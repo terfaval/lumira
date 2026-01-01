@@ -37,6 +37,7 @@ export default function FramePage() {
     try {
       const res = await fetch("/api/frame", {
         method: "POST",
+        credentials: "include",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ sessionId: id }),
       });

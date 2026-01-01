@@ -1,6 +1,7 @@
 import OpenAI from "openai";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/src/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
 
 export async function POST(req: Request) {
   try {
@@ -9,52 +10,99 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
     }
 
-    const supabase = await supabaseServer();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    // 0) legyen bejelentkezve (később úgyis kiveszed az anon-t)
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
-    // 1) nyers álom (RLS védi)
-    const { data: session, error: readErr } = await supabase
-      .from("dream_sessions")
-      .select("id, raw_dream_text")
-      .eq("id", sessionId)
-      .single();
-
-    if (readErr || !session) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(
-        { error: readErr?.message ?? "Session not found" },
-        { status: 404 }
+        { error: "Server misconfigured" },
+        { status: 500 }
       );
     }
 
-    const raw = session.raw_dream_text ?? "";
+    const cookieStore = cookies();
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options?: any) {
+          cookieStore.set(name, value, options);
+        },
+        remove(name: string, options?: any) {
+          cookieStore.set(name, "", { ...options, maxAge: 0 });
+        },
+      },
+    });
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const { data: session } = await supabase
+      .from("dream_sessions")
+      .select("id, raw_dream_text, ai_framing_text, status")
+      .eq("id", sessionId)
+      .single();
+
+    if (!session) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    if (session.ai_framing_text && session.status === "framed") {
+      return NextResponse.json({ sessionId, framing: session.ai_framing_text });
+    }
+
+    const raw = session.raw_dream_text?.trim() ?? "";
+    if (raw.length < 20) {
+      const framing =
+        "Az álomleírás nagyon rövid, de fontos, hogy időt szánj rá: " +
+        "pár mondatban írd le, mi történt és milyen érzések kísérték. Folytasd, amikor készen állsz.";
+
+      const { error: updErr } = await supabase
+        .from("dream_sessions")
+        .update({
+          ai_framing_text: framing,
+          ai_framing_audit: { model: "fallback", usage: null },
+          status: "framed",
+        })
+        .eq("id", sessionId);
+
+      if (updErr) {
+        return NextResponse.json({ error: updErr.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ sessionId, framing });
+    }
 
     // 2) OpenAI framing
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const prompt = [
-      "Feladat: rövid, nem-értelmező, biztonságos keretező reakció egy nyers álomleírásra.",
-      "Követelmények:",
-      "- 2–5 mondat",
-      "- ne diagnosztizálj, ne mondd meg a jelentést, ne patologizálj",
-      "- tükrözz vissza 1–2 feltűnő elemet vagy hangulatot",
-      "- bátoríts finoman a következő lépésre",
-      "- magyar nyelven",
-      "",
-      "Nyers álom:",
-      raw,
-    ].join("\n");
 
     const resp = await client.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Adj rövid, 2–5 mondatos magyar keretező választ egy nyers álomleírásra. " +
+            "Ne értelmezz, ne diagnosztizálj, ne patologizálj, ne utalj saját szerepedre. " +
+            "Csak tükrözz vissza 1–2 feltűnő elemet vagy hangulatot, nyugodt és támogató hangnemben, " +
+            "és finoman bátoríts a következő lépésre. Csak a keretezést add vissza magyarul.",
+        },
+        { role: "user", content: raw },
+      ],
+      temperature: 0.2,
+      max_tokens: 220,
     });
 
     const framing = resp.choices?.[0]?.message?.content?.trim() ?? "";
+    if (!framing) {
+      return NextResponse.json({ error: "Empty framing" }, { status: 502 });
+    }
     const audit = { model: resp.model, usage: resp.usage ?? null };
 
     // 3) visszaírjuk (RLS védi)
