@@ -21,8 +21,10 @@ export async function POST(req: Request) {
     }
 
     const cookieStore = await cookies();
+    const authHeader = req.headers.get("authorization") ?? undefined;
 
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      global: authHeader ? { headers: { Authorization: authHeader } } : {},
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value;
@@ -48,6 +50,7 @@ export async function POST(req: Request) {
       .from("dream_sessions")
       .select("id, raw_dream_text, ai_framing_text, status")
       .eq("id", sessionId)
+      .eq("user_id", user.id)
       .single();
 
     if (!session) {
@@ -71,7 +74,8 @@ export async function POST(req: Request) {
           ai_framing_audit: { model: "fallback", usage: null },
           status: "framed",
         })
-        .eq("id", sessionId);
+        .eq("id", sessionId)
+        .eq("user_id", user.id);
 
       if (updErr) {
         return NextResponse.json({ error: updErr.message }, { status: 500 });
@@ -114,7 +118,8 @@ export async function POST(req: Request) {
         ai_framing_audit: audit,
         status: "framed",
       })
-      .eq("id", sessionId);
+      .eq("id", sessionId)
+      .eq("user_id", user.id);
 
     if (updErr) {
       return NextResponse.json({ error: updErr.message }, { status: 500 });

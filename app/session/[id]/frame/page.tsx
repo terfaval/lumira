@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -15,6 +15,7 @@ export default function FramePage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const { loading } = useRequireAuth();
+  const attemptedRef = useRef(false);
 
   const load = useCallback(async () => {
     setErr(null);
@@ -31,14 +32,23 @@ export default function FramePage() {
     load();
   }, [load]);
 
-  async function runFraming() {
+  const runFraming = useCallback(async () => {
     setBusy(true);
     setErr(null);
     try {
+      const {
+        data: { session: authSession },
+      } = await supabase.auth.getSession();
+
+      const token = authSession?.access_token;
+
       const res = await fetch("/api/frame", {
         method: "POST",
         credentials: "include",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ sessionId: id }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -49,7 +59,19 @@ export default function FramePage() {
     } finally {
       setBusy(false);
     }
-  }
+  }, [id, load]);
+
+  useEffect(() => {
+    if (
+      session &&
+      !session.ai_framing_text &&
+      !busy &&
+      !attemptedRef.current
+    ) {
+      attemptedRef.current = true;
+      runFraming();
+    }
+  }, [session, busy, runFraming]);
 
   return (
     <Shell title="Keretezés">
