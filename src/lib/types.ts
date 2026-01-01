@@ -1,3 +1,5 @@
+export type JsonValue = Record<string, unknown>;
+
 export type DreamSession = {
   id: string;
   raw_dream_text: string;
@@ -12,14 +14,14 @@ export type DirectionCatalogItem = {
   title: string;
   description: string;
   is_active: boolean;
-  content: any; // jsonb
+  content: JsonValue; // jsonb
 };
 
 export type MorningDirectionChoice = {
   id: string;
   session_id: string;
   chosen_direction_slugs: string[] | null;
-  ai_recommendations: any; // jsonb (wireframe: [])
+  ai_recommendations: JsonValue; // jsonb (wireframe: [])
   choice_source: "ai_only" | "catalog_only" | "ai_plus_catalog";
 };
 

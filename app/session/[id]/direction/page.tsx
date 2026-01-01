@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -25,7 +25,7 @@ export default function DirectionPage() {
     [selected]
   );
 
-  async function load() {
+  const load = useCallback(async () => {
     setErr(null);
 
     const { data: cat, error: catErr } = await supabase
@@ -50,9 +50,11 @@ export default function DirectionPage() {
       (ch.chosen_direction_slugs ?? []).forEach((s: string) => (m[s] = true));
       setSelected(m);
     }
-  }
+  }, [sessionId]);
 
-  useEffect(() => { load(); }, [sessionId]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   function toggle(slug: string) {
     setSelected((prev) => ({ ...prev, [slug]: !prev[slug] }));
@@ -79,8 +81,9 @@ export default function DirectionPage() {
       if (error) throw error;
 
       router.push(`/session/${sessionId}/work`);
-    } catch (e: any) {
-      setErr(e.message ?? "Hiba");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Hiba";
+      setErr(message);
     } finally {
       setBusy(false);
     }

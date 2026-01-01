@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -16,7 +16,7 @@ export default function FramePage() {
   const [err, setErr] = useState<string | null>(null);
   const { loading } = useRequireAuth();
 
-  async function load() {
+  const load = useCallback(async () => {
     setErr(null);
     const { data, error } = await supabase
       .from("dream_sessions")
@@ -25,9 +25,11 @@ export default function FramePage() {
       .single();
     if (error) setErr(error.message);
     else setSession(data as DreamSession);
-  }
+  }, [id]);
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   async function runFraming() {
     setBusy(true);
@@ -40,8 +42,9 @@ export default function FramePage() {
       });
       if (!res.ok) throw new Error(await res.text());
       await load();
-    } catch (e: any) {
-      setErr(e.message ?? "Hiba");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Hiba";
+      setErr(message);
     } finally {
       setBusy(false);
     }

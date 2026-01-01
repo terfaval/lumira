@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -19,19 +19,20 @@ export default function WorkPage() {
 
   const current = useMemo(() => blocks.find((b) => b.block_state === "open") ?? blocks[0], [blocks]);
 
-  async function load() {
+  const load = useCallback(async () => {
     setErr(null);
     const { data, error } = await supabase
       .from("work_blocks")
       .select("id, session_id, direction_slug, sequence, ai_context, ai_question, user_answer, block_state")
       .eq("session_id", sessionId)
-      .is("deleted_at", null)
       .order("sequence", { ascending: true });
     if (error) setErr(error.message);
     else setBlocks((data ?? []) as WorkBlock[]);
-  }
+  }, [sessionId]);
 
-  useEffect(() => { load(); }, [sessionId]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   async function generateDummyBlock() {
     setBusy(true);
@@ -52,8 +53,9 @@ export default function WorkPage() {
 
       if (error) throw error;
       await load();
-    } catch (e: any) {
-      setErr(e.message ?? "Hiba");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Hiba";
+      setErr(message);
     } finally {
       setBusy(false);
     }
@@ -73,8 +75,9 @@ export default function WorkPage() {
         .eq("id", blockId);
       if (error) throw error;
       await load();
-    } catch (e: any) {
-      setErr(e.message ?? "Hiba");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Hiba";
+      setErr(message);
     } finally {
       setBusy(false);
     }
@@ -125,8 +128,6 @@ function BlockCard({
   busy: boolean;
 }) {
   const [draft, setDraft] = useState(block.user_answer ?? "");
-
-  useEffect(() => setDraft(block.user_answer ?? ""), [block.id]);
 
   return (
     <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>

@@ -39,8 +39,9 @@ export default function NewDream() {
       if (error) throw error;
 
       router.push(`/session/${data.id}/frame`);
-    } catch (e: any) {
-      setErr(e.message ?? "Hiba");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Hiba";
+      setErr(message);
     } finally {
       setBusy(false);
     }
@@ -52,6 +53,10 @@ export default function NewDream() {
         <p>Bejelentkezés ellenőrzése…</p>
       ) : (
         <>
+          <p style={{ marginBottom: 8, opacity: 0.85 }}>
+            Üres közép: csak írd le, ami megmaradt. Később bármikor folytathatod vagy kiegészítheted
+            a sessiont.
+          </p>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -62,6 +67,9 @@ export default function NewDream() {
           <div style={{ marginTop: 12, display: "flex", gap: 12 }}>
             <PrimaryButton onClick={createSession} disabled={busy}>
               Mentés & tovább
+            </PrimaryButton>
+            <PrimaryButton onClick={() => router.push("/sessions")}>
+              Megkezdett session folytatása
             </PrimaryButton>
           </div>
           {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}

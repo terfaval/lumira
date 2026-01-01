@@ -70,7 +70,8 @@ export default function EveningRun() {
     setErr(null);
     try {
       const userId = await requireUserId();
-      const version = (card as any).version ?? card.content?.meta?.version ?? null;
+      const meta = (card.content as { meta?: { version?: string | number | null } } | null)?.meta;
+      const version = card.version ?? meta?.version ?? null;
       const { error } = await supabase.from("evening_card_usage_log").insert({
         user_id: userId,
         card_slug: slug,
@@ -79,8 +80,9 @@ export default function EveningRun() {
 
       if (error) throw error;
       setCompleted(true);
-    } catch (e: any) {
-      setErr(e?.message ?? "Nem sikerült menteni a befejezést.");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Nem sikerült menteni a befejezést.";
+      setErr(message);
     } finally {
       setFinishing(false);
     }
