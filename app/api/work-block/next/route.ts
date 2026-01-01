@@ -55,6 +55,37 @@ function sanitizeSafety(flags?: SynthInput["flags"]): SafetyValue {
     : "other";
 }
 
+function detectSafety(dreamText: string): SafetyValue {
+  const text = dreamText.toLowerCase();
+  const selfHarmKeywords = [
+    "suicide",
+    "kill myself",
+    "end my life",
+    "öngyilk",
+    "megölöm magam",
+    "véget vetek",
+    "nem akarok élni",
+  ];
+  const realityConfusionKeywords = [
+    "can't tell what's real",
+    "not real",
+    "hallucinat",
+    "nem valós",
+    "nem tudom mi a valós",
+    "realitás",
+  ];
+
+  if (selfHarmKeywords.some((kw) => text.includes(kw))) {
+    return "self_harm";
+  }
+
+  if (realityConfusionKeywords.some((kw) => text.includes(kw))) {
+    return "reality_confusion";
+  }
+
+  return "none";
+}
+
 function sanitizeHistory(history: HistoryItem[] | undefined): HistoryItem[] {
   if (!Array.isArray(history)) return [];
   return history
@@ -154,6 +185,13 @@ function validateModelOutput(parsed: unknown): WorkBlockResponse | null {
   const leadIn = typeof workBlock.lead_in === "string" ? workBlock.lead_in : "";
   const cta = typeof workBlock.cta === "string" ? workBlock.cta : null;
 
+  const questionMarkCount = (question.match(/\?/g) ?? []).length;
+  const hasNumberedList = /\d+\)/.test(question);
+  const lineBreakCount = (question.match(/\n/g) ?? []).length;
+  if (questionMarkCount > 1 || hasNumberedList || lineBreakCount >= 2) {
+    return null;
+  }
+  
   const suggestStop = Boolean(stopSignal?.suggest_stop);
   const reason = typeof stopSignal?.reason === "string" ? stopSignal.reason : null;
 
@@ -166,6 +204,42 @@ function validateModelOutput(parsed: unknown): WorkBlockResponse | null {
     stop_signal: { suggest_stop: suggestStop, reason },
     flags: { safety },
   };
+}
+
+function buildDirectionForAI(direction: DirectionInput | undefined) {
+  if (!direction) return undefined;
+
+  const methodSpec = direction.method_spec ?? {};
+  const methodSpecForAI: Record<string, unknown> = {};
+
+  if (typeof methodSpec.question_style === "string") {
+    methodSpecForAI.question_style = methodSpec.question_style;
+  }
+  if ("aim" in methodSpec) {
+    methodSpecForAI.aim = methodSpec.aim;
+  }
+  if ("do" in methodSpec) {
+    methodSpecForAI.do = methodSpec.do;
+  }
+  if ("dont" in methodSpec) {
+    methodSpecForAI.dont = methodSpec.dont;
+  }
+
+  const directionForAI: Record<string, unknown> = {};
+  if (Object.keys(methodSpecForAI).length) {
+    directionForAI.method_spec = methodSpecForAI;
+  }
+  if (direction.stop_criteria) {
+    directionForAI.stop_criteria = direction.stop_criteria;
+  }
+  if (direction.output_spec) {
+    directionForAI.output_spec = direction.output_spec;
+  }
+  if (direction.safety) {
+    directionForAI.safety = direction.safety;
+  }
+
+  return Object.keys(directionForAI).length ? directionForAI : undefined;
 }
 
 export async function POST(req: Request) {
@@ -189,6 +263,11 @@ export async function POST(req: Request) {
       return NextResponse.json(makeClosureResponse("safety", safetyFlag));
     }
 
+    const detectedSafety = detectSafety(dreamText);
+    if (detectedSafety !== "none") {
+      return NextResponse.json(makeClosureResponse("safety", detectedSafety));
+    }
+    
     const stopSignal = shouldStop(direction, history);
     if (stopSignal.suggest_stop) {
       return NextResponse.json(makeClosureResponse(stopSignal.reason, safetyFlag));
@@ -212,16 +291,18 @@ export async function POST(req: Request) {
       }),
     ].join("\n");
 
+    const directionForAI = buildDirectionForAI(direction);
+
     const userPayload = {
       dream_text: dreamText,
-      direction,
+      direction: directionForAI ?? {},
       history,
       prior_echoes: priorEchoes,
     };
 
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.4,
+      temperature: 0,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: JSON.stringify(userPayload) },
@@ -234,7 +315,18 @@ export async function POST(req: Request) {
     try {
       parsed = JSON.parse(rawContent);
     } catch {
-      return NextResponse.json({ error: "Invalid JSON from model" }, { status: 500 });
+      const firstBrace = rawContent.indexOf("{");
+      const lastBrace = rawContent.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        const salvage = rawContent.slice(firstBrace, lastBrace + 1);
+        try {
+          parsed = JSON.parse(salvage);
+        } catch {
+          return NextResponse.json({ error: "Invalid JSON from model" }, { status: 500 });
+        }
+      } else {
+        return NextResponse.json({ error: "Invalid JSON from model" }, { status: 500 });
+      }
     }
 
     const sanitized = validateModelOutput(parsed);

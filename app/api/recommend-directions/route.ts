@@ -46,6 +46,11 @@ function selectDirections(
 
   const filtered = candidates.filter((c) => allowedSet.has(c)).slice(0, max);
 
+  if (!filtered.length) {
+    const fallback = (allowed ?? []).find((slug): slug is string => typeof slug === "string");
+    return { slugs: fallback ? [fallback] : [], flags };
+  }
+  
   return { slugs: filtered, flags };
 }
 
