@@ -16,9 +16,9 @@ export default function EveningCards() {
     (async () => {
       const { data, error } = await supabase
         .from("evening_card_catalog")
-        .select("slug, title, is_active, content")
+        .select("slug, title, is_active, content, sort_order")
         .eq("is_active", true)
-        .order("slug", { ascending: true });
+        .order("sort_order", { ascending: true });
 
       if (error) setErr(error.message);
       else setCards((data ?? []) as EveningCardCatalogItem[]);
@@ -36,11 +36,13 @@ export default function EveningCards() {
             {cards.map((c) => (
               <Link
                 key={c.slug}
-                href={`/evening/run/${c.slug}`}
+                href={`/evening/card/${c.slug}`}
                 style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12 }}
               >
                 <div style={{ fontWeight: 700 }}>{c.title}</div>
-                <div style={{ opacity: 0.6, fontSize: 12 }}>{c.slug}</div>
+                {c.content?.meta?.time && (
+                  <div style={{ opacity: 0.7, fontSize: 12 }}>{c.content.meta.time}</div>
+                )}
               </Link>
             ))}
           </div>

@@ -38,5 +38,7 @@ export type EveningCardCatalogItem = {
   slug: string;
   title: string;
   is_active: boolean;
+  version?: string | number | null;
+  sort_order?: number | null;
   content: any; // jsonb
 };
