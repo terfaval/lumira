@@ -20,17 +20,29 @@ create index if not exists dream_session_summaries_user_created_idx
 alter table public.dream_session_summaries
   enable row level security;
 
-create policy if not exists "Users can select own dream session summaries"
+-- SELECT
+drop policy if exists "Users can select own dream session summaries"
+  on public.dream_session_summaries;
+
+create policy "Users can select own dream session summaries"
   on public.dream_session_summaries
   for select
   using (auth.uid() = user_id);
 
-create policy if not exists "Users can insert own dream session summaries"
+-- INSERT
+drop policy if exists "Users can insert own dream session summaries"
+  on public.dream_session_summaries;
+
+create policy "Users can insert own dream session summaries"
   on public.dream_session_summaries
   for insert
   with check (auth.uid() = user_id);
 
-create policy if not exists "Users can update own dream session summaries"
+-- UPDATE
+drop policy if exists "Users can update own dream session summaries"
+  on public.dream_session_summaries;
+
+create policy "Users can update own dream session summaries"
   on public.dream_session_summaries
   for update
   using (auth.uid() = user_id)
