@@ -1,18 +1,47 @@
 "use client";
 
-import Link from "next/link";
-import { Shell } from "@/components/Shell";
-import { PrimaryButton } from "@/components/PrimaryButton";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+import { supabase } from "@/src/lib/supabase/client";
+
+const APP_ENTRY_ROUTE = "/new";
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function checkSession() {
+      const { data } = await supabase.auth.getSession();
+      if (!isMounted) return;
+
+      if (data.session) {
+        router.replace(APP_ENTRY_ROUTE);
+      } else {
+        router.replace("/login");
+      }
+    }
+
+    checkSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
+
   return (
-    <Shell title="Mira">
-      <p>Mit szeretnél most?</p>
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <Link href="/new"><PrimaryButton>Új álom rögzítése</PrimaryButton></Link>
-        <Link href="/archive"><PrimaryButton>Archívum</PrimaryButton></Link>
-        <Link href="/evening"><PrimaryButton>Esti tér</PrimaryButton></Link>
-      </div>
-    </Shell>
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        fontSize: 18,
+        fontWeight: 500,
+      }}
+    >
+      Loading...
+    </main>
   );
 }
