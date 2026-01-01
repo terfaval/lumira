@@ -5,11 +5,13 @@ import { useParams } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
+import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
 export default function EveningRun() {
   const { slug } = useParams<{ slug: string }>();
   const [card, setCard] = useState<any>(null);
   const [err, setErr] = useState<string | null>(null);
+  const { loading } = useRequireAuth();
 
   useEffect(() => {
     (async () => {
@@ -41,13 +43,19 @@ export default function EveningRun() {
 
   return (
     <Shell title={card?.title ?? "Esti kártya"}>
-      {err && <p style={{ color: "crimson" }}>{err}</p>}
-      {!card ? (
-        <p>Betöltés…</p>
+      {loading ? (
+        <p>Bejelentkezés ellenőrzése…</p>
       ) : (
-        <pre style={{ whiteSpace: "pre-wrap", border: "1px solid #ddd", borderRadius: 10, padding: 12 }}>
-          {JSON.stringify(card.content, null, 2)}
-        </pre>
+        <>
+          {err && <p style={{ color: "crimson" }}>{err}</p>}
+          {!card ? (
+            <p>Betöltés…</p>
+          ) : (
+            <pre style={{ whiteSpace: "pre-wrap", border: "1px solid #ddd", borderRadius: 10, padding: 12 }}>
+              {JSON.stringify(card.content, null, 2)}
+            </pre>
+          )}
+        </>
       )}
     </Shell>
   );

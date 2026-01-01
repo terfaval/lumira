@@ -5,10 +5,12 @@ import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { supabase } from "@/src/lib/supabase/client";
 import type { EveningCardCatalogItem } from "@/src/lib/types";
+import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
 export default function EveningCards() {
   const [cards, setCards] = useState<EveningCardCatalogItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const { loading } = useRequireAuth();
 
   useEffect(() => {
     (async () => {
@@ -25,15 +27,25 @@ export default function EveningCards() {
 
   return (
     <Shell title="Esti kártyák">
-      {err && <p style={{ color: "crimson" }}>{err}</p>}
-      <div style={{ display: "grid", gap: 10 }}>
-        {cards.map((c) => (
-          <Link key={c.slug} href={`/evening/run/${c.slug}`} style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12 }}>
-            <div style={{ fontWeight: 700 }}>{c.title}</div>
-            <div style={{ opacity: 0.6, fontSize: 12 }}>{c.slug}</div>
-          </Link>
-        ))}
-      </div>
+      {loading ? (
+        <p>Bejelentkezés ellenőrzése…</p>
+      ) : (
+        <>
+          {err && <p style={{ color: "crimson" }}>{err}</p>}
+          <div style={{ display: "grid", gap: 10 }}>
+            {cards.map((c) => (
+              <Link
+                key={c.slug}
+                href={`/evening/run/${c.slug}`}
+                style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12 }}
+              >
+                <div style={{ fontWeight: 700 }}>{c.title}</div>
+                <div style={{ opacity: 0.6, fontSize: 12 }}>{c.slug}</div>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </Shell>
   );
 }

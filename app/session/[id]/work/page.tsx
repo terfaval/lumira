@@ -7,10 +7,12 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import type { WorkBlock } from "@/src/lib/types";
+import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
 export default function WorkPage() {
   const { id: sessionId } = useParams<{ id: string }>();
   const router = useRouter();
+  const { loading } = useRequireAuth();
   const [blocks, setBlocks] = useState<WorkBlock[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -80,29 +82,35 @@ export default function WorkPage() {
 
   return (
     <Shell title="Kártyás feldolgozás">
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <PrimaryButton onClick={generateDummyBlock} disabled={busy}>
-          + 1 blokk (wireframe stub)
-        </PrimaryButton>
-        <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)}>
-          Összkép
-        </PrimaryButton>
-      </div>
-
-      <hr style={{ margin: "16px 0" }} />
-
-      {blocks.length === 0 ? (
-        <p>Még nincs blokk. Adj hozzá egyet a gombbal.</p>
+      {loading ? (
+        <p>Bejelentkezés ellenőrzése…</p>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {blocks.map((b) => (
-            <BlockCard key={b.id} block={b} onSave={saveAnswer} busy={busy} />
-          ))}
-        </div>
-      )}
+        <>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <PrimaryButton onClick={generateDummyBlock} disabled={busy}>
+              + 1 blokk (wireframe stub)
+            </PrimaryButton>
+            <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)}>
+              Összkép
+            </PrimaryButton>
+          </div>
 
-      {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-      {current && <p style={{ marginTop: 12, opacity: 0.7 }}>Aktív blokk: #{current.sequence}</p>}
+          <hr style={{ margin: "16px 0" }} />
+
+          {blocks.length === 0 ? (
+            <p>Még nincs blokk. Adj hozzá egyet a gombbal.</p>
+          ) : (
+            <div style={{ display: "grid", gap: 12 }}>
+              {blocks.map((b) => (
+                <BlockCard key={b.id} block={b} onSave={saveAnswer} busy={busy} />
+              ))}
+            </div>
+          )}
+
+          {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
+          {current && <p style={{ marginTop: 12, opacity: 0.7 }}>Aktív blokk: #{current.sequence}</p>}
+        </>
+      )}
     </Shell>
   );
 }

@@ -7,10 +7,12 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import type { DirectionCatalogItem, MorningDirectionChoice } from "@/src/lib/types";
+import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
 export default function DirectionPage() {
   const { id: sessionId } = useParams<{ id: string }>();
   const router = useRouter();
+  const { loading } = useRequireAuth();
 
   const [catalog, setCatalog] = useState<DirectionCatalogItem[]>([]);
   const [choice, setChoice] = useState<MorningDirectionChoice | null>(null);
@@ -86,40 +88,46 @@ export default function DirectionPage() {
 
   return (
     <Shell title="Irányválasztás">
-      <p style={{ opacity: 0.8 }}>
-        Válassz 0–n irányt. (Wireframe: egyelőre katalógusból.)
-      </p>
+      {loading ? (
+        <p>Bejelentkezés ellenőrzése…</p>
+      ) : (
+        <>
+          <p style={{ opacity: 0.8 }}>
+            Válassz 0–n irányt. (Wireframe: egyelőre katalógusból.)
+          </p>
 
-      <div style={{ display: "grid", gap: 10 }}>
-        {catalog.map((d) => (
-          <label key={d.slug} style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12 }}>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <input type="checkbox" checked={!!selected[d.slug]} onChange={() => toggle(d.slug)} />
-              <div>
-                <div style={{ fontWeight: 700 }}>{d.title}</div>
-                <div style={{ opacity: 0.8 }}>{d.description}</div>
-                <div style={{ fontSize: 12, opacity: 0.6 }}>slug: {d.slug}</div>
-              </div>
-            </div>
-          </label>
-        ))}
-      </div>
+          <div style={{ display: "grid", gap: 10 }}>
+            {catalog.map((d) => (
+              <label key={d.slug} style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12 }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <input type="checkbox" checked={!!selected[d.slug]} onChange={() => toggle(d.slug)} />
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{d.title}</div>
+                    <div style={{ opacity: 0.8 }}>{d.description}</div>
+                    <div style={{ fontSize: 12, opacity: 0.6 }}>slug: {d.slug}</div>
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
 
-      <div style={{ marginTop: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <PrimaryButton onClick={save} disabled={busy}>
-          Mentés & tovább a blokkokhoz
-        </PrimaryButton>
-        <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)}>
-          Megállok (összkép)
-        </PrimaryButton>
-      </div>
+          <div style={{ marginTop: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <PrimaryButton onClick={save} disabled={busy}>
+              Mentés & tovább a blokkokhoz
+            </PrimaryButton>
+            <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)}>
+              Megállok (összkép)
+            </PrimaryButton>
+          </div>
 
-      {choice && (
-        <p style={{ marginTop: 12, opacity: 0.7 }}>
-          Van már mentés ehhez a sessionhöz. (choice_source: {choice.choice_source})
-        </p>
+          {choice && (
+            <p style={{ marginTop: 12, opacity: 0.7 }}>
+              Van már mentés ehhez a sessionhöz. (choice_source: {choice.choice_source})
+            </p>
+          )}
+          {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
+        </>
       )}
-      {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
     </Shell>
   );
 }

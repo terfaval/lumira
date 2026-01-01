@@ -6,6 +6,7 @@ import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
 import type { DreamSession } from "@/src/lib/types";
+import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
 export default function FramePage() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ export default function FramePage() {
   const [session, setSession] = useState<DreamSession | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const { loading } = useRequireAuth();
 
   async function load() {
     setErr(null);
@@ -47,7 +49,9 @@ export default function FramePage() {
 
   return (
     <Shell title="Keretezés">
-      {!session ? (
+      {loading ? (
+        <p>Bejelentkezés ellenőrzése…</p>
+      ) : !session ? (
         <p>Betöltés…</p>
       ) : (
         <>
