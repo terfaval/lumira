@@ -1,18 +1,24 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "../../../src/lib/supabase/admin";
+import { supabaseServer } from "@/src/lib/supabase/server";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const sessionId = body.sessionId as string | undefined;
-
+    const { sessionId } = (await req.json()) as { sessionId?: string };
     if (!sessionId) {
       return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
     }
 
-    // 1) lekérjük a nyers álmot (service role-lal, mert ez szerver oldali művelet)
-    const { data: session, error: readErr } = await supabaseAdmin
+    const supabase = await supabaseServer();
+
+    // 0) legyen bejelentkezve (később úgyis kiveszed az anon-t)
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    // 1) nyers álom (RLS védi)
+    const { data: session, error: readErr } = await supabase
       .from("dream_sessions")
       .select("id, raw_dream_text")
       .eq("id", sessionId)
@@ -27,9 +33,8 @@ export async function POST(req: Request) {
 
     const raw = session.raw_dream_text ?? "";
 
-    // 2) OpenAI hívás: rövid, nem-értelmező keretezés
+    // 2) OpenAI framing
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
     const prompt = [
       "Feladat: rövid, nem-értelmező, biztonságos keretező reakció egy nyers álomleírásra.",
       "Követelmények:",
@@ -50,14 +55,10 @@ export async function POST(req: Request) {
     });
 
     const framing = resp.choices?.[0]?.message?.content?.trim() ?? "";
+    const audit = { model: resp.model, usage: resp.usage ?? null };
 
-    // 3) visszaírjuk a DB-be
-    const audit = {
-      model: resp.model,
-      usage: resp.usage ?? null,
-    };
-
-    const { error: updErr } = await supabaseAdmin
+    // 3) visszaírjuk (RLS védi)
+    const { error: updErr } = await supabase
       .from("dream_sessions")
       .update({
         ai_framing_text: framing,
