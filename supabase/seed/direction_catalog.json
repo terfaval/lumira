@@ -8,6 +8,32 @@
       "type": "direction",
       "group": "I. ÁLOMEMLÉKEZET ÉS HOZZÁFÉRÉS",
       "goal_md": "**Cél:** Az álom felidézett elemeinek stabilizálása és finom bővítése értelmezés nélkül.",
+      "micro_description": "Stabilizáld és finoman bővítsd az álomemléket (értelmezés nélkül).",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Az álom felidézett elemeinek stabilizálása és finom bővítése értelmezés nélkül.",
+        "do": [
+          "tarts nem-klinikai, nem-diagnosztikus hangot",
+          "maradj leíró és konkrét (jelenet, érzékszervi részletek, sorrend)",
+          "egy lépést / egy kártyát vezess egyszerre",
+          "adj választható irányokat (opciókat), ne egyetlen „helyes” utat",
+          "a jelentést hagyd a felhasználónál"
+        ],
+        "dont": [
+          "ne állíts jelentést tényként",
+          "ne diagnosztizálj",
+          "ne erőltesd a mélyítést",
+          "ne sürgesd a lezárást"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 4,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
         "role": "guide",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
@@ -23,7 +49,12 @@
         "card_types": ["reflect", "invite", "summarize"],
         "allowed_moves": ["reflect", "invite", "offer_options"],
         "avoid_moves": ["interpret_as_fact", "diagnose", "force_meaning"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "optional",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["stabilize_memory", "sensory_hook"],
@@ -50,6 +81,32 @@
       "type": "direction",
       "group": "I. ÁLOMEMLÉKEZET ÉS HOZZÁFÉRÉS",
       "goal_md": "**Cél:** Az álomállapot rövid idejű újraérintése.",
+      "micro_description": "Az álomállapot rövid, biztonságos újraérintése.",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Az álomállapot rövid idejű újraérintése.",
+        "do": [
+          "tarts nem-klinikai, nem-diagnosztikus hangot",
+          "maradj rövid és földelt (állapot/szenzoros kapu)",
+          "egy lépést / egy kártyát vezess egyszerre",
+          "adj opciókat és opt-out lehetőséget",
+          "tarts biztonságos távolságot, ha felkavaró"
+        ],
+        "dont": [
+          "ne erőltesd a visszalépést",
+          "ne mélyíts túl sokáig",
+          "ne állíts jelentést tényként",
+          "ne diagnosztizálj"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 3,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
         "role": "guide",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
@@ -65,7 +122,12 @@
         "card_types": ["invite", "reflect", "summarize"],
         "allowed_moves": ["invite", "reflect", "offer_options"],
         "avoid_moves": ["interpret_as_fact", "diagnose", "force_meaning"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "rare", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "rare",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["state_reconnect", "sensory_gate"],
@@ -92,6 +154,32 @@
       "type": "direction",
       "group": "I. ÁLOMEMLÉKEZET ÉS HOZZÁFÉRÉS",
       "goal_md": "**Cél:** Az álom spontán továbbalakulásának megfigyelése.",
+      "micro_description": "Figyeld meg, hogyan alakulna tovább az álom (kötés nélkül).",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Az álom spontán továbbalakulásának megfigyelése.",
+        "do": [
+          "tarts nyitott, nem-direktív hangot",
+          "hagyd, hogy új elemek bukkanjanak fel (emergencia)",
+          "jegyezd meg a változási pontokat (choice_point)",
+          "adj 2–3 lehetséges folytatási irányt, de ne erőltesd",
+          "tartsd a jelentést a felhasználónál"
+        ],
+        "dont": [
+          "ne tereld kötelező narratívába",
+          "ne állíts jelentést tényként",
+          "ne diagnosztizálj",
+          "ne mélyíts, ha felkavaró"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 4,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
         "role": "mirror",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
@@ -107,7 +195,12 @@
         "card_types": ["invite", "reflect", "summarize"],
         "allowed_moves": ["invite", "reflect", "offer_options"],
         "avoid_moves": ["interpret_as_fact", "diagnose", "force_meaning"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "optional",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["offer_two_paths", "gentle_prompting"],
@@ -134,6 +227,32 @@
       "type": "direction",
       "group": "II. ÉRZELMI ÉS TESTI LENYOMAT",
       "goal_md": "**Cél:** Az álom érzelmi tónusának azonosítása.",
+      "micro_description": "Nevezd meg és tartsd meg az álom érzelmi tónusát.",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Az álom érzelmi tónusának azonosítása.",
+        "do": [
+          "tarts validáló, konténerező hangot",
+          "nevezd meg óvatosan a tónust (opciókkal)",
+          "ha kell, tereld a fókuszt testre / földelésre",
+          "tarts rövid lépéseket, egy kártyát egyszerre",
+          "a jelentést hagyd a felhasználónál"
+        ],
+        "dont": [
+          "ne diagnosztizálj",
+          "ne erőltesd a katarzist",
+          "ne nyomd trauma-irányba",
+          "ne állíts jelentést tényként"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 4,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
         "role": "mirror",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
@@ -149,7 +268,12 @@
         "card_types": ["reflect", "invite", "summarize"],
         "allowed_moves": ["reflect", "invite", "offer_options"],
         "avoid_moves": ["diagnose", "force_catharsis", "push_trauma"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "rare", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "rare",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["offer_emotion_labels", "keep_simple"],
@@ -176,6 +300,32 @@
       "type": "direction",
       "group": "II. ÉRZELMI ÉS TESTI LENYOMAT",
       "goal_md": "**Cél:** Az álom testi hatásainak tudatosítása.",
+      "micro_description": "Testi érzetekre fókuszálva stabilizálni és megfigyelni.",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Az álom testi hatásainak tudatosítása.",
+        "do": [
+          "tarts földelt, praktikus hangot",
+          "maradj konkrét testi érzeteknél",
+          "csökkents intenzitást, ha kell (downshift)",
+          "egy kártya = egy kis lépés",
+          "adj opt-out lehetőséget"
+        ],
+        "dont": [
+          "ne diagnosztizálj",
+          "ne erőltesd az intenzitást",
+          "ne csússz át történet/értelmezés irányba",
+          "ne állíts jelentést tényként"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 4,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
         "role": "guide",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
@@ -191,7 +341,12 @@
         "card_types": ["invite", "reflect", "summarize"],
         "allowed_moves": ["invite", "reflect", "offer_options"],
         "avoid_moves": ["diagnose", "interpret_as_fact", "push_intensity"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "optional",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["simple_body_check", "one_anchor"],
@@ -218,6 +373,36 @@
       "type": "direction",
       "group": "III. MINTÁZATOK ÉS ISMÉTLŐDÉSEK",
       "goal_md": "**Cél:** Kapcsolódások felismerése korábbi álmokkal.",
+      "micro_description": "Visszatérések megfigyelése: különbségek, majd hasonlóságok.",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "constraints": {
+        "max_prior_sessions": 2,
+        "compare_style": "differences_first"
+      },
+      "method_spec": {
+        "aim": "Kapcsolódások felismerése korábbi álmokkal (megfigyelésként, nem megfejtésként).",
+        "do": [
+          "csak visszatérést észlelj (jelenet/szereplő/tónus/motívum)",
+          "először különbségeket emelj ki, aztán hasonlóságokat",
+          "tarts több lehetőséget nyitva; a jelentés a felhasználóé",
+          "tarts rövid, strukturált lépéseket",
+          "ha túl sok az input, szűkíts 1–2 korábbi sessionre"
+        ],
+        "dont": [
+          "ne állíts jelentést tényként",
+          "ne „magyarázd meg” a mintát",
+          "ne diagnosztizálj",
+          "ne általánosíts nagyot kevés adatból"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 4,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
         "role": "guide",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
@@ -233,7 +418,14 @@
         "card_types": ["reflect", "invite", "summarize"],
         "allowed_moves": ["reflect", "invite", "offer_options"],
         "avoid_moves": ["force_meaning", "interpret_as_fact", "diagnose"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "optional",
+          "question_count": "0-1",
+          "include_opt_out": true,
+          "never_claim_meaning": true,
+          "comparison_style": "differences_first"
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["offer_pattern_lenses", "keep_simple"],
@@ -260,6 +452,32 @@
       "type": "direction",
       "group": "IV. JELENTÉS-KÖZELI, DE NYITOTT IRÁNYOK",
       "goal_md": "**Cél:** Jelentéslehetőségek megnyitása megfejtés nélkül.",
+      "micro_description": "Nyitott asszociációk a szimbólumokra, megfejtés nélkül.",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Jelentéslehetőségek megnyitása megfejtés nélkül.",
+        "do": [
+          "kínálj több asszociációs csatornát (érzet, emlék, kép, kapcsolat)",
+          "tarts feltételes nyelvet (lehet, talán, számodra)",
+          "a jelentés a felhasználóé marad",
+          "maradj óvatos és nem-assertív",
+          "adj opt-out lehetőséget"
+        ],
+        "dont": [
+          "ne adj „egy igaz megfejtést”",
+          "ne állíts jelentést tényként",
+          "ne diagnosztizálj",
+          "ne vidd túl intenzívre, ha felkavaró"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 4,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
         "role": "inquire",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
@@ -275,7 +493,12 @@
         "card_types": ["invite", "reflect", "summarize"],
         "allowed_moves": ["invite", "reflect", "offer_options"],
         "avoid_moves": ["hard_interpretation", "interpret_as_fact", "diagnose"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "optional",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["offer_association_modes", "keep_light"],
@@ -302,8 +525,34 @@
       "type": "direction",
       "group": "IV. JELENTÉS-KÖZELI, DE NYITOTT IRÁNYOK",
       "goal_md": "**Cél:** Rezonanciák megfigyelése.",
+      "micro_description": "Rezonanciák keresése az ébrenléti életben (bizonyosság nélkül).",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Rezonanciák megfigyelése az ébrenléti élettel.",
+        "do": [
+          "maradj gyengéd és nem-ítélkező",
+          "tarts nyitott kapcsolatkeresést (rezonancia, nem magyarázat)",
+          "kerüld a tanács-adást; inkább opciókat kínálj",
+          "ne állíts ok-okozati összefüggést",
+          "a jelentés a felhasználóé"
+        ],
+        "dont": [
+          "ne írj elő cselekvést",
+          "ne diagnosztizálj",
+          "ne állíts jelentést tényként",
+          "ne légy túl bizonyos"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 4,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
-        "role": "coach",
+        "role": "facilitator",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["practical", "gentle", "non-judgmental"],
         "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
@@ -317,7 +566,12 @@
         "card_types": ["reflect", "invite", "summarize"],
         "allowed_moves": ["reflect", "invite", "offer_options"],
         "avoid_moves": ["prescribe_actions", "diagnose", "force_meaning"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "optional",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["offer_resonance_lenses", "keep_concrete"],
@@ -344,6 +598,32 @@
       "type": "direction",
       "group": "IV. JELENTÉS-KÖZELI, DE NYITOTT IRÁNYOK",
       "goal_md": "**Cél:** Az álom megtartása nyitott kérdésként.",
+      "micro_description": "Tartsd meg az álmot nyitott kérdésként, megoldás nélkül.",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Az álom megtartása nyitott kérdésként (feloldás nélkül).",
+        "do": [
+          "maradj minimalista és csendes hangon",
+          "fogalmazz nyitottan, véglegesítés nélkül",
+          "tartsd a fókuszt a feszültség/érzés magján",
+          "adj opt-out lehetőséget",
+          "ha kell, zárj rövid összegzéssel"
+        ],
+        "dont": [
+          "ne oldd meg a felhasználó helyett",
+          "ne állíts jelentést tényként",
+          "ne diagnosztizálj",
+          "ne mélyíts, ha felkavaró"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 3,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
         "role": "summarize",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
@@ -359,7 +639,12 @@
         "card_types": ["summarize", "invite"],
         "allowed_moves": ["reflect", "invite"],
         "avoid_moves": ["interpret_as_fact", "diagnose", "resolve_for_user"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "rare", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "rare",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["keep_one_thread", "hold_open"],
@@ -386,8 +671,34 @@
       "type": "direction",
       "group": "V. INTEGRÁCIÓ, KREATÍV HASZNÁLAT ÉS LEZÁRÁS",
       "goal_md": "**Cél:** Kognitív távolság létrehozása.",
+      "micro_description": "Perspektívaváltással kognitív távolság, óvatos újranézés.",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Kognitív távolság létrehozása narratív/perspektívaváltással.",
+        "do": [
+          "kínálj 2–3 nézőpontot, mint játékos lehetőséget",
+          "tarts feltételes, nem-assertív nyelvet",
+          "a jelentést hagyd a felhasználónál",
+          "tarts rövid lépéseket, egy kártya egyszerre",
+          "jegyezd meg, mi változik a nézőponttal"
+        ],
+        "dont": [
+          "ne állíts értelmezést tényként",
+          "ne diagnosztizálj",
+          "ne erőltesd a jelentést",
+          "ne tedd kötelezővé a váltást"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 4,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
-        "role": "coach",
+        "role": "facilitator",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["clear", "light", "non-assertive"],
         "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
@@ -401,7 +712,12 @@
         "card_types": ["reflect", "invite", "summarize"],
         "allowed_moves": ["offer_options", "reflect", "invite"],
         "avoid_moves": ["interpret_as_fact", "diagnose", "force_meaning"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "optional",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["offer_two_frames", "keep_simple"],
@@ -428,8 +744,34 @@
       "type": "direction",
       "group": "V. INTEGRÁCIÓ, KREATÍV HASZNÁLAT ÉS LEZÁRÁS",
       "goal_md": "**Cél:** Kreatív elemek elkülönítése.",
+      "micro_description": "Kreatív nyersanyagként elkülöníteni az álom elemeit.",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Kreatív elemek elkülönítése és opcionális, kíméletes átfordítása.",
+        "do": [
+          "tarts játékos, könnyű hangot",
+          "emelj ki képeket/motívumokat mint nyersanyagot",
+          "kínálj kicsi, opcionális átalakítási ötleteket",
+          "adj opt-out lehetőséget",
+          "maradj nem-assertív: nincs „megfejtés”"
+        ],
+        "dont": [
+          "ne állíts jelentést tényként",
+          "ne diagnosztizálj",
+          "ne erőltesd a kreatív használatot",
+          "ne vidd túl intenzívre, ha felkavaró"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 4,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
-        "role": "coach",
+        "role": "facilitator",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["playful", "light", "inspirational"],
         "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
@@ -443,7 +785,12 @@
         "card_types": ["invite", "reflect", "summarize"],
         "allowed_moves": ["offer_options", "invite", "reflect"],
         "avoid_moves": ["interpret_as_fact", "diagnose", "force_meaning"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "optional",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["pick_one_image", "keep_light"],
@@ -470,6 +817,32 @@
       "type": "direction",
       "group": "V. INTEGRÁCIÓ, KREATÍV HASZNÁLAT ÉS LEZÁRÁS",
       "goal_md": "**Cél:** Lezárás vagy továbblépés támogatása.",
+      "micro_description": "Rövid összegzés és puha lezárás vagy tudatos elengedés.",
+      "stop_criteria": {
+        "max_cards": 4,
+        "stop_if_user_brief_streak": 2,
+        "stop_if_repetition_detected": true,
+        "stop_if_emotional_overload": true
+      },
+      "method_spec": {
+        "aim": "Lezárás vagy továbblépés támogatása (puha integrációval).",
+        "do": [
+          "adj rövid összegzést és 1 opcionális továbblépési irányt",
+          "tarts záró, gyengéd hangot",
+          "hagyd nyitva a jelentést; ne véglegesíts",
+          "adj opt-out lehetőséget",
+          "ha kell, zárj földeléssel/testi visszatéréssel"
+        ],
+        "dont": [
+          "ne diagnosztizálj",
+          "ne írj elő cselekvést",
+          "ne állíts jelentést tényként",
+          "ne erőltesd a végleges lezárást"
+        ],
+        "question_style": "optional_single_open",
+        "max_steps": 3,
+        "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
+      },
       "ai_contract": {
         "role": "summarize",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
@@ -485,7 +858,12 @@
         "card_types": ["summarize", "invite"],
         "allowed_moves": ["reflect", "offer_options", "invite"],
         "avoid_moves": ["diagnose", "force_meaning", "prescribe_actions"],
-        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+        "format": {
+          "body_md_style": "short_paragraphs",
+          "use_bullets": "optional",
+          "question_count": "0-1",
+          "include_opt_out": true
+        }
       },
       "selection_hints": {
         "when_user_is_brief": ["short_summary", "one_next_step_optional"],
