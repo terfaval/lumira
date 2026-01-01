@@ -6,8 +6,129 @@ export type PriorEcho = {
   anchor_summary: string;
 };
 
+const TOP_K = 5;
+const MAX_RETURN = 2;
+const MAX_SUMMARY_CHARS = 800;
+
+// Ha két hasonlóság ennyire közel van, inkább a frissebbet preferáljuk
 const SIMILARITY_TIE_EPSILON = 0.02;
-const GENERIC_STOPWORDS = new Set([
+
+/**
+ * Magyar + angol stopword alapcsomag.
+ * (Nem kell tökéletesnek lennie – a cél a "túl generikus" szövegek kiszűrése.)
+ */
+const GENERIC_STOPWORDS = new Set<string>([
+  // HU alap
+  "a",
+  "az",
+  "és",
+  "hogy",
+  "nem",
+  "de",
+  "mert",
+  "volt",
+  "van",
+  "lesz",
+  "én",
+  "te",
+  "ő",
+  "mi",
+  "ti",
+  "ők",
+  "is",
+  "sem",
+  "csak",
+  "már",
+  "még",
+  "nagyon",
+  "kicsit",
+  "sok",
+  "egy",
+  "egyik",
+  "másik",
+  "itt",
+  "ott",
+  "akkor",
+  "ma",
+  "tegnap",
+  "holnap",
+  "ez",
+  "ezt",
+  "azt",
+  "olyan",
+  "ilyen",
+  "valami",
+  "minden",
+  "mindig",
+  "soha",
+  "amikor",
+  "ahogy",
+  "ahol",
+  "ami",
+  "amit",
+  "aki",
+  "akik",
+  "nekem",
+  "neked",
+  "neki",
+  "nekünk",
+  "nektek",
+  "nekik",
+  "tőlem",
+  "tőled",
+  "tőle",
+  "tőlünk",
+  "tőletek",
+  "tőlük",
+  "rám",
+  "rád",
+  "rá",
+  "ránk",
+  "rátok",
+  "rájuk",
+  "nálam",
+  "nálad",
+  "nála",
+  "nálunk",
+  "nálatok",
+  "náluk",
+  "hozzám",
+  "hozzád",
+  "hozzá",
+  "hozzánk",
+  "hozzátok",
+  "hozzájuk",
+  "számomra",
+  "számodra",
+  "számára",
+  "számunkra",
+  "számotokra",
+  "számukra",
+  "közben",
+  "után",
+  "előtt",
+  "alatt",
+  "fölött",
+  "felett",
+  "mellett",
+  "miatt",
+  "szerint",
+  "ellen",
+  "által",
+  "között",
+  "közé",
+  "vagy",
+  "mint",
+  "hát",
+  "igen",
+  "persze",
+  "úgy",
+  "úgyhogy",
+  "pedig",
+  "azonban",
+  "valahogy",
+
+  // EN alap (ha vegyesen kerül be szöveg)
   "the",
   "and",
   "a",
@@ -57,16 +178,57 @@ function cosineSimilarity(a: number[], b: number[]) {
   return denom === 0 ? 0 : dot / denom;
 }
 
-function isGenericSummary(summary: string) {
-  const tokens = summary.toLowerCase().match(/[a-z']+/g);
-  if (!tokens || tokens.length < 5) return true;
+/**
+ * Unicode-safe tokenizálás:
+ * - \p{L}: bármely betű (magyar ékezetek is)
+ * - kezeli a sima ' és az okos ’ apostrophot is
+ */
+function tokenize(text: string): string[] {
+  const normalized = text
+    .toLowerCase()
+    .replace(/[’]/g, "'")
+    .trim();
 
-  const stopwordCount = tokens.filter((token) => GENERIC_STOPWORDS.has(token)).length;
+  const tokens = normalized.match(/[\p{L}']+/gu) ?? [];
+  return tokens.filter(Boolean);
+}
+
+/**
+ * Generikusság heurisztika (magyarbarát):
+ * - túl rövid összefoglaló → generikus
+ * - túl magas stopword arány → generikus
+ * - túl alacsony egyediség → generikus (sok ismétlés)
+ * - túl kevés "informatív" (hosszabb) szó → generikus
+ */
+function isGenericSummary(summary: string) {
+  const clean = summary.trim();
+  if (clean.length < 40) return true;
+
+  const tokens = tokenize(clean);
+  if (tokens.length < 4) return true;
+
+  const stopwordCount = tokens.filter((t) => GENERIC_STOPWORDS.has(t)).length;
   const stopwordRatio = stopwordCount / tokens.length;
+
   const uniqueRatio = new Set(tokens).size / tokens.length;
 
-  return stopwordRatio > 0.6 || uniqueRatio < 0.4;
+  // Informatívabb szavak aránya (nyelvfüggetlen jelzés)
+  const longTokenRatio = tokens.filter((t) => t.length >= 6).length / tokens.length;
+
+  // Küszöbök: óvatosan, hogy ne dobjunk ki túl sokat
+  if (stopwordRatio > 0.65) return true;
+  if (uniqueRatio < 0.40) return true;
+  if (longTokenRatio < 0.20) return true;
+
+  return false;
 }
+
+type SummaryRow = {
+  session_id: string;
+  created_at: string;
+  anchor_summary: string | null;
+  embedding: unknown; // Supabase typing miatt
+};
 
 export async function retrievePriorEchoes(
   userId: string,
@@ -76,6 +238,7 @@ export async function retrievePriorEchoes(
   if (!queryEmbedding || queryEmbedding.length === 0) return [];
 
   const supabase = await supabaseServer();
+
   const { data, error } = await supabase
     .from("dream_session_summaries")
     .select("session_id, created_at, anchor_summary, embedding")
@@ -85,9 +248,9 @@ export async function retrievePriorEchoes(
 
   if (error || !data?.length) return [];
 
-  const scored = data
+  const scored = (data as SummaryRow[])
     .map((row) => {
-      const embedding = Array.isArray(row.embedding) ? row.embedding : null;
+      const embedding = Array.isArray(row.embedding) ? (row.embedding as number[]) : null;
       if (!embedding || embedding.length === 0) return null;
 
       return {
@@ -97,9 +260,14 @@ export async function retrievePriorEchoes(
         similarity: cosineSimilarity(queryEmbedding, embedding),
       };
     })
-    .filter((row): row is Required<PriorEcho> & { similarity: number } => Boolean(row))
+    .filter(
+      (row): row is { session_id: string; created_at: string; anchor_summary: string; similarity: number } =>
+        Boolean(row)
+    )
+    // először tisztán hasonlóság szerint topK
     .sort((a, b) => b.similarity - a.similarity)
-    .slice(0, 5)
+    .slice(0, TOP_K)
+    // majd tie-break: ha közel vannak, a frissebb előre
     .sort((a, b) => {
       const diff = b.similarity - a.similarity;
       if (Math.abs(diff) < SIMILARITY_TIE_EPSILON) {
@@ -108,12 +276,13 @@ export async function retrievePriorEchoes(
       return diff;
     });
 
+  // Preferáljuk a nem-generikus összefoglalókat, de ha mind generikus, akkor mégis adjunk valamit
   const prioritized = scored.filter((row) => !isGenericSummary(row.anchor_summary));
-  const chosen = (prioritized.length ? prioritized : scored).slice(0, 2);
+  const chosen = (prioritized.length ? prioritized : scored).slice(0, MAX_RETURN);
 
   return chosen.map((row) => ({
     session_id: row.session_id,
     created_at: row.created_at,
-    anchor_summary: row.anchor_summary.slice(0, 800),
+    anchor_summary: row.anchor_summary.slice(0, MAX_SUMMARY_CHARS),
   }));
 }
