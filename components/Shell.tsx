@@ -4,8 +4,18 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
+import { NapszakInitializer } from "./NapszakInitializer";
+import { PrimaryButton } from "./PrimaryButton";
 
-export function Shell({ title, children }: { title: string; children: ReactNode }) {
+export function Shell({
+  title,
+  children,
+  space = "dream",
+}: {
+  title: string;
+  children: ReactNode;
+  space?: "dream" | "evening";
+}) {
   const router = useRouter();
 
   async function logout() {
@@ -14,31 +24,26 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: 16 }}>
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          marginBottom: 16,
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <Link href="/">Home</Link>
+    <div className={`shell ${space === "evening" ? "evening-shell" : ""}`}>
+      <NapszakInitializer space={space} />
+      <header className="shell-header">
+        <nav className="shell-nav">
+          <Link href="/">Kezdő</Link>
           <Link href="/archive">Archívum</Link>
+          <Link href="/sessions">Folyamatban</Link>
           <Link href="/evening">Esti tér</Link>
+        </nav>
+        <div className="shell-actions">
+          <PrimaryButton onClick={logout} variant="secondary">
+            Kijelentkezés
+          </PrimaryButton>
         </div>
-        <button
-          onClick={logout}
-          style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #ccc", background: "white" }}
-        >
-          Kijelentkezés
-        </button>
+      </header>
+
+      <div className="stack">
+        <h1 className="shell-title">{title}</h1>
+        <section className="surface-layer card stack">{children}</section>
       </div>
-      <h1 style={{ margin: "12px 0 16px" }}>{title}</h1>
-      {children}
     </div>
   );
 }

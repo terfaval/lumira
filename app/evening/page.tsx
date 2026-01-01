@@ -8,28 +8,22 @@ export default function EveningLanding() {
   const { loading } = useRequireAuth();
 
   return (
-    <Shell title="Esti tér">
+    <Shell title="Esti tér" space="evening">
       {loading ? (
         <p>Bejelentkezés ellenőrzése…</p>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          <p>Üdvözöljük az esti kártyák terén.</p>
-          <Link
-            href="/evening/cards"
-            style={{
-              display: "inline-flex",
-              width: "fit-content",
-              padding: "10px 16px",
-              borderRadius: 10,
-              background: "#111827",
-              color: "white",
-            }}
-          >
-            Esti kártyák
-          </Link>
-          <Link href="/new" style={{ textDecoration: "underline", width: "fit-content" }}>
-            Vissza az álomtérhez
-          </Link>
+        <div className="stack">
+          <p style={{ color: "var(--text-muted)" }}>
+            Ez a tér este nyílik: kártyák, rövid levezető blokkok, visszakapcsolás az álomtérhez.
+          </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Link href="/evening/cards" className="btn btn-primary">
+              Esti kártyák
+            </Link>
+            <Link href="/new" className="btn btn-secondary">
+              Vissza az álomtérhez
+            </Link>
+          </div>
         </div>
       )}
     </Shell>

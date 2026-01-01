@@ -48,32 +48,30 @@ export default function NewDream() {
   }
 
   return (
-    <Shell title="Új álom">
+    <Shell title="Új álom" space="dream">
       {loading ? (
         <p>Bejelentkezés ellenőrzése…</p>
       ) : (
-        <>
-          <p style={{ marginBottom: 8, opacity: 0.85 }}>
-            Üres közép: csak írd le, ami megmaradt. Később bármikor folytathatod vagy kiegészítheted
-            a sessiont.
+        <div className="stack">
+          <p style={{ color: "var(--text-muted)" }}>
+            Üres közép: csak írd le, ami megmaradt. Később bármikor folytathatod vagy kiegészítheted a sessiont.
           </p>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Most csak rögzíts. A többi ráér."
             rows={10}
-            style={{ width: "100%", padding: 12, borderRadius: 10, border: "1px solid #ccc" }}
           />
-          <div style={{ marginTop: 12, display: "flex", gap: 12 }}>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <PrimaryButton onClick={createSession} disabled={busy}>
               Mentés & tovább
             </PrimaryButton>
-            <PrimaryButton onClick={() => router.push("/sessions")}>
+            <PrimaryButton onClick={() => router.push("/sessions")} variant="secondary">
               Megkezdett session folytatása
             </PrimaryButton>
           </div>
-          {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-        </>
+          {err && <p style={{ marginTop: 4, color: "crimson" }}>{err}</p>}
+        </div>
       )}
     </Shell>
   );

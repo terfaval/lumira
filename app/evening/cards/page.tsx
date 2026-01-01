@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
+import { Card } from "@/components/Card";
 import { supabase } from "@/src/lib/supabase/client";
 import type { EveningCardCatalogItem } from "@/src/lib/types";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
@@ -26,27 +27,24 @@ export default function EveningCards() {
   }, []);
 
   return (
-    <Shell title="Esti kártyák">
+    <Shell title="Esti kártyák" space="evening">
       {loading ? (
         <p>Bejelentkezés ellenőrzése…</p>
       ) : (
-        <>
+        <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
-          <div style={{ display: "grid", gap: 10 }}>
+          <div className="stack">
             {cards.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/evening/card/${c.slug}`}
-                style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12 }}
-              >
-                <div style={{ fontWeight: 700 }}>{c.title}</div>
-                {c.content?.meta?.time && (
-                  <div style={{ opacity: 0.7, fontSize: 12 }}>{c.content.meta.time}</div>
-                )}
-              </Link>
+              <Card key={c.slug} className="stack-tight">
+                <div className="card-title">{c.title}</div>
+                {c.content?.meta?.time && <div className="meta-block">{c.content.meta.time}</div>}
+                <Link href={`/evening/card/${c.slug}`} className="btn btn-primary" style={{ width: "fit-content" }}>
+                  Megnyitás
+                </Link>
+              </Card>
             ))}
           </div>
-        </>
+        </div>
       )}
     </Shell>
   );

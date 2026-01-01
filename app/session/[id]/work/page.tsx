@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { Card } from "@/components/Card";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import type { WorkBlock } from "@/src/lib/types";
@@ -84,26 +85,26 @@ export default function WorkPage() {
   }
 
   return (
-    <Shell title="Kártyás feldolgozás">
+    <Shell title="Kártyás feldolgozás" space="dream">
       {loading ? (
         <p>Bejelentkezés ellenőrzése…</p>
       ) : (
-        <>
+        <div className="stack">
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <PrimaryButton onClick={generateDummyBlock} disabled={busy}>
               + 1 blokk (wireframe stub)
             </PrimaryButton>
-            <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)}>
+            <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)} variant="secondary">
               Összkép
             </PrimaryButton>
           </div>
 
-          <hr style={{ margin: "16px 0" }} />
+          <hr className="hr-soft" />
 
           {blocks.length === 0 ? (
-            <p>Még nincs blokk. Adj hozzá egyet a gombbal.</p>
+            <p style={{ color: "var(--text-muted)" }}>Még nincs blokk. Adj hozzá egyet a gombbal.</p>
           ) : (
-            <div style={{ display: "grid", gap: 12 }}>
+            <div className="stack">
               {blocks.map((b) => (
                 <BlockCard key={b.id} block={b} onSave={saveAnswer} busy={busy} />
               ))}
@@ -112,7 +113,7 @@ export default function WorkPage() {
 
           {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
           {current && <p style={{ marginTop: 12, opacity: 0.7 }}>Aktív blokk: #{current.sequence}</p>}
-        </>
+        </div>
       )}
     </Shell>
   );
@@ -130,26 +131,28 @@ function BlockCard({
   const [draft, setDraft] = useState(block.user_answer ?? "");
 
   return (
-    <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-      <div style={{ opacity: 0.7, fontSize: 12 }}>
-        #{block.sequence} • state: {block.block_state}
-      </div>
-      <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{block.ai_context}</div>
-      <div style={{ marginTop: 8, fontWeight: 700 }}>{block.ai_question}</div>
+    <Card>
+      <div className="stack-tight">
+        <div className="meta-block">
+          <span className="badge-muted">#{block.sequence}</span>
+          <span className="badge-muted">Állapot: {block.block_state}</span>
+        </div>
+        <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{block.ai_context}</div>
+        <div style={{ fontWeight: 700 }}>{block.ai_question}</div>
 
-      <textarea
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        rows={4}
-        style={{ width: "100%", marginTop: 10, padding: 10, borderRadius: 10, border: "1px solid #ccc" }}
-        placeholder="Válasz (opcionális)"
-      />
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={4}
+          placeholder="Válasz (opcionális)"
+        />
 
-      <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
-        <PrimaryButton onClick={() => onSave(block.id, draft)} disabled={busy}>
-          Mentés
-        </PrimaryButton>
+        <div style={{ display: "flex", gap: 10 }}>
+          <PrimaryButton onClick={() => onSave(block.id, draft)} disabled={busy}>
+            Mentés
+          </PrimaryButton>
+        </div>
       </div>
-    </div>
+    </Card>
   );
 }
