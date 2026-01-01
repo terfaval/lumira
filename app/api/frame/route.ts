@@ -20,7 +20,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
+
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         get(name: string) {
