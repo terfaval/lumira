@@ -30,15 +30,21 @@
           "ne erőltesd a mélyítést",
           "ne sürgesd a lezárást"
         ],
-        "question_style": "optional_single_open",
+        "question_style": "sequence_probe_single",
         "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "guide",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["gentle", "slow", "minimal-friction"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 2
+        }
       },
       "focus_model": {
         "primary": ["scene", "sensory", "sequence"],
@@ -103,15 +109,21 @@
           "ne állíts jelentést tényként",
           "ne diagnosztizálj"
         ],
-        "question_style": "optional_single_open",
-        "max_steps": 3,
+        "question_style": "state_probe_single",
+        "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "guide",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["gentle", "clear", "grounded"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 3, "max_depth": 1 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 1
+        }
       },
       "focus_model": {
         "primary": ["state", "sensory", "scene"],
@@ -176,15 +188,21 @@
           "ne diagnosztizálj",
           "ne mélyíts, ha felkavaró"
         ],
-        "question_style": "optional_single_open",
+        "question_style": "choice_point_single",
         "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "mirror",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["open", "non-directive", "gentle"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 2
+        }
       },
       "focus_model": {
         "primary": ["imagination", "scene", "choice_point"],
@@ -210,7 +228,10 @@
       },
       "safety": {
         "flags": ["overwhelm"],
-        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese", "dir-04-erzelmi-mag-felterkepezese"],
+        "fallback_direction_slugs": [
+          "dir-05-testi-lenyomat-megfigyelese",
+          "dir-04-erzelmi-mag-felterkepezese"
+        ],
         "boundaries_md": "Ha felkavaró irányba megy, váltsunk érzelmi vagy testi keretre."
       }
     },
@@ -249,15 +270,21 @@
           "ne nyomd trauma-irányba",
           "ne állíts jelentést tényként"
         ],
-        "question_style": "optional_single_open",
+        "question_style": "emotion_label_single",
         "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "mirror",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["gentle", "validating", "contained"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 2
+        }
       },
       "focus_model": {
         "primary": ["emotion", "tone"],
@@ -282,7 +309,7 @@
         "when_user_is_stuck": ["shift_to_body", "micro_tone_change"]
       },
       "safety": {
-        "flags": ["overwhelm", "panic", "trauma"],
+        "flags": ["overwhelm", "panic", "trauma_activation"],
         "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
         "boundaries_md": "Ha túl intenzív, váltsunk testfókuszra, és rövidítsük a lépéseket."
       }
@@ -322,15 +349,21 @@
           "ne csússz át történet/értelmezés irányba",
           "ne állíts jelentést tényként"
         ],
-        "question_style": "optional_single_open",
+        "question_style": "sensory_probe_single",
         "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "guide",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["grounded", "gentle", "practical"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 1 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 1
+        }
       },
       "focus_model": {
         "primary": ["body", "sensation"],
@@ -355,7 +388,7 @@
         "when_user_is_stuck": ["move_attention", "contrast_points"]
       },
       "safety": {
-        "flags": ["panic", "overwhelm", "trauma"],
+        "flags": ["overwhelm", "panic", "trauma_activation"],
         "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
         "boundaries_md": "Maradjunk kicsiben és konkrétan; bármikor megállítható."
       }
@@ -382,7 +415,9 @@
       },
       "constraints": {
         "max_prior_sessions": 2,
-        "compare_style": "differences_first"
+        "compare_style": "differences_first",
+        "max_reference_items": 2,
+        "match_policy": "literal_or_near_literal_only"
       },
       "method_spec": {
         "aim": "Kapcsolódások felismerése korábbi álmokkal (megfigyelésként, nem megfejtésként).",
@@ -391,7 +426,8 @@
           "először különbségeket emelj ki, aztán hasonlóságokat",
           "tarts több lehetőséget nyitva; a jelentés a felhasználóé",
           "tarts rövid, strukturált lépéseket",
-          "ha túl sok az input, szűkíts 1–2 korábbi sessionre"
+          "ha túl sok az input, szűkíts 1–2 korábbi sessionre",
+          "csak olyan motívumot hasonlíts, ami mindkét álomban konkrétan jelen van (vagy közeli megnevezés)"
         ],
         "dont": [
           "ne állíts jelentést tényként",
@@ -399,15 +435,21 @@
           "ne diagnosztizálj",
           "ne általánosíts nagyot kevés adatból"
         ],
-        "question_style": "optional_single_open",
+        "question_style": "compare_probe_single",
         "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "guide",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["curious", "structured", "gentle"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 2
+        }
       },
       "focus_model": {
         "primary": ["patterns", "recurrence", "characters", "scene"],
@@ -423,8 +465,7 @@
           "use_bullets": "optional",
           "question_count": "0-1",
           "include_opt_out": true,
-          "never_claim_meaning": true,
-          "comparison_style": "differences_first"
+          "never_claim_meaning": true
         }
       },
       "selection_hints": {
@@ -435,7 +476,10 @@
       },
       "safety": {
         "flags": ["overwhelm"],
-        "fallback_direction_slugs": ["dir-04-erzelmi-mag-felterkepezese", "dir-05-testi-lenyomat-megfigyelese"],
+        "fallback_direction_slugs": [
+          "dir-04-erzelmi-mag-felterkepezese",
+          "dir-05-testi-lenyomat-megfigyelese"
+        ],
         "boundaries_md": "Csak mintázatot figyelünk meg, nem vonunk le következtetést."
       }
     },
@@ -474,15 +518,21 @@
           "ne diagnosztizálj",
           "ne vidd túl intenzívre, ha felkavaró"
         ],
-        "question_style": "optional_single_open",
+        "question_style": "association_single",
         "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "inquire",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["open", "curious", "non-assertive"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 2
+        }
       },
       "focus_model": {
         "primary": ["symbol", "association"],
@@ -547,15 +597,21 @@
           "ne állíts jelentést tényként",
           "ne légy túl bizonyos"
         ],
-        "question_style": "optional_single_open",
+        "question_style": "resonance_single",
         "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "facilitator",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["practical", "gentle", "non-judgmental"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 2
+        }
       },
       "focus_model": {
         "primary": ["waking_life", "resonance"],
@@ -620,15 +676,21 @@
           "ne diagnosztizálj",
           "ne mélyíts, ha felkavaró"
         ],
-        "question_style": "optional_single_open",
-        "max_steps": 3,
+        "question_style": "open_question_single",
+        "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "summarize",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["minimal", "quiet", "non-directive"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 3, "max_depth": 1 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 1
+        }
       },
       "focus_model": {
         "primary": ["open_inquiry"],
@@ -693,15 +755,21 @@
           "ne erőltesd a jelentést",
           "ne tedd kötelezővé a váltást"
         ],
-        "question_style": "optional_single_open",
+        "question_style": "perspective_shift_single",
         "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "facilitator",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["clear", "light", "non-assertive"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 2
+        }
       },
       "focus_model": {
         "primary": ["perspective", "narrative", "distance"],
@@ -766,15 +834,21 @@
           "ne erőltesd a kreatív használatot",
           "ne vidd túl intenzívre, ha felkavaró"
         ],
-        "question_style": "optional_single_open",
+        "question_style": "creative_transform_single",
         "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "facilitator",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["playful", "light", "inspirational"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 2
+        }
       },
       "focus_model": {
         "primary": ["creativity", "image", "motif"],
@@ -839,15 +913,21 @@
           "ne állíts jelentést tényként",
           "ne erőltesd a végleges lezárást"
         ],
-        "question_style": "optional_single_open",
-        "max_steps": 3,
+        "question_style": "closure_choice_single",
+        "max_steps": 4,
+        "max_steps_source": "content.stop_criteria.max_cards",
         "stop_rule": "max_cards_or_brief_streak_or_repetition_or_overwhelm"
       },
       "ai_contract": {
         "role": "summarize",
         "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
         "tone_tags": ["gentle", "clear", "closing"],
-        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 3, "max_depth": 1 }
+        "pacing": {
+          "card_granularity": "one_step_per_card",
+          "max_steps": 4,
+          "max_steps_source": "content.stop_criteria.max_cards",
+          "max_depth": 1
+        }
       },
       "focus_model": {
         "primary": ["integration", "closure"],
