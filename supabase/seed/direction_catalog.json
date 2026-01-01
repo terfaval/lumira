@@ -1,0 +1,506 @@
+[
+  {
+    "slug": "dir-01-alomemlek-elmelyitese",
+    "version": "v1",
+    "title": "Álomemlék elmélyítése",
+    "description": "Az álom felidézett elemeinek stabilizálása és finom bővítése értelmezés nélkül.",
+    "content": {
+      "type": "direction",
+      "group": "I. ÁLOMEMLÉKEZET ÉS HOZZÁFÉRÉS",
+      "goal_md": "**Cél:** Az álom felidézett elemeinek stabilizálása és finom bővítése értelmezés nélkül.",
+      "ai_contract": {
+        "role": "guide",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["gentle", "slow", "minimal-friction"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+      },
+      "focus_model": {
+        "primary": ["scene", "sensory", "sequence"],
+        "secondary": ["characters", "emotion"],
+        "priority_logic": "start_with_concrete_then_soften"
+      },
+      "output_spec": {
+        "card_types": ["reflect", "invite", "summarize"],
+        "allowed_moves": ["reflect", "invite", "offer_options"],
+        "avoid_moves": ["interpret_as_fact", "diagnose", "force_meaning"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["stabilize_memory", "sensory_hook"],
+        "when_user_is_emotional": ["soften_pacing", "keep_concrete"],
+        "when_user_wants_meaning": ["delay_meaning", "stay_descriptive"],
+        "when_user_is_stuck": ["re-anchor_scene", "micro_detail"]
+      },
+      "safety": {
+        "flags": ["overwhelm"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "Ha túl intenzívvé válik, válts stabilizáló, testi fókuszú irányra."
+      }
+    },
+    "tags": ["access", "dream-recall", "detail", "stabilize"],
+    "sort_order": 1,
+    "is_active": true
+  },
+  {
+    "slug": "dir-02-visszalepes-az-alomba",
+    "version": "v1",
+    "title": "Visszalépés az álomba",
+    "description": "Az álomállapot rövid idejű újraérintése.",
+    "content": {
+      "type": "direction",
+      "group": "I. ÁLOMEMLÉKEZET ÉS HOZZÁFÉRÉS",
+      "goal_md": "**Cél:** Az álomállapot rövid idejű újraérintése.",
+      "ai_contract": {
+        "role": "guide",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["gentle", "clear", "grounded"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 3, "max_depth": 1 }
+      },
+      "focus_model": {
+        "primary": ["state", "sensory", "scene"],
+        "secondary": ["emotion"],
+        "priority_logic": "state_first_then_scene"
+      },
+      "output_spec": {
+        "card_types": ["invite", "reflect", "summarize"],
+        "allowed_moves": ["invite", "reflect", "offer_options"],
+        "avoid_moves": ["interpret_as_fact", "diagnose", "force_meaning"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "rare", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["state_reconnect", "sensory_gate"],
+        "when_user_is_emotional": ["keep_safe_distance", "grounding"],
+        "when_user_wants_meaning": ["postpone_meaning", "return_to_state"],
+        "when_user_is_stuck": ["micro_state_shift", "single_anchor"]
+      },
+      "safety": {
+        "flags": ["overwhelm", "panic"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "Csak rövid ideig érintsük az állapotot; ha kényelmetlen, váltsunk testi stabilizálásra."
+      }
+    },
+    "tags": ["access", "re-entry", "state", "dream-recall"],
+    "sort_order": 2,
+    "is_active": true
+  },
+  {
+    "slug": "dir-03-alomfolytatas-nyitott",
+    "version": "v1",
+    "title": "Álomfolytatás (nyitott)",
+    "description": "Az álom spontán továbbalakulásának megfigyelése.",
+    "content": {
+      "type": "direction",
+      "group": "I. ÁLOMEMLÉKEZET ÉS HOZZÁFÉRÉS",
+      "goal_md": "**Cél:** Az álom spontán továbbalakulásának megfigyelése.",
+      "ai_contract": {
+        "role": "mirror",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["open", "non-directive", "gentle"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+      },
+      "focus_model": {
+        "primary": ["imagination", "scene", "choice_point"],
+        "secondary": ["emotion", "agency"],
+        "priority_logic": "allow_emergence_then_note_change"
+      },
+      "output_spec": {
+        "card_types": ["invite", "reflect", "summarize"],
+        "allowed_moves": ["invite", "reflect", "offer_options"],
+        "avoid_moves": ["interpret_as_fact", "diagnose", "force_meaning"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["offer_two_paths", "gentle_prompting"],
+        "when_user_is_emotional": ["keep_distance", "slow_down"],
+        "when_user_wants_meaning": ["stay_with_emergence", "note_new_elements"],
+        "when_user_is_stuck": ["introduce_small_variation", "change_point"]
+      },
+      "safety": {
+        "flags": ["overwhelm"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese", "dir-04-erzelmi-mag-felterkepezese"],
+        "boundaries_md": "Ha felkavaró irányba megy, váltsunk érzelmi vagy testi keretre."
+      }
+    },
+    "tags": ["access", "continuation", "imagination", "open"],
+    "sort_order": 3,
+    "is_active": true
+  },
+  {
+    "slug": "dir-04-erzelmi-mag-felterkepezese",
+    "version": "v1",
+    "title": "Érzelmi mag feltérképezése",
+    "description": "Az álom érzelmi tónusának azonosítása.",
+    "content": {
+      "type": "direction",
+      "group": "II. ÉRZELMI ÉS TESTI LENYOMAT",
+      "goal_md": "**Cél:** Az álom érzelmi tónusának azonosítása.",
+      "ai_contract": {
+        "role": "mirror",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["gentle", "validating", "contained"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+      },
+      "focus_model": {
+        "primary": ["emotion", "tone"],
+        "secondary": ["body", "tension_release"],
+        "priority_logic": "name_tone_then_ground"
+      },
+      "output_spec": {
+        "card_types": ["reflect", "invite", "summarize"],
+        "allowed_moves": ["reflect", "invite", "offer_options"],
+        "avoid_moves": ["diagnose", "force_catharsis", "push_trauma"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "rare", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["offer_emotion_labels", "keep_simple"],
+        "when_user_is_emotional": ["slow_pacing", "containment_first"],
+        "when_user_wants_meaning": ["hold_open_inquiry", "avoid_fast_interpretation"],
+        "when_user_is_stuck": ["shift_to_body", "micro_tone_change"]
+      },
+      "safety": {
+        "flags": ["overwhelm", "panic", "trauma"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "Ha túl intenzív, váltsunk testfókuszra, és rövidítsük a lépéseket."
+      }
+    },
+    "tags": ["emotion", "tone", "affect", "containment"],
+    "sort_order": 4,
+    "is_active": true
+  },
+  {
+    "slug": "dir-05-testi-lenyomat-megfigyelese",
+    "version": "v1",
+    "title": "Testi lenyomat megfigyelése",
+    "description": "Az álom testi hatásainak tudatosítása.",
+    "content": {
+      "type": "direction",
+      "group": "II. ÉRZELMI ÉS TESTI LENYOMAT",
+      "goal_md": "**Cél:** Az álom testi hatásainak tudatosítása.",
+      "ai_contract": {
+        "role": "guide",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["grounded", "gentle", "practical"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 1 }
+      },
+      "focus_model": {
+        "primary": ["body", "sensation"],
+        "secondary": ["emotion"],
+        "priority_logic": "body_first_then_label"
+      },
+      "output_spec": {
+        "card_types": ["invite", "reflect", "summarize"],
+        "allowed_moves": ["invite", "reflect", "offer_options"],
+        "avoid_moves": ["diagnose", "interpret_as_fact", "push_intensity"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["simple_body_check", "one_anchor"],
+        "when_user_is_emotional": ["stabilize_first", "downshift"],
+        "when_user_wants_meaning": ["return_to_sensation", "avoid_story"],
+        "when_user_is_stuck": ["move_attention", "contrast_points"]
+      },
+      "safety": {
+        "flags": ["panic", "overwhelm", "trauma"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "Maradjunk kicsiben és konkrétan; bármikor megállítható."
+      }
+    },
+    "tags": ["body", "somatic", "grounding", "stabilize"],
+    "sort_order": 5,
+    "is_active": true
+  },
+  {
+    "slug": "dir-06-visszatero-motivumok-felismerese",
+    "version": "v1",
+    "title": "Visszatérő motívumok felismerése",
+    "description": "Kapcsolódások felismerése korábbi álmokkal.",
+    "content": {
+      "type": "direction",
+      "group": "III. MINTÁZATOK ÉS ISMÉTLŐDÉSEK",
+      "goal_md": "**Cél:** Kapcsolódások felismerése korábbi álmokkal.",
+      "ai_contract": {
+        "role": "guide",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["curious", "structured", "gentle"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+      },
+      "focus_model": {
+        "primary": ["patterns", "recurrence", "characters", "scene"],
+        "secondary": ["emotion", "symbol"],
+        "priority_logic": "spot_recurrence_then_compare"
+      },
+      "output_spec": {
+        "card_types": ["reflect", "invite", "summarize"],
+        "allowed_moves": ["reflect", "invite", "offer_options"],
+        "avoid_moves": ["force_meaning", "interpret_as_fact", "diagnose"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["offer_pattern_lenses", "keep_simple"],
+        "when_user_is_emotional": ["prioritize_containment", "avoid_big_claims"],
+        "when_user_wants_meaning": ["multiple_hypotheses", "user_owns_meaning"],
+        "when_user_is_stuck": ["compare_two_instances", "small_differences"]
+      },
+      "safety": {
+        "flags": ["overwhelm"],
+        "fallback_direction_slugs": ["dir-04-erzelmi-mag-felterkepezese", "dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "Csak mintázatot figyelünk meg, nem vonunk le következtetést."
+      }
+    },
+    "tags": ["patterns", "motifs", "recurring", "compare"],
+    "sort_order": 6,
+    "is_active": true
+  },
+  {
+    "slug": "dir-07-szimbolumok-nyitott-megkozelitese",
+    "version": "v1",
+    "title": "Szimbólumok nyitott megközelítése",
+    "description": "Jelentéslehetőségek megnyitása megfejtés nélkül.",
+    "content": {
+      "type": "direction",
+      "group": "IV. JELENTÉS-KÖZELI, DE NYITOTT IRÁNYOK",
+      "goal_md": "**Cél:** Jelentéslehetőségek megnyitása megfejtés nélkül.",
+      "ai_contract": {
+        "role": "inquire",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["open", "curious", "non-assertive"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+      },
+      "focus_model": {
+        "primary": ["symbol", "association"],
+        "secondary": ["emotion", "waking_life"],
+        "priority_logic": "invite_association_without_claims"
+      },
+      "output_spec": {
+        "card_types": ["invite", "reflect", "summarize"],
+        "allowed_moves": ["invite", "reflect", "offer_options"],
+        "avoid_moves": ["hard_interpretation", "interpret_as_fact", "diagnose"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["offer_association_modes", "keep_light"],
+        "when_user_is_emotional": ["ground_before_symbol", "avoid_big_meaning"],
+        "when_user_wants_meaning": ["multiple_hypotheses", "user_owns_meaning"],
+        "when_user_is_stuck": ["switch_association_channel", "sensory_symbol"]
+      },
+      "safety": {
+        "flags": ["overwhelm"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "A szimbólum jelentése nem tény: csak lehetőségek, és a felhasználóé a döntés."
+      }
+    },
+    "tags": ["symbols", "meaning", "association", "open"],
+    "sort_order": 7,
+    "is_active": true
+  },
+  {
+    "slug": "dir-08-kapcsolodas-az-ebrenleti-elethez",
+    "version": "v1",
+    "title": "Kapcsolódás az ébrenléti élethez",
+    "description": "Rezonanciák megfigyelése.",
+    "content": {
+      "type": "direction",
+      "group": "IV. JELENTÉS-KÖZELI, DE NYITOTT IRÁNYOK",
+      "goal_md": "**Cél:** Rezonanciák megfigyelése.",
+      "ai_contract": {
+        "role": "coach",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["practical", "gentle", "non-judgmental"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+      },
+      "focus_model": {
+        "primary": ["waking_life", "resonance"],
+        "secondary": ["emotion", "choice_point"],
+        "priority_logic": "find_resonance_then_keep_open"
+      },
+      "output_spec": {
+        "card_types": ["reflect", "invite", "summarize"],
+        "allowed_moves": ["reflect", "invite", "offer_options"],
+        "avoid_moves": ["prescribe_actions", "diagnose", "force_meaning"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["offer_resonance_lenses", "keep_concrete"],
+        "when_user_is_emotional": ["containment_first", "small_links_only"],
+        "when_user_wants_meaning": ["open_inquiry", "avoid_certainty"],
+        "when_user_is_stuck": ["micro_link", "one_area_only"]
+      },
+      "safety": {
+        "flags": ["overwhelm"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "Csak rezonanciát keresünk, nem ok-okozati magyarázatot."
+      }
+    },
+    "tags": ["waking-life", "resonance", "context", "integration"],
+    "sort_order": 8,
+    "is_active": true
+  },
+  {
+    "slug": "dir-09-alom-mint-kerdes",
+    "version": "v1",
+    "title": "Álom mint kérdés",
+    "description": "Az álom megtartása nyitott kérdésként.",
+    "content": {
+      "type": "direction",
+      "group": "IV. JELENTÉS-KÖZELI, DE NYITOTT IRÁNYOK",
+      "goal_md": "**Cél:** Az álom megtartása nyitott kérdésként.",
+      "ai_contract": {
+        "role": "summarize",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["minimal", "quiet", "non-directive"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 3, "max_depth": 1 }
+      },
+      "focus_model": {
+        "primary": ["open_inquiry"],
+        "secondary": ["emotion", "symbol"],
+        "priority_logic": "hold_question_without_resolution"
+      },
+      "output_spec": {
+        "card_types": ["summarize", "invite"],
+        "allowed_moves": ["reflect", "invite"],
+        "avoid_moves": ["interpret_as_fact", "diagnose", "resolve_for_user"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "rare", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["keep_one_thread", "hold_open"],
+        "when_user_is_emotional": ["containment", "no_deepening"],
+        "when_user_wants_meaning": ["delay_resolution", "keep_multiple"],
+        "when_user_is_stuck": ["restate_core_tension", "small_reframe"]
+      },
+      "safety": {
+        "flags": ["overwhelm"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "A kérdést nem kell megoldani most; elég megtartani."
+      }
+    },
+    "tags": ["inquiry", "open-question", "minimal", "containment"],
+    "sort_order": 9,
+    "is_active": true
+  },
+  {
+    "slug": "dir-10-narrativ-vagy-perspektivavaltasos-megfigyeles",
+    "version": "v1",
+    "title": "Narratív vagy perspektívaváltásos megfigyelés",
+    "description": "Kognitív távolság létrehozása.",
+    "content": {
+      "type": "direction",
+      "group": "V. INTEGRÁCIÓ, KREATÍV HASZNÁLAT ÉS LEZÁRÁS",
+      "goal_md": "**Cél:** Kognitív távolság létrehozása.",
+      "ai_contract": {
+        "role": "coach",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["clear", "light", "non-assertive"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+      },
+      "focus_model": {
+        "primary": ["perspective", "narrative", "distance"],
+        "secondary": ["emotion", "agency"],
+        "priority_logic": "create_distance_then_note_shift"
+      },
+      "output_spec": {
+        "card_types": ["reflect", "invite", "summarize"],
+        "allowed_moves": ["offer_options", "reflect", "invite"],
+        "avoid_moves": ["interpret_as_fact", "diagnose", "force_meaning"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["offer_two_frames", "keep_simple"],
+        "when_user_is_emotional": ["distance_first", "containment"],
+        "when_user_wants_meaning": ["hypotheses_not_claims", "user_chooses"],
+        "when_user_is_stuck": ["shift_viewpoint", "name_new_angle"]
+      },
+      "safety": {
+        "flags": ["overwhelm"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "A váltás játékos lehetőség; semmi sem kötelező."
+      }
+    },
+    "tags": ["perspective", "narrative", "distance", "integration"],
+    "sort_order": 10,
+    "is_active": true
+  },
+  {
+    "slug": "dir-11-alom-mint-kreativ-nyersanyag",
+    "version": "v1",
+    "title": "Álom mint kreatív nyersanyag",
+    "description": "Kreatív elemek elkülönítése.",
+    "content": {
+      "type": "direction",
+      "group": "V. INTEGRÁCIÓ, KREATÍV HASZNÁLAT ÉS LEZÁRÁS",
+      "goal_md": "**Cél:** Kreatív elemek elkülönítése.",
+      "ai_contract": {
+        "role": "coach",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["playful", "light", "inspirational"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 4, "max_depth": 2 }
+      },
+      "focus_model": {
+        "primary": ["creativity", "image", "motif"],
+        "secondary": ["emotion", "symbol"],
+        "priority_logic": "extract_elements_then_optionally_transform"
+      },
+      "output_spec": {
+        "card_types": ["invite", "reflect", "summarize"],
+        "allowed_moves": ["offer_options", "invite", "reflect"],
+        "avoid_moves": ["interpret_as_fact", "diagnose", "force_meaning"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["pick_one_image", "keep_light"],
+        "when_user_is_emotional": ["avoid_intensity", "keep_safe_distance"],
+        "when_user_wants_meaning": ["optional_only", "no_claims"],
+        "when_user_is_stuck": ["change_medium", "small_transform"]
+      },
+      "safety": {
+        "flags": ["overwhelm"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "A kreatív használat opcionális; ha nem esik jól, maradjunk leíró szinten."
+      }
+    },
+    "tags": ["creativity", "creative-use", "inspiration", "integration"],
+    "sort_order": 11,
+    "is_active": true
+  },
+  {
+    "slug": "dir-12-integracio-vagy-tudatos-elengedes",
+    "version": "v1",
+    "title": "Integráció vagy tudatos elengedés",
+    "description": "Lezárás vagy továbblépés támogatása.",
+    "content": {
+      "type": "direction",
+      "group": "V. INTEGRÁCIÓ, KREATÍV HASZNÁLAT ÉS LEZÁRÁS",
+      "goal_md": "**Cél:** Lezárás vagy továbblépés támogatása.",
+      "ai_contract": {
+        "role": "summarize",
+        "stance": ["non-clinical", "non-diagnostic", "user-meaning-first"],
+        "tone_tags": ["gentle", "clear", "closing"],
+        "pacing": { "card_granularity": "one_step_per_card", "max_steps": 3, "max_depth": 1 }
+      },
+      "focus_model": {
+        "primary": ["integration", "closure"],
+        "secondary": ["waking_life", "choice_point"],
+        "priority_logic": "summarize_then_release"
+      },
+      "output_spec": {
+        "card_types": ["summarize", "invite"],
+        "allowed_moves": ["reflect", "offer_options", "invite"],
+        "avoid_moves": ["diagnose", "force_meaning", "prescribe_actions"],
+        "format": { "body_md_style": "short_paragraphs", "use_bullets": "optional", "question_count": "0-1", "include_opt_out": true }
+      },
+      "selection_hints": {
+        "when_user_is_brief": ["short_summary", "one_next_step_optional"],
+        "when_user_is_emotional": ["containment", "grounding_close"],
+        "when_user_wants_meaning": ["hold_open", "no_final_claims"],
+        "when_user_is_stuck": ["name_one_takeaway", "offer_release"]
+      },
+      "safety": {
+        "flags": ["overwhelm"],
+        "fallback_direction_slugs": ["dir-05-testi-lenyomat-megfigyelese"],
+        "boundaries_md": "A lezárás lehet puha: elég egy rövid összegzés vagy tudatos elengedés."
+      }
+    },
+    "tags": ["integration", "closure", "release", "wrap-up"],
+    "sort_order": 12,
+    "is_active": true
+  }
+]
