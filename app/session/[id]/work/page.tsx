@@ -29,14 +29,18 @@ export default function WorkPage() {
   const directionBlocks = useMemo(
     () =>
       blocks
-        .map((block) => (isDirectionCardContent(block.content) ? ({ ...block, content: normalizeContent(block.content) } as DirectionWorkBlock) : null))
+        .map((block) =>
+          isDirectionCardContent(block.content)
+            ? ({ ...block, content: normalizeContent(block.content) } as DirectionWorkBlock)
+            : null
+        )
         .filter((b): b is DirectionWorkBlock => !!b && (!directionSlug || b.content.direction_slug === directionSlug)),
-    [blocks, directionSlug],
+    [blocks, directionSlug]
   );
 
   const current = useMemo(
     () => directionBlocks.find((b) => (b.content.state ?? "open") === "open") ?? directionBlocks[0],
-    [directionBlocks],
+    [directionBlocks]
   );
 
   const load = useCallback(async () => {
@@ -63,7 +67,7 @@ export default function WorkPage() {
 
   const nextSequence = useMemo(
     () => directionBlocks.reduce((max, block) => Math.max(max, block.content.sequence ?? 0), 0) + 1,
-    [directionBlocks],
+    [directionBlocks]
   );
 
   const generateDirectionBlock = useCallback(async () => {
@@ -113,41 +117,66 @@ export default function WorkPage() {
     setEnsuredInitial(true);
   }, [busy, directionBlocks.length, directionSlug, ensuredInitial, generateDirectionBlock, loaded, loading]);
 
-  const saveAnswer = useCallback(async (block: DirectionWorkBlock, answer: string) => {
-    setBusy(true);
-    setErr(null);
-    try {
-      const existingContent = normalizeContent(block.content);
-      const trimmed = answer.trim();
-      const updatedContent: DirectionCardContent = {
-        ...existingContent,
-        state: trimmed ? "answered" : "open",
-        user: {
-          ...(existingContent.user ?? {}),
-          answer: trimmed,
-          answered_at: trimmed ? new Date().toISOString() : null,
-        },
-      };
+  const saveAnswer = useCallback(
+    async (block: DirectionWorkBlock, answer: string) => {
+      setBusy(true);
+      setErr(null);
+      try {
+        const existingContent = normalizeContent(block.content);
+        const trimmed = answer.trim();
+        const updatedContent: DirectionCardContent = {
+          ...existingContent,
+          state: trimmed ? "answered" : "open",
+          user: {
+            ...(existingContent.user ?? {}),
+            answer: trimmed,
+            answered_at: trimmed ? new Date().toISOString() : null,
+          },
+        };
 
-      const { error } = await supabase
-        .from("work_blocks")
-        .update({ content: updatedContent })
-        .eq("id", block.id);
-      if (error) throw error;
-      await load();
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Hiba";
-      setErr("Nem sikerült menteni a választ.");
-      console.error(message);
-    } finally {
-      setBusy(false);
-    }
-  }, [load]);
+        const { error } = await supabase.from("work_blocks").update({ content: updatedContent }).eq("id", block.id);
+        if (error) throw error;
+        await load();
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Hiba";
+        setErr("Nem sikerült menteni a választ.");
+        console.error(message);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [load]
+  );
+
+  const Spinner = (
+    <>
+      <div
+        aria-label="Betöltés"
+        className="spinner"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: "999px",
+          border: "2px solid var(--border)",
+          borderTopColor: "var(--text-muted)",
+          animation: "spin 0.9s linear infinite",
+          marginTop: 8,
+        }}
+      />
+      <style jsx>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </>
+  );
 
   return (
     <Shell title="Kártyás feldolgozás" space="dream">
       {loading ? (
-        <p>Bejelentkezés ellenőrzése…</p>
+        Spinner
       ) : !directionSlug ? (
         <div className="stack">
           <p style={{ color: "var(--text-muted)" }}>
@@ -158,9 +187,6 @@ export default function WorkPage() {
       ) : (
         <div className="stack">
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <PrimaryButton onClick={generateDirectionBlock} disabled={busy}>
-              + 1 blokk (wireframe stub)
-            </PrimaryButton>
             <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)} variant="secondary">
               Összkép
             </PrimaryButton>
@@ -170,7 +196,7 @@ export default function WorkPage() {
 
           {directionBlocks.length === 0 ? (
             <p style={{ color: "var(--text-muted)" }}>
-              Még nincs blokk ehhez az irányhoz. Adj hozzá egyet a gombbal.
+              Még nincs kártya ehhez az irányhoz.
             </p>
           ) : (
             <div className="stack">
@@ -186,7 +212,8 @@ export default function WorkPage() {
           )}
 
           {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-          {current && <p style={{ marginTop: 12, opacity: 0.7 }}>Aktív blokk: #{current.content.sequence}</p>}
+          {/* Aktív blokk: csak vizuális jel (szöveg nélkül). A jelenlegi UI-ban ez most nem jelenik meg külön. */}
+          {current && null}
         </div>
       )}
     </Shell>
@@ -215,9 +242,11 @@ function BlockCard({
           <span className="badge-muted">Állapot: {stateLabel}</span>
           {answeredAt && <span className="badge-muted">Válaszolva: {new Date(answeredAt).toLocaleString("hu-HU")}</span>}
         </div>
+
         <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>
           {block.content.ai?.context ?? "Most csak egy apró pontot nézünk meg ebből az álomból."}
         </div>
+
         <div style={{ fontWeight: 700 }}>
           {block.content.ai?.question ?? "Mi az a részlet, ami most a leginkább megmaradt benned?"}
         </div>
@@ -226,12 +255,12 @@ function BlockCard({
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={4}
-          placeholder="Válasz (opcionális)"
+          placeholder="Rögzítés (opcionális)"
         />
 
         <div style={{ display: "flex", gap: 10 }}>
           <PrimaryButton onClick={() => onSave(block, draft)} disabled={busy}>
-            Mentés
+            Rögzítés
           </PrimaryButton>
         </div>
       </div>
