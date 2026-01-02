@@ -462,6 +462,7 @@ textarea:focus {
 /* Finom váltás a jobb panel tartalmára (pl. work flip előtt/után) */
 .panel-body {
   transition: opacity 160ms ease;
+}
 
 /* ────────────────────────────────────────────────────────────── */
 /*  SPACE OVERRIDES (álomtér vs esti tér)                           */
