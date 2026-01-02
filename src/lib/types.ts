@@ -123,11 +123,10 @@ export type DirectionCatalogItem = {
 };
 
 export type MorningDirectionChoice = {
-  id: string;
+  id?: string;
   session_id: string;
-  chosen_direction_slugs: string[] | null;
-  ai_recommendations: any; // jsonb (wireframe: [])
-  choice_source: "ai_only" | "catalog_only" | "ai_plus_catalog";
+  direction_slug: string;
+  created_at?: string;
 };
 
 export type WorkBlock = {

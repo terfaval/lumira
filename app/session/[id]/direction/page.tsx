@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
-import { requireUserId } from "@/src/lib/db";
-import type { DirectionCatalogItem, MorningDirectionChoice } from "@/src/lib/types";
+import { startDirection } from "@/src/lib/startDirection";
+import type { DirectionCatalogItem } from "@/src/lib/types";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
 export default function DirectionPage() {
@@ -15,15 +15,9 @@ export default function DirectionPage() {
   const { loading } = useRequireAuth();
 
   const [catalog, setCatalog] = useState<DirectionCatalogItem[]>([]);
-  const [choice, setChoice] = useState<MorningDirectionChoice | null>(null);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  const selectedSlugs = useMemo(
-    () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k),
-    [selected]
-  );
 
   const load = useCallback(async () => {
     setErr(null);
@@ -39,15 +33,15 @@ export default function DirectionPage() {
 
     const { data: ch, error: chErr } = await supabase
       .from("morning_direction_choices")
-      .select("id, session_id, chosen_direction_slugs, ai_recommendations, choice_source")
-      .eq("session_id", sessionId)
-      .maybeSingle();
+      .select("direction_slug")
+      .eq("session_id", sessionId);
 
     if (chErr) return setErr(chErr.message);
     if (ch) {
-      setChoice(ch as MorningDirectionChoice);
       const m: Record<string, boolean> = {};
-      (ch.chosen_direction_slugs ?? []).forEach((s: string) => (m[s] = true));
+      ch.forEach((row: { direction_slug: string }) => {
+        m[row.direction_slug] = true;
+      });
       setSelected(m);
     }
   }, [sessionId]);
@@ -56,38 +50,32 @@ export default function DirectionPage() {
     load();
   }, [load]);
 
-  function toggle(slug: string) {
-    setSelected((prev) => ({ ...prev, [slug]: !prev[slug] }));
-  }
+  const handleStart = useCallback(
+    async (slug: string) => {
+      setBusy(true);
+      setErr(null);
+      try {
+        const result = await startDirection(sessionId, slug);
+        if (!result.success) {
+          // Do not navigate if persist failed; processing space depends on this choice.
+          setErr("Hiba történt, próbáld újra.");
+          return;
+        }
 
-  async function save() {
-    setBusy(true);
-    setErr(null);
-    try {
-      const userId = await requireUserId();
+        setSelected((prev) => ({ ...prev, [slug]: true }));
 
-      const payload = {
-        session_id: sessionId,
-        user_id: userId,
-        ai_recommendations: [], // wireframe stub (NOT NULL!)
-        chosen_direction_slugs: selectedSlugs.length ? selectedSlugs : null,
-        choice_source: "catalog_only",
-      };
-
-      const { error } = await supabase
-        .from("morning_direction_choices")
-        .upsert(payload, { onConflict: "session_id" });
-
-      if (error) throw error;
-
-      router.push(`/session/${sessionId}/work`);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Hiba";
-      setErr(message);
-    } finally {
-      setBusy(false);
-    }
-  }
+        router.push(
+          `/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`
+        );
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Hiba";
+        setErr(message);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [router, sessionId]
+  );
 
   return (
     <Shell title="Irányválasztás">
@@ -96,7 +84,7 @@ export default function DirectionPage() {
       ) : (
         <>
           <p style={{ opacity: 0.8 }}>
-            Válassz 0–n irányt. (Wireframe: egyelőre katalógusból.)
+            Kattints egy irányra, és azonnal folytatjuk a munkát.
           </p>
 
           <div
@@ -107,41 +95,33 @@ export default function DirectionPage() {
             }}
           >
             {catalog.map((d) => (
-              <label
+              <button
                 key={d.slug}
-                style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, display: "block" }}
+                type="button"
+                onClick={() => handleStart(d.slug)}
+                disabled={busy}
+                style={{ textAlign: "left", border: "1px solid #ddd", borderRadius: 10, padding: 12 }}
+                className="card"
               >
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <input
-                    type="checkbox"
-                    checked={!!selected[d.slug]}
-                    onChange={() => toggle(d.slug)}
-                    style={{ marginTop: 4 }}
-                  />
-                  <div className="stack-tight">
-                    <div style={{ fontWeight: 700 }}>{d.title}</div>
-                    <div style={{ opacity: 0.8 }}>{d.description}</div>
-                    <div style={{ fontSize: 12, opacity: 0.6 }}>slug: {d.slug}</div>
+                <div className="stack-tight">
+                  <div style={{ fontWeight: 700, display: "flex", gap: 8, alignItems: "center" }}>
+                    <span>{d.title}</span>
+                    {selected[d.slug] && (
+                      <span style={{ fontSize: 12, opacity: 0.7 }}>(már kiválasztott)</span>
+                    )}
                   </div>
+                  <div style={{ opacity: 0.8 }}>{d.description}</div>
+                  <div style={{ fontSize: 12, opacity: 0.6 }}>slug: {d.slug}</div>
                 </div>
-              </label>
+              </button>
             ))}
           </div>
 
           <div style={{ marginTop: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <PrimaryButton onClick={save} disabled={busy}>
-              Mentés & tovább a blokkokhoz
-            </PrimaryButton>
             <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)}>
               Megállok (összkép)
             </PrimaryButton>
           </div>
-
-          {choice && (
-            <p style={{ marginTop: 12, opacity: 0.7 }}>
-              Van már mentés ehhez a sessionhöz. (choice_source: {choice.choice_source})
-            </p>
-          )}
           {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
         </>
       )}

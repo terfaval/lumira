@@ -5,8 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
+import { startDirection } from "@/src/lib/startDirection";
 import type { DirectionCatalogItem, DreamSession } from "@/src/lib/types";
-import { requireUserId } from "@/src/lib/db";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
 export default function FramePage() {
@@ -102,22 +102,13 @@ export default function FramePage() {
       setBusy(true);
       setErr(null);
       try {
-        const userId = await requireUserId();
-        const payload = {
-          session_id: id,
-          user_id: userId,
-          ai_recommendations: [],
-          chosen_direction_slugs: [slug],
-          choice_source: "ai_only" as const,
-        };
+        const result = await startDirection(id, slug);
+        if (!result.success) {
+          setErr("Hiba történt, próbáld újra.");
+          return;
+        }
 
-        const { error } = await supabase
-          .from("morning_direction_choices")
-          .upsert(payload, { onConflict: "session_id" });
-
-        if (error) throw error;
-
-        router.push(`/session/${id}/work?direction=${slug}`);
+        router.push(`/session/${id}/work?direction=${encodeURIComponent(slug)}`);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Hiba";
         setErr(message);
