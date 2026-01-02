@@ -23,9 +23,7 @@ export default function FramePage() {
     setErr(null);
     const { data, error } = await supabase
       .from("dream_sessions")
-      .select(
-        "id, raw_dream_text, ai_framing_text, ai_framing_audit, status, created_at, updated_at"
-      )
+      .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, created_at, updated_at")
       .eq("id", id)
       .single();
     if (error) setErr(error.message);
@@ -130,17 +128,39 @@ export default function FramePage() {
     [id, router]
   );
 
+  const Spinner = (
+    <>
+      <div
+        aria-label="Betöltés"
+        className="spinner"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: "999px",
+          border: "2px solid var(--border)",
+          borderTopColor: "var(--text-muted)",
+          animation: "spin 0.9s linear infinite",
+          marginTop: 8,
+        }}
+      />
+      <style jsx>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </>
+  );
+
   return (
     <Shell title="Keretezés">
       {loading ? (
-        <p>Bejelentkezés ellenőrzése…</p>
+        Spinner
       ) : !session ? (
-        <p>Betöltés…</p>
+        Spinner
       ) : (
         <div className="stack">
-          <p style={{ opacity: 0.8 }}>Session státusz: {session.status}</p>
-
-          <h3>AI keretezés</h3>
           <div
             style={{
               whiteSpace: "pre-wrap",
@@ -150,38 +170,23 @@ export default function FramePage() {
               background: "#fafafa",
             }}
           >
-            {framingReady
-              ? session.ai_framing_text
-              : "A keretezés és az ajánlott irányok készülnek. Ez pár másodpercig tarthat."}
+            {framingReady ? session.ai_framing_text : "Készül…"}
           </div>
-
-          {!framingReady ? (
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <PrimaryButton onClick={runFraming} disabled={busy}>
-                Keretezés kérése
-              </PrimaryButton>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={runFraming}
-              disabled={busy}
-              className="btn btn-secondary"
-              style={{ alignSelf: "flex-start", padding: "4px 10px", fontSize: 12 }}
-            >
-              Keretezés frissítése (debug)
-            </button>
-          )}
 
           {framingReady && (
             <div className="stack">
               <p style={{ opacity: 0.8 }}>
-                Folytasd az álommunkát egy iránykártyával. Válaszd ki, amelyik most
-                megszólít.
+                Ha szeretnéd folytatni, válassz egy irányt, ami most a legtermészetesebbnek tűnik.
               </p>
 
               {/* Az ajánlások a framing auditból érkeznek, nem katalógus szeletelésből. */}
-              <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gap: 12,
+                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                }}
+              >
                 {recommendations.map((d) => (
                   <button
                     key={d.slug}
@@ -206,10 +211,7 @@ export default function FramePage() {
                 <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>
                   További irányok
                 </PrimaryButton>
-                <PrimaryButton
-                  variant="secondary"
-                  onClick={() => router.push(`/archive`)}
-                >
+                <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
                   Később folytatom
                 </PrimaryButton>
               </div>
