@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/Card";
@@ -21,8 +21,6 @@ const sortOptions: SortOption[] = ["date_desc", "date_asc", "score_desc", "score
 
 type ArchiveStatusFilter = Feldolgozottsag | "lezart";
 
-/* ---------------- query parsing ---------------- */
-
 function parseStatus(value: string | undefined): ArchiveStatusFilter | undefined {
   if (value === "vazlat" || value === "erintett" || value === "feldolgozott" || value === "lezart") return value;
   return undefined;
@@ -33,8 +31,6 @@ function parseRange(value: string | undefined): RangeOption {
 function parseSort(value: string | undefined): SortOption {
   return sortOptions.find((opt) => opt === value) ?? "date_desc";
 }
-
-/* ---------------- filtering / sorting ---------------- */
 
 function applyFilters(
   sessions: ArchiveSessionSummary[],
@@ -74,8 +70,6 @@ function applySort(sessions: ArchiveSessionSummary[], sort: SortOption): Archive
   return sorted;
 }
 
-/* ---------------- helpers ---------------- */
-
 function formatStatusLabel(status: string) {
   if (status === "vazlat") return "Vázlat";
   if (status === "erintett") return "Érintett";
@@ -105,8 +99,6 @@ function getSnippet(session: ArchiveSessionSummary): string {
   return t.length > 160 ? `${cut}…` : cut;
 }
 
-/* ---------------- component ---------------- */
-
 export default function ArchiveClient() {
   const sp = useSearchParams();
 
@@ -124,6 +116,14 @@ export default function ArchiveClient() {
     availableDirections: string[];
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // összecsukás: mely csoportok nyitottak
+  const [openGroups, setOpenGroups] = useState<Record<ArchiveStatusFilter, boolean>>({
+    vazlat: true,
+    erintett: true,
+    feldolgozott: true,
+    lezart: true,
+  });
 
   useEffect(() => {
     if (loading) return;
@@ -172,6 +172,17 @@ export default function ArchiveClient() {
     }))
     .filter((g) => g.items.length > 0);
 
+  // státusz dropdown opciók: csak amik tényleg jelen vannak a felhasználónál
+  const availableStatuses = useMemo<ArchiveStatusFilter[]>(() => {
+    const set = new Set<ArchiveStatusFilter>();
+    for (const s of summaries) set.add(getComputedStatus(s));
+    return ["vazlat", "erintett", "feldolgozott", "lezart"].filter((k) => set.has(k as any)) as ArchiveStatusFilter[];
+  }, [summaries]);
+
+  function toggleGroup(key: ArchiveStatusFilter) {
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
   return (
     <Shell title="Álmonapló">
       <div className="stack">
@@ -179,6 +190,7 @@ export default function ArchiveClient() {
 
         <ArchiveControls
           availableDirections={availableDirections}
+          availableStatuses={availableStatuses}
           selectedStatus={status}
           selectedDirections={directions}
           selectedRange={range}
@@ -199,70 +211,95 @@ export default function ArchiveClient() {
           </Card>
         ) : (
           <div className="stack">
-            {grouped.map((group) => (
-              <div key={group.key} className="stack">
-                <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: 0.2, color: "var(--text-muted)" }}>
-                  {group.title} · {group.items.length}
+            {grouped.map((group) => {
+              const isOpen = openGroups[group.key];
+
+              return (
+                <div key={group.key} className="stack">
+                  {/* fejléc: kattintható összecsukás */}
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.key)}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                      gap: 12,
+                      width: "100%",
+                      background: "transparent",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                    aria-expanded={isOpen}
+                  >
+                    <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: 0.2, color: "var(--text-muted)" }}>
+                      {group.title} · {group.items.length}
+                    </div>
+                    <div style={{ color: "var(--text-muted)", fontSize: 12, opacity: 0.8 }}>
+                      {isOpen ? "▾" : "▸"}
+                    </div>
+                  </button>
+
+                  {isOpen && (
+                    <div className="stack">
+                      {group.items.map((session) => {
+                        const computedStatus = getComputedStatus(session);
+                        const snippet = getSnippet(session);
+
+                        const progressParts = [
+                          session.answered_cards_count ? `${session.answered_cards_count} kártya` : null,
+                          session.touched_directions_count ? `${session.touched_directions_count} irány` : null,
+                        ].filter(Boolean);
+                        const progress = progressParts.length ? progressParts.join(" · ") : "—";
+
+                        return (
+                          <Link key={session.id} href={`/session/${session.id}`} style={{ textDecoration: "none" }}>
+                            <Card>
+                              <div className="stack-tight">
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    gap: 12,
+                                    alignItems: "baseline",
+                                  }}
+                                >
+                                  <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+                                    <div style={{ fontWeight: 800 }}>{session.title}</div>
+                                    <span className="badge-muted">{formatStatusLabel(computedStatus)}</span>
+                                  </div>
+
+                                  <div style={{ color: "var(--text-muted)", fontSize: 13, whiteSpace: "nowrap" }}>
+                                    {progress}
+                                  </div>
+                                </div>
+
+                                {/* snippet: akkor látszik, ha a fetchArchiveSessions tényleg hozza a raw_dream_text-et */}
+                                {snippet ? (
+                                  <div style={{ opacity: 0.7, whiteSpace: "pre-wrap" }}>{snippet}</div>
+                                ) : null}
+
+                                {session.touched_directions_count > 0 && (
+                                  <div style={{ fontSize: 12, opacity: 0.6 }}>
+                                    {session.touched_directions_count} érintett irány
+                                  </div>
+                                )}
+
+                                <div style={{ fontSize: 12, opacity: 0.65 }}>
+                                  {new Date(session.created_at).toLocaleString("hu-HU")}
+                                </div>
+                              </div>
+                            </Card>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-
-                <div className="stack">
-                  {group.items.map((session) => {
-                    const computedStatus = getComputedStatus(session);
-                    const snippet = getSnippet(session);
-
-                    const progressParts = [
-                      session.answered_cards_count ? `${session.answered_cards_count} kártya` : null,
-                      session.touched_directions_count ? `${session.touched_directions_count} irány` : null,
-                    ].filter(Boolean);
-                    const progress = progressParts.length ? progressParts.join(" · ") : "—";
-
-                    return (
-                      <Link
-                        key={session.id}
-                        href={`/session/${session.id}`}
-                        style={{ textDecoration: "none" }}
-                      >
-                        <Card>
-                          <div className="stack-tight">
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                gap: 12,
-                                alignItems: "baseline",
-                              }}
-                            >
-                              <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
-                                <div style={{ fontWeight: 800 }}>{session.title}</div>
-                                <span className="badge-muted">{formatStatusLabel(computedStatus)}</span>
-                              </div>
-
-                              <div style={{ color: "var(--text-muted)", fontSize: 13, whiteSpace: "nowrap" }}>
-                                {progress}
-                              </div>
-                            </div>
-
-                            {snippet && (
-                              <div style={{ opacity: 0.7, whiteSpace: "pre-wrap" }}>{snippet}</div>
-                            )}
-
-                            {session.touched_directions_count > 0 && (
-                              <div style={{ fontSize: 12, opacity: 0.6 }}>
-                                {session.touched_directions_count} érintett irány
-                              </div>
-                            )}
-
-                            <div style={{ fontSize: 12, opacity: 0.65 }}>
-                              {new Date(session.created_at).toLocaleString("hu-HU")}
-                            </div>
-                          </div>
-                        </Card>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

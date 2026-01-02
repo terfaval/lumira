@@ -23,6 +23,7 @@ const sortOptions = [
 
 type ArchiveControlsProps = {
   availableDirections: string[];
+  availableStatuses: ArchiveStatusFilter[]; // ✅ ez hiányzott
   selectedStatus?: ArchiveStatusFilter;
   selectedDirections: string[];
   selectedRange: RangeOption;
@@ -31,6 +32,7 @@ type ArchiveControlsProps = {
 
 export default function ArchiveControls({
   availableDirections,
+  availableStatuses,
   selectedStatus,
   selectedDirections,
   selectedRange,
@@ -46,11 +48,8 @@ export default function ArchiveControls({
     const params = new URLSearchParams(searchParams?.toString() ?? "");
 
     Object.entries(newValues).forEach(([key, value]) => {
-      if (value === null || value === "") {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
+      if (value === null || value === "") params.delete(key);
+      else params.set(key, value);
     });
 
     const query = params.toString();
@@ -78,9 +77,10 @@ export default function ArchiveControls({
     updateSearch({ directions: combined.length ? combined.join(",") : null });
   }
 
+  const show = (s: ArchiveStatusFilter) => availableStatuses.includes(s);
+
   return (
     <div className="card" style={{ display: "grid", gap: 10, padding: 12 }}>
-      {/* felső sor: státusz / időszak / rendezés egymás mellett */}
       <div
         style={{
           display: "grid",
@@ -97,10 +97,10 @@ export default function ArchiveControls({
             onChange={(e) => handleStatusChange(e.target.value)}
           >
             <option value="">Mind</option>
-            <option value="vazlat">Vázlat</option>
-            <option value="erintett">Érintett</option>
-            <option value="feldolgozott">Feldolgozott</option>
-            <option value="lezart">Lezárt</option>
+            {show("vazlat") && <option value="vazlat">Vázlat</option>}
+            {show("erintett") && <option value="erintett">Érintett</option>}
+            {show("feldolgozott") && <option value="feldolgozott">Feldolgozott</option>}
+            {show("lezart") && <option value="lezart">Lezárt</option>}
           </select>
         </div>
 
@@ -127,7 +127,6 @@ export default function ArchiveControls({
         </div>
       </div>
 
-      {/* irányok */}
       <div style={{ display: "grid", gap: 6 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <label style={{ fontWeight: 600, fontSize: 13 }}>Irányok</label>

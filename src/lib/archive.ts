@@ -10,6 +10,10 @@ export type ArchiveSessionSummary = {
   title: string;
   created_at: string;
   status: string;
+
+  // ✅ NEW: a session listához hasonlóan, snippethez
+  raw_dream_text?: string | null;
+
   touched_directions: string[];
   touched_directions_count: number;
   answered_cards_count: number;
@@ -53,7 +57,8 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
 
   let sessionQuery = supabase
     .from("dream_sessions")
-    .select("id, ai_framing_audit, status, created_at")
+    // ✅ NEW: raw_dream_text bekerül a selectbe
+    .select("id, ai_framing_audit, status, created_at, raw_dream_text")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -79,10 +84,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
     workBlocks = (blocks ?? []) as Pick<WorkBlock, "session_id" | "content">[];
   }
 
-  const aggregates = new Map<
-    string,
-    { touchedSlugs: Set<string>; answeredCount: number }
-  >();
+  const aggregates = new Map<string, { touchedSlugs: Set<string>; answeredCount: number }>();
 
   for (const block of workBlocks) {
     if (!isDirectionCardContent(block.content)) continue;
@@ -111,10 +113,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
     const touched_directions = Array.from(aggregate.touchedSlugs);
     const touched_directions_count = touched_directions.length;
     const answered_cards_count = aggregate.answeredCount;
-    const feldolgozottsag = classifyFeldolgozottsag(
-      touched_directions_count,
-      answered_cards_count
-    );
+    const feldolgozottsag = classifyFeldolgozottsag(touched_directions_count, answered_cards_count);
     const score = touched_directions_count * 10 + answered_cards_count;
     const title = extractAuditTitle(session.ai_framing_audit) || "Álom";
 
@@ -123,6 +122,8 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
       title,
       created_at: session.created_at,
       status: session.status,
+      // ✅ NEW: átadjuk a nyers álomszöveget a kliensnek
+      raw_dream_text: session.raw_dream_text ?? null,
       touched_directions,
       touched_directions_count,
       answered_cards_count,
@@ -131,9 +132,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
     };
   });
 
-  const availableDirections = Array.from(
-    new Set(summaries.flatMap((s) => s.touched_directions))
-  ).sort();
+  const availableDirections = Array.from(new Set(summaries.flatMap((s) => s.touched_directions))).sort();
 
   return { summaries, availableDirections };
 }
