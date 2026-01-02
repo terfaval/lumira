@@ -69,7 +69,7 @@ export default function FramePage() {
         credentials: "include",
         headers: {
           "content-type": "application/json",
-          ...(token ? { authorization: `Bearer ${token}` } : {}),
+          ...(token ? { authorization: `Bearer ${token}` } : {} ),
         },
         body: JSON.stringify({ sessionId: id }),
       });
@@ -86,9 +86,7 @@ export default function FramePage() {
   const recommendations = useMemo(() => {
     const raw = (session?.ai_framing_audit as any)?.recommended_directions;
     if (!Array.isArray(raw)) return [];
-
     const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
-
     return raw
       .map((rec) => {
         if (typeof rec?.slug !== "string" || typeof rec?.reason !== "string") return null;
@@ -104,7 +102,7 @@ export default function FramePage() {
   useEffect(() => {
     if (session && !busy && !attemptedRef.current && !framingReady) {
       attemptedRef.current = true;
-      runFraming();
+      void runFraming();
     }
   }, [session, busy, runFraming, framingReady]);
 
@@ -118,7 +116,6 @@ export default function FramePage() {
           setErr("Hiba történt, próbáld újra.");
           return;
         }
-
         router.push(`/session/${id}/work?direction=${encodeURIComponent(slug)}`);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Hiba";
@@ -147,9 +144,7 @@ export default function FramePage() {
       />
       <style jsx>{`
         @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </>
@@ -167,7 +162,7 @@ export default function FramePage() {
           right={
             <div className="stack">
               {framingReady ? (
-                <div className="stack">
+                <>
                   <div
                     style={{
                       whiteSpace: "pre-wrap",
@@ -180,11 +175,6 @@ export default function FramePage() {
                     {session.ai_framing_text}
                   </div>
 
-                  <p style={{ opacity: 0.8 }}>
-                    Ha szeretnéd folytatni, válassz egy irányt, ami most a legtermészetesebbnek tűnik.
-                  </p>
-
-                  {/* Az ajánlások a framing auditból érkeznek, nem katalógus szeletelésből. */}
                   <div
                     style={{
                       display: "grid",
@@ -212,7 +202,7 @@ export default function FramePage() {
                     ))}
                   </div>
 
-                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ display: "grid", gap: 12 }}>
                     <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>
                       További irányok
                     </PrimaryButton>
@@ -220,13 +210,12 @@ export default function FramePage() {
                       Később folytatom
                     </PrimaryButton>
                   </div>
-                </div>
+                </>
               ) : (
                 <p style={{ color: "var(--text-muted)" }}>
                   A keretezés készül, hamarosan megjelennek az ajánlott irányok.
                 </p>
               )}
-
               {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
             </div>
           }

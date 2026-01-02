@@ -102,10 +102,8 @@ export default function WorkPage() {
 
       if (error) throw error;
       await load();
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Hiba";
+    } catch {
       setErr("Nem sikerült új kártyát létrehozni.");
-      console.error(message);
     } finally {
       setBusy(false);
     }
@@ -135,14 +133,11 @@ export default function WorkPage() {
             answered_at: trimmed ? new Date().toISOString() : null,
           },
         };
-
         const { error } = await supabase.from("work_blocks").update({ content: updatedContent }).eq("id", block.id);
         if (error) throw error;
         await load();
-      } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : "Hiba";
+      } catch {
         setErr("Nem sikerült menteni a választ.");
-        console.error(message);
       } finally {
         setBusy(false);
       }
@@ -166,11 +161,7 @@ export default function WorkPage() {
         }}
       />
       <style jsx>{`
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </>
   );
@@ -186,26 +177,13 @@ export default function WorkPage() {
           rightTitle="Feldolgozás"
           right={
             !directionSlug ? (
-              <div className="stack">
-                <p style={{ color: "var(--text-muted)" }}>
-                  Válassz egy irányt az <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj
-                  vissza ide.
-                </p>
-              </div>
+              <p style={{ color: "var(--text-muted)" }}>
+                Válassz egy irányt az <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj vissza ide.
+              </p>
             ) : (
               <div className="stack">
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)} variant="secondary">
-                    Összkép
-                  </PrimaryButton>
-                </div>
-
-                <hr className="hr-soft" />
-
                 {directionBlocks.length === 0 ? (
-                  <p style={{ color: "var(--text-muted)" }}>
-                    Még nincs kártya ehhez az irányhoz.
-                  </p>
+                  <p style={{ color: "var(--text-muted)" }}>Még nincs kártya ehhez az irányhoz.</p>
                 ) : (
                   <div className="stack">
                     {directionBlocks.map((b) => (
@@ -218,9 +196,7 @@ export default function WorkPage() {
                     ))}
                   </div>
                 )}
-
                 {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-                {/* Aktív blokk: csak vizuális jel (szöveg nélkül). A jelenlegi UI-ban ez most nem jelenik meg külön. */}
                 {current && null}
               </div>
             )
@@ -241,7 +217,6 @@ function BlockCard({
   busy: boolean;
 }) {
   const [draft, setDraft] = useState(block.content.user?.answer ?? "");
-
   const stateLabel = block.content.state ?? "open";
   const answeredAt = block.content.user?.answered_at;
 

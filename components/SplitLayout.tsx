@@ -6,25 +6,24 @@ export function SplitLayout({
   left,
   rightTitle,
   right,
+  hideLeftOnMobile = true,
 }: {
   leftTitle: string;
   left: ReactNode;
   rightTitle: string;
   right: ReactNode;
+  hideLeftOnMobile?: boolean;
 }) {
   return (
-    <div className="split-layout">
+    <div className={`split-layout ${hideLeftOnMobile ? "split-hide-left-mobile" : ""}`}>
       <Card className="split-panel">
-        <div className="stack">
-          {leftTitle ? <h3 className="split-panel-title">{leftTitle}</h3> : null}
-          {left}
-        </div>
+        {leftTitle ? <h3 className="split-panel-title">{leftTitle}</h3> : null}
+        <div className="panel-body">{left}</div>
       </Card>
+
       <Card className="split-panel">
-        <div className="stack">
-          {rightTitle ? <h3 className="split-panel-title">{rightTitle}</h3> : null}
-          {right}
-        </div>
+        {rightTitle ? <h3 className="split-panel-title">{rightTitle}</h3> : null}
+        <div className="panel-body">{right}</div>
       </Card>
     </div>
   );

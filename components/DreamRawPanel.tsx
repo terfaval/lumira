@@ -21,8 +21,7 @@ export function DreamRawPanel({
 
   useEffect(() => {
     let cancelled = false;
-
-    if (session && session.raw_dream_text) return () => {};
+    if (session && session.raw_dream_text) return;
 
     const load = async () => {
       setLoading(true);
@@ -41,26 +40,16 @@ export function DreamRawPanel({
     };
 
     void load();
-
     return () => {
       cancelled = true;
     };
   }, [session, sessionId]);
 
   return (
-    <div className="stack-tight">
-      <div className="stack-tight">
-        <p className="card-title" style={{ margin: 0 }}>
-          Nyers álom
-        </p>
-        <p style={{ color: "var(--text-muted)" }}>A rögzített álomszöveg (változtatás nélkül).</p>
-      </div>
-
-      <div className="dream-raw-text" aria-live="polite">
-        {loading && !displaySession ? "Betöltés…" : null}
-        {error ? <span style={{ color: "crimson" }}>Nem sikerült betölteni az álmot.</span> : null}
-        {!loading && !error ? displaySession?.raw_dream_text ?? "Nincs megjeleníthető álomszöveg." : null}
-      </div>
+    <div className="dream-raw-text" aria-live="polite">
+      {loading && !displaySession ? "Betöltés…" : null}
+      {error ? <span style={{ color: "crimson" }}>Nem sikerült betölteni az álmot.</span> : null}
+      {!loading && !error ? displaySession?.raw_dream_text ?? "Nincs megjeleníthető álomszöveg." : null}
     </div>
   );
 }

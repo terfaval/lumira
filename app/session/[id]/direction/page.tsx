@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
 import { startDirection } from "@/src/lib/startDirection";
@@ -57,13 +56,10 @@ export default function DirectionPage() {
       try {
         const result = await startDirection(sessionId, slug);
         if (!result.success) {
-          // Do not navigate if persist failed; processing space depends on this choice.
           setErr("Hiba történt, próbáld újra.");
           return;
         }
-
         setSelected((prev) => ({ ...prev, [slug]: true }));
-
         router.push(`/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Hiba";
@@ -91,68 +87,93 @@ export default function DirectionPage() {
         }}
       />
       <style jsx>{`
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </>
   );
 
   return (
-    <Shell title="Irányválasztás">
-      {loading ? (
-        Spinner
-      ) : (
-        <>
-          <p style={{ opacity: 0.8 }}>
-            Válassz egy irányt, ami most a legtermészetesebbnek tűnik.
-          </p>
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="direction-overlay"
+      onClick={(e) => {
+        // háttérre kattintásra zárás
+        if (e.target === e.currentTarget) router.back();
+      }}
+    >
+      <div className="direction-sheet card" role="document">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <h3 className="split-panel-title">Irányválasztás</h3>
+          <button className="btn btn-secondary" onClick={() => router.back()} aria-label="Bezárás">Bezárás</button>
+        </div>
 
-          <div
-            style={{
-              display: "grid",
-              gap: 10,
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            }}
-          >
-            {catalog.map((d) => (
-              <button
-                key={d.slug}
-                type="button"
-                onClick={() => handleStart(d.slug)}
-                disabled={busy}
-                style={{
-                  textAlign: "left",
-                  border: "1px solid #ddd",
-                  borderRadius: 10,
-                  padding: 12,
-                }}
-                className="card"
-              >
-                <div className="stack-tight">
-                  <div style={{ fontWeight: 700, display: "flex", gap: 8, alignItems: "center" }}>
-                    <span>{d.title}</span>
-                    {selected[d.slug] && (
-                      <span style={{ fontSize: 12, opacity: 0.7 }}>(korábban kiválasztva)</span>
-                    )}
+        {loading ? (
+          <div style={{ paddingTop: 8 }}>{Spinner}</div>
+        ) : (
+          <>
+            <p style={{ opacity: 0.8 }}>
+              Válassz egy irányt, ami most a legtermészetesebbnek tűnik.
+            </p>
+
+            <div className="direction-grid">
+              {catalog.map((d) => (
+                <button
+                  key={d.slug}
+                  type="button"
+                  onClick={() => handleStart(d.slug)}
+                  disabled={busy}
+                  style={{ textAlign: "left" }}
+                  className="card"
+                >
+                  <div className="stack-tight">
+                    <div style={{ fontWeight: 700, display: "flex", gap: 8, alignItems: "center" }}>
+                      <span>{d.title}</span>
+                      {selected[d.slug] && (
+                        <span style={{ fontSize: 12, opacity: 0.7 }}>(korábban kiválasztva)</span>
+                      )}
+                    </div>
+                    <div style={{ opacity: 0.8 }}>{d.description}</div>
                   </div>
-                  <div style={{ opacity: 0.8 }}>{d.description}</div>
-                </div>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
 
-          <div style={{ marginTop: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)}>
-              Összkép
-            </PrimaryButton>
-          </div>
+            {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
+          </>
+        )}
+      </div>
 
-          {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-        </>
-      )}
-    </Shell>
+      <style jsx>{`
+        .direction-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.28);
+          display: grid;
+          place-items: center;
+          padding: 16px;
+          z-index: 50;
+        }
+        .direction-sheet {
+          width: min(1040px, 96vw);
+          max-height: min(86dvh, 860px);
+          overflow: auto;
+          display: grid;
+          gap: 12px;
+        }
+        .direction-grid {
+          display: grid;
+          gap: 10px;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        @media (max-width: 999px) {
+          .direction-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 679px) {
+          .direction-sheet { width: 100%; max-height: 100dvh; border-radius: 0; }
+          .direction-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
+    </div>
   );
 }

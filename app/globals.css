@@ -379,20 +379,27 @@ textarea:focus {
   margin: var(--space-3) 0;
 }
 
+/* Split layout rács */
 .split-layout {
   display: grid;
   gap: var(--space-3);
 }
 
+/* Desktop / tablet: két oszlop */
 @media (min-width: 820px) {
   .split-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    align-items: stretch;
   }
 }
 
+/* Panelek */
 .split-panel {
-  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0; /* a belső scrollerhez */
+  height: calc(100dvh - 160px); /* fix blokk-magasság (ablak nem görget) */
+  overflow: hidden; /* a belső body görget */
 }
 
 .split-panel-title {
@@ -401,6 +408,13 @@ textarea:focus {
   letter-spacing: -0.01em;
 }
 
+/* Belső scroller a panelen belül */
+.panel-body {
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Dream szöveg doboz (belső görgetéssel) */
 .dream-raw-text {
   white-space: pre-wrap;
   color: var(--text-muted);
@@ -408,9 +422,46 @@ textarea:focus {
   border: 1px solid var(--line-soft);
   border-radius: 12px;
   padding: var(--space-2);
-  max-height: 360px;
-  overflow-y: auto;
+  height: 100%;
+  max-height: none;
+  overflow: auto;
 }
+
+/* Mobil: csak a jobb panel marad látható (aktuális munka) */
+@media (max-width: 819px) {
+  .split-hide-left-mobile > .split-panel:first-child {
+    display: none;
+  }
+}
+
+/* Scrollbar minimal (átlátszó track) – WebKit */
+.panel-body::-webkit-scrollbar,
+.dream-raw-text::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.panel-body::-webkit-scrollbar-thumb,
+.dream-raw-text::-webkit-scrollbar-thumb {
+  background: rgba(127, 127, 127, 0.35);
+  border-radius: 10px;
+}
+
+.panel-body::-webkit-scrollbar-track,
+.dream-raw-text::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Firefox */
+.panel-body,
+.dream-raw-text {
+  scrollbar-color: rgba(127,127,127,0.35) transparent;
+  scrollbar-width: thin;
+}
+
+/* Finom váltás a jobb panel tartalmára (pl. work flip előtt/után) */
+.panel-body {
+  transition: opacity 160ms ease;
 
 /* ────────────────────────────────────────────────────────────── */
 /*  SPACE OVERRIDES (álomtér vs esti tér)                           */
