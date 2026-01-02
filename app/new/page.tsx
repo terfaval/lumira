@@ -22,7 +22,7 @@ export default function NewDream() {
       const userId = await requireUserId();
 
       if (!text.trim()) {
-        setErr("Írj be legalább pár szót (a DB-ben kötelező a raw_dream_text).");
+        setErr("Írj le legalább néhány szót az álmodból.");
         return;
       }
 
@@ -50,29 +50,49 @@ export default function NewDream() {
   return (
     <Shell title="Új álom" space="dream">
       {loading ? (
-        <p>Bejelentkezés ellenőrzése…</p>
+        <div
+          aria-label="Betöltés"
+          className="spinner"
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: "999px",
+            border: "2px solid var(--border)",
+            borderTopColor: "var(--text-muted)",
+            animation: "spin 0.9s linear infinite",
+            marginTop: 8,
+          }}
+        />
       ) : (
         <div className="stack">
           <p style={{ color: "var(--text-muted)" }}>
-            Üres közép: csak írd le, ami megmaradt. Később bármikor folytathatod vagy kiegészítheted a sessiont.
+            Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is.
           </p>
+
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Most csak rögzíts. A többi ráér."
+            placeholder="Kezdd egy képpel, érzettel vagy pár szóval az álmodból…"
             rows={10}
           />
+
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <PrimaryButton onClick={createSession} disabled={busy}>
-              Mentés & tovább
-            </PrimaryButton>
-            <PrimaryButton onClick={() => router.push("/sessions")} variant="secondary">
-              Megkezdett session folytatása
+              Rögzítés
             </PrimaryButton>
           </div>
+
           {err && <p style={{ marginTop: 4, color: "crimson" }}>{err}</p>}
         </div>
       )}
+
+      <style jsx>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </Shell>
   );
 }
