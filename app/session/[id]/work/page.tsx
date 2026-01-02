@@ -1,97 +1,162 @@
-"use client";
-
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Card } from "@/components/Card";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
-import type { WorkBlock } from "@/src/lib/types";
+import { isDirectionCardContent, type DirectionCardContent, type WorkBlock } from "@/src/lib/types";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
+
+type DirectionWorkBlock = WorkBlock & { content: DirectionCardContent };
 
 export default function WorkPage() {
   const { id: sessionId } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { loading } = useRequireAuth();
   const [blocks, setBlocks] = useState<WorkBlock[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [ensuredInitial, setEnsuredInitial] = useState(false);
 
-  const current = useMemo(() => blocks.find((b) => b.block_state === "open") ?? blocks[0], [blocks]);
+  const directionSlug = searchParams?.get("direction") ?? "";
+
+  const directionBlocks = useMemo(
+    () =>
+      blocks
+        .map((block) => (isDirectionCardContent(block.content) ? ({ ...block, content: normalizeContent(block.content) } as DirectionWorkBlock) : null))
+        .filter((b): b is DirectionWorkBlock => !!b && (!directionSlug || b.content.direction_slug === directionSlug)),
+    [blocks, directionSlug],
+  );
+
+  const current = useMemo(
+    () => directionBlocks.find((b) => (b.content.state ?? "open") === "open") ?? directionBlocks[0],
+    [directionBlocks],
+  );
 
   const load = useCallback(async () => {
     setErr(null);
+    setLoaded(false);
     const { data, error } = await supabase
       .from("work_blocks")
-      .select("id, session_id, direction_slug, sequence, ai_context, ai_question, user_answer, block_state")
+      .select("id, session_id, user_id, block_type, content, created_at, updated_at")
       .eq("session_id", sessionId)
-      .order("sequence", { ascending: true });
-    if (error) setErr(error.message);
+      .eq("block_type", "dream_analysis")
+      .order("created_at", { ascending: true });
+    if (error) setErr("Nem sikerült betölteni a kártyákat.");
     else setBlocks((data ?? []) as WorkBlock[]);
+    setLoaded(true);
   }, [sessionId]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  async function generateDummyBlock() {
+  useEffect(() => {
+    setEnsuredInitial(false);
+  }, [directionSlug]);
+
+  const nextSequence = useMemo(
+    () => directionBlocks.reduce((max, block) => Math.max(max, block.content.sequence ?? 0), 0) + 1,
+    [directionBlocks],
+  );
+
+  const generateDirectionBlock = useCallback(async () => {
+    if (!directionSlug) {
+      setErr("Előbb válassz irányt.");
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
       const userId = await requireUserId();
-      const nextSeq = (blocks.at(-1)?.sequence ?? 0) + 1;
+      const content: DirectionCardContent = {
+        kind: "direction_card",
+        direction_slug: directionSlug,
+        sequence: nextSequence,
+        state: "open",
+        ai: {
+          context: "Most csak egy apró pontot nézünk meg ebből az álomból.",
+          question: "Mi az a részlet, ami most a leginkább megmaradt benned?",
+        },
+        user: { answer: null, answered_at: null },
+      };
 
       const { error } = await supabase.from("work_blocks").insert({
         session_id: sessionId,
         user_id: userId,
-        sequence: nextSeq,
-        direction_slug: null,
-        ai_context: "Most csak egy apró pontot nézünk meg ebből az álomból.",
-        ai_question: "Mi az a részlet, ami most a leginkább megmaradt benned?",
-        block_state: "open",
+        block_type: "dream_analysis",
+        content,
       });
 
       if (error) throw error;
       await load();
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Hiba";
-      setErr(message);
+      setErr("Nem sikerült új kártyát létrehozni.");
+      console.error(message);
     } finally {
       setBusy(false);
     }
-  }
+  }, [directionSlug, load, nextSequence, sessionId]);
 
-  async function saveAnswer(blockId: string, answer: string) {
+  useEffect(() => {
+    if (!directionSlug || loading || busy || ensuredInitial || !loaded) return;
+    if (directionBlocks.length === 0) {
+      void generateDirectionBlock();
+    }
+    setEnsuredInitial(true);
+  }, [busy, directionBlocks.length, directionSlug, ensuredInitial, generateDirectionBlock, loaded, loading]);
+
+  const saveAnswer = useCallback(async (block: DirectionWorkBlock, answer: string) => {
     setBusy(true);
     setErr(null);
     try {
+      const existingContent = normalizeContent(block.content);
+      const trimmed = answer.trim();
+      const updatedContent: DirectionCardContent = {
+        ...existingContent,
+        state: trimmed ? "answered" : "open",
+        user: {
+          ...(existingContent.user ?? {}),
+          answer: trimmed,
+          answered_at: trimmed ? new Date().toISOString() : null,
+        },
+      };
+
       const { error } = await supabase
         .from("work_blocks")
-        .update({
-          user_answer: answer,
-          answered_at: new Date().toISOString(),
-          block_state: answer.trim() ? "answered" : "open",
-        })
-        .eq("id", blockId);
+        .update({ content: updatedContent })
+        .eq("id", block.id);
       if (error) throw error;
       await load();
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Hiba";
-      setErr(message);
+      setErr("Nem sikerült menteni a választ.");
+      console.error(message);
     } finally {
       setBusy(false);
     }
-  }
+  }, [load]);
 
   return (
     <Shell title="Kártyás feldolgozás" space="dream">
       {loading ? (
         <p>Bejelentkezés ellenőrzése…</p>
+      ) : !directionSlug ? (
+        <div className="stack">
+          <p style={{ color: "var(--text-muted)" }}>
+            Válassz egy irányt az <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj
+            vissza ide.
+          </p>
+        </div>
       ) : (
         <div className="stack">
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <PrimaryButton onClick={generateDummyBlock} disabled={busy}>
+            <PrimaryButton onClick={generateDirectionBlock} disabled={busy}>
               + 1 blokk (wireframe stub)
             </PrimaryButton>
             <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)} variant="secondary">
@@ -101,18 +166,25 @@ export default function WorkPage() {
 
           <hr className="hr-soft" />
 
-          {blocks.length === 0 ? (
-            <p style={{ color: "var(--text-muted)" }}>Még nincs blokk. Adj hozzá egyet a gombbal.</p>
+          {directionBlocks.length === 0 ? (
+            <p style={{ color: "var(--text-muted)" }}>
+              Még nincs blokk ehhez az irányhoz. Adj hozzá egyet a gombbal.
+            </p>
           ) : (
             <div className="stack">
-              {blocks.map((b) => (
-                <BlockCard key={b.id} block={b} onSave={saveAnswer} busy={busy} />
+              {directionBlocks.map((b) => (
+                <BlockCard
+                  key={`${b.id}-${b.content.user?.answered_at ?? ""}-${b.content.user?.answer ?? ""}`}
+                  block={b}
+                  onSave={saveAnswer}
+                  busy={busy}
+                />
               ))}
             </div>
           )}
 
           {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-          {current && <p style={{ marginTop: 12, opacity: 0.7 }}>Aktív blokk: #{current.sequence}</p>}
+          {current && <p style={{ marginTop: 12, opacity: 0.7 }}>Aktív blokk: #{current.content.sequence}</p>}
         </div>
       )}
     </Shell>
@@ -124,21 +196,29 @@ function BlockCard({
   onSave,
   busy,
 }: {
-  block: WorkBlock;
-  onSave: (id: string, answer: string) => Promise<void>;
+  block: DirectionWorkBlock;
+  onSave: (block: DirectionWorkBlock, answer: string) => Promise<void>;
   busy: boolean;
 }) {
-  const [draft, setDraft] = useState(block.user_answer ?? "");
+  const [draft, setDraft] = useState(block.content.user?.answer ?? "");
+
+  const stateLabel = block.content.state ?? "open";
+  const answeredAt = block.content.user?.answered_at;
 
   return (
     <Card>
       <div className="stack-tight">
         <div className="meta-block">
-          <span className="badge-muted">#{block.sequence}</span>
-          <span className="badge-muted">Állapot: {block.block_state}</span>
+          <span className="badge-muted">#{block.content.sequence}</span>
+          <span className="badge-muted">Állapot: {stateLabel}</span>
+          {answeredAt && <span className="badge-muted">Válaszolva: {new Date(answeredAt).toLocaleString("hu-HU")}</span>}
         </div>
-        <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{block.ai_context}</div>
-        <div style={{ fontWeight: 700 }}>{block.ai_question}</div>
+        <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>
+          {block.content.ai?.context ?? "Most csak egy apró pontot nézünk meg ebből az álomból."}
+        </div>
+        <div style={{ fontWeight: 700 }}>
+          {block.content.ai?.question ?? "Mi az a részlet, ami most a leginkább megmaradt benned?"}
+        </div>
 
         <textarea
           value={draft}
@@ -148,11 +228,29 @@ function BlockCard({
         />
 
         <div style={{ display: "flex", gap: 10 }}>
-          <PrimaryButton onClick={() => onSave(block.id, draft)} disabled={busy}>
+          <PrimaryButton onClick={() => onSave(block, draft)} disabled={busy}>
             Mentés
           </PrimaryButton>
         </div>
       </div>
     </Card>
   );
+}
+
+function normalizeContent(content: DirectionCardContent): DirectionCardContent {
+  return {
+    ...content,
+    user: {
+      ...content.user,
+      answer: content.user?.answer ?? null,
+      answered_at: content.user?.answered_at ?? null,
+    },
+    sequence: content.sequence ?? 0,
+    state: content.state ?? "open",
+    ai: {
+      ...content.ai,
+      context: content.ai?.context ?? null,
+      question: content.ai?.question ?? null,
+    },
+  };
 }

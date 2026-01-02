@@ -7,11 +7,19 @@ import { Shell } from "@/components/Shell";
 import { Card } from "@/components/Card";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
-import type { DreamSession, WorkBlock } from "@/src/lib/types";
+import { isDirectionCardContent, type DreamSession, type WorkBlock } from "@/src/lib/types";
 
 type SessionDetail = DreamSession & {
   archived_at?: string | null;
 };
+
+function renderBlockSummary(block: WorkBlock) {
+  if (!isDirectionCardContent(block.content)) return "Ismeretlen blokk";
+  const state = block.content.state ?? "open";
+  const seq = block.content.sequence ?? 0;
+  const question = block.content.ai?.question ?? "(nincs kérdés)";
+  return `#${seq}: ${question} (${state})`;
+}
 
 export default function SessionOverview() {
   const { id } = useParams<{ id: string }>();
@@ -34,9 +42,10 @@ export default function SessionOverview() {
 
         const { data: blocks, error: wbErr } = await supabase
           .from("work_blocks")
-          .select("id, session_id, direction_slug, sequence, ai_context, ai_question, user_answer, block_state")
+          .select("id, session_id, user_id, block_type, content, created_at, updated_at")
           .eq("session_id", id)
-          .order("sequence", { ascending: true });
+          .eq("block_type", "dream_analysis")
+          .order("created_at", { ascending: true });
 
         if (wbErr) throw wbErr;
         setWorkBlocks((blocks ?? []) as WorkBlock[]);
@@ -59,7 +68,9 @@ export default function SessionOverview() {
         <div className="stack">
           <div className="meta-block">
             <span className="badge-muted">Státusz: {session.status}</span>
-            {session.archived_at && <span className="badge-muted">Archiválva: {new Date(session.archived_at).toLocaleString("hu-HU")}</span>}
+            {session.archived_at && (
+              <span className="badge-muted">Archiválva: {new Date(session.archived_at).toLocaleString("hu-HU")}</span>
+            )}
           </div>
 
           <Card>
@@ -87,7 +98,7 @@ export default function SessionOverview() {
                 <ul style={{ paddingLeft: 18, display: "grid", gap: 6 }}>
                   {workBlocks.map((b) => (
                     <li key={b.id} style={{ opacity: 0.85 }}>
-                      #{b.sequence}: {b.ai_question} ({b.block_state})
+                      {renderBlockSummary(b)}
                     </li>
                   ))}
                 </ul>

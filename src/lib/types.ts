@@ -129,15 +129,35 @@ export type MorningDirectionChoice = {
   created_at?: string;
 };
 
+export type DirectionCardContent = {
+  kind: "direction_card";
+  direction_slug: string;
+  sequence?: number;
+  state?: "open" | "answered" | "paused";
+  ai?: {
+    context?: string | null;
+    question?: string | null;
+  };
+  user?: {
+    answer?: string | null;
+    answered_at?: string | null;
+  };
+} & Record<string, Json>;
+
+export function isDirectionCardContent(content: unknown): content is DirectionCardContent {
+  if (!content || typeof content !== "object") return false;
+  const c = content as Record<string, unknown>;
+  return c.kind === "direction_card" && typeof c.direction_slug === "string";
+}
+
 export type WorkBlock = {
   id: string;
   session_id: string;
-  direction_slug: string | null;
-  sequence: number;
-  ai_context: string;
-  ai_question: string;
-  user_answer: string | null;
-  block_state: "open" | "answered" | "skipped" | "archived";
+  user_id: string;
+  block_type: "free_journal" | "dream_analysis" | "reflection" | "ai";
+  content: DirectionCardContent | Json;
+  created_at: string;
+  updated_at: string;
 };
 
 export type EveningCardCatalogItem = {
