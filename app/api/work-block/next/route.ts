@@ -50,9 +50,7 @@ type RequestBody = {
 
 function sanitizeSafety(flags?: SynthInput["flags"]): SafetyValue {
   const safety = flags?.safety ?? "none";
-  return SAFETY_VALUES.includes(safety as SafetyValue)
-    ? (safety as SafetyValue)
-    : "other";
+  return SAFETY_VALUES.includes(safety as SafetyValue) ? (safety as SafetyValue) : "none";
 }
 
 function detectSafety(dreamText: string): SafetyValue {
@@ -191,13 +189,11 @@ function validateModelOutput(parsed: unknown): WorkBlockResponse | null {
   if (questionMarkCount > 1 || hasNumberedList || lineBreakCount >= 2) {
     return null;
   }
-  
+
   const suggestStop = Boolean(stopSignal?.suggest_stop);
   const reason = typeof stopSignal?.reason === "string" ? stopSignal.reason : null;
 
-  const safety = SAFETY_VALUES.includes(flags?.safety as SafetyValue)
-    ? (flags.safety as SafetyValue)
-    : "other";
+  const safety = SAFETY_VALUES.includes(flags?.safety as SafetyValue) ? (flags.safety as SafetyValue) : "none";
 
   return {
     work_block: clampWorkBlock({ lead_in: leadIn, question, cta }),
@@ -267,7 +263,7 @@ export async function POST(req: Request) {
     if (detectedSafety !== "none") {
       return NextResponse.json(makeClosureResponse("safety", detectedSafety));
     }
-    
+
     const stopSignal = shouldStop(direction, history);
     if (stopSignal.suggest_stop) {
       return NextResponse.json(makeClosureResponse(stopSignal.reason, safetyFlag));
@@ -303,10 +299,12 @@ export async function POST(req: Request) {
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0,
+      response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: JSON.stringify(userPayload) },
       ],
+      max_tokens: 500,
     });
 
     const rawContent = completion.choices?.[0]?.message?.content ?? "";

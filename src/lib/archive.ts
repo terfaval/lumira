@@ -39,15 +39,27 @@ function normalizeAnswer(answer: unknown): string {
   return answer.trim();
 }
 
+function sanitizeTitle(t: string): string | null {
+  const cleaned = (t ?? "").replace(/\s+/g, " ").trim();
+  if (!cleaned) return null;
+  if (cleaned.length > 72) return cleaned.slice(0, 69).trimEnd() + "…";
+  return cleaned;
+}
+
 function extractAuditTitle(audit: unknown): string | null {
   if (!audit || typeof audit !== "object") return null;
+
   const maybeAudit = audit as { title?: unknown };
   const rawTitle = maybeAudit.title;
-  if (typeof rawTitle === "string") return rawTitle.trim();
+
+  if (typeof rawTitle === "string") return sanitizeTitle(rawTitle);
+
+  // ha valamiért nem string (régi / hibás audit), próbáljuk stringgé konvertálni
   if (rawTitle && typeof rawTitle === "object" && "toString" in rawTitle) {
-    const converted = String(rawTitle).trim();
-    return converted.length ? converted : null;
+    const converted = sanitizeTitle(String(rawTitle));
+    return converted;
   }
+
   return null;
 }
 
@@ -115,6 +127,8 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
     const answered_cards_count = aggregate.answeredCount;
     const feldolgozottsag = classifyFeldolgozottsag(touched_directions_count, answered_cards_count);
     const score = touched_directions_count * 10 + answered_cards_count;
+
+    // ✅ title: auditból, tisztítva; fallback marad
     const title = extractAuditTitle(session.ai_framing_audit) || "Álom";
 
     return {

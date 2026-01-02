@@ -84,9 +84,11 @@ function clampArray(values: unknown, max: number): string[] {
 
 function sanitizeFlags(flags: unknown, dreamTooShort: boolean): Flags {
   const raw = (flags ?? {}) as Partial<Flags>;
-  const safety = SAFETY_VALUES.includes(raw.safety as SafetyValue)
-    ? (raw.safety as SafetyValue)
-    : "other";
+
+  // ✅ fontos: ha a modell nem ad safety-t, NE essünk "other"-be, mert az lenullázza a candidate-eket
+  const safety: SafetyValue =
+    SAFETY_VALUES.includes(raw.safety as SafetyValue) ? (raw.safety as SafetyValue) : "none";
+
   return {
     safety,
     too_short: dreamTooShort || Boolean(raw.too_short),
@@ -119,12 +121,21 @@ function sanitizeQuestionSeed(seed: unknown): QuestionSeed {
   const raw = (seed ?? {}) as Partial<QuestionSeed>;
   return {
     preferred_style:
-      typeof raw.preferred_style === "string" &&
-      ALLOWED_PREFERRED_STYLES.includes(raw.preferred_style)
+      typeof raw.preferred_style === "string" && ALLOWED_PREFERRED_STYLES.includes(raw.preferred_style)
         ? raw.preferred_style
         : "",
     target_anchor: typeof raw.target_anchor === "string" ? raw.target_anchor : "",
   };
+}
+
+// Fisher–Yates shuffle (pozíció-bias csökkentéshez)
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 function sanitizeCandidates(
@@ -135,6 +146,7 @@ function sanitizeCandidates(
 ): string[] {
   if (flags.too_short || flags.safety !== "none") return [];
   if (!Array.isArray(candidates)) return [];
+
   const filtered: string[] = [];
   for (const candidate of candidates) {
     if (typeof candidate !== "string" || !allowed.has(candidate)) continue;
@@ -149,8 +161,11 @@ function sanitizeCandidates(
   const filteredSet = new Set(filtered);
   const fallback: string[] = [];
 
+  // ✅ ha fallback-ozunk, ne a slug lista eleje domináljon
+  const allowedPool = shuffle(allowedSlugs);
+
   const addByKeywords = (keywords: string[]) => {
-    for (const slug of allowedSlugs) {
+    for (const slug of allowedPool) {
       if (filteredSet.has(slug) || fallback.includes(slug)) continue;
       if (keywords.some((kw) => slug.toLowerCase().includes(kw))) {
         fallback.push(slug);
@@ -164,7 +179,7 @@ function sanitizeCandidates(
   addByKeywords(["lezar", "elenged"]);
 
   if (filtered.length + fallback.length < targetLength) {
-    for (const slug of allowedSlugs) {
+    for (const slug of allowedPool) {
       if (filteredSet.has(slug) || fallback.includes(slug)) continue;
       fallback.push(slug);
       if (filtered.length + fallback.length >= targetLength) break;
@@ -187,12 +202,7 @@ function sanitizeOutput(
   const obj = raw as Record<string, unknown>;
   const anchors = sanitizeAnchors(obj.anchors);
   const flags = sanitizeFlags(obj.flags, dreamTooShort);
-  const candidate_directions = sanitizeCandidates(
-    obj.candidate_directions,
-    allowedSet,
-    flags,
-    allowedSlugs
-  );
+  const candidate_directions = sanitizeCandidates(obj.candidate_directions, allowedSet, flags, allowedSlugs);
 
   return {
     anchors,
@@ -205,23 +215,8 @@ function sanitizeOutput(
 
 function detectSafety(dreamText: string): SafetyValue {
   const lower = dreamText.toLowerCase();
-  const selfHarmKeywords = [
-    "suicide",
-    "kill myself",
-    "end my life",
-    "öngyilk",
-    "megölöm magam",
-    "véget vetek",
-    "nem akarok élni",
-  ];
-  const realityConfusionKeywords = [
-    "not real",
-    "can't tell what's real",
-    "hallucinat",
-    "nem valós",
-    "nem tudom mi a valós",
-    "realitás",
-  ];
+  const selfHarmKeywords = ["suicide", "kill myself", "end my life", "öngyilk", "megölöm magam", "véget vetek", "nem akarok élni"];
+  const realityConfusionKeywords = ["not real", "can't tell what's real", "hallucinat", "nem valós", "nem tudom mi a valós", "realitás"];
 
   if (selfHarmKeywords.some((kw) => lower.includes(kw))) return "self_harm";
   if (realityConfusionKeywords.some((kw) => lower.includes(kw))) return "reality_confusion";
@@ -232,8 +227,7 @@ function clampHistory(history: unknown): HistoryItem[] {
   if (!Array.isArray(history)) return [];
   const items = history.filter(
     (item) =>
-      typeof item?.question === "string" &&
-      (typeof item?.answer === "string" || item?.answer === null)
+      typeof item?.question === "string" && (typeof item?.answer === "string" || item?.answer === null)
   );
   return items.slice(-4);
 }
@@ -245,9 +239,7 @@ function clampPriorEchoes(priorEchoes: unknown): PriorEcho[] {
     .map((echo) => ({
       session_id: typeof echo?.session_id === "string" ? echo.session_id : "",
       anchor_summary:
-        typeof echo?.anchor_summary === "string"
-          ? echo.anchor_summary.slice(0, MAX_ANCHOR_SUMMARY_LENGTH)
-          : "",
+        typeof echo?.anchor_summary === "string" ? echo.anchor_summary.slice(0, MAX_ANCHOR_SUMMARY_LENGTH) : "",
       created_at: typeof echo?.created_at === "string" ? echo.created_at : "",
     }))
     .filter((echo) => echo.session_id && echo.anchor_summary);
@@ -272,9 +264,7 @@ function reduceCatalogForAI(catalog: unknown): unknown {
   };
 
   if (Array.isArray(catalog)) {
-    const reduced = catalog
-      .map((item) => pickFields(item))
-      .filter((item) => item !== null);
+    const reduced = catalog.map((item) => pickFields(item)).filter((item) => item !== null);
     return reduced;
   }
 
@@ -283,9 +273,7 @@ function reduceCatalogForAI(catalog: unknown): unknown {
     for (const key of possibleArrays) {
       const candidate = (catalog as Record<string, unknown>)[key];
       if (Array.isArray(candidate)) {
-        const reduced = candidate
-          .map((item) => pickFields(item))
-          .filter((item) => item !== null);
+        const reduced = candidate.map((item) => pickFields(item)).filter((item) => item !== null);
         return reduced;
       }
     }
@@ -362,10 +350,13 @@ export async function POST(req: Request) {
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini", // server-side only
       temperature: 0,
+      // ✅ segít, hogy tényleg JSON-t kapjunk
+      response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: JSON.stringify(userPayload) },
       ],
+      max_tokens: 650,
     });
 
     const rawContent = completion.choices?.[0]?.message?.content ?? "";

@@ -12,14 +12,37 @@ type DirectionCatalogSummary = {
 
 type RecommendedDirection = { slug: string; reason: string };
 
+function sanitizeTitle(t: string): string {
+  const cleaned = (t ?? "").replace(/\s+/g, " ").trim();
+  if (!cleaned) return "";
+  if (cleaned.length > 72) return cleaned.slice(0, 69).trimEnd() + "…";
+  return cleaned;
+}
+
+// Fisher–Yates shuffle (pozíció-bias csökkentéshez)
+function shuffleInPlace<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 function fallbackRecommendations(active: DirectionCatalogSummary[]): RecommendedDirection[] {
-  const safe = (active ?? []).slice(0, 3);
+  // ne mindig az első 3 legyen
+  const pool = [...(active ?? [])];
+  shuffleInPlace(pool);
+  const safe = pool.slice(0, 3);
+
   const reasons = [
     "Ez az irány segíthet egy konkrét részletnél időzni.",
     "Ez a megközelítés lehetőséget ad az érzetek megfigyelésére.",
     "Ez a lépésről lépésre vezetett irány biztonságos keretet ad a munkához.",
   ];
-  return safe.map((d, idx) => ({ slug: d.slug, reason: reasons[idx] ?? reasons[reasons.length - 1] }));
+  return safe.map((d, idx) => ({
+    slug: d.slug,
+    reason: reasons[idx] ?? reasons[reasons.length - 1],
+  }));
 }
 
 function validateRecommendations(
@@ -54,10 +77,7 @@ export async function POST(req: Request) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseAnonKey) {
-      return NextResponse.json(
-        { error: "Server misconfigured" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
     }
 
     const cookieStore = await cookies();
@@ -108,9 +128,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: dirErr.message }, { status: 500 });
     }
 
-    const activeDirections: DirectionCatalogSummary[] = (directions ?? []).filter(
-      (d) => d.is_active
-    );
+    const activeDirections: DirectionCatalogSummary[] = (directions ?? []).filter((d) => d.is_active);
     const allowedSlugs = new Set(activeDirections.map((d) => d.slug));
 
     const existingRecommendations = validateRecommendations(
@@ -129,12 +147,18 @@ export async function POST(req: Request) {
         "pár mondatban írd le, mi történt és milyen érzések kísérték. Folytasd, amikor készen állsz.";
 
       const recommended = fallbackRecommendations(activeDirections);
+      const title = "Rövid álom";
 
       const { error: updErr } = await supabase
         .from("dream_sessions")
         .update({
           ai_framing_text: framing,
-          ai_framing_audit: { model: "fallback", usage: null, recommended_directions: recommended },
+          ai_framing_audit: {
+            model: "fallback",
+            usage: null,
+            title,
+            recommended_directions: recommended,
+          },
           status: "framed",
         })
         .eq("id", sessionId)
@@ -185,12 +209,49 @@ export async function POST(req: Request) {
       audit = { model: resp.model, usage: resp.usage ?? null, ...audit };
     }
 
+    // 2.5) AI cím generálás (audit.title)
+    let title = sanitizeTitle((audit as any)?.title ?? "");
+    if (!title) {
+      try {
+        const titleResp = await client.chat.completions.create({
+          model: "gpt-4o-mini",
+          temperature: 0.4,
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "Feladat: adj egy rövid, semleges címet az álomhoz.\n" +
+                "Szabályok:\n" +
+                "- Magyar nyelv\n" +
+                "- 3–7 szó\n" +
+                "- Ne fejtsd meg, ne magyarázd, ne diagnosztizálj\n" +
+                "- Konkrét megfigyelhető elemekre utalj (helyzet, tárgy, szereplő, mozgás, hangulat), de ne vonj le következtetést\n" +
+                "- Ne használj idézőjeleket a címben\n" +
+                'Formátum: {"title":"..."}',
+            },
+            { role: "user", content: JSON.stringify({ dream_text: raw, framing }) },
+          ],
+          max_tokens: 60,
+        });
+
+        const parsed = JSON.parse(titleResp.choices?.[0]?.message?.content ?? "{}");
+        title = sanitizeTitle(typeof parsed?.title === "string" ? parsed.title : "");
+      } catch {
+        title = "";
+      }
+    }
+    if (!title) title = "Álom";
+    audit = { ...audit, title };
+
     // 3) AI ajánlott irányok
     const catalogForModel = activeDirections.map((d) => ({
       slug: d.slug,
       title: d.title,
       summary: (d.content as any)?.micro_description ?? d.description ?? "",
     }));
+    // pozíció-bias csökkentése: véletlen sorrendben küldjük
+    shuffleInPlace(catalogForModel);
 
     let recommendations = existingRecommendations;
 
@@ -198,20 +259,21 @@ export async function POST(req: Request) {
       try {
         const recResp = await client.chat.completions.create({
           model: "gpt-4o-mini",
-          temperature: 0.2,
+          temperature: 0.4,
           response_format: { type: "json_object" },
           messages: [
             {
               role: "system",
               content:
-                "Feladat: válassz ki pontosan 3 irányt a megadott katalógusból.\n" +
+                "Feladat: válassz ki pontosan 3 releváns irányt a megadott katalógusból egy nyers álom alapján.\n" +
                 "Szabályok:\n" +
                 "- Csak a megadott slugokat használd.\n" +
-                "- Adj vissza pontosan 3 elemet.\n" +
-                "- Minden elemhez írj 1 semleges, nem értelmező mondatot arról, " +
-                "miért lehet hasznos belépési pont.\n" +
+                "- Pontosan 3 különböző elemet adj vissza.\n" +
+                "- A katalógus sorrendje NEM jelent prioritást (véletlen).\n" +
+                "- Ne válaszd automatikusan a lista elejét: a döntés alapja 2–3 konkrét megfigyelhető álomjel (pl. váltások, érzet, test, ismétlődés, töredezettség).\n" +
+                "- Minden elemhez 1 semleges, nem értelmező mondatot írj: miért lehet jó belépési pont.\n" +
                 "- Ne tulajdoníts jelentést az álomnak, ne diagnosztizálj.\n" +
-                "Formátum: {\"recommended_directions\":[{\"slug\":\"...\",\"reason\":\"...\"}],...}",
+                'Formátum: {"recommended_directions":[{"slug":"...","reason":"..."},{"slug":"...","reason":"..."},{"slug":"...","reason":"..."}]}',
             },
             {
               role: "user",

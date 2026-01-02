@@ -11,10 +11,7 @@ export async function POST(req: Request) {
       (await req.json()) as { session_id?: string; dream_text?: string };
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: "Missing session_id" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
     }
 
     const supabase = await supabaseServer();
@@ -43,29 +40,36 @@ export async function POST(req: Request) {
     let embedding: number[] | null = null;
 
     if (dreamText.length >= 20) {
-      const prompt = [
-        "Create a concise anchor summary of the dream with these constraints:",
-        "- Max 800 characters.",
-        "- Describe only observable elements: characters, places, objects, scene shifts, explicit emotion words.",
-        "- Do NOT interpret or explain meanings; avoid phrases like 'this means', 'suggests', 'represents', or any diagnoses.",
-        "- Output plain text only.",
-        "",
-        "Dream text:",
-        dreamText,
-      ].join("\n");
-
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
       const summaryResp = await openai.chat.completions.create({
         model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
         temperature: 0,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You write concise, literal summaries of dream texts for indexing. " +
+              "No interpretation, no meaning, no diagnosis. Output plain text only.",
+          },
+          {
+            role: "user",
+            content: [
+              "Create a concise anchor summary of the dream with these constraints:",
+              "- Max 800 characters.",
+              "- Describe only observable elements: characters, places, objects, scene shifts, explicit emotion words.",
+              "- Do NOT interpret or explain meanings; avoid phrases like 'this means', 'suggests', 'represents', or any diagnoses.",
+              "- Output plain text only.",
+              "",
+              "Dream text:",
+              dreamText,
+            ].join("\n"),
+          },
+        ],
       });
 
-      const completion =
-        summaryResp.choices?.[0]?.message?.content?.trim() ?? "";
-
-      anchorSummary = completion.slice(0, MAX_SUMMARY_CHARS);
+      const completion = summaryResp.choices?.[0]?.message?.content?.trim() ?? "";
+      anchorSummary = completion.replace(/\s+/g, " ").trim().slice(0, MAX_SUMMARY_CHARS);
 
       if (anchorSummary) {
         const embeddingResp = await openai.embeddings.create({
