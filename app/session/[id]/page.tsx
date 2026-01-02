@@ -14,11 +14,10 @@ type SessionDetail = DreamSession & {
 };
 
 function renderBlockSummary(block: WorkBlock) {
-  if (!isDirectionCardContent(block.content)) return "Ismeretlen blokk";
-  const state = block.content.state ?? "open";
-  const seq = block.content.sequence ?? 0;
-  const question = block.content.ai?.question ?? "(nincs kérdés)";
-  return `#${seq}: ${question} (${state})`;
+  if (!isDirectionCardContent(block.content)) return "Ismeretlen kártya";
+  const question = block.content.ai?.question ?? "";
+  const isAnswered = (block.content.state ?? "open") === "answered";
+  return question ? `${question}${isAnswered ? " · rögzítve" : ""}` : isAnswered ? "Rögzítve" : "Kártya";
 }
 
 export default function SessionOverview() {
@@ -56,44 +55,70 @@ export default function SessionOverview() {
     })();
   }, [id]);
 
+  const Spinner = (
+    <>
+      <div
+        aria-label="Betöltés"
+        className="spinner"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: "999px",
+          border: "2px solid var(--border)",
+          borderTopColor: "var(--text-muted)",
+          animation: "spin 0.9s linear infinite",
+          marginTop: 8,
+        }}
+      />
+      <style jsx>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </>
+  );
+
   return (
     <Shell title="Álom összkép" space="dream">
       {loading ? (
-        <p>Bejelentkezés ellenőrzése…</p>
+        Spinner
       ) : err ? (
         <p style={{ color: "crimson" }}>{err}</p>
       ) : !session ? (
-        <p>Betöltés…</p>
+        Spinner
       ) : (
         <div className="stack">
           <div className="meta-block">
-            <span className="badge-muted">Státusz: {session.status}</span>
+            <span className="badge-muted">{session.status}</span>
             {session.archived_at && (
-              <span className="badge-muted">Archiválva: {new Date(session.archived_at).toLocaleString("hu-HU")}</span>
+              <span className="badge-muted">
+                {new Date(session.archived_at).toLocaleString("hu-HU")}
+              </span>
             )}
           </div>
 
           <Card>
             <div className="stack-tight">
-              <div className="section-title">Rögzített álom</div>
-              <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{session.raw_dream_text}</div>
-            </div>
-          </Card>
-
-          <Card>
-            <div className="stack-tight">
-              <div className="section-title">Keretezés</div>
               <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>
-                {session.ai_framing_text ?? "Még nincs keretezés."}
+                {session.raw_dream_text}
               </div>
             </div>
           </Card>
 
           <Card>
             <div className="stack-tight">
-              <div className="section-title">Kártyás feldolgozás</div>
+              <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>
+                {session.ai_framing_text ?? "—"}
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="stack-tight">
               {workBlocks.length === 0 ? (
-                <p style={{ color: "var(--text-muted)" }}>Még nincsenek blokkok.</p>
+                <p style={{ color: "var(--text-muted)" }}>Még nincsenek kártyák.</p>
               ) : (
                 <ul style={{ paddingLeft: 18, display: "grid", gap: 6 }}>
                   {workBlocks.map((b) => (
@@ -107,17 +132,14 @@ export default function SessionOverview() {
           </Card>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Link href={`/session/${id}/frame`} className="btn btn-primary">
-              Keretezés
-            </Link>
-            <Link href={`/session/${id}/direction`} className="btn btn-primary">
-              Irányválasztás
-            </Link>
             <Link href={`/session/${id}/work`} className="btn btn-primary">
               Feldolgozás
             </Link>
+            <Link href={`/session/${id}/direction`} className="btn btn-secondary">
+              Irányok
+            </Link>
             <Link href="/sessions" className="btn btn-secondary">
-              Vissza a listához
+              Vissza
             </Link>
           </div>
         </div>
