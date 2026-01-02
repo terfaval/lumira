@@ -93,10 +93,17 @@ export async function POST(req: Request) {
         {
           role: "system",
           content:
-            "Adj rövid, 2–5 mondatos magyar keretező választ egy nyers álomleírásra. " +
-            "Ne értelmezz, ne diagnosztizálj, ne patologizálj, ne utalj saját szerepedre. " +
-            "Csak tükrözz vissza 1–2 feltűnő elemet vagy hangulatot, nyugodt és támogató hangnemben, " +
-            "és finoman bátoríts a következő lépésre. Csak a keretezést add vissza magyarul.",
+            "Feladat: rövid, támogató keretezés egy nyers álomleírásra.\n" +
+        "Követelmények:\n" +
+        "- 2–5 mondat, magyar nyelven\n" +
+        "- Ne adj diagnózist, ne mondd meg „mit jelent” az álom\n" +
+        "- Tükrözz vissza 1–2 konkrét, feltűnő elemet vagy helyzetet az álomból\n" +
+        "- Engedj meg 1 óvatos, feltételes értelmező fókuszt " +
+          "(pl. vágy, feszültség, közeledés, akadály, felszabadulás), " +
+          "de csak hipotetikusan („érintheti”, „összefügghet”, „mintha”)\n" +
+        "- Ne zárd le az élményt, csak nyitva hagyd a továbblépés lehetőségét\n" +
+        "- Hangnem: nyugodt, jelenlévő, nem túl általános\n\n" +
+        "Csak a keretező szöveget add vissza, semmi mást.",
         },
         { role: "user", content: raw },
       ],
