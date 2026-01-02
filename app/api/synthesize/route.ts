@@ -266,6 +266,7 @@ function reduceCatalogForAI(catalog: unknown): unknown {
         stop_criteria: (content as any)?.stop_criteria,
         output_spec: (content as any)?.output_spec,
         safety: (content as any)?.safety,
+        micro_description: (content as any)?.micro_description,
       },
     };
   };

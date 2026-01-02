@@ -1,23 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
-import type { DreamSession } from "@/src/lib/types";
+import type { DirectionCatalogItem, DreamSession } from "@/src/lib/types";
+import { requireUserId } from "@/src/lib/db";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
 export default function FramePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [session, setSession] = useState<DreamSession | null>(null);
+  const [catalog, setCatalog] = useState<DirectionCatalogItem[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const { loading } = useRequireAuth();
   const attemptedRef = useRef(false);
 
-  const load = useCallback(async () => {
+  const loadSession = useCallback(async () => {
     setErr(null);
     const { data, error } = await supabase
       .from("dream_sessions")
@@ -28,9 +30,27 @@ export default function FramePage() {
     else setSession(data as DreamSession);
   }, [id]);
 
+  const loadCatalog = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("direction_catalog")
+      .select("slug, title, description, is_active, content, sort_order")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true, nullsFirst: false })
+      .order("slug", { ascending: true });
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    setCatalog((data ?? []) as DirectionCatalogItem[]);
+  }, []);
+
   useEffect(() => {
-    load();
-  }, [load]);
+    loadSession();
+  }, [loadSession]);
+
+  useEffect(() => {
+    loadCatalog();
+  }, [loadCatalog]);
 
   const runFraming = useCallback(async () => {
     setBusy(true);
@@ -52,14 +72,14 @@ export default function FramePage() {
         body: JSON.stringify({ sessionId: id }),
       });
       if (!res.ok) throw new Error(await res.text());
-      await load();
+      await loadSession();
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Hiba";
       setErr(message);
     } finally {
       setBusy(false);
     }
-  }, [id, load]);
+  }, [id, loadSession]);
 
   useEffect(() => {
     if (
@@ -73,6 +93,41 @@ export default function FramePage() {
     }
   }, [session, busy, runFraming]);
 
+  const recommended = useMemo(() => {
+    return catalog.filter((c) => c.is_active).slice(0, 3);
+  }, [catalog]);
+
+  const handleDirectionSelect = useCallback(
+    async (slug: string) => {
+      setBusy(true);
+      setErr(null);
+      try {
+        const userId = await requireUserId();
+        const payload = {
+          session_id: id,
+          user_id: userId,
+          ai_recommendations: [],
+          chosen_direction_slugs: [slug],
+          choice_source: "ai_only" as const,
+        };
+
+        const { error } = await supabase
+          .from("morning_direction_choices")
+          .upsert(payload, { onConflict: "session_id" });
+
+        if (error) throw error;
+
+        router.push(`/session/${id}/work?direction=${slug}`);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Hiba";
+        setErr(message);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [id, router]
+  );
+
   return (
     <Shell title="Keretezés">
       {loading ? (
@@ -80,28 +135,84 @@ export default function FramePage() {
       ) : !session ? (
         <p>Betöltés…</p>
       ) : (
-        <>
+        <div className="stack">
           <p style={{ opacity: 0.8 }}>Session státusz: {session.status}</p>
 
           <h3>AI keretezés</h3>
-          <div style={{ whiteSpace: "pre-wrap", padding: 12, border: "1px solid #ddd", borderRadius: 10 }}>
+          <div
+            style={{
+              whiteSpace: "pre-wrap",
+              padding: 12,
+              border: "1px solid #ddd",
+              borderRadius: 10,
+              background: "#fafafa",
+            }}
+          >
             {session.ai_framing_text ?? "Még nincs keretezés. Kérhetsz egyet."}
           </div>
 
-          <div style={{ marginTop: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <PrimaryButton onClick={runFraming} disabled={busy}>
-              Keretezés frissítése
-            </PrimaryButton>
-            <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>
-              Tovább az irányokhoz
-            </PrimaryButton>
-            <PrimaryButton onClick={() => router.push(`/session/${id}`)}>
-              Megállok (összkép)
-            </PrimaryButton>
-          </div>
+          {!session.ai_framing_text ? (
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <PrimaryButton onClick={runFraming} disabled={busy}>
+                Keretezés kérése
+              </PrimaryButton>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={runFraming}
+              disabled={busy}
+              className="btn btn-secondary"
+              style={{ alignSelf: "flex-start", padding: "4px 10px", fontSize: 12 }}
+            >
+              Keretezés frissítése (debug)
+            </button>
+          )}
+
+          {session.ai_framing_text && (
+            <div className="stack">
+              <p style={{ opacity: 0.8 }}>
+                Folytasd az álommunkát egy iránykártyával. Válaszd ki, amelyik most
+                megszólít.
+              </p>
+
+              <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+                {recommended.map((d) => (
+                  <button
+                    key={d.slug}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handleDirectionSelect(d.slug)}
+                    style={{ textAlign: "left" }}
+                    className="card"
+                  >
+                    <div className="stack-tight">
+                      <div style={{ fontWeight: 700 }}>{d.title}</div>
+                      <div style={{ opacity: 0.8 }}>
+                        {(d.content as any)?.micro_description ?? d.description}
+                      </div>
+                      <div style={{ fontSize: 12, opacity: 0.6 }}>slug: {d.slug}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>
+                  További irányok
+                </PrimaryButton>
+                <PrimaryButton
+                  variant="secondary"
+                  onClick={() => router.push(`/archive`)}
+                >
+                  Később folytatom
+                </PrimaryButton>
+              </div>
+            </div>
+          )}
 
           {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-        </>
+        </div>
       )}
     </Shell>
   );

@@ -99,12 +99,26 @@ export default function DirectionPage() {
             Válassz 0–n irányt. (Wireframe: egyelőre katalógusból.)
           </p>
 
-          <div style={{ display: "grid", gap: 10 }}>
+          <div
+            style={{
+              display: "grid",
+              gap: 10,
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            }}
+          >
             {catalog.map((d) => (
-              <label key={d.slug} style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12 }}>
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                  <input type="checkbox" checked={!!selected[d.slug]} onChange={() => toggle(d.slug)} />
-                  <div>
+              <label
+                key={d.slug}
+                style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, display: "block" }}
+              >
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <input
+                    type="checkbox"
+                    checked={!!selected[d.slug]}
+                    onChange={() => toggle(d.slug)}
+                    style={{ marginTop: 4 }}
+                  />
+                  <div className="stack-tight">
                     <div style={{ fontWeight: 700 }}>{d.title}</div>
                     <div style={{ opacity: 0.8 }}>{d.description}</div>
                     <div style={{ fontSize: 12, opacity: 0.6 }}>slug: {d.slug}</div>
