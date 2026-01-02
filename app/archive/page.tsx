@@ -45,10 +45,7 @@ function applyFilters(
   });
 }
 
-function applySort(
-  sessions: ArchiveSessionSummary[],
-  sort: SortOption
-): ArchiveSessionSummary[] {
+function applySort(sessions: ArchiveSessionSummary[], sort: SortOption): ArchiveSessionSummary[] {
   const sorted = [...sessions];
   sorted.sort((a, b) => {
     if (sort === "date_desc") {
@@ -64,7 +61,7 @@ function applySort(
     }
     if (sort === "score_asc") {
       if (a.score !== b.score) return a.score - b.score;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     }
 
     return 0;
@@ -74,7 +71,7 @@ function applySort(
 
 function DirectionChips({ slugs }: { slugs: string[] }) {
   if (slugs.length === 0) {
-    return <span className="badge-muted">Nincs irány érintve</span>;
+    return <span className="badge-muted">Nincs érintett irány</span>;
   }
 
   const primary = slugs.slice(0, 2);
@@ -100,14 +97,10 @@ export default async function ArchivePage({
   const status = parseStatus(searchParams.status as string | undefined);
   const range = parseRange(searchParams.range as string | undefined);
   const sort = parseSort(searchParams.sort as string | undefined);
-  const directions = (searchParams.directions as string | undefined)
-    ?.split(",")
-    .filter(Boolean)
-    .slice(0, 20) ?? [];
+  const directions =
+    (searchParams.directions as string | undefined)?.split(",").filter(Boolean).slice(0, 20) ?? [];
 
-  const { summaries, availableDirections } = await fetchArchiveSessions(
-    range === "all" ? undefined : range
-  );
+  const { summaries, availableDirections } = await fetchArchiveSessions(range === "all" ? undefined : range);
 
   const filtered = applyFilters(summaries, { status, directions });
   const sorted = applySort(filtered, sort);
@@ -116,7 +109,7 @@ export default async function ArchivePage({
     <Shell title="Álmonapló">
       <div className="stack">
         <p style={{ color: "var(--text-muted)" }}>
-          Itt láthatod minden eddig rögzített álom feldolgozottsági összképét.
+          Itt látod a korábban rögzített álmaid összképét.
         </p>
 
         <ArchiveControls
@@ -128,16 +121,16 @@ export default async function ArchivePage({
         />
 
         <div className="meta-block">
-          <span className="badge-muted">Összesen: {summaries.length}</span>
-          <span className="badge-muted">Találatok: {sorted.length}</span>
+          <span className="badge-muted">{summaries.length} összesen</span>
+          <span className="badge-muted">{sorted.length} találat</span>
           <Link className="badge-muted" href="/sessions">
-            Vissza a folyamatban lévőkhöz
+            Vissza
           </Link>
         </div>
 
         {sorted.length === 0 ? (
           <Card muted>
-            <p style={{ color: "var(--text-muted)" }}>Nincs a feltételeknek megfelelő álom.</p>
+            <p style={{ color: "var(--text-muted)" }}>Itt most nincs találat.</p>
           </Card>
         ) : (
           <div className="stack">
@@ -157,18 +150,14 @@ export default async function ArchivePage({
                       {new Date(session.created_at).toLocaleDateString("hu-HU")}
                     </div>
                   </div>
+
                   <DirectionChips slugs={session.touched_directions} />
+
                   <div className="meta-block">
-                    <span className="badge-muted">
-                      Feldolgozottság: {session.feldolgozottsag}
-                    </span>
-                    <span className="badge-muted">
-                      Érintett irányok: {session.touched_directions_count}
-                    </span>
-                    <span className="badge-muted">
-                      Megválaszolt kártyák: {session.answered_cards_count}
-                    </span>
-                    <span className="badge-muted">Pontszám: {session.score}</span>
+                    <span className="badge-muted">{session.feldolgozottsag}</span>
+                    <span className="badge-muted">{session.touched_directions_count} irány</span>
+                    <span className="badge-muted">{session.answered_cards_count} kártya</span>
+                    <span className="badge-muted">{session.score} pont</span>
                   </div>
                 </div>
               </Card>
