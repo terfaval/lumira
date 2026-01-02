@@ -7,21 +7,47 @@ import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 export default function EveningLanding() {
   const { loading } = useRequireAuth();
 
+  const Spinner = (
+    <>
+      <div
+        aria-label="Betöltés"
+        className="spinner"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: "999px",
+          border: "2px solid var(--border)",
+          borderTopColor: "var(--text-muted)",
+          animation: "spin 0.9s linear infinite",
+          marginTop: 8,
+        }}
+      />
+      <style jsx>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </>
+  );
+
   return (
-    <Shell title="Esti tér" space="evening">
+    <Shell title="Álom előkészítő gyakorlatok" space="evening">
       {loading ? (
-        <p>Bejelentkezés ellenőrzése…</p>
+        Spinner
       ) : (
         <div className="stack">
           <p style={{ color: "var(--text-muted)" }}>
-            Ez a tér este nyílik: kártyák, rövid levezető blokkok, visszakapcsolás az álomtérhez.
+            Egy rövid esti tér: lecsendesítés, ráhangolódás az alvásra.
           </p>
+
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link href="/evening/cards" className="btn btn-primary">
-              Esti kártyák
+              Kártyák
             </Link>
             <Link href="/new" className="btn btn-secondary">
-              Vissza az álomtérhez
+              Álomtér
             </Link>
           </div>
         </div>
