@@ -28,14 +28,14 @@ export function Shell({
       <NapszakInitializer space={space} />
       <header className="shell-header">
         <nav className="shell-nav">
-          <Link href="/">Kezdő</Link>
-          <Link href="/archive">Archívum</Link>
-          <Link href="/sessions">Folyamatban</Link>
-          <Link href="/evening">Esti tér</Link>
+          <Link href="/">Álomtér</Link>
+          <Link href="/archive">Álomnapló</Link>
+          <Link href="/session">Megkezdett</Link>
+          <Link href="/evening">Álom előkészítés</Link>
         </nav>
         <div className="shell-actions">
           <PrimaryButton onClick={logout} variant="secondary">
-            Kijelentkezés
+            Kilépés
           </PrimaryButton>
         </div>
       </header>

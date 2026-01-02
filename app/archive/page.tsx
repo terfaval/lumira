@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/Card";
 import { Shell } from "@/components/Shell";
@@ -8,6 +11,8 @@ import {
   type RangeOption,
   type SortOption,
 } from "@/src/lib/archive";
+import { useRequireAuth } from "@/src/hooks/useRequireAuth";
+import { requireUserId } from "@/src/lib/db";
 import ArchiveControls from "./ArchiveControls";
 
 const rangeOptions: RangeOption[] = ["all", "7", "30", "90", "365"];
@@ -89,7 +94,7 @@ function DirectionChips({ slugs }: { slugs: string[] }) {
   );
 }
 
-export default async function ArchivePage({
+export default function ArchivePage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -100,7 +105,43 @@ export default async function ArchivePage({
   const directions =
     (searchParams.directions as string | undefined)?.split(",").filter(Boolean).slice(0, 20) ?? [];
 
-  const { summaries, availableDirections } = await fetchArchiveSessions(range === "all" ? undefined : range);
+  const { loading } = useRequireAuth();
+  const [archiveData, setArchiveData] = useState<{
+    summaries: ArchiveSessionSummary[];
+    availableDirections: string[];
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (loading) return;
+
+    let isMounted = true;
+
+    async function loadArchive() {
+      try {
+        const userId = await requireUserId();
+        const data = await fetchArchiveSessions(userId, range === "all" ? undefined : range);
+        if (!isMounted) return;
+        setArchiveData(data);
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        if (!isMounted) return;
+        setError("Hiba történt az archívum betöltésekor.");
+        setArchiveData({ summaries: [], availableDirections: [] });
+      }
+    }
+
+    loadArchive();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [loading, range]);
+
+  const summaries = archiveData?.summaries ?? [];
+  const availableDirections = archiveData?.availableDirections ?? [];
+  const isLoading = loading || archiveData === null;
 
   const filtered = applyFilters(summaries, { status, directions });
   const sorted = applySort(filtered, sort);
@@ -123,12 +164,20 @@ export default async function ArchivePage({
         <div className="meta-block">
           <span className="badge-muted">{summaries.length} összesen</span>
           <span className="badge-muted">{sorted.length} találat</span>
-          <Link className="badge-muted" href="/sessions">
+          <Link className="badge-muted" href="/">
             Vissza
           </Link>
         </div>
 
-        {sorted.length === 0 ? (
+        {isLoading ? (
+          <Card muted>
+            <p style={{ color: "var(--text-muted)" }}>Betöltés...</p>
+          </Card>
+        ) : error ? (
+          <Card muted>
+            <p style={{ color: "var(--text-muted)" }}>{error}</p>
+          </Card>
+        ) : sorted.length === 0 ? (
           <Card muted>
             <p style={{ color: "var(--text-muted)" }}>Itt most nincs találat.</p>
           </Card>

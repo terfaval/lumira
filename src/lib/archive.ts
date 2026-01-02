@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { supabaseServer } from "./supabase/server";
+import { supabase } from "./supabase/client";
 import { isDirectionCardContent, type WorkBlock } from "./types";
 
 export type Feldolgozottsag = "vazlat" | "erintett" | "feldolgozott";
@@ -48,23 +47,14 @@ function extractAuditTitle(audit: unknown): string | null {
   return null;
 }
 
-export async function fetchArchiveSessions(range?: RangeOption) {
-  const supabase = await supabaseServer();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError) throw authError;
-  if (!user) redirect("/login");
-
+export async function fetchArchiveSessions(userId: string, range?: RangeOption) {
   const days = range && range !== "all" ? rangeToDays[range] : undefined;
   const sinceDate = days ? new Date(Date.now() - days * 24 * 60 * 60 * 1000) : null;
 
   let sessionQuery = supabase
     .from("dream_sessions")
     .select("id, ai_framing_audit, status, created_at")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   if (sinceDate) {
@@ -82,7 +72,8 @@ export async function fetchArchiveSessions(range?: RangeOption) {
       .from("work_blocks")
       .select("session_id, content")
       .eq("block_type", "dream_analysis")
-      .in("session_id", sessionIds);
+      .in("session_id", sessionIds)
+      .eq("user_id", userId);
 
     if (wbError) throw wbError;
     workBlocks = (blocks ?? []) as Pick<WorkBlock, "session_id" | "content">[];
