@@ -21,7 +21,6 @@ export default function EveningRun() {
   const [card, setCard] = useState<EveningCardCatalogItem | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
-  const [answers, setAnswers] = useState<string[]>([]);
   const [finishing, setFinishing] = useState(false);
   const [completed, setCompleted] = useState(false);
 
@@ -41,9 +40,6 @@ export default function EveningRun() {
 
       const typed = (data ?? null) as EveningCardCatalogItem | null;
       setCard(typed);
-
-      const steps = (typed?.content?.steps ?? []) as EveningCardStep[];
-      setAnswers(Array.from({ length: steps.length }, () => ""));
       setStepIndex(0);
     })();
   }, [slug]);
@@ -57,14 +53,6 @@ export default function EveningRun() {
   const canGoBack = stepIndex > 0;
   const canGoNext = stepIndex < steps.length - 1;
 
-  function updateAnswer(value: string) {
-    setAnswers((prev) => {
-      const next = [...prev];
-      next[stepIndex] = value;
-      return next;
-    });
-  }
-
   async function finishRun() {
     if (!card) return;
     setFinishing(true);
@@ -73,6 +61,7 @@ export default function EveningRun() {
       const userId = await requireUserId();
       const meta = (card.content as { meta?: { version?: string | number | null } } | null)?.meta;
       const version = card.version ?? meta?.version ?? null;
+
       const { error } = await supabase.from("evening_card_usage_log").insert({
         user_id: userId,
         card_slug: slug,
@@ -89,11 +78,36 @@ export default function EveningRun() {
     }
   }
 
+  const Spinner = (
+    <>
+      <div
+        aria-label="Betöltés"
+        className="spinner"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: "999px",
+          border: "2px solid var(--border)",
+          borderTopColor: "var(--text-muted)",
+          animation: "spin 0.9s linear infinite",
+          marginTop: 8,
+        }}
+      />
+      <style jsx>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </>
+  );
+
   if (completed) {
     return (
       <Shell title={card?.title ?? "Esti kártya"} space="evening">
         <div className="stack">
-          <p style={{ fontWeight: 600 }}>Kész! Naplóztuk a kártya használatát.</p>
+          <p style={{ fontWeight: 600 }}>Szép álmokat.</p>
           <Link href="/evening/cards" className="btn btn-primary" style={{ width: "fit-content" }}>
             Vissza a kártyákhoz
           </Link>
@@ -105,12 +119,13 @@ export default function EveningRun() {
   return (
     <Shell title={card?.title ?? "Esti kártya"} space="evening">
       {loading ? (
-        <p>Bejelentkezés ellenőrzése…</p>
+        Spinner
       ) : (
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
+
           {!card ? (
-            <p>Betöltés…</p>
+            Spinner
           ) : steps.length === 0 ? (
             <Card className="stack-tight">
               {card.content?.goal_md && <p style={{ whiteSpace: "pre-wrap" }}>{card.content.goal_md}</p>}
@@ -131,15 +146,17 @@ export default function EveningRun() {
               )}
 
               <Card className="stack-tight">
-                <div className="meta-block">Lépés {stepIndex + 1} / {steps.length}</div>
-                {currentStep?.context_md && <div style={{ whiteSpace: "pre-wrap", opacity: 0.8 }}>{currentStep.context_md}</div>}
-                {currentStep?.question && <div style={{ fontWeight: 700, fontSize: 16 }}>{currentStep.question}</div>}
-                <textarea
-                  value={answers[stepIndex] ?? ""}
-                  onChange={(e) => updateAnswer(e.target.value)}
-                  rows={4}
-                  placeholder="Jegyzeteid ide kerülnek (nem mentjük el)"
-                />
+                <div className="meta-block">
+                  Lépés {stepIndex + 1} / {steps.length}
+                </div>
+
+                {currentStep?.context_md && (
+                  <div style={{ whiteSpace: "pre-wrap", opacity: 0.8 }}>{currentStep.context_md}</div>
+                )}
+
+                {currentStep?.question && (
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>{currentStep.question}</div>
+                )}
 
                 <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                   <button
@@ -150,8 +167,12 @@ export default function EveningRun() {
                   >
                     Vissza
                   </button>
+
                   {canGoNext ? (
-                    <button onClick={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))} className="btn btn-secondary">
+                    <button
+                      onClick={() => setStepIndex((i) => Math.min(steps.length - 1, i + 1))}
+                      className="btn btn-secondary"
+                    >
                       Következő
                     </button>
                   ) : (
@@ -160,11 +181,6 @@ export default function EveningRun() {
                     </button>
                   )}
                 </div>
-                {!canGoNext && (
-                  <button onClick={finishRun} disabled={finishing} className="btn btn-primary" style={{ width: "fit-content" }}>
-                    {finishing ? "Mentés…" : "Befejezés"}
-                  </button>
-                )}
               </Card>
             </div>
           )}
