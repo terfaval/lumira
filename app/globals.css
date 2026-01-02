@@ -210,13 +210,19 @@ p {
 /* ────────────────────────────────────────────────────────────── */
 
 .shell {
-  max-width: 840px;
+  max-width: 840px;         /* alap layoutokhoz marad a régi */
   margin: 0 auto;
   padding: var(--space-4) var(--space-3) var(--space-5);
   display: grid;
   gap: var(--space-3);
 }
 
+/* Fluid változat: arányos szélesség a Split oldalakhoz */
+.shell--fluid {
+  max-width: clamp(960px, 88vw, 1280px);
+}
+
+/* (A régi header osztályok maradhatnak, de a Shell komponens már nem használja őket) */
 .shell-header {
   display: flex;
   align-items: center;
@@ -385,11 +391,23 @@ textarea:focus {
   gap: var(--space-3);
 }
 
-/* Desktop / tablet: két oszlop */
+/* Desktop / tablet: két oszlop — alapszinten felezés */
 @media (min-width: 820px) {
   .split-layout {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr 1fr;
     align-items: stretch;
+  }
+}
+
+/* Nagyobb nézet: arányos (bal/jobb) oszloparányok */
+@media (min-width: 1120px) {
+  .split-layout {
+    grid-template-columns: 0.44fr 0.56fr; /* több hely a feldolgozó (jobb) panelnek */
+  }
+}
+@media (min-width: 1400px) {
+  .split-layout {
+    grid-template-columns: 0.42fr 0.58fr;
   }
 }
 
