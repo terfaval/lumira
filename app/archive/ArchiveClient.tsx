@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/Card";
 import { Shell } from "@/components/Shell";
 import {
@@ -18,8 +19,10 @@ import ArchiveControls from "./ArchiveControls";
 const rangeOptions: RangeOption[] = ["all", "7", "30", "90", "365"];
 const sortOptions: SortOption[] = ["date_desc", "date_asc", "score_desc", "score_asc"];
 
-function parseStatus(value: string | undefined): Feldolgozottsag | undefined {
-  if (value === "vazlat" || value === "erintett" || value === "feldolgozott") return value;
+type ArchiveStatusFilter = Feldolgozottsag | "lezart";
+
+function parseStatus(value: string | undefined): ArchiveStatusFilter | undefined {
+  if (value === "vazlat" || value === "erintett" || value === "feldolgozott" || value === "lezart") return value;
   return undefined;
 }
 function parseRange(value: string | undefined): RangeOption {
@@ -31,10 +34,14 @@ function parseSort(value: string | undefined): SortOption {
 
 function applyFilters(
   sessions: ArchiveSessionSummary[],
-  filters: { status?: Feldolgozottsag; directions: string[] }
+  filters: { status?: ArchiveStatusFilter; directions: string[] }
 ) {
   return sessions.filter((session) => {
-    if (filters.status && session.feldolgozottsag !== filters.status) return false;
+    if (filters.status) {
+      const computed = getComputedStatus(session);
+      if (computed !== filters.status) return false;
+    }
+
     if (
       filters.directions.length > 0 &&
       !session.touched_directions.some((slug) => filters.directions.includes(slug))
@@ -64,7 +71,7 @@ function applySort(sessions: ArchiveSessionSummary[], sort: SortOption): Archive
 }
 
 function DirectionChips({ slugs }: { slugs: string[] }) {
-  if (slugs.length === 0) return <span className="badge-muted">Nincs érintett irány</span>;
+  if (!slugs || slugs.length === 0) return null;
 
   const primary = slugs.slice(0, 2);
   const extra = slugs.length - primary.length;
@@ -81,16 +88,50 @@ function DirectionChips({ slugs }: { slugs: string[] }) {
   );
 }
 
-export default function ArchiveClient({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  const status = parseStatus(searchParams.status as string | undefined);
-  const range = parseRange(searchParams.range as string | undefined);
-  const sort = parseSort(searchParams.sort as string | undefined);
-  const directions =
-    (searchParams.directions as string | undefined)?.split(",").filter(Boolean).slice(0, 20) ?? [];
+function formatStatusLabel(status: string) {
+  if (status === "vazlat") return "Vázlat";
+  if (status === "erintett") return "Érintett";
+  if (status === "feldolgozott") return "Feldolgozott";
+  if (status === "lezart") return "Lezárt";
+  return status;
+}
+
+function getComputedStatus(session: ArchiveSessionSummary): ArchiveStatusFilter {
+  const s: any = session as any;
+  const feld = (s.feldolgozottsag as string | undefined) ?? "";
+  const status = s.status as string | undefined;
+  const archivedAt = s.archived_at as string | null | undefined;
+
+  if (feld === "lezart" || status === "closed" || status === "archived" || Boolean(archivedAt)) return "lezart";
+  // fallback a meglévő enumokra
+  if (feld === "vazlat" || feld === "erintett" || feld === "feldolgozott") return feld;
+  // ha valamiért üres/idegen jön, ne dőljön el:
+  return "vazlat";
+}
+
+function getSnippet(session: ArchiveSessionSummary): string {
+  const s: any = session as any;
+  const raw =
+    (s.raw_dream_text as string | undefined | null) ??
+    (s.dream_text as string | undefined | null) ??
+    (s.content as string | undefined | null) ??
+    "";
+  const t = raw.trim();
+  if (!t) return "";
+  const cut = t.slice(0, 170);
+  return t.length > 170 ? `${cut}…` : cut;
+}
+
+export default function ArchiveClient() {
+  const sp = useSearchParams();
+
+  const status = parseStatus(sp.get("status") ?? undefined);
+  const range = parseRange(sp.get("range") ?? undefined);
+  const sort = parseSort(sp.get("sort") ?? undefined);
+  const directions = (sp.get("directions") ?? "")
+    .split(",")
+    .filter(Boolean)
+    .slice(0, 20);
 
   const { loading } = useRequireAuth();
   const [archiveData, setArchiveData] = useState<{
@@ -133,6 +174,20 @@ export default function ArchiveClient({
   const filtered = applyFilters(summaries, { status, directions });
   const sorted = applySort(filtered, sort);
 
+  const groups = [
+    { key: "vazlat" as const, title: "Vázlatok" },
+    { key: "erintett" as const, title: "Érintettek" },
+    { key: "feldolgozott" as const, title: "Feldolgozottak" },
+    { key: "lezart" as const, title: "Lezártak" },
+  ];
+
+  const grouped = groups
+    .map((g) => ({
+      ...g,
+      items: sorted.filter((s) => getComputedStatus(s) === g.key),
+    }))
+    .filter((g) => g.items.length > 0);
+
   return (
     <Shell title="Álmonapló">
       <div className="stack">
@@ -145,14 +200,6 @@ export default function ArchiveClient({
           selectedRange={range}
           selectedSort={sort}
         />
-
-        <div className="meta-block">
-          <span className="badge-muted">{summaries.length} összesen</span>
-          <span className="badge-muted">{sorted.length} találat</span>
-          <Link className="badge-muted" href="/">
-            Vissza
-          </Link>
-        </div>
 
         {isLoading ? (
           <Card muted>
@@ -168,26 +215,68 @@ export default function ArchiveClient({
           </Card>
         ) : (
           <div className="stack">
-            {sorted.map((session) => (
-              <Card key={session.id}>
-                <div className="stack-tight">
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
-                    <div style={{ fontWeight: 700 }}>{session.title}</div>
-                    <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
-                      {new Date(session.created_at).toLocaleDateString("hu-HU")}
-                    </div>
-                  </div>
-
-                  <DirectionChips slugs={session.touched_directions} />
-
-                  <div className="meta-block">
-                    <span className="badge-muted">{session.feldolgozottsag}</span>
-                    <span className="badge-muted">{session.touched_directions_count} irány</span>
-                    <span className="badge-muted">{session.answered_cards_count} kártya</span>
-                    <span className="badge-muted">{session.score} pont</span>
-                  </div>
+            {grouped.map((group) => (
+              <div key={group.key} className="stack">
+                <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: 0.2, color: "var(--text-muted)" }}>
+                  {group.title}
                 </div>
-              </Card>
+
+                <div className="stack">
+                  {group.items.map((session) => {
+                    const computedStatus = getComputedStatus(session);
+                    const snippet = getSnippet(session);
+
+                    const progressParts = [
+                      session.answered_cards_count ? `${session.answered_cards_count} kártya` : null,
+                      session.touched_directions_count ? `${session.touched_directions_count} irány` : null,
+                    ].filter(Boolean);
+                    const progress = progressParts.length ? progressParts.join(" · ") : "—";
+
+                    return (
+                      <Link
+                        key={session.id}
+                        href={`/session/${session.id}`}
+                        style={{ textDecoration: "none" }}
+                        aria-label={`Álom megnyitása: ${session.title}`}
+                      >
+                        <Card>
+                          <div className="stack-tight">
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                gap: 12,
+                                alignItems: "baseline",
+                              }}
+                            >
+                              <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+                                <div style={{ fontWeight: 800 }}>{session.title}</div>
+                                <span className="badge-muted">{formatStatusLabel(computedStatus)}</span>
+                              </div>
+
+                              <div style={{ color: "var(--text-muted)", fontSize: 13, whiteSpace: "nowrap" }}>
+                                {progress}
+                              </div>
+                            </div>
+
+                            {snippet ? (
+                              <div style={{ opacity: 0.85, whiteSpace: "pre-wrap" }}>{snippet}</div>
+                            ) : (
+                              <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Nincs mentett álomszöveg.</div>
+                            )}
+
+                            {session.touched_directions?.length ? <DirectionChips slugs={session.touched_directions} /> : null}
+
+                            <div style={{ fontSize: 12, opacity: 0.65 }}>
+                              {new Date(session.created_at).toLocaleString("hu-HU")}
+                            </div>
+                          </div>
+                        </Card>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
           </div>
         )}

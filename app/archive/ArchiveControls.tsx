@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Feldolgozottsag, RangeOption, SortOption } from "@/src/lib/archive";
 
+type ArchiveStatusFilter = Feldolgozottsag | "lezart";
+
 const rangeOptions = [
   { value: "all", label: "Időszak: Mind" },
   { value: "7", label: "Utolsó 7 nap" },
@@ -21,7 +23,7 @@ const sortOptions = [
 
 type ArchiveControlsProps = {
   availableDirections: string[];
-  selectedStatus?: Feldolgozottsag;
+  selectedStatus?: ArchiveStatusFilter;
   selectedDirections: string[];
   selectedRange: RangeOption;
   selectedSort: SortOption;
@@ -69,68 +71,69 @@ export default function ArchiveControls({
 
   function toggleDirection(slug: string) {
     const next = new Set(selectedDirectionSet);
-    if (next.has(slug)) {
-      next.delete(slug);
-    } else {
-      next.add(slug);
-    }
+    if (next.has(slug)) next.delete(slug);
+    else next.add(slug);
+
     const combined = Array.from(next);
     updateSearch({ directions: combined.length ? combined.join(",") : null });
   }
 
   return (
-    <div className="card" style={{ display: "grid", gap: 12 }}>
-      <div style={{ display: "grid", gap: 6 }}>
-        <label style={{ fontWeight: 600 }}>Feldolgozottság</label>
-        <select
-          className="input-field"
-          value={selectedStatus ?? ""}
-          onChange={(e) => handleStatusChange(e.target.value)}
-        >
-          <option value="">Mind</option>
-          <option value="vazlat">Vázlat</option>
-          <option value="erintett">Érintett</option>
-          <option value="feldolgozott">Feldolgozott</option>
-        </select>
+    <div className="card" style={{ display: "grid", gap: 10, padding: 12 }}>
+      {/* felső sor: státusz / időszak / rendezés egymás mellett */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+          gap: 10,
+          alignItems: "end",
+        }}
+      >
+        <div style={{ display: "grid", gap: 6 }}>
+          <label style={{ fontWeight: 600, fontSize: 13 }}>Állapot</label>
+          <select
+            className="input-field"
+            value={selectedStatus ?? ""}
+            onChange={(e) => handleStatusChange(e.target.value)}
+          >
+            <option value="">Mind</option>
+            <option value="vazlat">Vázlat</option>
+            <option value="erintett">Érintett</option>
+            <option value="feldolgozott">Feldolgozott</option>
+            <option value="lezart">Lezárt</option>
+          </select>
+        </div>
+
+        <div style={{ display: "grid", gap: 6 }}>
+          <label style={{ fontWeight: 600, fontSize: 13 }}>Időszak</label>
+          <select className="input-field" value={selectedRange} onChange={(e) => handleRangeChange(e.target.value)}>
+            {rangeOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: "grid", gap: 6 }}>
+          <label style={{ fontWeight: 600, fontSize: 13 }}>Rendezés</label>
+          <select className="input-field" value={selectedSort} onChange={(e) => handleSortChange(e.target.value)}>
+            {sortOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <div style={{ display: "grid", gap: 6 }}>
-        <label style={{ fontWeight: 600 }}>Időszak</label>
-        <select
-          className="input-field"
-          value={selectedRange}
-          onChange={(e) => handleRangeChange(e.target.value)}
-        >
-          {rangeOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div style={{ display: "grid", gap: 6 }}>
-        <label style={{ fontWeight: 600 }}>Rendezés</label>
-        <select
-          className="input-field"
-          value={selectedSort}
-          onChange={(e) => handleSortChange(e.target.value)}
-        >
-          {sortOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
+      {/* irányok */}
       <div style={{ display: "grid", gap: 6 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <label style={{ fontWeight: 600 }}>Irányok</label>
-          <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
-            OR logika, érintett kártyák alapján
-          </span>
+          <label style={{ fontWeight: 600, fontSize: 13 }}>Irányok</label>
+          <span style={{ color: "var(--text-muted)", fontSize: 12 }}>OR</span>
         </div>
+
         {availableDirections.length === 0 ? (
           <span style={{ color: "var(--text-muted)" }}>Még nincs érintett irány.</span>
         ) : (

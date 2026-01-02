@@ -33,21 +33,46 @@ export default function EveningCardPreview() {
   const meta = card?.content?.meta;
   const tips: string[] | undefined = card?.content?.tips;
 
+  const Spinner = (
+    <>
+      <div
+        aria-label="Betöltés"
+        className="spinner"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: "999px",
+          border: "2px solid var(--border)",
+          borderTopColor: "var(--text-muted)",
+          animation: "spin 0.9s linear infinite",
+          marginTop: 8,
+        }}
+      />
+      <style jsx>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </>
+  );
+
   return (
-    <Shell title={card?.title ?? "Esti kártya"} space="evening">
+    <Shell title={card?.title ?? "Kártya"} space="evening">
       {loading ? (
-        <p>Bejelentkezés ellenőrzése…</p>
+        Spinner
       ) : (
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
+
           {!card ? (
-            <p>Betöltés…</p>
+            Spinner
           ) : (
             <div className="stack">
               {goal && (
                 <Card>
                   <div className="stack-tight">
-                    <div className="section-title">Cél</div>
                     <p style={{ whiteSpace: "pre-wrap" }}>{goal}</p>
                   </div>
                 </Card>
@@ -56,8 +81,10 @@ export default function EveningCardPreview() {
               {(meta?.time || meta?.not_recommended) && (
                 <Card muted>
                   <div className="stack-tight">
-                    {meta?.time && <div>Időkeret: {meta.time}</div>}
-                    {meta?.not_recommended && <div style={{ color: "#f1a6a6" }}>Nem ajánlott: {meta.not_recommended}</div>}
+                    {meta?.time && <div>{meta.time}</div>}
+                    {meta?.not_recommended && (
+                      <div style={{ color: "#f1a6a6" }}>Nem ajánlott: {meta.not_recommended}</div>
+                    )}
                   </div>
                 </Card>
               )}
@@ -65,7 +92,6 @@ export default function EveningCardPreview() {
               {tips && tips.length > 0 && (
                 <Card>
                   <div className="stack-tight">
-                    <div className="section-title">Tippek</div>
                     <ul style={{ paddingLeft: 18, display: "grid", gap: 6 }}>
                       {tips.map((tip, idx) => (
                         <li key={idx}>{tip}</li>

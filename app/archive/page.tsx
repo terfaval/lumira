@@ -1,14 +1,10 @@
 import { Suspense } from "react";
 import ArchiveClient from "./ArchiveClient";
 
-export default function Page({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+export default function Page() {
   return (
     <Suspense fallback={<div />}>
-      <ArchiveClient searchParams={searchParams} />
+      <ArchiveClient />
     </Suspense>
   );
 }
