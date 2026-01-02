@@ -23,7 +23,9 @@ export default function FramePage() {
     setErr(null);
     const { data, error } = await supabase
       .from("dream_sessions")
-      .select("id, raw_dream_text, ai_framing_text, status, created_at, updated_at")
+      .select(
+        "id, raw_dream_text, ai_framing_text, ai_framing_audit, status, created_at, updated_at"
+      )
       .eq("id", id)
       .single();
     if (error) setErr(error.message);
@@ -81,21 +83,30 @@ export default function FramePage() {
     }
   }, [id, loadSession]);
 
+  const recommendations = useMemo(() => {
+    const raw = (session?.ai_framing_audit as any)?.recommended_directions;
+    if (!Array.isArray(raw)) return [];
+
+    const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
+
+    return raw
+      .map((rec) => {
+        if (typeof rec?.slug !== "string" || typeof rec?.reason !== "string") return null;
+        const item = catalogBySlug.get(rec.slug);
+        if (!item) return null;
+        return { ...item, reason: rec.reason };
+      })
+      .filter((x): x is DirectionCatalogItem & { reason: string } => Boolean(x));
+  }, [session, catalog]);
+
+  const framingReady = Boolean(session?.ai_framing_text && recommendations.length === 3);
+
   useEffect(() => {
-    if (
-      session &&
-      !session.ai_framing_text &&
-      !busy &&
-      !attemptedRef.current
-    ) {
+    if (session && !busy && !attemptedRef.current && !framingReady) {
       attemptedRef.current = true;
       runFraming();
     }
-  }, [session, busy, runFraming]);
-
-  const recommended = useMemo(() => {
-    return catalog.filter((c) => c.is_active).slice(0, 3);
-  }, [catalog]);
+  }, [session, busy, runFraming, framingReady]);
 
   const handleDirectionSelect = useCallback(
     async (slug: string) => {
@@ -139,10 +150,12 @@ export default function FramePage() {
               background: "#fafafa",
             }}
           >
-            {session.ai_framing_text ?? "Még nincs keretezés. Kérhetsz egyet."}
+            {framingReady
+              ? session.ai_framing_text
+              : "A keretezés és az ajánlott irányok készülnek. Ez pár másodpercig tarthat."}
           </div>
 
-          {!session.ai_framing_text ? (
+          {!framingReady ? (
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <PrimaryButton onClick={runFraming} disabled={busy}>
                 Keretezés kérése
@@ -160,15 +173,16 @@ export default function FramePage() {
             </button>
           )}
 
-          {session.ai_framing_text && (
+          {framingReady && (
             <div className="stack">
               <p style={{ opacity: 0.8 }}>
                 Folytasd az álommunkát egy iránykártyával. Válaszd ki, amelyik most
                 megszólít.
               </p>
 
+              {/* Az ajánlások a framing auditból érkeznek, nem katalógus szeletelésből. */}
               <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-                {recommended.map((d) => (
+                {recommendations.map((d) => (
                   <button
                     key={d.slug}
                     type="button"
@@ -179,10 +193,10 @@ export default function FramePage() {
                   >
                     <div className="stack-tight">
                       <div style={{ fontWeight: 700 }}>{d.title}</div>
-                      <div style={{ opacity: 0.8 }}>
+                      <div style={{ opacity: 0.9 }}>{d.reason}</div>
+                      <div style={{ opacity: 0.7 }}>
                         {(d.content as any)?.micro_description ?? d.description}
                       </div>
-                      <div style={{ fontSize: 12, opacity: 0.6 }}>slug: {d.slug}</div>
                     </div>
                   </button>
                 ))}

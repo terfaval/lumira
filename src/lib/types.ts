@@ -106,6 +106,12 @@ export type DreamSession = {
   id: string;
   raw_dream_text: string;
   ai_framing_text: string | null;
+  ai_framing_audit?: {
+    model?: string;
+    usage?: Json;
+    title?: string;
+    recommended_directions?: { slug: string; reason: string }[];
+  } | null;
   status: string;
   created_at: string;
   updated_at: string;
