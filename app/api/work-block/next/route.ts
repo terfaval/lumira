@@ -17,6 +17,9 @@ type HistoryItem = { question: string; answer: string | null };
 type PriorEcho = { session_id: string; anchor_summary: string; created_at: string };
 
 type DirectionInput = {
+  slug?: string;
+  title?: string;
+  micro_description?: string;
   method_spec?: { question_style?: string } & Record<string, unknown>;
   stop_criteria?: {
     max_cards?: number;
@@ -26,6 +29,20 @@ type DirectionInput = {
   output_spec?: Record<string, unknown>;
   safety?: Record<string, unknown>;
   focus_model?: Record<string, unknown>;
+  selection_hints?: Record<string, unknown>;
+  content?: Record<string, unknown>;
+};
+
+type DirectionNormalized = {
+  slug?: string;
+  title?: string;
+  micro_description?: string;
+  method_spec?: Record<string, unknown>;
+  stop_criteria?: DirectionInput["stop_criteria"];
+  output_spec?: Record<string, unknown>;
+  safety?: Record<string, unknown>;
+  focus_model?: Record<string, unknown>;
+  selection_hints?: Record<string, unknown>;
 };
 
 type SynthInput = {
@@ -107,6 +124,52 @@ function sanitizePriorEchoes(echoes: PriorEcho[] | undefined): PriorEcho[] {
     .filter((p) => p.session_id && p.anchor_summary && p.created_at);
 }
 
+function unwrapDirection(direction: DirectionInput | undefined | null): DirectionNormalized | null {
+  if (!direction || typeof direction !== "object") return null;
+
+  const asRecord = (val: unknown) => (val && typeof val === "object" ? (val as Record<string, unknown>) : undefined);
+  const content = asRecord((direction as any).content) ?? asRecord(direction);
+
+  const methodSpec = (asRecord(content?.method_spec) ?? asRecord((direction as any).method_spec)) ?? undefined;
+  const stopCriteria = asRecord(content?.stop_criteria) ?? asRecord((direction as any).stop_criteria) ?? undefined;
+  const outputSpec = asRecord(content?.output_spec) ?? asRecord((direction as any).output_spec) ?? undefined;
+  const safety = asRecord(content?.safety) ?? asRecord((direction as any).safety) ?? undefined;
+  const focusModel = asRecord(content?.focus_model) ?? asRecord((direction as any).focus_model) ?? undefined;
+  const selectionHints =
+    asRecord(content?.selection_hints) ?? asRecord((direction as any).selection_hints) ?? undefined;
+
+  const microDescriptionCandidate =
+    typeof (content as any)?.micro_description === "string"
+      ? (content as any).micro_description
+      : typeof (direction as any)?.micro_description === "string"
+        ? (direction as any).micro_description
+        : undefined;
+
+  const normalized: DirectionNormalized = {
+    slug: typeof (direction as any)?.slug === "string" ? (direction as any).slug : undefined,
+    title: typeof (direction as any)?.title === "string" ? (direction as any).title : undefined,
+    micro_description: microDescriptionCandidate,
+    method_spec: methodSpec,
+    stop_criteria: stopCriteria as DirectionInput["stop_criteria"],
+    output_spec: outputSpec,
+    safety,
+    focus_model: focusModel,
+    selection_hints: selectionHints,
+  };
+
+  const hasContent =
+    normalized.micro_description ||
+    normalized.method_spec ||
+    normalized.stop_criteria ||
+    normalized.output_spec ||
+    normalized.safety ||
+    normalized.focus_model ||
+    normalized.selection_hints;
+
+  if (!normalized.slug && !hasContent) return null;
+  return normalized;
+}
+
 function detectRepetition(history: HistoryItem[], stopIfRepetition?: boolean): boolean {
   if (!stopIfRepetition) return false;
   if (history.length < 2) return false;
@@ -122,7 +185,7 @@ function detectUserBriefStreak(history: HistoryItem[], streak?: number): boolean
   return recent.every((h) => (h.answer ?? "").trim().length <= BRIEF_ANSWER_LIMIT);
 }
 
-function shouldStop(direction: DirectionInput | undefined, history: HistoryItem[]): {
+function shouldStop(direction: DirectionNormalized | undefined, history: HistoryItem[]): {
   suggest_stop: boolean;
   reason: string | null;
 } {
@@ -202,26 +265,29 @@ function validateModelOutput(parsed: unknown): WorkBlockResponse | null {
   };
 }
 
-function buildDirectionForAI(direction: DirectionInput | undefined) {
+function buildDirectionForAI(direction: DirectionNormalized | undefined) {
   if (!direction) return undefined;
 
   const methodSpec = direction.method_spec ?? {};
   const methodSpecForAI: Record<string, unknown> = {};
 
-  if (typeof methodSpec.question_style === "string") {
-    methodSpecForAI.question_style = methodSpec.question_style;
+  if (typeof (methodSpec as any)?.question_style === "string") {
+    methodSpecForAI.question_style = (methodSpec as any).question_style;
   }
   if ("aim" in methodSpec) {
-    methodSpecForAI.aim = methodSpec.aim;
+    methodSpecForAI.aim = (methodSpec as any).aim;
   }
   if ("do" in methodSpec) {
-    methodSpecForAI.do = methodSpec.do;
+    methodSpecForAI.do = (methodSpec as any).do;
   }
   if ("dont" in methodSpec) {
-    methodSpecForAI.dont = methodSpec.dont;
+    methodSpecForAI.dont = (methodSpec as any).dont;
   }
 
   const directionForAI: Record<string, unknown> = {};
+  if (direction.slug) directionForAI.slug = direction.slug;
+  if (direction.title) directionForAI.title = direction.title;
+  if (direction.micro_description) directionForAI.micro_description = direction.micro_description;
   if (Object.keys(methodSpecForAI).length) {
     directionForAI.method_spec = methodSpecForAI;
   }
@@ -234,6 +300,12 @@ function buildDirectionForAI(direction: DirectionInput | undefined) {
   if (direction.safety) {
     directionForAI.safety = direction.safety;
   }
+  if (direction.focus_model) {
+    directionForAI.focus_model = direction.focus_model;
+  }
+  if (direction.selection_hints) {
+    directionForAI.selection_hints = direction.selection_hints;
+  }
 
   return Object.keys(directionForAI).length ? directionForAI : undefined;
 }
@@ -242,8 +314,9 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as RequestBody;
     const dreamText = (body.dream_text ?? "").trim();
-    const direction = body.direction;
+    const direction = unwrapDirection(body.direction as DirectionInput);
     const history = sanitizeHistory(body.history);
+    const previousQuestion = history[history.length - 1]?.question ?? "";
     const priorEchoes = sanitizePriorEchoes(body.prior_echoes);
     const safetyFlag = sanitizeSafety(body.synth?.flags);
 
@@ -270,21 +343,17 @@ export async function POST(req: Request) {
     }
 
     const systemPrompt = [
-      "You are an API that returns ONLY strict JSON using the provided schema.",
-      "Role: generate the next work-block card (1 question) for a dream exploration.",
-      "Rules:",
-      "- Exactly one question string; non-empty; no multiple questions.",
-      "- No interpretation, symbol dictionary, diagnosis, or therapy language.",
-      "- Respect direction.method_spec.question_style for tone/shape.",
-      "- Stay under character limits: lead_in <= 280, question <= 160, cta <= 120.",
-      "- stop_signal must always be present (suggest_stop=false in normal flow).",
-      "- Output JSON only, no markdown, no explanations.",
-      "Schema:",
-      JSON.stringify({
-        work_block: { lead_in: "", question: "", cta: "" },
-        stop_signal: { suggest_stop: false, reason: null },
-        flags: { safety: "none" },
-      }),
+      "Magyar nyelvű API vagy, kizárólag a megadott JSON sémát adod vissza.",
+      "Szerep: egyetlen új kérdést adj a következő kártyára, az aktuális irány szerint.",
+      "Szabályok:",
+      "- Pontosan egy kérdés; kerüld a felsorolást vagy több kérdőjelet.",
+      "- Ne értelmezd az álmot, ne diagnosztizálj, ne utalj szimbólumszótárra.",
+      "- Igazodj a direction.method_spec.question_style, micro_description, focus_model és selection_hints tartalmához.",
+      "- Kerüld az ismétlést: légy friss, de kapcsolódj az eddigi kérdésekhez.",
+      "- Karakterlimitek: lead_in <= 280, question <= 160, cta <= 120.",
+      "- Mindig töltsd ki a stop_signal mezőt (normál esetben suggest_stop=false).",
+      "- JSON séma: {\"work_block\":{\"lead_in\":\"\",\"question\":\"\",\"cta\":\"\"},\"stop_signal\":{\"suggest_stop\":false,\"reason\":null},\"flags\":{\"safety\":\"none\"}}",
+      "- Kimenet: csak JSON, magyarázat és markdown nélkül.",
     ].join("\n");
 
     const directionForAI = buildDirectionForAI(direction);
@@ -293,12 +362,15 @@ export async function POST(req: Request) {
       dream_text: dreamText,
       direction: directionForAI ?? {},
       history,
+      previous_question: previousQuestion,
       prior_echoes: priorEchoes,
     };
 
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0,
+      temperature: 0.35,
+      presence_penalty: 0.3,
+      frequency_penalty: 0.3,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
@@ -330,6 +402,13 @@ export async function POST(req: Request) {
     const sanitized = validateModelOutput(parsed);
     if (!sanitized) {
       return NextResponse.json({ error: "Invalid model output" }, { status: 500 });
+    }
+
+    if (
+      previousQuestion &&
+      sanitized.work_block.question.trim().toLowerCase() === previousQuestion.trim().toLowerCase()
+    ) {
+      return NextResponse.json({ error: "Repeated question" }, { status: 502 });
     }
 
     return NextResponse.json(sanitized);

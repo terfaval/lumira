@@ -52,11 +52,21 @@ function extractAuditTitle(audit: unknown): string | null {
   const maybeAudit = audit as { title?: unknown };
   const rawTitle = maybeAudit.title;
 
-  if (typeof rawTitle === "string") return sanitizeTitle(rawTitle);
+  if (typeof rawTitle === "string") {
+    const cleaned = sanitizeTitle(rawTitle);
+
+    // ✅ itt volt a TS hiba: cleaned lehet null
+    if (!cleaned) return null;
+    if (cleaned.toLowerCase() === "álom") return null;
+
+    return cleaned;
+  }
 
   // ha valamiért nem string (régi / hibás audit), próbáljuk stringgé konvertálni
   if (rawTitle && typeof rawTitle === "object" && "toString" in rawTitle) {
     const converted = sanitizeTitle(String(rawTitle));
+    if (!converted) return null;
+    if (converted.toLowerCase() === "álom") return null;
     return converted;
   }
 
@@ -129,7 +139,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
     const score = touched_directions_count * 10 + answered_cards_count;
 
     // ✅ title: auditból, tisztítva; fallback marad
-    const title = extractAuditTitle(session.ai_framing_audit) || "Álom";
+    const title = extractAuditTitle((session as any).ai_framing_audit) || "Álom";
 
     return {
       id: session.id,
@@ -137,7 +147,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
       created_at: session.created_at,
       status: session.status,
       // ✅ NEW: átadjuk a nyers álomszöveget a kliensnek
-      raw_dream_text: session.raw_dream_text ?? null,
+      raw_dream_text: (session as any).raw_dream_text ?? null,
       touched_directions,
       touched_directions_count,
       answered_cards_count,
