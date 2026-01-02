@@ -64,9 +64,7 @@ export default function DirectionPage() {
 
         setSelected((prev) => ({ ...prev, [slug]: true }));
 
-        router.push(
-          `/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`
-        );
+        router.push(`/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Hiba";
         setErr(message);
@@ -77,14 +75,39 @@ export default function DirectionPage() {
     [router, sessionId]
   );
 
+  const Spinner = (
+    <>
+      <div
+        aria-label="Betöltés"
+        className="spinner"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: "999px",
+          border: "2px solid var(--border)",
+          borderTopColor: "var(--text-muted)",
+          animation: "spin 0.9s linear infinite",
+          marginTop: 8,
+        }}
+      />
+      <style jsx>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </>
+  );
+
   return (
     <Shell title="Irányválasztás">
       {loading ? (
-        <p>Bejelentkezés ellenőrzése…</p>
+        Spinner
       ) : (
         <>
           <p style={{ opacity: 0.8 }}>
-            Kattints egy irányra, és azonnal folytatjuk a munkát.
+            Válassz egy irányt, ami most a legtermészetesebbnek tűnik.
           </p>
 
           <div
@@ -100,18 +123,22 @@ export default function DirectionPage() {
                 type="button"
                 onClick={() => handleStart(d.slug)}
                 disabled={busy}
-                style={{ textAlign: "left", border: "1px solid #ddd", borderRadius: 10, padding: 12 }}
+                style={{
+                  textAlign: "left",
+                  border: "1px solid #ddd",
+                  borderRadius: 10,
+                  padding: 12,
+                }}
                 className="card"
               >
                 <div className="stack-tight">
                   <div style={{ fontWeight: 700, display: "flex", gap: 8, alignItems: "center" }}>
                     <span>{d.title}</span>
                     {selected[d.slug] && (
-                      <span style={{ fontSize: 12, opacity: 0.7 }}>(már kiválasztott)</span>
+                      <span style={{ fontSize: 12, opacity: 0.7 }}>(korábban kiválasztva)</span>
                     )}
                   </div>
                   <div style={{ opacity: 0.8 }}>{d.description}</div>
-                  <div style={{ fontSize: 12, opacity: 0.6 }}>slug: {d.slug}</div>
                 </div>
               </button>
             ))}
@@ -119,9 +146,10 @@ export default function DirectionPage() {
 
           <div style={{ marginTop: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
             <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)}>
-              Megállok (összkép)
+              Összkép
             </PrimaryButton>
           </div>
+
           {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
         </>
       )}
