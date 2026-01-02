@@ -21,6 +21,8 @@ const sortOptions: SortOption[] = ["date_desc", "date_asc", "score_desc", "score
 
 type ArchiveStatusFilter = Feldolgozottsag | "lezart";
 
+/* ---------------- query parsing ---------------- */
+
 function parseStatus(value: string | undefined): ArchiveStatusFilter | undefined {
   if (value === "vazlat" || value === "erintett" || value === "feldolgozott" || value === "lezart") return value;
   return undefined;
@@ -31,6 +33,8 @@ function parseRange(value: string | undefined): RangeOption {
 function parseSort(value: string | undefined): SortOption {
   return sortOptions.find((opt) => opt === value) ?? "date_desc";
 }
+
+/* ---------------- filtering / sorting ---------------- */
 
 function applyFilters(
   sessions: ArchiveSessionSummary[],
@@ -70,23 +74,7 @@ function applySort(sessions: ArchiveSessionSummary[], sort: SortOption): Archive
   return sorted;
 }
 
-function DirectionChips({ slugs }: { slugs: string[] }) {
-  if (!slugs || slugs.length === 0) return null;
-
-  const primary = slugs.slice(0, 2);
-  const extra = slugs.length - primary.length;
-
-  return (
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-      {primary.map((slug) => (
-        <span key={slug} className="badge-muted">
-          {slug}
-        </span>
-      ))}
-      {extra > 0 && <span className="badge-muted">+{extra}</span>}
-    </div>
-  );
-}
+/* ---------------- helpers ---------------- */
 
 function formatStatusLabel(status: string) {
   if (status === "vazlat") return "Vázlat";
@@ -102,25 +90,22 @@ function getComputedStatus(session: ArchiveSessionSummary): ArchiveStatusFilter 
   const status = s.status as string | undefined;
   const archivedAt = s.archived_at as string | null | undefined;
 
-  if (feld === "lezart" || status === "closed" || status === "archived" || Boolean(archivedAt)) return "lezart";
-  // fallback a meglévő enumokra
+  if (feld === "lezart" || status === "archived" || status === "closed" || Boolean(archivedAt)) return "lezart";
   if (feld === "vazlat" || feld === "erintett" || feld === "feldolgozott") return feld;
-  // ha valamiért üres/idegen jön, ne dőljön el:
+
   return "vazlat";
 }
 
 function getSnippet(session: ArchiveSessionSummary): string {
   const s: any = session as any;
-  const raw =
-    (s.raw_dream_text as string | undefined | null) ??
-    (s.dream_text as string | undefined | null) ??
-    (s.content as string | undefined | null) ??
-    "";
+  const raw = (s.raw_dream_text as string | undefined | null) ?? "";
   const t = raw.trim();
   if (!t) return "";
-  const cut = t.slice(0, 170);
-  return t.length > 170 ? `${cut}…` : cut;
+  const cut = t.slice(0, 160);
+  return t.length > 160 ? `${cut}…` : cut;
 }
+
+/* ---------------- component ---------------- */
 
 export default function ArchiveClient() {
   const sp = useSearchParams();
@@ -161,7 +146,6 @@ export default function ArchiveClient() {
     }
 
     loadArchive();
-
     return () => {
       isMounted = false;
     };
@@ -218,7 +202,7 @@ export default function ArchiveClient() {
             {grouped.map((group) => (
               <div key={group.key} className="stack">
                 <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: 0.2, color: "var(--text-muted)" }}>
-                  {group.title}
+                  {group.title} · {group.items.length}
                 </div>
 
                 <div className="stack">
@@ -237,7 +221,6 @@ export default function ArchiveClient() {
                         key={session.id}
                         href={`/session/${session.id}`}
                         style={{ textDecoration: "none" }}
-                        aria-label={`Álom megnyitása: ${session.title}`}
                       >
                         <Card>
                           <div className="stack-tight">
@@ -259,13 +242,15 @@ export default function ArchiveClient() {
                               </div>
                             </div>
 
-                            {snippet ? (
-                              <div style={{ opacity: 0.85, whiteSpace: "pre-wrap" }}>{snippet}</div>
-                            ) : (
-                              <div style={{ color: "var(--text-muted)", fontSize: 13 }}>Nincs mentett álomszöveg.</div>
+                            {snippet && (
+                              <div style={{ opacity: 0.7, whiteSpace: "pre-wrap" }}>{snippet}</div>
                             )}
 
-                            {session.touched_directions?.length ? <DirectionChips slugs={session.touched_directions} /> : null}
+                            {session.touched_directions_count > 0 && (
+                              <div style={{ fontSize: 12, opacity: 0.6 }}>
+                                {session.touched_directions_count} érintett irány
+                              </div>
+                            )}
 
                             <div style={{ fontSize: 12, opacity: 0.65 }}>
                               {new Date(session.created_at).toLocaleString("hu-HU")}
