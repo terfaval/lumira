@@ -1,79 +1,181 @@
-
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Card } from "@/components/Card";
 import { Shell } from "@/components/Shell";
-import { supabase } from "@/src/lib/supabase/client";
-import { useRequireAuth } from "@/src/hooks/useRequireAuth";
-import { requireUserId } from "@/src/lib/db";
-import type { DreamSession } from "@/src/lib/types";
+import {
+  fetchArchiveSessions,
+  type ArchiveSessionSummary,
+  type Feldolgozottsag,
+  type RangeOption,
+  type SortOption,
+} from "@/src/lib/archive";
+import ArchiveControls from "./ArchiveControls";
 
-type ArchiveSession = DreamSession & {
-  archived_at?: string | null;
-};
+const rangeOptions: RangeOption[] = ["all", "7", "30", "90", "365"];
+const sortOptions: SortOption[] = ["date_desc", "date_asc", "score_desc", "score_asc"];
 
-export default function ArchivePage() {
-  const { loading } = useRequireAuth();
-  const [sessions, setSessions] = useState<ArchiveSession[]>([]);
-  const [err, setErr] = useState<string | null>(null);
+function parseStatus(value: string | undefined): Feldolgozottsag | undefined {
+  if (value === "vazlat" || value === "erintett" || value === "feldolgozott") return value;
+  return undefined;
+}
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const userId = await requireUserId();
-        const { data, error } = await supabase
-          .from("dream_sessions")
-          .select("id, raw_dream_text, status, archived_at, updated_at")
-          .eq("user_id", userId)
-          .order("archived_at", { ascending: false })
-          .order("updated_at", { ascending: false });
+function parseRange(value: string | undefined): RangeOption {
+  return rangeOptions.find((opt) => opt === value) ?? "all";
+}
 
-        if (error) throw error;
-        setSessions((data ?? []) as ArchiveSession[]);
-      } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : "Nem sikerült betölteni az archívumot.";
-        setErr(message);
-      }
-    })();
-  }, []);
+function parseSort(value: string | undefined): SortOption {
+  return sortOptions.find((opt) => opt === value) ?? "date_desc";
+}
 
-  const archived = sessions.filter((s) => s.archived_at || s.status === "archived");
+function applyFilters(
+  sessions: ArchiveSessionSummary[],
+  filters: {
+    status?: Feldolgozottsag;
+    directions: string[];
+  }
+) {
+  return sessions.filter((session) => {
+    if (filters.status && session.feldolgozottsag !== filters.status) return false;
+    if (
+      filters.directions.length > 0 &&
+      !session.touched_directions.some((slug) => filters.directions.includes(slug))
+    ) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function applySort(
+  sessions: ArchiveSessionSummary[],
+  sort: SortOption
+): ArchiveSessionSummary[] {
+  const sorted = [...sessions];
+  sorted.sort((a, b) => {
+    if (sort === "date_desc") {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+    if (sort === "date_asc") {
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    }
+
+    if (sort === "score_desc") {
+      if (b.score !== a.score) return b.score - a.score;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+    if (sort === "score_asc") {
+      if (a.score !== b.score) return a.score - b.score;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+
+    return 0;
+  });
+  return sorted;
+}
+
+function DirectionChips({ slugs }: { slugs: string[] }) {
+  if (slugs.length === 0) {
+    return <span className="badge-muted">Nincs irány érintve</span>;
+  }
+
+  const primary = slugs.slice(0, 2);
+  const extra = slugs.length - primary.length;
 
   return (
-    <Shell title="Archívum">
-      {loading ? (
-        <p>Bejelentkezés ellenőrzése…</p>
-      ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          <p style={{ opacity: 0.8 }}>Itt az archivált vagy lezárt álomsessziók listája.</p>
-          <Link href="/sessions" style={{ textDecoration: "underline", width: "fit-content" }}>
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {primary.map((slug) => (
+        <span key={slug} className="badge-muted">
+          {slug}
+        </span>
+      ))}
+      {extra > 0 && <span className="badge-muted">+{extra}</span>}
+    </div>
+  );
+}
+
+export default async function ArchivePage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const status = parseStatus(searchParams.status as string | undefined);
+  const range = parseRange(searchParams.range as string | undefined);
+  const sort = parseSort(searchParams.sort as string | undefined);
+  const directions = (searchParams.directions as string | undefined)
+    ?.split(",")
+    .filter(Boolean)
+    .slice(0, 20) ?? [];
+
+  const { summaries, availableDirections } = await fetchArchiveSessions(
+    range === "all" ? undefined : range
+  );
+
+  const filtered = applyFilters(summaries, { status, directions });
+  const sorted = applySort(filtered, sort);
+
+  return (
+    <Shell title="Álmonapló">
+      <div className="stack">
+        <p style={{ color: "var(--text-muted)" }}>
+          Itt láthatod minden eddig rögzített álom feldolgozottsági összképét.
+        </p>
+
+        <ArchiveControls
+          availableDirections={availableDirections}
+          selectedStatus={status}
+          selectedDirections={directions}
+          selectedRange={range}
+          selectedSort={sort}
+        />
+
+        <div className="meta-block">
+          <span className="badge-muted">Összesen: {summaries.length}</span>
+          <span className="badge-muted">Találatok: {sorted.length}</span>
+          <Link className="badge-muted" href="/sessions">
             Vissza a folyamatban lévőkhöz
           </Link>
-
-          {err && <p style={{ color: "crimson" }}>{err}</p>}
-
-          {archived.length === 0 ? (
-            <p>Még nincs archivált session.</p>
-          ) : (
-            <div style={{ display: "grid", gap: 10 }}>
-              {archived.map((s) => (
-                <Link
-                  key={s.id}
-                  href={`/session/${s.id}`}
-                  style={{ border: "1px solid #ddd", borderRadius: 10, padding: 12, display: "grid", gap: 6 }}
-                >
-                  <div style={{ fontWeight: 700 }}>Session #{s.id.slice(0, 8)}</div>
-                  <div style={{ opacity: 0.7 }}>Státusz: {s.status}</div>
-                  <div style={{ fontSize: 12, opacity: 0.6 }}>
-                    Archiválva: {s.archived_at ? new Date(s.archived_at).toLocaleString("hu-HU") : "nincs dátum"}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
         </div>
-      )}
+
+        {sorted.length === 0 ? (
+          <Card muted>
+            <p style={{ color: "var(--text-muted)" }}>Nincs a feltételeknek megfelelő álom.</p>
+          </Card>
+        ) : (
+          <div className="stack">
+            {sorted.map((session) => (
+              <Card key={session.id}>
+                <div className="stack-tight">
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      alignItems: "baseline",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700 }}>{session.title}</div>
+                    <div style={{ color: "var(--text-muted)", fontSize: 13 }}>
+                      {new Date(session.created_at).toLocaleDateString("hu-HU")}
+                    </div>
+                  </div>
+                  <DirectionChips slugs={session.touched_directions} />
+                  <div className="meta-block">
+                    <span className="badge-muted">
+                      Feldolgozottság: {session.feldolgozottsag}
+                    </span>
+                    <span className="badge-muted">
+                      Érintett irányok: {session.touched_directions_count}
+                    </span>
+                    <span className="badge-muted">
+                      Megválaszolt kártyák: {session.answered_cards_count}
+                    </span>
+                    <span className="badge-muted">Pontszám: {session.score}</span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </Shell>
   );
 }
