@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { SplitLayout } from "@/components/SplitLayout";
+import { DreamRawPanel } from "@/components/DreamRawPanel";
 import { supabase } from "@/src/lib/supabase/client";
 import { startDirection } from "@/src/lib/startDirection";
 import type { DirectionCatalogItem, DreamSession } from "@/src/lib/types";
@@ -155,71 +157,80 @@ export default function FramePage() {
 
   return (
     <Shell title="Keretezés">
-      {loading ? (
-        Spinner
-      ) : !session ? (
+      {loading || !session ? (
         Spinner
       ) : (
-        <div className="stack">
-          <div
-            style={{
-              whiteSpace: "pre-wrap",
-              padding: 12,
-              border: "1px solid #ddd",
-              borderRadius: 10,
-              background: "#fafafa",
-            }}
-          >
-            {framingReady ? session.ai_framing_text : "Készül…"}
-          </div>
-
-          {framingReady && (
+        <SplitLayout
+          leftTitle="Nyers álom"
+          left={<DreamRawPanel sessionId={id} session={session} />}
+          rightTitle="Keretezés"
+          right={
             <div className="stack">
-              <p style={{ opacity: 0.8 }}>
-                Ha szeretnéd folytatni, válassz egy irányt, ami most a legtermészetesebbnek tűnik.
-              </p>
-
-              {/* Az ajánlások a framing auditból érkeznek, nem katalógus szeletelésből. */}
-              <div
-                style={{
-                  display: "grid",
-                  gap: 12,
-                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                }}
-              >
-                {recommendations.map((d) => (
-                  <button
-                    key={d.slug}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => handleDirectionSelect(d.slug)}
-                    style={{ textAlign: "left" }}
-                    className="card"
+              {framingReady ? (
+                <div className="stack">
+                  <div
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      padding: 12,
+                      border: "1px solid var(--line-soft)",
+                      borderRadius: 12,
+                      background: "var(--card-surface-subtle)",
+                    }}
                   >
-                    <div className="stack-tight">
-                      <div style={{ fontWeight: 700 }}>{d.title}</div>
-                      <div style={{ opacity: 0.9 }}>{d.reason}</div>
-                      <div style={{ opacity: 0.7 }}>
-                        {(d.content as any)?.micro_description ?? d.description}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+                    {session.ai_framing_text}
+                  </div>
 
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>
-                  További irányok
-                </PrimaryButton>
-                <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
-                  Később folytatom
-                </PrimaryButton>
-              </div>
+                  <p style={{ opacity: 0.8 }}>
+                    Ha szeretnéd folytatni, válassz egy irányt, ami most a legtermészetesebbnek tűnik.
+                  </p>
+
+                  {/* Az ajánlások a framing auditból érkeznek, nem katalógus szeletelésből. */}
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: 12,
+                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    }}
+                  >
+                    {recommendations.map((d) => (
+                      <button
+                        key={d.slug}
+                        type="button"
+                        disabled={busy}
+                        onClick={() => handleDirectionSelect(d.slug)}
+                        style={{ textAlign: "left" }}
+                        className="card"
+                      >
+                        <div className="stack-tight">
+                          <div style={{ fontWeight: 700 }}>{d.title}</div>
+                          <div style={{ opacity: 0.9 }}>{d.reason}</div>
+                          <div style={{ opacity: 0.7 }}>
+                            {(d.content as any)?.micro_description ?? d.description}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>
+                      További irányok
+                    </PrimaryButton>
+                    <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
+                      Később folytatom
+                    </PrimaryButton>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ color: "var(--text-muted)" }}>
+                  A keretezés készül, hamarosan megjelennek az ajánlott irányok.
+                </p>
+              )}
+
+              {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
             </div>
-          )}
-
-          {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-        </div>
+          }
+        />
       )}
     </Shell>
   );

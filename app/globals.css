@@ -379,6 +379,39 @@ textarea:focus {
   margin: var(--space-3) 0;
 }
 
+.split-layout {
+  display: grid;
+  gap: var(--space-3);
+}
+
+@media (min-width: 820px) {
+  .split-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.split-panel {
+  height: 100%;
+}
+
+.split-panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.dream-raw-text {
+  white-space: pre-wrap;
+  color: var(--text-muted);
+  background: var(--card-surface-subtle);
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  padding: var(--space-2);
+  max-height: 360px;
+  overflow-y: auto;
+}
+
 /* ────────────────────────────────────────────────────────────── */
 /*  SPACE OVERRIDES (álomtér vs esti tér)                           */
 /* ────────────────────────────────────────────────────────────── */

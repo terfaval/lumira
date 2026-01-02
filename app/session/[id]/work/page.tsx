@@ -6,6 +6,8 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Card } from "@/components/Card";
+import { SplitLayout } from "@/components/SplitLayout";
+import { DreamRawPanel } from "@/components/DreamRawPanel";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import { isDirectionCardContent, type DirectionCardContent, type WorkBlock } from "@/src/lib/types";
@@ -177,44 +179,53 @@ export default function WorkPage() {
     <Shell title="Kártyás feldolgozás" space="dream">
       {loading ? (
         Spinner
-      ) : !directionSlug ? (
-        <div className="stack">
-          <p style={{ color: "var(--text-muted)" }}>
-            Válassz egy irányt az <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj
-            vissza ide.
-          </p>
-        </div>
       ) : (
-        <div className="stack">
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)} variant="secondary">
-              Összkép
-            </PrimaryButton>
-          </div>
+        <SplitLayout
+          leftTitle="Nyers álom"
+          left={<DreamRawPanel sessionId={sessionId} />}
+          rightTitle="Feldolgozás"
+          right={
+            !directionSlug ? (
+              <div className="stack">
+                <p style={{ color: "var(--text-muted)" }}>
+                  Válassz egy irányt az <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj
+                  vissza ide.
+                </p>
+              </div>
+            ) : (
+              <div className="stack">
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                  <PrimaryButton onClick={() => router.push(`/session/${sessionId}`)} variant="secondary">
+                    Összkép
+                  </PrimaryButton>
+                </div>
 
-          <hr className="hr-soft" />
+                <hr className="hr-soft" />
 
-          {directionBlocks.length === 0 ? (
-            <p style={{ color: "var(--text-muted)" }}>
-              Még nincs kártya ehhez az irányhoz.
-            </p>
-          ) : (
-            <div className="stack">
-              {directionBlocks.map((b) => (
-                <BlockCard
-                  key={`${b.id}-${b.content.user?.answered_at ?? ""}-${b.content.user?.answer ?? ""}`}
-                  block={b}
-                  onSave={saveAnswer}
-                  busy={busy}
-                />
-              ))}
-            </div>
-          )}
+                {directionBlocks.length === 0 ? (
+                  <p style={{ color: "var(--text-muted)" }}>
+                    Még nincs kártya ehhez az irányhoz.
+                  </p>
+                ) : (
+                  <div className="stack">
+                    {directionBlocks.map((b) => (
+                      <BlockCard
+                        key={`${b.id}-${b.content.user?.answered_at ?? ""}-${b.content.user?.answer ?? ""}`}
+                        block={b}
+                        onSave={saveAnswer}
+                        busy={busy}
+                      />
+                    ))}
+                  </div>
+                )}
 
-          {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-          {/* Aktív blokk: csak vizuális jel (szöveg nélkül). A jelenlegi UI-ban ez most nem jelenik meg külön. */}
-          {current && null}
-        </div>
+                {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
+                {/* Aktív blokk: csak vizuális jel (szöveg nélkül). A jelenlegi UI-ban ez most nem jelenik meg külön. */}
+                {current && null}
+              </div>
+            )
+          }
+        />
       )}
     </Shell>
   );
