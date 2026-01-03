@@ -1,7 +1,7 @@
+// /app/api/frame/route.ts
 import OpenAI from "openai";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 
 type DirectionCatalogSummary = {
   slug: string;
@@ -15,13 +15,11 @@ type RecommendedDirection = { slug: string; reason: string };
 function sanitizeTitle(t: string): string {
   const cleaned = (t ?? "").replace(/\s+/g, " ").trim();
   if (!cleaned) return "";
-  // ne legyen túl hosszú
   if (cleaned.length > 72) return cleaned.slice(0, 69).trimEnd() + "…";
   return cleaned;
 }
 
 function titleCaseHungarian(s: string): string {
-  // csak az első betűt nagyítjuk (Hungarian title case nem triviális, MVP-ben ez elég)
   const cleaned = sanitizeTitle(s);
   if (!cleaned) return "";
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
@@ -34,11 +32,9 @@ function countWords(s: string): number {
 function looksSentenceLike(s: string): boolean {
   const cleaned = sanitizeTitle(s);
   if (!cleaned) return true;
-  // ha túl hosszú, vagy tipikus kötőszavas “mondat”, vagy több tagmondat, akkor gyanús
   if (cleaned.length > 48) return true;
   if (/[.!?]/.test(cleaned)) return true;
   if (cleaned.includes(",") || cleaned.includes(";") || cleaned.includes(":")) return true;
-  // “ugyanakkor / valamennyire / mintha” jellegű töltelékszavak -> inkább essünk vissza
   const lower = cleaned.toLowerCase();
   const badFillers = ["ugyanakkor", "valamennyire", "mintha", "ahogy", "és akkor", "de közben", "közben"];
   if (badFillers.some((w) => lower.includes(w))) return true;
@@ -51,7 +47,6 @@ function isGenericTitle(title?: string | null) {
   return cleaned.toLowerCase() === "álom";
 }
 
-// Fisher–Yates shuffle (pozíció-bias csökkentéshez)
 function shuffleInPlace<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -97,64 +92,31 @@ function validateRecommendations(recs: unknown, allowed: Set<string>): Recommend
 export async function POST(req: Request) {
   try {
     const { sessionId } = (await req.json()) as { sessionId?: string };
-    if (!sessionId) {
-      return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
-    }
+    if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabase = await supabaseServerAuthed(req);
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
-    }
-
-    const cookieStore = await cookies();
-    const authHeader = req.headers.get("authorization") ?? undefined;
-
-    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-      global: authHeader ? { headers: { Authorization: authHeader } } : {},
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options?: any) {
-          cookieStore.set(name, value, options);
-        },
-        remove(name: string, options?: any) {
-          cookieStore.set(name, "", { ...options, maxAge: 0 });
-        },
-      },
-    });
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
+    const userId = authData.user.id;
 
     const { data: session } = await supabase
       .from("dream_sessions")
-      .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status")
+      .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, user_id")
       .eq("id", sessionId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
-    if (!session) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 });
-    }
+    if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
     const { data: directions, error: dirErr } = await supabase
       .from("direction_catalog")
-      .select("slug, title, description, content, is_active")
+      .select("slug, title, description, content, is_active, sort_order")
       .eq("is_active", true)
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("slug", { ascending: true });
 
-    if (dirErr) {
-      return NextResponse.json({ error: dirErr.message }, { status: 500 });
-    }
+    if (dirErr) return NextResponse.json({ error: dirErr.message }, { status: 500 });
 
     const activeDirections: DirectionCatalogSummary[] = (directions ?? []).filter((d) => d.is_active);
     const allowedSlugs = new Set(activeDirections.map((d) => d.slug));
@@ -186,11 +148,9 @@ export async function POST(req: Request) {
           status: "framed",
         })
         .eq("id", sessionId)
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
-      if (updErr) {
-        return NextResponse.json({ error: updErr.message }, { status: 500 });
-      }
+      if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
       return NextResponse.json({ sessionId, framing, title });
     }
@@ -200,14 +160,9 @@ export async function POST(req: Request) {
     let framing = session.ai_framing_text?.trim() ?? "";
     let audit = (session.ai_framing_audit as any) ?? {};
 
-    const ensureTitle = async (
-      rawText: string,
-      framingText: string,
-      existingAudit: Record<string, unknown>
-    ) => {
+    const ensureTitle = async (rawText: string, framingText: string, existingAudit: Record<string, unknown>) => {
       const existingTitle = titleCaseHungarian(sanitizeTitle((existingAudit as any)?.title ?? ""));
       if (existingTitle && !isGenericTitle(existingTitle)) {
-        // ha már van cím, de mégis mondatszerű/rossz, regeneráljuk
         const wc = countWords(existingTitle);
         if (wc >= 2 && wc <= 6 && !looksSentenceLike(existingTitle)) {
           return { title: existingTitle, audit: { ...existingAudit, title: existingTitle } };
@@ -219,7 +174,6 @@ export async function POST(req: Request) {
         return { title: fallback, audit: { ...existingAudit, title: fallback } };
       }
 
-      // ✅ kulcsjelenet-alapú, rövid, általános cím
       let generated = "";
       try {
         const titleResp = await client.chat.completions.create({
@@ -238,13 +192,9 @@ export async function POST(req: Request) {
                 "- Ne használj kötőszavas szerkezeteket (pl. „ugyanakkor”, „közben”, „mintha”)\n" +
                 "- Ne legyen értelmezés, jelentés, diagnózis\n" +
                 "- Ne legyen idézőjel\n" +
-                "- Preferáld a főnévi/igei kulcsképet (pl. „Eltűnő barát a táborban”, „Telefon keresése a táborban”)\n" +
                 'Formátum: {"title":"..."}',
             },
-            {
-              role: "user",
-              content: JSON.stringify({ dream_text: rawText, framing: framingText }),
-            },
+            { role: "user", content: JSON.stringify({ dream_text: rawText, framing: framingText }) },
           ],
           max_tokens: 60,
         });
@@ -255,12 +205,10 @@ export async function POST(req: Request) {
         generated = "";
       }
 
-      // ✅ hard validáció + fallback
       let finalTitle = titleCaseHungarian(sanitizeTitle(generated));
-
       const wc = countWords(finalTitle);
+
       if (!finalTitle || isGenericTitle(finalTitle) || wc < 2 || wc > 6 || looksSentenceLike(finalTitle)) {
-        // próbáljunk egy extra "szűkebb" fallback promptot (olcsó, max 1 retry)
         try {
           const retry = await client.chat.completions.create({
             model: "gpt-4o-mini",
@@ -291,11 +239,7 @@ export async function POST(req: Request) {
         }
       }
 
-      if (!finalTitle || isGenericTitle(finalTitle) || countWords(finalTitle) < 2) {
-        // utolsó biztos fallback: rövid, általános, de használható
-        finalTitle = "Tábori jelenetek";
-      }
-
+      if (!finalTitle || isGenericTitle(finalTitle) || countWords(finalTitle) < 2) finalTitle = "Tábori jelenetek";
       return { title: finalTitle, audit: { ...existingAudit, title: finalTitle } };
     };
 
@@ -311,10 +255,7 @@ export async function POST(req: Request) {
               "- 2–5 mondat, magyar nyelven\n" +
               "- Ne adj diagnózist, ne mondd meg „mit jelent” az álom\n" +
               "- Tükrözz vissza 1–2 konkrét, feltűnő elemet vagy helyzetet az álomból\n" +
-              "- Engedj meg 1 óvatos, feltételes értelmező fókuszt " +
-              "(pl. vágy, feszültség, közeledés, akadály, felszabadulás), " +
-              "de csak hipotetikusan („érintheti”, „összefügghet”, „mintha”)\n" +
-              "- Ne zárd le az élményt, csak nyitva hagyd a továbblépés lehetőségét\n" +
+              "- Engedj meg 1 óvatos, feltételes értelmező fókuszt, de csak hipotetikusan\n" +
               "- Hangnem: nyugodt, jelenlévő, nem túl általános\n\n" +
               "Csak a keretező szöveget add vissza, semmi mást.",
           },
@@ -325,9 +266,7 @@ export async function POST(req: Request) {
       });
 
       framing = resp.choices?.[0]?.message?.content?.trim() ?? "";
-      if (!framing) {
-        return NextResponse.json({ error: "Empty framing" }, { status: 502 });
-      }
+      if (!framing) return NextResponse.json({ error: "Empty framing" }, { status: 502 });
       audit = { model: resp.model, usage: resp.usage ?? null, ...audit };
     }
 
@@ -357,47 +296,31 @@ export async function POST(req: Request) {
                 "Szabályok:\n" +
                 "- Csak a megadott slugokat használd.\n" +
                 "- Pontosan 3 különböző elemet adj vissza.\n" +
-                "- A katalógus sorrendje NEM jelent prioritást (véletlen).\n" +
-                "- Ne válaszd automatikusan a lista elejét: a döntés alapja 2–3 konkrét megfigyelhető álomjel (pl. váltások, érzet, test, ismétlődés, töredezettség).\n" +
-                "- Minden elemhez 1 semleges, nem értelmező mondatot írj: miért lehet jó belépési pont.\n" +
                 "- Ne tulajdoníts jelentést az álomnak, ne diagnosztizálj.\n" +
                 'Formátum: {"recommended_directions":[{"slug":"...","reason":"..."},{"slug":"...","reason":"..."},{"slug":"...","reason":"..."}]}',
             },
-            {
-              role: "user",
-              content: JSON.stringify({ dream_text: raw, framing, catalog: catalogForModel }),
-            },
+            { role: "user", content: JSON.stringify({ dream_text: raw, framing, catalog: catalogForModel }) },
           ],
           max_tokens: 400,
         });
 
-        const recContent = recResp.choices?.[0]?.message?.content ?? "";
-        const parsed = JSON.parse(recContent);
+        const parsed = JSON.parse(recResp.choices?.[0]?.message?.content ?? "{}");
         recommendations = validateRecommendations(parsed?.recommended_directions, allowedSlugs);
       } catch {
         recommendations = null;
       }
     }
 
-    if (!recommendations) {
-      recommendations = fallbackRecommendations(activeDirections);
-    }
-
+    if (!recommendations) recommendations = fallbackRecommendations(activeDirections);
     audit = { ...audit, recommended_directions: recommendations };
 
     const { error: updErr } = await supabase
       .from("dream_sessions")
-      .update({
-        ai_framing_text: framing,
-        ai_framing_audit: audit,
-        status: "framed",
-      })
+      .update({ ai_framing_text: framing, ai_framing_audit: audit, status: "framed" })
       .eq("id", sessionId)
-      .eq("user_id", user.id);
+      .eq("user_id", userId);
 
-    if (updErr) {
-      return NextResponse.json({ error: updErr.message }, { status: 500 });
-    }
+    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
     return NextResponse.json({ sessionId, framing, title });
   } catch (e: unknown) {

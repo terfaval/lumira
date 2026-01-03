@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/src/lib/supabase/server";
+import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 
 const SAFETY_VALUES = ["none", "self_harm", "reality_confusion", "other"] as const;
 const MAX_HISTORY = 4;
@@ -409,11 +409,10 @@ async function runLatentSynthesisSidecar(args: {
 
   const allowedSlugs = sanitizeAllowedSlugs(args.body.allowed_slugs, args.direction?.slug);
 
-  // fontos: abszolút URL server fetch-hez
   const url = new URL("/api/synthesize", args.req.url).toString();
 
-  // cookie továbbítás: a synthesize route így tud autholni a saját supabaseServer()-ével
   const cookieHeader = args.req.headers.get("cookie") ?? "";
+  const authHeader = args.req.headers.get("authorization") ?? "";
 
   try {
     const res = await fetch(url, {
@@ -422,6 +421,7 @@ async function runLatentSynthesisSidecar(args: {
       headers: {
         "content-type": "application/json",
         ...(cookieHeader ? { cookie: cookieHeader } : {}),
+        ...(authHeader ? { authorization: authHeader } : {}),
       },
       body: JSON.stringify({
         session_id: sessionId,
@@ -444,11 +444,9 @@ async function runLatentSynthesisSidecar(args: {
 
 export async function POST(req: Request) {
   try {
-    const supabase = await supabaseServer();
+    const supabase = await supabaseServerAuthed(req);
     const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!authData?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = (await req.json()) as RequestBody;
 

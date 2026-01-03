@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/src/lib/supabase/server";
+import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 
 const MIN_DREAM_LENGTH = 20;
 const MAX_ANCHOR_ITEMS = 6;
@@ -295,29 +296,21 @@ function reduceCatalogForAI(catalog: unknown): unknown {
 }
 
 // ✅ ÚJ: közös mentő helper az append loghoz (RPC)
-async function persistLatentAppendLog(args: {
-  sessionId?: string;
-  output: SynthesizeOutput;
-  meta: Record<string, unknown>;
-}) {
+async function persistLatentAppendLog(req: Request, args: { sessionId?: string; output: SynthesizeOutput; meta: Record<string, unknown> }) {
   const { sessionId, output, meta } = args;
   if (!sessionId) return;
 
-  const supabase = await supabaseServer();
+  const supabase = await supabaseServerAuthed(req);
   const { data: authData } = await supabase.auth.getUser();
   if (!authData?.user) return;
 
-  // Atomikus append + snapshot frissítés
   const { error } = await supabase.rpc("append_latent_analysis", {
     p_session_id: sessionId,
     p_output: output,
     p_meta: meta,
   });
 
-  if (error) {
-    // fontos: ne törjük el a synthesize API-t DB hiba miatt
-    console.warn("append_latent_analysis failed", error.message);
-  }
+  if (error) console.warn("append_latent_analysis failed", error.message);
 }
 
 export async function POST(req: Request) {
@@ -343,7 +336,7 @@ export async function POST(req: Request) {
       output.flags.too_short = true;
 
       // ✅ append log + snapshot, ha van session_id
-      await persistLatentAppendLog({
+      await persistLatentAppendLog(req, {
         sessionId,
         output,
         meta: { source: "synthesize", note: "too_short" },
@@ -357,7 +350,7 @@ export async function POST(req: Request) {
       const output = defaultOutput();
       output.flags.safety = detectedSafety;
 
-      await persistLatentAppendLog({
+      await persistLatentAppendLog(req, {
         sessionId,
         output,
         meta: { source: "synthesize", note: "safety", safety: detectedSafety },
@@ -432,7 +425,7 @@ export async function POST(req: Request) {
     const output = sanitizeOutput(parsed, allowedSlugs, false, priorEchoSessionIds);
 
     // ✅ append log + snapshot, ha van session_id
-    await persistLatentAppendLog({
+    await persistLatentAppendLog(req, {
       sessionId,
       output,
       meta: {

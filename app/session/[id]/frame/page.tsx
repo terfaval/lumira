@@ -1,3 +1,5 @@
+// /app/session/[id]/frame/page.tsx //
+
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -7,6 +9,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { SplitLayout } from "@/components/SplitLayout";
 import { DreamRawPanel } from "@/components/DreamRawPanel";
 import { supabase } from "@/src/lib/supabase/client";
+import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { startDirection } from "@/src/lib/startDirection";
 import type { DirectionCatalogItem, DreamSession } from "@/src/lib/types";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
@@ -67,15 +70,11 @@ export default function FramePage() {
 
       const token = authSession?.access_token;
 
-      const res = await fetch("/api/frame", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "content-type": "application/json",
-          ...(token ? { authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ sessionId: id }),
+      const res = await fetchWithAuth("/api/frame", {
+      method: "POST",
+      json: { sessionId: id },
       });
+
 
       if (!res.ok) throw new Error(await res.text());
       await loadSession();
@@ -122,22 +121,18 @@ export default function FramePage() {
 
       const token = authSession?.access_token;
 
-      const res = await fetch("/api/synthesize", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "content-type": "application/json",
-          ...(token ? { authorization: `Bearer ${token}` } : {}),
+      const res = await fetchWithAuth("/api/synthesize", {
+      method: "POST",
+      json: {
+        session_id: id,
+        dream_text: session.raw_dream_text,
+        history: [],
+        prior_echoes: [],
+        catalog,
+        allowed_slugs: catalog.map((c) => c.slug),
         },
-        body: JSON.stringify({
-          session_id: id,
-          dream_text: session.raw_dream_text,
-          history: [],
-          prior_echoes: [],
-          catalog,
-          allowed_slugs: catalog.map((c) => c.slug),
-        }),
       });
+
 
       // Itt nem akarunk UI-t törni: ha hibázik, csak logoljuk/soft error
       if (!res.ok) {

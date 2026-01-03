@@ -1,7 +1,7 @@
+// /app/api/index-session/route.ts
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
-
-import { supabaseServer } from "@/src/lib/supabase/server";
+import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 
 const MAX_SUMMARY_CHARS = 800;
 
@@ -10,28 +10,23 @@ export async function POST(req: Request) {
     const { session_id: sessionId, dream_text: dreamTextFromBody } =
       (await req.json()) as { session_id?: string; dream_text?: string };
 
-    if (!sessionId) {
-      return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
-    }
+    if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
 
-    const supabase = await supabaseServer();
+    const supabase = await supabaseServerAuthed(req);
     const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-    if (!authData?.user) {
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
+    const userId = authData.user.id;
 
     const { data: session, error: sessionError } = await supabase
       .from("dream_sessions")
-      .select("id, raw_dream_text")
+      .select("id, raw_dream_text, user_id")
       .eq("id", sessionId)
+      .eq("user_id", userId)
       .single();
 
     if (sessionError || !session) {
-      return NextResponse.json(
-        { error: sessionError?.message ?? "Session not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: sessionError?.message ?? "Session not found" }, { status: 404 });
     }
 
     const dreamText = (dreamTextFromBody ?? session.raw_dream_text ?? "").trim();
@@ -76,7 +71,6 @@ export async function POST(req: Request) {
           model: "text-embedding-3-small",
           input: anchorSummary,
         });
-
         embedding = embeddingResp.data?.[0]?.embedding ?? null;
       }
     }
@@ -86,7 +80,7 @@ export async function POST(req: Request) {
       .upsert(
         {
           session_id: sessionId,
-          user_id: authData.user.id,
+          user_id: userId,
           anchor_summary: anchorSummary,
           embedding,
           created_at: new Date().toISOString(),
@@ -94,10 +88,7 @@ export async function POST(req: Request) {
         { onConflict: "session_id" }
       );
 
-    if (upsertError) {
-      return NextResponse.json({ error: upsertError.message }, { status: 500 });
-    }
-
+    if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";

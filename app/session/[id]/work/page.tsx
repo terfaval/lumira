@@ -8,6 +8,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { Card } from "@/components/Card";
 import { SplitLayout } from "@/components/SplitLayout";
 import { DreamRawPanel } from "@/components/DreamRawPanel";
+import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import {
@@ -168,11 +169,11 @@ export default function WorkPage() {
     async (payload: NextPayload): Promise<NextResponse | null> => {
       setNextErr(null);
       try {
-        const res = await fetch("/api/work-block/next", {
+        const res = await fetchWithAuth("/api/work-block/next", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          json: payload,
         });
+
 
         if (!res.ok) {
           const text = await res.text();
@@ -306,10 +307,9 @@ export default function WorkPage() {
     if (indexAttemptedRef.current) return;
     indexAttemptedRef.current = true;
 
-    void fetch("/api/index-session", {
+    void fetchWithAuth("/api/index-session", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, dream_text: session.raw_dream_text }),
+      json: { session_id: sessionId, dream_text: session.raw_dream_text },
     }).catch((e) => console.warn("index-session failed", e));
   }, [session?.raw_dream_text, sessionId]);
 
