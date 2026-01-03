@@ -1,5 +1,3 @@
-// /app/session/[id]/work/page.tsx //
-
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -90,6 +88,7 @@ export default function WorkPage() {
   const load = useCallback(async () => {
     setErr(null);
     setLoaded(false);
+
     const { data, error } = await supabase
       .from("work_blocks")
       .select("id, session_id, user_id, block_type, content, created_at, updated_at")
@@ -99,6 +98,7 @@ export default function WorkPage() {
 
     if (error) setErr("Nem sikerült betölteni a kártyákat.");
     else setBlocks((data ?? []) as WorkBlock[]);
+
     setLoaded(true);
   }, [sessionId]);
 
@@ -135,6 +135,7 @@ export default function WorkPage() {
 
   useEffect(() => {
     let cancelled = false;
+
     const loadSession = async () => {
       const { data, error } = await supabase
         .from("dream_sessions")
@@ -163,36 +164,32 @@ export default function WorkPage() {
     setClosureBlock(null);
     setPendingNextPayload(null);
     setNextErr(null);
-    // fontos: ha irányt váltunk, tisztítsuk a hibaüzeneteket is
     setErr(null);
   }, [directionSlug]);
 
-  const fetchNextWorkBlock = useCallback(
-    async (payload: NextPayload): Promise<NextResponse | null> => {
-      setNextErr(null);
-      try {
-        const res = await fetchWithAuth("/api/work-block/next", {
-          method: "POST",
-          json: payload,
-        });
+  const fetchNextWorkBlock = useCallback(async (payload: NextPayload): Promise<NextResponse | null> => {
+    setNextErr(null);
 
+    try {
+      const res = await fetchWithAuth("/api/work-block/next", {
+        method: "POST",
+        json: payload,
+      });
 
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("Next block error", res.status, text);
-          setNextErr("Hiba történt a következő kérésénél.");
-          return null;
-        }
-
-        return (await res.json()) as NextResponse;
-      } catch (e) {
-        console.error(e);
-        setNextErr("Nem sikerült lekérni a következő kérdést.");
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Next block error", res.status, text);
+        setNextErr("Hiba történt a következő kérésénél.");
         return null;
       }
-    },
-    []
-  );
+
+      return (await res.json()) as NextResponse;
+    } catch (e) {
+      console.error(e);
+      setNextErr("Nem sikerült lekérni a következő kérdést.");
+      return null;
+    }
+  }, []);
 
   const processNextPayload = useCallback(
     async (payload: NextPayload) => {
@@ -254,6 +251,7 @@ export default function WorkPage() {
   const handleRetryNext = useCallback(async () => {
     if (!pendingNextPayload) return;
     setBusy(true);
+
     try {
       await processNextPayload(pendingNextPayload);
     } catch (e) {
@@ -281,7 +279,7 @@ export default function WorkPage() {
 
     setPendingNextPayload(payload);
     await processNextPayload(payload);
-  }, [directionConfig, directionSlug, processNextPayload, session]);
+  }, [directionConfig, directionSlug, processNextPayload, session, sessionId]);
 
   useEffect(() => {
     if (!directionSlug || loading || busy || ensuredInitial || !loaded) return;
@@ -292,16 +290,7 @@ export default function WorkPage() {
     }
 
     setEnsuredInitial(true);
-  }, [
-    busy,
-    directionBlocks.length,
-    directionSlug,
-    ensuredInitial,
-    ensureInitialBlock,
-    loaded,
-    loading,
-    session,
-  ]);
+  }, [busy, directionBlocks.length, directionSlug, ensuredInitial, ensureInitialBlock, loaded, loading, session]);
 
   // opcionális: index-session egyszer
   useEffect(() => {
@@ -339,13 +328,16 @@ export default function WorkPage() {
           },
         };
 
-        const { error } = await supabase.from("work_blocks").update({ content: updatedContent }).eq("id", block.id);
+        const { error } = await supabase
+          .from("work_blocks")
+          .update({ content: updatedContent })
+          .eq("id", block.id);
+
         if (error) throw error;
 
-        // update local cache
         setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content: updatedContent } : b)));
 
-        // history: a directionBlocks még a korábbi renderből jön, ezért itt explicit összeállítjuk
+        // history: explicit összeállítás, hogy ne “render lag” legyen
         const updatedDirectionBlocks = directionBlocks.map((b) =>
           b.id === block.id ? { ...b, content: updatedContent } : b
         );
@@ -363,7 +355,6 @@ export default function WorkPage() {
 
         setPendingNextPayload(payload);
 
-        // ha next nem megy, a mentés attól még jó volt → ne állítsunk mentési hibát
         await processNextPayload(payload);
       } catch (e: unknown) {
         console.error(e);
@@ -372,7 +363,7 @@ export default function WorkPage() {
         setBusy(false);
       }
     },
-    [directionBlocks, directionSlug, processNextPayload, session, directionConfig]
+    [directionBlocks, directionSlug, processNextPayload, session, directionConfig, sessionId]
   );
 
   const Spinner = (
@@ -413,9 +404,11 @@ export default function WorkPage() {
             !directionSlug ? (
               <p style={{ color: "var(--text-muted)" }}>
                 Válassz egy irányt az{" "}
-                <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj
-                vissza ide.
+                <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj vissza ide.
               </p>
+            ) : closureBlock ? (
+              // ✅ ha lezárás van, NINCS más blokk
+              <CenteredClosure block={closureBlock} sessionId={sessionId} />
             ) : (
               <div className="stack">
                 {!currentBlock ? (
@@ -428,10 +421,8 @@ export default function WorkPage() {
                       key={`${currentBlock.id}-${currentBlock.content.user?.answered_at ?? ""}-${currentBlock.content.user?.answer ?? ""}`}
                       block={currentBlock}
                       onSave={saveAnswer}
-                      busy={busy || Boolean(closureBlock)}
+                      busy={busy}
                     />
-
-                    {closureBlock ? <ClosureCard block={closureBlock} sessionId={sessionId} /> : null}
 
                     {nextErr ? (
                       <Card>
@@ -449,9 +440,7 @@ export default function WorkPage() {
                 {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
 
                 {process.env.NODE_ENV === "development" && pendingNextPayload && (
-                  <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                    következő kérésre várakozik…
-                  </p>
+                  <p style={{ fontSize: 12, color: "var(--text-muted)" }}>következő kérésre várakozik…</p>
                 )}
               </div>
             )
@@ -487,15 +476,15 @@ function BlockCard({
           <span className="badge-muted">#{block.content.sequence}</span>
           <span className="badge-muted">Állapot: {stateLabel}</span>
           {answeredAt && (
-            <span className="badge-muted">
-              Válaszolva: {new Date(answeredAt).toLocaleString("hu-HU")}
-            </span>
+            <span className="badge-muted">Válaszolva: {new Date(answeredAt).toLocaleString("hu-HU")}</span>
           )}
         </div>
 
-        <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>
-          {block.content.ai?.context ?? ""}
-        </div>
+        {!!block.content.ai?.context && (
+          <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>
+            {block.content.ai.context}
+          </div>
+        )}
 
         <div style={{ fontWeight: 700 }}>{block.content.ai?.question ?? ""}</div>
 
@@ -513,6 +502,30 @@ function BlockCard({
         </div>
       </div>
     </Card>
+  );
+}
+
+function CenteredClosure({
+  block,
+  sessionId,
+}: {
+  block: NextResponse["work_block"];
+  sessionId: string;
+}) {
+  return (
+    <div
+      style={{
+        minHeight: 460,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "12px 0",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: 760 }}>
+        <ClosureCard block={block} sessionId={sessionId} />
+      </div>
+    </div>
   );
 }
 
@@ -566,6 +579,7 @@ function normalizeContent(content: DirectionCardContent): DirectionCardContent {
   };
 }
 
+// ✅ FONTOS: több history-t küldünk (különben a 3. kérdés simán megismétli az 1.-et)
 function buildHistory(blocks: DirectionWorkBlock[]): HistoryItem[] {
   return [...blocks]
     .sort((a, b) => (a.content.sequence ?? 0) - (b.content.sequence ?? 0))
@@ -574,5 +588,5 @@ function buildHistory(blocks: DirectionWorkBlock[]): HistoryItem[] {
       answer: b.content.user?.answer ? String(b.content.user.answer) : null,
     }))
     .filter((h) => h.question)
-    .slice(-4);
+    .slice(-8);
 }

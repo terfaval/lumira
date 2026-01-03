@@ -1,19 +1,21 @@
-// /app/api/work-block/next/route.ts //
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 
 const SAFETY_VALUES = ["none", "self_harm", "reality_confusion", "other"] as const;
-const MAX_HISTORY = 4;
+
+// ✅ több history, hogy ne ismételje az első kérdést a 3.-nál
+const MAX_HISTORY = 8;
+
 const MAX_PRIOR_ECHOES = 2;
 const LEAD_IN_LIMIT = 280;
 const QUESTION_LIMIT = 160;
 const CTA_LIMIT = 120;
 const BRIEF_ANSWER_LIMIT = 30;
 
-// low novelty
+// low novelty / repetition
 const SIMILARITY_THRESHOLD = 0.72; // 0.68–0.78 között érdemes hangolni
-const RECENT_QS_FOR_SIMILARITY = 2;
+const RECENT_QS_FOR_SIMILARITY = 6;
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -146,9 +148,7 @@ function sanitizeAllowedSlugs(allowed: unknown, fallbackSlug?: string): string[]
 function unwrapDirection(direction: DirectionInput | undefined | null): DirectionNormalized | null {
   if (!direction || typeof direction !== "object") return null;
 
-  const asRecord = (val: unknown) =>
-    val && typeof val === "object" ? (val as Record<string, unknown>) : undefined;
-
+  const asRecord = (val: unknown) => (val && typeof val === "object" ? (val as Record<string, unknown>) : undefined);
   const content = asRecord((direction as any).content) ?? asRecord(direction);
 
   const methodSpec = (asRecord(content?.method_spec) ?? asRecord((direction as any).method_spec)) ?? undefined;
@@ -262,6 +262,18 @@ function makeLowNoveltyClosure(safety: SafetyValue): WorkBlockResponse {
   };
 }
 
+// --- lead_in tisztítás: ne kerülhessen kérdés az átvezetőbe ---
+function cleanLeadIn(leadIn: string): string {
+  const t = (leadIn ?? "").trim();
+  if (!t) return "";
+  const q = t.indexOf("?");
+  if (q !== -1) {
+    const before = t.slice(0, q).trim();
+    return before.length >= 12 ? before : "";
+  }
+  return t;
+}
+
 function validateModelOutput(parsed: unknown): WorkBlockResponse | null {
   if (!parsed || typeof parsed !== "object") return null;
   const obj = parsed as Record<string, any>;
@@ -274,21 +286,19 @@ function validateModelOutput(parsed: unknown): WorkBlockResponse | null {
   const question = typeof workBlock.question === "string" ? workBlock.question.trim() : "";
   if (!question) return null;
 
-  const leadIn = typeof workBlock.lead_in === "string" ? workBlock.lead_in : "";
+  const leadInRaw = typeof workBlock.lead_in === "string" ? workBlock.lead_in : "";
+  const leadIn = cleanLeadIn(leadInRaw);
   const cta = typeof workBlock.cta === "string" ? workBlock.cta : null;
 
   const questionMarkCount = (question.match(/\?/g) ?? []).length;
   const hasNumberedList = /\d+\)/.test(question);
   const lineBreakCount = (question.match(/\n/g) ?? []).length;
-
   if (questionMarkCount > 1 || hasNumberedList || lineBreakCount >= 2) return null;
 
   const suggestStop = Boolean(stopSignal?.suggest_stop);
   const reason = typeof stopSignal?.reason === "string" ? stopSignal.reason : null;
 
-  const safety = SAFETY_VALUES.includes(flags?.safety as SafetyValue)
-    ? (flags.safety as SafetyValue)
-    : "none";
+  const safety = SAFETY_VALUES.includes(flags?.safety as SafetyValue) ? (flags.safety as SafetyValue) : "none";
 
   return {
     work_block: clampWorkBlock({ lead_in: leadIn, question, cta }),
@@ -324,7 +334,7 @@ function buildDirectionForAI(direction: DirectionNormalized | undefined) {
   return Object.keys(directionForAI).length ? directionForAI : undefined;
 }
 
-// ---------- similarity helpers (low novelty) ----------
+// ---------- repetition & similarity helpers ----------
 function normalizeQ(s: string) {
   return s
     .toLowerCase()
@@ -383,6 +393,12 @@ function isTooSimilar(newQ: string, prevQs: string[], threshold = SIMILARITY_THR
   return prevQs.some((prev) => jaccard(a, tokenSet(prev)) >= threshold);
 }
 
+function isExactRepeat(newQ: string, prevQs: string[]) {
+  const n = normalizeQ(newQ);
+  if (!n) return false;
+  return prevQs.some((p) => normalizeQ(p) === n);
+}
+
 async function parseModelJSON(rawContent: string): Promise<unknown> {
   try {
     return JSON.parse(rawContent);
@@ -409,7 +425,6 @@ async function runLatentSynthesisSidecar(args: {
   if (!sessionId) return;
 
   const allowedSlugs = sanitizeAllowedSlugs(args.body.allowed_slugs, args.direction?.slug);
-
   const url = new URL("/api/synthesize", args.req.url).toString();
 
   const cookieHeader = args.req.headers.get("cookie") ?? "";
@@ -455,7 +470,6 @@ export async function POST(req: Request) {
     const dreamText = (body.dream_text ?? "").trim();
     const direction = unwrapDirection(body.direction as DirectionInput);
     const history = sanitizeHistory(body.history);
-    const previousQuestion = history[history.length - 1]?.question ?? "";
     const priorEchoes = sanitizePriorEchoes(body.prior_echoes);
     const safetyFlag = sanitizeSafety(body.synth?.flags);
 
@@ -482,17 +496,16 @@ export async function POST(req: Request) {
 
     const directionForAI = buildDirectionForAI(direction);
 
-    const userPayload = {
-      dream_text: dreamText,
-      direction: directionForAI ?? {},
-      history,
-      previous_question: previousQuestion,
-      prior_echoes: priorEchoes,
-    };
+    const prevQsAll = history.map((h) => h.question).filter(Boolean);
+    const prevQsRecent = prevQsAll.slice(-RECENT_QS_FOR_SIMILARITY);
 
     const baseSystemPrompt = [
       "Magyar nyelvű API vagy, kizárólag a megadott JSON sémát adod vissza.",
       "Szerep: a következő kártyára egyetlen, irányhoz illeszkedő kérdést generálsz.",
+      "",
+      "LEAD_IN vs KÉRDÉS:",
+      "- lead_in = 1 rövid átvezető mondat (NEM kérdés, NEM tartalmaz '?').",
+      "- question = pontosan 1 kérdés, 1 kérdőjellel.",
       "",
       "KÖTELEZŐ ILLESZKEDÉS AZ IRÁNYHOZ:",
       "- A direction.method_spec.question_style szerint formáld a kérdést.",
@@ -502,9 +515,9 @@ export async function POST(req: Request) {
       "- A kérdésben legyen legalább 1 konkrét horgony a dream_text-ből VAGY a legutóbbi answer-ből.",
       "- Ne kérdezz általánosan horgony nélkül.",
       "",
-      "ISMÉTLÉS ELLEN:",
-      "- Ne ismételd a previous_question-t és ne parafrazáld.",
-      "- Kapcsolódj, de válts fókuszt (más részlet, más dimenzió).",
+      "SZIGORÚ NEM-ISMÉTLÉS:",
+      "- Tilos megismételni vagy parafrazálni bármelyik korábbi kérdést.",
+      "- Ha hasonló lenne, válts teljesen más konkrét részletre ugyanabban az irányban.",
       "",
       "Biztonság:",
       "- Ne értelmezd az álmot, ne diagnosztizálj, ne szimbólumszótár.",
@@ -518,10 +531,12 @@ export async function POST(req: Request) {
       "{\"work_block\":{\"lead_in\":\"\",\"question\":\"\",\"cta\":\"\"},\"stop_signal\":{\"suggest_stop\":false,\"reason\":null},\"flags\":{\"safety\":\"none\"}}",
     ].join("\n");
 
-    const recentQs = history
-      .map((h) => h.question)
-      .filter(Boolean)
-      .slice(-RECENT_QS_FOR_SIMILARITY);
+    const userPayload = {
+      dream_text: dreamText,
+      direction: directionForAI ?? {},
+      history,
+      prior_echoes: priorEchoes,
+    };
 
     async function callModel(extraRules: string[] = []) {
       const systemPrompt = [baseSystemPrompt, ...extraRules].join("\n");
@@ -546,30 +561,33 @@ export async function POST(req: Request) {
       return sanitized;
     }
 
-    // 1) első próbálkozás
+    // 1) first try
     const first = await callModel();
 
-    // ha pont ugyanaz mint előző kérdés → tekintsük low novelty jelnek (nem 502)
-    const exactRepeat =
-      previousQuestion &&
-      first.work_block.question.trim().toLowerCase() === previousQuestion.trim().toLowerCase();
+    const tooSimilar1 =
+      (prevQsRecent.length > 0 && isTooSimilar(first.work_block.question, prevQsRecent)) ||
+      isExactRepeat(first.work_block.question, prevQsAll);
 
-    const tooSimilar = (recentQs.length > 0 && isTooSimilar(first.work_block.question, recentQs)) || exactRepeat;
+    if (!tooSimilar1) return NextResponse.json(first);
 
-    if (!tooSimilar) return NextResponse.json(first);
-
-    // 2) retry: explicit fókuszváltás + tiltás
+    // 2) retry: explicit tiltás + kötelező fókuszváltás
     const retry = await callModel([
-      `FONTOS: A következő kérdés NEM lehet ugyanaz vagy parafrázis ezekhez: ${recentQs.join(" | ")}`,
-      "Válts fókuszt: ha eddig állapot/érzés volt, menj jelenet/szenzoros/sorrend irányba, vagy fordítva — de maradj az irány keretében.",
-      "Ha így sem tudsz lényegesen új, érdemi kérdést adni, akkor adj egy rövid, egyszerű kérdést, ami másik konkrét elemre kérdez rá.",
+      `TILOS: ezekkel megegyező vagy ezek parafrázisa: ${prevQsRecent.join(" | ")}`,
+      "KÖTELEZŐ: válts teljesen más konkrét részletre (szereplő/helyszín/tárgy/jelenetváltás/testérzet), de maradj az irány keretében.",
+      "Ha nem tudsz érdemben új kérdést, akkor add vissza a sémát úgy, hogy stop_signal.suggest_stop=true és reason='low_novelty'.",
     ]);
 
-    const tooSimilarAgain = recentQs.length > 0 && isTooSimilar(retry.work_block.question, recentQs);
+    // ha a modell mégis kérdést ad, ellenőrizzük újra
+    const tooSimilar2 =
+      (prevQsRecent.length > 0 && isTooSimilar(retry.work_block.question, prevQsRecent)) ||
+      isExactRepeat(retry.work_block.question, prevQsAll);
 
-    if (tooSimilarAgain) {
-      // 3) kontrollált lezárás
-      return NextResponse.json(makeLowNoveltyClosure("none"));
+    // ha a modell maga stop-ot kér, azt engedjük át
+    if (retry.stop_signal?.suggest_stop) return NextResponse.json(retry);
+
+    if (tooSimilar2) {
+      // 3) kontrollált lezárás (UI már tudja kezelni)
+      return NextResponse.json(makeLowNoveltyClosure(safetyFlag));
     }
 
     return NextResponse.json(retry);
