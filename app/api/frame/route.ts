@@ -1,4 +1,4 @@
-// /app/api/frame/route.ts //
+// /app/api/frame/route.ts
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
@@ -8,6 +8,8 @@ type DirectionCatalogSummary = {
   title: string;
   description: string | null;
   content?: any;
+  is_active?: boolean;
+  sort_order?: number | null;
 };
 
 type RecommendedDirection = { slug: string; reason: string };
@@ -44,7 +46,8 @@ function looksSentenceLike(s: string): boolean {
 function isGenericTitle(title?: string | null) {
   const cleaned = sanitizeTitle(title ?? "");
   if (!cleaned) return true;
-  return cleaned.toLowerCase() === "álom";
+  const t = cleaned.toLowerCase();
+  return t === "álom" || t === "álomjelenet" || t === "jelenet" || t === "álomnapló";
 }
 
 function shuffleInPlace<T>(arr: T[]): T[] {
@@ -93,7 +96,11 @@ async function upsertSummaries(
   supabase: any,
   sessionId: string,
   userId: string,
-  payload: { title: string; framing_text: string; recommended_directions: RecommendedDirection[] }
+  payload: {
+    title?: string | null;
+    framing_text?: string | null;
+    recommended_directions?: RecommendedDirection[] | null;
+  }
 ) {
   const { error } = await supabase
     .from("dream_session_summaries")
@@ -101,9 +108,9 @@ async function upsertSummaries(
       {
         session_id: sessionId,
         user_id: userId,
-        title: payload.title,
-        framing_text: payload.framing_text,
-        recommended_directions: payload.recommended_directions,
+        ...(payload.title !== undefined ? { title: payload.title } : {}),
+        ...(payload.framing_text !== undefined ? { framing_text: payload.framing_text } : {}),
+        ...(payload.recommended_directions !== undefined ? { recommended_directions: payload.recommended_directions } : {}),
       },
       { onConflict: "session_id" }
     );
@@ -113,12 +120,7 @@ async function upsertSummaries(
   }
 }
 
-async function appendLatentAnalysis(
-  supabase: any,
-  sessionId: string,
-  output: any,
-  meta: any
-) {
+async function appendLatentAnalysis(supabase: any, sessionId: string, output: any, meta: any) {
   const { error } = await supabase.rpc("append_latent_analysis", {
     p_session_id: sessionId,
     p_output: output,
@@ -128,6 +130,114 @@ async function appendLatentAnalysis(
   if (error) {
     console.warn("append_latent_analysis failed:", error.message);
   }
+}
+
+async function generateLatent(
+  client: OpenAI,
+  raw: string,
+  framing: string,
+  recommendations: RecommendedDirection[],
+  allowedSlugs: string[]
+) {
+  // belső latent: lehet erősebb hipotézis, de feltételes + alátámasztott, nem user-facing
+  const resp = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.35,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content:
+          "BELSŐ (nem felhasználói) latent elemzést készítesz egy álomról. Magyar nyelv.\n" +
+          "Cél: segíteni a következő kérdések pontosítását és az álom fokozatos mélyítését.\n" +
+          "Szabályok:\n" +
+          "- Nem diagnózis, nem klinikai címkék.\n" +
+          "- Lehetnek erősebb hipotézisek, de feltételesen, az álom elemeivel alátámasztva.\n" +
+          "- Ne adj tanácsot a felhasználónak.\n" +
+          "- candidate_directions: csak a megadott slugokból.\n" +
+          'Kimenet: csak JSON objektum a következő kulcsokkal: kind, summary_hu, anchors, hypotheses, candidate_directions, question_seed, flags.',
+      },
+      {
+        role: "user",
+        content: JSON.stringify({
+          dream_text: raw,
+          framing_text: framing,
+          recommended_directions: recommendations,
+          allowed_slugs: allowedSlugs,
+        }),
+      },
+    ],
+    max_tokens: 650,
+  });
+
+  const parsed = JSON.parse(resp.choices?.[0]?.message?.content ?? "{}");
+  return parsed;
+}
+
+async function ensureTitleFromLatent(
+  client: OpenAI,
+  framingText: string,
+  existingAudit: Record<string, unknown>,
+  latentForTitle: any,
+  rawBackup: string
+) {
+  const existingTitle = titleCaseHungarian(sanitizeTitle((existingAudit as any)?.title ?? ""));
+  if (existingTitle && !isGenericTitle(existingTitle)) {
+    const wc = countWords(existingTitle);
+    if (wc >= 2 && wc <= 4 && !looksSentenceLike(existingTitle)) {
+      return { title: existingTitle, audit: { ...existingAudit, title: existingTitle } };
+    }
+  }
+
+  const anchors = latentForTitle?.anchors ?? null;
+
+  const system = [
+    "Adj egy rövid, magyar címet az álomhoz, a KULCSJELENETRE fókuszálva.",
+    "Szabályok:",
+    "- 2–4 szó (szigorú)",
+    "- Kezdődjön nagybetűvel",
+    "- Ne legyen mondat, ne legyen magyarázat",
+    "- Ne legyen értelmezés/diagnózis",
+    "- Tiltott generikus címek: Álom, Álomjelenet, Jelenet, Álomnapló",
+    "- Lehetőleg: 1 akció/állapot + 1 konkrét horgony (hely/objektum/szereplő) az anchors mezőből",
+    'Formátum: {"title":"..."}',
+  ].join("\n");
+
+  const userPayload = {
+    framing_text: framingText,
+    anchors,
+    // csak vésztartalék; nem “szóvadászat”, inkább kontextus, ha anchors hiányos
+    dream_text_excerpt: rawBackup.slice(0, 700),
+  };
+
+  let generated = "";
+  try {
+    const titleResp = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: JSON.stringify(userPayload) },
+      ],
+      max_tokens: 60,
+    });
+
+    const parsed = JSON.parse(titleResp.choices?.[0]?.message?.content ?? "{}");
+    generated = typeof parsed?.title === "string" ? parsed.title : "";
+  } catch {
+    generated = "";
+  }
+
+  let finalTitle = titleCaseHungarian(sanitizeTitle(generated));
+  const wc = countWords(finalTitle);
+
+  if (!finalTitle || isGenericTitle(finalTitle) || wc < 2 || wc > 4 || looksSentenceLike(finalTitle)) {
+    // Stabil, nem generikus fallback (nem raw tokenekből)
+    finalTitle = "Menekülés és veszély";
+  }
+
+  return { title: finalTitle, audit: { ...existingAudit, title: finalTitle } };
 }
 
 export async function POST(req: Request) {
@@ -162,11 +272,6 @@ export async function POST(req: Request) {
     const activeDirections: DirectionCatalogSummary[] = (directions ?? []).filter((d) => d.is_active);
     const allowedSlugs = new Set(activeDirections.map((d) => d.slug));
 
-    const existingRecommendations = validateRecommendations(
-      (session.ai_framing_audit as any)?.recommended_directions,
-      allowedSlugs
-    );
-
     const raw = session.raw_dream_text?.trim() ?? "";
 
     // ---- rövid álom fallback ----
@@ -195,14 +300,14 @@ export async function POST(req: Request) {
 
       if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
-      // ✅ canonical: summaries is kapja meg
+      // canonical: summaries is
       await upsertSummaries(supabase, sessionId, userId, {
         title,
         framing_text: framing,
         recommended_directions: recommended,
       });
 
-      // ✅ initial latent snapshot (fallback)
+      // initial latent snapshot (fallback)
       await appendLatentAnalysis(
         supabase,
         sessionId,
@@ -223,87 +328,17 @@ export async function POST(req: Request) {
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+    // framing & audit
     let framing = session.ai_framing_text?.trim() ?? "";
     let audit = (session.ai_framing_audit as any) ?? {};
 
-    const ensureTitle = async (rawText: string, framingText: string, existingAudit: Record<string, unknown>) => {
-      const existingTitle = titleCaseHungarian(sanitizeTitle((existingAudit as any)?.title ?? ""));
-      if (existingTitle && !isGenericTitle(existingTitle)) {
-        const wc = countWords(existingTitle);
-        if (wc >= 2 && wc <= 6 && !looksSentenceLike(existingTitle)) {
-          return { title: existingTitle, audit: { ...existingAudit, title: existingTitle } };
-        }
-      }
+    // Existing recommendations from audit (ha valid)
+    const existingRecommendations = validateRecommendations(
+      (session.ai_framing_audit as any)?.recommended_directions,
+      allowedSlugs
+    );
 
-      let generated = "";
-      try {
-        const titleResp = await client.chat.completions.create({
-          model: "gpt-4o-mini",
-          temperature: 0.2,
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content:
-                "Adj egy rövid, magyar címet az álomhoz, a KULCSJELENETRE fókuszálva.\n" +
-                "Szabályok:\n" +
-                "- 2–6 szó\n" +
-                "- Kezdődjön nagybetűvel\n" +
-                "- Ne legyen magyarázó mondat\n" +
-                "- Ne használj kötőszavas szerkezeteket (pl. „ugyanakkor”, „közben”, „mintha”)\n" +
-                "- Ne legyen értelmezés, jelentés, diagnózis\n" +
-                "- Ne legyen idézőjel\n" +
-                'Formátum: {"title":"..."}',
-            },
-            { role: "user", content: JSON.stringify({ dream_text: rawText, framing: framingText }) },
-          ],
-          max_tokens: 60,
-        });
-
-        const parsed = JSON.parse(titleResp.choices?.[0]?.message?.content ?? "{}");
-        generated = typeof parsed?.title === "string" ? parsed.title : "";
-      } catch {
-        generated = "";
-      }
-
-      let finalTitle = titleCaseHungarian(sanitizeTitle(generated));
-      const wc = countWords(finalTitle);
-
-      if (!finalTitle || isGenericTitle(finalTitle) || wc < 2 || wc > 6 || looksSentenceLike(finalTitle)) {
-        try {
-          const retry = await client.chat.completions.create({
-            model: "gpt-4o-mini",
-            temperature: 0,
-            response_format: { type: "json_object" },
-            messages: [
-              {
-                role: "system",
-                content:
-                  "Adj 1 darab címet.\n" +
-                  "Kötelező: 2–5 szó, nagybetűvel kezdődjön, kulcsjelenet.\n" +
-                  "Tiltott: mondat, kötőszavak (ugyanakkor/közben/mintha), értelmezés.\n" +
-                  'Formátum: {"title":"..."}',
-              },
-              { role: "user", content: rawText },
-            ],
-            max_tokens: 40,
-          });
-          const parsed2 = JSON.parse(retry.choices?.[0]?.message?.content ?? "{}");
-          const gen2 = typeof parsed2?.title === "string" ? parsed2.title : "";
-          const candidate = titleCaseHungarian(sanitizeTitle(gen2));
-          const wc2 = countWords(candidate);
-          if (candidate && !isGenericTitle(candidate) && wc2 >= 2 && wc2 <= 6 && !looksSentenceLike(candidate)) {
-            finalTitle = candidate;
-          }
-        } catch {
-          // ignore
-        }
-      }
-
-      if (!finalTitle || isGenericTitle(finalTitle) || countWords(finalTitle) < 2) finalTitle = "Álomjelenet";
-      return { title: finalTitle, audit: { ...existingAudit, title: finalTitle } };
-    };
-
+    // 1) FRAMING (ha nincs)
     if (!framing) {
       const resp = await client.chat.completions.create({
         model: "gpt-4o-mini",
@@ -331,9 +366,7 @@ export async function POST(req: Request) {
       audit = { model: resp.model, usage: resp.usage ?? null, ...audit };
     }
 
-    const { title, audit: auditWithTitle } = await ensureTitle(raw, framing, audit);
-    audit = auditWithTitle;
-
+    // 2) RECOMMENDATIONS (ha nincs valid meglévő)
     const catalogForModel = activeDirections.map((d) => ({
       slug: d.slug,
       title: d.title,
@@ -373,66 +406,57 @@ export async function POST(req: Request) {
     }
 
     if (!recommendations) recommendations = fallbackRecommendations(activeDirections);
-    audit = { ...audit, recommended_directions: recommendations };
 
-    const { error: updErr } = await supabase
-      .from("dream_sessions")
-      .update({ ai_framing_text: framing, ai_framing_audit: audit, status: "framed" })
-      .eq("id", sessionId)
-      .eq("user_id", userId);
-
-    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
-
-    // ✅ canonical: summaries is kapja meg (title+framing+reco)
-    await upsertSummaries(supabase, sessionId, userId, {
-      title,
-      framing_text: framing,
-      recommended_directions: recommendations,
-    });
-
-    // ✅ latent_analysis szülessen meg a frame-nél
+    // 3) LATENT (mindig, a frame-nél szülessen meg az initial)
+    let latentParsed: any = null;
     try {
-      const latentResp = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        temperature: 0.35,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content:
-              "BELSŐ (nem felhasználói) latent elemzést készítesz egy álomról. Magyar nyelv.\n" +
-              "Cél: segíteni a következő kérdések pontosítását és az álom fokozatos mélyítését.\n" +
-              "Szabályok:\n" +
-              "- Nem diagnózis, nem klinikai címkék.\n" +
-              "- Lehetnek erősebb hipotézisek, de feltételesen, az álom elemeivel alátámasztva.\n" +
-              "- Ne adj tanácsot a felhasználónak.\n" +
-              "- candidate_directions: csak a megadott slugokból.\n" +
-              'Kimenet: csak JSON objektum a következő kulcsokkal: kind, summary_hu, anchors, hypotheses, candidate_directions, question_seed, flags.',
-          },
-          {
-            role: "user",
-            content: JSON.stringify({
-              dream_text: raw,
-              framing_text: framing,
-              title,
-              recommended_directions: recommendations,
-              allowed_slugs: Array.from(allowedSlugs),
-            }),
-          },
-        ],
-        max_tokens: 650,
-      });
+      latentParsed = await generateLatent(
+        client,
+        raw,
+        framing,
+        recommendations,
+        Array.from(allowedSlugs)
+      );
 
-      const parsed = JSON.parse(latentResp.choices?.[0]?.message?.content ?? "{}");
-
-      await appendLatentAnalysis(supabase, sessionId, parsed, {
+      await appendLatentAnalysis(supabase, sessionId, latentParsed, {
         source: "frame",
         note: "initial_latent",
         model: "gpt-4o-mini",
       });
     } catch (e) {
       console.warn("latent generation failed:", e);
+      latentParsed = null;
     }
+
+    // 4) TITLE (latent anchors + framing alapján; 2–4 szó)
+    const { title, audit: auditWithTitle } = await ensureTitleFromLatent(
+      client,
+      framing,
+      audit,
+      latentParsed,
+      raw
+    );
+    audit = { ...auditWithTitle, recommended_directions: recommendations };
+
+    // 5) dream_sessions update (megmarad, mert a UI jelenleg innen is olvas)
+    const { error: updErr } = await supabase
+      .from("dream_sessions")
+      .update({
+        ai_framing_text: framing,
+        ai_framing_audit: audit,
+        status: "framed",
+      })
+      .eq("id", sessionId)
+      .eq("user_id", userId);
+
+    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+
+    // 6) canonical: summaries is kapja meg (title + framing + reco)
+    await upsertSummaries(supabase, sessionId, userId, {
+      title,
+      framing_text: framing,
+      recommended_directions: recommendations,
+    });
 
     return NextResponse.json({ sessionId, framing, title });
   } catch (e: unknown) {
