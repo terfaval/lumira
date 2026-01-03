@@ -1,3 +1,4 @@
+// /app/api/work-block/next/route.ts //
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";

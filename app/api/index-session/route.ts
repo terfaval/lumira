@@ -1,4 +1,4 @@
-// /app/api/index-session/route.ts
+// /app/api/index-session/route.ts //
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";

@@ -110,7 +110,7 @@ export default function EveningRun() {
       <Shell title={card?.title ?? "Esti kártya"} space="evening">
         <div className="stack">
           <p style={{ fontWeight: 600 }}>Szép álmokat.</p>
-          <Link href="/evening/cards" className="btn btn-primary" style={{ width: "fit-content" }}>
+          <Link href="/evening" className="btn btn-primary" style={{ width: "fit-content" }}>
             Vissza a kártyákhoz
           </Link>
         </div>

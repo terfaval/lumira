@@ -5,7 +5,7 @@
     "title": "Álomemlékezet erősítése",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Az álomemlékek reggeli hozzáférhetőségének növelése.",
+      "goal_md": "Az álomemlékek reggeli hozzáférhetőségének növelése.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már kényelmesen fekszel, hunyd le a szemed." },
         { "context_md": "Gyakorlat", "question": "Engedd, hogy a légzés magától lelassuljon (nem kell irányítani)." },
@@ -37,7 +37,7 @@
     "title": "Lucid álom – alap előkészítés",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Tudatosság csírájának megjelenése álomban, erőlködés nélkül.",
+      "goal_md": "Tudatosság csírájának megjelenése álomban, erőlködés nélkül.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Miután elhelyezkedtél az ágyban, lazítsd el az arcot, az állkapcsot és a vállakat." },
         { "context_md": "Gyakorlat", "question": "Idézz fel egy egyszerű nappali mozdulatot (például ajtónyitás, kézmosás)." },
@@ -68,7 +68,7 @@
     "title": "Problémamegoldás alvás közben",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Tudattalan inkubáció támogatása.",
+      "goal_md": "Tudattalan inkubáció támogatása.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt fogj egy papírt, és írd le a kérdést egy mondatban." },
         { "context_md": "Gyakorlat", "question": "2 percig írj le mindent, ami eszedbe jut róla (szűrés nélkül)." },
@@ -98,7 +98,7 @@
     "title": "Érzelmi feldolgozás",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Napi érzelmi lenyomatok elcsendesítése, integráció támogatása.",
+      "goal_md": "Napi érzelmi lenyomatok elcsendesítése, integráció támogatása.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Ahogy megérkezel a fekvő helyzetbe, tedd fel magadban: „Mi maradt bennem a mai napból?”" },
         { "context_md": "Gyakorlat", "question": "Válassz ki egy érzést vagy hangulatot (akár halványat is)." },
@@ -129,7 +129,7 @@
     "title": "Kreativitás és inspiráció",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Asszociatív, képi gondolkodás megnyitása.",
+      "goal_md": "Asszociatív, képi gondolkodás megnyitása.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt vagy amikor már kényelmesen fekszel, gondolj három kategóriára: tárgy – élőlény – hely." },
         { "context_md": "Gyakorlat", "question": "Mondj ki magadban 1–1 szót mindegyikből (például „kulcs – róka – állomás”)." },
@@ -159,7 +159,7 @@
     "title": "Rémálmok csökkentése",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Visszatérő rémálmok intenzitásának enyhítése.",
+      "goal_md": "Visszatérő rémálmok intenzitásának enyhítése.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt idézz fel nagyon röviden egy visszatérő rémálmot (csak a vázát)." },
         { "context_md": "Gyakorlat", "question": "Válassz ki egy fordulópontot: egy pillanatot, ahol a jelenet megtörhet." },
@@ -189,7 +189,7 @@
     "title": "Szimbólumok tisztázása — Bővítés (opcionális)",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Visszatérő motívumok implicit megértésének támogatása.",
+      "goal_md": "Visszatérő motívumok implicit megértésének támogatása.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Válassz ki egy visszatérő szimbólumot vagy motívumot (csak nevezd meg)." },
         { "context_md": "Gyakorlat", "question": "Tedd fel magadban a kérdést: „Mit képviselsz számomra?”" },
@@ -217,7 +217,7 @@
     "title": "Stresszlevezetés",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Idegrendszeri lecsendesítés elalvás előtt.",
+      "goal_md": "Idegrendszeri lecsendesítés elalvás előtt.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már kényelmesen fekszel, vegyél egy természetes belégzést." },
         { "context_md": "Gyakorlat", "question": "A következő körben: belégzés 4-ig, kilégzés 6-ig (számolhatod magadban)." },
@@ -246,7 +246,7 @@
     "title": "Tudattalan biztonságérzet",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Mélyebb, megszakításmentesebb alvás támogatása.",
+      "goal_md": "Mélyebb, megszakításmentesebb alvás támogatása.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Miután elhelyezkedtél, figyeld meg, hol érintkezik a tested az ággyal." },
         { "context_md": "Gyakorlat", "question": "Engedd, hogy ezek a pontok „nehezedjenek” – mintha a test átadná a súlyt." },
@@ -275,7 +275,7 @@
     "title": "Életirány tisztázása",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Belső irányérzet finom hangolása.",
+      "goal_md": "Belső irányérzet finom hangolása.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már a pihenés felé fordulsz, mondd magadban: „Mi fontos most?”" },
         { "context_md": "Gyakorlat", "question": "Ne válaszolj rá." },
@@ -304,7 +304,7 @@
     "title": "Szokásformálás támogatása",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Egy apró viselkedésváltozás „beültetése” túlterhelés nélkül.",
+      "goal_md": "Egy apró viselkedésváltozás „beültetése” túlterhelés nélkül.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Válassz egyetlen mikrolépést holnapra (például „ebéd után 5 perc séta”)." },
         { "context_md": "Gyakorlat", "question": "Mondd ki magadban egyszer, egyszerűen." },
@@ -334,7 +334,7 @@
     "title": "Test–tudat integráció",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Testérzetek finomítása, belső jelenlét mélyítése.",
+      "goal_md": "Testérzetek finomítása, belső jelenlét mélyítése.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Kényelmes fekvésben vidd a figyelmet a lábfejekre 2 légzésig." },
         { "context_md": "Gyakorlat", "question": "Lassan menj feljebb: lábszár–térd–comb (minden állomás 1–2 légzés)." },
@@ -364,7 +364,7 @@
     "title": "Tanulás konszolidációja",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Napközben tanultak ülepedésének támogatása.",
+      "goal_md": "Napközben tanultak ülepedésének támogatása.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt idézz fel 3 kulcspontot a tanult anyagból (csak címszavak)." },
         { "context_md": "Gyakorlat", "question": "Mondd ki magadban őket egyszer, lassan." },
@@ -393,7 +393,7 @@
     "title": "Spirituális nyitottság (keretben)",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Tágasabb jelentésérzet, nyitottság – földelten.",
+      "goal_md": "Tágasabb jelentésérzet, nyitottság – földelten.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már pihen a tested, gondolj 1 dologra, amiért ma hálás lehetsz (apró is jó)." },
         { "context_md": "Gyakorlat", "question": "Mondd ki magadban egyszer: „Köszönöm.”" },
@@ -422,7 +422,7 @@
     "title": "Mély alvás támogatása",
     "content": {
       "type": "evening_card",
-      "goal_md": "**Cél:** Fiziológiai elcsendesedés, alvás-stabilizálás.",
+      "goal_md": "Fiziológiai elcsendesedés, alvás-stabilizálás.",
       "steps": [
         { "context_md": "Gyakorlat", "question": "Kényelmes fekvésben vedd észre, hol tart még a tested (váll, nyelv, has)." },
         { "context_md": "Gyakorlat", "question": "Minden kilégzésnél mondd magadban: „Le.”" },
