@@ -83,7 +83,7 @@ export async function POST(req: Request) {
           user_id: userId,
           anchor_summary: anchorSummary,
           embedding,
-          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         },
         { onConflict: "session_id" }
       );

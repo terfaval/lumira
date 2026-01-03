@@ -445,7 +445,7 @@ export default function EveningLanding() {
               <style jsx>{`
                 .evening-grid {
                   display: grid;
-                  gap: 12px;
+                  gap: 18px;
                   grid-template-columns: repeat(1, minmax(0, 1fr));
                 }
                 @media (min-width: 860px) {
@@ -457,18 +457,33 @@ export default function EveningLanding() {
                 .intent-row {
                   display: flex;
                   gap: 8px;
-                  flex-wrap: wrap;
-                  margin-top: 8px;
+                  margin-top: 10px;
+                  overflow-x: auto;
+                  padding-bottom: 6px; /* hogy ne vágja le a scrollbar */
+                  -webkit-overflow-scrolling: touch;
+                  scrollbar-width: thin;
                 }
+
+                .intent-row::-webkit-scrollbar {
+                  height: 6px;
+                }
+                .intent-row::-webkit-scrollbar-thumb {
+                  background: var(--border);
+                  border-radius: 999px;
+                }
+
                 .intent-chip {
+                  flex: 0 0 auto; /* ne törjön */
                   font-size: 12px;
-                  padding: 6px 10px;
+                  padding: 7px 11px;
                   border: 1px solid var(--border);
                   border-radius: 999px;
                   color: var(--text-muted);
                   background: transparent;
                   cursor: pointer;
+                  white-space: nowrap; /* ne csússzon szét */
                 }
+
                 .intent-chip.active {
                   color: var(--text);
                   border-color: var(--text-muted);
