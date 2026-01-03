@@ -12,20 +12,43 @@ type DirectionCatalogSummary = {
 
 type RecommendedDirection = { slug: string; reason: string };
 
-const MAX_SUMMARY_CHARS = 800;
-
 function sanitizeTitle(t: string): string {
   const cleaned = (t ?? "").replace(/\s+/g, " ").trim();
   if (!cleaned) return "";
+  // ne legyen túl hosszú
   if (cleaned.length > 72) return cleaned.slice(0, 69).trimEnd() + "…";
   return cleaned;
+}
+
+function titleCaseHungarian(s: string): string {
+  // csak az első betűt nagyítjuk (Hungarian title case nem triviális, MVP-ben ez elég)
+  const cleaned = sanitizeTitle(s);
+  if (!cleaned) return "";
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+function countWords(s: string): number {
+  return sanitizeTitle(s).split(" ").filter(Boolean).length;
+}
+
+function looksSentenceLike(s: string): boolean {
+  const cleaned = sanitizeTitle(s);
+  if (!cleaned) return true;
+  // ha túl hosszú, vagy tipikus kötőszavas “mondat”, vagy több tagmondat, akkor gyanús
+  if (cleaned.length > 48) return true;
+  if (/[.!?]/.test(cleaned)) return true;
+  if (cleaned.includes(",") || cleaned.includes(";") || cleaned.includes(":")) return true;
+  // “ugyanakkor / valamennyire / mintha” jellegű töltelékszavak -> inkább essünk vissza
+  const lower = cleaned.toLowerCase();
+  const badFillers = ["ugyanakkor", "valamennyire", "mintha", "ahogy", "és akkor", "de közben", "közben"];
+  if (badFillers.some((w) => lower.includes(w))) return true;
+  return false;
 }
 
 function isGenericTitle(title?: string | null) {
   const cleaned = sanitizeTitle(title ?? "");
   if (!cleaned) return true;
-  const lower = cleaned.toLowerCase();
-  return lower === "álom" || lower === "dream" || lower === "cím" || lower === "title";
+  return cleaned.toLowerCase() === "álom";
 }
 
 // Fisher–Yates shuffle (pozíció-bias csökkentéshez)
@@ -71,98 +94,6 @@ function validateRecommendations(recs: unknown, allowed: Set<string>): Recommend
   return cleaned.length === 3 ? cleaned : null;
 }
 
-/**
- * Heurisztikus fallback cím:
- * - stopword minimal
- * - max 6 szó
- * - ha nem jön ki, "Rövid álomjegyzet"
- */
-function heuristicTitleFromDream(rawText: string): string {
-  const stop = new Set([
-    "a",
-    "az",
-    "és",
-    "de",
-    "hogy",
-    "mint",
-    "van",
-    "volt",
-    "lesz",
-    "én",
-    "te",
-    "ő",
-    "mi",
-    "ti",
-    "ők",
-    "egy",
-    "valami",
-    "nagyon",
-    "csak",
-    "még",
-    "is",
-    "sem",
-    "aki",
-    "ami",
-    "ahol",
-    "amikor",
-    "mert",
-    "vagy",
-  ]);
-
-  const words = (rawText ?? "")
-    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ")
-    .map((w) => w.trim())
-    .filter(Boolean);
-
-  const picked: string[] = [];
-  for (const w of words) {
-    const lw = w.toLowerCase();
-    if (stop.has(lw)) continue;
-    picked.push(w);
-    if (picked.length >= 6) break;
-  }
-
-  const title = sanitizeTitle(picked.join(" "));
-  return title.length >= 3 ? title : "Rövid álomjegyzet";
-}
-
-async function makeAnchorSummary(openai: OpenAI, dreamText: string): Promise<string> {
-  const text = (dreamText ?? "").trim();
-  if (text.length < 20) return "";
-
-  const summaryResp = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0,
-    messages: [
-      {
-        role: "system",
-        content:
-          "Rövid, szó szerinti összefoglalót írsz álmokról indexeléshez. " +
-          "NINCS értelmezés, NINCS jelentés, NINCS diagnózis. Csak megfigyelhető elemek.",
-      },
-      {
-        role: "user",
-        content: [
-          "Készíts egy tömör 'anchor summary'-t az álomról ezekkel a szabályokkal:",
-          "- Max 800 karakter.",
-          "- Csak megfigyelhető dolgok: szereplők, helyszínek, tárgyak, jelenetváltások, kimondott érzelmek.",
-          "- Ne írj olyat, hogy 'ez azt jelenti' / 'szimbolizál' / 'arra utal'.",
-          "- Csak sima szöveget adj vissza.",
-          "",
-          "Álom szöveg:",
-          text,
-        ].join("\n"),
-      },
-    ],
-  });
-
-  const completion = summaryResp.choices?.[0]?.message?.content?.trim() ?? "";
-  return completion.replace(/\s+/g, " ").trim().slice(0, MAX_SUMMARY_CHARS);
-}
-
 export async function POST(req: Request) {
   try {
     const { sessionId } = (await req.json()) as { sessionId?: string };
@@ -205,7 +136,7 @@ export async function POST(req: Request) {
 
     const { data: session } = await supabase
       .from("dream_sessions")
-      .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, user_id")
+      .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status")
       .eq("id", sessionId)
       .eq("user_id", user.id)
       .single();
@@ -234,61 +165,6 @@ export async function POST(req: Request) {
     );
 
     const raw = session.raw_dream_text?.trim() ?? "";
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-    // --- Helper: title biztosítása (AI + heurisztikus fallback)
-    const ensureTitle = async (
-      rawText: string,
-      framingText: string,
-      existingAudit: Record<string, unknown>
-    ) => {
-      const existingTitle = sanitizeTitle((existingAudit as any)?.title ?? "");
-      if (existingTitle && !isGenericTitle(existingTitle)) {
-        return { title: existingTitle, audit: { ...existingAudit, title: existingTitle } };
-      }
-
-      if (rawText.trim().length < 20) {
-        const fallback = "Rövid álomjegyzet";
-        return { title: fallback, audit: { ...existingAudit, title: fallback } };
-      }
-
-      let generated = "";
-      try {
-        const titleResp = await client.chat.completions.create({
-          model: "gpt-4o-mini",
-          temperature: 0.4,
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content:
-                "Adj egy rövid, leíró magyar címet egy álomhoz.\n" +
-                "Szabályok:\n" +
-                "- 2–6 szó\n" +
-                "- Csak megfigyelhető elemek, helyzetek vagy hangulatok\n" +
-                "- Ne adj értelmezést\n" +
-                "- Ne használj idézőjeleket\n" +
-                'Formátum: {"title":"..."}',
-            },
-            { role: "user", content: JSON.stringify({ dream_text: rawText, framing: framingText }) },
-          ],
-          max_tokens: 80,
-        });
-
-        const parsed = JSON.parse(titleResp.choices?.[0]?.message?.content ?? "{}");
-        generated = sanitizeTitle(typeof parsed?.title === "string" ? parsed.title : "");
-      } catch {
-        generated = "";
-      }
-
-      // ✅ soha ne legyen "Álom" – ha AI hibázik, heurisztika
-      const finalTitle =
-        !isGenericTitle(generated) && generated ? generated : heuristicTitleFromDream(rawText);
-
-      return { title: finalTitle, audit: { ...existingAudit, title: finalTitle } };
-    };
-
-    // --- rövid álomnál fallback framing + summaries upsert
     if (raw.length < 20) {
       const framing =
         "Az álomleírás nagyon rövid, de fontos, hogy időt szánj rá: " +
@@ -297,48 +173,131 @@ export async function POST(req: Request) {
       const recommended = fallbackRecommendations(activeDirections);
       const title = "Rövid álomjegyzet";
 
-      const audit = {
-        model: "fallback",
-        usage: null,
-        title,
-        recommended_directions: recommended,
-      };
-
       const { error: updErr } = await supabase
         .from("dream_sessions")
         .update({
           ai_framing_text: framing,
-          ai_framing_audit: audit,
+          ai_framing_audit: {
+            model: "fallback",
+            usage: null,
+            title,
+            recommended_directions: recommended,
+          },
           status: "framed",
         })
         .eq("id", sessionId)
         .eq("user_id", user.id);
 
-      if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
-
-      // ✅ Mira-hub mentés (summaries)
-      const { error: sumErr } = await supabase.from("dream_session_summaries").upsert(
-        {
-          session_id: sessionId,
-          user_id: user.id,
-          title,
-          framing_text: framing,
-          recommended_directions: recommended,
-          ai_meta: { source: "frame", model: "fallback" },
-          anchor_summary: "",
-          embedding: null,
-        },
-        { onConflict: "session_id" }
-      );
-
-      if (sumErr) return NextResponse.json({ error: sumErr.message }, { status: 500 });
+      if (updErr) {
+        return NextResponse.json({ error: updErr.message }, { status: 500 });
+      }
 
       return NextResponse.json({ sessionId, framing, title });
     }
 
-    // --- 1) framing (reuse or generate)
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
     let framing = session.ai_framing_text?.trim() ?? "";
     let audit = (session.ai_framing_audit as any) ?? {};
+
+    const ensureTitle = async (
+      rawText: string,
+      framingText: string,
+      existingAudit: Record<string, unknown>
+    ) => {
+      const existingTitle = titleCaseHungarian(sanitizeTitle((existingAudit as any)?.title ?? ""));
+      if (existingTitle && !isGenericTitle(existingTitle)) {
+        // ha már van cím, de mégis mondatszerű/rossz, regeneráljuk
+        const wc = countWords(existingTitle);
+        if (wc >= 2 && wc <= 6 && !looksSentenceLike(existingTitle)) {
+          return { title: existingTitle, audit: { ...existingAudit, title: existingTitle } };
+        }
+      }
+
+      if (rawText.trim().length < 20) {
+        const fallback = "Rövid álomjegyzet";
+        return { title: fallback, audit: { ...existingAudit, title: fallback } };
+      }
+
+      // ✅ kulcsjelenet-alapú, rövid, általános cím
+      let generated = "";
+      try {
+        const titleResp = await client.chat.completions.create({
+          model: "gpt-4o-mini",
+          temperature: 0.2,
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "Adj egy rövid, magyar címet az álomhoz, a KULCSJELENETRE fókuszálva.\n" +
+                "Szabályok:\n" +
+                "- 2–6 szó\n" +
+                "- Kezdődjön nagybetűvel\n" +
+                "- Legyen általánosabb: ne legyen magyarázó mondat\n" +
+                "- Ne használj kötőszavas szerkezeteket (pl. „ugyanakkor”, „közben”, „mintha”)\n" +
+                "- Ne legyen értelmezés, jelentés, diagnózis\n" +
+                "- Ne legyen idézőjel\n" +
+                "- Preferáld a főnévi/igei kulcsképet (pl. „Eltűnő barát a táborban”, „Telefon keresése a táborban”)\n" +
+                'Formátum: {"title":"..."}',
+            },
+            {
+              role: "user",
+              content: JSON.stringify({ dream_text: rawText, framing: framingText }),
+            },
+          ],
+          max_tokens: 60,
+        });
+
+        const parsed = JSON.parse(titleResp.choices?.[0]?.message?.content ?? "{}");
+        generated = typeof parsed?.title === "string" ? parsed.title : "";
+      } catch {
+        generated = "";
+      }
+
+      // ✅ hard validáció + fallback
+      let finalTitle = titleCaseHungarian(sanitizeTitle(generated));
+
+      const wc = countWords(finalTitle);
+      if (!finalTitle || isGenericTitle(finalTitle) || wc < 2 || wc > 6 || looksSentenceLike(finalTitle)) {
+        // próbáljunk egy extra "szűkebb" fallback promptot (olcsó, max 1 retry)
+        try {
+          const retry = await client.chat.completions.create({
+            model: "gpt-4o-mini",
+            temperature: 0,
+            response_format: { type: "json_object" },
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Adj 1 darab címet.\n" +
+                  "Kötelező: 2–5 szó, nagybetűvel kezdődjön, kulcsjelenet.\n" +
+                  "Tiltott: mondat, kötőszavak (ugyanakkor/közben/mintha), értelmezés.\n" +
+                  'Formátum: {"title":"..."}',
+              },
+              { role: "user", content: rawText },
+            ],
+            max_tokens: 40,
+          });
+          const parsed2 = JSON.parse(retry.choices?.[0]?.message?.content ?? "{}");
+          const gen2 = typeof parsed2?.title === "string" ? parsed2.title : "";
+          const candidate = titleCaseHungarian(sanitizeTitle(gen2));
+          const wc2 = countWords(candidate);
+          if (candidate && !isGenericTitle(candidate) && wc2 >= 2 && wc2 <= 6 && !looksSentenceLike(candidate)) {
+            finalTitle = candidate;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (!finalTitle || isGenericTitle(finalTitle) || countWords(finalTitle) < 2) {
+        // utolsó biztos fallback: rövid, általános, de használható
+        finalTitle = "Tábori jelenetek";
+      }
+
+      return { title: finalTitle, audit: { ...existingAudit, title: finalTitle } };
+    };
 
     if (!framing) {
       const resp = await client.chat.completions.create({
@@ -366,16 +325,15 @@ export async function POST(req: Request) {
       });
 
       framing = resp.choices?.[0]?.message?.content?.trim() ?? "";
-      if (!framing) return NextResponse.json({ error: "Empty framing" }, { status: 502 });
-
+      if (!framing) {
+        return NextResponse.json({ error: "Empty framing" }, { status: 502 });
+      }
       audit = { model: resp.model, usage: resp.usage ?? null, ...audit };
     }
 
-    // --- 2) title biztosítása
     const { title, audit: auditWithTitle } = await ensureTitle(raw, framing, audit);
     audit = auditWithTitle;
 
-    // --- 3) ajánlott irányok
     const catalogForModel = activeDirections.map((d) => ({
       slug: d.slug,
       title: d.title,
@@ -400,8 +358,8 @@ export async function POST(req: Request) {
                 "- Csak a megadott slugokat használd.\n" +
                 "- Pontosan 3 különböző elemet adj vissza.\n" +
                 "- A katalógus sorrendje NEM jelent prioritást (véletlen).\n" +
-                "- Ne válaszd automatikusan a lista elejét.\n" +
-                "- Minden elemhez 1 semleges, nem értelmező mondatot írj.\n" +
+                "- Ne válaszd automatikusan a lista elejét: a döntés alapja 2–3 konkrét megfigyelhető álomjel (pl. váltások, érzet, test, ismétlődés, töredezettség).\n" +
+                "- Minden elemhez 1 semleges, nem értelmező mondatot írj: miért lehet jó belépési pont.\n" +
                 "- Ne tulajdoníts jelentést az álomnak, ne diagnosztizálj.\n" +
                 'Formátum: {"recommended_directions":[{"slug":"...","reason":"..."},{"slug":"...","reason":"..."},{"slug":"...","reason":"..."}]}',
             },
@@ -427,7 +385,6 @@ export async function POST(req: Request) {
 
     audit = { ...audit, recommended_directions: recommendations };
 
-    // --- 4) dream_sessions mentés (kompatibilitás miatt marad)
     const { error: updErr } = await supabase
       .from("dream_sessions")
       .update({
@@ -438,51 +395,9 @@ export async function POST(req: Request) {
       .eq("id", sessionId)
       .eq("user_id", user.id);
 
-    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
-
-    // --- 5) summaries hub mentés: title + framing + recs + (anchor_summary + embedding)
-    let anchor_summary = "";
-    let embedding: number[] | null = null;
-
-    try {
-      anchor_summary = await makeAnchorSummary(client, raw);
-      if (anchor_summary) {
-        const embeddingResp = await client.embeddings.create({
-          model: "text-embedding-3-small",
-          input: anchor_summary,
-        });
-        embedding = embeddingResp.data?.[0]?.embedding ?? null;
-      }
-    } catch {
-      anchor_summary = "";
-      embedding = null;
+    if (updErr) {
+      return NextResponse.json({ error: updErr.message }, { status: 500 });
     }
-
-    const ai_meta = {
-      source: "frame",
-      framing_model: (audit as any)?.model ?? "unknown",
-      title_model: "gpt-4o-mini",
-      rec_model: "gpt-4o-mini",
-      has_framing: Boolean(framing),
-      has_title: Boolean(title),
-      has_recommendations: Array.isArray(recommendations),
-    };
-
-    const { error: sumErr } = await supabase.from("dream_session_summaries").upsert(
-      {
-        session_id: sessionId,
-        user_id: user.id,
-        title,
-        framing_text: framing,
-        recommended_directions: recommendations,
-        ai_meta,
-        anchor_summary,
-        embedding,
-      },
-      { onConflict: "session_id" }
-    );
-
-    if (sumErr) return NextResponse.json({ error: sumErr.message }, { status: 500 });
 
     return NextResponse.json({ sessionId, framing, title });
   } catch (e: unknown) {
