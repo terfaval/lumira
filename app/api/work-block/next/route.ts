@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { supabaseServer } from "@/src/lib/supabase/server";
 
 const SAFETY_VALUES = ["none", "self_harm", "reality_confusion", "other"] as const;
 const MAX_HISTORY = 4;
@@ -62,11 +63,14 @@ type WorkBlockResponse = {
 };
 
 type RequestBody = {
+  session_id?: string;
   dream_text?: string;
   direction?: DirectionInput;
   history?: HistoryItem[];
   synth?: SynthInput;
   prior_echoes?: PriorEcho[];
+  catalog?: unknown;
+  allowed_slugs?: unknown;
 };
 
 function sanitizeSafety(flags?: SynthInput["flags"]): SafetyValue {
@@ -120,6 +124,22 @@ function sanitizePriorEchoes(echoes: PriorEcho[] | undefined): PriorEcho[] {
       created_at: typeof p?.created_at === "string" ? p.created_at : "",
     }))
     .filter((p) => p.session_id && p.anchor_summary && p.created_at);
+}
+
+function sanitizeAllowedSlugs(allowed: unknown, fallbackSlug?: string): string[] {
+  if (Array.isArray(allowed)) {
+    return allowed
+      .filter((s): s is string => typeof s === "string")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 10);
+  }
+
+  if (fallbackSlug && typeof fallbackSlug === "string" && fallbackSlug.trim()) {
+    return [fallbackSlug.trim()];
+  }
+
+  return [];
 }
 
 function unwrapDirection(direction: DirectionInput | undefined | null): DirectionNormalized | null {
@@ -376,10 +396,63 @@ async function parseModelJSON(rawContent: string): Promise<unknown> {
   }
 }
 
+async function runLatentSynthesisSidecar(args: {
+  req: Request;
+  body: RequestBody;
+  dreamText: string;
+  direction: DirectionNormalized | null;
+  history: HistoryItem[];
+  priorEchoes: PriorEcho[];
+}) {
+  const sessionId = typeof args.body.session_id === "string" ? args.body.session_id : undefined;
+  if (!sessionId) return;
+
+  const allowedSlugs = sanitizeAllowedSlugs(args.body.allowed_slugs, args.direction?.slug);
+
+  // fontos: abszolút URL server fetch-hez
+  const url = new URL("/api/synthesize", args.req.url).toString();
+
+  // cookie továbbítás: a synthesize route így tud autholni a saját supabaseServer()-ével
+  const cookieHeader = args.req.headers.get("cookie") ?? "";
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "content-type": "application/json",
+        ...(cookieHeader ? { cookie: cookieHeader } : {}),
+      },
+      body: JSON.stringify({
+        session_id: sessionId,
+        dream_text: args.dreamText,
+        history: args.history,
+        prior_echoes: args.priorEchoes,
+        catalog: args.body.catalog ?? null,
+        allowed_slugs: allowedSlugs,
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.warn("synthesize sidecar non-OK", res.status, text.slice(0, 400));
+    }
+  } catch (err) {
+    console.warn("synthesize sidecar failed", err);
+  }
+}
+
 export async function POST(req: Request) {
   try {
+    const supabase = await supabaseServer();
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = (await req.json()) as RequestBody;
 
+    const sessionId = typeof body.session_id === "string" ? body.session_id : undefined;
     const dreamText = (body.dream_text ?? "").trim();
     const direction = unwrapDirection(body.direction as DirectionInput);
     const history = sanitizeHistory(body.history);
@@ -389,6 +462,16 @@ export async function POST(req: Request) {
 
     if (!dreamText) return NextResponse.json({ error: "Missing dream_text" }, { status: 400 });
     if (!direction) return NextResponse.json({ error: "Missing direction" }, { status: 400 });
+    if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
+
+    await runLatentSynthesisSidecar({
+      req,
+      body,
+      dreamText,
+      direction,
+      history,
+      priorEchoes,
+    });
 
     if (safetyFlag !== "none") return NextResponse.json(makeClosureResponse("safety", safetyFlag));
 

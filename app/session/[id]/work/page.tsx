@@ -22,11 +22,14 @@ type DirectionWorkBlock = WorkBlock & { content: DirectionCardContent };
 type HistoryItem = { question: string; answer: string | null };
 
 type NextPayload = {
+  session_id: string;
   dream_text: string;
   direction: unknown;
   history: HistoryItem[];
   synth?: { flags?: { safety?: string; too_short?: boolean } };
   prior_echoes?: unknown;
+  catalog?: unknown;
+  allowed_slugs?: string[];
 };
 
 type NextResponse = {
@@ -265,9 +268,12 @@ export default function WorkPage() {
     const direction = directionConfig ?? { slug: directionSlug };
 
     const payload: NextPayload = {
+      session_id: sessionId,
       dream_text: session.raw_dream_text,
       direction,
       history: [],
+      catalog: directionConfig ? [directionConfig] : [],
+      allowed_slugs: directionSlug ? [directionSlug] : [],
     };
 
     setPendingNextPayload(payload);
@@ -345,9 +351,12 @@ export default function WorkPage() {
         const updatedHistory = buildHistory(updatedDirectionBlocks);
 
         const payload: NextPayload = {
+          session_id: sessionId,
           dream_text: session.raw_dream_text,
           direction: directionConfig ?? { slug: directionSlug },
           history: updatedHistory,
+          catalog: directionConfig ? [directionConfig] : [],
+          allowed_slugs: directionSlug ? [directionSlug] : [],
         };
 
         setPendingNextPayload(payload);
