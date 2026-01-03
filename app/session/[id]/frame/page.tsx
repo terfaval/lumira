@@ -21,6 +21,9 @@ export default function FramePage() {
   const { loading } = useRequireAuth();
   const attemptedRef = useRef(false);
 
+  // ✅ synthesize-t csak egyszer indítsuk el
+  const synthAttemptedRef = useRef(false);
+
   const loadSession = useCallback(async () => {
     setErr(null);
     const { data, error } = await supabase
@@ -69,10 +72,11 @@ export default function FramePage() {
         credentials: "include",
         headers: {
           "content-type": "application/json",
-          ...(token ? { authorization: `Bearer ${token}` } : {} ),
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ sessionId: id }),
       });
+
       if (!res.ok) throw new Error(await res.text());
       await loadSession();
     } catch (e: unknown) {
@@ -105,6 +109,54 @@ export default function FramePage() {
       void runFraming();
     }
   }, [session, busy, runFraming, framingReady]);
+
+  // ✅ synthesize: háttérelemzés mentése a dream_session_summaries.latent_analysis mezőbe
+  const runSynthesizeForBackground = useCallback(async () => {
+    if (!session?.raw_dream_text) return;
+    if (catalog.length === 0) return;
+
+    try {
+      const {
+        data: { session: authSession },
+      } = await supabase.auth.getSession();
+
+      const token = authSession?.access_token;
+
+      const res = await fetch("/api/synthesize", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "content-type": "application/json",
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          session_id: id,
+          dream_text: session.raw_dream_text,
+          history: [],
+          prior_echoes: [],
+          catalog,
+          allowed_slugs: catalog.map((c) => c.slug),
+        }),
+      });
+
+      // Itt nem akarunk UI-t törni: ha hibázik, csak logoljuk/soft error
+      if (!res.ok) {
+        // opcionális: const txt = await res.text();
+        // console.warn("synthesize failed", txt);
+      }
+    } catch {
+      // no-op (MVP: háttér mentés, ne akadjon meg a UI)
+    }
+  }, [id, session?.raw_dream_text, catalog]);
+
+  useEffect(() => {
+    // csak akkor, ha már kész a framing (hogy legyen "stabil" input), és csak egyszer
+    if (!framingReady) return;
+    if (synthAttemptedRef.current) return;
+
+    synthAttemptedRef.current = true;
+    void runSynthesizeForBackground();
+  }, [framingReady, runSynthesizeForBackground]);
 
   const handleDirectionSelect = useCallback(
     async (slug: string) => {
@@ -144,7 +196,9 @@ export default function FramePage() {
       />
       <style jsx>{`
         @keyframes spin {
-          to { transform: rotate(360deg); }
+          to {
+            transform: rotate(360deg);
+          }
         }
       `}</style>
     </>

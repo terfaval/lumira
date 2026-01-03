@@ -90,13 +90,31 @@ function getComputedStatus(session: ArchiveSessionSummary): ArchiveStatusFilter 
   return "vazlat";
 }
 
+/** ugyanaz a “tisztítás”, mint a sidebarban */
+function compact(text: string | null | undefined): string {
+  return (text ?? "").trim().replace(/\s+/g, " ");
+}
+
+/** ugyanaz a title logika, mint a sidebarban */
+function titleOf(session: ArchiveSessionSummary): string {
+  const s: any = session as any;
+
+  const t = compact(s.title as string | null | undefined);
+  if (t) return t;
+
+  const raw = compact(s.raw_dream_text as string | null | undefined);
+  if (!raw) return "Cím nélküli álom";
+
+  return raw.length > 42 ? raw.slice(0, 41) + "…" : raw;
+}
+
+/** snippet: egységes, nem túl hosszú, és üresnél üres stringet ad */
 function getSnippet(session: ArchiveSessionSummary): string {
   const s: any = session as any;
-  const raw = (s.raw_dream_text as string | undefined | null) ?? "";
-  const t = raw.trim();
-  if (!t) return "";
-  const cut = t.slice(0, 160);
-  return t.length > 160 ? `${cut}…` : cut;
+  const raw = compact(s.raw_dream_text as string | undefined | null);
+  if (!raw) return "";
+  const max = 160;
+  return raw.length > max ? raw.slice(0, max - 1) + "…" : raw;
 }
 
 export default function ArchiveClient() {
@@ -117,7 +135,6 @@ export default function ArchiveClient() {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // összecsukás: mely csoportok nyitottak
   const [openGroups, setOpenGroups] = useState<Record<ArchiveStatusFilter, boolean>>({
     vazlat: true,
     erintett: true,
@@ -172,7 +189,6 @@ export default function ArchiveClient() {
     }))
     .filter((g) => g.items.length > 0);
 
-  // státusz dropdown opciók: csak amik tényleg jelen vannak a felhasználónál
   const availableStatuses = useMemo<ArchiveStatusFilter[]>(() => {
     const set = new Set<ArchiveStatusFilter>();
     for (const s of summaries) set.add(getComputedStatus(s));
@@ -216,7 +232,6 @@ export default function ArchiveClient() {
 
               return (
                 <div key={group.key} className="stack">
-                  {/* fejléc: kattintható összecsukás */}
                   <button
                     type="button"
                     onClick={() => toggleGroup(group.key)}
@@ -237,9 +252,7 @@ export default function ArchiveClient() {
                     <div style={{ fontWeight: 800, fontSize: 13, letterSpacing: 0.2, color: "var(--text-muted)" }}>
                       {group.title} · {group.items.length}
                     </div>
-                    <div style={{ color: "var(--text-muted)", fontSize: 12, opacity: 0.8 }}>
-                      {isOpen ? "▾" : "▸"}
-                    </div>
+                    <div style={{ color: "var(--text-muted)", fontSize: 12, opacity: 0.8 }}>{isOpen ? "▾" : "▸"}</div>
                   </button>
 
                   {isOpen && (
@@ -267,7 +280,7 @@ export default function ArchiveClient() {
                                   }}
                                 >
                                   <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
-                                    <div style={{ fontWeight: 800 }}>{session.title}</div>
+                                    <div style={{ fontWeight: 800 }}>{titleOf(session)}</div>
                                     <span className="badge-muted">{formatStatusLabel(computedStatus)}</span>
                                   </div>
 
@@ -276,7 +289,6 @@ export default function ArchiveClient() {
                                   </div>
                                 </div>
 
-                                {/* snippet: akkor látszik, ha a fetchArchiveSessions tényleg hozza a raw_dream_text-et */}
                                 {snippet ? (
                                   <div style={{ opacity: 0.7, whiteSpace: "pre-wrap" }}>{snippet}</div>
                                 ) : null}

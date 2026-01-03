@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useCallback, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
 
 type Space = "dream" | "evening";
 
 type DreamRow = {
-  id: string;
-  raw_dream_text: string | null;
+  id: string; // megegyezik a session id-val
   created_at: string;
+  title: string | null;
+  raw_dream_text: string | null;
 };
 
 export function SidebarDrawer({
@@ -24,13 +24,12 @@ export function SidebarDrawer({
   space: Space;
   onLogout: () => Promise<void> | void;
 }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [recent, setRecent] = useState<DreamRow[]>([]);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
-  // ESC zárás
+  /* ESC zárás */
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -40,7 +39,7 @@ export function SidebarDrawer({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // Kívülre katt zárás
+  /* Kívülre katt zárás */
   const onBackdropClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (e.target === e.currentTarget) onClose();
@@ -48,18 +47,36 @@ export function SidebarDrawer({
     [onClose]
   );
 
-  // Legutóbbi 10 álom lekérése
+  /* Legutóbbi 10 álom (summaries + join) */
   const loadRecent = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const { data, error } = await supabase
-        .from("dream_sessions")
-        .select("id, raw_dream_text, created_at")
+        .from("dream_session_summaries")
+        .select(
+          `
+            id,
+            created_at,
+            title,
+            dream_sessions:session_id (
+              raw_dream_text
+            )
+          `
+        )
         .order("created_at", { ascending: false })
         .limit(10);
+
       if (error) throw error;
-      setRecent((data ?? []) as DreamRow[]);
+
+      const rows: DreamRow[] = (data ?? []).map((r: any) => ({
+        id: r.id,
+        created_at: r.created_at,
+        title: r.title ?? null,
+        raw_dream_text: r.dream_sessions?.raw_dream_text ?? null,
+      }));
+
+      setRecent(rows);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Ismeretlen hiba");
     } finally {
@@ -71,17 +88,22 @@ export function SidebarDrawer({
     if (open) void loadRecent();
   }, [open, loadRecent]);
 
-  const primarySwitch = useMemo(() => {
-    if (space === "dream") {
-      return { href: "/evening", label: "Álom előkészítés" };
-    }
-    return { href: "/", label: "Álomtér" };
-  }, [space]);
+  function compact(text: string | null): string {
+    return (text ?? "").trim().replace(/\s+/g, " ");
+  }
 
-  function preview(text: string | null, max = 80): string {
-    const t = (text ?? "").trim().replace(/\s+/g, " ");
+  function snippet(text: string | null, max = 90): string {
+    const t = compact(text);
     if (!t) return "— üres feljegyzés —";
     return t.length > max ? t.slice(0, max - 1) + "…" : t;
+  }
+
+  function titleOf(row: DreamRow): string {
+    const t = compact(row.title);
+    if (t) return t;
+    const fallback = compact(row.raw_dream_text);
+    if (!fallback) return "Cím nélküli álom";
+    return fallback.length > 42 ? fallback.slice(0, 41) + "…" : fallback;
   }
 
   return (
@@ -93,23 +115,36 @@ export function SidebarDrawer({
       onClick={onBackdropClick}
     >
       <aside className="drawer-sheet" role="document" aria-label="Oldalsáv">
-        {/* Felső blokk: váltó link (álomtér/elő-készítés) */}
-        <div className="drawer-section">
+        {/* Felső fix opciók */}
+        <div className="drawer-section drawer-top">
           <Link
-            href={primarySwitch.href}
-            className="drawer-link drawer-link--primary"
-            onClick={() => onClose()}
+            href="/evening"
+            className="drawer-navlink"
+            onClick={onClose}
+            aria-current={space === "evening" ? "page" : undefined}
           >
-            {primarySwitch.label}
+            Álom előkészítés
+          </Link>
+
+          <Link
+            href="/"
+            className="drawer-navlink"
+            onClick={onClose}
+            aria-current={space === "dream" ? "page" : undefined}
+          >
+            Új álom rögzítése
           </Link>
         </div>
 
-        {/* Álomnapló (archívum) */}
+        {/* Álomnapló */}
         <div className="drawer-section">
           <div className="drawer-section-head">
-            <span className="drawer-section-title">Álomnapló</span>
-            <Link href="/archive" className="drawer-link--muted" onClick={() => onClose()}>
-              Teljes lista
+            <Link
+              href="/archive"
+              className="drawer-navlink drawer-navlink--title"
+              onClick={onClose}
+            >
+              Álomnapló
             </Link>
           </div>
 
@@ -122,13 +157,16 @@ export function SidebarDrawer({
           ) : (
             <ul className="drawer-list">
               {recent.map((r) => (
-                <li key={r.id}>
+                <li key={r.id} className="drawer-list-item">
                   <Link
                     href={`/session/${r.id}/frame`}
                     className="drawer-item"
-                    onClick={() => onClose()}
+                    onClick={onClose}
                   >
-                    <div className="drawer-item-title">{preview(r.raw_dream_text)}</div>
+                    <div className="drawer-item-title">{titleOf(r)}</div>
+                    <div className="drawer-item-snippet">
+                      {snippet(r.raw_dream_text)}
+                    </div>
                     <div className="drawer-item-meta">
                       {new Date(r.created_at).toLocaleString("hu-HU")}
                     </div>
@@ -139,9 +177,9 @@ export function SidebarDrawer({
           )}
         </div>
 
-        {/* Alul: Kilépés */}
+        {/* Kilépés */}
         <div className="drawer-footer">
-          <button className="btn btn-secondary drawer-logout" onClick={() => onLogout()}>
+          <button className="btn btn-secondary drawer-logout" onClick={onLogout}>
             Kilépés
           </button>
         </div>
@@ -175,7 +213,6 @@ export function SidebarDrawer({
           transition: transform 200ms ease;
           display: grid;
           grid-template-rows: auto 1fr auto;
-          gap: 0;
           padding: 14px;
         }
         .drawer-root.is-open .drawer-sheet {
@@ -183,29 +220,27 @@ export function SidebarDrawer({
         }
 
         .drawer-section {
-          padding: 6px 4px 12px 4px;
+          padding: 10px 4px 14px;
           border-bottom: 1px solid var(--line-soft);
         }
         .drawer-section:last-of-type {
           border-bottom: none;
         }
 
-        .drawer-section-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
+        .drawer-top {
+          display: grid;
           gap: 8px;
-          margin-bottom: 8px;
-        }
-        .drawer-section-title {
-          font-weight: 700;
-          letter-spacing: -0.01em;
+          padding-top: 6px;
         }
 
-        .drawer-link {
+        .drawer-section-head {
+          margin-bottom: 10px;
+        }
+
+        /* egységes tipó */
+        .drawer-navlink {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
           padding: 10px 12px;
           border-radius: 12px;
           border: 1px solid var(--line-soft);
@@ -213,24 +248,23 @@ export function SidebarDrawer({
           text-decoration: none;
           color: var(--text-primary);
           font-weight: 700;
+          letter-spacing: -0.01em;
         }
-        .drawer-link:hover {
+        .drawer-navlink:hover {
           background: var(--card-surface-subtle);
         }
-        .drawer-link--primary {
-          width: 100%;
-          justify-content: center;
-          background: var(--accent);
-          color: var(--accent-ink);
-          border-color: transparent;
+        .drawer-navlink[aria-current="page"] {
+          border-color: var(--line-strong, var(--line-soft));
+          box-shadow: var(--shadow-soft);
         }
-        .drawer-link--primary:hover {
-          box-shadow: var(--shadow-accent);
+
+        .drawer-navlink--title {
+          padding: 6px 8px;
+          border: none;
+          background: transparent;
         }
-        .drawer-link--muted {
-          color: var(--text-muted);
-          text-decoration: none;
-          font-weight: 600;
+        .drawer-navlink--title:hover {
+          background: var(--card-surface-subtle);
         }
 
         .drawer-muted {
@@ -247,38 +281,53 @@ export function SidebarDrawer({
           margin: 0;
           padding: 0;
           display: grid;
-          gap: 6px;
+          gap: 10px;
           max-height: calc(100dvh - 280px);
           overflow: auto;
         }
+
+        .drawer-list-item {
+          padding-bottom: 10px;
+          border-bottom: 1px solid var(--line-soft);
+        }
+        .drawer-list-item:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+        }
+
         .drawer-item {
           display: grid;
-          gap: 4px;
-          padding: 10px 12px;
+          gap: 6px;
+          padding: 12px;
           border: 1px solid var(--line-soft);
-          border-radius: 12px;
-          text-decoration: none;
-          color: var(--text-primary);
+          border-radius: 14px;
           background: var(--card-surface);
+          color: var(--text-primary);
+          text-decoration: none;
         }
         .drawer-item:hover {
           background: var(--card-surface-subtle);
         }
+
         .drawer-item-title {
-          font-weight: 600;
+          font-weight: 700;
+          line-height: 1.15;
         }
+
+        .drawer-item-snippet {
+          font-size: 13px;
+          line-height: 1.35;
+          color: var(--text-muted);
+        }
+
         .drawer-item-meta {
           font-size: 12px;
           color: var(--text-muted);
         }
 
         .drawer-footer {
-          display: grid;
           padding: 10px 4px 6px;
           border-top: 1px solid var(--line-soft);
-        }
-        .drawer-logout {
-          justify-self: start;
         }
 
         @media (max-width: 719px) {

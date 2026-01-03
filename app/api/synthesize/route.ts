@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { supabaseServer } from "@/src/lib/supabase/server";
 
 const MIN_DREAM_LENGTH = 20;
 const MAX_ANCHOR_ITEMS = 6;
@@ -27,7 +28,9 @@ type SafetyValue = (typeof SAFETY_VALUES)[number];
 
 type HistoryItem = { question: string; answer: string | null };
 type PriorEcho = { session_id: string; anchor_summary: string; created_at: string };
+
 type SynthesizeInput = {
+  session_id?: string; // ✅ új (opcionális) – ha megadod, appendeljük a latent logba
   dream_text?: string;
   history?: HistoryItem[];
   prior_echoes?: PriorEcho[];
@@ -44,9 +47,7 @@ type Anchors = {
 };
 
 type QuestionSeed = { preferred_style: string; target_anchor: string };
-
 type PriorEchoUsed = { session_id: string; matched_items: string[] };
-
 type Flags = { safety: SafetyValue; too_short: boolean };
 
 type SynthesizeOutput = {
@@ -84,8 +85,6 @@ function clampArray(values: unknown, max: number): string[] {
 
 function sanitizeFlags(flags: unknown, dreamTooShort: boolean): Flags {
   const raw = (flags ?? {}) as Partial<Flags>;
-
-  // ✅ fontos: ha a modell nem ad safety-t, NE essünk "other"-be, mert az lenullázza a candidate-eket
   const safety: SafetyValue =
     SAFETY_VALUES.includes(raw.safety as SafetyValue) ? (raw.safety as SafetyValue) : "none";
 
@@ -128,7 +127,7 @@ function sanitizeQuestionSeed(seed: unknown): QuestionSeed {
   };
 }
 
-// Fisher–Yates shuffle (pozíció-bias csökkentéshez)
+// Fisher–Yates shuffle
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -160,8 +159,6 @@ function sanitizeCandidates(
 
   const filteredSet = new Set(filtered);
   const fallback: string[] = [];
-
-  // ✅ ha fallback-ozunk, ne a slug lista eleje domináljon
   const allowedPool = shuffle(allowedSlugs);
 
   const addByKeywords = (keywords: string[]) => {
@@ -215,8 +212,23 @@ function sanitizeOutput(
 
 function detectSafety(dreamText: string): SafetyValue {
   const lower = dreamText.toLowerCase();
-  const selfHarmKeywords = ["suicide", "kill myself", "end my life", "öngyilk", "megölöm magam", "véget vetek", "nem akarok élni"];
-  const realityConfusionKeywords = ["not real", "can't tell what's real", "hallucinat", "nem valós", "nem tudom mi a valós", "realitás"];
+  const selfHarmKeywords = [
+    "suicide",
+    "kill myself",
+    "end my life",
+    "öngyilk",
+    "megölöm magam",
+    "véget vetek",
+    "nem akarok élni",
+  ];
+  const realityConfusionKeywords = [
+    "not real",
+    "can't tell what's real",
+    "hallucinat",
+    "nem valós",
+    "nem tudom mi a valós",
+    "realitás",
+  ];
 
   if (selfHarmKeywords.some((kw) => lower.includes(kw))) return "self_harm";
   if (realityConfusionKeywords.some((kw) => lower.includes(kw))) return "reality_confusion";
@@ -282,9 +294,38 @@ function reduceCatalogForAI(catalog: unknown): unknown {
   return null;
 }
 
+// ✅ ÚJ: közös mentő helper az append loghoz (RPC)
+async function persistLatentAppendLog(args: {
+  sessionId?: string;
+  output: SynthesizeOutput;
+  meta: Record<string, unknown>;
+}) {
+  const { sessionId, output, meta } = args;
+  if (!sessionId) return;
+
+  const supabase = await supabaseServer();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData?.user) return;
+
+  // Atomikus append + snapshot frissítés
+  const { error } = await supabase.rpc("append_latent_analysis", {
+    p_session_id: sessionId,
+    p_output: output,
+    p_meta: meta,
+  });
+
+  if (error) {
+    // fontos: ne törjük el a synthesize API-t DB hiba miatt
+    console.warn("append_latent_analysis failed", error.message);
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as SynthesizeInput;
+
+    const sessionId = typeof body.session_id === "string" ? body.session_id : undefined;
+
     const dreamText = (body.dream_text ?? "").trim();
     const allowedSlugs = (body.allowed_slugs ?? [])
       .filter((s) => typeof s === "string")
@@ -300,6 +341,14 @@ export async function POST(req: Request) {
     if (tooShort) {
       const output = defaultOutput();
       output.flags.too_short = true;
+
+      // ✅ append log + snapshot, ha van session_id
+      await persistLatentAppendLog({
+        sessionId,
+        output,
+        meta: { source: "synthesize", note: "too_short" },
+      });
+
       return NextResponse.json(output);
     }
 
@@ -307,6 +356,13 @@ export async function POST(req: Request) {
     if (detectedSafety !== "none") {
       const output = defaultOutput();
       output.flags.safety = detectedSafety;
+
+      await persistLatentAppendLog({
+        sessionId,
+        output,
+        meta: { source: "synthesize", note: "safety", safety: detectedSafety },
+      });
+
       return NextResponse.json(output);
     }
 
@@ -348,9 +404,8 @@ export async function POST(req: Request) {
     };
 
     const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini", // server-side only
+      model: "gpt-4o-mini",
       temperature: 0,
-      // ✅ segít, hogy tényleg JSON-t kapjunk
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
@@ -368,17 +423,26 @@ export async function POST(req: Request) {
       const firstBrace = rawContent.indexOf("{");
       const lastBrace = rawContent.lastIndexOf("}");
       if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        try {
-          parsed = JSON.parse(rawContent.slice(firstBrace, lastBrace + 1));
-        } catch {
-          return NextResponse.json({ error: "Invalid JSON from model" }, { status: 500 });
-        }
+        parsed = JSON.parse(rawContent.slice(firstBrace, lastBrace + 1));
       } else {
         return NextResponse.json({ error: "Invalid JSON from model" }, { status: 500 });
       }
     }
 
     const output = sanitizeOutput(parsed, allowedSlugs, false, priorEchoSessionIds);
+
+    // ✅ append log + snapshot, ha van session_id
+    await persistLatentAppendLog({
+      sessionId,
+      output,
+      meta: {
+        source: "synthesize",
+        model: "gpt-4o-mini",
+        has_candidates: output.candidate_directions.length,
+        safety: output.flags.safety,
+        too_short: output.flags.too_short,
+      },
+    });
 
     return NextResponse.json(output);
   } catch (e: unknown) {
