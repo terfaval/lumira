@@ -1,8 +1,8 @@
-// /app/evening/page.tsx //
+// /app/evening/page.tsx
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Card } from "@/components/Card";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
@@ -81,6 +81,9 @@ export default function EveningLanding() {
   const [finishing, setFinishing] = useState(false);
   const [completed, setCompleted] = useState(false);
 
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+
   useEffect(() => {
     (async () => {
       setErr(null);
@@ -105,10 +108,58 @@ export default function EveningLanding() {
     };
   }, [openSlug]);
 
+  // ESC close + basic focus trap
+  useEffect(() => {
+    if (!openSlug) return;
+
+    // focus close button
+    closeBtnRef.current?.focus();
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeModal();
+        return;
+      }
+
+      if (e.key !== "Tab") return;
+
+      const root = modalRef.current;
+      if (!root) return;
+
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true");
+
+      if (focusables.length === 0) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (e.shiftKey) {
+        if (!active || active === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openSlug]);
+
   const allIntentsInData = useMemo(() => {
     const s = new Set<IntentKey>();
     for (const c of cards) for (const i of getIntents(c)) s.add(i);
-    // stabil sorrend: a saját definíciók sorrendje szerint
     const order = Object.keys(INTENT_LABEL) as IntentKey[];
     return order.filter((k) => s.has(k));
   }, [cards]);
@@ -117,35 +168,6 @@ export default function EveningLanding() {
     if (selectedIntent === "all") return cards;
     return cards.filter((c) => getIntents(c).includes(selectedIntent));
   }, [cards, selectedIntent]);
-
-  function renderCardTile(c: EveningCardCatalogItem) {
-  const m = (c.content as any)?.meta as
-    | { time?: string; effect?: string; not_recommended?: string }
-    | undefined;
-
-  const effect = m?.effect ?? "";
-  const time = m?.time ?? "";
-  const notRec = m?.not_recommended ?? "";
-  const g = ((c.content as any)?.goal_md ?? "") as string;
-
-  return (
-    <Card key={c.slug} className="stack-tight evening-card">
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <div className="card-title">{c.title}</div>
-        {time ? <span className="meta-pill">{time}</span> : null}
-      </div>
-
-      {effect ? <div className="effect-line">{effect}</div> : null}
-      {g ? <div style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.35 }}>{g}</div> : null}
-      {notRec ? <div className="warn-line">Mikor ne: {notRec}</div> : null}
-
-      <button className="btn btn-primary" onClick={() => openModal(c.slug)} style={{ width: "fit-content" }}>
-        Indítás
-      </button>
-    </Card>
-  );
-}
-
 
   const openCard = useMemo(() => {
     return openSlug ? filteredCards.find((c) => c.slug === openSlug) ?? null : null;
@@ -198,6 +220,34 @@ export default function EveningLanding() {
     } finally {
       setFinishing(false);
     }
+  }
+
+  function renderCardTile(c: EveningCardCatalogItem) {
+    const m = (c.content as any)?.meta as
+      | { time?: string; effect?: string; not_recommended?: string }
+      | undefined;
+
+    const effect = m?.effect ?? "";
+    const time = m?.time ?? "";
+    const notRec = m?.not_recommended ?? "";
+    const g = ((c.content as any)?.goal_md ?? "") as string;
+
+    return (
+      <Card key={c.slug} className="stack-tight evening-card">
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+          <div className="card-title">{c.title}</div>
+          {time ? <span className="meta-pill">{time}</span> : null}
+        </div>
+
+        {effect ? <div className="effect-line">{effect}</div> : null}
+        {g ? <div style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.35 }}>{g}</div> : null}
+        {notRec ? <div className="warn-line">Mikor ne: {notRec}</div> : null}
+
+        <button className="btn btn-primary" onClick={() => openModal(c.slug)} style={{ width: "fit-content" }}>
+          Indítás
+        </button>
+      </Card>
+    );
   }
 
   const Spinner = (
@@ -264,38 +314,30 @@ export default function EveningLanding() {
             </div>
           </div>
 
-          <div className="evening-grid">
-            {filteredCards.map((c) => {
-              const m = (c.content as any)?.meta as
-                | { time?: string; effect?: string; not_recommended?: string }
-                | undefined;
+          {/* grouped (all) vs filtered (single intent) */}
+          {selectedIntent === "all" ? (
+            <div className="stack">
+              {INTENT_SECTIONS.map((sec) => {
+                const group = cards.filter((c) => getIntents(c).includes(sec.key));
+                if (group.length === 0) return null;
 
-              const effect = m?.effect ?? "";
-              const time = m?.time ?? "";
-              const notRec = m?.not_recommended ?? "";
-              const g = ((c.content as any)?.goal_md ?? "") as string;
+                return (
+                  <div key={sec.key} className="stack-tight">
+                    <div className="section-head">
+                      <div className="section-title">{sec.title}</div>
+                      <button className="mini-link" onClick={() => setSelectedIntent(sec.key)}>
+                        Szűrés erre
+                      </button>
+                    </div>
 
-              return (
-                <Card key={c.slug} className="stack-tight evening-card">
-                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-                    <div className="card-title">{c.title}</div>
-                    {time ? <span className="meta-pill">{time}</span> : null}
+                    <div className="evening-grid">{group.map((c) => renderCardTile(c))}</div>
                   </div>
-
-                  {effect ? <div className="effect-line">{effect}</div> : null}
-
-                  {g ? <div style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.35 }}>{g}</div> : null}
-
-                  {/* diszkrét jelzés: nem ijesztő, de látszik */}
-                  {notRec ? <div className="warn-line">Mikor ne: {notRec}</div> : null}
-
-                  <button className="btn btn-primary" onClick={() => openModal(c.slug)} style={{ width: "fit-content" }}>
-                    Indítás
-                  </button>
-                </Card>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="evening-grid">{filteredCards.map((c) => renderCardTile(c))}</div>
+          )}
 
           {/* modal */}
           {openSlug && (
@@ -307,12 +349,23 @@ export default function EveningLanding() {
                 if (e.target === e.currentTarget) closeModal();
               }}
             >
-              <div className="evening-modal">
+              <div
+                className="evening-modal"
+                ref={modalRef}
+                aria-labelledby="evening-modal-title"
+                aria-describedby="evening-modal-desc"
+              >
                 <div className="evening-modal-head">
-                  <div style={{ fontWeight: 800 }}>{openCard?.title ?? "Esti kártya"}</div>
-                  <button className="btn btn-secondary" onClick={closeModal}>
+                  <div id="evening-modal-title" style={{ fontWeight: 800 }}>
+                    {openCard?.title ?? "Esti kártya"}
+                  </div>
+                  <button className="btn btn-secondary" onClick={closeModal} ref={closeBtnRef}>
                     Bezárás
                   </button>
+                </div>
+
+                <div id="evening-modal-desc" style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 8 }}>
+                  Esti gyakorlat – fókuszált nézet. ESC: bezárás.
                 </div>
 
                 {!openCard ? (
@@ -419,6 +472,26 @@ export default function EveningLanding() {
                 .intent-chip.active {
                   color: var(--text);
                   border-color: var(--text-muted);
+                }
+
+                .section-head {
+                  display: flex;
+                  align-items: baseline;
+                  justify-content: space-between;
+                  gap: 12px;
+                }
+
+                .mini-link {
+                  background: transparent;
+                  border: none;
+                  padding: 0;
+                  cursor: pointer;
+                  color: var(--text-muted);
+                  font-size: 12px;
+                  text-decoration: underline;
+                }
+                .mini-link:hover {
+                  color: var(--text);
                 }
 
                 .meta-pill {
