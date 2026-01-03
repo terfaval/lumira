@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Shell } from "@/components/Shell";
@@ -20,6 +20,7 @@ import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
 type DirectionWorkBlock = WorkBlock & { content: DirectionCardContent };
 type HistoryItem = { question: string; answer: string | null };
+
 type NextPayload = {
   dream_text: string;
   direction: unknown;
@@ -27,6 +28,7 @@ type NextPayload = {
   synth?: { flags?: { safety?: string; too_short?: boolean } };
   prior_echoes?: unknown;
 };
+
 type NextResponse = {
   work_block: { lead_in: string; question: string; cta: string | null };
   stop_signal: { suggest_stop: boolean; reason: string | null };
@@ -37,18 +39,24 @@ export default function WorkPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { loading } = useRequireAuth();
+
   const [blocks, setBlocks] = useState<WorkBlock[]>([]);
   const [directionConfig, setDirectionConfig] = useState<DirectionCatalogItem | null>(null);
   const [session, setSession] = useState<{ raw_dream_text: string } | null>(null);
+
   const [err, setErr] = useState<string | null>(null);
   const [nextErr, setNextErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
+
   const [ensuredInitial, setEnsuredInitial] = useState(false);
   const [closureBlock, setClosureBlock] = useState<NextResponse["work_block"] | null>(null);
   const [pendingNextPayload, setPendingNextPayload] = useState<NextPayload | null>(null);
 
   const directionSlug = searchParams?.get("direction") ?? "";
+
+  // egyszeri index-session (hogy a dream_session_summaries ne maradjon üres)
+  const indexAttemptedRef = useRef(false);
 
   const directionBlocks = useMemo(
     () =>
@@ -58,7 +66,10 @@ export default function WorkPage() {
             ? ({ ...block, content: normalizeContent(block.content) } as DirectionWorkBlock)
             : null
         )
-        .filter((b): b is DirectionWorkBlock => !!b && (!directionSlug || b.content.direction_slug === directionSlug)),
+        .filter(
+          (b): b is DirectionWorkBlock =>
+            !!b && (!directionSlug || b.content.direction_slug === directionSlug)
+        ),
     [blocks, directionSlug]
   );
 
@@ -71,6 +82,7 @@ export default function WorkPage() {
       .eq("session_id", sessionId)
       .eq("block_type", "dream_analysis")
       .order("created_at", { ascending: true });
+
     if (error) setErr("Nem sikerült betölteni a kártyákat.");
     else setBlocks((data ?? []) as WorkBlock[]);
     setLoaded(true);
@@ -134,40 +146,34 @@ export default function WorkPage() {
 
   useEffect(() => {
     setEnsuredInitial(false);
+    setClosureBlock(null);
+    setPendingNextPayload(null);
+    setNextErr(null);
   }, [directionSlug]);
 
-  const nextSequence = useMemo(
-    () => directionBlocks.reduce((max, block) => Math.max(max, block.content.sequence ?? 0), 0) + 1,
-    [directionBlocks]
-  );
+  const fetchNextWorkBlock = useCallback(async (payload: NextPayload): Promise<NextResponse | null> => {
+    setNextErr(null);
+    try {
+      const res = await fetch("/api/work-block/next", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-  const fetchNextWorkBlock = useCallback(
-    async (payload: NextPayload): Promise<NextResponse | null> => {
-      setNextErr(null);
-      try {
-        const res = await fetch("/api/work-block/next", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("Next block error", res.status, text);
-          setNextErr("Hiba történt a következő kérésénél.");
-          return null;
-        }
-
-        const json = (await res.json()) as NextResponse;
-        return json;
-      } catch (e) {
-        console.error(e);
-        setNextErr("Nem sikerült lekérni a következő kérdést.");
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Next block error", res.status, text);
+        setNextErr("Hiba történt a következő kérésénél.");
         return null;
       }
-    },
-    []
-  );
+
+      return (await res.json()) as NextResponse;
+    } catch (e) {
+      console.error(e);
+      setNextErr("Nem sikerült lekérni a következő kérdést.");
+      return null;
+    }
+  }, []);
 
   const processNextPayload = useCallback(
     async (payload: NextPayload) => {
@@ -186,15 +192,12 @@ export default function WorkPage() {
       }
 
       const userId = await requireUserId();
-      const sequence = directionBlocks.reduce(
-        (max, block) => Math.max(max, block.content.sequence ?? 0),
-        0
-      );
 
+      const maxSeq = directionBlocks.reduce((max, block) => Math.max(max, block.content.sequence ?? 0), 0);
       const content: DirectionCardContent = {
         kind: "direction_card",
         direction_slug: directionSlug,
-        sequence: sequence + 1,
+        sequence: maxSeq + 1,
         state: "open",
         ai: {
           context: next.work_block.lead_in,
@@ -215,6 +218,7 @@ export default function WorkPage() {
         .single();
 
       if (insertErr) throw insertErr;
+
       setBlocks((prev) => [...prev, inserted as WorkBlock]);
       setClosureBlock(null);
       setPendingNextPayload(null);
@@ -237,51 +241,42 @@ export default function WorkPage() {
     }
   }, [pendingNextPayload, processNextPayload]);
 
-  const generateDirectionBlock = useCallback(async () => {
-    if (!directionSlug) {
-      setErr("Előbb válassz irányt.");
-      return;
-    }
-    setBusy(true);
-    setErr(null);
-    setNextErr(null);
-    try {
-      const userId = await requireUserId();
-      const content: DirectionCardContent = {
-        kind: "direction_card",
-        direction_slug: directionSlug,
-        sequence: nextSequence,
-        state: "open",
-        ai: {
-          context: "Most csak egy apró pontot nézünk meg ebből az álomból.",
-          question: "Mi az a részlet, ami most a leginkább megmaradt benned?",
-        },
-        user: { answer: null, answered_at: null },
-      };
+  const ensureInitialBlock = useCallback(async () => {
+    if (!directionSlug || !session) return;
+    // directionConfig néha később jön, de akkor is működjön minimálban
+    const direction = directionConfig ?? { slug: directionSlug };
 
-      const { error } = await supabase.from("work_blocks").insert({
-        session_id: sessionId,
-        user_id: userId,
-        block_type: "dream_analysis",
-        content,
-      });
+    const payload: NextPayload = {
+      dream_text: session.raw_dream_text,
+      direction,
+      history: [],
+    };
 
-      if (error) throw error;
-      await load();
-    } catch {
-      setErr("Nem sikerült új kártyát létrehozni.");
-    } finally {
-      setBusy(false);
-    }
-  }, [directionSlug, load, nextSequence, sessionId]);
+    setPendingNextPayload(payload);
+    await processNextPayload(payload);
+  }, [directionConfig, directionSlug, processNextPayload, session]);
 
   useEffect(() => {
     if (!directionSlug || loading || busy || ensuredInitial || !loaded) return;
+    if (!session) return; // várjuk meg
     if (directionBlocks.length === 0) {
-      void generateDirectionBlock();
+      void ensureInitialBlock();
     }
     setEnsuredInitial(true);
-  }, [busy, directionBlocks.length, directionSlug, ensuredInitial, generateDirectionBlock, loaded, loading]);
+  }, [busy, directionBlocks.length, directionSlug, ensuredInitial, ensureInitialBlock, loaded, loading, session]);
+
+  // opcionális: index-session egyszer (hogy dream_session_summaries töltődjön)
+  useEffect(() => {
+    if (!session?.raw_dream_text) return;
+    if (indexAttemptedRef.current) return;
+    indexAttemptedRef.current = true;
+
+    void fetch("/api/index-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, dream_text: session.raw_dream_text }),
+    }).catch((e) => console.warn("index-session failed", e));
+  }, [session?.raw_dream_text, sessionId]);
 
   const saveAnswer = useCallback(
     async (block: DirectionWorkBlock, answer: string) => {
@@ -289,10 +284,12 @@ export default function WorkPage() {
         setErr("Hiányzó adatok: frissítsd az oldalt.");
         return;
       }
+
       const trimmed = answer.trim();
       setBusy(true);
       setErr(null);
       setNextErr(null);
+
       try {
         const existingContent = normalizeContent(block.content);
         const updatedContent: DirectionCardContent = {
@@ -304,15 +301,15 @@ export default function WorkPage() {
             answered_at: trimmed ? new Date().toISOString() : null,
           },
         };
+
         const { error } = await supabase
           .from("work_blocks")
           .update({ content: updatedContent })
           .eq("id", block.id);
+
         if (error) throw error;
 
-        setBlocks((prev) =>
-          prev.map((b) => (b.id === block.id ? { ...b, content: updatedContent } : b))
-        );
+        setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content: updatedContent } : b)));
 
         const updatedDirectionBlocks = directionBlocks.map((b) =>
           b.id === block.id ? { ...b, content: updatedContent } : b
@@ -327,7 +324,10 @@ export default function WorkPage() {
         };
 
         setPendingNextPayload(payload);
-        await processNextPayload(payload);
+
+        const ok = await processNextPayload(payload);
+        // ha nem sikerül next, akkor a mentés attól még oké volt → ne "mentés hiba"
+        if (!ok) return;
       } catch (e: unknown) {
         console.error(e);
         setErr("Nem sikerült menteni a választ.");
@@ -354,7 +354,11 @@ export default function WorkPage() {
         }}
       />
       <style jsx>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
       `}</style>
     </>
   );
@@ -371,7 +375,9 @@ export default function WorkPage() {
           right={
             !directionSlug ? (
               <p style={{ color: "var(--text-muted)" }}>
-                Válassz egy irányt az <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj vissza ide.
+                Válassz egy irányt az{" "}
+                <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj
+                vissza ide.
               </p>
             ) : (
               <div className="stack">
@@ -426,6 +432,7 @@ function BlockCard({
   useEffect(() => {
     setDraft(block.content.user?.answer ?? "");
   }, [block.content.user?.answer, block.id]);
+
   const stateLabel = block.content.state ?? "open";
   const answeredAt = block.content.user?.answered_at;
 
@@ -435,16 +442,18 @@ function BlockCard({
         <div className="meta-block">
           <span className="badge-muted">#{block.content.sequence}</span>
           <span className="badge-muted">Állapot: {stateLabel}</span>
-          {answeredAt && <span className="badge-muted">Válaszolva: {new Date(answeredAt).toLocaleString("hu-HU")}</span>}
+          {answeredAt && (
+            <span className="badge-muted">
+              Válaszolva: {new Date(answeredAt).toLocaleString("hu-HU")}
+            </span>
+          )}
         </div>
 
         <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>
-          {block.content.ai?.context ?? "Most csak egy apró pontot nézünk meg ebből az álomból."}
+          {block.content.ai?.context ?? ""}
         </div>
 
-        <div style={{ fontWeight: 700 }}>
-          {block.content.ai?.question ?? "Mi az a részlet, ami most a leginkább megmaradt benned?"}
-        </div>
+        <div style={{ fontWeight: 700 }}>{block.content.ai?.question ?? ""}</div>
 
         <textarea
           value={draft}
@@ -467,9 +476,7 @@ function ClosureCard({ block }: { block: NextResponse["work_block"] }) {
   return (
     <Card>
       <div className="stack-tight">
-        <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>
-          {block.lead_in}
-        </div>
+        <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{block.lead_in}</div>
         <div style={{ fontWeight: 700 }}>{block.question}</div>
         <p style={{ color: "var(--text-muted)", margin: 0 }}>
           Ha szeretnéd, itt megpihenhetünk. Bármikor visszatérhetsz a munkához.

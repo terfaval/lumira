@@ -6,8 +6,8 @@
     "description": "Az álom felidézett elemeinek stabilizálása és finom bővítése értelmezés nélkül.",
     "content": {
       "type": "direction",
-      "group": "I. ÁLOMEMLÉKEZET ÉS HOZZÁFÉRÉS",
-      "goal_md": "**Cél:** Az álom felidézett elemeinek stabilizálása és finom bővítése értelmezés nélkül.",
+      "group": "Álomemlékezet erősítése",
+      "goal_md": "Az álom felidézett elemeinek stabilizálása és finom bővítése értelmezés nélkül.",
       "micro_description": "Stabilizáld és finoman bővítsd az álomemléket (értelmezés nélkül).",
       "stop_criteria": {
         "max_cards": 4,
@@ -85,8 +85,8 @@
     "description": "Az álomállapot rövid idejű újraérintése.",
     "content": {
       "type": "direction",
-      "group": "I. ÁLOMEMLÉKEZET ÉS HOZZÁFÉRÉS",
-      "goal_md": "**Cél:** Az álomállapot rövid idejű újraérintése.",
+      "group": "Álomemlékezet erősítése",
+      "goal_md": "Az álomállapot rövid idejű újraérintése.",
       "micro_description": "Az álomállapot rövid, biztonságos újraérintése.",
       "stop_criteria": {
         "max_cards": 4,
@@ -164,8 +164,8 @@
     "description": "Az álom spontán továbbalakulásának megfigyelése.",
     "content": {
       "type": "direction",
-      "group": "I. ÁLOMEMLÉKEZET ÉS HOZZÁFÉRÉS",
-      "goal_md": "**Cél:** Az álom spontán továbbalakulásának megfigyelése.",
+      "group": "Álomemlékezet erősítése",
+      "goal_md": "Az álom spontán továbbalakulásának megfigyelése.",
       "micro_description": "Figyeld meg, hogyan alakulna tovább az álom (kötés nélkül).",
       "stop_criteria": {
         "max_cards": 4,
@@ -246,8 +246,8 @@
     "description": "Az álom érzelmi tónusának azonosítása.",
     "content": {
       "type": "direction",
-      "group": "II. ÉRZELMI ÉS TESTI LENYOMAT",
-      "goal_md": "**Cél:** Az álom érzelmi tónusának azonosítása.",
+      "group": "Érzelmi és testi lenyomat",
+      "goal_md": "Az álom érzelmi tónusának azonosítása.",
       "micro_description": "Nevezd meg és tartsd meg az álom érzelmi tónusát.",
       "stop_criteria": {
         "max_cards": 4,
@@ -325,8 +325,8 @@
     "description": "Az álom testi hatásainak tudatosítása.",
     "content": {
       "type": "direction",
-      "group": "II. ÉRZELMI ÉS TESTI LENYOMAT",
-      "goal_md": "**Cél:** Az álom testi hatásainak tudatosítása.",
+      "group": "Érzelmi és testi lenyomat",
+      "goal_md": "Az álom testi hatásainak tudatosítása.",
       "micro_description": "Testi érzetekre fókuszálva stabilizálni és megfigyelni.",
       "stop_criteria": {
         "max_cards": 4,
@@ -404,8 +404,8 @@
     "description": "Kapcsolódások felismerése korábbi álmokkal.",
     "content": {
       "type": "direction",
-      "group": "III. MINTÁZATOK ÉS ISMÉTLŐDÉSEK",
-      "goal_md": "**Cél:** Kapcsolódások felismerése korábbi álmokkal.",
+      "group": "Mintázatok keresése",
+      "goal_md": "Kapcsolódások felismerése korábbi álmokkal.",
       "micro_description": "Visszatérések megfigyelése: különbségek, majd hasonlóságok.",
       "stop_criteria": {
         "max_cards": 4,
@@ -494,8 +494,8 @@
     "description": "Jelentéslehetőségek megnyitása megfejtés nélkül.",
     "content": {
       "type": "direction",
-      "group": "IV. JELENTÉS-KÖZELI, DE NYITOTT IRÁNYOK",
-      "goal_md": "**Cél:** Jelentéslehetőségek megnyitása megfejtés nélkül.",
+      "group": "Jelentések keresése",
+      "goal_md": "Jelentéslehetőségek megnyitása megfejtés nélkül.",
       "micro_description": "Nyitott asszociációk a szimbólumokra, megfejtés nélkül.",
       "stop_criteria": {
         "max_cards": 4,
@@ -573,8 +573,8 @@
     "description": "Rezonanciák megfigyelése.",
     "content": {
       "type": "direction",
-      "group": "IV. JELENTÉS-KÖZELI, DE NYITOTT IRÁNYOK",
-      "goal_md": "**Cél:** Rezonanciák megfigyelése.",
+      "group": "Jelentések keresése",
+      "goal_md": "Rezonanciák megfigyelése.",
       "micro_description": "Rezonanciák keresése az ébrenléti életben (bizonyosság nélkül).",
       "stop_criteria": {
         "max_cards": 4,
@@ -652,8 +652,8 @@
     "description": "Az álom megtartása nyitott kérdésként.",
     "content": {
       "type": "direction",
-      "group": "IV. JELENTÉS-KÖZELI, DE NYITOTT IRÁNYOK",
-      "goal_md": "**Cél:** Az álom megtartása nyitott kérdésként.",
+      "group": "Jelentések keresése",
+      "goal_md": "Az álom megtartása nyitott kérdésként.",
       "micro_description": "Tartsd meg az álmot nyitott kérdésként, megoldás nélkül.",
       "stop_criteria": {
         "max_cards": 4,
@@ -731,8 +731,8 @@
     "description": "Kognitív távolság létrehozása.",
     "content": {
       "type": "direction",
-      "group": "V. INTEGRÁCIÓ, KREATÍV HASZNÁLAT ÉS LEZÁRÁS",
-      "goal_md": "**Cél:** Kognitív távolság létrehozása.",
+      "group": "Kreatív integráció ",
+      "goal_md": "Kognitív távolság létrehozása.",
       "micro_description": "Perspektívaváltással kognitív távolság, óvatos újranézés.",
       "stop_criteria": {
         "max_cards": 4,
@@ -810,8 +810,8 @@
     "description": "Kreatív elemek elkülönítése.",
     "content": {
       "type": "direction",
-      "group": "V. INTEGRÁCIÓ, KREATÍV HASZNÁLAT ÉS LEZÁRÁS",
-      "goal_md": "**Cél:** Kreatív elemek elkülönítése.",
+      "group": "Kreatív integráció ",
+      "goal_md": "Kreatív elemek elkülönítése.",
       "micro_description": "Kreatív nyersanyagként elkülöníteni az álom elemeit.",
       "stop_criteria": {
         "max_cards": 4,
@@ -889,8 +889,8 @@
     "description": "Lezárás vagy továbblépés támogatása.",
     "content": {
       "type": "direction",
-      "group": "V. INTEGRÁCIÓ, KREATÍV HASZNÁLAT ÉS LEZÁRÁS",
-      "goal_md": "**Cél:** Lezárás vagy továbblépés támogatása.",
+      "group": "Kreatív integráció ",
+      "goal_md": "Lezárás vagy továbblépés támogatása.",
       "micro_description": "Rövid összegzés és puha lezárás vagy tudatos elengedés.",
       "stop_criteria": {
         "max_cards": 4,

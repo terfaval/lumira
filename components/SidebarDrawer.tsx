@@ -104,10 +104,10 @@ export function SidebarDrawer({
           </Link>
         </div>
 
-        {/* Álmonapló (archívum) */}
+        {/* Álomnapló (archívum) */}
         <div className="drawer-section">
           <div className="drawer-section-head">
-            <span className="drawer-section-title">Álmonapló</span>
+            <span className="drawer-section-title">Álomnapló</span>
             <Link href="/archive" className="drawer-link--muted" onClick={() => onClose()}>
               Teljes lista
             </Link>
