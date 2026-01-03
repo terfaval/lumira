@@ -18,6 +18,22 @@ export async function POST(req: Request) {
 
     const userId = authData.user.id;
 
+    // ✅ 0) ne indexelj újra, ha már van embedding + anchor_summary
+    const { data: existing, error: existingErr } = await supabase
+      .from("dream_session_summaries")
+      .select("anchor_summary, embedding")
+      .eq("session_id", sessionId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!existingErr && existing) {
+      const hasSummary = typeof existing.anchor_summary === "string" && existing.anchor_summary.trim().length > 0;
+      const hasEmbedding = Boolean(existing.embedding);
+      if (hasSummary && hasEmbedding) {
+        return NextResponse.json({ ok: true, skipped: true });
+      }
+    }
+
     const { data: session, error: sessionError } = await supabase
       .from("dream_sessions")
       .select("id, raw_dream_text, user_id")
@@ -44,19 +60,19 @@ export async function POST(req: Request) {
           {
             role: "system",
             content:
-              "You write concise, literal summaries of dream texts for indexing. " +
-              "No interpretation, no meaning, no diagnosis. Output plain text only.",
+              "Magyar nyelvű, tömör, szó szerinti horgony-összefoglalót írsz álmokhoz indexeléshez. " +
+              "Nem értelmezel, nem magyarázol, nem diagnosztizálsz. Kimenet: csak sima szöveg.",
           },
           {
             role: "user",
             content: [
-              "Create a concise anchor summary of the dream with these constraints:",
-              "- Max 800 characters.",
-              "- Describe only observable elements: characters, places, objects, scene shifts, explicit emotion words.",
-              "- Do NOT interpret or explain meanings; avoid phrases like 'this means', 'suggests', 'represents', or any diagnoses.",
-              "- Output plain text only.",
+              "Készíts egy magyar, tömör horgony-összefoglalót a következő megkötésekkel:",
+              "- Max 800 karakter.",
+              "- Csak megfigyelhető elemek: szereplők, helyek, tárgyak, jelenetváltások, kifejezett érzelemszavak.",
+              "- Ne értelmezz; ne legyen: „ez azt jelenti”, „arra utal”, „szimbolizál”, diagnózis.",
+              "- Kimenet: csak a szöveg.",
               "",
-              "Dream text:",
+              "Álom szöveg:",
               dreamText,
             ].join("\n"),
           },
@@ -83,13 +99,13 @@ export async function POST(req: Request) {
           user_id: userId,
           anchor_summary: anchorSummary,
           embedding,
-          updated_at: new Date().toISOString(),
+          // ✅ updated_at-et NE írjuk; trigger kezeli
         },
         { onConflict: "session_id" }
       );
 
     if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, skipped: false });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

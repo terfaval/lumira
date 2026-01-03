@@ -89,6 +89,47 @@ function validateRecommendations(recs: unknown, allowed: Set<string>): Recommend
   return cleaned.length === 3 ? cleaned : null;
 }
 
+async function upsertSummaries(
+  supabase: any,
+  sessionId: string,
+  userId: string,
+  payload: { title: string; framing_text: string; recommended_directions: RecommendedDirection[] }
+) {
+  const { error } = await supabase
+    .from("dream_session_summaries")
+    .upsert(
+      {
+        session_id: sessionId,
+        user_id: userId,
+        title: payload.title,
+        framing_text: payload.framing_text,
+        recommended_directions: payload.recommended_directions,
+      },
+      { onConflict: "session_id" }
+    );
+
+  if (error) {
+    console.warn("dream_session_summaries upsert failed:", error.message);
+  }
+}
+
+async function appendLatentAnalysis(
+  supabase: any,
+  sessionId: string,
+  output: any,
+  meta: any
+) {
+  const { error } = await supabase.rpc("append_latent_analysis", {
+    p_session_id: sessionId,
+    p_output: output,
+    p_meta: meta ?? {},
+  });
+
+  if (error) {
+    console.warn("append_latent_analysis failed:", error.message);
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const { sessionId } = (await req.json()) as { sessionId?: string };
@@ -127,6 +168,8 @@ export async function POST(req: Request) {
     );
 
     const raw = session.raw_dream_text?.trim() ?? "";
+
+    // ---- rövid álom fallback ----
     if (raw.length < 20) {
       const framing =
         "Az álomleírás nagyon rövid, de fontos, hogy időt szánj rá: " +
@@ -152,6 +195,29 @@ export async function POST(req: Request) {
 
       if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
+      // ✅ canonical: summaries is kapja meg
+      await upsertSummaries(supabase, sessionId, userId, {
+        title,
+        framing_text: framing,
+        recommended_directions: recommended,
+      });
+
+      // ✅ initial latent snapshot (fallback)
+      await appendLatentAnalysis(
+        supabase,
+        sessionId,
+        {
+          kind: "latent_v1",
+          summary_hu: "A nyers álomleírás túl rövid; első lépésként több konkrét részlet szükséges.",
+          anchors: { characters: [], places: [], objects: [], beats: [], felt_words: [] },
+          hypotheses: [],
+          candidate_directions: recommended.map((r) => r.slug),
+          question_seed: { preferred_style: "open_question_single", target_anchor: "" },
+          flags: { safety: "none", too_short: true },
+        },
+        { source: "frame", mode: "fallback" }
+      );
+
       return NextResponse.json({ sessionId, framing, title });
     }
 
@@ -169,11 +235,6 @@ export async function POST(req: Request) {
         }
       }
 
-      if (rawText.trim().length < 20) {
-        const fallback = "Rövid álomjegyzet";
-        return { title: fallback, audit: { ...existingAudit, title: fallback } };
-      }
-
       let generated = "";
       try {
         const titleResp = await client.chat.completions.create({
@@ -188,7 +249,7 @@ export async function POST(req: Request) {
                 "Szabályok:\n" +
                 "- 2–6 szó\n" +
                 "- Kezdődjön nagybetűvel\n" +
-                "- Legyen általánosabb: ne legyen magyarázó mondat\n" +
+                "- Ne legyen magyarázó mondat\n" +
                 "- Ne használj kötőszavas szerkezeteket (pl. „ugyanakkor”, „közben”, „mintha”)\n" +
                 "- Ne legyen értelmezés, jelentés, diagnózis\n" +
                 "- Ne legyen idézőjel\n" +
@@ -239,7 +300,7 @@ export async function POST(req: Request) {
         }
       }
 
-      if (!finalTitle || isGenericTitle(finalTitle) || countWords(finalTitle) < 2) finalTitle = "Tábori jelenetek";
+      if (!finalTitle || isGenericTitle(finalTitle) || countWords(finalTitle) < 2) finalTitle = "Álomjelenet";
       return { title: finalTitle, audit: { ...existingAudit, title: finalTitle } };
     };
 
@@ -255,7 +316,7 @@ export async function POST(req: Request) {
               "- 2–5 mondat, magyar nyelven\n" +
               "- Ne adj diagnózist, ne mondd meg „mit jelent” az álom\n" +
               "- Tükrözz vissza 1–2 konkrét, feltűnő elemet vagy helyzetet az álomból\n" +
-              "- Engedj meg 1 óvatos, feltételes értelmező fókuszt, de csak hipotetikusan\n" +
+              "- Engedj meg 1 óvatos, feltételes fókuszt, de csak hipotetikusan\n" +
               "- Hangnem: nyugodt, jelenlévő, nem túl általános\n\n" +
               "Csak a keretező szöveget add vissza, semmi mást.",
           },
@@ -321,6 +382,57 @@ export async function POST(req: Request) {
       .eq("user_id", userId);
 
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
+
+    // ✅ canonical: summaries is kapja meg (title+framing+reco)
+    await upsertSummaries(supabase, sessionId, userId, {
+      title,
+      framing_text: framing,
+      recommended_directions: recommendations,
+    });
+
+    // ✅ latent_analysis szülessen meg a frame-nél
+    try {
+      const latentResp = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        temperature: 0.35,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              "BELSŐ (nem felhasználói) latent elemzést készítesz egy álomról. Magyar nyelv.\n" +
+              "Cél: segíteni a következő kérdések pontosítását és az álom fokozatos mélyítését.\n" +
+              "Szabályok:\n" +
+              "- Nem diagnózis, nem klinikai címkék.\n" +
+              "- Lehetnek erősebb hipotézisek, de feltételesen, az álom elemeivel alátámasztva.\n" +
+              "- Ne adj tanácsot a felhasználónak.\n" +
+              "- candidate_directions: csak a megadott slugokból.\n" +
+              'Kimenet: csak JSON objektum a következő kulcsokkal: kind, summary_hu, anchors, hypotheses, candidate_directions, question_seed, flags.',
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              dream_text: raw,
+              framing_text: framing,
+              title,
+              recommended_directions: recommendations,
+              allowed_slugs: Array.from(allowedSlugs),
+            }),
+          },
+        ],
+        max_tokens: 650,
+      });
+
+      const parsed = JSON.parse(latentResp.choices?.[0]?.message?.content ?? "{}");
+
+      await appendLatentAnalysis(supabase, sessionId, parsed, {
+        source: "frame",
+        note: "initial_latent",
+        model: "gpt-4o-mini",
+      });
+    } catch (e) {
+      console.warn("latent generation failed:", e);
+    }
 
     return NextResponse.json({ sessionId, framing, title });
   } catch (e: unknown) {

@@ -11,7 +11,7 @@ export type ArchiveSessionSummary = {
   created_at: string;
   status: string;
 
-  // ✅ NEW: a session listához hasonlóan, snippethez
+  // snippethez
   raw_dream_text?: string | null;
 
   touched_directions: string[];
@@ -46,6 +46,11 @@ function sanitizeTitle(t: string): string | null {
   return cleaned;
 }
 
+function isGenericTitle(t: string | null | undefined): boolean {
+  const cleaned = (t ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  return !cleaned || cleaned === "álom";
+}
+
 function extractAuditTitle(audit: unknown): string | null {
   if (!audit || typeof audit !== "object") return null;
 
@@ -54,15 +59,11 @@ function extractAuditTitle(audit: unknown): string | null {
 
   if (typeof rawTitle === "string") {
     const cleaned = sanitizeTitle(rawTitle);
-
-    // ✅ itt volt a TS hiba: cleaned lehet null
     if (!cleaned) return null;
     if (cleaned.toLowerCase() === "álom") return null;
-
     return cleaned;
   }
 
-  // ha valamiért nem string (régi / hibás audit), próbáljuk stringgé konvertálni
   if (rawTitle && typeof rawTitle === "object" && "toString" in rawTitle) {
     const converted = sanitizeTitle(String(rawTitle));
     if (!converted) return null;
@@ -73,14 +74,40 @@ function extractAuditTitle(audit: unknown): string | null {
   return null;
 }
 
+/**
+ * ✅ Új: preferált title forrás:
+ * 1) dream_session_summaries.title
+ * 2) dream_sessions.ai_framing_audit.title (régi)
+ * 3) "Álom"
+ */
+function resolveTitle(session: any): string {
+  const summaryTitle = sanitizeTitle(session?.dream_session_summaries?.title ?? "");
+  if (summaryTitle && !isGenericTitle(summaryTitle)) return summaryTitle;
+
+  const auditTitle = extractAuditTitle(session?.ai_framing_audit);
+  if (auditTitle && !isGenericTitle(auditTitle)) return auditTitle;
+
+  return "Álom";
+}
+
 export async function fetchArchiveSessions(userId: string, range?: RangeOption) {
   const days = range && range !== "all" ? rangeToDays[range] : undefined;
   const sinceDate = days ? new Date(Date.now() - days * 24 * 60 * 60 * 1000) : null;
 
   let sessionQuery = supabase
     .from("dream_sessions")
-    // ✅ NEW: raw_dream_text bekerül a selectbe
-    .select("id, ai_framing_audit, status, created_at, raw_dream_text")
+    .select(
+      `
+        id,
+        status,
+        created_at,
+        raw_dream_text,
+        ai_framing_audit,
+        dream_session_summaries: dream_session_summaries (
+          title
+        )
+      `
+    )
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -91,7 +118,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
   const { data: sessions, error: sessionsError } = await sessionQuery;
   if (sessionsError) throw sessionsError;
 
-  const sessionIds = (sessions ?? []).map((s) => s.id);
+  const sessionIds = (sessions ?? []).map((s: any) => s.id);
   let workBlocks: Pick<WorkBlock, "session_id" | "content">[] = [];
 
   if (sessionIds.length > 0) {
@@ -126,7 +153,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
     aggregates.set(block.session_id, touched);
   }
 
-  const summaries: ArchiveSessionSummary[] = (sessions ?? []).map((session) => {
+  const summaries: ArchiveSessionSummary[] = (sessions ?? []).map((session: any) => {
     const aggregate = aggregates.get(session.id) ?? {
       touchedSlugs: new Set<string>(),
       answeredCount: 0,
@@ -138,16 +165,12 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
     const feldolgozottsag = classifyFeldolgozottsag(touched_directions_count, answered_cards_count);
     const score = touched_directions_count * 10 + answered_cards_count;
 
-    // ✅ title: auditból, tisztítva; fallback marad
-    const title = extractAuditTitle((session as any).ai_framing_audit) || "Álom";
-
     return {
       id: session.id,
-      title,
+      title: resolveTitle(session),
       created_at: session.created_at,
       status: session.status,
-      // ✅ NEW: átadjuk a nyers álomszöveget a kliensnek
-      raw_dream_text: (session as any).raw_dream_text ?? null,
+      raw_dream_text: session.raw_dream_text ?? null,
       touched_directions,
       touched_directions_count,
       answered_cards_count,

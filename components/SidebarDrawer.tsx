@@ -7,10 +7,10 @@ import { supabase } from "@/src/lib/supabase/client";
 type Space = "dream" | "evening";
 
 type DreamRow = {
-  id: string; // megegyezik a session id-val
-  created_at: string;
-  title: string | null;
-  raw_dream_text: string | null;
+  session_id: string; // ✅ PK a summaries-ben
+  created_at: string; // ✅ dream_sessions.created_at
+  title: string | null; // ✅ summaries.title
+  raw_dream_text: string | null; // ✅ dream_sessions.raw_dream_text
 };
 
 export function SidebarDrawer({
@@ -47,7 +47,7 @@ export function SidebarDrawer({
     [onClose]
   );
 
-  /* Legutóbbi 10 álom (summaries + join) */
+  /* Legutóbbi 10 álom (summaries + join dream_sessions) */
   const loadRecent = useCallback(async () => {
     setLoading(true);
     setErr(null);
@@ -56,27 +56,33 @@ export function SidebarDrawer({
         .from("dream_session_summaries")
         .select(
           `
-            id,
-            created_at,
+            session_id,
             title,
             dream_sessions:session_id (
+              created_at,
               raw_dream_text
             )
           `
         )
-        .order("created_at", { ascending: false })
-        .limit(10);
+        // ✅ order a dream_sessions.created_at alapján nem tud mindig közvetlenül, ezért:
+        // 1) nagyobb limit
+        // 2) kliensoldali rendezés
+        .limit(30);
 
       if (error) throw error;
 
-      const rows: DreamRow[] = (data ?? []).map((r: any) => ({
-        id: r.id,
-        created_at: r.created_at,
-        title: r.title ?? null,
-        raw_dream_text: r.dream_sessions?.raw_dream_text ?? null,
-      }));
+      const rows: DreamRow[] = (data ?? [])
+        .map((r: any) => ({
+          session_id: r.session_id,
+          title: r.title ?? null,
+          created_at: r.dream_sessions?.created_at ?? null,
+          raw_dream_text: r.dream_sessions?.raw_dream_text ?? null,
+        }))
+        .filter((r) => typeof r.session_id === "string" && typeof r.created_at === "string");
 
-      setRecent(rows);
+      rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setRecent(rows.slice(0, 10));
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Ismeretlen hiba");
     } finally {
@@ -157,16 +163,14 @@ export function SidebarDrawer({
           ) : (
             <ul className="drawer-list">
               {recent.map((r) => (
-                <li key={r.id} className="drawer-list-item">
+                <li key={r.session_id} className="drawer-list-item">
                   <Link
-                    href={`/session/${r.id}/frame`}
+                    href={`/session/${r.session_id}/frame`}
                     className="drawer-item"
                     onClick={onClose}
                   >
                     <div className="drawer-item-title">{titleOf(r)}</div>
-                    <div className="drawer-item-snippet">
-                      {snippet(r.raw_dream_text)}
-                    </div>
+                    <div className="drawer-item-snippet">{snippet(r.raw_dream_text)}</div>
                     <div className="drawer-item-meta">
                       {new Date(r.created_at).toLocaleString("hu-HU")}
                     </div>
