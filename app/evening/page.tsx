@@ -112,7 +112,6 @@ export default function EveningLanding() {
   useEffect(() => {
     if (!openSlug) return;
 
-    // focus close button
     closeBtnRef.current?.focus();
 
     function onKeyDown(e: KeyboardEvent) {
@@ -169,9 +168,11 @@ export default function EveningLanding() {
     return cards.filter((c) => getIntents(c).includes(selectedIntent));
   }, [cards, selectedIntent]);
 
+  // fontos: openCard a teljes cards-ból jöjjön, ne filteredCards-ból
+  // különben intent váltás után eltűnhet a modal tartalma
   const openCard = useMemo(() => {
-    return openSlug ? filteredCards.find((c) => c.slug === openSlug) ?? null : null;
-  }, [openSlug, filteredCards]);
+    return openSlug ? cards.find((c) => c.slug === openSlug) ?? null : null;
+  }, [openSlug, cards]);
 
   const meta = (openCard?.content as any)?.meta as
     | { time?: string; effect?: string; not_recommended?: string }
@@ -316,25 +317,29 @@ export default function EveningLanding() {
 
           {/* grouped (all) vs filtered (single intent) */}
           {selectedIntent === "all" ? (
-            <div className="stack">
-              {INTENT_SECTIONS.map((sec) => {
-                const group = cards.filter((c) => getIntents(c).includes(sec.key));
-                if (group.length === 0) return null;
+            allIntentsInData.length === 0 ? (
+              <div className="evening-grid">{cards.map((c) => renderCardTile(c))}</div>
+            ) : (
+              <div className="stack">
+                {INTENT_SECTIONS.map((sec) => {
+                  const group = cards.filter((c) => getIntents(c).includes(sec.key));
+                  if (group.length === 0) return null;
 
-                return (
-                  <div key={sec.key} className="stack-tight">
-                    <div className="section-head">
-                      <div className="section-title">{sec.title}</div>
-                      <button className="mini-link" onClick={() => setSelectedIntent(sec.key)}>
-                        Szűrés erre
-                      </button>
+                  return (
+                    <div key={sec.key} className="stack-tight">
+                      <div className="section-head">
+                        <div className="section-title">{sec.title}</div>
+                        <button className="mini-link" onClick={() => setSelectedIntent(sec.key)}>
+                          Szűrés erre
+                        </button>
+                      </div>
+
+                      <div className="evening-grid">{group.map((c) => renderCardTile(c))}</div>
                     </div>
-
-                    <div className="evening-grid">{group.map((c) => renderCardTile(c))}</div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )
           ) : (
             <div className="evening-grid">{filteredCards.map((c) => renderCardTile(c))}</div>
           )}
@@ -441,164 +446,163 @@ export default function EveningLanding() {
 
                 {err ? <div style={{ color: "crimson", marginTop: 10 }}>{err}</div> : null}
               </div>
-
-              <style jsx>{`
-                .evening-grid {
-                  display: grid;
-                  gap: 18px;
-                  grid-template-columns: repeat(1, minmax(0, 1fr));
-                }
-                @media (min-width: 860px) {
-                  .evening-grid {
-                    grid-template-columns: repeat(3, minmax(0, 1fr));
-                  }
-                }
-
-                .intent-row {
-                  display: flex;
-                  gap: 8px;
-                  margin-top: 10px;
-                  overflow-x: auto;
-                  padding-bottom: 6px; /* hogy ne vágja le a scrollbar */
-                  -webkit-overflow-scrolling: touch;
-                  scrollbar-width: thin;
-                }
-
-                .intent-row::-webkit-scrollbar {
-                  height: 6px;
-                }
-                .intent-row::-webkit-scrollbar-thumb {
-                  background: var(--border);
-                  border-radius: 999px;
-                }
-
-                .intent-chip {
-                  flex: 0 0 auto; /* ne törjön */
-                  font-size: 12px;
-                  padding: 7px 11px;
-                  border: 1px solid var(--border);
-                  border-radius: 999px;
-                  color: var(--text-muted);
-                  background: transparent;
-                  cursor: pointer;
-                  white-space: nowrap; /* ne csússzon szét */
-                }
-
-                .intent-chip.active {
-                  color: var(--text);
-                  border-color: var(--text-muted);
-                }
-
-                .section-head {
-                  display: flex;
-                  align-items: baseline;
-                  justify-content: space-between;
-                  gap: 12px;
-                }
-
-                .mini-link {
-                  background: transparent;
-                  border: none;
-                  padding: 0;
-                  cursor: pointer;
-                  color: var(--text-muted);
-                  font-size: 12px;
-                  text-decoration: underline;
-                }
-                .mini-link:hover {
-                  color: var(--text);
-                }
-
-                .meta-pill {
-                  font-size: 12px;
-                  padding: 4px 8px;
-                  border: 1px solid var(--border);
-                  border-radius: 999px;
-                  color: var(--text-muted);
-                  white-space: nowrap;
-                }
-
-                .effect-line {
-                  font-size: 13px;
-                  font-weight: 650;
-                }
-
-                .warn-line {
-                  font-size: 12px;
-                  color: var(--text-muted);
-                  opacity: 0.9;
-                }
-
-                .disclaimer {
-                  border-top: 1px solid var(--border);
-                  padding-top: 10px;
-                }
-
-                .steps {
-                  display: grid;
-                  gap: 10px;
-                }
-
-                .step-row {
-                  display: grid;
-                  grid-template-columns: 34px 1fr;
-                  gap: 10px;
-                  align-items: start;
-                }
-
-                .step-num {
-                  font-size: 22px;
-                  font-weight: 900;
-                  line-height: 1;
-                  opacity: 0.75;
-                }
-
-                .step-text {
-                  font-size: 15px;
-                  font-weight: 650;
-                  line-height: 1.35;
-                }
-
-                .evening-overlay {
-                  position: fixed;
-                  inset: 0;
-                  z-index: 60;
-                  background: rgba(0, 0, 0, 0.58);
-                  backdrop-filter: blur(6px);
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  padding: 16px;
-                }
-
-                .evening-modal {
-                  width: min(760px, 100%);
-                  max-height: min(85vh, 820px);
-                  overflow: auto;
-                  border: 1px solid var(--border);
-                  border-radius: 18px;
-                  background: var(--bg);
-                  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
-                  padding: 14px;
-                }
-
-                .evening-modal-head {
-                  display: flex;
-                  align-items: center;
-                  justify-content: space-between;
-                  gap: 12px;
-                  padding: 6px 6px 12px 6px;
-                  position: sticky;
-                  top: 0;
-                  background: var(--bg);
-                  z-index: 1;
-                  border-bottom: 1px solid var(--border);
-                }
-              `}</style>
             </div>
           )}
         </div>
       )}
+
+      {/* FONTOS: a CSS legyen a modalon kívül, hogy a grid mindig működjön */}
+      <style jsx>{`
+        .evening-grid {
+          display: grid;
+          gap: 18px;
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+        @media (min-width: 860px) {
+          .evening-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+
+        .intent-row {
+          display: flex;
+          gap: 8px;
+          margin-top: 10px;
+          overflow-x: auto;
+          padding-bottom: 6px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+        }
+        .intent-row::-webkit-scrollbar {
+          height: 6px;
+        }
+        .intent-row::-webkit-scrollbar-thumb {
+          background: var(--border);
+          border-radius: 999px;
+        }
+
+        .intent-chip {
+          flex: 0 0 auto;
+          font-size: 12px;
+          padding: 7px 11px;
+          border: 1px solid var(--border);
+          border-radius: 999px;
+          color: var(--text-muted);
+          background: transparent;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .intent-chip.active {
+          color: var(--text);
+          border-color: var(--text-muted);
+        }
+
+        .section-head {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .mini-link {
+          background: transparent;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          color: var(--text-muted);
+          font-size: 12px;
+          text-decoration: underline;
+        }
+        .mini-link:hover {
+          color: var(--text);
+        }
+
+        .meta-pill {
+          font-size: 12px;
+          padding: 4px 8px;
+          border: 1px solid var(--border);
+          border-radius: 999px;
+          color: var(--text-muted);
+          white-space: nowrap;
+        }
+
+        .effect-line {
+          font-size: 13px;
+          font-weight: 650;
+        }
+
+        .warn-line {
+          font-size: 12px;
+          color: var(--text-muted);
+          opacity: 0.9;
+        }
+
+        .disclaimer {
+          border-top: 1px solid var(--border);
+          padding-top: 10px;
+        }
+
+        .steps {
+          display: grid;
+          gap: 10px;
+        }
+
+        .step-row {
+          display: grid;
+          grid-template-columns: 34px 1fr;
+          gap: 10px;
+          align-items: start;
+        }
+
+        .step-num {
+          font-size: 22px;
+          font-weight: 900;
+          line-height: 1;
+          opacity: 0.75;
+        }
+
+        .step-text {
+          font-size: 15px;
+          font-weight: 650;
+          line-height: 1.35;
+        }
+
+        .evening-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 60;
+          background: rgba(0, 0, 0, 0.58);
+          backdrop-filter: blur(6px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }
+
+        .evening-modal {
+          width: min(760px, 100%);
+          max-height: min(85vh, 820px);
+          overflow: auto;
+          border: 1px solid var(--border);
+          border-radius: 18px;
+          background: var(--bg);
+          box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+          padding: 14px;
+        }
+
+        .evening-modal-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 6px 6px 12px 6px;
+          position: sticky;
+          top: 0;
+          background: var(--bg);
+          z-index: 1;
+          border-bottom: 1px solid var(--border);
+        }
+      `}</style>
     </Shell>
   );
 }
