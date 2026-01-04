@@ -2,9 +2,16 @@
 
 import { useEffect } from "react";
 
-type Napszak = "morning" | "day" | "evening" | "night";
+type Napszak = "default" | "morning" | "day" | "evening" | "night";
 
-function resolveNapszak(date: Date): Napszak {
+/**
+ * Ideiglenes kapcsoló:
+ * - true  => mindig "default" téma
+ * - false => napszak szerinti automata téma
+ */
+const FORCE_DEFAULT_THEME = true;
+
+function resolveNapszak(date: Date): Exclude<Napszak, "default"> {
   const hour = date.getHours();
 
   if (hour >= 8 && hour < 10) return "morning";
@@ -15,7 +22,8 @@ function resolveNapszak(date: Date): Napszak {
 
 export function NapszakInitializer({ space }: { space?: "dream" | "evening" }) {
   useEffect(() => {
-    const current = resolveNapszak(new Date());
+    const current: Napszak = FORCE_DEFAULT_THEME ? "default" : resolveNapszak(new Date());
+
     document.body.dataset.napszak = current;
     document.body.dataset.space = space ?? "dream";
   }, [space]);

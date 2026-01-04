@@ -20,25 +20,41 @@ a heavy UI framework.
 
   --shadow-soft: 0 18px 38px rgba(0, 0, 0, 0.06);
 
-  /* Core accents (per napszak override-olja) */
-  --accent: #1f2f4d;
-  --accent-2: #6b8cff;
+  /* ──────────────────────────────────────────────────────────── */
+  /* DEFAULT THEME (ideiglenes “egyetlen beállítás”)               */
+  /* ──────────────────────────────────────────────────────────── */
+
+  --bg-root: #f5f8f8;
+  --bg-layer: #ffffffdd;
+  --bg-layer-strong: #eef4f4;
+
+  --text-primary: #1c2430;
+  --text-muted: #4f5b6a;
+
+  --line-soft: rgba(30, 41, 59, 0.12);
+
+  --card-surface: #ffffff;
+  --card-surface-subtle: #f5f8f8;
+
+  /* Core accents */
+  --accent: #6ba0af;      /* <- kért alapszín */
+  --accent-2: #4f8797;    /* ideiglenes: enyhén mélyebb pár */
 
   /* Accent semantics */
   --accent-ink: #0b1020; /* szöveg a primary gombon */
-  --focus-ring: rgba(31, 47, 77, 0.30);
-  --selection-bg: rgba(31, 47, 77, 0.18);
+  --focus-ring: rgba(107, 160, 175, 0.30);
+  --selection-bg: rgba(107, 160, 175, 0.18);
 
   /* Links */
   --link: var(--text-primary);
   --link-hover: var(--accent);
 
   /* Radial highlights (page background glow) */
-  --glow-1: rgba(255, 255, 255, 0.14);
-  --glow-2: rgba(255, 255, 255, 0.10);
+  --glow-1: rgba(107, 160, 175, 0.14);
+  --glow-2: rgba(107, 160, 175, 0.10);
 
   /* Button shadows (primary hover) */
-  --shadow-accent: 0 10px 26px rgba(15, 21, 35, 0.20);
+  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.24);
 
   /* Badges (default muted) */
   --badge-bg: var(--card-surface-subtle);
@@ -47,8 +63,35 @@ a heavy UI framework.
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/*  NAPSZAK TOKENS (4 mód)                                         */
+/*  NAPSZAK TOKENS (4 mód + DEFAULT)                               */
 /* ────────────────────────────────────────────────────────────── */
+
+/* ✅ mostantól ezt használjuk “egyetlen” témának */
+body[data-napszak="default"] {
+  --bg-root: #f5f8f8;
+  --bg-layer: #ffffffdd;
+  --bg-layer-strong: #eef4f4;
+
+  --text-primary: #1c2430;
+  --text-muted: #4f5b6a;
+
+  --line-soft: rgba(30, 41, 59, 0.12);
+
+  --card-surface: #ffffff;
+  --card-surface-subtle: #f5f8f8;
+
+  --accent: #6ba0af;
+  --accent-2: #4f8797;
+
+  --accent-ink: #0b1020;
+  --focus-ring: rgba(107, 160, 175, 0.30);
+  --selection-bg: rgba(107, 160, 175, 0.18);
+
+  --glow-1: rgba(107, 160, 175, 0.14);
+  --glow-2: rgba(107, 160, 175, 0.10);
+
+  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.24);
+}
 
 body[data-napszak="morning"] {
   /* világos, frissebb reggel */
