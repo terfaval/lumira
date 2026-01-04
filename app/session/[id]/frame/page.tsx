@@ -214,11 +214,7 @@ export default function FramePage() {
                 <>
                   <div
                     style={{
-                      whiteSpace: "pre-wrap",
-                      padding: 12,
-                      border: "1px solid var(--line-soft)",
-                      borderRadius: 12,
-                      background: "var(--card-surface-subtle)",
+                      whiteSpace: "pre-wrap"
                     }}
                   >
                     {session.ai_framing_text}

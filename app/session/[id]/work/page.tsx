@@ -549,7 +549,7 @@ function ClosureCard({
           </Link>
 
           <Link href={`/archive`} style={{ textDecoration: "none" }}>
-            <PrimaryButton>Vissza az Álmonaplóhoz</PrimaryButton>
+            <PrimaryButton>Vissza az Álomnaplóhoz</PrimaryButton>
           </Link>
         </div>
 
