@@ -66,7 +66,7 @@
   {
     "slug": "evening-prep-03-mikroszokas-ultetese",
     "version": "v6",
-    "title": "Kezdőlépés",
+    "title": "Reggeli kezdőlépés",
     "content": {
       "type": "evening_card",
       "phase": "prep",
@@ -220,7 +220,7 @@
   {
     "slug": "evening-inbed-01-alomemlekezet-kapu",
     "version": "v6",
-    "title": "Álomemlékezet – kapu",
+    "title": "Álomemlékezet kapuja",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
@@ -547,7 +547,7 @@
   {
     "slug": "evening-inbed-11-mely-alvas-le",
     "version": "v6",
-    "title": "Mély alvás – le",
+    "title": "Alvásba merülés",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
@@ -580,7 +580,7 @@
   {
     "slug": "evening-inbed-12-lucid-valosagjel",
     "version": "v6",
-    "title": "Lucid – valóságjel",
+    "title": "Lucid valóság",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
@@ -706,7 +706,7 @@
   {
     "slug": "evening-inbed-16-irany-harom-szo",
     "version": "v6",
-    "title": "Irány – három szó",
+    "title": "Egyszerű lezárás",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
@@ -738,7 +738,7 @@
   {
     "slug": "evening-inbed-17-emlekezet-visszafele-nap",
     "version": "v2",
-    "title": "Emlékezet – visszafelé nap",
+    "title": "Kifordított emlékezet",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
@@ -770,7 +770,7 @@
   {
     "slug": "evening-inbed-18-lucid-szelid-kerdes",
     "version": "v2",
-    "title": "Lucid – szelíd kérdés",
+    "title": "Szelíd tudatosság",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
@@ -801,7 +801,7 @@
   {
     "slug": "evening-inbed-19-kreativ-harom-kep",
     "version": "v2",
-    "title": "Kreatív – három kép",
+    "title": "Kreatív elengedés",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
@@ -992,7 +992,7 @@
   {
     "slug": "evening-rescue-03-gondolat-parkolo",
     "version": "v2",
-    "title": "Éjszakai gondolat megszakítása",
+    "title": "Éjszakai gondolat stop",
     "content": {
       "type": "evening_card",
       "phase": "rescue",
@@ -1023,7 +1023,7 @@
   {
     "slug": "evening-rescue-04-remalom-utani-stabilizalas",
     "version": "v2",
-    "title": "Rémálom után – stabilizálás",
+    "title": "Rémálom után",
     "content": {
       "type": "evening_card",
       "phase": "rescue",

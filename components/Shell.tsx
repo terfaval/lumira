@@ -1,22 +1,27 @@
 "use client";
 
-import Link from "next/link";
 import { ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
 import { NapszakInitializer } from "./NapszakInitializer";
-import { PrimaryButton } from "./PrimaryButton";
-// A következő lépésben küldöm ezt a komponenst:
 import { SidebarDrawer } from "./SidebarDrawer";
 
 export function Shell({
   title,
   children,
   space = "dream",
+  headerActions,
+  infoPanel,
+  infoOpen,
+  onToggleInfo,
 }: {
   title: string;
   children: ReactNode;
   space?: "dream" | "evening";
+  headerActions?: ReactNode;
+  infoPanel?: ReactNode;
+  infoOpen?: boolean;
+  onToggleInfo?: () => void;
 }) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -30,8 +35,8 @@ export function Shell({
     <div className={`shell shell--fluid ${space === "evening" ? "evening-shell" : ""}`}>
       <NapszakInitializer space={space} />
 
-      {/* Felső sáv: csak a hamburger + cím, nincs régi nav */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      {/* Felső sáv */}
+      <div className="shell-topbar">
         <button
           type="button"
           aria-label="Menü"
@@ -47,27 +52,46 @@ export function Shell({
             borderRadius: 12,
           }}
         >
-          {/* egyszerű hamburger ikon (SVG) */}
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
         </button>
 
-        <h1 className="shell-title" style={{ margin: 0 }}>{title}</h1>
+        <h1 className="shell-title" style={{ margin: 0 }}>
+          {title}
+        </h1>
+
+        <div className="shell-topbar-spacer" />
+
+        {headerActions}
+
+        {/* opcionális: ha a headerActions-ben nem rakod bele, itt is lehetne info gomb;
+            most csak a struktúrát tartjuk meg */}
+        {onToggleInfo && (
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Információ"
+            aria-expanded={!!infoOpen}
+            onClick={onToggleInfo}
+            style={{ display: "none" }}
+          />
+        )}
       </div>
+
+      {/* Info panel (lenyíló) */}
+      {infoPanel && (
+        <div className={`info-panel ${infoOpen ? "info-panel--open" : ""}`} aria-hidden={!infoOpen}>
+          <div className="info-panel-inner">{infoPanel}</div>
+        </div>
+      )}
 
       {/* Tartalom */}
       <section className="surface-layer card stack" style={{ marginTop: "var(--space-3)" }}>
         {children}
       </section>
 
-      {/* Rejtett oldalsáv – a következő lépésben adom a komponenst és a CSS-t */}
-      <SidebarDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        space={space}
-        onLogout={logout}
-      />
+      <SidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} space={space} onLogout={logout} />
     </div>
   );
 }

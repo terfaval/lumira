@@ -5,6 +5,11 @@ Design tokens live here. They are applied via body[data-napszak] from the
 NapszakInitializer component. The tokens align the calm visuals without adding
 a heavy UI framework.
 */
+
+/* ────────────────────────────────────────────────────────────── */
+/* 1) BASE TOKENS (fallback)                                       */
+/* ────────────────────────────────────────────────────────────── */
+
 :root {
   --font-base: var(--font-geist-sans, system-ui, -apple-system, sans-serif);
   --font-mono: var(--font-geist-mono, "JetBrains Mono", monospace);
@@ -20,10 +25,7 @@ a heavy UI framework.
 
   --shadow-soft: 0 18px 38px rgba(0, 0, 0, 0.06);
 
-  /* ──────────────────────────────────────────────────────────── */
-  /* DEFAULT THEME (ideiglenes “egyetlen beállítás”)               */
-  /* ──────────────────────────────────────────────────────────── */
-
+  /* Fallback (ha valamiért nincs data-napszak) */
   --bg-root: #f5f8f8;
   --bg-layer: #ffffffdd;
   --bg-layer-strong: #eef4f4;
@@ -36,37 +38,40 @@ a heavy UI framework.
   --card-surface: #ffffff;
   --card-surface-subtle: #f5f8f8;
 
-  /* Core accents */
-  --accent: #6ba0af;      /* <- kért alapszín */
-  --accent-2: #4f8797;    /* ideiglenes: enyhén mélyebb pár */
+  /* Accent: 1 / nappali (Cerulean Blue) */
+  --accent: #80b9b9;
+  --accent-2: #497c92; /* Wedgewood Blue (nappali) mint mélyebb pár */
 
-  /* Accent semantics */
-  --accent-ink: #0b1020; /* szöveg a primary gombon */
-  --focus-ring: rgba(107, 160, 175, 0.30);
-  --selection-bg: rgba(107, 160, 175, 0.18);
+  --accent-ink: #0b1020;
+  --focus-ring: rgba(128, 185, 185, 0.30);
+  --selection-bg: rgba(128, 185, 185, 0.18);
 
-  /* Links */
   --link: var(--text-primary);
   --link-hover: var(--accent);
 
-  /* Radial highlights (page background glow) */
-  --glow-1: rgba(107, 160, 175, 0.14);
-  --glow-2: rgba(107, 160, 175, 0.10);
+  --glow-1: rgba(128, 185, 185, 0.14);
+  --glow-2: rgba(128, 185, 185, 0.10);
 
-  /* Button shadows (primary hover) */
-  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.24);
+  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.18);
 
-  /* Badges (default muted) */
   --badge-bg: var(--card-surface-subtle);
   --badge-line: var(--line-soft);
   --badge-text: var(--text-muted);
+
+  /* Dream textarea tokens (fallback = nappali papír) */
+  --dream-input-bg: rgba(248, 192, 138, 0.42);       /* Sunlit Yellow – nappali #f8c08a */
+  --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
+  --dream-input-text: var(--text-primary);
+  --dream-input-placeholder: rgba(28, 36, 48, 0.55);
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/*  NAPSZAK TOKENS (4 mód + DEFAULT)                               */
+/* 2) NAPSZAK TOKENS                                               */
+/*    - default/morning/day: világos, sárga textarea               */
+/*    - evening/night: sötét, kék textarea + fehér betű            */
 /* ────────────────────────────────────────────────────────────── */
 
-/* ✅ mostantól ezt használjuk “egyetlen” témának */
+/* DEFAULT (ha FORCE_DEFAULT_THEME true, ez a legfontosabb) */
 body[data-napszak="default"] {
   --bg-root: #f5f8f8;
   --bg-layer: #ffffffdd;
@@ -80,124 +85,162 @@ body[data-napszak="default"] {
   --card-surface: #ffffff;
   --card-surface-subtle: #f5f8f8;
 
-  --accent: #6ba0af;
-  --accent-2: #4f8797;
+  /* Accent: 1 / nappali */
+  --accent: #80b9b9;
+  --accent-2: #497c92;
 
   --accent-ink: #0b1020;
-  --focus-ring: rgba(107, 160, 175, 0.30);
-  --selection-bg: rgba(107, 160, 175, 0.18);
+  --focus-ring: rgba(128, 185, 185, 0.30);
+  --selection-bg: rgba(128, 185, 185, 0.18);
 
-  --glow-1: rgba(107, 160, 175, 0.14);
-  --glow-2: rgba(107, 160, 175, 0.10);
+  --glow-1: rgba(128, 185, 185, 0.14);
+  --glow-2: rgba(128, 185, 185, 0.10);
 
-  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.24);
+  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.18);
+
+  /* Dream textarea: sárga (nappali Sunlit Yellow) */
+  --dream-input-bg: rgba(248, 192, 138, 0.42);       /* #f8c08a */
+  --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
+  --dream-input-text: var(--text-primary);
+  --dream-input-placeholder: rgba(28, 36, 48, 0.55);
 }
 
+/* MORNING: maradhat a teljes téma később finomabb, de textarea sárga legyen ugyanaz */
 body[data-napszak="morning"] {
-  /* világos, frissebb reggel */
   --bg-root: #f6f7f4;
   --bg-layer: #ffffffdd;
   --bg-layer-strong: #eef2ea;
+
   --text-primary: #1c2430;
   --text-muted: #4f5b6a;
+
   --line-soft: rgba(30, 41, 59, 0.12);
+
   --card-surface: #ffffff;
   --card-surface-subtle: #f6f7f4;
 
-  /* Primary + secondary */
-  --accent: #2b4c7e;     /* tiszta, reggeli kék */
-  --accent-2: #2aa07a;   /* friss zöld (harmonizál, de eltér) */
+  /* Accent marad egységesen a “1 / nappali” (később lehet, hogy külön akarsz) */
+  --accent: #80b9b9;
+  --accent-2: #497c92;
 
-  /* Derived */
   --accent-ink: #0b1020;
-  --focus-ring: rgba(43, 76, 126, 0.26);
-  --selection-bg: rgba(43, 76, 126, 0.16);
+  --focus-ring: rgba(128, 185, 185, 0.30);
+  --selection-bg: rgba(128, 185, 185, 0.18);
 
-  --glow-1: rgba(43, 160, 122, 0.10);
-  --glow-2: rgba(43, 76, 126, 0.10);
+  --glow-1: rgba(128, 185, 185, 0.12);
+  --glow-2: rgba(128, 185, 185, 0.10);
 
-  --shadow-accent: 0 10px 26px rgba(15, 21, 35, 0.18);
+  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.16);
+
+  /* Dream textarea: sárga */
+  --dream-input-bg: rgba(248, 192, 138, 0.42);
+  --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
+  --dream-input-text: var(--text-primary);
+  --dream-input-placeholder: rgba(28, 36, 48, 0.55);
 }
 
+/* DAY: ugyanaz a textarea logika */
 body[data-napszak="day"] {
   --bg-root: #f7f5f1;
   --bg-layer: #ffffffdd;
   --bg-layer-strong: #f0ede6;
+
   --text-primary: #1c2430;
   --text-muted: #4f5b6a;
+
   --line-soft: rgba(30, 41, 59, 0.12);
+
   --card-surface: #ffffff;
   --card-surface-subtle: #f7f5f1;
 
-  /* Primary + secondary */
-  --accent: #1f2f4d;     /* mély tintakék */
-  --accent-2: #c07a2a;   /* meleg borostyán */
+  --accent: #80b9b9;
+  --accent-2: #497c92;
 
-  /* Derived */
   --accent-ink: #0b1020;
-  --focus-ring: rgba(31, 47, 77, 0.30);
-  --selection-bg: rgba(31, 47, 77, 0.18);
+  --focus-ring: rgba(128, 185, 185, 0.30);
+  --selection-bg: rgba(128, 185, 185, 0.18);
 
-  --glow-1: rgba(255, 255, 255, 0.14);
-  --glow-2: rgba(255, 255, 255, 0.10);
+  --glow-1: rgba(128, 185, 185, 0.12);
+  --glow-2: rgba(128, 185, 185, 0.10);
 
-  --shadow-accent: 0 10px 26px rgba(15, 21, 35, 0.20);
+  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.16);
+
+  /* Dream textarea: sárga */
+  --dream-input-bg: rgba(248, 192, 138, 0.42);
+  --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
+  --dream-input-text: var(--text-primary);
+  --dream-input-placeholder: rgba(28, 36, 48, 0.55);
 }
 
+/* EVENING: textarea sötétkék (Wedgewood Blue), fehér betű */
 body[data-napszak="evening"] {
-  /* este: mélyebb, barátságos alkony */
   --bg-root: #121722;
   --bg-layer: #1b2331;
   --bg-layer-strong: #0f141e;
+
   --text-primary: #e7ecf5;
   --text-muted: #9ca8bb;
+
   --line-soft: rgba(226, 232, 240, 0.16);
+
   --card-surface: #1b2331;
   --card-surface-subtle: #151c28;
 
-  /* Primary + secondary */
-  --accent: #9fb4ff;     /* lágy periwinkle */
-  --accent-2: #f3b6c8;   /* púder-rozé */
+  /* Accent marad egységes (ha akarod később lehet esti accent is) */
+  --accent: #80b9b9;
+  --accent-2: #497c92;
 
-  /* Derived */
   --accent-ink: #0b1020;
-  --focus-ring: rgba(159, 180, 255, 0.38);
-  --selection-bg: rgba(159, 180, 255, 0.26);
+  --focus-ring: rgba(128, 185, 185, 0.34);
+  --selection-bg: rgba(128, 185, 185, 0.22);
 
-  --glow-1: rgba(159, 180, 255, 0.10);
-  --glow-2: rgba(243, 182, 200, 0.10);
+  --glow-1: rgba(73, 124, 146, 0.14);  /* Wedgewood Blue */
+  --glow-2: rgba(128, 185, 185, 0.08);
 
   --shadow-accent: 0 10px 26px rgba(10, 14, 24, 0.55);
+
+  /* Dream textarea: sötétkék + fehér betű */
+  --dream-input-bg: rgba(73, 124, 146, 0.32);        /* #497c92 */
+  --dream-input-bg-focus: rgba(73, 124, 146, 0.46);
+  --dream-input-text: rgba(255, 255, 255, 0.92);
+  --dream-input-placeholder: rgba(255, 255, 255, 0.55);
 }
 
+/* NIGHT: még mélyebb Wedgewood Blue, fehér betű */
 body[data-napszak="night"] {
-  /* éj: hidegebb, holdfényes */
   --bg-root: #0c1019;
   --bg-layer: #121827;
   --bg-layer-strong: #0a0f18;
+
   --text-primary: #e6ebf5;
   --text-muted: #9da7bc;
+
   --line-soft: rgba(226, 232, 240, 0.14);
+
   --card-surface: #121827;
   --card-surface-subtle: #0c1019;
 
-  /* Primary + secondary */
-  --accent: #8dd9ff;     /* holdfény-cyan */
-  --accent-2: #b49bff;   /* levendula */
+  --accent: #80b9b9;
+  --accent-2: #497c92;
 
-  /* Derived */
   --accent-ink: #07101a;
-  --focus-ring: rgba(141, 217, 255, 0.36);
-  --selection-bg: rgba(141, 217, 255, 0.22);
+  --focus-ring: rgba(128, 185, 185, 0.34);
+  --selection-bg: rgba(128, 185, 185, 0.22);
 
-  --glow-1: rgba(141, 217, 255, 0.08);
-  --glow-2: rgba(180, 155, 255, 0.08);
+  --glow-1: rgba(50, 88, 109, 0.14);   /* Wedgewood Blue – éjszakai #32586d */
+  --glow-2: rgba(128, 185, 185, 0.08);
 
   --shadow-accent: 0 10px 26px rgba(0, 0, 0, 0.60);
+
+  /* Dream textarea: sötétkék + fehér betű */
+  --dream-input-bg: rgba(50, 88, 109, 0.36);         /* #32586d */
+  --dream-input-bg-focus: rgba(50, 88, 109, 0.52);
+  --dream-input-text: rgba(255, 255, 255, 0.92);
+  --dream-input-placeholder: rgba(255, 255, 255, 0.55);
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/*  BASE STYLES                                                    */
+/* 3) BASE STYLES                                                  */
 /* ────────────────────────────────────────────────────────────── */
 
 * {
@@ -249,58 +292,19 @@ p {
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/*  LAYOUT + UI                                                    */
+/* 4) LAYOUT + UI                                                  */
 /* ────────────────────────────────────────────────────────────── */
 
 .shell {
-  max-width: 840px;         /* alap layoutokhoz marad a régi */
+  max-width: 840px;
   margin: 0 auto;
   padding: var(--space-4) var(--space-3) var(--space-5);
   display: grid;
   gap: var(--space-3);
 }
 
-/* Fluid változat: arányos szélesség a Split oldalakhoz */
 .shell--fluid {
   max-width: clamp(960px, 88vw, 1280px);
-}
-
-/* (A régi header osztályok maradhatnak, de a Shell komponens már nem használja őket) */
-.shell-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.shell-nav {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--bg-layer);
-  border: 1px solid var(--line-soft);
-  box-shadow: var(--shadow-soft);
-}
-
-.shell-nav a {
-  text-decoration: none;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-radius: var(--radius-pill);
-  transition: background 160ms ease, color 160ms ease;
-}
-
-.shell-nav a:hover {
-  background: var(--card-surface-subtle);
-}
-
-.shell-actions {
-  display: inline-flex;
-  gap: var(--space-2);
-  align-items: center;
 }
 
 .shell-title {
@@ -428,13 +432,12 @@ textarea:focus {
   margin: var(--space-3) 0;
 }
 
-/* Split layout rács */
+/* Split layout */
 .split-layout {
   display: grid;
   gap: var(--space-3);
 }
 
-/* Desktop / tablet: két oszlop — alapszinten felezés */
 @media (min-width: 820px) {
   .split-layout {
     grid-template-columns: 1fr 1fr;
@@ -442,10 +445,9 @@ textarea:focus {
   }
 }
 
-/* Nagyobb nézet: arányos (bal/jobb) oszloparányok */
 @media (min-width: 1120px) {
   .split-layout {
-    grid-template-columns: 0.44fr 0.56fr; /* több hely a feldolgozó (jobb) panelnek */
+    grid-template-columns: 0.44fr 0.56fr;
   }
 }
 @media (min-width: 1400px) {
@@ -454,13 +456,12 @@ textarea:focus {
   }
 }
 
-/* Panelek */
 .split-panel {
   display: grid;
   grid-template-rows: auto 1fr;
-  min-height: 0; /* a belső scrollerhez */
-  height: calc(100dvh - 160px); /* fix blokk-magasság (ablak nem görget) */
-  overflow: hidden; /* a belső body görget */
+  min-height: 0;
+  height: calc(100dvh - 160px);
+  overflow: hidden;
 }
 
 .split-panel-title {
@@ -469,13 +470,12 @@ textarea:focus {
   letter-spacing: -0.01em;
 }
 
-/* Belső scroller a panelen belül */
 .panel-body {
   min-height: 0;
   overflow: auto;
+  transition: opacity 160ms ease;
 }
 
-/* Dream szöveg doboz (belső görgetéssel) */
 .dream-raw-text {
   white-space: pre-wrap;
   color: var(--text-muted);
@@ -488,14 +488,13 @@ textarea:focus {
   overflow: auto;
 }
 
-/* Mobil: csak a jobb panel marad látható (aktuális munka) */
 @media (max-width: 819px) {
   .split-hide-left-mobile > .split-panel:first-child {
     display: none;
   }
 }
 
-/* Scrollbar minimal (átlátszó track) – WebKit */
+/* Scrollbar – WebKit */
 .panel-body::-webkit-scrollbar,
 .dream-raw-text::-webkit-scrollbar {
   width: 10px;
@@ -516,17 +515,12 @@ textarea:focus {
 /* Firefox */
 .panel-body,
 .dream-raw-text {
-  scrollbar-color: rgba(127,127,127,0.35) transparent;
+  scrollbar-color: rgba(127, 127, 127, 0.35) transparent;
   scrollbar-width: thin;
 }
 
-/* Finom váltás a jobb panel tartalmára (pl. work flip előtt/után) */
-.panel-body {
-  transition: opacity 160ms ease;
-}
-
 /* ────────────────────────────────────────────────────────────── */
-/*  SPACE OVERRIDES (álomtér vs esti tér)                           */
+/* 5) SPACE OVERRIDES                                              */
 /* ────────────────────────────────────────────────────────────── */
 
 body[data-space="evening"] {
@@ -541,34 +535,93 @@ body[data-space="evening"] {
   background: var(--bg-layer);
 }
 
-/* NewDream – apró finomhangolások */
+/* ────────────────────────────────────────────────────────────── */
+/* 6) SHELL INFO UI                                                */
+/* ────────────────────────────────────────────────────────────── */
 
-.newdream-lead {
-  color: var(--text-muted);
-  font-size: 14px;
-}
-
-.textarea-dream {
-  min-height: 240px;
-  resize: vertical;
-  line-height: 1.65;
-}
-
-.newdream-meta {
+.shell-topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.newdream-hint {
-  color: var(--text-muted);
-  font-size: 12px;
+.shell-topbar-spacer {
+  flex: 1;
+}
+
+/* körben i gomb */
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-layer);
+  box-shadow: var(--shadow-soft);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 120ms ease, background 160ms ease;
+}
+
+.icon-btn:hover {
+  transform: translateY(-1px);
+  background: var(--card-surface-subtle);
+}
+
+.icon-btn svg {
+  opacity: 0.9;
+}
+
+/* lenyíló panel */
+.info-panel {
+  overflow: hidden;
+  max-height: 0px;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: max-height 220ms ease, opacity 180ms ease, transform 220ms ease;
+}
+
+.info-panel--open {
+  max-height: 520px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.info-panel-inner {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line-soft);
+  background: var(--bg-layer);
+  box-shadow: var(--shadow-soft);
+}
+
+/* ────────────────────────────────────────────────────────────── */
+/* 7) NEWDREAM                                                     */
+/* ────────────────────────────────────────────────────────────── */
+
+.textarea-dream {
+  min-height: 260px;
+  resize: vertical;
+  line-height: 1.65;
+
+  /* napszak-függő tokenek */
+  background: var(--dream-input-bg);
+  color: var(--dream-input-text);
+}
+
+.textarea-dream::placeholder {
+  color: var(--dream-input-placeholder);
+}
+
+.textarea-dream:focus {
+  background: var(--dream-input-bg-focus);
 }
 
 .newdream-actions {
   display: flex;
+  justify-content: flex-end;
   gap: 12px;
   flex-wrap: wrap;
   align-items: center;
@@ -580,9 +633,4 @@ body[data-space="evening"] {
   color: var(--text-primary);
   border-radius: 12px;
   padding: 10px 12px;
-}
-
-.newdream-footnote {
-  color: var(--text-muted);
-  font-size: 13px;
 }
