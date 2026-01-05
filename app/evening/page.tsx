@@ -1,4 +1,3 @@
-// /app/evening/page.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -16,12 +15,6 @@ const PHASE_LABEL: Record<PhaseKey, string> = {
   in_bed: "Elalvás előtt",
   rescue: "Éjjeli mentés",
 };
-
-const PHASE_SECTIONS: { key: PhaseKey; title: string; subtitle?: string }[] = [
-  { key: "prep", title: "Előkészítés", subtitle: "Rövid lerakások / inkubáció még lefekvés előtt." },
-  { key: "in_bed", title: "Elalvás előtt", subtitle: "Finom, alvásba csúszó gyakorlatok." },
-  { key: "rescue", title: "Éjjeli mentés", subtitle: "Ha felébredsz / felriadsz: gyors, stabilizáló visszatérés." },
-];
 
 type IntentKey =
   | "emlekezet"
@@ -41,17 +34,6 @@ const INTENT_LABEL: Record<IntentKey, string> = {
   irany_es_jelentes: "Irány / Jelentés",
   test_es_jelenlet: "Test / Jelenlét",
 };
-
-// explicit order (dropdown-hoz)
-const INTENT_SECTIONS: { key: IntentKey; title: string }[] = [
-  { key: "lecsendesites", title: "Lecsengés" },
-  { key: "biztonsag", title: "Biztonság" },
-  { key: "emlekezet", title: "Emlékezet" },
-  { key: "tudatossag", title: "Tudatosság" },
-  { key: "kreativ_inkubacio", title: "Kreatív inkubáció" },
-  { key: "irany_es_jelentes", title: "Irány / Jelentés" },
-  { key: "test_es_jelenlet", title: "Test / Jelenlét" },
-];
 
 function getPhase(card: EveningCardCatalogItem): PhaseKey | null {
   const p = (card?.content as any)?.phase;
@@ -76,58 +58,10 @@ function getIntents(card: EveningCardCatalogItem): IntentKey[] {
   return intents.filter((x): x is IntentKey => typeof x === "string" && allowed.has(x as IntentKey));
 }
 
-function intentColor(intent: IntentKey): { rgb: string; rgbaSoft: string } {
-  // visszafogott, “pasztell” végekhez (a gradienthez)
-  // rgb: a chip színéhez; rgbaSoft: a gradienthez (alfa)
-  switch (intent) {
-    case "lecsendesites":
-      return { rgb: "99 102 241", rgbaSoft: "rgba(99,102,241,0.16)" }; // indigo
-    case "biztonsag":
-      return { rgb: "16 185 129", rgbaSoft: "rgba(16,185,129,0.16)" }; // emerald
-    case "emlekezet":
-      return { rgb: "59 130 246", rgbaSoft: "rgba(59,130,246,0.16)" }; // blue
-    case "tudatossag":
-      return { rgb: "168 85 247", rgbaSoft: "rgba(168,85,247,0.16)" }; // purple
-    case "kreativ_inkubacio":
-      return { rgb: "245 158 11", rgbaSoft: "rgba(245,158,11,0.16)" }; // amber
-    case "irany_es_jelentes":
-      return { rgb: "234 88 12", rgbaSoft: "rgba(234,88,12,0.16)" }; // orange
-    case "test_es_jelenlet":
-      return { rgb: "20 184 166", rgbaSoft: "rgba(20,184,166,0.16)" }; // teal
-    default:
-      return { rgb: "107 114 128", rgbaSoft: "rgba(107,114,128,0.12)" }; // gray
-  }
-}
-
-function phaseColor(phase: PhaseKey): { rgb: string } {
-  switch (phase) {
-    case "prep":
-      return { rgb: "245 158 11" }; // amber
-    case "in_bed":
-      return { rgb: "99 102 241" }; // indigo
-    case "rescue":
-      return { rgb: "239 68 68" }; // red
-    default:
-      return { rgb: "107 114 128" };
-  }
-}
-
-function pickPrimaryIntent(intents: IntentKey[]): IntentKey | null {
-  // ha több van, legyen “domináns”: biztonság/lecsendesítés előrébb,
-  // de ha csak simán sorrendben jön, az is oké.
-  const priority: IntentKey[] = [
-    "biztonsag",
-    "lecsendesites",
-    "test_es_jelenlet",
-    "emlekezet",
-    "tudatossag",
-    "irany_es_jelentes",
-    "kreativ_inkubacio",
-  ];
-  for (const p of priority) if (intents.includes(p)) return p;
-  return intents[0] ?? null;
-}
-
+/**
+ * Determinisztikus shuffle (hogy ne ugráljon minden renderre).
+ * Mulberry32: gyors, elég jó UI-hoz.
+ */
 function mulberry32(seed: number) {
   return function () {
     let t = (seed += 0x6d2b79f5);
@@ -137,7 +71,7 @@ function mulberry32(seed: number) {
   };
 }
 
-function shuffleStable<T>(arr: T[], seed: number): T[] {
+function shuffleDeterministic<T>(arr: T[], seed: number): T[] {
   const out = [...arr];
   const rnd = mulberry32(seed);
   for (let i = out.length - 1; i > 0; i--) {
@@ -145,6 +79,75 @@ function shuffleStable<T>(arr: T[], seed: number): T[] {
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
+}
+
+function intentColor(intent: IntentKey | null): { text: string; bg: string } {
+  // text = pill border + font
+  // bg = gradient target color
+  switch (intent) {
+    case "biztonsag":
+      return { text: "rgba(120, 195, 255, 0.95)", bg: "rgba(120, 195, 255, 0.55)" };
+    case "lecsendesites":
+      return { text: "rgba(170, 140, 255, 0.95)", bg: "rgba(170, 140, 255, 0.55)" };
+    case "emlekezet":
+      return { text: "rgba(255, 190, 120, 0.95)", bg: "rgba(255, 190, 120, 0.55)" };
+    case "tudatossag":
+      return { text: "rgba(120, 220, 170, 0.95)", bg: "rgba(120, 220, 170, 0.55)" };
+    case "kreativ_inkubacio":
+      return { text: "rgba(255, 150, 190, 0.95)", bg: "rgba(255, 150, 190, 0.55)" };
+    case "irany_es_jelentes":
+      return { text: "rgba(255, 220, 120, 0.95)", bg: "rgba(255, 220, 120, 0.55)" };
+    case "test_es_jelenlet":
+      return { text: "rgba(160, 235, 255, 0.95)", bg: "rgba(160, 235, 255, 0.55)" };
+    default:
+      return { text: "rgba(200,200,200,0.95)", bg: "rgba(200,200,200,0.35)" };
+  }
+}
+
+function phaseColor(phase: PhaseKey | null): string {
+  // a phase pill színe (border+font)
+  switch (phase) {
+    case "prep":
+      return "rgba(255, 200, 120, 0.95)";
+    case "in_bed":
+      return "rgba(170, 140, 255, 0.95)";
+    case "rescue":
+      return "rgba(120, 195, 255, 0.95)";
+    default:
+      return "rgba(200,200,200,0.95)";
+  }
+}
+
+// Egyszerű magyarítás a “technical tag” stringekre.
+// Ha valami nincs benne, fallback az eredetire.
+const TAG_HU: Record<string, string> = {
+  "sleep-prep": "Alvás előkészítés",
+  sleep: "Alvás",
+  rescue: "Éjjeli mentés",
+  breath: "Légzés",
+  grounding: "Földelés",
+  safety: "Biztonság",
+  "mental-offload": "Mentális teherlerakás",
+  incubation: "Inkubáció",
+  learning: "Tanulás",
+  memory: "Emlékezet",
+  "dream-recall": "Álomemlékezet",
+  lucid: "Lucid",
+  "dreamwork": "Álommunka",
+  emotion: "Érzelem",
+  "nervous-system": "Idegrendszer",
+  "downshift": "Lecsengés",
+  "body-awareness": "Testtudat",
+  body: "Test",
+  meaning: "Jelentés",
+  values: "Értékek",
+  gentle: "Szelíd",
+  "imagery-rehearsal": "Kép-átírás",
+  nightmares: "Rémálmok",
+};
+
+function huTag(t: string): string {
+  return TAG_HU[t] ?? t;
 }
 
 export default function EveningLanding() {
@@ -165,12 +168,9 @@ export default function EveningLanding() {
   const modalRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
-  // stabil “random seed” egy oldalletöltésen belül
-  const randomSeedRef = useRef<number | null>(null);
-  if (randomSeedRef.current === null) {
-    // elég stabil, de ne legyen mindig ugyanaz: idő + kis jitter
-    randomSeedRef.current = Math.floor(Date.now() % 1000000000);
-  }
+  // stabil seed a random sorrendhez
+  const seedRef = useRef<number>(0);
+  if (!seedRef.current) seedRef.current = Math.floor(Date.now() % 2147483647);
 
   useEffect(() => {
     (async () => {
@@ -178,8 +178,7 @@ export default function EveningLanding() {
       const { data, error } = await supabase
         .from("evening_card_catalog")
         .select("slug, title, is_active, content, tags, sort_order, version")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
+        .eq("is_active", true);
 
       if (error) setErr(error.message);
       else setCards((data ?? []) as EveningCardCatalogItem[]);
@@ -208,7 +207,6 @@ export default function EveningLanding() {
         closeModal();
         return;
       }
-
       if (e.key !== "Tab") return;
 
       const root = modalRef.current;
@@ -250,42 +248,27 @@ export default function EveningLanding() {
       const p = getPhase(c);
       if (p) s.add(p);
     }
-    const order = PHASE_SECTIONS.map((x) => x.key);
+    const order: PhaseKey[] = ["prep", "in_bed", "rescue"];
     return order.filter((k) => s.has(k));
   }, [cards]);
 
   const allIntentsInData = useMemo(() => {
     const s = new Set<IntentKey>();
     for (const c of cards) for (const i of getIntents(c)) s.add(i);
-
-    const order = INTENT_SECTIONS.map((x) => x.key);
+    const order: IntentKey[] = [
+      "lecsendesites",
+      "biztonsag",
+      "emlekezet",
+      "tudatossag",
+      "kreativ_inkubacio",
+      "irany_es_jelentes",
+      "test_es_jelenlet",
+    ];
     return order.filter((k) => s.has(k));
   }, [cards]);
 
-  // “napszak szerinti” alap-rendezés az ALL/ALL nézethez
-  const cardsDefaultOrdered = useMemo(() => {
-    if (cards.length === 0) return cards;
-
-    const hour = new Date().getHours();
-    const isNight = hour >= 0 && hour < 6;
-
-    const rescue = cards.filter((c) => getPhase(c) === "rescue");
-    const prep = cards.filter((c) => getPhase(c) === "prep");
-    const inBed = cards.filter((c) => getPhase(c) === "in_bed");
-    const other = cards.filter((c) => getPhase(c) === null);
-
-    if (isNight) {
-      // éjszaka: rescue elöl, a többi maradhat a sort_order szerinti sorrendben (ahogy a DB adja)
-      return [...rescue, ...inBed, ...prep, ...other];
-    }
-
-    // nappal/este: prep + in_bed random keverve elöl, rescue a végén
-    const mixed = shuffleStable([...prep, ...inBed], randomSeedRef.current ?? 12345);
-    return [...mixed, ...rescue, ...other];
-  }, [cards]);
-
   const filteredCards = useMemo(() => {
-    let out = cardsDefaultOrdered;
+    let out = cards;
 
     if (selectedPhase !== "all") {
       out = out.filter((c) => getPhase(c) === selectedPhase);
@@ -295,9 +278,25 @@ export default function EveningLanding() {
     }
 
     return out;
-  }, [cardsDefaultOrdered, selectedPhase, selectedIntent]);
+  }, [cards, selectedPhase, selectedIntent]);
 
-  // openCard a teljes cards-ból jöjjön
+  // Alapsorrend: éjjel rescue elöl, különben prep+in_bed random, rescue a végén.
+  const orderedCards = useMemo(() => {
+    const hour = new Date().getHours();
+    const isNight = hour >= 0 && hour <= 6;
+
+    const rescue = filteredCards.filter((c) => getPhase(c) === "rescue");
+    const other = filteredCards.filter((c) => getPhase(c) !== "rescue");
+
+    const otherShuffled = shuffleDeterministic(other, seedRef.current);
+    const rescueShuffled = shuffleDeterministic(rescue, seedRef.current ^ 1337);
+
+    if (isNight) return [...rescueShuffled, ...otherShuffled];
+
+    // nappal/este: “random legyenek in-bed és prep”, rescue menjen hátra
+    return [...otherShuffled, ...rescueShuffled];
+  }, [filteredCards]);
+
   const openCard = useMemo(() => {
     return openSlug ? cards.find((c) => c.slug === openSlug) ?? null : null;
   }, [openSlug, cards]);
@@ -358,69 +357,65 @@ export default function EveningLanding() {
 
     const time = m?.time ?? "";
     const g = ((c.content as any)?.goal_md ?? "") as string;
+
     const p = getPhase(c);
     const intentKeys = getIntents(c);
-    const primaryIntent = pickPrimaryIntent(intentKeys);
+    const primaryIntent = intentKeys[0] ?? null;
 
-    const bg = primaryIntent ? intentColor(primaryIntent).rgbaSoft : "rgba(107,114,128,0.10)";
+    const pc = phaseColor(p);
+    const ic = intentColor(primaryIntent);
+
+    const tags = (((c as any)?.tags ?? []) as string[]).slice(0, 3);
 
     return (
-      <div key={c.slug} className="evening-tile-wrap" onClick={() => openModal(c.slug)} role="button" tabIndex={0}>
-        <Card
-          className="stack-tight evening-card"
-          style={{
-            background: `linear-gradient(135deg, rgba(255,255,255,0.92) 0%, ${bg} 100%)`,
-          }}
-        >
-          {/* top row */}
-          <div className="card-top">
-            <div className="pill-row">
-              {p ? (
-                <span
-                  className="pill pill-phase"
-                  style={{
-                    borderColor: `rgb(${phaseColor(p).rgb})`,
-                    color: `rgb(${phaseColor(p).rgb})`,
-                  }}
-                >
-                  {PHASE_LABEL[p]}
-                </span>
-              ) : null}
-
-              {primaryIntent ? (
-                <span
-                  className="pill pill-intent"
-                  style={{
-                    borderColor: `rgb(${intentColor(primaryIntent).rgb})`,
-                    color: `rgb(${intentColor(primaryIntent).rgb})`,
-                  }}
-                >
-                  {INTENT_LABEL[primaryIntent]}
-                </span>
-              ) : null}
-            </div>
-
-            {time ? <div className="time-pill">{time}</div> : null}
+      <Card
+        key={c.slug}
+        className="evening-card"
+        onClick={() => openModal(c.slug)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") openModal(c.slug);
+        }}
+        style={{
+          background: `linear-gradient(135deg,
+            rgba(255,255,255,0.72) 0%,
+            rgba(255,255,255,0.72) 70%,
+            ${ic.bg} 100%)`,
+        }}
+      >
+        {/* top row: phase + intent + time (egy vonalban) */}
+        <div className="card-top">
+          <div className="pill-row">
+            {p ? (
+              <span className="pill" style={{ color: pc, borderColor: pc }}>
+                {PHASE_LABEL[p]}
+              </span>
+            ) : null}
+            {primaryIntent ? (
+              <span className="pill" style={{ color: ic.text, borderColor: ic.text }}>
+                {INTENT_LABEL[primaryIntent]}
+              </span>
+            ) : null}
           </div>
 
-          {/* title */}
-          <div className="card-title-strong">{c.title}</div>
+          {time ? <div className="card-time">{time}</div> : <div />}
+        </div>
 
-          {/* goal_md */}
-          {g ? <div className="card-goal">{g}</div> : null}
+        <div className="card-title">{c.title}</div>
 
-          {/* tags */}
-          {(c.tags?.length ?? 0) > 0 ? (
-            <div className="tag-row">
-              {(c.tags ?? []).slice(0, 3).map((t) => (
-                <span key={t} className="tag-pill">
-                  {t}
-                </span>
-              ))}
-            </div>
-          ) : null}
-        </Card>
-      </div>
+        {g ? <div className="card-body">{g}</div> : null}
+
+        {tags.length ? (
+          <div className="tag-row">
+            {tags.map((t: string) => (
+              <span key={t} className="tag">
+                {huTag(t)}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </Card>
     );
   }
 
@@ -452,61 +447,50 @@ export default function EveningLanding() {
   const openCardPhase = openCard ? getPhase(openCard) : null;
 
   return (
-    <Shell title="Álom előkészítő gyakorlatok" space="evening">
+    <Shell title={""} space="evening">
       {loading ? (
         Spinner
       ) : (
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
 
-          {/* PAGE HEADER */}
+          {/* Header row: title + info */}
           <div className="page-head">
             <div className="page-title">Álom előkészítő gyakorlatok</div>
 
             <button
-              type="button"
               className="info-btn"
-              aria-expanded={infoOpen}
-              aria-controls="evening-info"
               onClick={() => setInfoOpen((v) => !v)}
-              title="Információ"
+              aria-expanded={infoOpen}
+              aria-label="Információ"
+              type="button"
             >
               i
             </button>
           </div>
 
           {infoOpen ? (
-            <Card id="evening-info" className="stack-tight">
-              <div style={{ fontWeight: 800 }}>Hogyan használd ezt az oldalt?</div>
-              <div style={{ color: "var(--text-muted)", lineHeight: 1.5, fontSize: 14 }}>
-                Itt rövid, finom gyakorlatokat találsz az esti átmenethez — úgy, hogy a fókusz ne felpörgessen, hanem
-                segítsen <b>kíméletesen</b> áthangolni a figyelmet alvás felé.
+            <div className="info-panel">
+              <div className="info-text">
+                Ezek rövid, kíméletes gyakorlatok az elalvás előtti átmenethez — és azokra az éjszakai pillanatokra,
+                amikor túl éberen ébredsz.
                 <br />
                 <br />
-                <b>Válassz állapot szerint:</b>
-                <ul style={{ marginTop: 8, paddingLeft: 18, display: "grid", gap: 6 }}>
-                  <li>
-                    <b>Előkészítés</b>: még lefekvés előtt — mentális lerakás, inkubáció, finom “lezárás”.
-                  </li>
-                  <li>
-                    <b>Elalvás előtt</b>: már ágyban — olyan gyakorlatok, amik természetesen “átcsúsznak” alvásba.
-                  </li>
-                  <li>
-                    <b>Éjjeli mentés</b>: ha felébredsz / felriadsz — gyors visszarendező, stabilizáló lépések.
-                  </li>
-                </ul>
-                <br />
-                <b>Szűrés:</b> a két legfontosabb tengely mentén szűrhetsz: fázis és szándék (intent). Ha nem akarsz
-                gondolkodni, hagyd “mind”-en, és csak válassz egy szimpatikus kártyát.
+                <b>Hogyan használd:</b>
+                <br />• Válassz egy fázist: <b>Előkészítés</b> (még lefekvés előtt), <b>Elalvás előtt</b> (már ágyban),
+                vagy <b>Éjjeli mentés</b> (ha felébredtél).
+                <br />• Válassz egy szándékot, ha tudod, mire van most szükséged (pl. lecsendesítés vagy biztonság).
+                <br />• Nyisd meg a kártyát, és csak annyit csinálj, amennyi ma belefér: a cél a lejjebb hangolás, nem a
+                “tökéletes végrehajtás”.
                 <br />
                 <br />
-                <b>Tipp:</b> ha valami túl sok, inkább válts <b>Biztonság</b> vagy <b>Lecsengés</b> intentre — ezek a
-                legkíméletesebb “vissza a testbe” útvonalak.
+                <b>Kis szabály:</b> ha bármelyik gyakorlat élénkít vagy feszít, válts egy egyszerűbb, test- vagy légzés
+                fókuszú kártyára.
               </div>
-            </Card>
+            </div>
           ) : null}
 
-          {/* FILTERS (two dropdowns side-by-side) */}
+          {/* Filters (két dropdown egymás mellett) */}
           <div className="filters">
             <div className="filter">
               <div className="filter-label">Fázis</div>
@@ -515,7 +499,7 @@ export default function EveningLanding() {
                 value={selectedPhase}
                 onChange={(e) => setSelectedPhase(e.target.value as PhaseKey | "all")}
               >
-                <option value="all">Mind</option>
+                <option value="all">Minden fázis</option>
                 {allPhasesInData.map((k) => (
                   <option key={k} value={k}>
                     {PHASE_LABEL[k]}
@@ -531,7 +515,7 @@ export default function EveningLanding() {
                 value={selectedIntent}
                 onChange={(e) => setSelectedIntent(e.target.value as IntentKey | "all")}
               >
-                <option value="all">Mind</option>
+                <option value="all">Minden szándék</option>
                 {allIntentsInData.map((k) => (
                   <option key={k} value={k}>
                     {INTENT_LABEL[k]}
@@ -541,32 +525,7 @@ export default function EveningLanding() {
             </div>
           </div>
 
-          {/* GRID / GROUPING */}
-          {selectedPhase === "all" && selectedIntent === "all" ? (
-            allPhasesInData.length === 0 ? (
-              <div className="evening-grid">{cardsDefaultOrdered.map((c) => renderCardTile(c))}</div>
-            ) : (
-              <div className="stack">
-                {PHASE_SECTIONS.map((sec) => {
-                  const group = cardsDefaultOrdered.filter((c) => getPhase(c) === sec.key);
-                  if (group.length === 0) return null;
-
-                  return (
-                    <div key={sec.key} className="stack-tight">
-                      <div className="phase-head">
-                        <div className="phase-title">{sec.title}</div>
-                        {sec.subtitle ? <div className="phase-sub">{sec.subtitle}</div> : null}
-                      </div>
-
-                      <div className="evening-grid">{group.map((c) => renderCardTile(c))}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            )
-          ) : (
-            <div className="evening-grid">{filteredCards.map((c) => renderCardTile(c))}</div>
-          )}
+          <div className="evening-grid">{orderedCards.map((c) => renderCardTile(c))}</div>
 
           {/* modal */}
           {openSlug && (
@@ -677,23 +636,13 @@ export default function EveningLanding() {
       )}
 
       <style jsx>{`
-        .evening-grid {
-          display: grid;
-          gap: 18px;
-          grid-template-columns: repeat(1, minmax(0, 1fr));
-        }
-        @media (min-width: 860px) {
-          .evening-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-        }
-
         .page-head {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
         }
+
         .page-title {
           font-size: 18px;
           font-weight: 900;
@@ -701,78 +650,93 @@ export default function EveningLanding() {
         }
 
         .info-btn {
-          width: 34px;
-          height: 34px;
+          width: 28px;
+          height: 28px;
           border-radius: 999px;
           border: 1px solid var(--border);
           background: transparent;
-          color: var(--text-muted);
+          color: var(--text);
           cursor: pointer;
-          font-weight: 900;
           display: grid;
           place-items: center;
+          font-weight: 800;
           line-height: 1;
         }
         .info-btn:hover {
-          color: var(--text);
           border-color: var(--text-muted);
         }
 
-        .filters {
-          display: flex;
-          gap: 12px;
-          align-items: flex-end;
-          flex-wrap: wrap;
+        .info-panel {
+          border: 1px solid var(--border);
+          border-radius: 14px;
+          padding: 12px;
+          background: rgba(255, 255, 255, 0.02);
         }
+
+        .info-text {
+          font-size: 14px;
+          color: var(--text-muted);
+          line-height: 1.45;
+        }
+
+        .filters {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 10px;
+          margin-top: 4px;
+        }
+        @media (min-width: 720px) {
+          .filters {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+
         .filter {
           display: grid;
           gap: 6px;
-          min-width: 220px;
         }
+
         .filter-label {
           font-size: 12px;
           color: var(--text-muted);
         }
+
         .select {
           width: 100%;
           border: 1px solid var(--border);
           border-radius: 12px;
+          padding: 10px 12px;
           background: transparent;
           color: var(--text);
-          padding: 10px 10px;
           outline: none;
         }
         .select:focus {
           border-color: var(--text-muted);
         }
 
-        .phase-head {
+        .evening-grid {
+          display: grid;
+          gap: 18px;
+          grid-template-columns: repeat(1, minmax(0, 1fr));
           margin-top: 6px;
         }
-        .phase-title {
-          font-weight: 900;
-          letter-spacing: -0.01em;
-        }
-        .phase-sub {
-          color: var(--text-muted);
-          font-size: 13px;
-          margin-top: 2px;
+        @media (min-width: 860px) {
+          .evening-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
         }
 
-        .evening-tile-wrap {
+        /* CARD */
+        .evening-card {
           cursor: pointer;
-          transform: translateZ(0);
+          border-radius: 18px;
+          transition: transform 160ms ease, box-shadow 160ms ease;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
         }
 
-        :global(.evening-card) {
-          transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-          border: 1px solid var(--border);
-        }
-
-        .evening-tile-wrap:hover :global(.evening-card) {
-          transform: scale(1.02);
-          box-shadow: 0 16px 50px rgba(0, 0, 0, 0.16);
-          border-color: rgba(255, 255, 255, 0.14);
+        .evening-card:hover {
+          transform: translateY(-2px) scale(1.02);
+          box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
         }
 
         .card-top {
@@ -780,6 +744,7 @@ export default function EveningLanding() {
           align-items: center;
           justify-content: space-between;
           gap: 10px;
+          margin-bottom: 10px;
         }
 
         .pill-row {
@@ -789,54 +754,55 @@ export default function EveningLanding() {
           flex-wrap: wrap;
         }
 
+        /* “nem kattintható lekerekített gomb” */
         .pill {
           font-size: 12px;
-          padding: 5px 9px;
+          padding: 6px 10px;
           border-radius: 999px;
-          border: 1px solid var(--border);
-          background: rgba(255, 255, 255, 0.06);
+          border: 2px solid var(--border);
+          background: rgba(255, 255, 255, 0.08);
+          font-weight: 800;
+          line-height: 1;
+          white-space: nowrap;
+        }
+
+        .card-time {
+          font-size: 12px;
+          color: var(--text-muted);
           white-space: nowrap;
           font-weight: 700;
         }
 
-        .time-pill {
-          font-size: 12px;
-          padding: 5px 9px;
-          border-radius: 999px;
-          border: 1px solid var(--border);
-          color: var(--text-muted);
-          background: rgba(255, 255, 255, 0.06);
-          white-space: nowrap;
-        }
-
-        .card-title-strong {
+        /* Title nagyobb + vastagabb */
+        .card-title {
           font-size: 16px;
           font-weight: 900;
           letter-spacing: -0.01em;
-          margin-top: 2px;
+          margin-bottom: 8px;
         }
 
-        .card-goal {
+        /* a title-en kívül kb. “11pt” */
+        .card-body {
+          font-size: 14px; /* ~10.5–11pt körül */
           color: var(--text-muted);
-          font-size: 13px;
-          line-height: 1.4;
+          line-height: 1.35;
         }
 
         .tag-row {
           display: flex;
-          gap: 6px;
+          gap: 8px;
           flex-wrap: wrap;
-          margin-top: 8px;
+          margin-top: 12px;
         }
 
-        .tag-pill {
-          font-size: 11px;
-          padding: 4px 8px;
+        .tag {
+          font-size: 12px;
+          padding: 6px 10px;
           border: 1px solid var(--border);
           border-radius: 999px;
           color: var(--text-muted);
+          background: rgba(255, 255, 255, 0.06);
           white-space: nowrap;
-          background: rgba(255, 255, 255, 0.04);
         }
 
         .meta-block {
