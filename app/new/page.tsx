@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
@@ -12,18 +12,8 @@ import { Card } from "@/components/Card";
 function InfoIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 17v-6"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M12 8h.01"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+      <path d="M12 17v-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M12 8h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
       <path
         d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z"
         stroke="currentColor"
@@ -41,10 +31,18 @@ export default function NewDream() {
   const [infoOpen, setInfoOpen] = useState(false);
   const { loading } = useRequireAuth();
 
+  const stats = useMemo(() => {
+    const trimmed = text.trim();
+    const chars = text.length;
+    const words = trimmed ? trimmed.split(/\s+/).length : 0;
+    const empty = !trimmed;
+    return { chars, words, empty };
+  }, [text]);
+
   async function createSession() {
     setErr(null);
 
-    if (!text.trim()) {
+    if (stats.empty) {
       setErr("Írj le legalább néhány szót az álmodból.");
       return;
     }
@@ -82,7 +80,7 @@ export default function NewDream() {
         <button
           type="button"
           className="icon-btn"
-          aria-label="Hogyan használd?"
+          aria-label="Infó"
           aria-expanded={infoOpen}
           onClick={() => setInfoOpen((v) => !v)}
         >
@@ -93,7 +91,7 @@ export default function NewDream() {
       onToggleInfo={() => setInfoOpen((v) => !v)}
       infoPanel={
         <div className="stack-tight">
-          <p className="section-title">Hogyan érdemes használni ezt az oldalt?</p>
+          <p className="section-title">Rögzítés</p>
 
           <p style={{ color: "var(--text-muted)" }}>
             Itt csak a rögzítés a cél. Nem kell szépen megfogalmazni, nem kell “értelmes” legyen.
@@ -107,10 +105,6 @@ export default function NewDream() {
             <li>Ha van erős érzelem vagy testérzet: egy szó is elég (“szorítás”, “könnyűség”).</li>
             <li>Ne erőltesd a történetté fűzést — a töredékek is teljes értékűek.</li>
           </ul>
-
-          <p style={{ color: "var(--text-muted)" }}>
-            Ha kész vagy, nyomd meg a <b>Rögzítés</b>-t. A feldolgozás a következő lépés.
-          </p>
         </div>
       }
     >
@@ -139,25 +133,37 @@ export default function NewDream() {
                 placeholder="Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is."
                 rows={10}
                 aria-invalid={!!err}
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    if (!busy && !stats.empty) void createSession();
+                  }
+                }}
               />
 
-              {/* gombok ide kerültek (a régi “tipp” helyére) */}
-              <div className="newdream-actions">
-                <button
-                  className="btn btn-secondary"
-                  type="button"
-                  onClick={() => {
-                    setErr(null);
-                    setText("");
-                  }}
-                  disabled={busy || !text.length}
-                >
-                  Törlés
-                </button>
+              {/* alsó sor: számláló + gombok */}
+              <div className="newdream-footer">
+                <span className="badge-muted">
+                  {stats.words} szó · {stats.chars} karakter
+                </span>
 
-                <PrimaryButton onClick={createSession} disabled={busy}>
-                  {busy ? "Rögzítés…" : "Rögzítés"}
-                </PrimaryButton>
+                <div className="newdream-actions">
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    onClick={() => {
+                      setErr(null);
+                      setText("");
+                    }}
+                    disabled={busy || !text.length}
+                  >
+                    Törlés
+                  </button>
+
+                  <PrimaryButton onClick={createSession} disabled={busy || stats.empty}>
+                    {busy ? "Rögzítés…" : "Rögzítés"}
+                  </PrimaryButton>
+                </div>
               </div>
             </div>
           </Card>

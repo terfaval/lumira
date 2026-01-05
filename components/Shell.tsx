@@ -32,7 +32,9 @@ export function Shell({
   }
 
   return (
-    <div className={`shell shell--fluid ${space === "evening" ? "evening-shell" : ""}`}>
+    <div className={`shell shell--fluid ${space === "evening" ? "evening-shell" : ""}`}
+    style={{ position: "relative" }}>
+
       <NapszakInitializer space={space} />
 
       {/* Felső sáv */}
@@ -81,7 +83,7 @@ export function Shell({
 
       {/* Info panel (lenyíló) */}
       {infoPanel && (
-        <div className={`info-panel ${infoOpen ? "info-panel--open" : ""}`} aria-hidden={!infoOpen}>
+        <div className={`info-panel info-panel--overlay ${infoOpen ? "info-panel--open" : ""}`}>
           <div className="info-panel-inner">{infoPanel}</div>
         </div>
       )}

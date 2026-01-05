@@ -59,8 +59,8 @@ a heavy UI framework.
   --badge-text: var(--text-muted);
 
   /* Dream textarea tokens (fallback = nappali papír) */
-  --dream-input-bg: rgba(248, 192, 138, 0.42);       /* Sunlit Yellow – nappali #f8c08a */
-  --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
+  --dream-input-bg: rgba(255, 231, 168, 0.42);
+  --dream-input-bg-focus: rgba(255, 231, 168, 0.58);
   --dream-input-text: var(--text-primary);
   --dream-input-placeholder: rgba(28, 36, 48, 0.55);
 }
@@ -574,11 +574,25 @@ body[data-space="evening"] {
 }
 
 /* lenyíló panel */
+.info-panel--overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 56px; /* kb. a topbar magassága alá */
+  z-index: 50;
+  pointer-events: none; /* zárt állapotban ne kapjon kattintást */
+}
+
+.info-panel--overlay .info-panel-inner {
+  pointer-events: auto; /* nyitva: a panel kapjon kattintást */
+}
+
+/* alap animáció */
 .info-panel {
   overflow: hidden;
   max-height: 0px;
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translateY(-8px);
   transition: max-height 220ms ease, opacity 180ms ease, transform 220ms ease;
 }
 
@@ -633,4 +647,18 @@ body[data-space="evening"] {
   color: var(--text-primary);
   border-radius: 12px;
   padding: 10px 12px;
+}
+
+.newdream-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.newdream-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
