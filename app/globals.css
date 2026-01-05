@@ -59,8 +59,8 @@ a heavy UI framework.
   --badge-text: var(--text-muted);
 
   /* Dream textarea tokens (fallback = nappali papír) */
-  --dream-input-bg: rgba(255, 231, 168, 0.42);
-  --dream-input-bg-focus: rgba(255, 231, 168, 0.58);
+  --dream-input-bg: rgba(255, 231, 168, 0.30);
+  --dream-input-bg-focus: rgba(255, 231, 168, 0.42);
   --dream-input-text: var(--text-primary);
   --dream-input-placeholder: rgba(28, 36, 48, 0.55);
 }
@@ -662,3 +662,13 @@ body[data-space="evening"] {
   gap: 12px;
   align-items: center;
 }
+
+.newdream-stat {
+  background: transparent;
+  border-color: var(--line-soft);
+}
+
+.newdream-panel {
+  padding: var(--space-3);
+}
+

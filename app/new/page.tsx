@@ -7,7 +7,6 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
-import { Card } from "@/components/Card";
 
 function InfoIcon() {
   return (
@@ -124,49 +123,47 @@ export default function NewDream() {
         />
       ) : (
         <div className="stack">
-          <Card>
-            <div className="stack-tight">
-              <textarea
-                className="textarea-dream"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is."
-                rows={10}
-                aria-invalid={!!err}
-                onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                    e.preventDefault();
-                    if (!busy && !stats.empty) void createSession();
-                  }
-                }}
-              />
+          {/* ⬇️ NINCS belső Card — így eltűnik a “plusz container” */}
+          <div className="newdream-panel stack-tight">
+            <textarea
+              className="textarea-dream"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is."
+              rows={10}
+              aria-invalid={!!err}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  if (!busy && !stats.empty) void createSession();
+                }
+              }}
+            />
 
-              {/* alsó sor: számláló + gombok */}
-              <div className="newdream-footer">
-                <span className="badge-muted">
-                  {stats.words} szó · {stats.chars} karakter
-                </span>
+            <div className="newdream-footer">
+              <span className="badge-muted newdream-stat">
+                {stats.words} szó · {stats.chars} karakter
+              </span>
 
-                <div className="newdream-actions">
-                  <button
-                    className="btn btn-secondary"
-                    type="button"
-                    onClick={() => {
-                      setErr(null);
-                      setText("");
-                    }}
-                    disabled={busy || !text.length}
-                  >
-                    Törlés
-                  </button>
+              <div className="newdream-actions">
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  onClick={() => {
+                    setErr(null);
+                    setText("");
+                  }}
+                  disabled={busy || !text.length}
+                >
+                  Törlés
+                </button>
 
-                  <PrimaryButton onClick={createSession} disabled={busy || stats.empty}>
-                    {busy ? "Rögzítés…" : "Rögzítés"}
-                  </PrimaryButton>
-                </div>
+                <PrimaryButton onClick={createSession} disabled={busy || stats.empty}>
+                  {busy ? "Rögzítés…" : "Rögzítés"}
+                </PrimaryButton>
               </div>
             </div>
-          </Card>
+          </div>
 
           {err && (
             <div className="newdream-error" role="alert">
