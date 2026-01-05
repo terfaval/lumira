@@ -11,62 +11,51 @@ import { requireUserId } from "@/src/lib/db";
 import type { EveningCardCatalogItem } from "@/src/lib/types";
 
 type IntentKey =
-  | "dream_recall"
-  | "lucid"
-  | "nightmares"
-  | "downshift"
-  | "deep_sleep"
-  | "safety"
-  | "emotion"
-  | "problem_solving"
-  | "creativity"
-  | "symbols"
-  | "life_direction"
-  | "habits"
-  | "body_integration"
-  | "learning"
-  | "spiritual_grounded";
+  | "emlekezet"
+  | "tudatossag"
+  | "lecsendesites"
+  | "biztonsag"
+  | "kreativ_inkubacio"
+  | "irany_es_jelentes"
+  | "test_es_jelenlet";
 
 const INTENT_LABEL: Record<IntentKey, string> = {
-  dream_recall: "Álomemlékezet",
-  lucid: "Lucid",
-  nightmares: "Rémálmok",
-  downshift: "Lecsengés / Stressz",
-  deep_sleep: "Mély alvás",
-  safety: "Biztonságérzet",
-  emotion: "Érzelmi",
-  problem_solving: "Problémamegoldás",
-  creativity: "Kreativitás",
-  symbols: "Szimbólumok",
-  life_direction: "Életirány",
-  habits: "Szokás",
-  body_integration: "Test–tudat",
-  learning: "Tanulás",
-  spiritual_grounded: "Spirituális (keretben)",
+  lecsendesites: "Lecsengés",
+  biztonsag: "Biztonság",
+  emlekezet: "Emlékezet",
+  tudatossag: "Tudatosság",
+  kreativ_inkubacio: "Inkubáció",
+  irany_es_jelentes: "Irány / Jelentés",
+  test_es_jelenlet: "Test / Jelenlét",
 };
 
+// Az “All” nézet szekció-sorrendje
 const INTENT_SECTIONS: { key: IntentKey; title: string }[] = [
-  { key: "downshift", title: "Lecsengés / Stressz" },
-  { key: "safety", title: "Biztonságérzet" },
-  { key: "deep_sleep", title: "Mély alvás" },
-  { key: "dream_recall", title: "Álomemlékezet" },
-  { key: "lucid", title: "Lucid" },
-  { key: "nightmares", title: "Rémálmok" },
-  { key: "emotion", title: "Érzelmi" },
-  { key: "problem_solving", title: "Problémamegoldás" },
-  { key: "creativity", title: "Kreativitás" },
-  { key: "symbols", title: "Szimbólumok" },
-  { key: "life_direction", title: "Életirány" },
-  { key: "habits", title: "Szokás" },
-  { key: "body_integration", title: "Test–tudat" },
-  { key: "learning", title: "Tanulás" },
-  { key: "spiritual_grounded", title: "Spirituális (keretben)" },
+  { key: "lecsendesites", title: "Lecsengés" },
+  { key: "biztonsag", title: "Biztonság" },
+  { key: "emlekezet", title: "Emlékezet" },
+  { key: "tudatossag", title: "Tudatosság" },
+  { key: "kreativ_inkubacio", title: "Kreatív inkubáció" },
+  { key: "irany_es_jelentes", title: "Irány / Jelentés" },
+  { key: "test_es_jelenlet", title: "Test / Jelenlét" },
 ];
 
 function getIntents(card: EveningCardCatalogItem): IntentKey[] {
   const intents = (card?.content as any)?.intents;
-  if (Array.isArray(intents)) return intents as IntentKey[];
-  return [];
+
+  // csak a v2 intenteket engedjük tovább (véd a régi adatok ellen)
+  const allowed = new Set<IntentKey>([
+    "emlekezet",
+    "tudatossag",
+    "lecsendesites",
+    "biztonsag",
+    "kreativ_inkubacio",
+    "irany_es_jelentes",
+    "test_es_jelenlet",
+  ]);
+
+  if (!Array.isArray(intents)) return [];
+  return intents.filter((x): x is IntentKey => typeof x === "string" && allowed.has(x as IntentKey));
 }
 
 export default function EveningLanding() {
@@ -159,7 +148,9 @@ export default function EveningLanding() {
   const allIntentsInData = useMemo(() => {
     const s = new Set<IntentKey>();
     for (const c of cards) for (const i of getIntents(c)) s.add(i);
-    const order = Object.keys(INTENT_LABEL) as IntentKey[];
+
+    // explicit order = section order
+    const order = INTENT_SECTIONS.map((x) => x.key);
     return order.filter((k) => s.has(k));
   }, [cards]);
 
@@ -303,6 +294,7 @@ export default function EveningLanding() {
               >
                 Mind
               </button>
+
               {allIntentsInData.map((k) => (
                 <button
                   key={k}
