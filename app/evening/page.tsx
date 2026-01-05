@@ -10,6 +10,20 @@ import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import type { EveningCardCatalogItem } from "@/src/lib/types";
 
+type PhaseKey = "prep" | "in_bed" | "rescue";
+
+const PHASE_LABEL: Record<PhaseKey, string> = {
+  prep: "Előkészület",
+  in_bed: "Ágyban",
+  rescue: "Éjjeli mentés",
+};
+
+const PHASE_SECTIONS: { key: PhaseKey; title: string; subtitle?: string }[] = [
+  { key: "prep", title: "Előkészület", subtitle: "Rövid lerakások / inkubáció még lefekvés előtt." },
+  { key: "in_bed", title: "Ágyban", subtitle: "Finom, alvásba csúszó gyakorlatok." },
+  { key: "rescue", title: "Éjjeli mentés", subtitle: "Ha felébredsz / felriadsz: gyors, stabilizáló visszatérés." },
+];
+
 type IntentKey =
   | "emlekezet"
   | "tudatossag"
@@ -29,7 +43,7 @@ const INTENT_LABEL: Record<IntentKey, string> = {
   test_es_jelenlet: "Test / Jelenlét",
 };
 
-// Az “All” nézet szekció-sorrendje
+// Az “All” nézet intents szekció-sorrendje (ha kell később intent-szintű csoportosítás)
 const INTENT_SECTIONS: { key: IntentKey; title: string }[] = [
   { key: "lecsendesites", title: "Lecsengés" },
   { key: "biztonsag", title: "Biztonság" },
@@ -39,6 +53,12 @@ const INTENT_SECTIONS: { key: IntentKey; title: string }[] = [
   { key: "irany_es_jelentes", title: "Irány / Jelentés" },
   { key: "test_es_jelenlet", title: "Test / Jelenlét" },
 ];
+
+function getPhase(card: EveningCardCatalogItem): PhaseKey | null {
+  const p = (card?.content as any)?.phase;
+  const allowed = new Set<PhaseKey>(["prep", "in_bed", "rescue"]);
+  return typeof p === "string" && allowed.has(p as PhaseKey) ? (p as PhaseKey) : null;
+}
 
 function getIntents(card: EveningCardCatalogItem): IntentKey[] {
   const intents = (card?.content as any)?.intents;
@@ -63,10 +83,11 @@ export default function EveningLanding() {
   const [cards, setCards] = useState<EveningCardCatalogItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
+  const [selectedPhase, setSelectedPhase] = useState<PhaseKey | "all">("all");
   const [selectedIntent, setSelectedIntent] = useState<IntentKey | "all">("all");
 
   const [openSlug, setOpenSlug] = useState<string | null>(null);
-  const [phase, setPhase] = useState<"overview" | "practice">("overview");
+  const [viewPhase, setViewPhase] = useState<"overview" | "practice">("overview"); // UI view phase
   const [finishing, setFinishing] = useState(false);
   const [completed, setCompleted] = useState(false);
 
@@ -145,6 +166,16 @@ export default function EveningLanding() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openSlug]);
 
+  const allPhasesInData = useMemo(() => {
+    const s = new Set<PhaseKey>();
+    for (const c of cards) {
+      const p = getPhase(c);
+      if (p) s.add(p);
+    }
+    const order = PHASE_SECTIONS.map((x) => x.key);
+    return order.filter((k) => s.has(k));
+  }, [cards]);
+
   const allIntentsInData = useMemo(() => {
     const s = new Set<IntentKey>();
     for (const c of cards) for (const i of getIntents(c)) s.add(i);
@@ -155,12 +186,20 @@ export default function EveningLanding() {
   }, [cards]);
 
   const filteredCards = useMemo(() => {
-    if (selectedIntent === "all") return cards;
-    return cards.filter((c) => getIntents(c).includes(selectedIntent));
-  }, [cards, selectedIntent]);
+    let out = cards;
+
+    if (selectedPhase !== "all") {
+      out = out.filter((c) => getPhase(c) === selectedPhase);
+    }
+    if (selectedIntent !== "all") {
+      out = out.filter((c) => getIntents(c).includes(selectedIntent));
+    }
+
+    return out;
+  }, [cards, selectedPhase, selectedIntent]);
 
   // fontos: openCard a teljes cards-ból jöjjön, ne filteredCards-ból
-  // különben intent váltás után eltűnhet a modal tartalma
+  // különben szűrés váltás után eltűnhet a modal tartalma
   const openCard = useMemo(() => {
     return openSlug ? cards.find((c) => c.slug === openSlug) ?? null : null;
   }, [openSlug, cards]);
@@ -177,14 +216,14 @@ export default function EveningLanding() {
 
   function openModal(slug: string) {
     setOpenSlug(slug);
-    setPhase("overview");
+    setViewPhase("overview");
     setCompleted(false);
     setFinishing(false);
   }
 
   function closeModal() {
     setOpenSlug(null);
-    setPhase("overview");
+    setViewPhase("overview");
     setCompleted(false);
     setFinishing(false);
   }
@@ -223,17 +262,33 @@ export default function EveningLanding() {
     const time = m?.time ?? "";
     const notRec = m?.not_recommended ?? "";
     const g = ((c.content as any)?.goal_md ?? "") as string;
+    const p = getPhase(c);
+    const intentKeys = getIntents(c);
 
     return (
       <Card key={c.slug} className="stack-tight evening-card">
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
           <div className="card-title">{c.title}</div>
-          {time ? <span className="meta-pill">{time}</span> : null}
+
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {p ? <span className="meta-pill">{PHASE_LABEL[p]}</span> : null}
+            {time ? <span className="meta-pill">{time}</span> : null}
+          </div>
         </div>
 
         {effect ? <div className="effect-line">{effect}</div> : null}
         {g ? <div style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.35 }}>{g}</div> : null}
         {notRec ? <div className="warn-line">Mikor ne: {notRec}</div> : null}
+
+        {intentKeys.length ? (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+            {intentKeys.slice(0, 4).map((k) => (
+              <span key={k} className="tag-pill">
+                {INTENT_LABEL[k]}
+              </span>
+            ))}
+          </div>
+        ) : null}
 
         <button className="btn btn-primary" onClick={() => openModal(c.slug)} style={{ width: "fit-content" }}>
           Indítás
@@ -267,6 +322,8 @@ export default function EveningLanding() {
     </>
   );
 
+  const openCardPhase = openCard ? getPhase(openCard) : null;
+
   return (
     <Shell title="Esti tér" space="evening">
       {loading ? (
@@ -277,7 +334,7 @@ export default function EveningLanding() {
 
           <div className="stack-tight">
             <p style={{ color: "var(--text-muted)" }}>
-              Válassz egy kártyát az estédhez. Rövid, finom gyakorlatok — a végük “átcsúszik” alvásba.
+              Válassz egy kártyát az estédhez. Rövid, finom gyakorlatok — a legtöbbnek a vége “átcsúszik” alvásba.
             </p>
 
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -286,13 +343,33 @@ export default function EveningLanding() {
               </Link>
             </div>
 
+            {/* phase chips */}
+            <div className="intent-row" style={{ marginTop: 12 }}>
+              <button
+                className={`intent-chip ${selectedPhase === "all" ? "active" : ""}`}
+                onClick={() => setSelectedPhase("all")}
+              >
+                Minden fázis
+              </button>
+
+              {allPhasesInData.map((k) => (
+                <button
+                  key={k}
+                  className={`intent-chip ${selectedPhase === k ? "active" : ""}`}
+                  onClick={() => setSelectedPhase(k)}
+                >
+                  {PHASE_LABEL[k]}
+                </button>
+              ))}
+            </div>
+
             {/* intent chips */}
             <div className="intent-row">
               <button
                 className={`intent-chip ${selectedIntent === "all" ? "active" : ""}`}
                 onClick={() => setSelectedIntent("all")}
               >
-                Mind
+                Minden szándék
               </button>
 
               {allIntentsInData.map((k) => (
@@ -307,21 +384,29 @@ export default function EveningLanding() {
             </div>
           </div>
 
-          {/* grouped (all) vs filtered (single intent) */}
-          {selectedIntent === "all" ? (
-            allIntentsInData.length === 0 ? (
+          {/* Csoportosítás logika:
+              - Ha nincs intent/phase szűrés (mindkettő all): fázis szerint szekciók
+              - Egyébként: sima grid a filteredCards-ból
+           */}
+          {selectedPhase === "all" && selectedIntent === "all" ? (
+            allPhasesInData.length === 0 ? (
               <div className="evening-grid">{cards.map((c) => renderCardTile(c))}</div>
             ) : (
               <div className="stack">
-                {INTENT_SECTIONS.map((sec) => {
-                  const group = cards.filter((c) => getIntents(c).includes(sec.key));
+                {PHASE_SECTIONS.map((sec) => {
+                  const group = cards.filter((c) => getPhase(c) === sec.key);
                   if (group.length === 0) return null;
 
                   return (
                     <div key={sec.key} className="stack-tight">
                       <div className="section-head">
-                        <div className="section-title">{sec.title}</div>
-                        <button className="mini-link" onClick={() => setSelectedIntent(sec.key)}>
+                        <div>
+                          <div className="section-title">{sec.title}</div>
+                          {sec.subtitle ? (
+                            <div style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 2 }}>{sec.subtitle}</div>
+                          ) : null}
+                        </div>
+                        <button className="mini-link" onClick={() => setSelectedPhase(sec.key)}>
                           Szűrés erre
                         </button>
                       </div>
@@ -362,7 +447,7 @@ export default function EveningLanding() {
                 </div>
 
                 <div id="evening-modal-desc" style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 8 }}>
-                  Esti gyakorlat – fókuszált nézet. ESC: bezárás.
+                  Esti kártya – fókuszált nézet{openCardPhase ? ` • ${PHASE_LABEL[openCardPhase]}` : ""}. ESC: bezárás.
                 </div>
 
                 {!openCard ? (
@@ -379,9 +464,13 @@ export default function EveningLanding() {
                       </Link>
                     </div>
                   </Card>
-                ) : phase === "overview" ? (
+                ) : viewPhase === "overview" ? (
                   <Card className="stack-tight" style={{ maxWidth: 620, margin: "0 auto" }}>
-                    {meta?.time ? <div className="meta-block">{meta.time}</div> : null}
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                      {openCardPhase ? <div className="meta-block">{PHASE_LABEL[openCardPhase]}</div> : null}
+                      {meta?.time ? <div className="meta-block">{meta.time}</div> : null}
+                    </div>
+
                     {meta?.effect ? <div style={{ fontWeight: 700 }}>{meta.effect}</div> : null}
                     {goal ? <div style={{ color: "var(--text-muted)" }}>{goal}</div> : null}
 
@@ -395,7 +484,7 @@ export default function EveningLanding() {
                     </div>
 
                     <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-                      <button className="btn btn-primary" onClick={() => setPhase("practice")}>
+                      <button className="btn btn-primary" onClick={() => setViewPhase("practice")}>
                         Indítás
                       </button>
                     </div>
@@ -489,9 +578,18 @@ export default function EveningLanding() {
           border-color: var(--text-muted);
         }
 
+        .tag-pill {
+          font-size: 11px;
+          padding: 4px 8px;
+          border: 1px solid var(--border);
+          border-radius: 999px;
+          color: var(--text-muted);
+          white-space: nowrap;
+        }
+
         .section-head {
           display: flex;
-          align-items: baseline;
+          align-items: flex-start;
           justify-content: space-between;
           gap: 12px;
         }
@@ -504,6 +602,8 @@ export default function EveningLanding() {
           color: var(--text-muted);
           font-size: 12px;
           text-decoration: underline;
+          white-space: nowrap;
+          margin-top: 4px;
         }
         .mini-link:hover {
           color: var(--text);
@@ -516,6 +616,15 @@ export default function EveningLanding() {
           border-radius: 999px;
           color: var(--text-muted);
           white-space: nowrap;
+        }
+
+        .meta-block {
+          font-size: 12px;
+          padding: 6px 10px;
+          border: 1px solid var(--border);
+          border-radius: 999px;
+          color: var(--text-muted);
+          width: fit-content;
         }
 
         .effect-line {

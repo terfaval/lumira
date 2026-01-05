@@ -1,10 +1,235 @@
 [
   {
-    "slug": "evening-01-alomemlekezet-erositese",
-    "version": "v4",
+    "slug": "evening-prep-01-ejszakai-inkubacio",
+    "version": "v6",
+    "title": "Éjszakai inkubáció",
+    "content": {
+      "type": "evening_card",
+      "phase": "prep",
+      "goal_md": "A kérdést letenni, hogy éjszaka szabadabban rendeződhessenek a minták.",
+      "intents": ["kreativ_inkubacio", "lecsendesites"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Lefekvés előtt fogj egy papírt, és írd le a kérdést egy mondatban." },
+        { "context_md": "Gyakorlat", "question": "2 percig írj le mindent, ami eszedbe jut róla (szűrés nélkül)." },
+        { "context_md": "Gyakorlat", "question": "A végén írd a lap aljára: „Most pihenek. A megoldás jöhet később.”" },
+        { "context_md": "Gyakorlat", "question": "Hajtsd félbe a lapot, és tedd el (ne maradjon szem előtt)." },
+        { "context_md": "Gyakorlat", "question": "Amikor már lefeküdtél, idézd fel a kérdést egyszer, majd tudatosan engedd el." },
+        { "context_md": "Gyakorlat", "question": "Maradj 6–8 lassú légzésig a testérzeteknél, és hagyd, hogy jöjjön az alvás." }
+      ],
+      "tips": [
+        "A „mindent leírok” rész a lényeg, nem a jó megfogalmazás.",
+        "A válasz gyakran reggel vagy napközben érkezik."
+      ],
+      "meta": {
+        "effect": "Mentális teher-lerakás: kevesebb rumináció, több tér a spontán rendeződésnek.",
+        "time": "3–5 perc",
+        "not_recommended": "Ha az írás felpörget vagy szorongást erősít."
+      }
+    },
+    "tags": ["problem-solving", "incubation", "mental-offload", "sleep-prep"],
+    "sort_order": 1,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-prep-02-remalom-atiras",
+    "version": "v6",
+    "title": "Rémálom – átírás",
+    "content": {
+      "type": "evening_card",
+      "phase": "prep",
+      "goal_md": "Visszatérő rémálom-érzetet finoman enyhíteni, stabilabb testi lenyomattal.",
+      "intents": ["biztonsag"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Lefekvés előtt idézz fel nagyon röviden egy visszatérő rémálmot (csak a vázát)." },
+        { "context_md": "Gyakorlat", "question": "Válassz ki egy fordulópontot: egy pillanatot, ahol a jelenet megtörhet." },
+        { "context_md": "Gyakorlat", "question": "Képzeld el, hogy ott valami más történik – elég egy apró változás." },
+        { "context_md": "Gyakorlat", "question": "Figyeld meg 1–2 légzésig, hogyan reagál a tested (akár 1% enyhülés is elég)." },
+        { "context_md": "Gyakorlat", "question": "Ne időzz sokáig a jeleneten; térj vissza a légzéshez." },
+        { "context_md": "Gyakorlat", "question": "Maradj 6 lassú légzésig, majd engedd, hogy az alvás jöjjön." }
+      ],
+      "tips": [
+        "A cél nem „jó befejezés”, hanem más idegrendszeri lenyomat.",
+        "Ha felkavar, válts stabilizáló kártyára."
+      ],
+      "meta": {
+        "effect": "Fenyergetés-reakció finom átkeretezése: kevesebb éjszakai túlpörgés, több biztonságérzet.",
+        "time": "3–5 perc",
+        "not_recommended": "Ha már a felidézés is túl megterhelő."
+      }
+    },
+    "tags": ["nightmares", "safety", "imagery-rehearsal", "sleep-prep"],
+    "sort_order": 2,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-prep-03-mikroszokas-ultetese",
+    "version": "v6",
+    "title": "Mikroszokás ültetése",
+    "content": {
+      "type": "evening_card",
+      "phase": "prep",
+      "goal_md": "Egy holnapi mikrolépést egyszerűen beültetni, nyomás és túlgondolás nélkül.",
+      "intents": ["irany_es_jelentes"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Lefekvés előtt válassz egyetlen mikrolépést holnapra (például: „ebéd után 5 perc séta”)." },
+        { "context_md": "Gyakorlat", "question": "Mondd ki magadban egyszer, egyszerűen." },
+        { "context_md": "Gyakorlat", "question": "Képzeld el 10–15 mp-ig, ahogy tényleg megtörténik (helyszín, mozdulat, időpont)." },
+        { "context_md": "Gyakorlat", "question": "Vedd észre, milyen érzés lenne, ha kész van (akár csak: „kicsit könnyebb”)." },
+        { "context_md": "Gyakorlat", "question": "Engedd el, és fordulj a légzéshez." },
+        { "context_md": "Gyakorlat", "question": "Nem kell észben tartanod éjjel — elég, hogy egyszer elültetted." },
+        { "context_md": "Gyakorlat", "question": "Hagyd, hogy az alvás átvegye." }
+      ],
+      "tips": [
+        "Ne cél legyen, hanem a következő apró lépés.",
+        "Ha túl nagy, felezd tovább."
+      ],
+      "meta": {
+        "effect": "Apró szándék-konszolidáció: kevesebb belső nyomás, több esély a megtörténésre.",
+        "time": "1–3 perc",
+        "not_recommended": "Maximalista túlnyomásnál (inkább biztonság)."
+      }
+    },
+    "tags": ["habits", "behavior-change", "micro-step", "sleep-prep"],
+    "sort_order": 3,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-prep-04-tanulas-ulepedese",
+    "version": "v6",
+    "title": "Tanulás ülepedése",
+    "content": {
+      "type": "evening_card",
+      "phase": "prep",
+      "goal_md": "A tanultakat röviden lezárni, hogy éjjel könnyebben konszolidálódhasson.",
+      "intents": ["kreativ_inkubacio", "lecsendesites"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Lefekvés előtt idézz fel 3 kulcspontot a tanult anyagból (csak címszavak)." },
+        { "context_md": "Gyakorlat", "question": "Mondd ki magadban őket egyszer, lassan." },
+        { "context_md": "Gyakorlat", "question": "A harmadik után mondd: „Most ülepedik.”" },
+        { "context_md": "Gyakorlat", "question": "Maradj 6–8 légzésig a légzésnél." },
+        { "context_md": "Gyakorlat", "question": "Engedd, hogy a gondolat elhalványuljon, és jöjjön az alvás." }
+      ],
+      "tips": [
+        "Nem ismétlés, nem magolás.",
+        "Ha teljesítményszorongást hoz, válts lecsendesítésre."
+      ],
+      "meta": {
+        "effect": "Rövid lezárás: kevésbé pörög tovább az anyag, és könnyebb átadni a helyet az alvásnak.",
+        "time": "1–3 perc",
+        "not_recommended": "Erős teljesítményszorongás esetén."
+      }
+    },
+    "tags": ["learning", "memory", "consolidation", "sleep-prep"],
+    "sort_order": 4,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-prep-05-reggeli-horgony",
+    "version": "v6",
+    "title": "Reggeli horgony",
+    "content": {
+      "type": "evening_card",
+      "phase": "prep",
+      "goal_md": "Reggelre egy könnyű kaput előkészíteni, hogy az álomhoz egyszerűbb legyen visszanyúlni.",
+      "intents": ["emlekezet"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Lefekvés előtt tedd a telefonod/füzeted a megszokott helyre úgy, hogy reggel könnyű legyen elérni." },
+        { "context_md": "Gyakorlat", "question": "Fekvésben mondd magadban egyszer: „Reggel először az álomhoz nyúlok.”" },
+        { "context_md": "Gyakorlat", "question": "Maradj 6 lassú légzésig a test súlyánál, majd engedd az alvást jönni." }
+      ],
+      "tips": [
+        "Ne csinálj belőle feladatot: elég az egyszeri jelzés.",
+        "Ha stresszt kelt, hagyd ki, és válassz lecsendesítést."
+      ],
+      "meta": {
+        "effect": "Külső jel + belső szándék: kisebb az esély, hogy reggel „elsodor” a nap.",
+        "time": "1–3 perc",
+        "not_recommended": "Ha az emlékezés köré teljesítménynyomás épül."
+      }
+    },
+    "tags": ["dream-recall", "sleep-prep", "gentle"],
+    "sort_order": 5,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-prep-06-egy-sor-inkubacio",
+    "version": "v2",
+    "title": "Egy sor – inkubáció",
+    "content": {
+      "type": "evening_card",
+      "phase": "prep",
+      "goal_md": "Egy kérdést minimális erőfeszítéssel letenni, hogy éjszaka dolgozhasson rajta az elme.",
+      "intents": ["kreativ_inkubacio"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Lefekvés előtt írj le egyetlen sort: „A kérdésem: …”" },
+        { "context_md": "Gyakorlat", "question": "Ne magyarázd, ne fejtsd ki." },
+        { "context_md": "Gyakorlat", "question": "Tedd félre a papírt (ne maradjon szem előtt)." },
+        { "context_md": "Gyakorlat", "question": "Fekvésben mondd magadban: „Most ülepedik.”" }
+      ],
+      "tips": [
+        "Egy sor elég.",
+        "A pontosság nem számít."
+      ],
+      "meta": {
+        "effect": "Mentális lerakás: az éjszakai inkubáció szabadabban indul.",
+        "time": "1–2 perc",
+        "not_recommended": "Ha az írás gondolkodási spirált indít."
+      }
+    },
+    "tags": ["prep", "incubation", "sleep"],
+    "sort_order": 6,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-prep-07-harom-tetel-lerakas",
+    "version": "v2",
+    "title": "Három tétel – lerakás",
+    "content": {
+      "type": "evening_card",
+      "phase": "prep",
+      "goal_md": "A nyitva maradt dolgokat röviden lerakni, hogy ne vidd be őket az ágyba.",
+      "intents": ["lecsendesites"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Lefekvés előtt írj le három dolgot, ami még „nyitva maradt”." },
+        { "context_md": "Gyakorlat", "question": "Nem oldod meg őket." },
+        { "context_md": "Gyakorlat", "question": "A lista alá írd: „Most pihenek.”" },
+        { "context_md": "Gyakorlat", "question": "Tedd el a papírt, és menj az ágyba." }
+      ],
+      "tips": [
+        "Háromnál ne legyen több.",
+        "Nem fontossági sorrend."
+      ],
+      "meta": {
+        "effect": "Kognitív tehercsökkentés: kevesebb éjszakai gondolati zaj.",
+        "time": "2–3 perc",
+        "not_recommended": "Ha a listaírás túlpörget."
+      }
+    },
+    "tags": ["prep", "mental-offload", "sleep"],
+    "sort_order": 7,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-inbed-01-alomemlekezet-kapu",
+    "version": "v6",
     "title": "Álomemlékezet – kapu",
     "content": {
       "type": "evening_card",
+      "phase": "in_bed",
       "goal_md": "Reggel könnyebben elérhetővé tenni az álom nyomait, erőlködés nélkül.",
       "intents": ["emlekezet", "lecsendesites"],
       "steps": [
@@ -28,24 +253,26 @@
       }
     },
     "tags": ["dream-recall", "sleep-prep", "intention", "gentle"],
-    "sort_order": 1,
+    "sort_order": 8,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-02-lucid-alom-alap-elokeszites",
-    "version": "v4",
+    "slug": "evening-inbed-02-lucid-finom-jel",
+    "version": "v6",
     "title": "Lucid – finom jel",
     "content": {
       "type": "evening_card",
-      "goal_md": "Álomban megjelenő tudatosság csíráját támogatni, túlzott erőlködés nélkül.",
+      "phase": "in_bed",
+      "goal_md": "A tudatosság csíráját támogatni álomban, túlzott erőlködés nélkül.",
       "intents": ["tudatossag", "emlekezet"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Miután elhelyezkedtél, lazítsd el az arcot, az állkapcsot és a vállakat." },
         { "context_md": "Gyakorlat", "question": "Idézz fel egy nagyon egyszerű nappali mozdulatot (ajtónyitás, kézmosás)." },
         { "context_md": "Gyakorlat", "question": "Vedd észre: abban a pillanatban tudtad, hogy ébren vagy." },
         { "context_md": "Gyakorlat", "question": "Mondd magadban lassan: „Álomban is észrevehetem.”" },
-        { "context_md": "Gyakorlat", "question": "Most nem csinálsz semmit: maradj a légzésnél 6–10 lassú légzésen át." },
+        { "context_md": "Gyakorlat", "question": "Most ne csinálj semmit: maradj a légzésnél 6–10 lassú légzésen át." },
         { "context_md": "Gyakorlat", "question": "Ha képek jönnek, hagyd őket jönni-menni; nem követed őket." },
         { "context_md": "Gyakorlat", "question": "A gyakorlat nem ér véget – csak átcsúszik alvásba." }
       ],
@@ -60,52 +287,23 @@
       }
     },
     "tags": ["lucid", "metacognition", "dreamwork", "sleep-prep"],
-    "sort_order": 2,
+    "sort_order": 9,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-03-problemamegoldas-alvas-kozben",
-    "version": "v4",
-    "title": "Éjszakai inkubáció",
-    "content": {
-      "type": "evening_card",
-      "goal_md": "A kérdések „lerakása”, hogy az agy éjszaka szabadabban rendezhesse a mintákat.",
-      "intents": ["kreativ_inkubacio", "lecsendesites"],
-      "steps": [
-        { "context_md": "Gyakorlat", "question": "Lefekvés előtt fogj egy papírt, és írd le a kérdést egy mondatban." },
-        { "context_md": "Gyakorlat", "question": "2 percig írj le mindent, ami eszedbe jut róla (szűrés nélkül)." },
-        { "context_md": "Gyakorlat", "question": "A végén írd a lap aljára: „Most pihenek. A megoldás jöhet később.”" },
-        { "context_md": "Gyakorlat", "question": "Hajtsd félbe a lapot, és tedd el (ne maradjon szem előtt)." },
-        { "context_md": "Gyakorlat", "question": "Amikor már kényelmesen fekszel, idézd fel a kérdést egyszer, majd tudatosan engedd el." },
-        { "context_md": "Gyakorlat", "question": "Maradj 6–8 lassú légzésig a testérzeteknél, és hagyd, hogy jöjjön az alvás." }
-      ],
-      "tips": [
-        "A „mindent leírok” rész a lényeg, nem a jó megfogalmazás.",
-        "A válasz gyakran reggel vagy napközben érkezik."
-      ],
-      "meta": {
-        "effect": "Mentális teher-lerakás: kevesebb rumináció, több tér a spontán rendeződésnek.",
-        "time": "3–5 perc",
-        "not_recommended": "Ha az írás felpörget vagy szorongást erősít."
-      }
-    },
-    "tags": ["problem-solving", "incubation", "mental-offload", "sleep-prep"],
-    "sort_order": 3,
-    "level": null,
-    "is_active": true
-  },
-  {
-    "slug": "evening-04-erzelmi-feldolgozas",
-    "version": "v4",
+    "slug": "evening-inbed-03-erzelmi-lenyomat",
+    "version": "v6",
     "title": "Érzelmi lenyomat",
     "content": {
       "type": "evening_card",
+      "phase": "in_bed",
       "goal_md": "A napból maradt érzelmi tónust csendesebbre hangolni, anélkül hogy meg kellene oldani.",
       "intents": ["lecsendesites", "biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Ahogy megérkezel a fekvő helyzetbe, tedd fel magadban: „Mi maradt bennem a mai napból?”" },
-        { "context_md": "Gyakorlat", "question": "Válassz ki egy érzést vagy hangulatot (akár nagyon halványat is)." },
+        { "context_md": "Gyakorlat", "question": "Válassz ki egy érzést vagy hangulatot (akár halványat is)." },
         { "context_md": "Gyakorlat", "question": "Figyeld meg, hol érzed a testben (mellkas, torok, has, váll stb.)." },
         { "context_md": "Gyakorlat", "question": "Maradj ennél az érzetnél 6 légzésig: nem elemzed, csak kíséred." },
         { "context_md": "Gyakorlat", "question": "Minden kilégzés végén mondd magadban: „Most nem kell megoldani.”" },
@@ -123,23 +321,25 @@
       }
     },
     "tags": ["emotion", "downshift", "nervous-system", "sleep-prep"],
-    "sort_order": 4,
+    "sort_order": 10,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-05-kreativitas-es-inspiracio",
-    "version": "v4",
+    "slug": "evening-inbed-04-kreativ-csuszas",
+    "version": "v6",
     "title": "Kreatív csúszás",
     "content": {
       "type": "evening_card",
+      "phase": "in_bed",
       "goal_md": "Asszociatív, képi gondolkodást megnyitni úgy, hogy közben a test alvás felé mehet.",
       "intents": ["kreativ_inkubacio", "lecsendesites"],
       "steps": [
-        { "context_md": "Gyakorlat", "question": "Lefekvés előtt vagy amikor már kényelmesen fekszel, gondolj három kategóriára: tárgy – élőlény – hely." },
-        { "context_md": "Gyakorlat", "question": "Mondj ki magadban 1–1 szót mindegyikből (például „kulcs – róka – állomás”)." },
+        { "context_md": "Gyakorlat", "question": "Amikor már kényelmesen fekszel, gondolj három kategóriára: tárgy – élőlény – hely." },
+        { "context_md": "Gyakorlat", "question": "Mondj ki magadban 1–1 szót mindegyikből (például: „kulcs – róka – állomás”)." },
         { "context_md": "Gyakorlat", "question": "Ismételd meg a hármast még egyszer, lassan." },
-        { "context_md": "Gyakorlat", "question": "Most csak figyeld, milyen képek, hangulatok, jelenetek kezdenek összecsúszni." },
+        { "context_md": "Gyakorlat", "question": "Most csak figyeld, milyen képek vagy hangulatok kezdenek összecsúszni." },
         { "context_md": "Gyakorlat", "question": "Maradj ebben a nyitott figyelemben 1–2 percig; nem irányítasz semmit." },
         { "context_md": "Gyakorlat", "question": "Engedd, hogy az alvás átvegye." }
       ],
@@ -154,47 +354,18 @@
       }
     },
     "tags": ["creativity", "inspiration", "imagery", "sleep-prep"],
-    "sort_order": 5,
+    "sort_order": 11,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-06-remalmok-csokkentese",
-    "version": "v4",
-    "title": "Rémálom – átírás",
-    "content": {
-      "type": "evening_card",
-      "goal_md": "Visszatérő rémálom-érzeten finoman enyhíteni, a test reakcióját stabilabban hangolva.",
-      "intents": ["biztonsag"],
-      "steps": [
-        { "context_md": "Gyakorlat", "question": "Lefekvés előtt idézz fel nagyon röviden egy visszatérő rémálmot (csak a vázát)." },
-        { "context_md": "Gyakorlat", "question": "Válassz ki egy fordulópontot: egy pillanatot, ahol a jelenet megtörhet." },
-        { "context_md": "Gyakorlat", "question": "Képzeld el, hogy ott valami más történik – elég egy apró változás." },
-        { "context_md": "Gyakorlat", "question": "Figyeld meg 1–2 légzésig, hogyan reagál a tested (akár csak 1% enyhülés is elég)." },
-        { "context_md": "Gyakorlat", "question": "Ne időzz sokáig a jeleneten; térj vissza a légzéshez." },
-        { "context_md": "Gyakorlat", "question": "Hagyd, hogy az alvás jöjjön." }
-      ],
-      "tips": [
-        "A cél nem „jó befejezés”, hanem más idegrendszeri lenyomat.",
-        "Ha felkavar, válts stabilizáló kártyára."
-      ],
-      "meta": {
-        "effect": "Fenyergetés-reakció finom átkeretezése: kevesebb éjszakai túlpörgés, több biztonságérzet.",
-        "time": "3–5 perc",
-        "not_recommended": "Ha már a felidézés is túl megterhelő."
-      }
-    },
-    "tags": ["nightmares", "safety", "imagery-rehearsal", "sleep-prep"],
-    "sort_order": 6,
-    "level": null,
-    "is_active": true
-  },
-  {
-    "slug": "evening-07-szimbolumok-tisztazasa-bovites-opcionalis",
-    "version": "v4",
+    "slug": "evening-inbed-05-szimbolum-kerdes",
+    "version": "v6",
     "title": "Szimbólum – kérdés",
     "content": {
       "type": "evening_card",
+      "phase": "in_bed",
       "goal_md": "Egy visszatérő motívumot nyitott kérdésként megtartani, megfejtés-kényszer nélkül.",
       "intents": ["irany_es_jelentes", "emlekezet"],
       "steps": [
@@ -214,16 +385,18 @@
       }
     },
     "tags": ["symbols", "meaning", "dreamwork", "gentle"],
-    "sort_order": 7,
+    "sort_order": 12,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-08-stresszlevezetes",
-    "version": "v4",
+    "slug": "evening-inbed-06-lecsenges-legzessel",
+    "version": "v6",
     "title": "Lecsengés légzéssel",
     "content": {
       "type": "evening_card",
+      "phase": "in_bed",
       "goal_md": "Az idegrendszert lejjebb hangolni egy egyszerű ritmussal, miközben az alvás átvehet.",
       "intents": ["lecsendesites"],
       "steps": [
@@ -244,17 +417,19 @@
       }
     },
     "tags": ["stress", "downshift", "breath", "sleep-prep"],
-    "sort_order": 8,
+    "sort_order": 13,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-09-tudattalan-biztonsagerzet",
-    "version": "v4",
+    "slug": "evening-inbed-07-biztonsag-lehorgonyzasa",
+    "version": "v6",
     "title": "Biztonság lehorgonyzása",
     "content": {
       "type": "evening_card",
-      "goal_md": "A test biztonságérzetét egyszerűen stabilizálni, hogy az éjszaka kevésbé legyen töredezett.",
+      "phase": "in_bed",
+      "goal_md": "A test biztonságérzetét stabilizálni, hogy az éjszaka kevésbé legyen töredezett.",
       "intents": ["biztonsag", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Miután elhelyezkedtél, figyeld meg, hol érintkezik a tested az ággyal." },
@@ -274,17 +449,19 @@
       }
     },
     "tags": ["safety", "grounding", "nervous-system", "sleep-prep"],
-    "sort_order": 9,
+    "sort_order": 14,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-10-eletirany-tisztazasa",
-    "version": "v4",
+    "slug": "evening-inbed-08-iranyhangolas",
+    "version": "v6",
     "title": "Irányhangolás",
     "content": {
       "type": "evening_card",
-      "goal_md": "Belső irányérzetet finoman megmozgatni egy kérdéssel, anélkül hogy döntést kellene hozni.",
+      "phase": "in_bed",
+      "goal_md": "Belső irányérzetet finoman megmozgatni egy kérdéssel, döntéskényszer nélkül.",
       "intents": ["irany_es_jelentes", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már a pihenés felé fordulsz, mondd magadban: „Mi fontos most?”" },
@@ -304,47 +481,18 @@
       }
     },
     "tags": ["life-direction", "values", "meaning", "sleep-prep"],
-    "sort_order": 10,
+    "sort_order": 15,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-11-szokasformalas-tamogatasa",
-    "version": "v4",
-    "title": "Mikroszokás ültetése",
-    "content": {
-      "type": "evening_card",
-      "goal_md": "Egyetlen holnapi mikrolépést egyszerűen „beültetni”, túlgondolás és nyomás nélkül.",
-      "intents": ["irany_es_jelentes"],
-      "steps": [
-        { "context_md": "Gyakorlat", "question": "Válassz egyetlen mikrolépést holnapra (például „ebéd után 5 perc séta”)." },
-        { "context_md": "Gyakorlat", "question": "Mondd ki magadban egyszer, egyszerűen." },
-        { "context_md": "Gyakorlat", "question": "Képzeld el 10–15 mp-ig, ahogy tényleg megtörténik (helyszín, mozdulat, időpont)." },
-        { "context_md": "Gyakorlat", "question": "Vedd észre, milyen érzés lenne, ha kész van (akár csak „kicsit könnyebb”)." },
-        { "context_md": "Gyakorlat", "question": "Engedd el, és fordulj a légzéshez." },
-        { "context_md": "Gyakorlat", "question": "Hagyd, hogy az alvás átvegye." }
-      ],
-      "tips": [
-        "Ne cél legyen, hanem a következő apró lépés.",
-        "Ha túl nagy, felezd tovább."
-      ],
-      "meta": {
-        "effect": "Apró szándék-konszolidáció: kevesebb belső nyomás, több esély a tényleges megtörténésre.",
-        "time": "1–3 perc",
-        "not_recommended": "Maximalista túlnyomásnál (inkább biztonság)."
-      }
-    },
-    "tags": ["habits", "behavior-change", "micro-step", "sleep-prep"],
-    "sort_order": 11,
-    "level": null,
-    "is_active": true
-  },
-  {
-    "slug": "evening-12-test-tudat-integracio",
-    "version": "v4",
+    "slug": "evening-inbed-09-test-tudat-bejaras",
+    "version": "v6",
     "title": "Test–tudat bejárás",
     "content": {
       "type": "evening_card",
+      "phase": "in_bed",
       "goal_md": "A figyelmet finoman a testbe vinni, hogy a jelenlét stabilabb legyen és az alvás megjöjjön.",
       "intents": ["test_es_jelenlet", "biztonsag"],
       "steps": [
@@ -366,47 +514,19 @@
       }
     },
     "tags": ["body-awareness", "grounding", "integration", "sleep-prep"],
-    "sort_order": 12,
+    "sort_order": 16,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-13-tanulas-konszolidacioja",
-    "version": "v4",
-    "title": "Tanulás ülepedése",
-    "content": {
-      "type": "evening_card",
-      "goal_md": "A napközben tanultakat röviden „lezárni”, hogy az agy éjjel könnyebben konszolidálhasson.",
-      "intents": ["kreativ_inkubacio", "lecsendesites"],
-      "steps": [
-        { "context_md": "Gyakorlat", "question": "Lefekvés előtt idézz fel 3 kulcspontot a tanult anyagból (csak címszavak)." },
-        { "context_md": "Gyakorlat", "question": "Mondd ki magadban őket egyszer, lassan." },
-        { "context_md": "Gyakorlat", "question": "A harmadik után mondd: „Most ülepedik.”" },
-        { "context_md": "Gyakorlat", "question": "Maradj 6–8 légzésig a légzésnél." },
-        { "context_md": "Gyakorlat", "question": "Engedd, hogy a gondolat elhalványuljon, és jöjjön az alvás." }
-      ],
-      "tips": [
-        "Nem ismétlés, nem magolás.",
-        "Ha teljesítményszorongást hoz, válts lecsendesítésre."
-      ],
-      "meta": {
-        "effect": "Rövid lezárás: kevésbé pörög tovább az anyag, és könnyebb átadni a helyet az alvásnak.",
-        "time": "1–3 perc",
-        "not_recommended": "Erős teljesítményszorongás esetén."
-      }
-    },
-    "tags": ["learning", "memory", "consolidation", "sleep-prep"],
-    "sort_order": 13,
-    "level": null,
-    "is_active": true
-  },
-  {
-    "slug": "evening-14-spiritualis-nyitottsag-keretben",
-    "version": "v4",
+    "slug": "evening-inbed-10-hala-foldelten",
+    "version": "v6",
     "title": "Hála – földelten",
     "content": {
       "type": "evening_card",
-      "goal_md": "Tágasabb hangulatot megengedni egy apró hálával, majd visszatérni a test egyszerű biztonságába.",
+      "phase": "in_bed",
+      "goal_md": "Egy apró hálával tágasabb hangulatot megengedni, majd visszatérni a test egyszerű biztonságába.",
       "intents": ["irany_es_jelentes", "biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már pihen a tested, gondolj 1 dologra, amiért ma hálás lehetsz (apró is jó)." },
@@ -426,16 +546,18 @@
       }
     },
     "tags": ["spiritual", "gratitude", "meaning", "grounded"],
-    "sort_order": 14,
+    "sort_order": 17,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-15-mely-alvas-tamogatasa",
-    "version": "v4",
+    "slug": "evening-inbed-11-mely-alvas-le",
+    "version": "v6",
     "title": "Mély alvás – le",
     "content": {
       "type": "evening_card",
+      "phase": "in_bed",
       "goal_md": "Fiziológiai lecsendesedést támogatni egyetlen szóval és egy picit hosszabb kilégzéssel.",
       "intents": ["lecsendesites"],
       "steps": [
@@ -457,23 +579,25 @@
       }
     },
     "tags": ["deep-sleep", "downshift", "nervous-system", "sleep-prep"],
-    "sort_order": 15,
+    "sort_order": 18,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-16-lucid-valosagjel",
-    "version": "v4",
+    "slug": "evening-inbed-12-lucid-valosagjel",
+    "version": "v6",
     "title": "Lucid – valóságjel",
     "content": {
       "type": "evening_card",
-      "goal_md": "Egy gyengéd „észrevétel-jelzést” ültetni, ami álomban is felbukkanhat, nyomás nélkül.",
+      "phase": "in_bed",
+      "goal_md": "Egy gyengéd észrevétel-jelzést ültetni, ami álomban is felbukkanhat, nyomás nélkül.",
       "intents": ["tudatossag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Válassz egy egyszerű jelet: például a tenyered látványa vagy a lámpakapcsoló mozdulata." },
         { "context_md": "Gyakorlat", "question": "Képzeld el 5–10 mp-ig, hogy ránézel, és magadban megjegyzed: „Most ébren.”" },
         { "context_md": "Gyakorlat", "question": "Mondd magadban egyszer: „Álomban is ránézhetek.”" },
-        { "context_md": "Gyakorlat", "question": "Most engedd el, és maradj 6 lassú légzésig csak a légzésnél." },
+        { "context_md": "Gyakorlat", "question": "Most engedd el, és maradj 6 lassú légzésig a légzésnél." },
         { "context_md": "Gyakorlat", "question": "A gyakorlat átcsúszik alvásba." }
       ],
       "tips": [
@@ -481,23 +605,25 @@
         "Ha élénkít, válts lecsendesítésre."
       ],
       "meta": {
-        "effect": "Egyetlen „jel”: növelheti az észrevétel esélyét, miközben megmarad az alvás elsőbbsége.",
+        "effect": "Egyetlen jel: növelheti az észrevétel esélyét, miközben megmarad az alvás elsőbbsége.",
         "time": "1–3 perc",
         "not_recommended": "Alvásparalízis-hajlam vagy túlzott ráfeszülés esetén."
       }
     },
     "tags": ["lucid", "sleep-prep", "gentle"],
-    "sort_order": 16,
+    "sort_order": 19,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-17-test-allkapocs-nyak",
-    "version": "v4",
+    "slug": "evening-inbed-13-allkapocs-nyak-oldas",
+    "version": "v6",
     "title": "Állkapocs–nyak oldás",
     "content": {
       "type": "evening_card",
-      "goal_md": "A leggyakoribb esti feszültségpontokat (állkapocs–nyak) lejjebb hangolni, gyorsan és kíméletesen.",
+      "phase": "in_bed",
+      "goal_md": "Az esti feszültségpontokat (állkapocs–nyak) lejjebb hangolni, gyorsan és kíméletesen.",
       "intents": ["test_es_jelenlet", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Hunyd le a szemed, és engedd, hogy a nyelv elnehezedjen a szájban." },
@@ -510,23 +636,25 @@
         "Ha bármi fáj, hagyd abba, és válts légzésre."
       ],
       "meta": {
-        "effect": "Feszültség-csökkenés a fej körül: kevésbé „tartod” magad, és könnyebb elengedni a napot.",
+        "effect": "Feszültség-csökkenés a fej körül: könnyebb elengedni a napot és átcsúszni alvásba.",
         "time": "1–3 perc",
         "not_recommended": "Akut nyaki fájdalom esetén csak nagyon óvatosan, vagy inkább kihagyva."
       }
     },
     "tags": ["body", "downshift", "sleep-prep"],
-    "sort_order": 17,
+    "sort_order": 20,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-18-test-mellkas-ter",
-    "version": "v4",
+    "slug": "evening-inbed-14-mellkas-ter-erzet",
+    "version": "v6",
     "title": "Mellkas-tér érzet",
     "content": {
       "type": "evening_card",
-      "goal_md": "Egy enyhe „tágasságérzetet” meghívni a mellkas környékére, és visszaengedni az alvásnak.",
+      "phase": "in_bed",
+      "goal_md": "Egy enyhe tágasságérzetet meghívni a mellkas környékére, és visszaengedni az alvásnak.",
       "intents": ["test_es_jelenlet", "biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Tedd a figyelmed a mellkas közepére 2 légzésig (csak észlelés)." },
@@ -540,23 +668,25 @@
         "Ha a mellkasfigyelem kellemetlen, válts lábfej-érzetre."
       ],
       "meta": {
-        "effect": "Finom tágulásérzet: több „hely” belül, miközben a test nyugszik és nem kell megoldani semmit.",
+        "effect": "Finom tágulásérzet: több „hely” belül, miközben a test nyugszik.",
         "time": "3–5 perc",
         "not_recommended": "Ha a mellkasra figyelés szorongást kelt."
       }
     },
     "tags": ["body", "safety", "sleep-prep"],
-    "sort_order": 18,
+    "sort_order": 21,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-19-biztonsag-visszateres-pont",
-    "version": "v4",
+    "slug": "evening-inbed-15-visszateres-pontja",
+    "version": "v6",
     "title": "Visszatérés pontja",
     "content": {
       "type": "evening_card",
-      "goal_md": "Egy egyszerű „visszatérési pontot” kijelölni, ha éjjel felriadnál vagy nyugtalanul fordulnál át.",
+      "phase": "in_bed",
+      "goal_md": "Egy egyszerű visszatérési pontot kijelölni, ha éjjel felriadnál vagy nyugtalanul fordulnál át.",
       "intents": ["biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Válassz egyetlen pontot: talpak érzetét, kezek súlyát, vagy a párna nyomását." },
@@ -575,45 +705,19 @@
       }
     },
     "tags": ["safety", "grounding", "sleep-prep"],
-    "sort_order": 19,
+    "sort_order": 22,
     "level": null,
     "is_active": true
   },
+
   {
-    "slug": "evening-20-emlekezet-reggeli-horgony",
-    "version": "v4",
-    "title": "Reggeli horgony",
-    "content": {
-      "type": "evening_card",
-      "goal_md": "Egy reggeli emlékeztető-kaput előkészíteni, hogy felébredéskor könnyebb legyen az álomhoz nyúlni.",
-      "intents": ["emlekezet"],
-      "steps": [
-        { "context_md": "Gyakorlat", "question": "Tedd a telefonod/füzeted a megszokott helyre úgy, hogy reggel könnyű legyen elérni." },
-        { "context_md": "Gyakorlat", "question": "Fekvésben mondd magadban egyszer: „Reggel először az álomhoz nyúlok.”" },
-        { "context_md": "Gyakorlat", "question": "Maradj 6 lassú légzésig a test súlyánál, majd engedd az alvást jönni." }
-      ],
-      "tips": [
-        "Ne csinálj belőle feladatot: elég az egyszeri jelzés.",
-        "Ha stresszt kelt, hagyd ki, és válassz lecsendesítést."
-      ],
-      "meta": {
-        "effect": "Külső jel + belső szándék: reggel kisebb az esély, hogy „elsodor” a nap kezdete.",
-        "time": "1–3 perc",
-        "not_recommended": "Ha az emlékezés köré teljesítménynyomás épül."
-      }
-    },
-    "tags": ["dream-recall", "sleep-prep", "gentle"],
-    "sort_order": 20,
-    "level": null,
-    "is_active": true
-  },
-  {
-    "slug": "evening-21-irany-harom-szo",
-    "version": "v4",
+    "slug": "evening-inbed-16-irany-harom-szo",
+    "version": "v6",
     "title": "Irány – három szó",
     "content": {
       "type": "evening_card",
-      "goal_md": "A napot három semleges szóval lezárni, hogy az irányérzet maradhasson, de ne induljon rumináció.",
+      "phase": "in_bed",
+      "goal_md": "A napot három semleges szóval lezárni, hogy az irányérzet maradjon, de ne induljon rumináció.",
       "intents": ["irany_es_jelentes", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Válassz három szót a napról (például: „sűrű – tanulság – csend”)." },
@@ -633,7 +737,324 @@
       }
     },
     "tags": ["meaning", "sleep-prep", "gentle"],
-    "sort_order": 21,
+    "sort_order": 23,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-inbed-17-emlekezet-visszafele-nap",
+    "version": "v2",
+    "title": "Emlékezet – visszafelé nap",
+    "content": {
+      "type": "evening_card",
+      "phase": "in_bed",
+      "goal_md": "Az emlékezetet finoman megnyitni, anélkül hogy a gondolkodás aktiválódna.",
+      "intents": ["emlekezet", "lecsendesites"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Amikor már kényelmesen fekszel, idézz fel egy pillanatot a nap végéről." },
+        { "context_md": "Gyakorlat", "question": "Most egy pillanatot a nap közepéről." },
+        { "context_md": "Gyakorlat", "question": "Végül egy pillanatot a nap elejéről." },
+        { "context_md": "Gyakorlat", "question": "Nem meséled el, csak észleled." },
+        { "context_md": "Gyakorlat", "question": "Engedd el a képeket, és hagyd, hogy az alvás átvegye." }
+      ],
+      "tips": [
+        "Elég egy-egy képkocka.",
+        "Ha üres marad, az is jó."
+      ],
+      "meta": {
+        "effect": "Időbeli visszatekintés: az emlékezés aktiválódik, miközben a test nyugszik.",
+        "time": "1–2 perc",
+        "not_recommended": "Ha a nap felidézése ruminációt indít."
+      }
+    },
+    "tags": ["memory", "dream-recall", "sleep"],
+    "sort_order": 24,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-inbed-18-lucid-szelid-kerdes",
+    "version": "v2",
+    "title": "Lucid – szelíd kérdés",
+    "content": {
+      "type": "evening_card",
+      "phase": "in_bed",
+      "goal_md": "A tudatosság lehetőségét megengedni, anélkül hogy az alvás háttérbe szorulna.",
+      "intents": ["tudatossag", "lecsendesites"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Fekvésben mondd magadban egyszer: „Ha álmodom, észrevehetem.”" },
+        { "context_md": "Gyakorlat", "question": "Ne várj választ." },
+        { "context_md": "Gyakorlat", "question": "Maradj 6 lassú légzésig a légzésnél." },
+        { "context_md": "Gyakorlat", "question": "Engedd el a kérdést, és csússz át alvásba." }
+      ],
+      "tips": [
+        "Egyszer hangzik el.",
+        "Ha élénkít, hagyd ki ma."
+      ],
+      "meta": {
+        "effect": "Metakognitív nyitottság: a tudatosság esélye nő, erőlködés nélkül.",
+        "time": "1–2 perc",
+        "not_recommended": "Alvásparalízis-hajlam esetén."
+      }
+    },
+    "tags": ["lucid", "gentle", "sleep"],
+    "sort_order": 25,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-inbed-19-kreativ-harom-kep",
+    "version": "v2",
+    "title": "Kreatív – három kép",
+    "content": {
+      "type": "evening_card",
+      "phase": "in_bed",
+      "goal_md": "Asszociatív gondolkodást megengedni minimális mentális aktivitással.",
+      "intents": ["kreativ_inkubacio", "lecsendesites"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Engedj meg magadnak egy egyszerű képet (tárgy vagy hely)." },
+        { "context_md": "Gyakorlat", "question": "Hagyd, hogy egy második kép megjelenjen." },
+        { "context_md": "Gyakorlat", "question": "Majd egy harmadik." },
+        { "context_md": "Gyakorlat", "question": "Nem rendezed őket, nem kapcsolod össze." },
+        { "context_md": "Gyakorlat", "question": "Engedd, hogy elmosódjanak, és jöjjön az alvás." }
+      ],
+      "tips": [
+        "Nem történetet keresünk.",
+        "Ha nincs kép, elég a hangulat."
+      ],
+      "meta": {
+        "effect": "Szabad asszociáció: kreatív kapcsolódás kontroll nélkül.",
+        "time": "2–3 perc",
+        "not_recommended": "Ha a képek túlpörgetnek."
+      }
+    },
+    "tags": ["creativity", "imagery", "sleep"],
+    "sort_order": 26,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-inbed-20-szem-homlok-elengedes",
+    "version": "v2",
+    "title": "Szem–homlok elengedés",
+    "content": {
+      "type": "evening_card",
+      "phase": "in_bed",
+      "goal_md": "A gyakori éjszakai feszültségpontokat (szem, homlok) finoman leengedni.",
+      "intents": ["test_es_jelenlet", "lecsendesites"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Hunyd le a szemed, és vedd észre a szemgödrök környékét." },
+        { "context_md": "Gyakorlat", "question": "Képzeld el, hogy a szemek egy picit hátrébb és lejjebb süllyednek." },
+        { "context_md": "Gyakorlat", "question": "A homlokon engedj el egy apró ráncot." },
+        { "context_md": "Gyakorlat", "question": "Maradj ebben az érzetben néhány légzésig." },
+        { "context_md": "Gyakorlat", "question": "Ne tartsd – hagyd, hogy az alvás átvegye." }
+      ],
+      "tips": [
+        "Nem kell „lazítani”, elég megengedni.",
+        "Ha feszül, hagyd abba."
+      ],
+      "meta": {
+        "effect": "Idegrendszeri leengedés a fej területén: könnyebb elalvás.",
+        "time": "1–3 perc",
+        "not_recommended": "Ha a szemre figyelés kellemetlen."
+      }
+    },
+    "tags": ["body", "downshift", "sleep"],
+    "sort_order": 27,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-inbed-21-ejszakai-keret",
+    "version": "v2",
+    "title": "Éjszakai keret",
+    "content": {
+      "type": "evening_card",
+      "phase": "in_bed",
+      "goal_md": "Biztonságos belső keretet adni az éjszakára, minimális kognitív terheléssel.",
+      "intents": ["biztonsag", "lecsendesites"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Fekvésben mondd magadban egyszer: „Most nem kell semmit csinálni.”" },
+        { "context_md": "Gyakorlat", "question": "Vedd észre a tested súlyát az ágyon." },
+        { "context_md": "Gyakorlat", "question": "Engedd, hogy a figyelem a testben maradjon." },
+        { "context_md": "Gyakorlat", "question": "A mondat elhalványul, az érzet marad." }
+      ],
+      "tips": [
+        "A mondat egyszer hangzik el.",
+        "Nem kell megnyugodni – elég megállni."
+      ],
+      "meta": {
+        "effect": "Stabil belső keret: kevesebb éjszakai bizonytalanság.",
+        "time": "1–2 perc",
+        "not_recommended": "Nincs; ha nem esik jól, hagyd ki."
+      }
+    },
+    "tags": ["safety", "grounding", "sleep"],
+    "sort_order": 28,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-inbed-22-has-medence-megerkezes",
+    "version": "v2",
+    "title": "Has–medence megérkezés",
+    "content": {
+      "type": "evening_card",
+      "phase": "in_bed",
+      "goal_md": "A figyelmet a test középpontjába vinni, hogy a fej elcsendesedjen.",
+      "intents": ["test_es_jelenlet", "biztonsag"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Vidd a figyelmet a has és a medence területére." },
+        { "context_md": "Gyakorlat", "question": "Belégzésnél engedd, hogy a has picit megemelkedjen." },
+        { "context_md": "Gyakorlat", "question": "Kilégzésnél engedd le a súlyt ebbe a területbe." },
+        { "context_md": "Gyakorlat", "question": "Maradj itt néhány légzésig." },
+        { "context_md": "Gyakorlat", "question": "A figyelem elnehezül, és jöhet az alvás." }
+      ],
+      "tips": [
+        "Nem kell irányítani a légzést.",
+        "Ha kellemetlen, válts test-súly gyakorlatra."
+      ],
+      "meta": {
+        "effect": "Középpontba érkezés: a figyelem lejjebb költözik a fejből.",
+        "time": "2–3 perc",
+        "not_recommended": "Ha a hasi figyelem szorongást kelt."
+      }
+    },
+    "tags": ["body", "grounding", "sleep"],
+    "sort_order": 29,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-rescue-01-kilegzes-reset",
+    "version": "v2",
+    "title": "Visszaalvás – kilégzés reset",
+    "content": {
+      "type": "evening_card",
+      "phase": "rescue",
+      "goal_md": "Felébredés után gyorsan lejjebb hangolni az idegrendszert, gondolkodás nélkül.",
+      "intents": ["lecsendesites"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Amikor észreveszed, hogy felébredtél, ne változtass testhelyzetet." },
+        { "context_md": "Gyakorlat", "question": "Vegyél egy természetes belégzést." },
+        { "context_md": "Gyakorlat", "question": "A kilégzést engedd picit hosszabbra, mint a belégzést." },
+        { "context_md": "Gyakorlat", "question": "Ismételd ezt összesen háromszor." },
+        { "context_md": "Gyakorlat", "question": "A harmadik után ne csinálj semmit – hagyd, hogy a légzés menjen magától." }
+      ],
+      "tips": [
+        "Nem kell számolni.",
+        "Ha gondolat jön, nem foglalkozol vele."
+      ],
+      "meta": {
+        "effect": "Gyors idegrendszeri reset: a test visszatalál az alvás ritmusához.",
+        "time": "30–60 mp",
+        "not_recommended": "Ha a légzésre figyelés önmagában szorongást kelt."
+      }
+    },
+    "tags": ["rescue", "breath", "downshift", "sleep"],
+    "sort_order": 30,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-rescue-02-test-sulya",
+    "version": "v2",
+    "title": "Visszaalvás – test súlya",
+    "content": {
+      "type": "evening_card",
+      "phase": "rescue",
+      "goal_md": "Felriadás után visszahívni a test biztonságérzetét egyszerű kontaktusokon keresztül.",
+      "intents": ["biztonsag", "test_es_jelenlet"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Figyeld meg a fejed súlyát a párnán." },
+        { "context_md": "Gyakorlat", "question": "Figyeld meg a tested érintkezését a matraccal." },
+        { "context_md": "Gyakorlat", "question": "Figyeld meg a takaró súlyát ott, ahol érzed." },
+        { "context_md": "Gyakorlat", "question": "Engedd, hogy ezek a pontok egy kicsit „nehezedjenek”." },
+        { "context_md": "Gyakorlat", "question": "Maradj ennél az érzetnél néhány légzésig." }
+      ],
+      "tips": [
+        "Nem kell minden pontot érezni.",
+        "Ha csak egy kontaktus marad meg, az is elég."
+      ],
+      "meta": {
+        "effect": "Fizikai lehorgonyzás: a test jelzést kap, hogy újra biztonságban van.",
+        "time": "1–2 perc",
+        "not_recommended": "Ha a testérzetekre figyelés túl intenzív."
+      }
+    },
+    "tags": ["rescue", "safety", "grounding", "sleep"],
+    "sort_order": 31,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-rescue-03-gondolat-parkolo",
+    "version": "v2",
+    "title": "Visszaalvás – gondolat parkoló",
+    "content": {
+      "type": "evening_card",
+      "phase": "rescue",
+      "goal_md": "Felébredéskor megjelenő gondolatokat ideiglenesen félretenni, megoldás nélkül.",
+      "intents": ["lecsendesites", "biztonsag"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Amikor észreveszed, hogy gondolat indulna, mondd magadban: „Ezt holnap nézem.”" },
+        { "context_md": "Gyakorlat", "question": "Nem folytatod, nem elemzed." },
+        { "context_md": "Gyakorlat", "question": "Vidd vissza a figyelmet a légzéshez vagy a test súlyához." },
+        { "context_md": "Gyakorlat", "question": "Maradj itt néhány légzésig." }
+      ],
+      "tips": [
+        "A mondat egyszer hangzik el.",
+        "Nem kell elhinni – elég kimondani."
+      ],
+      "meta": {
+        "effect": "Mentális lekapcsolás: kevesebb éjszakai rumináció, gyorsabb visszaalvás.",
+        "time": "30–90 mp",
+        "not_recommended": "Ha a mondatok ismétlése pörgető."
+      }
+    },
+    "tags": ["rescue", "thoughts", "downshift", "sleep"],
+    "sort_order": 32,
+    "level": null,
+    "is_active": true
+  },
+
+  {
+    "slug": "evening-rescue-04-remalom-utani-stabilizalas",
+    "version": "v2",
+    "title": "Rémálom után – stabilizálás",
+    "content": {
+      "type": "evening_card",
+      "phase": "rescue",
+      "goal_md": "Rémálom utáni felriadáskor visszarendezni a testet, felidézés nélkül.",
+      "intents": ["biztonsag"],
+      "steps": [
+        { "context_md": "Gyakorlat", "question": "Ne idézd fel az álmot." },
+        { "context_md": "Gyakorlat", "question": "Vedd észre: most az ágyban vagy." },
+        { "context_md": "Gyakorlat", "question": "Figyeld meg a légzést a has vagy a mellkas környékén." },
+        { "context_md": "Gyakorlat", "question": "Mondd magadban egyszer: „Most vége.”" },
+        { "context_md": "Gyakorlat", "question": "Maradj a testérzetnél, amíg újra elnehezül." }
+      ],
+      "tips": [
+        "A kép nélküli stabilizálás a cél.",
+        "Ha túl éber maradsz, válts test-súly kártyára."
+      ],
+      "meta": {
+        "effect": "Fenyergetés-reakció csillapítása: a test visszatalál az alvás állapotához.",
+        "time": "1–3 perc",
+        "not_recommended": "Ha az ébrenlét nagyon elhúzódik (ilyenkor felkelés is segíthet)."
+      }
+    },
+    "tags": ["rescue", "nightmare", "safety", "sleep"],
+    "sort_order": 33,
     "level": null,
     "is_active": true
   }
