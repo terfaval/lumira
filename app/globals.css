@@ -616,7 +616,7 @@ body[data-space="evening"] {
 /* ────────────────────────────────────────────────────────────── */
 
 .textarea-dream {
-  min-height: 260px;
+  min-height: 420px;
   resize: vertical;
   line-height: 1.65;
 
@@ -669,6 +669,6 @@ body[data-space="evening"] {
 }
 
 .newdream-panel {
-  padding: var(--space-3);
+  padding: var(--space-1);
 }
 

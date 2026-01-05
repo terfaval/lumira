@@ -35,6 +35,20 @@ const INTENT_LABEL: Record<IntentKey, string> = {
   test_es_jelenlet: "Test / Jelenlét",
 };
 
+function InfoIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 17v-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M12 8h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+      <path
+        d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
 function getPhase(card: EveningCardCatalogItem): PhaseKey | null {
   const p = (card?.content as any)?.phase;
   const allowed = new Set<PhaseKey>(["prep", "in_bed", "rescue"]);
@@ -86,19 +100,19 @@ function intentColor(intent: IntentKey | null): { text: string; bg: string } {
   // bg = gradient target color
   switch (intent) {
     case "biztonsag":
-      return { text: "rgba(120, 195, 255, 0.95)", bg: "rgba(120, 195, 255, 0.55)" };
+      return { text: "rgba(120, 195, 255, 0.95)", bg: "rgba(120, 195, 255, 0.32)" };
     case "lecsendesites":
-      return { text: "rgba(170, 140, 255, 0.95)", bg: "rgba(170, 140, 255, 0.55)" };
+      return { text: "rgba(170, 140, 255, 0.95)", bg: "rgba(170, 140, 255, 0.32)" };
     case "emlekezet":
-      return { text: "rgba(255, 190, 120, 0.95)", bg: "rgba(255, 190, 120, 0.55)" };
+      return { text: "rgba(255, 190, 120, 0.95)", bg: "rgba(255, 190, 120, 0.32)" };
     case "tudatossag":
-      return { text: "rgba(120, 220, 170, 0.95)", bg: "rgba(120, 220, 170, 0.55)" };
+      return { text: "rgba(120, 220, 170, 0.95)", bg: "rgba(120, 220, 170, 0.32)" };
     case "kreativ_inkubacio":
-      return { text: "rgba(255, 150, 190, 0.95)", bg: "rgba(255, 150, 190, 0.55)" };
+      return { text: "rgba(255, 150, 190, 0.95)", bg: "rgba(255, 150, 190, 0.32)" };
     case "irany_es_jelentes":
-      return { text: "rgba(255, 220, 120, 0.95)", bg: "rgba(255, 220, 120, 0.55)" };
+      return { text: "rgba(255, 220, 120, 0.95)", bg: "rgba(255, 220, 120, 0.32)" };
     case "test_es_jelenlet":
-      return { text: "rgba(160, 235, 255, 0.95)", bg: "rgba(160, 235, 255, 0.55)" };
+      return { text: "rgba(160, 235, 255, 0.95)", bg: "rgba(160, 235, 255, 0.32)" };
     default:
       return { text: "rgba(200,200,200,0.95)", bg: "rgba(200,200,200,0.35)" };
   }
@@ -381,7 +395,7 @@ export default function EveningLanding() {
           background: `linear-gradient(135deg,
             rgba(255,255,255,0.72) 0%,
             rgba(255,255,255,0.72) 70%,
-            ${ic.bg} 100%)`,
+            ${ic.bg} 110%)`,
         }}
       >
         {/* top row: phase + intent + time (egy vonalban) */}
@@ -447,48 +461,47 @@ export default function EveningLanding() {
   const openCardPhase = openCard ? getPhase(openCard) : null;
 
   return (
-    <Shell title={""} space="evening">
+  <Shell
+    title="Álom előkészítő gyakorlatok"
+    space="evening"
+    headerActions={
+      <button
+        type="button"
+        className="icon-btn"
+        aria-label="Infó"
+        aria-expanded={infoOpen}
+        onClick={() => setInfoOpen((v) => !v)}
+      >
+        <InfoIcon />
+      </button>
+    }
+    infoOpen={infoOpen}
+    onToggleInfo={() => setInfoOpen((v) => !v)}
+    infoPanel={
+      <div className="stack-tight">
+
+        <p style={{ color: "var(--text-muted)" }}>
+          Ezek rövid, kíméletes gyakorlatok az elalvás előtti átmenethez, valamint azokra 
+          az éjszakai pillanatokra, amikor túl éberen ébredsz és nehezedre esik visszaaludni.
+        </p>
+
+        <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-muted)", lineHeight: 1.7 }}>
+          <li>Az egyes fázisok és szándékok segítségével könnyebben tudsz választani, </li>
+          <li>hogy megtaláld az alkalomhoz és a céljaidhoz leginkább megfelelő gyakorlatot</li>
+          <li>Nyisd meg a kártyát, és csak annyit csinálj, amennyi ma belefér.</li>
+          <li>
+            Ha bármelyik gyakorlat élénkít vagy feszít, válts egyszerűbb, test- vagy légzésfókuszú kártyára.
+          </li>
+        </ul>
+      </div>
+    }
+  >
+
       {loading ? (
         Spinner
       ) : (
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
-
-          {/* Header row: title + info */}
-          <div className="page-head">
-            <div className="page-title">Álom előkészítő gyakorlatok</div>
-
-            <button
-              className="info-btn"
-              onClick={() => setInfoOpen((v) => !v)}
-              aria-expanded={infoOpen}
-              aria-label="Információ"
-              type="button"
-            >
-              i
-            </button>
-          </div>
-
-          {infoOpen ? (
-            <div className="info-panel">
-              <div className="info-text">
-                Ezek rövid, kíméletes gyakorlatok az elalvás előtti átmenethez — és azokra az éjszakai pillanatokra,
-                amikor túl éberen ébredsz.
-                <br />
-                <br />
-                <b>Hogyan használd:</b>
-                <br />• Válassz egy fázist: <b>Előkészítés</b> (még lefekvés előtt), <b>Elalvás előtt</b> (már ágyban),
-                vagy <b>Éjjeli mentés</b> (ha felébredtél).
-                <br />• Válassz egy szándékot, ha tudod, mire van most szükséged (pl. lecsendesítés vagy biztonság).
-                <br />• Nyisd meg a kártyát, és csak annyit csinálj, amennyi ma belefér: a cél a lejjebb hangolás, nem a
-                “tökéletes végrehajtás”.
-                <br />
-                <br />
-                <b>Kis szabály:</b> ha bármelyik gyakorlat élénkít vagy feszít, válts egy egyszerűbb, test- vagy légzés
-                fókuszú kártyára.
-              </div>
-            </div>
-          ) : null}
 
           {/* Filters (két dropdown egymás mellett) */}
           <div className="filters">
@@ -636,49 +649,6 @@ export default function EveningLanding() {
       )}
 
       <style jsx>{`
-        .page-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-        }
-
-        .page-title {
-          font-size: 18px;
-          font-weight: 900;
-          letter-spacing: -0.01em;
-        }
-
-        .info-btn {
-          width: 28px;
-          height: 28px;
-          border-radius: 999px;
-          border: 1px solid var(--border);
-          background: transparent;
-          color: var(--text);
-          cursor: pointer;
-          display: grid;
-          place-items: center;
-          font-weight: 800;
-          line-height: 1;
-        }
-        .info-btn:hover {
-          border-color: var(--text-muted);
-        }
-
-        .info-panel {
-          border: 1px solid var(--border);
-          border-radius: 14px;
-          padding: 12px;
-          background: rgba(255, 255, 255, 0.02);
-        }
-
-        .info-text {
-          font-size: 14px;
-          color: var(--text-muted);
-          line-height: 1.45;
-        }
-
         .filters {
           display: grid;
           grid-template-columns: 1fr;
@@ -756,18 +726,19 @@ export default function EveningLanding() {
 
         /* “nem kattintható lekerekített gomb” */
         .pill {
-          font-size: 12px;
+          font-size: 11pt;
           padding: 6px 10px;
           border-radius: 999px;
-          border: 2px solid var(--border);
-          background: rgba(255, 255, 255, 0.08);
+          border: 2.25px solid var(--border); /* inline felülírja a színt */
+          background: rgba(255, 255, 255, 0.10);
           font-weight: 800;
           line-height: 1;
           white-space: nowrap;
         }
 
+
         .card-time {
-          font-size: 12px;
+          font-size: 11px;
           color: var(--text-muted);
           white-space: nowrap;
           font-weight: 700;
@@ -781,22 +752,21 @@ export default function EveningLanding() {
           margin-bottom: 8px;
         }
 
-        /* a title-en kívül kb. “11pt” */
         .card-body {
-          font-size: 14px; /* ~10.5–11pt körül */
+          font-size: 11px;
           color: var(--text-muted);
           line-height: 1.35;
         }
 
         .tag-row {
           display: flex;
-          gap: 8px;
+          gap: 12px;
           flex-wrap: wrap;
           margin-top: 12px;
         }
 
         .tag {
-          font-size: 12px;
+          font-size: 10px;
           padding: 6px 10px;
           border: 1px solid var(--border);
           border-radius: 999px;
@@ -806,7 +776,7 @@ export default function EveningLanding() {
         }
 
         .meta-block {
-          font-size: 12px;
+          font-size: 11px;
           padding: 6px 10px;
           border: 1px solid var(--border);
           border-radius: 999px;
