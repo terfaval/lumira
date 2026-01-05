@@ -616,7 +616,7 @@ body[data-space="evening"] {
 /* ────────────────────────────────────────────────────────────── */
 
 .textarea-dream {
-  min-height: 420px;
+  min-height: 60vh;
   resize: vertical;
   line-height: 1.65;
 
