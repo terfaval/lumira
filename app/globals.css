@@ -540,3 +540,49 @@ body[data-space="evening"] {
 .shell.evening-shell .surface-layer {
   background: var(--bg-layer);
 }
+
+/* NewDream – apró finomhangolások */
+
+.newdream-lead {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.textarea-dream {
+  min-height: 240px;
+  resize: vertical;
+  line-height: 1.65;
+}
+
+.newdream-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.newdream-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.newdream-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.newdream-error {
+  background: var(--bg-layer);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  color: var(--text-primary);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.newdream-footnote {
+  color: var(--text-muted);
+  font-size: 13px;
+}
