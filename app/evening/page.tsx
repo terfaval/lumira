@@ -95,42 +95,55 @@ function shuffleDeterministic<T>(arr: T[], seed: number): T[] {
   return out;
 }
 
-function intentColor(intent: IntentKey | null): { text: string; bg: string } {
-  // text = pill border + font
-  // bg = gradient target color
-  switch (intent) {
-    case "biztonsag":
-      return { text: "rgba(120, 195, 255, 0.95)", bg: "rgba(120, 195, 255, 0.32)" };
-    case "lecsendesites":
-      return { text: "rgba(170, 140, 255, 0.95)", bg: "rgba(170, 140, 255, 0.32)" };
-    case "emlekezet":
-      return { text: "rgba(255, 190, 120, 0.95)", bg: "rgba(255, 190, 120, 0.32)" };
-    case "tudatossag":
-      return { text: "rgba(120, 220, 170, 0.95)", bg: "rgba(120, 220, 170, 0.32)" };
-    case "kreativ_inkubacio":
-      return { text: "rgba(255, 150, 190, 0.95)", bg: "rgba(255, 150, 190, 0.32)" };
-    case "irany_es_jelentes":
-      return { text: "rgba(255, 220, 120, 0.95)", bg: "rgba(255, 220, 120, 0.32)" };
-    case "test_es_jelenlet":
-      return { text: "rgba(160, 235, 255, 0.95)", bg: "rgba(160, 235, 255, 0.32)" };
-    default:
-      return { text: "rgba(200,200,200,0.95)", bg: "rgba(200,200,200,0.35)" };
-  }
+function cssVar(name: string, fallback: string) {
+  if (typeof window === "undefined") return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
 }
 
-function phaseColor(phase: PhaseKey | null): string {
-  // a phase pill színe (border+font)
-  switch (phase) {
-    case "prep":
-      return "rgba(255, 200, 120, 0.95)";
-    case "in_bed":
-      return "rgba(170, 140, 255, 0.95)";
-    case "rescue":
-      return "rgba(120, 195, 255, 0.95)";
-    default:
-      return "rgba(200,200,200,0.95)";
+function intentColor(intent: IntentKey | null): { text: string; bg: string } {
+  const map: Record<IntentKey, string> = {
+    biztonsag: "--intent-biztonsag",
+    lecsendesites: "--intent-lecsendesites",
+    emlekezet: "--intent-emlekezet",
+    tudatossag: "--intent-tudatossag",
+    kreativ_inkubacio: "--intent-kreativ_inkubacio",
+    irany_es_jelentes: "--intent-irany_es_jelentes",
+    test_es_jelenlet: "--intent-test_es_jelenlet",
+  };
+
+  if (!intent) {
+    return { text: "rgba(200,200,200,0.95)", bg: "rgba(200,200,200,0.20)" };
   }
+
+  const token = map[intent];
+  const text = cssVar(token, "rgba(200,200,200,0.95)");
+  const alpha = cssVar("--intent-glow-alpha", "0.32");
+
+  // bg = ugyanaz a szín, csak kisebb alpha-val (rgba(...) már alpha-s, de oké:
+  // itt egyszerűen visszaadjuk a text színt, és a gradientben “paper” viszi a lágyságot)
+  // Ha később akarod: átírhatjuk okosabb rgba parse-ra.
+  const bg = text.replace(/rgba\(([^)]+)\)/, (m) => {
+    // ha már rgba, hagyjuk: a paper úgyis puhít
+    return m;
+  });
+
+  // ha a token rgb lenne, akkor itt alpha-val egészítenénk ki.
+  // most rgba-kat adunk meg a tokenekben, így elég.
+  return { text, bg: bg.replace(/,\s*0\.\d+\)/, `, ${alpha})`) };
 }
+
+
+function phaseColor(phase: PhaseKey | null): string {
+  const map: Record<PhaseKey, string> = {
+    prep: "--phase-prep",
+    in_bed: "--phase-in_bed",
+    rescue: "--phase-rescue",
+  };
+  if (!phase) return "rgba(200,200,200,0.95)";
+  return cssVar(map[phase], "rgba(200,200,200,0.95)");
+}
+
 
 // Egyszerű magyarítás a “technical tag” stringekre.
 // Ha valami nincs benne, fallback az eredetire.
@@ -393,8 +406,8 @@ export default function EveningLanding() {
         }}
         style={{
           background: `linear-gradient(135deg,
-            rgba(255,255,255,0.72) 0%,
-            rgba(255,255,255,0.72) 70%,
+            var(--evening-card-paper-strong) 0%,
+            var(--evening-card-paper) 60%,
             ${ic.bg} 110%)`,
         }}
       >
@@ -730,7 +743,7 @@ export default function EveningLanding() {
           padding: 6px 10px;
           border-radius: 999px;
           border: 2.25px solid var(--border); /* inline felülírja a színt */
-          background: rgba(255, 255, 255, 0.10);
+          background: var(--evening-pill-bg);
           font-weight: 800;
           line-height: 1;
           white-space: nowrap;

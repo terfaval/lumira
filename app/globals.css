@@ -38,6 +38,10 @@ a heavy UI framework.
   --card-surface: #ffffff;
   --card-surface-subtle: #f5f8f8;
 
+  --text: var(--text-primary);
+  --border: var(--line-soft);
+  --bg: var(--bg-layer);
+
   /* Accent: 1 / nappali (Cerulean Blue) */
   --accent: #80b9b9;
   --accent-2: #497c92; /* Wedgewood Blue (nappali) mint mélyebb pár */
@@ -63,6 +67,11 @@ a heavy UI framework.
   --dream-input-bg-focus: rgba(255, 231, 168, 0.42);
   --dream-input-text: var(--text-primary);
   --dream-input-placeholder: rgba(28, 36, 48, 0.55);
+
+  /* Evening cards (fallback = nappali papír) */
+  --evening-card-paper: rgba(248, 192, 138, 0.30);
+  --evening-card-paper-strong: rgba(248, 192, 138, 0.42);
+  --evening-pill-bg: rgba(255, 255, 255, 0.10);
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -103,6 +112,11 @@ body[data-napszak="default"] {
   --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
   --dream-input-text: var(--text-primary);
   --dream-input-placeholder: rgba(28, 36, 48, 0.55);
+
+  /* Evening cards (fallback = nappali papír) */
+  --evening-card-paper: rgba(248, 192, 138, 0.30);
+  --evening-card-paper-strong: rgba(248, 192, 138, 0.42);
+  --evening-pill-bg: rgba(255, 255, 255, 0.10);
 }
 
 /* MORNING: maradhat a teljes téma később finomabb, de textarea sárga legyen ugyanaz */
@@ -137,6 +151,11 @@ body[data-napszak="morning"] {
   --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
   --dream-input-text: var(--text-primary);
   --dream-input-placeholder: rgba(28, 36, 48, 0.55);
+
+  /* Evening cards (fallback = nappali papír) */
+  --evening-card-paper: rgba(248, 192, 138, 0.30);
+  --evening-card-paper-strong: rgba(248, 192, 138, 0.42);
+  --evening-pill-bg: rgba(255, 255, 255, 0.10);
 }
 
 /* DAY: ugyanaz a textarea logika */
@@ -170,6 +189,11 @@ body[data-napszak="day"] {
   --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
   --dream-input-text: var(--text-primary);
   --dream-input-placeholder: rgba(28, 36, 48, 0.55);
+
+  /* Evening cards (fallback = nappali papír) */
+  --evening-card-paper: rgba(248, 192, 138, 0.30);
+  --evening-card-paper-strong: rgba(248, 192, 138, 0.42);
+  --evening-pill-bg: rgba(255, 255, 255, 0.10);
 }
 
 /* EVENING: textarea sötétkék (Wedgewood Blue), fehér betű */
@@ -204,6 +228,11 @@ body[data-napszak="evening"] {
   --dream-input-bg-focus: rgba(73, 124, 146, 0.46);
   --dream-input-text: rgba(255, 255, 255, 0.92);
   --dream-input-placeholder: rgba(255, 255, 255, 0.55);
+
+  /* Evening cards: sötétkék + fehér betű */
+  --evening-card-paper: rgba(73, 124, 146, 0.26);
+  --evening-card-paper-strong: rgba(73, 124, 146, 0.36);
+  --evening-pill-bg: rgba(255, 255, 255, 0.08);
 }
 
 /* NIGHT: még mélyebb Wedgewood Blue, fehér betű */
@@ -237,7 +266,41 @@ body[data-napszak="night"] {
   --dream-input-bg-focus: rgba(50, 88, 109, 0.52);
   --dream-input-text: rgba(255, 255, 255, 0.92);
   --dream-input-placeholder: rgba(255, 255, 255, 0.55);
+
+  /* Evening cards: sötétkék + fehér betű */  
+  --evening-card-paper: rgba(50, 88, 109, 0.28);
+  --evening-card-paper-strong: rgba(50, 88, 109, 0.40);
+  --evening-pill-bg: rgba(255, 255, 255, 0.06);
+
 }
+
+/* ────────────────────────────────────────────────────────────── */
+/* 3) EVENING CARD COLORS                                                  */
+/* ────────────────────────────────────────────────────────────── */
+
+  /* Evening cards – “papír” alap (alapérték nappali jelleg) */
+  --evening-card-paper: rgba(248, 192, 138, 0.30);
+  --evening-card-paper-strong: rgba(248, 192, 138, 0.42);
+
+  /* Evening pills – háttér */
+  --evening-pill-bg: rgba(255, 255, 255, 0.10);
+
+  /* Evening intent / phase colors (border+text) */
+  --intent-biztonsag: rgba(120, 195, 255, 0.95);
+  --intent-lecsendesites: rgba(170, 140, 255, 0.95);
+  --intent-emlekezet: rgba(255, 190, 120, 0.95);
+  --intent-tudatossag: rgba(120, 220, 170, 0.95);
+  --intent-kreativ_inkubacio: rgba(255, 150, 190, 0.95);
+  --intent-irany_es_jelentes: rgba(255, 220, 120, 0.95);
+  --intent-test_es_jelenlet: rgba(160, 235, 255, 0.95);
+
+  --phase-prep: rgba(255, 200, 120, 0.95);
+  --phase-in_bed: rgba(170, 140, 255, 0.95);
+  --phase-rescue: rgba(120, 195, 255, 0.95);
+
+  /* Intent glow (a gradient színes sarka) */
+  --intent-glow-alpha: 0.32;
+
 
 /* ────────────────────────────────────────────────────────────── */
 /* 3) BASE STYLES                                                  */
