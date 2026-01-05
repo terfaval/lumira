@@ -173,4 +173,5 @@ export type EveningCardCatalogItem = {
   version?: string | number | null;
   sort_order?: number | null;
   content: any; // jsonb
+  tags?: string[] | null;
 };

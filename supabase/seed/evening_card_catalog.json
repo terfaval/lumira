@@ -2,11 +2,11 @@
   {
     "slug": "evening-prep-01-ejszakai-inkubacio",
     "version": "v6",
-    "title": "Éjszakai inkubáció",
+    "title": "Kérdés elengedése",
     "content": {
       "type": "evening_card",
       "phase": "prep",
-      "goal_md": "A kérdést letenni, hogy éjszaka szabadabban rendeződhessenek a minták.",
+      "goal_md": "Ha egy kérdés nem hagy nyugodni lefekvéskor. Leírod, majd félreteszed, hogy éjjel ne pörgesse tovább a fejedben.",
       "intents": ["kreativ_inkubacio", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt fogj egy papírt, és írd le a kérdést egy mondatban." },
@@ -21,7 +21,7 @@
         "A válasz gyakran reggel vagy napközben érkezik."
       ],
       "meta": {
-        "effect": "Mentális teher-lerakás: kevesebb rumináció, több tér a spontán rendeződésnek.",
+        "effect": "Akkor használd, ha egy kérdés újra és újra felbukkan, és nem szeretnél rajta gondolkodni elalvás előtt. A leírás segít kívülre tenni, majd tudatosan elengedni. A cél nem a válasz, hanem hogy a kérdés ne maradjon ébren tartó tényező. Nem kell megoldani semmit, csak követni a test jelzéseit.",
         "time": "3–5 perc",
         "not_recommended": "Ha az írás felpörget vagy szorongást erősít."
       }
@@ -31,15 +31,14 @@
     "level": null,
     "is_active": true
   },
-
   {
     "slug": "evening-prep-02-remalom-atiras",
     "version": "v6",
-    "title": "Rémálom – átírás",
+    "title": "Rémálom átírás",
     "content": {
       "type": "evening_card",
       "phase": "prep",
-      "goal_md": "Visszatérő rémálom-érzetet finoman enyhíteni, stabilabb testi lenyomattal.",
+      "goal_md": "Ha visszatérő rémálom képe aktív elalvás előtt. Egy ponton aprót változtatsz, a testet megfigyeled, majd elengeded lassan, kíméletesen.",
       "intents": ["biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt idézz fel nagyon röviden egy visszatérő rémálmot (csak a vázát)." },
@@ -54,7 +53,7 @@
         "Ha felkavar, válts stabilizáló kártyára."
       ],
       "meta": {
-        "effect": "Fenyergetés-reakció finom átkeretezése: kevesebb éjszakai túlpörgés, több biztonságérzet.",
+        "effect": "Ez akkor hasznos, ha egy rémálom már előre feszültséget okoz lefekvéskor. Nem a történetet dolgozod fel, csak egy ponton más irányt képzelsz el. Ez új testi élményt ad, így kisebb eséllyel viszed át ugyanazt a feszültséget az éjszakába. A cél a lelassulás, nem a teljes kontroll.",
         "time": "3–5 perc",
         "not_recommended": "Ha már a felidézés is túl megterhelő."
       }
@@ -64,15 +63,14 @@
     "level": null,
     "is_active": true
   },
-
   {
     "slug": "evening-prep-03-mikroszokas-ultetese",
     "version": "v6",
-    "title": "Mikroszokás ültetése",
+    "title": "Kezdőlépés",
     "content": {
       "type": "evening_card",
       "phase": "prep",
-      "goal_md": "Egy holnapi mikrolépést egyszerűen beültetni, nyomás és túlgondolás nélkül.",
+      "goal_md": "Ha reggel nehéz elindulni. Egyetlen kezdőlépést kijelölsz holnapra, röviden elképzeled, majd elengeded estére.",
       "intents": ["irany_es_jelentes"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt válassz egyetlen mikrolépést holnapra (például: „ebéd után 5 perc séta”)." },
@@ -88,7 +86,7 @@
         "Ha túl nagy, felezd tovább."
       ],
       "meta": {
-        "effect": "Apró szándék-konszolidáció: kevesebb belső nyomás, több esély a megtörténésre.",
+        "effect": "Akkor válaszd, ha tudod, hogy reggel ellenállás lesz benned. Nem feladatlistát készítesz, csak egy egészen kicsi első lépést jelölsz ki. Ettől másnap nem kell dönteni, csak elindulni, ami sokszor elég a mozgásba lendüléshez. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc",
         "not_recommended": "Maximalista túlnyomásnál (inkább biztonság)."
       }
@@ -98,15 +96,14 @@
     "level": null,
     "is_active": true
   },
-
   {
     "slug": "evening-prep-04-tanulas-ulepedese",
     "version": "v6",
-    "title": "Tanulás ülepedése",
+    "title": "Tanulás lezárása",
     "content": {
       "type": "evening_card",
       "phase": "prep",
-      "goal_md": "A tanultakat röviden lezárni, hogy éjjel könnyebben konszolidálódhasson.",
+      "goal_md": "Ha a tananyag még forog lefekvéskor. Három kulcspontot felidézel, kimondod: „Most ülepedik”, majd pihensz.",
       "intents": ["kreativ_inkubacio", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt idézz fel 3 kulcspontot a tanult anyagból (csak címszavak)." },
@@ -120,7 +117,7 @@
         "Ha teljesítményszorongást hoz, válts lecsendesítésre."
       ],
       "meta": {
-        "effect": "Rövid lezárás: kevésbé pörög tovább az anyag, és könnyebb átadni a helyet az alvásnak.",
+        "effect": "Ez akkor jó, ha tanulás után nehéz kikapcsolni. A lényeg nem az ismétlés, hanem a lezárás: röviden végigveszed, mi volt fontos, majd megállsz. Így az elme könnyebben pihen, miközben az anyag éjszaka tovább rendeződhet. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc",
         "not_recommended": "Erős teljesítményszorongás esetén."
       }
@@ -130,7 +127,6 @@
     "level": null,
     "is_active": true
   },
-
   {
     "slug": "evening-prep-05-reggeli-horgony",
     "version": "v6",
@@ -138,7 +134,7 @@
     "content": {
       "type": "evening_card",
       "phase": "prep",
-      "goal_md": "Reggelre egy könnyű kaput előkészíteni, hogy az álomhoz egyszerűbb legyen visszanyúlni.",
+      "goal_md": "Ha reggel könnyebben nyúlnál az álomhoz. Előkészítesz egy jegyzetpontot, és egyszer jelzed: „Reggel ide jövök.”",
       "intents": ["emlekezet"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt tedd a telefonod/füzeted a megszokott helyre úgy, hogy reggel könnyű legyen elérni." },
@@ -150,7 +146,7 @@
         "Ha stresszt kelt, hagyd ki, és válassz lecsendesítést."
       ],
       "meta": {
-        "effect": "Külső jel + belső szándék: kisebb az esély, hogy reggel „elsodor” a nap.",
+        "effect": "Akkor használd, ha fontos számodra az álomemlékezés, de reggel gyorsan elvisz a nap. Egy apró előkészület miatt felébredéskor nem kell keresgélni vagy dönteni. Így nagyobb az esély, hogy az első mozdulatod az álom felé nyúl. Ha túl éber leszel, rövidíts és engedd el.",
         "time": "1–3 perc",
         "not_recommended": "Ha az emlékezés köré teljesítménynyomás épül."
       }
@@ -160,15 +156,14 @@
     "level": null,
     "is_active": true
   },
-
   {
     "slug": "evening-prep-06-egy-sor-inkubacio",
     "version": "v2",
-    "title": "Egy sor – inkubáció",
+    "title": "Egy mondatos kérdés",
     "content": {
       "type": "evening_card",
       "phase": "prep",
-      "goal_md": "Egy kérdést minimális erőfeszítéssel letenni, hogy éjszaka dolgozhasson rajta az elme.",
+      "goal_md": "Ha van kérdésed, de nem akarsz belemerülni. Egy mondatban leírod, félreteszed, és hagyod, hogy éjjel ülepedjen.",
       "intents": ["kreativ_inkubacio"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt írj le egyetlen sort: „A kérdésem: …”" },
@@ -181,7 +176,7 @@
         "A pontosság nem számít."
       ],
       "meta": {
-        "effect": "Mentális lerakás: az éjszakai inkubáció szabadabban indul.",
+        "effect": "Ez akkor jó, ha egy kérdés fontos, de nem most szeretnél vele foglalkozni. Az egy mondat elég ahhoz, hogy az elme tudja, miről van szó, miközben leveszi róla az esti nyomást. Nem kell pontosítani vagy tovább gondolni. A cél a lelassulás, nem a teljes kontroll.",
         "time": "1–2 perc",
         "not_recommended": "Ha az írás gondolkodási spirált indít."
       }
@@ -191,15 +186,14 @@
     "level": null,
     "is_active": true
   },
-
   {
     "slug": "evening-prep-07-harom-tetel-lerakas",
     "version": "v2",
-    "title": "Három tétel – lerakás",
+    "title": "Napi terhek lerakása",
     "content": {
       "type": "evening_card",
       "phase": "prep",
-      "goal_md": "A nyitva maradt dolgokat röviden lerakni, hogy ne vidd be őket az ágyba.",
+      "goal_md": "Ha túl sok nyitott dolog maradt a napból. Három tételt leírsz, aláírod: „Most pihenek”, és nem viszed tovább ma éjjel sem, tényleg.",
       "intents": ["lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Lefekvés előtt írj le három dolgot, ami még „nyitva maradt”." },
@@ -212,7 +206,7 @@
         "Nem fontossági sorrend."
       ],
       "meta": {
-        "effect": "Kognitív tehercsökkentés: kevesebb éjszakai gondolati zaj.",
+        "effect": "Akkor válaszd, ha a nap nyitott szálai lefekvéskor is aktívak. A leírás segít kívülre tenni mindazt, ami még „függőben van”. A cél nem a megoldás, hanem hogy az ágy ne a gondolkodás, hanem a pihenés helye legyen. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "2–3 perc",
         "not_recommended": "Ha a listaírás túlpörget."
       }
@@ -230,7 +224,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Reggel könnyebben elérhetővé tenni az álom nyomait, erőlködés nélkül.",
+      "goal_md": "Ha reggel könnyebben szeretnél álomnyomot fogni. A légzés szüneteit finoman észreveszed, majd egy szándékot elengedsz alvásba.",
       "intents": ["emlekezet", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már kényelmesen fekszel, hunyd le a szemed." },
@@ -247,7 +241,7 @@
         "Ha elkalandozol, csak vedd észre, és folytasd."
       ],
       "meta": {
-        "effect": "Finom ráhangolás az emlékezésre, miközben a test átfordul alvásba.",
+        "effect": "Akkor válaszd, ha reggel könnyebben szeretnél rátalálni az álomnyomokra, erőlködés nélkül. A légzés lassan kisimul, a természetes szüneteket csak észreveszed, majd egy rövid szándékot megfogalmazol. Ettől a figyelem „kaput” kap, miközben az alvás első marad. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "3–5 perc",
         "not_recommended": "Ha a légzés figyelése szorongást kelt."
       }
@@ -257,15 +251,14 @@
     "level": null,
     "is_active": true
   },
-
   {
     "slug": "evening-inbed-02-lucid-finom-jel",
     "version": "v6",
-    "title": "Lucid – finom jel",
+    "title": "Lucid inkubáció",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "A tudatosság csíráját támogatni álomban, túlzott erőlködés nélkül.",
+      "goal_md": "Ha finoman nyitnál a lucid irányba. Felidézel egy hétköznapi mozdulatot, megjegyzed: „Álomban is észrevehetem”, majd elengeded.",
       "intents": ["tudatossag", "emlekezet"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Miután elhelyezkedtél, lazítsd el az arcot, az állkapcsot és a vállakat." },
@@ -281,7 +274,7 @@
         "Ha élénkít, válts inkább lecsendesítésre."
       ],
       "meta": {
-        "effect": "Finom metakognitív érzékenység: észlelni a különbséget ébrenlét és álom között.",
+        "effect": "Ezt akkor használd, ha finoman nyitnál a lucid irányba, de nem akarsz éberen maradni. Felidézel egy egyszerű nappali mozzanatot, és ránézel arra, honnan tudod, hogy ébren vagy. Utána nem „keresed” az álmot: pár légzésig csak jelen vagy, és átcsúszol alvásba. Nem kell megoldani semmit, csak követni a test jelzéseit.",
         "time": "3–5 perc",
         "not_recommended": "Alvásparalízisre hajlam esetén."
       }
@@ -299,7 +292,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "A napból maradt érzelmi tónust csendesebbre hangolni, anélkül hogy meg kellene oldani.",
+      "goal_md": "Ha a nap hangulata még benned maradt. Megnevezel egy érzést, megkeresed a testben, és kilégzésről kilégzésre engeded csendesedni.",
       "intents": ["lecsendesites", "biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Ahogy megérkezel a fekvő helyzetbe, tedd fel magadban: „Mi maradt bennem a mai napból?”" },
@@ -315,7 +308,7 @@
         "Ha az érzés erősödik, válts egy biztonság-kártyára."
       ],
       "meta": {
-        "effect": "Lassítás és megengedés: a test terhelése csökken, az alvás könnyebben átvehet.",
+        "effect": "Akkor jó, ha érzelmileg „túl sok” maradt a napból, és ezt nem szeretnéd megoldani az ágyban. Kiválasztasz egy halvány tónust, és csak megfigyeled, hol lakik a testben. A kilégzéseknél engedsz egy kicsit, mintha letennél belőle. A cél a csillapodás, nem az elemzés. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "3–5 perc",
         "not_recommended": "Ha a felidézés túl megterhelő (inkább stabilizálás)."
       }
@@ -333,7 +326,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Asszociatív, képi gondolkodást megnyitni úgy, hogy közben a test alvás felé mehet.",
+      "goal_md": "Ha jólesne egy kis asszociáció elalvás előtt. Három egyszerű szót mondasz, a képeket csak figyeled, és hagyod, hogy elpuhuljanak.",
       "intents": ["kreativ_inkubacio", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már kényelmesen fekszel, gondolj három kategóriára: tárgy – élőlény – hely." },
@@ -348,7 +341,7 @@
         "Ha gondolkodássá válik, térj vissza a légzéshez."
       ],
       "meta": {
-        "effect": "Szabad asszociáció: több kreatív kapcsolat, kevesebb kontroll-érzés a fejben.",
+        "effect": "Ezt akkor válaszd, ha kreatív hangolásra vágysz, de szeretnél közben elaludni. Kitalálsz három egyszerű szót (tárgy–élőlény–hely), kimondod magadban, majd nyitva hagyod a teret. Nem történetet építesz, csak engeded, hogy képek vagy hangulatok jöjjenek-menjenek. Ha közben elkalandozol, csak vedd észre, és térj vissza az érzethez.",
         "time": "3–5 perc",
         "not_recommended": "Túlpörgött, insomnia-közeli állapotban."
       }
@@ -366,7 +359,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Egy visszatérő motívumot nyitott kérdésként megtartani, megfejtés-kényszer nélkül.",
+      "goal_md": "Ha van visszatérő motívumod, de nem akarsz megfejteni. Felteszel egy kérdést, nem vársz választ, majd visszacsúszol a testérzetekhez.",
       "intents": ["irany_es_jelentes", "emlekezet"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Válassz ki egy visszatérő szimbólumot vagy motívumot (csak nevezd meg)." },
@@ -379,7 +372,7 @@
         "Ha ruminációt indít, hagyd ki ma."
       ],
       "meta": {
-        "effect": "Nyitott figyelmi kapu: a jelentés alakulhat, anélkül hogy ráfeszítenél a megfejtésre.",
+        "effect": "Akkor használd, ha egy szimbólum vagy motívum újra megjelenik, és szeretnél vele kapcsolatban maradni anélkül, hogy rágódnál rajta. Megnevezed, felteszel egy nyitott kérdést, majd nem vársz választ. A figyelem pár légzésig a testben marad, így a jelentés dolgozhat, miközben te pihensz. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc",
         "not_recommended": "Kényszeres jelentéskeresés esetén."
       }
@@ -393,11 +386,11 @@
   {
     "slug": "evening-inbed-06-lecsenges-legzessel",
     "version": "v6",
-    "title": "Lecsengés légzéssel",
+    "title": "Álomba billenés",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Az idegrendszert lejjebb hangolni egy egyszerű ritmussal, miközben az alvás átvehet.",
+      "goal_md": "Ha ágyban vagy, de nem jön az alvás. A kilégzést kicsit megnyújtod, a ritmus lejjebb visz, aztán magától elenged finoman, csendben.",
       "intents": ["lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már kényelmesen fekszel, vegyél egy természetes belégzést." },
@@ -411,7 +404,7 @@
         "A váll és a nyelv ellazítása sokat segít."
       ],
       "meta": {
-        "effect": "Kilégzés-túlsúly: csökken a belső zaj, és könnyebb átcsúszni az alvásba.",
+        "effect": "Ezt akkor válaszd, ha nem jön az alvás, és egy egyszerű ritmus jól esne. Néhány körig a belégzés rövidebb, a kilégzés hosszabb, a végén pedig csak észreveszed a természetes szünetet. Nem kell precízen számolni: a hangsúly a lelassuláson van. A ritmus idővel magától elenged, és az alvás átvesz. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc vagy 3–5 perc",
         "not_recommended": "Ha a légzés kontrollja szorongást kelt."
       }
@@ -429,7 +422,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "A test biztonságérzetét stabilizálni, hogy az éjszaka kevésbé legyen töredezett.",
+      "goal_md": "Ha nyugtalan a tested lefekvéskor. Az ágy érintkezési pontjainál időzöl, a súly átadódik, és a belső riasztás halkul szépen, lassan.",
       "intents": ["biztonsag", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Miután elhelyezkedtél, figyeld meg, hol érintkezik a tested az ággyal." },
@@ -443,7 +436,7 @@
         "Ha szorít a takaró, engedj a testen, ne a takarón."
       ],
       "meta": {
-        "effect": "Súly és kontaktus: a test kap egy egyszerű „rendben vagyok” jelzést az éjszakára.",
+        "effect": "Akkor használd, ha este bizonytalan vagy feszült a test, és szeretnél egyszerűen „megérkezni”. Figyeled, hol érintkezik a tested az ággyal, és hagyod, hogy ezek a pontok nehezedjenek. Néhány kilégzésig egy rövid, megnyugtató mondat is kísérheti, aztán elhalványul. A cél, hogy a test biztonságjelzést kapjon, és könnyebb legyen átcsúszni alvásba. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc",
         "not_recommended": "Klausztrofóbiás érzésnél."
       }
@@ -461,7 +454,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Belső irányérzetet finoman megmozgatni egy kérdéssel, döntéskényszer nélkül.",
+      "goal_md": "Ha sok a kérdés, de nem akarsz dönteni este. Egy „Mi fontos most?” kérdést beteszel háttérnek, majd a testnél maradsz csendben.",
       "intents": ["irany_es_jelentes", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már a pihenés felé fordulsz, mondd magadban: „Mi fontos most?”" },
@@ -475,7 +468,7 @@
         "Ha ruminációt indít, válts lecsendesítésre."
       ],
       "meta": {
-        "effect": "Egy kérdés a háttérben: az irányérzet dolgozhat, miközben te pihensz.",
+        "effect": "Ezt akkor válaszd, ha belül keresed az irányt, de az ágy nem a döntéshozás helye. Felteszel egy egyszerű kérdést, és nem válaszolsz rá: csak észreveszed, mi mozdul meg benned. Ha feljön egy szó vagy kép, nem elemzed, csak tudomásul veszed. A figyelem visszacsúszik a testhez, így a kérdés dolgozhat a háttérben, miközben te pihensz. Nem kell megoldani semmit, csak követni a test jelzéseit.",
         "time": "3–5 perc",
         "not_recommended": "Erős ruminációs állapotban."
       }
@@ -493,7 +486,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "A figyelmet finoman a testbe vinni, hogy a jelenlét stabilabb legyen és az alvás megjöjjön.",
+      "goal_md": "Ha a fej túl aktív elalváskor. Végigmész pár testállomáson, majd egy összérzetnél megállsz, és hagyod, hogy elringasson lassan.",
       "intents": ["test_es_jelenlet", "biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Kényelmes fekvésben vidd a figyelmet a lábfejekre 2 légzésig." },
@@ -508,7 +501,7 @@
         "Ha a testfigyelem kellemetlen, rövidíts, vagy válts légzésre."
       ],
       "meta": {
-        "effect": "Interoceptív lehorgonyzás: a figyelem lejjebb költözik a fejből, és a test nyugszik.",
+        "effect": "Akkor használd, ha a gondolatok pörögnek, és jól esne visszaköltözni a testbe. Lépésről lépésre végigérsz a lábakon, törzsön, arcon, mindegyiknél csak 1–2 légzésig időzöl. Nem kell mindent élesen érezni, elég a körvonal. A végén abbahagyod a „bejárást”, és egyetlen összérzet marad, amitől a figyelem elpuhul és átcsúszik alvásba. Nem kell megoldani semmit, csak követni a test jelzéseit.",
         "time": "3–5 perc",
         "not_recommended": "Ha a testfigyelem pánikszerűvé válik (inkább rövidítve)."
       }
@@ -522,11 +515,11 @@
   {
     "slug": "evening-inbed-10-hala-foldelten",
     "version": "v6",
-    "title": "Hála – földelten",
+    "title": "Hálás zárás",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Egy apró hálával tágasabb hangulatot megengedni, majd visszatérni a test egyszerű biztonságába.",
+      "goal_md": "Ha szeretnél szépen, földelten zárni. Egy apró hálát megérzel, aztán visszatérsz a légzéshez és a test súlyához, és engeded nyugodtan.",
       "intents": ["irany_es_jelentes", "biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már pihen a tested, gondolj 1 dologra, amiért ma hálás lehetsz (apró is jó)." },
@@ -540,7 +533,7 @@
         "A visszatérés a „keret”: légzés, súly, ágy."
       ],
       "meta": {
-        "effect": "Finom jelentés-érzet, majd stabil visszatérés a testhez: tágasabb, mégis földelt lezárás.",
+        "effect": "Ezt akkor válaszd, ha jólesik egy egyszerű, földelt lezárás a nap végén. Kiválasztasz valami aprót, amiért hálás lehetsz, és csak egy pillanatra megérzed a hatását. Nem kell emelkedettnek lennie, elég egy finom „köszönöm”. Utána visszafordulsz a légzéshez és az ágy érzetéhez, így a hangulat tágul, de a test megmarad a pihenésben. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "3–5 perc",
         "not_recommended": "Disszociatív állapotban nem javasolt."
       }
@@ -558,7 +551,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Fiziológiai lecsendesedést támogatni egyetlen szóval és egy picit hosszabb kilégzéssel.",
+      "goal_md": "Ha gyorsan lejjebb mennél elalvás előtt. Kilégzésről kilégzésre egy „Le.” szó kísér, majd a szó is eltűnik, és jöhet az alvás.",
       "intents": ["lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Kényelmes fekvésben vedd észre, hol tart még a tested (váll, nyelv, has)." },
@@ -573,7 +566,7 @@
         "Ha a számolás pörget, ne számolj."
       ],
       "meta": {
-        "effect": "Egyszerű lefele irány: a test „leenged”, és az elalvás kevésbé lesz kognitív feladat.",
+        "effect": "Akkor használd, ha elalvás előtt még „fent tart” valami: váll, nyelv, has, belső nyugtalanság. Minden kilégzéshez hozzáteszed a „Le.” szót, és hagyod, hogy a kilégzés kicsit hosszabb legyen. A végén észreveszed a természetes szünetet, majd elengeded a szót is. Így a fókusz nem gondolat, hanem egy egyszerű lefelé irány, amitől könnyebb átcsúszni alvásba. Figyeld a légzést.",
         "time": "3–5 perc",
         "not_recommended": "Nincs; ha kellemetlen, rövidíts."
       }
@@ -591,7 +584,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Egy gyengéd észrevétel-jelzést ültetni, ami álomban is felbukkanhat, nyomás nélkül.",
+      "goal_md": "Ha ültetnél egy valóságjelet álomra. Pár másodpercig elképzeled, majd elengeded, és visszatérsz pár légzésre a testhez csendben.",
       "intents": ["tudatossag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Válassz egy egyszerű jelet: például a tenyered látványa vagy a lámpakapcsoló mozdulata." },
@@ -605,7 +598,7 @@
         "Ha élénkít, válts lecsendesítésre."
       ],
       "meta": {
-        "effect": "Egyetlen jel: növelheti az észrevétel esélyét, miközben megmarad az alvás elsőbbsége.",
+        "effect": "Ezt akkor válaszd, ha a lucid irány érdekel, de az alvás a fontosabb. Kiválasztasz egy hétköznapi jelet (tenyér, lámpa), és pár másodpercre elképzeled, hogy ránézel, és megjegyzed: most ébren. Utána jön egy rövid szándék, majd visszaengeded a figyelmet a légzéshez. A jel beülhet a háttérbe, miközben te elalszol. Figyeld a légzést.",
         "time": "1–3 perc",
         "not_recommended": "Alvásparalízis-hajlam vagy túlzott ráfeszülés esetén."
       }
@@ -623,7 +616,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Az esti feszültségpontokat (állkapocs–nyak) lejjebb hangolni, gyorsan és kíméletesen.",
+      "goal_md": "Ha az állkapocs és a nyak feszül estére. A nyelv elnehezül, a fogak picit szétválnak, és kilégzésre engedsz egyet még, óvatosan.",
       "intents": ["test_es_jelenlet", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Hunyd le a szemed, és engedd, hogy a nyelv elnehezedjen a szájban." },
@@ -636,7 +629,7 @@
         "Ha bármi fáj, hagyd abba, és válts légzésre."
       ],
       "meta": {
-        "effect": "Feszültség-csökkenés a fej körül: könnyebb elengedni a napot és átcsúszni alvásba.",
+        "effect": "Akkor használd, ha az esti feszültség az állkapocsban, nyakban, fej körül érezhető. Nem kell erősen lazítani: elég, hogy a fogak egy hajszálnyit szétválnak, a nyelv elnehezül, és a kilégzésnél a nyak elölről picit hosszabbnak tűnik. Néhány lassú légzés után abbahagyod a „csinálást”, és hagyod, hogy a test átforduljon alvásba. Figyeld a légzést.",
         "time": "1–3 perc",
         "not_recommended": "Akut nyaki fájdalom esetén csak nagyon óvatosan, vagy inkább kihagyva."
       }
@@ -650,11 +643,11 @@
   {
     "slug": "evening-inbed-14-mellkas-ter-erzet",
     "version": "v6",
-    "title": "Mellkas-tér érzet",
+    "title": "Mellkas lazítás",
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Egy enyhe tágasságérzetet meghívni a mellkas környékére, és visszaengedni az alvásnak.",
+      "goal_md": "Ha a mellkas környéke szoros vagy nyugtalan. Belégzésnél kis helyet engedsz, kilégzésnél a váll lejjebb kerül, és lazulsz fokozatosan.",
       "intents": ["test_es_jelenlet", "biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Tedd a figyelmed a mellkas közepére 2 légzésig (csak észlelés)." },
@@ -668,7 +661,7 @@
         "Ha a mellkasfigyelem kellemetlen, válts lábfej-érzetre."
       ],
       "meta": {
-        "effect": "Finom tágulásérzet: több „hely” belül, miközben a test nyugszik.",
+        "effect": "Ezt akkor válaszd, ha a mellkasban feszültséget, szorítást vagy nyugtalanságot érzel, és szeretnél enyhíteni rajta. A figyelem a mellkas közepén pihen, belégzésnél finom tágasságot képzelsz, kilégzésnél a vállakat engeded 1%-kal. Ha nem jön kép, a váll-leengedés önmagában elég. Pár kör után elengeded a vezetést, és maradsz az összérzetnél, míg az alvás átvesz. Figyeld a légzést.",
         "time": "3–5 perc",
         "not_recommended": "Ha a mellkasra figyelés szorongást kelt."
       }
@@ -686,7 +679,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Egy egyszerű visszatérési pontot kijelölni, ha éjjel felriadnál vagy nyugtalanul fordulnál át.",
+      "goal_md": "Ha éjjel gyakran felriadsz. Kijelölsz egy testérzetet visszatérési pontnak, pár légzésig ott maradsz, és kevesebb lesz a keresgélés.",
       "intents": ["biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Válassz egyetlen pontot: talpak érzetét, kezek súlyát, vagy a párna nyomását." },
@@ -699,7 +692,7 @@
         "Ha nyugtalanít, válts lecsendesítésre."
       ],
       "meta": {
-        "effect": "Egyszerű stabilizáló kapaszkodó: éjjeli felriadásnál kevesebb keresgélés, több visszarendeződés.",
+        "effect": "Akkor használd, ha gyakran felébredsz éjjel, és jól jönne egy egyszerű visszaút. Kiválasztasz egy pontot (talp, kéz, párna), és egyszer megjegyzed: ha felébredek, ide jövök vissza. Ez nem „feladat”, inkább egy jelzés az idegrendszernek. Pár légzésig időzöl a pontnál, majd elengeded, így később ébredéskor is könnyebb lehet gyorsan visszarendeződni. Figyeld a légzést.",
         "time": "1–3 perc",
         "not_recommended": "Ha a testfigyelem önmagában túl terhelő."
       }
@@ -717,7 +710,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "A napot három semleges szóval lezárni, hogy az irányérzet maradjon, de ne induljon rumináció.",
+      "goal_md": "Ha lezárnád a napot rágódás nélkül. Három semleges szó összefoglal, majd „Elég mára”, és a figyelem a légzésre csúszik csendben.",
       "intents": ["irany_es_jelentes", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Válassz három szót a napról (például: „sűrű – tanulság – csend”)." },
@@ -731,7 +724,7 @@
         "Ha gondolkodássá válik, válts lecsendesítésre."
       ],
       "meta": {
-        "effect": "Rövid jelentés-érzet lezárással: megmarad a nyom, de nem kell tovább vinni éjszakára.",
+        "effect": "Ezt akkor válaszd, ha jólesik egy rövid jelentés-érzet, de az elemzés pörgetne. Három egyszerű, hétköznapi szót választasz, ami kifejezi a nap hangját, és egyszer kimondod magadban. A harmadik után jön a lezáró mondat, majd pár légzés, ahol nem foglalkozol a szavakkal. Így marad egy nyom, de nem viszed tovább éjszakára. Figyeld a légzést.",
         "time": "1–3 perc",
         "not_recommended": "Ha a szavak azonnal ruminációt indítanak."
       }
@@ -749,7 +742,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Az emlékezetet finoman megnyitni, anélkül hogy a gondolkodás aktiválódna.",
+      "goal_md": "Ha az emlékezetet nyitnád, de nem akarsz gondolkodni. Három pillanatot idézel visszafelé, képkockaként, majd elengeded lassan.",
       "intents": ["emlekezet", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor már kényelmesen fekszel, idézz fel egy pillanatot a nap végéről." },
@@ -763,7 +756,7 @@
         "Ha üres marad, az is jó."
       ],
       "meta": {
-        "effect": "Időbeli visszatekintés: az emlékezés aktiválódik, miközben a test nyugszik.",
+        "effect": "Akkor használd, ha szeretnéd, hogy reggel könnyebb legyen emlékezni, de az esti gondolkodást kerülnéd. Felidézel egy rövid pillanatot a nap végéről, közepéről, elejéről, mintha három képet néznél meg egymás után. Nem meséled el, nem értékeled, csak észleled. Ez megmozgatja az emlékezést, miközben a test pihen, majd hagyod, hogy a képek elhalványuljanak. Figyeld a légzést.",
         "time": "1–2 perc",
         "not_recommended": "Ha a nap felidézése ruminációt indít."
       }
@@ -781,7 +774,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "A tudatosság lehetőségét megengedni, anélkül hogy az alvás háttérbe szorulna.",
+      "goal_md": "Ha megengednéd a lucid lehetőségét nyomás nélkül. Egy mondatot kimondasz, nem vársz választ, pár légzés, és átcsúszol alvásba finoman.",
       "intents": ["tudatossag", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Fekvésben mondd magadban egyszer: „Ha álmodom, észrevehetem.”" },
@@ -794,7 +787,7 @@
         "Ha élénkít, hagyd ki ma."
       ],
       "meta": {
-        "effect": "Metakognitív nyitottság: a tudatosság esélye nő, erőlködés nélkül.",
+        "effect": "Ezt akkor válaszd, ha a lucid téma érdekel, de nem akarsz „gyakorolni” az ágyban. Egy rövid mondat megengedi a tudatosság esélyét, aztán nem ismételgeted és nem figyeled, mi lesz belőle. Pár lassú légzés alatt a figyelem lecsendesedik, és a kérdés háttérbe kerül. Így a szándék megvan, de nem lesz belőle ébren tartó projekt. Figyeld a légzést.",
         "time": "1–2 perc",
         "not_recommended": "Alvásparalízis-hajlam esetén."
       }
@@ -812,7 +805,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Asszociatív gondolkodást megengedni minimális mentális aktivitással.",
+      "goal_md": "Ha képekre vágysz, de nem sztorira. Megengedsz három egyszerű képet egymás után, nem kötöd össze őket, és elmosódnak lassan, békén.",
       "intents": ["kreativ_inkubacio", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Engedj meg magadnak egy egyszerű képet (tárgy vagy hely)." },
@@ -826,7 +819,7 @@
         "Ha nincs kép, elég a hangulat."
       ],
       "meta": {
-        "effect": "Szabad asszociáció: kreatív kapcsolódás kontroll nélkül.",
+        "effect": "Akkor használd, ha kreatív hangulatot szeretnél, de minimális mentális terheléssel. Megjelenik egy első kép (tárgy vagy hely), aztán egy második, majd egy harmadik, mintha egymás után felvillannának. Nem kell értelmet adni nekik, és nem kell irányítani semmit. Ha nincs kép, elég egy hangulat. A végén hagyod, hogy elhomályosodjanak, és az alvás átvegye a teret. Figyeld a légzést.",
         "time": "2–3 perc",
         "not_recommended": "Ha a képek túlpörgetnek."
       }
@@ -844,7 +837,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "A gyakori éjszakai feszültségpontokat (szem, homlok) finoman leengedni.",
+      "goal_md": "Ha a szem és a homlok feszül, és ébren tart. A szemek mintha lejjebb süllyednének, egy ránc elenged, és csendesebb lesz belül.",
       "intents": ["test_es_jelenlet", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Hunyd le a szemed, és vedd észre a szemgödrök környékét." },
@@ -858,7 +851,7 @@
         "Ha feszül, hagyd abba."
       ],
       "meta": {
-        "effect": "Idegrendszeri leengedés a fej területén: könnyebb elalvás.",
+        "effect": "Ezt akkor válaszd, ha az éberség a szemeknél, homloknál „ragad”, és nehéz elaludni. A figyelem a szemgödör környékén pihen, és elképzeled, hogy a szemek picit hátrébb és lejjebb kerülnek. A homlokon elengedsz egy apró ráncot, nem erőből, csak megengedéssel. Pár légzés után nem tartod tovább, hagyod, hogy az alvás átvegye. Figyeld a légzést.",
         "time": "1–3 perc",
         "not_recommended": "Ha a szemre figyelés kellemetlen."
       }
@@ -876,7 +869,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "Biztonságos belső keretet adni az éjszakára, minimális kognitív terheléssel.",
+      "goal_md": "Ha belül szétesett az este. Egy mondat kijelöli: most nem kell semmit csinálni, majd a test súlyánál maradsz, és elengedsz lassan.",
       "intents": ["biztonsag", "lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Fekvésben mondd magadban egyszer: „Most nem kell semmit csinálni.”" },
@@ -889,7 +882,7 @@
         "Nem kell megnyugodni – elég megállni."
       ],
       "meta": {
-        "effect": "Stabil belső keret: kevesebb éjszakai bizonytalanság.",
+        "effect": "Akkor használd, ha lefekvéskor nehéz leállni, és jól jönne egy egyszerű belső keret. Kimondasz magadban egy rövid mondatot, majd a tested súlyát veszed észre az ágyon. Nem kell megnyugodni, csak megállni: a mondat elhalványul, az érzet marad. Ettől kevesebb lehet a belső bizonytalanság, és könnyebb átcsúszni alvásba. Figyeld a légzést.",
         "time": "1–2 perc",
         "not_recommended": "Nincs; ha nem esik jól, hagyd ki."
       }
@@ -907,7 +900,7 @@
     "content": {
       "type": "evening_card",
       "phase": "in_bed",
-      "goal_md": "A figyelmet a test középpontjába vinni, hogy a fej elcsendesedjen.",
+      "goal_md": "Ha a figyelem a fejedben ragadt. A has–medence környékén időzöl, belégzés megemel, kilégzés leenged, és megérkezel csendben, lassan.",
       "intents": ["test_es_jelenlet", "biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Vidd a figyelmet a has és a medence területére." },
@@ -921,7 +914,7 @@
         "Ha kellemetlen, válts test-súly gyakorlatra."
       ],
       "meta": {
-        "effect": "Középpontba érkezés: a figyelem lejjebb költözik a fejből.",
+        "effect": "Ezt akkor válaszd, ha gondolatok pörögnek, és jól esne a test közepébe érkezni. A figyelem a has–medence területén pihen, belégzésnél csak észreveszed a finom emelkedést, kilégzésnél engeded a súlyt egy kicsit bele. Nem kell irányítani a légzést, inkább követni. Pár kör után a figyelem elnehezül, és az alvás természetesen átveszi. Figyeld a légzést.",
         "time": "2–3 perc",
         "not_recommended": "Ha a hasi figyelem szorongást kelt."
       }
@@ -935,11 +928,11 @@
   {
     "slug": "evening-rescue-01-kilegzes-reset",
     "version": "v2",
-    "title": "Visszaalvás – kilégzés reset",
+    "title": "Visszaalvás légzéssel",
     "content": {
       "type": "evening_card",
       "phase": "rescue",
-      "goal_md": "Felébredés után gyorsan lejjebb hangolni az idegrendszert, gondolkodás nélkül.",
+      "goal_md": "Ha éjjel túl éberen ébredsz, és nem jön vissza az alvás. Három hosszabb kilégzés lejjebb hangol, aztán nem csinálsz semmit tovább.",
       "intents": ["lecsendesites"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor észreveszed, hogy felébredtél, ne változtass testhelyzetet." },
@@ -953,7 +946,7 @@
         "Ha gondolat jön, nem foglalkozol vele."
       ],
       "meta": {
-        "effect": "Gyors idegrendszeri reset: a test visszatalál az alvás ritmusához.",
+        "effect": "Akkor használd, amikor felébredsz, de érzed, hogy a tested túlságosan éber. Néhány körig a kilégzés hosszabb, majd elengeded az irányítást. Nem az elalvásra figyelsz, hanem arra, hogy a test visszataláljon a saját nyugalmi ritmusához. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "30–60 mp",
         "not_recommended": "Ha a légzésre figyelés önmagában szorongást kelt."
       }
@@ -967,11 +960,11 @@
   {
     "slug": "evening-rescue-02-test-sulya",
     "version": "v2",
-    "title": "Visszaalvás – test súlya",
+    "title": "Visszaalvás testérzettel",
     "content": {
       "type": "evening_card",
       "phase": "rescue",
-      "goal_md": "Felriadás után visszahívni a test biztonságérzetét egyszerű kontaktusokon keresztül.",
+      "goal_md": "Ha felriadva nyugtalan a tested. A párna, matrac, takaró érzetére figyelsz, és hagyod, hogy a súly átadódjon néhány légzésig.",
       "intents": ["biztonsag", "test_es_jelenlet"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Figyeld meg a fejed súlyát a párnán." },
@@ -985,7 +978,7 @@
         "Ha csak egy kontaktus marad meg, az is elég."
       ],
       "meta": {
-        "effect": "Fizikai lehorgonyzás: a test jelzést kap, hogy újra biztonságban van.",
+        "effect": "Ez akkor jó választás, ha a gondolkodás még nem indult el, de a test feszült. A súly, az alátámasztás vagy a takaró érzetére figyelsz, nem kell mindent egyszerre érezni. A cél, hogy a test újra biztonságos helyzetként érzékelje az ágyat. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–2 perc",
         "not_recommended": "Ha a testérzetekre figyelés túl intenzív."
       }
@@ -999,11 +992,11 @@
   {
     "slug": "evening-rescue-03-gondolat-parkolo",
     "version": "v2",
-    "title": "Visszaalvás – gondolat parkoló",
+    "title": "Éjszakai gondolat megszakítása",
     "content": {
       "type": "evening_card",
       "phase": "rescue",
-      "goal_md": "Felébredéskor megjelenő gondolatokat ideiglenesen félretenni, megoldás nélkül.",
+      "goal_md": "Ha éjszaka elindulna a gondolkodás. Egy mondattal elhalasztod, visszatérsz a légzéshez vagy testhez, és nem folytatod tovább.",
       "intents": ["lecsendesites", "biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Amikor észreveszed, hogy gondolat indulna, mondd magadban: „Ezt holnap nézem.”" },
@@ -1016,7 +1009,7 @@
         "Nem kell elhinni – elég kimondani."
       ],
       "meta": {
-        "effect": "Mentális lekapcsolás: kevesebb éjszakai rumináció, gyorsabb visszaalvás.",
+        "effect": "Akkor használd, ha az éjszakai ébredést gondolatok követik. Nem vitatkozol velük, csak jelzed, hogy most nem ez a dolguk. A figyelem ezután visszakerül a testhez vagy a légzéshez, így kisebb az esélye, hogy az elme teljesen felébredjen. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "30–90 mp",
         "not_recommended": "Ha a mondatok ismétlése pörgető."
       }
@@ -1034,7 +1027,7 @@
     "content": {
       "type": "evening_card",
       "phase": "rescue",
-      "goal_md": "Rémálom utáni felriadáskor visszarendezni a testet, felidézés nélkül.",
+      "goal_md": "Rémálom után, amikor a test még riadóban van. Nem idézed fel a képet, a jelen biztonságára figyelsz, és visszarendeződsz csendben.",
       "intents": ["biztonsag"],
       "steps": [
         { "context_md": "Gyakorlat", "question": "Ne idézd fel az álmot." },
@@ -1048,7 +1041,7 @@
         "Ha túl éber maradsz, válts test-súly kártyára."
       ],
       "meta": {
-        "effect": "Fenyergetés-reakció csillapítása: a test visszatalál az alvás állapotához.",
+        "effect": "Ez akkor hasznos, ha rémálom után zaklatottan ébredsz. Nem térsz vissza a képekhez, hanem a jelen környezetre és a test érzetére figyelsz. A cél az, hogy az idegrendszer megkapja a jelzést: most már nincs veszély, lehet visszarendeződni. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc",
         "not_recommended": "Ha az ébrenlét nagyon elhúzódik (ilyenkor felkelés is segíthet)."
       }
