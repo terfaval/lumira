@@ -67,7 +67,7 @@ export function EveningCardTile({
         background: `linear-gradient(135deg,
           var(--evening-card-paper-strong) 0%,
           var(--evening-card-paper) 42%,
-          ${bgCorner} 125%)`,
+          ${bgCorner} 110%)`,
       }}
     >
       {/* TOP */}

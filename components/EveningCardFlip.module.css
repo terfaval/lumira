@@ -1,0 +1,189 @@
+.wrap {
+  perspective: 1200px;
+}
+
+.scene {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.card3d {
+  position: relative;
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: transparent;
+
+  transform-style: preserve-3d;
+  transition: transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.flipped {
+  transform: rotateY(180deg);
+}
+
+.face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    var(--evening-card-paper-strong) 0%,
+    var(--evening-card-paper) 50%,
+    rgba(0, 0, 0, 0) 120%
+  );
+
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.18);
+  padding: 18px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 520px;
+}
+
+.back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.leftPills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+
+.time {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.015em;
+  line-height: 1.12;
+}
+
+.goal {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.section {
+  display: grid;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.sectionTitle {
+  font-weight: 800;
+  font-size: 12px;
+  opacity: 0.95;
+}
+
+.long {
+  color: var(--text);
+  line-height: 1.65;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+
+.disclaimer {
+  border: 1px solid rgba(241, 166, 166, 0.25);
+  background: rgba(241, 166, 166, 0.08);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.disclaimerTitle {
+  font-weight: 900;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.disclaimerText {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.bullets {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+.tagsRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.footer {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.footerSticky {
+  margin-top: auto;
+  padding-top: 6px;
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    var(--evening-card-paper) 40%,
+    var(--evening-card-paper) 100%
+  );
+}
+
+.primaryWide {
+  width: 100%;
+}
+
+/* pill sötétedés fix (lokális) */
+.wrap :global(.pill.pill--intent),
+.wrap :global(.pill.pill--phase) {
+  background: transparent;
+  box-shadow: none;
+  font-weight: 650;
+}
+
+/* Reduced motion: flip nélkül, csak “nézetváltás” */
+@media (prefers-reduced-motion: reduce) {
+  .card3d {
+    transition: none;
+  }
+  .flipped {
+    transform: none;
+  }
+  .back {
+    transform: none;
+    position: static;
+  }
+  .face {
+    min-height: auto;
+  }
+}

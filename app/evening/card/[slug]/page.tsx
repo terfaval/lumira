@@ -1,15 +1,43 @@
-// /app/evening/card/[slug]/page.tsx
-
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
-import { Card } from "@/components/Card";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import type { EveningCardCatalogItem } from "@/src/lib/types";
+import { EveningCardFlip } from "@/components/EveningCardFlip";
+import { TAG_HU } from "@/app/evening/page"; // ha innen exportálod, oké. ha nem: tedd külön fájlba.
+
+type PhaseKey = "prep" | "in_bed" | "rescue";
+const PHASE_LABEL: Record<PhaseKey, string> = {
+  prep: "Előkészítés",
+  in_bed: "Elalvás előtt",
+  rescue: "Éjjeli mentés",
+};
+
+type IntentKey =
+  | "emlekezet"
+  | "tudatossag"
+  | "lecsendesites"
+  | "biztonsag"
+  | "kreativ_inkubacio"
+  | "irany_es_jelentes"
+  | "test_es_jelenlet";
+
+const INTENT_LABEL: Record<IntentKey, string> = {
+  lecsendesites: "Lecsengés",
+  biztonsag: "Biztonság",
+  emlekezet: "Emlékezet",
+  tudatossag: "Tudatosság",
+  kreativ_inkubacio: "Inkubáció",
+  irany_es_jelentes: "Irány / Jelentés",
+  test_es_jelenlet: "Test / Jelenlét",
+};
+
+function huTag(t: string) {
+  return TAG_HU[t] ?? t;
+}
 
 export default function EveningCardPreview() {
   const { slug } = useParams<{ slug: string }>();
@@ -22,7 +50,7 @@ export default function EveningCardPreview() {
       setErr(null);
       const { data, error } = await supabase
         .from("evening_card_catalog")
-        .select("slug, title, content, version")
+        .select("slug, title, content, version, tags")
         .eq("slug", slug)
         .single();
 
@@ -30,10 +58,6 @@ export default function EveningCardPreview() {
       else setCard((data ?? null) as EveningCardCatalogItem | null);
     })();
   }, [slug]);
-
-  const goal = card?.content?.goal_md;
-  const meta = card?.content?.meta;
-  const tips: string[] | undefined = card?.content?.tips;
 
   const Spinner = (
     <>
@@ -67,46 +91,13 @@ export default function EveningCardPreview() {
       ) : (
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
-
-          {!card ? (
-            Spinner
-          ) : (
-            <div className="stack">
-              {goal && (
-                <Card>
-                  <div className="stack-tight">
-                    <p style={{ whiteSpace: "pre-wrap" }}>{goal}</p>
-                  </div>
-                </Card>
-              )}
-
-              {(meta?.time || meta?.not_recommended) && (
-                <Card muted>
-                  <div className="stack-tight">
-                    {meta?.time && <div>{meta.time}</div>}
-                    {meta?.not_recommended && (
-                      <div style={{ color: "#f1a6a6" }}>Nem ajánlott: {meta.not_recommended}</div>
-                    )}
-                  </div>
-                </Card>
-              )}
-
-              {tips && tips.length > 0 && (
-                <Card>
-                  <div className="stack-tight">
-                    <ul style={{ paddingLeft: 18, display: "grid", gap: 6 }}>
-                      {tips.map((tip, idx) => (
-                        <li key={idx}>{tip}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </Card>
-              )}
-
-              <Link href={`/evening/run/${slug}`} className="btn btn-primary" style={{ width: "fit-content" }}>
-                Indítás
-              </Link>
-            </div>
+          {!card ? Spinner : (
+            <EveningCardFlip
+              card={card}
+              phaseLabel={PHASE_LABEL}
+              intentLabel={INTENT_LABEL}
+              huTag={huTag}
+            />
           )}
         </div>
       )}
