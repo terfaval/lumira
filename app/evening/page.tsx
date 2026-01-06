@@ -11,7 +11,6 @@ import type { EveningCardCatalogItem } from "@/src/lib/types";
 import { EveningCardTile } from "@/components/EveningCardTile";
 
 type PhaseKey = "prep" | "in_bed" | "rescue";
-
 const PHASE_LABEL: Record<PhaseKey, string> = {
   prep: "Előkészítés",
   in_bed: "Elalvás előtt",
@@ -38,7 +37,6 @@ const INTENT_LABEL: Record<IntentKey, string> = {
 };
 
 type TimeFilterKey = "all" | "t1" | "t2" | "t3" | "t5" | "t5plus";
-
 const TIME_LABEL: Record<Exclude<TimeFilterKey, "all">, string> = {
   t1: "≤ 1 perc",
   t2: "≤ 2 perc",
@@ -69,7 +67,6 @@ function getPhase(card: EveningCardCatalogItem): PhaseKey | null {
 
 function getIntents(card: EveningCardCatalogItem): IntentKey[] {
   const intents = (card?.content as any)?.intents;
-
   const allowed = new Set<IntentKey>([
     "emlekezet",
     "tudatossag",
@@ -79,7 +76,6 @@ function getIntents(card: EveningCardCatalogItem): IntentKey[] {
     "irany_es_jelentes",
     "test_es_jelenlet",
   ]);
-
   if (!Array.isArray(intents)) return [];
   return intents.filter((x): x is IntentKey => typeof x === "string" && allowed.has(x as IntentKey));
 }
@@ -93,7 +89,6 @@ function mulberry32(seed: number) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-
 function shuffleDeterministic<T>(arr: T[], seed: number): T[] {
   const out = [...arr];
   const rnd = mulberry32(seed);
@@ -104,24 +99,17 @@ function shuffleDeterministic<T>(arr: T[], seed: number): T[] {
   return out;
 }
 
-/** Token mapping */
+/** Token mapping (a tile-hoz) */
 function intentToken(intent: IntentKey | null) {
   if (!intent) return null;
-  return {
-    text: `--intent-${intent}` as const,
-    bg: `--intent-${intent}-bg` as const,
-  };
+  return { text: `--intent-${intent}` as const, bg: `--intent-${intent}-bg` as const };
 }
-
 function phaseToken(phase: PhaseKey | null) {
   if (!phase) return null;
-  return {
-    text: `--phase-${phase}` as const,
-    bg: `--phase-${phase}-bg` as const,
-  };
+  return { text: `--phase-${phase}` as const, bg: `--phase-${phase}-bg` as const };
 }
 
-// Tag HU
+/** Tag HU */
 export const TAG_HU: Record<string, string> = {
   mental_offload: "Fej kiürítése",
   downshift: "Lecsengés",
@@ -138,7 +126,6 @@ export const TAG_HU: Record<string, string> = {
   creativity_seed: "Kreatív nyitás",
   habit_seed: "Szokás indítása",
   day_close: "Napi lezárás",
-
   writing: "Írás",
   breath: "Légzés",
   body: "Testérzet",
@@ -148,18 +135,14 @@ export const TAG_HU: Record<string, string> = {
   planning: "Finom tervezés",
   setup: "Előkészítés",
 };
-
 function huTag(t: string): string {
   return TAG_HU[t] ?? t;
 }
-
 function normalizeTagKey(t: string) {
   return (t ?? "").trim().toLowerCase();
 }
 
-/**
- * Idő parse -> max minutes
- */
+/** Idő parse -> max minutes */
 function parseMaxMinutes(raw?: string): number | null {
   const s = (raw ?? "").toLowerCase();
 
@@ -189,17 +172,17 @@ function parseMaxMinutes(raw?: string): number | null {
 
   return null;
 }
-
 function timeBucket(raw?: string): TimeFilterKey | null {
   const maxMin = parseMaxMinutes(raw);
   if (maxMin == null) return null;
-
   if (maxMin <= 1.01) return "t1";
   if (maxMin <= 2.01) return "t2";
   if (maxMin <= 3.01) return "t3";
   if (maxMin <= 5.01) return "t5";
   return "t5plus";
 }
+
+type ViewPhase = "overview" | "practice";
 
 export default function EveningLanding() {
   const { loading } = useRequireAuth();
@@ -210,14 +193,19 @@ export default function EveningLanding() {
   const [selectedIntent, setSelectedIntent] = useState<IntentKey | "all">("all");
   const [selectedTime, setSelectedTime] = useState<TimeFilterKey>("all");
 
+  // ✅ “Tile kattintás -> nő + flip card overlay”
   const [openSlug, setOpenSlug] = useState<string | null>(null);
-  const [viewPhase, setViewPhase] = useState<"overview" | "practice">("overview");
+  const [viewPhase, setViewPhase] = useState<ViewPhase>("overview");
   const [finishing, setFinishing] = useState(false);
   const [completed, setCompleted] = useState(false);
 
+  // ✅ grow-from-tile state
+  const [originRect, setOriginRect] = useState<DOMRect | null>(null);
+  const [opening, setOpening] = useState(false);
+
   const [infoOpen, setInfoOpen] = useState(false);
 
-  const modalRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const seedRef = useRef<number>(0);
@@ -236,6 +224,7 @@ export default function EveningLanding() {
     })();
   }, []);
 
+  // lock scroll while open
   useEffect(() => {
     if (!openSlug) return;
     const prev = document.body.style.overflow;
@@ -245,6 +234,7 @@ export default function EveningLanding() {
     };
   }, [openSlug]);
 
+  // ESC + focus
   useEffect(() => {
     if (!openSlug) return;
 
@@ -253,36 +243,8 @@ export default function EveningLanding() {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
-        closeModal();
+        closeOverlay();
         return;
-      }
-      if (e.key !== "Tab") return;
-
-      const root = modalRef.current;
-      if (!root) return;
-
-      const focusables = Array.from(
-        root.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter((el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true");
-
-      if (focusables.length === 0) return;
-
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-
-      if (e.shiftKey) {
-        if (!active || active === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (active === last) {
-          e.preventDefault();
-          first.focus();
-        }
       }
     }
 
@@ -329,7 +291,6 @@ export default function EveningLanding() {
 
   const filteredCards = useMemo(() => {
     let out = cards;
-
     if (selectedPhase !== "all") out = out.filter((c) => getPhase(c) === selectedPhase);
     if (selectedIntent !== "all") out = out.filter((c) => getIntents(c).includes(selectedIntent));
 
@@ -360,6 +321,7 @@ export default function EveningLanding() {
     return openSlug ? cards.find((c) => c.slug === openSlug) ?? null : null;
   }, [openSlug, cards]);
 
+  const openCardPhase = openCard ? getPhase(openCard) : null;
   const meta = (openCard?.content as any)?.meta as
     | { time?: string; effect?: string; not_recommended?: string }
     | undefined;
@@ -370,18 +332,69 @@ export default function EveningLanding() {
   );
   const goal = ((openCard?.content as any)?.goal_md ?? "") as string;
 
-  function openModal(slug: string) {
+  // ✅ számoljuk ki az animált transformot a tile rect -> center felé
+  function computeGrowStyle(rect: DOMRect | null, isOpening: boolean): React.CSSProperties {
+    if (typeof window === "undefined") return {};
+
+    // final modal méret (a flip-shell alap méretéhez igazítva)
+    const targetW = Math.min(860, window.innerWidth - 32);
+    const targetH = Math.min(900, Math.floor(window.innerHeight * 0.86));
+
+    const targetLeft = (window.innerWidth - targetW) / 2;
+    const targetTop = (window.innerHeight - targetH) / 2;
+
+    if (!rect) {
+      return {
+        transform: isOpening ? "scale(0.98) translateY(8px)" : "scale(1) translateY(0)",
+        opacity: isOpening ? 0.75 : 1,
+      };
+    }
+
+    const fromCX = rect.left + rect.width / 2;
+    const fromCY = rect.top + rect.height / 2;
+    const toCX = targetLeft + targetW / 2;
+    const toCY = targetTop + targetH / 2;
+
+    const dx = fromCX - toCX;
+    const dy = fromCY - toCY;
+
+    const sx = Math.max(0.06, rect.width / targetW);
+    const sy = Math.max(0.06, rect.height / targetH);
+    const s = Math.min(sx, sy);
+
+    if (isOpening) {
+      return {
+        transform: `translate(${dx}px, ${dy}px) scale(${s})`,
+        opacity: 0.6,
+      };
+    }
+
+    return {
+      transform: "translate(0px, 0px) scale(1)",
+      opacity: 1,
+    };
+  }
+
+  function openOverlay(slug: string, rect?: DOMRect) {
+    setOriginRect(rect ?? null);
     setOpenSlug(slug);
     setViewPhase("overview");
     setCompleted(false);
     setFinishing(false);
+
+    // indító frame: “tile pozícióból”
+    setOpening(true);
+    // következő frame: “középre nő”
+    requestAnimationFrame(() => setOpening(false));
   }
 
-  function closeModal() {
+  function closeOverlay() {
     setOpenSlug(null);
+    setOriginRect(null);
     setViewPhase("overview");
     setCompleted(false);
     setFinishing(false);
+    setOpening(false);
   }
 
   async function finishRun() {
@@ -425,7 +438,7 @@ export default function EveningLanding() {
         phaseToken={phaseToken}
         tags={tags}
         huTag={huTag}
-        onOpen={openModal}
+        onOpen={openOverlay} // ✅ tile kattintás -> rect is jöhet
       />
     );
   }
@@ -454,8 +467,6 @@ export default function EveningLanding() {
       `}</style>
     </>
   );
-
-  const openCardPhase = openCard ? getPhase(openCard) : null;
 
   return (
     <Shell
@@ -548,104 +559,114 @@ export default function EveningLanding() {
 
           <div className="evening-grid">{orderedCards.map((c) => renderCardTile(c))}</div>
 
+          {/* ✅ Grow + Flip overlay */}
           {openSlug && (
             <div
-              className="evening-overlay"
+              className="flip-overlay"
+              ref={overlayRef}
               role="dialog"
               aria-modal="true"
               onMouseDown={(e) => {
-                if (e.target === e.currentTarget) closeModal();
+                if (e.target === e.currentTarget) closeOverlay();
               }}
             >
-              <div
-                className="evening-modal"
-                ref={modalRef}
-                aria-labelledby="evening-modal-title"
-                aria-describedby="evening-modal-desc"
-              >
-                <div className="evening-modal-head">
-                  <div id="evening-modal-title" style={{ fontWeight: 800 }}>
-                    {openCard?.title ?? "Esti kártya"}
-                  </div>
-                  <button className="btn btn-secondary" onClick={closeModal} ref={closeBtnRef}>
+              <div className="flip-shell" style={computeGrowStyle(originRect, opening)}>
+                <div className="flip-shell-head">
+                  <div style={{ fontWeight: 900 }}>{openCard?.title ?? "Esti kártya"}</div>
+                  <button className="btn btn-secondary" onClick={closeOverlay} ref={closeBtnRef}>
                     Bezárás
                   </button>
                 </div>
 
-                <div id="evening-modal-desc" style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 8 }}>
-                  Esti kártya – fókuszált nézet{openCardPhase ? ` • ${PHASE_LABEL[openCardPhase]}` : ""}. ESC: bezárás.
+                <div style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 10 }}>
+                  Kattintás: megnyit • Indítás: fordul • ESC: bezárás
+                  {openCardPhase ? ` • ${PHASE_LABEL[openCardPhase]}` : ""}
                 </div>
 
                 {!openCard ? (
                   <div className="stack">{Spinner}</div>
                 ) : completed ? (
-                  <Card className="stack-tight" style={{ maxWidth: 620, margin: "0 auto" }}>
-                    <div style={{ fontWeight: 800 }}>Jó pihenést és szép álmokat.</div>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      <button className="btn btn-primary" onClick={closeModal}>
+                  <Card className="stack-tight" style={{ maxWidth: 720, margin: "0 auto" }}>
+                    <div style={{ fontWeight: 900 }}>Jó pihenést és szép álmokat.</div>
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                      <button className="btn btn-primary" onClick={closeOverlay}>
                         Kész
                       </button>
                     </div>
                   </Card>
-                ) : viewPhase === "overview" ? (
-                  <Card className="stack-tight" style={{ maxWidth: 620, margin: "0 auto" }}>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                      {openCardPhase ? <div className="meta-block">{PHASE_LABEL[openCardPhase]}</div> : null}
-                      {meta?.time ? <div className="meta-block">{meta.time}</div> : null}
-                    </div>
-
-                    {meta?.effect ? <div style={{ fontWeight: 700 }}>{meta.effect}</div> : null}
-                    {goal ? <div style={{ color: "var(--text-muted)" }}>{goal}</div> : null}
-
-                    <div style={{ marginTop: 10 }}>
-                      {meta?.not_recommended ? (
-                        <div className="disclaimer">
-                          <div style={{ fontWeight: 700, marginBottom: 6 }}>Mikor ne</div>
-                          <div style={{ color: "var(--text-muted)" }}>{meta.not_recommended}</div>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-                      <button className="btn btn-primary" onClick={() => setViewPhase("practice")}>
-                        Indítás
-                      </button>
-                    </div>
-                  </Card>
                 ) : (
-                  <Card className="stack-tight" style={{ maxWidth: 620, margin: "0 auto" }}>
-                    {tips?.length ? (
-                      <div className="stack-tight">
-                        <div className="section-title">Tippek</div>
-                        <ul style={{ paddingLeft: 18, display: "grid", gap: 6, margin: 0 }}>
-                          {tips.map((t, i) => (
-                            <li key={i} style={{ color: "var(--text-muted)" }}>
-                              {t}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
+                  <div className={`flip3d ${viewPhase === "practice" ? "is-flipped" : ""}`}>
+                    {/* FRONT = overview */}
+                    <div className="flip-face flip-front">
+                      <Card className="stack-tight" style={{ maxWidth: 720, margin: "0 auto" }}>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                          {openCardPhase ? <div className="meta-block">{PHASE_LABEL[openCardPhase]}</div> : null}
+                          {meta?.time ? <div className="meta-block">{meta.time}</div> : null}
+                        </div>
 
-                    <div className="stack-tight" style={{ marginTop: 10 }}>
-                      <div className="section-title">Lépések</div>
+                        {meta?.effect ? <div style={{ fontWeight: 800 }}>{meta.effect}</div> : null}
+                        {goal ? <div style={{ color: "var(--text-muted)" }}>{goal}</div> : null}
 
-                      <div className="steps">
-                        {steps.map((s, idx) => (
-                          <div key={idx} className="step-row">
-                            <div className="step-num">{idx + 1}</div>
-                            <div className="step-text">{s.question}</div>
+                        {meta?.not_recommended ? (
+                          <div className="disclaimer" style={{ marginTop: 10 }}>
+                            <div style={{ fontWeight: 800, marginBottom: 6 }}>Mikor ne</div>
+                            <div style={{ color: "var(--text-muted)" }}>{meta.not_recommended}</div>
                           </div>
-                        ))}
-                      </div>
+                        ) : null}
+
+                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+                          <button className="btn btn-primary" onClick={() => setViewPhase("practice")}>
+                            Indítás
+                          </button>
+                        </div>
+                      </Card>
                     </div>
 
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-                      <button className="btn btn-primary" onClick={finishRun} disabled={finishing}>
-                        {finishing ? "Mentés…" : "Befejezés"}
-                      </button>
+                    {/* BACK = practice */}
+                    <div className="flip-face flip-back">
+                      <Card className="stack-tight" style={{ maxWidth: 720, margin: "0 auto" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                          <div className="section-title" style={{ margin: 0 }}>
+                            Gyakorlat
+                          </div>
+                          <button className="btn btn-secondary" onClick={() => setViewPhase("overview")}>
+                            Vissza
+                          </button>
+                        </div>
+
+                        {tips?.length ? (
+                          <div className="stack-tight" style={{ marginTop: 10 }}>
+                            <div className="section-title">Tippek</div>
+                            <ul style={{ paddingLeft: 18, display: "grid", gap: 6, margin: 0 }}>
+                              {tips.map((t, i) => (
+                                <li key={i} style={{ color: "var(--text-muted)" }}>
+                                  {t}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+
+                        <div className="stack-tight" style={{ marginTop: 12 }}>
+                          <div className="section-title">Lépések</div>
+                          <div className="steps">
+                            {steps.map((s, idx) => (
+                              <div key={idx} className="step-row">
+                                <div className="step-num">{idx + 1}</div>
+                                <div className="step-text">{s.question}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+                          <button className="btn btn-primary" onClick={finishRun} disabled={finishing}>
+                            {finishing ? "Mentés…" : "Befejezés"}
+                          </button>
+                        </div>
+                      </Card>
                     </div>
-                  </Card>
+                  </div>
                 )}
 
                 {err ? <div style={{ color: "crimson", marginTop: 10 }}>{err}</div> : null}
@@ -667,17 +688,14 @@ export default function EveningLanding() {
             grid-template-columns: 1fr 1fr 1fr;
           }
         }
-
         .filter {
           display: grid;
           gap: 6px;
         }
-
         .filter-label {
           font-size: 12px;
           color: var(--text-muted);
         }
-
         .select {
           width: 100%;
           border: 1px solid var(--border);
@@ -703,7 +721,7 @@ export default function EveningLanding() {
           }
         }
 
-        .evening-overlay {
+        .flip-overlay {
           position: fixed;
           inset: 0;
           z-index: 60;
@@ -713,20 +731,34 @@ export default function EveningLanding() {
           align-items: center;
           justify-content: center;
           padding: 16px;
+          animation: overlayIn 160ms ease-out;
         }
 
-        .evening-modal {
-          width: min(760px, 100%);
-          max-height: min(85vh, 820px);
+        @keyframes overlayIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        .flip-shell {
+          width: min(860px, 100%);
+          max-height: min(86vh, 900px);
           overflow: auto;
           border: 1px solid var(--border);
           border-radius: 18px;
           background: var(--bg);
-          box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 24px 90px rgba(0, 0, 0, 0.55);
           padding: 14px;
+
+          transform-origin: center;
+          transition: transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 220ms ease-out;
+          will-change: transform, opacity;
         }
 
-        .evening-modal-head {
+        .flip-shell-head {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -735,8 +767,39 @@ export default function EveningLanding() {
           position: sticky;
           top: 0;
           background: var(--bg);
-          z-index: 1;
+          z-index: 2;
           border-bottom: 1px solid var(--border);
+        }
+
+        /* flip */
+        .flip3d {
+          position: relative;
+          width: 100%;
+          perspective: 1200px;
+        }
+
+        .flip-face {
+          backface-visibility: hidden;
+          transform-style: preserve-3d;
+          transition: transform 420ms cubic-bezier(0.2, 0.9, 0.2, 1);
+        }
+
+        .flip-front {
+          transform: rotateY(0deg);
+        }
+
+        .flip-back {
+          position: absolute;
+          inset: 0;
+          transform: rotateY(180deg);
+        }
+
+        .flip3d.is-flipped .flip-front {
+          transform: rotateY(-180deg);
+        }
+
+        .flip3d.is-flipped .flip-back {
+          transform: rotateY(0deg);
         }
       `}</style>
     </Shell>

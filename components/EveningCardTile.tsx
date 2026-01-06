@@ -26,7 +26,8 @@ type Props = {
   tags: string[];
   huTag: (t: string) => string;
 
-  onOpen: (slug: string) => void;
+  // ✅ változott: rect is megy
+  onOpen: (slug: string, originRect?: DOMRect) => void;
 };
 
 export function EveningCardTile({
@@ -54,14 +55,22 @@ export function EveningCardTile({
 
   const bgCorner = intentTok ? `var(${intentTok.bg})` : "rgba(0,0,0,0)";
 
+  function openFrom(el: HTMLElement | null) {
+    const rect = el?.getBoundingClientRect();
+    onOpen(card.slug, rect);
+  }
+
   return (
     <div
       className={`${styles.wrap} ${styles.card}`}
       role="button"
       tabIndex={0}
-      onClick={() => onOpen(card.slug)}
+      onClick={(e) => openFrom(e.currentTarget as HTMLElement)}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") onOpen(card.slug);
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openFrom(e.currentTarget as HTMLElement);
+        }
       }}
       style={{
         background: `linear-gradient(135deg,

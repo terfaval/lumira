@@ -23,7 +23,7 @@
       "meta": {
         "effect": "Akkor használd, ha egy kérdés újra és újra felbukkan, és nem szeretnél rajta gondolkodni elalvás előtt. A leírás segít kívülre tenni, majd tudatosan elengedni. A cél nem a válasz, hanem hogy a kérdés ne maradjon ébren tartó tényező. Nem kell megoldani semmit, csak követni a test jelzéseit.",
         "time": "3–5 perc",
-        "not_recommended": "Ha az írás felpörget vagy szorongást erősít."
+        "not_recommended": "Ne csináld, ha az írás nem megkönnyebbülést hoz, hanem tovább pörgeti a gondolkodást vagy feszültséget erősít."
       }
     },
     "tags": ["mental_offload", "writing", "sleep_onset"],
@@ -55,7 +55,7 @@
       "meta": {
         "effect": "Ez akkor hasznos, ha egy rémálom már előre feszültséget okoz lefekvéskor. Nem a történetet dolgozod fel, csak egy ponton más irányt képzelsz el. Ez új testi élményt ad, így kisebb eséllyel viszed át ugyanazt a feszültséget az éjszakába. A cél a lelassulás, nem a teljes kontroll.",
         "time": "3–5 perc",
-        "not_recommended": "Ha már a felidézés is túl megterhelő."
+        "not_recommended": "Ne csináld, ha már a rövid felidézés is túl erős testi vagy érzelmi reakciót vált ki benned."
       }
     },
     "tags": ["nightmare_relief", "imagery", "sleep_onset"],
@@ -88,7 +88,7 @@
       "meta": {
         "effect": "Akkor válaszd, ha tudod, hogy reggel ellenállás lesz benned. Nem feladatlistát készítesz, csak egy egészen kicsi első lépést jelölsz ki. Ettől másnap nem kell dönteni, csak elindulni, ami sokszor elég a mozgásba lendüléshez. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc",
-        "not_recommended": "Maximalista túlnyomásnál (inkább biztonság)."
+        "not_recommended": "Ne csináld, ha maximalista nyomást érzel, és a mikrolépés is kötelező feladattá válik benned."
       }
     },
     "tags": ["habit_seed", "planning", "sleep_onset"],
@@ -119,7 +119,7 @@
       "meta": {
         "effect": "Ez akkor jó, ha tanulás után nehéz kikapcsolni. A lényeg nem az ismétlés, hanem a lezárás: röviden végigveszed, mi volt fontos, majd megállsz. Így az elme könnyebben pihen, miközben az anyag éjszaka tovább rendeződhet. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc",
-        "not_recommended": "Erős teljesítményszorongás esetén."
+        "not_recommended": "Ne csináld, ha a tananyag felidézése teljesítményszorongást vagy bizonyítási kényszert indít el."
       }
     },
     "tags": ["learning_settle", "review", "sleep_onset"],
@@ -148,7 +148,7 @@
       "meta": {
         "effect": "Akkor használd, ha fontos számodra az álomemlékezés, de reggel gyorsan elvisz a nap. Egy apró előkészület miatt felébredéskor nem kell keresgélni vagy dönteni. Így nagyobb az esély, hogy az első mozdulatod az álom felé nyúl. Ha túl éber leszel, rövidíts és engedd el.",
         "time": "1–3 perc",
-        "not_recommended": "Ha az emlékezés köré teljesítménynyomás épül."
+        "not_recommended": "Ne csináld, ha az álomemlékezés gondolata feszültté tesz, vagy elvárássá válik számodra."
       }
     },
     "tags": ["dream_recall", "setup", "sleep_onset"],
@@ -178,7 +178,7 @@
       "meta": {
         "effect": "Ez akkor jó, ha egy kérdés fontos, de nem most szeretnél vele foglalkozni. Az egy mondat elég ahhoz, hogy az elme tudja, miről van szó, miközben leveszi róla az esti nyomást. Nem kell pontosítani vagy tovább gondolni. A cél a lelassulás, nem a teljes kontroll.",
         "time": "1–2 perc",
-        "not_recommended": "Ha az írás gondolkodási spirált indít."
+        "not_recommended": "Ne csináld, ha az egyetlen mondat leírása is gondolkodási spirált indít el benned."
       }
     },
     "tags": ["mental_offload", "writing", "sleep_onset"],
@@ -208,7 +208,7 @@
       "meta": {
         "effect": "Akkor válaszd, ha a nap nyitott szálai lefekvéskor is aktívak. A leírás segít kívülre tenni mindazt, ami még „függőben van”. A cél nem a megoldás, hanem hogy az ágy ne a gondolkodás, hanem a pihenés helye legyen. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "2–3 perc",
-        "not_recommended": "Ha a listaírás túlpörget."
+        "not_recommended": "Ne csináld, ha a listaírás nem megkönnyebbülést hoz, hanem tovább növeli a belső nyomást."
       }
     },
     "tags": ["mental_offload", "writing", "sleep_onset"],
@@ -243,7 +243,7 @@
       "meta": {
         "effect": "Akkor válaszd, ha reggel könnyebben szeretnél rátalálni az álomnyomokra, erőlködés nélkül. A légzés lassan kisimul, a természetes szüneteket csak észreveszed, majd egy rövid szándékot megfogalmazol. Ettől a figyelem „kaput” kap, miközben az alvás első marad. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "3–5 perc",
-        "not_recommended": "Ha a légzés figyelése szorongást kelt."
+        "not_recommended": "Ne csináld, ha a légzés figyelése szorongást, kontrollérzetet vagy túlzott éberséget kelt."
       }
     },
     "tags": ["dream_recall", "breath", "sleep_onset"],
@@ -276,7 +276,7 @@
       "meta": {
         "effect": "Ezt akkor használd, ha finoman nyitnál a lucid irányba, de nem akarsz éberen maradni. Felidézel egy egyszerű nappali mozzanatot, és ránézel arra, honnan tudod, hogy ébren vagy. Utána nem „keresed” az álmot: pár légzésig csak jelen vagy, és átcsúszol alvásba. Nem kell megoldani semmit, csak követni a test jelzéseit.",
         "time": "3–5 perc",
-        "not_recommended": "Alvásparalízisre hajlam esetén."
+        "not_recommended": "Ne csináld, amikor a gyakorlat inkább felébreszt, mint lecsendesít, vagy nehéz utána elaludni."
       }
     },
     "tags": ["lucid_seed", "imagery", "sleep_onset"],
@@ -310,7 +310,7 @@
       "meta": {
         "effect": "Akkor jó, ha érzelmileg „túl sok” maradt a napból, és ezt nem szeretnéd megoldani az ágyban. Kiválasztasz egy halvány tónust, és csak megfigyeled, hol lakik a testben. A kilégzéseknél engedsz egy kicsit, mintha letennél belőle. A cél a csillapodás, nem az elemzés. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "3–5 perc",
-        "not_recommended": "Ha a felidézés túl megterhelő (inkább stabilizálás)."
+        "not_recommended": "Ne csináld, ha az érzés felidézése felerősödik, és nem tudsz visszatérni a test megnyugvásához."
       }
     },
     "tags": ["emotion_settle", "body", "downshift"],
@@ -343,7 +343,7 @@
       "meta": {
         "effect": "Ezt akkor válaszd, ha kreatív hangolásra vágysz, de szeretnél közben elaludni. Kitalálsz három egyszerű szót (tárgy–élőlény–hely), kimondod magadban, majd nyitva hagyod a teret. Nem történetet építesz, csak engeded, hogy képek vagy hangulatok jöjjenek-menjenek. Ha közben elkalandozol, csak vedd észre, és térj vissza az érzethez.",
         "time": "3–5 perc",
-        "not_recommended": "Túlpörgött, insomnia-közeli állapotban."
+        "not_recommended": "Ne csináld, amikor túl pörgött vagy insomnia-közeli állapotban, és a képek nem elpuhítanak, hanem élénkítenek."
       }
     },
     "tags": ["creativity_seed", "imagery", "downshift"],
@@ -374,7 +374,7 @@
       "meta": {
         "effect": "Akkor használd, ha egy szimbólum vagy motívum újra megjelenik, és szeretnél vele kapcsolatban maradni anélkül, hogy rágódnál rajta. Megnevezed, felteszel egy nyitott kérdést, majd nem vársz választ. A figyelem pár légzésig a testben marad, így a jelentés dolgozhat, miközben te pihensz. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc",
-        "not_recommended": "Kényszeres jelentéskeresés esetén."
+        "not_recommended": "Ne csináld, ha a kérdés azonnal rágódást vagy kényszeres értelmezést indít el."
       }
     },
     "tags": ["meaning_seed", "phrase", "downshift"],
@@ -406,7 +406,7 @@
       "meta": {
         "effect": "Ezt akkor válaszd, ha nem jön az alvás, és egy egyszerű ritmus jól esne. Néhány körig a belégzés rövidebb, a kilégzés hosszabb, a végén pedig csak észreveszed a természetes szünetet. Nem kell precízen számolni: a hangsúly a lelassuláson van. A ritmus idővel magától elenged, és az alvás átvesz. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–5 perc",
-        "not_recommended": "Ha a légzés kontrollja szorongást kelt."
+        "not_recommended": "Ne csináld, ha a légzés ritmizálása kontrollérzetté válik, és feszültséget okoz."
       }
     },
     "tags": ["sleep_onset", "breath", "downshift"],
@@ -438,7 +438,7 @@
       "meta": {
         "effect": "Akkor használd, ha este bizonytalan vagy feszült a test, és szeretnél egyszerűen „megérkezni”. Figyeled, hol érintkezik a tested az ággyal, és hagyod, hogy ezek a pontok nehezedjenek. Néhány kilégzésig egy rövid, megnyugtató mondat is kísérheti, aztán elhalványul. A cél, hogy a test biztonságjelzést kapjon, és könnyebb legyen átcsúszni alvásba. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc",
-        "not_recommended": "Klausztrofóbiás érzésnél."
+        "not_recommended": "Ne csináld, ha a test súlyának érzékelése klausztrofób vagy szorongó élményt hoz."
       }
     },
     "tags": ["safety_settle", "body", "downshift"],
@@ -470,7 +470,7 @@
       "meta": {
         "effect": "Ezt akkor válaszd, ha belül keresed az irányt, de az ágy nem a döntéshozás helye. Felteszel egy egyszerű kérdést, és nem válaszolsz rá: csak észreveszed, mi mozdul meg benned. Ha feljön egy szó vagy kép, nem elemzed, csak tudomásul veszed. A figyelem visszacsúszik a testhez, így a kérdés dolgozhat a háttérben, miközben te pihensz. Nem kell megoldani semmit, csak követni a test jelzéseit.",
         "time": "3–5 perc",
-        "not_recommended": "Erős ruminációs állapotban."
+        "not_recommended": "Ne csináld, ha a kérdés feltevése gondolkodási spirált indít el, és nem tudsz visszatérni a testhez."
       }
     },
     "tags": ["meaning_seed", "phrase", "downshift"],
@@ -503,7 +503,7 @@
       "meta": {
         "effect": "Akkor használd, ha a gondolatok pörögnek, és jól esne visszaköltözni a testbe. Lépésről lépésre végigérsz a lábakon, törzsön, arcon, mindegyiknél csak 1–2 légzésig időzöl. Nem kell mindent élesen érezni, elég a körvonal. A végén abbahagyod a „bejárást”, és egyetlen összérzet marad, amitől a figyelem elpuhul és átcsúszik alvásba. Nem kell megoldani semmit, csak követni a test jelzéseit.",
         "time": "3–5 perc",
-        "not_recommended": "Ha a testfigyelem pánikszerűvé válik (inkább rövidítve)."
+        "not_recommended": "Ne csináld, ha a testfigyelem pánikszerűvé válik, vagy kellemetlen testi reakciókat indít."
       }
     },
     "tags": ["body_release", "body", "downshift"],
@@ -535,7 +535,7 @@
       "meta": {
         "effect": "Ezt akkor válaszd, ha jólesik egy egyszerű, földelt lezárás a nap végén. Kiválasztasz valami aprót, amiért hálás lehetsz, és csak egy pillanatra megérzed a hatását. Nem kell emelkedettnek lennie, elég egy finom „köszönöm”. Utána visszafordulsz a légzéshez és az ágy érzetéhez, így a hangulat tágul, de a test megmarad a pihenésben. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "3–5 perc",
-        "not_recommended": "Disszociatív állapotban nem javasolt."
+        "not_recommended": "Ne csináld, ha disszociatív állapotban vagy, és a hála gyakorlása eltávolít a testedtől."
       }
     },
     "tags": ["meaning_seed", "phrase", "downshift"],
@@ -568,7 +568,7 @@
       "meta": {
         "effect": "Akkor használd, ha elalvás előtt még „fent tart” valami: váll, nyelv, has, belső nyugtalanság. Minden kilégzéshez hozzáteszed a „Le.” szót, és hagyod, hogy a kilégzés kicsit hosszabb legyen. A végén észreveszed a természetes szünetet, majd elengeded a szót is. Így a fókusz nem gondolat, hanem egy egyszerű lefelé irány, amitől könnyebb átcsúszni alvásba. Figyeld a légzést.",
         "time": "3–5 perc",
-        "not_recommended": "Nincs; ha kellemetlen, rövidíts."
+        "not_recommended": "Ne csináld, ha a „Le” szó ismétlése irritálóvá vagy túl erőltetetté válik."
       }
     },
     "tags": ["sleep_onset", "phrase", "downshift"],
@@ -600,7 +600,7 @@
       "meta": {
         "effect": "Ezt akkor válaszd, ha a lucid irány érdekel, de az alvás a fontosabb. Kiválasztasz egy hétköznapi jelet (tenyér, lámpa), és pár másodpercre elképzeled, hogy ránézel, és megjegyzed: most ébren. Utána jön egy rövid szándék, majd visszaengeded a figyelmet a légzéshez. A jel beülhet a háttérbe, miközben te elalszol. Figyeld a légzést.",
         "time": "1–3 perc",
-        "not_recommended": "Alvásparalízis-hajlam vagy túlzott ráfeszülés esetén."
+        "not_recommended": "Ne csináld, amikor a lucid szándék élénkít, vagy nehézzé teszi az elalvást."
       }
     },
     "tags": ["lucid_seed", "imagery", "sleep_onset"],
@@ -631,7 +631,7 @@
       "meta": {
         "effect": "Akkor használd, ha az esti feszültség az állkapocsban, nyakban, fej körül érezhető. Nem kell erősen lazítani: elég, hogy a fogak egy hajszálnyit szétválnak, a nyelv elnehezül, és a kilégzésnél a nyak elölről picit hosszabbnak tűnik. Néhány lassú légzés után abbahagyod a „csinálást”, és hagyod, hogy a test átforduljon alvásba. Figyeld a légzést.",
         "time": "1–3 perc",
-        "not_recommended": "Akut nyaki fájdalom esetén csak nagyon óvatosan, vagy inkább kihagyva."
+        "not_recommended": "Ne csináld, ha akut nyaki fájdalom van jelen, vagy az apró mozgások is kellemetlenek."
       }
     },
     "tags": ["body_release", "body", "sleep_onset"],
@@ -663,7 +663,7 @@
       "meta": {
         "effect": "Ezt akkor válaszd, ha a mellkasban feszültséget, szorítást vagy nyugtalanságot érzel, és szeretnél enyhíteni rajta. A figyelem a mellkas közepén pihen, belégzésnél finom tágasságot képzelsz, kilégzésnél a vállakat engeded 1%-kal. Ha nem jön kép, a váll-leengedés önmagában elég. Pár kör után elengeded a vezetést, és maradsz az összérzetnél, míg az alvás átvesz. Figyeld a légzést.",
         "time": "3–5 perc",
-        "not_recommended": "Ha a mellkasra figyelés szorongást kelt."
+        "not_recommended": "Ne csináld, ha a mellkasra irányuló figyelem szorongást vagy légszomjat vált ki."
       }
     },
     "tags": ["body_release", "body", "safety_settle"],
@@ -694,7 +694,7 @@
       "meta": {
         "effect": "Akkor használd, ha gyakran felébredsz éjjel, és jól jönne egy egyszerű visszaút. Kiválasztasz egy pontot (talp, kéz, párna), és egyszer megjegyzed: ha felébredek, ide jövök vissza. Ez nem „feladat”, inkább egy jelzés az idegrendszernek. Pár légzésig időzöl a pontnál, majd elengeded, így később ébredéskor is könnyebb lehet gyorsan visszarendeződni. Figyeld a légzést.",
         "time": "1–3 perc",
-        "not_recommended": "Ha a testfigyelem önmagában túl terhelő."
+        "not_recommended": "Ne csináld, ha a testérzetekre való figyelés önmagában túl megterhelő."
       }
     },
     "tags": ["night_waking", "body", "safety_settle"],
@@ -726,7 +726,7 @@
       "meta": {
         "effect": "Ezt akkor válaszd, ha jólesik egy rövid jelentés-érzet, de az elemzés pörgetne. Három egyszerű, hétköznapi szót választasz, ami kifejezi a nap hangját, és egyszer kimondod magadban. A harmadik után jön a lezáró mondat, majd pár légzés, ahol nem foglalkozol a szavakkal. Így marad egy nyom, de nem viszed tovább éjszakára. Figyeld a légzést.",
         "time": "1–3 perc",
-        "not_recommended": "Ha a szavak azonnal ruminációt indítanak."
+        "not_recommended": "Ne csináld, ha a szavak azonnal elemzést vagy belső vitát indítanak el."
       }
     },
     "tags": ["day_close", "phrase", "downshift"],
@@ -758,7 +758,7 @@
       "meta": {
         "effect": "Akkor használd, ha szeretnéd, hogy reggel könnyebb legyen emlékezni, de az esti gondolkodást kerülnéd. Felidézel egy rövid pillanatot a nap végéről, közepéről, elejéről, mintha három képet néznél meg egymás után. Nem meséled el, nem értékeled, csak észleled. Ez megmozgatja az emlékezést, miközben a test pihen, majd hagyod, hogy a képek elhalványuljanak. Figyeld a légzést.",
         "time": "1–2 perc",
-        "not_recommended": "Ha a nap felidézése ruminációt indít."
+        "not_recommended": "Ne csináld, ha a nap felidézése rágódást vagy érzelmi túltelítődést okoz."
       }
     },
     "tags": ["dream_recall", "review", "downshift"],
@@ -789,7 +789,7 @@
       "meta": {
         "effect": "Ezt akkor válaszd, ha a lucid téma érdekel, de nem akarsz „gyakorolni” az ágyban. Egy rövid mondat megengedi a tudatosság esélyét, aztán nem ismételgeted és nem figyeled, mi lesz belőle. Pár lassú légzés alatt a figyelem lecsendesedik, és a kérdés háttérbe kerül. Így a szándék megvan, de nem lesz belőle ébren tartó projekt. Figyeld a légzést.",
         "time": "1–2 perc",
-        "not_recommended": "Alvásparalízis-hajlam esetén."
+        "not_recommended": "Ne csináld, amikor a tudatosság gondolata élénkít, vagy nyomást helyez az elalvásra."
       }
     },
     "tags": ["lucid_seed", "phrase", "downshift"],
@@ -821,7 +821,7 @@
       "meta": {
         "effect": "Akkor használd, ha kreatív hangulatot szeretnél, de minimális mentális terheléssel. Megjelenik egy első kép (tárgy vagy hely), aztán egy második, majd egy harmadik, mintha egymás után felvillannának. Nem kell értelmet adni nekik, és nem kell irányítani semmit. Ha nincs kép, elég egy hangulat. A végén hagyod, hogy elhomályosodjanak, és az alvás átvegye a teret. Figyeld a légzést.",
         "time": "2–3 perc",
-        "not_recommended": "Ha a képek túlpörgetnek."
+        "not_recommended": "Ne csináld, ha a képek nem elcsendesítenek, hanem fokozzák a belső aktivitást."
       }
     },
     "tags": ["creativity_seed", "imagery", "downshift"],
@@ -853,7 +853,7 @@
       "meta": {
         "effect": "Ezt akkor válaszd, ha az éberség a szemeknél, homloknál „ragad”, és nehéz elaludni. A figyelem a szemgödör környékén pihen, és elképzeled, hogy a szemek picit hátrébb és lejjebb kerülnek. A homlokon elengedsz egy apró ráncot, nem erőből, csak megengedéssel. Pár légzés után nem tartod tovább, hagyod, hogy az alvás átvegye. Figyeld a légzést.",
         "time": "1–3 perc",
-        "not_recommended": "Ha a szemre figyelés kellemetlen."
+        "not_recommended": "Ne csináld, ha a szem vagy a homlok környékére figyelés kellemetlen vagy feszítő érzést hoz."
       }
     },
     "tags": ["body_release", "body", "downshift"],
@@ -884,7 +884,7 @@
       "meta": {
         "effect": "Akkor használd, ha lefekvéskor nehéz leállni, és jól jönne egy egyszerű belső keret. Kimondasz magadban egy rövid mondatot, majd a tested súlyát veszed észre az ágyon. Nem kell megnyugodni, csak megállni: a mondat elhalványul, az érzet marad. Ettől kevesebb lehet a belső bizonytalanság, és könnyebb átcsúszni alvásba. Figyeld a légzést.",
         "time": "1–2 perc",
-        "not_recommended": "Nincs; ha nem esik jól, hagyd ki."
+        "not_recommended": "Ne csináld, ha a mondat kimondása ellenállást vagy belső vitát vált ki."
       }
     },
     "tags": ["safety_settle", "phrase", "downshift"],
@@ -916,7 +916,7 @@
       "meta": {
         "effect": "Ezt akkor válaszd, ha gondolatok pörögnek, és jól esne a test közepébe érkezni. A figyelem a has–medence területén pihen, belégzésnél csak észreveszed a finom emelkedést, kilégzésnél engeded a súlyt egy kicsit bele. Nem kell irányítani a légzést, inkább követni. Pár kör után a figyelem elnehezül, és az alvás természetesen átveszi. Figyeld a légzést.",
         "time": "2–3 perc",
-        "not_recommended": "Ha a hasi figyelem szorongást kelt."
+        "not_recommended": "Ne csináld, ha a hasi területre irányuló figyelem szorongást kelt."
       }
     },
     "tags": ["body_release", "breath", "downshift"],
@@ -948,7 +948,7 @@
       "meta": {
         "effect": "Akkor használd, amikor felébredsz, de érzed, hogy a tested túlságosan éber. Néhány körig a kilégzés hosszabb, majd elengeded az irányítást. Nem az elalvásra figyelsz, hanem arra, hogy a test visszataláljon a saját nyugalmi ritmusához. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "30–60 mp",
-        "not_recommended": "Ha a légzésre figyelés önmagában szorongást kelt."
+        "not_recommended": "Ne csináld, ha a légzés figyelése éjszakai ébredés után fokozza az éberséget."
       }
     },
     "tags": ["night_waking", "breath", "downshift"],
@@ -980,7 +980,7 @@
       "meta": {
         "effect": "Ez akkor jó választás, ha a gondolkodás még nem indult el, de a test feszült. A súly, az alátámasztás vagy a takaró érzetére figyelsz, nem kell mindent egyszerre érezni. A cél, hogy a test újra biztonságos helyzetként érzékelje az ágyat. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–2 perc",
-        "not_recommended": "Ha a testérzetekre figyelés túl intenzív."
+        "not_recommended": "Ne csináld, ha a testérzetek észlelése túl intenzív vagy nyugtalanító."
       }
     },
     "tags": ["night_waking", "body", "safety_settle"],
@@ -1011,7 +1011,7 @@
       "meta": {
         "effect": "Akkor használd, ha az éjszakai ébredést gondolatok követik. Nem vitatkozol velük, csak jelzed, hogy most nem ez a dolguk. A figyelem ezután visszakerül a testhez vagy a légzéshez, így kisebb az esélye, hogy az elme teljesen felébredjen. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "30–90 mp",
-        "not_recommended": "Ha a mondatok ismétlése pörgető."
+        "not_recommended": "Ne csináld, ha a mondat ismétlése gondolkodássá vagy vitává alakul."
       }
     },
     "tags": ["night_waking", "phrase", "downshift"],
@@ -1043,7 +1043,7 @@
       "meta": {
         "effect": "Ez akkor hasznos, ha rémálom után zaklatottan ébredsz. Nem térsz vissza a képekhez, hanem a jelen környezetre és a test érzetére figyelsz. A cél az, hogy az idegrendszer megkapja a jelzést: most már nincs veszély, lehet visszarendeződni. Ha elkalandozol, csak térj vissza a légzéshez.",
         "time": "1–3 perc",
-        "not_recommended": "Ha az ébrenlét nagyon elhúzódik (ilyenkor felkelés is segíthet)."
+        "not_recommended": "Ne csináld, amikor az ébrenlét már nagyon elhúzódott, és inkább felkelésre lenne szükség."
       }
     },
     "tags": ["nightmare_relief", "safety_settle", "body"],
