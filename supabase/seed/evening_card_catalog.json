@@ -26,7 +26,7 @@
         "not_recommended": "Ha az írás felpörget vagy szorongást erősít."
       }
     },
-    "tags": ["problem-solving", "incubation", "mental-offload", "sleep-prep"],
+    "tags": ["mental_offload", "writing", "sleep_onset"],
     "sort_order": 1,
     "level": null,
     "is_active": true
@@ -58,7 +58,7 @@
         "not_recommended": "Ha már a felidézés is túl megterhelő."
       }
     },
-    "tags": ["nightmares", "safety", "imagery-rehearsal", "sleep-prep"],
+    "tags": ["nightmare_relief", "imagery", "sleep_onset"],
     "sort_order": 2,
     "level": null,
     "is_active": true
@@ -91,7 +91,7 @@
         "not_recommended": "Maximalista túlnyomásnál (inkább biztonság)."
       }
     },
-    "tags": ["habits", "behavior-change", "micro-step", "sleep-prep"],
+    "tags": ["habit_seed", "planning", "sleep_onset"],
     "sort_order": 3,
     "level": null,
     "is_active": true
@@ -122,7 +122,7 @@
         "not_recommended": "Erős teljesítményszorongás esetén."
       }
     },
-    "tags": ["learning", "memory", "consolidation", "sleep-prep"],
+    "tags": ["learning_settle", "review", "sleep_onset"],
     "sort_order": 4,
     "level": null,
     "is_active": true
@@ -151,7 +151,7 @@
         "not_recommended": "Ha az emlékezés köré teljesítménynyomás épül."
       }
     },
-    "tags": ["dream-recall", "sleep-prep", "gentle"],
+    "tags": ["dream_recall", "setup", "sleep_onset"],
     "sort_order": 5,
     "level": null,
     "is_active": true
@@ -181,7 +181,7 @@
         "not_recommended": "Ha az írás gondolkodási spirált indít."
       }
     },
-    "tags": ["prep", "incubation", "sleep"],
+    "tags": ["mental_offload", "writing", "sleep_onset"],
     "sort_order": 6,
     "level": null,
     "is_active": true
@@ -211,7 +211,7 @@
         "not_recommended": "Ha a listaírás túlpörget."
       }
     },
-    "tags": ["prep", "mental-offload", "sleep"],
+    "tags": ["mental_offload", "writing", "sleep_onset"],
     "sort_order": 7,
     "level": null,
     "is_active": true
@@ -246,7 +246,7 @@
         "not_recommended": "Ha a légzés figyelése szorongást kelt."
       }
     },
-    "tags": ["dream-recall", "sleep-prep", "intention", "gentle"],
+    "tags": ["dream_recall", "breath", "sleep_onset"],
     "sort_order": 8,
     "level": null,
     "is_active": true
@@ -279,7 +279,7 @@
         "not_recommended": "Alvásparalízisre hajlam esetén."
       }
     },
-    "tags": ["lucid", "metacognition", "dreamwork", "sleep-prep"],
+    "tags": ["lucid_seed", "imagery", "sleep_onset"],
     "sort_order": 9,
     "level": null,
     "is_active": true
@@ -313,7 +313,7 @@
         "not_recommended": "Ha a felidézés túl megterhelő (inkább stabilizálás)."
       }
     },
-    "tags": ["emotion", "downshift", "nervous-system", "sleep-prep"],
+    "tags": ["emotion_settle", "body", "downshift"],
     "sort_order": 10,
     "level": null,
     "is_active": true
@@ -346,7 +346,7 @@
         "not_recommended": "Túlpörgött, insomnia-közeli állapotban."
       }
     },
-    "tags": ["creativity", "inspiration", "imagery", "sleep-prep"],
+    "tags": ["creativity_seed", "imagery", "downshift"],
     "sort_order": 11,
     "level": null,
     "is_active": true
@@ -377,7 +377,7 @@
         "not_recommended": "Kényszeres jelentéskeresés esetén."
       }
     },
-    "tags": ["symbols", "meaning", "dreamwork", "gentle"],
+    "tags": ["meaning_seed", "phrase", "downshift"],
     "sort_order": 12,
     "level": null,
     "is_active": true
@@ -409,7 +409,7 @@
         "not_recommended": "Ha a légzés kontrollja szorongást kelt."
       }
     },
-    "tags": ["stress", "downshift", "breath", "sleep-prep"],
+    "tags": ["sleep_onset", "breath", "downshift"],
     "sort_order": 13,
     "level": null,
     "is_active": true
@@ -441,7 +441,7 @@
         "not_recommended": "Klausztrofóbiás érzésnél."
       }
     },
-    "tags": ["safety", "grounding", "nervous-system", "sleep-prep"],
+    "tags": ["safety_settle", "body", "downshift"],
     "sort_order": 14,
     "level": null,
     "is_active": true
@@ -473,7 +473,7 @@
         "not_recommended": "Erős ruminációs állapotban."
       }
     },
-    "tags": ["life-direction", "values", "meaning", "sleep-prep"],
+    "tags": ["meaning_seed", "phrase", "downshift"],
     "sort_order": 15,
     "level": null,
     "is_active": true
@@ -506,7 +506,7 @@
         "not_recommended": "Ha a testfigyelem pánikszerűvé válik (inkább rövidítve)."
       }
     },
-    "tags": ["body-awareness", "grounding", "integration", "sleep-prep"],
+    "tags": ["body_release", "body", "downshift"],
     "sort_order": 16,
     "level": null,
     "is_active": true
@@ -538,7 +538,7 @@
         "not_recommended": "Disszociatív állapotban nem javasolt."
       }
     },
-    "tags": ["spiritual", "gratitude", "meaning", "grounded"],
+    "tags": ["meaning_seed", "phrase", "downshift"],
     "sort_order": 17,
     "level": null,
     "is_active": true
@@ -571,7 +571,7 @@
         "not_recommended": "Nincs; ha kellemetlen, rövidíts."
       }
     },
-    "tags": ["deep-sleep", "downshift", "nervous-system", "sleep-prep"],
+    "tags": ["sleep_onset", "phrase", "downshift"],
     "sort_order": 18,
     "level": null,
     "is_active": true
@@ -603,7 +603,7 @@
         "not_recommended": "Alvásparalízis-hajlam vagy túlzott ráfeszülés esetén."
       }
     },
-    "tags": ["lucid", "sleep-prep", "gentle"],
+    "tags": ["lucid_seed", "imagery", "sleep_onset"],
     "sort_order": 19,
     "level": null,
     "is_active": true
@@ -634,7 +634,7 @@
         "not_recommended": "Akut nyaki fájdalom esetén csak nagyon óvatosan, vagy inkább kihagyva."
       }
     },
-    "tags": ["body", "downshift", "sleep-prep"],
+    "tags": ["body_release", "body", "sleep_onset"],
     "sort_order": 20,
     "level": null,
     "is_active": true
@@ -666,7 +666,7 @@
         "not_recommended": "Ha a mellkasra figyelés szorongást kelt."
       }
     },
-    "tags": ["body", "safety", "sleep-prep"],
+    "tags": ["body_release", "body", "safety_settle"],
     "sort_order": 21,
     "level": null,
     "is_active": true
@@ -697,7 +697,7 @@
         "not_recommended": "Ha a testfigyelem önmagában túl terhelő."
       }
     },
-    "tags": ["safety", "grounding", "sleep-prep"],
+    "tags": ["night_waking", "body", "safety_settle"],
     "sort_order": 22,
     "level": null,
     "is_active": true
@@ -729,7 +729,7 @@
         "not_recommended": "Ha a szavak azonnal ruminációt indítanak."
       }
     },
-    "tags": ["meaning", "sleep-prep", "gentle"],
+    "tags": ["day_close", "phrase", "downshift"],
     "sort_order": 23,
     "level": null,
     "is_active": true
@@ -761,7 +761,7 @@
         "not_recommended": "Ha a nap felidézése ruminációt indít."
       }
     },
-    "tags": ["memory", "dream-recall", "sleep"],
+    "tags": ["dream_recall", "review", "downshift"],
     "sort_order": 24,
     "level": null,
     "is_active": true
@@ -792,7 +792,7 @@
         "not_recommended": "Alvásparalízis-hajlam esetén."
       }
     },
-    "tags": ["lucid", "gentle", "sleep"],
+    "tags": ["lucid_seed", "phrase", "downshift"],
     "sort_order": 25,
     "level": null,
     "is_active": true
@@ -824,7 +824,7 @@
         "not_recommended": "Ha a képek túlpörgetnek."
       }
     },
-    "tags": ["creativity", "imagery", "sleep"],
+    "tags": ["creativity_seed", "imagery", "downshift"],
     "sort_order": 26,
     "level": null,
     "is_active": true
@@ -856,7 +856,7 @@
         "not_recommended": "Ha a szemre figyelés kellemetlen."
       }
     },
-    "tags": ["body", "downshift", "sleep"],
+    "tags": ["body_release", "body", "downshift"],
     "sort_order": 27,
     "level": null,
     "is_active": true
@@ -887,7 +887,7 @@
         "not_recommended": "Nincs; ha nem esik jól, hagyd ki."
       }
     },
-    "tags": ["safety", "grounding", "sleep"],
+    "tags": ["safety_settle", "phrase", "downshift"],
     "sort_order": 28,
     "level": null,
     "is_active": true
@@ -919,7 +919,7 @@
         "not_recommended": "Ha a hasi figyelem szorongást kelt."
       }
     },
-    "tags": ["body", "grounding", "sleep"],
+    "tags": ["body_release", "breath", "downshift"],
     "sort_order": 29,
     "level": null,
     "is_active": true
@@ -951,7 +951,7 @@
         "not_recommended": "Ha a légzésre figyelés önmagában szorongást kelt."
       }
     },
-    "tags": ["rescue", "breath", "downshift", "sleep"],
+    "tags": ["night_waking", "breath", "downshift"],
     "sort_order": 30,
     "level": null,
     "is_active": true
@@ -983,7 +983,7 @@
         "not_recommended": "Ha a testérzetekre figyelés túl intenzív."
       }
     },
-    "tags": ["rescue", "safety", "grounding", "sleep"],
+    "tags": ["night_waking", "body", "safety_settle"],
     "sort_order": 31,
     "level": null,
     "is_active": true
@@ -1014,7 +1014,7 @@
         "not_recommended": "Ha a mondatok ismétlése pörgető."
       }
     },
-    "tags": ["rescue", "thoughts", "downshift", "sleep"],
+    "tags": ["night_waking", "phrase", "downshift"],
     "sort_order": 32,
     "level": null,
     "is_active": true
@@ -1046,7 +1046,7 @@
         "not_recommended": "Ha az ébrenlét nagyon elhúzódik (ilyenkor felkelés is segíthet)."
       }
     },
-    "tags": ["rescue", "nightmare", "safety", "sleep"],
+    "tags": ["nightmare_relief", "safety_settle", "body"],
     "sort_order": 33,
     "level": null,
     "is_active": true

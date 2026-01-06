@@ -122,56 +122,33 @@ function phaseToken(phase: PhaseKey | null) {
 }
 
 // Tag HU (bővítve a jelenlegi katalógus alapján)
-const TAG_HU: Record<string, string> = {
-  // már meglévők
-  "sleep-prep": "Elalvás előkészítés",
-  sleep: "Alvás",
-  rescue: "Éjjeli mentés",
-  breath: "Légzés",
-  grounding: "Földelés",
-  safety: "Biztonság",
-  "mental-offload": "Mentális teherlerakás",
-  incubation: "Inkubáció",
-  learning: "Tanulás",
-  memory: "Emlékezet",
-  "dream-recall": "Álomemlékezet",
-  lucid: "Lucid",
-  dreamwork: "Álommunka",
-  emotion: "Érzelem",
-  "nervous-system": "Idegrendszer",
+export const TAG_HU: Record<string, string> = {
+  // cél / hatás
+  mental_offload: "Fej kiürítése",
   downshift: "Lecsengés",
-  "body-awareness": "Testtudat",
-  body: "Test",
-  meaning: "Jelentés",
-  values: "Értékek",
-  gentle: "Szelíd",
-  "imagery-rehearsal": "Kép-átírás",
-  nightmares: "Rémálmok",
+  sleep_onset: "Elalvás",
+  night_waking: "Visszaalvás",
+  dream_recall: "Álomemlékezet",
+  lucid_seed: "Lucid nyitás",
+  nightmare_relief: "Rémálom-relax",
+  emotion_settle: "Érzelmi lecsendesítés",
+  body_release: "Testi oldás",
+  safety_settle: "Biztonságérzet",
+  meaning_seed: "Jelentés hangolás",
+  learning_settle: "Tanulás ülepedése",
+  creativity_seed: "Kreatív nyitás",
+  habit_seed: "Szokás indítása",
+  day_close: "Napi lezárás",
 
-  // hiányzók a katalógusból
-  "problem-solving": "Problémamegoldás",
-  habits: "Szokások",
-  "behavior-change": "Viselkedésváltozás",
-  "micro-step": "Mikrolépés",
-  consolidation: "Konszolidáció",
-  intention: "Szándék",
-  metacognition: "Metakogníció",
-  creativity: "Kreativitás",
-  inspiration: "Inspiráció",
+  // módszer / forma
+  writing: "Írás",
+  breath: "Légzés",
+  body: "Testérzet",
   imagery: "Képzelet",
-  symbols: "Szimbólumok",
-  "life-direction": "Életirány",
-  integration: "Integráció",
-  spiritual: "Spirituális",
-  gratitude: "Hála",
-  grounded: "Földelt",
-  "deep-sleep": "Mély alvás",
-  stress: "Stressz",
-  thoughts: "Gondolatok",
-  nightmare: "Rémálom",
-
-  // vegyes / legacy
-  prep: "Előkészítés",
+  phrase: "Belső mondat",
+  review: "Visszatekintés",
+  planning: "Finom tervezés",
+  setup: "Előkészítés",
 };
 
 function huTag(t: string): string {
@@ -566,13 +543,9 @@ export default function EveningLanding() {
             ) : null}
           </div>
 
-          {/* jobb: time pill */}
+          {/* jobb: time (plain text) */}
           <div className="pill-row-right">
-            {time ? (
-              <Pill variant="neutral">
-                {time}
-              </Pill>
-            ) : null}
+            {time ? <div className="time-text">{time}</div> : null}
           </div>
         </div>
 
@@ -881,12 +854,26 @@ export default function EveningLanding() {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          min-height: 220px;
-          gap: 14px;
+          
+          padding: 18px;
+          min-height: 250px;
+          gap: 0;
+        }
+
+        /* TOP/MID/BOTTOM tagolás */
+          .card-top { margin-bottom: 14px; }
+          .card-mid { margin-bottom: 14px; }
+
+        /* BOTTOM (tag-row) menjen le a kártya aljára */
+        .tag-row {
+          margin-top: auto;
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
         }
 
         .evening-card:hover {
-          transform: translateY(-3px) scale(1.03);
+          transform: translateY(0px) scale(1.08);
           box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
         }
 
@@ -915,6 +902,14 @@ export default function EveningLanding() {
           padding-top: 1px;
         }
 
+        .time-text {
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--text-muted);
+          padding-top: 2px;
+          white-space: nowrap;
+        }
+
         /* middle wrapper (title + goal) */
         .card-mid {
           display: grid;
@@ -922,7 +917,7 @@ export default function EveningLanding() {
         }
 
         .evening-card-title {
-          font-size: 20px;
+          font-size: 26px;
           font-weight: 900;
           letter-spacing: -0.015em;
           line-height: 1.15;
@@ -1006,6 +1001,11 @@ export default function EveningLanding() {
         :global(.pill) {
           box-shadow: none !important;
           font-weight: 600 !important;
+        }
+
+        /* intent + phase: NE kapjon “sötét” pill-bg-t */
+          :global(.pill:not(.pill--neutral)) {
+          background: transparent !important;
         }
       `}</style>
     </Shell>
