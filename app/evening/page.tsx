@@ -427,7 +427,7 @@ export default function EveningLanding() {
             ) : null}
           </div>
 
-          {time ? <div className="card-time">{time}</div> : <div />}
+          {time ? <div className="card-time">{time}</div> : null}
         </div>
 
         <div className="card-title">{c.title}</div>
@@ -743,12 +743,12 @@ export default function EveningLanding() {
         .pill {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
+          justify-content: center;
+          
           min-height: 30px;
-
           padding: 7px 12px;
+          
           border-radius: 999px;
-
           border: 2.25px solid currentColor;
           background: var(--evening-pill-bg);
 

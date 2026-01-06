@@ -68,10 +68,28 @@ a heavy UI framework.
   --dream-input-text: var(--text-primary);
   --dream-input-placeholder: rgba(28, 36, 48, 0.55);
 
-  /* Evening cards (fallback = nappali papír) */
+  /* Evening cards – “papír” alap (alapérték nappali jelleg) */
   --evening-card-paper: rgba(248, 192, 138, 0.30);
   --evening-card-paper-strong: rgba(248, 192, 138, 0.42);
+
+  /* Evening pills – háttér */
   --evening-pill-bg: rgba(255, 255, 255, 0.10);
+
+  /* Evening intent / phase colors (border+text) */
+  --intent-biztonsag: rgba(120, 195, 255, 0.95);
+  --intent-lecsendesites: rgba(170, 140, 255, 0.95);
+  --intent-emlekezet: rgba(255, 190, 120, 0.95);
+  --intent-tudatossag: rgba(120, 220, 170, 0.95);
+  --intent-kreativ_inkubacio: rgba(255, 150, 190, 0.95);
+  --intent-irany_es_jelentes: rgba(255, 220, 120, 0.95);
+  --intent-test_es_jelenlet: rgba(160, 235, 255, 0.95);
+
+  --phase-prep: rgba(255, 200, 120, 0.95);
+  --phase-in_bed: rgba(170, 140, 255, 0.95);
+  --phase-rescue: rgba(120, 195, 255, 0.95);
+
+  /* Intent glow (a gradient színes sarka) */
+  --intent-glow-alpha: 0.32;
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -273,33 +291,6 @@ body[data-napszak="night"] {
   --evening-pill-bg: rgba(255, 255, 255, 0.06);
 
 }
-
-/* ────────────────────────────────────────────────────────────── */
-/* 3) EVENING CARD COLORS                                                  */
-/* ────────────────────────────────────────────────────────────── */
-
-  /* Evening cards – “papír” alap (alapérték nappali jelleg) */
-  --evening-card-paper: rgba(248, 192, 138, 0.30);
-  --evening-card-paper-strong: rgba(248, 192, 138, 0.42);
-
-  /* Evening pills – háttér */
-  --evening-pill-bg: rgba(255, 255, 255, 0.10);
-
-  /* Evening intent / phase colors (border+text) */
-  --intent-biztonsag: rgba(120, 195, 255, 0.95);
-  --intent-lecsendesites: rgba(170, 140, 255, 0.95);
-  --intent-emlekezet: rgba(255, 190, 120, 0.95);
-  --intent-tudatossag: rgba(120, 220, 170, 0.95);
-  --intent-kreativ_inkubacio: rgba(255, 150, 190, 0.95);
-  --intent-irany_es_jelentes: rgba(255, 220, 120, 0.95);
-  --intent-test_es_jelenlet: rgba(160, 235, 255, 0.95);
-
-  --phase-prep: rgba(255, 200, 120, 0.95);
-  --phase-in_bed: rgba(170, 140, 255, 0.95);
-  --phase-rescue: rgba(120, 195, 255, 0.95);
-
-  /* Intent glow (a gradient színes sarka) */
-  --intent-glow-alpha: 0.32;
 
 
 /* ────────────────────────────────────────────────────────────── */
