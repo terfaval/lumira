@@ -209,6 +209,7 @@ function timeBucket(raw?: string): TimeFilterKey | null {
   return "t5plus";
 }
 
+
 export default function EveningLanding() {
   const { loading } = useRequireAuth();
   const [cards, setCards] = useState<EveningCardCatalogItem[]>([]);
@@ -435,10 +436,10 @@ export default function EveningLanding() {
     const intentTok = intentToken(primaryIntent);
     const phaseTok = phaseToken(p);
 
-    // Tagok: HU + rövid + ne legyen redundáns phase/intent alapján
+    // Tagok: HU + rövid
     const rawTags = (((c as any)?.tags ?? []) as string[]).map(normalizeTagKey).filter(Boolean);
-    const exclude = excludedTagsFor(p, intents);
-    const tags = rawTags.filter((t) => !exclude.has(t)).slice(0, 3);
+    const tags = rawTags.slice(0, 2);
+
 
     const bgCorner = intentTok ? `var(${intentTok.bg})` : "rgba(0,0,0,0)";
 
