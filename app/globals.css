@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 /*
-Design tokens live here.
-Applied via body[data-napszak] from NapszakInitializer.
-We maintain only TWO themes:
-- Day  (morning, day)
+Globals.css — Design Tokens + Minimal UI Primitives
+Themes:
+- Day   (morning, day)
 - Night (default, evening, night)
+All colors use HEX. Semi-transparent colors use 8-digit HEX (#RRGGBBAA).
 */
 
 /* ────────────────────────────────────────────────────────────── */
@@ -13,55 +13,66 @@ We maintain only TWO themes:
 /* ────────────────────────────────────────────────────────────── */
 
 :root {
+  /* Typography */
   --font-base: var(--font-geist-sans, system-ui, -apple-system, sans-serif);
   --font-mono: var(--font-geist-mono, "JetBrains Mono", monospace);
 
+  /* Radii */
   --radius-card: 14px;
   --radius-pill: 999px;
 
+  /* Spacing */
   --space-1: 6px;
   --space-2: 10px;
   --space-3: 14px;
   --space-4: 20px;
   --space-5: 28px;
 
-  --shadow-soft: 0 18px 38px rgba(0, 0, 0, 0.10);
+  /* Shadows (use hex alpha) */
+  --shadow-soft: 0 18px 38px #0000001A; /* ~10% */
+  --shadow-accent: 0 10px 26px #00000073; /* ~45% (overridden per theme where needed) */
 
-  /* Semantic (theme will set actual colors) */
-  --bg-root: #111;
-  --bg-layer: rgba(255, 255, 255, 0.08);
-  --bg-layer-strong: rgba(255, 255, 255, 0.12);
+  /* ------------------------------------------------------------------ */
+  /* SEMANTIC TOKENS (theme sets actual values)                          */
+  /* Defaults here act as "Night fallback" until body[data-napszak] sets */
+  /* ------------------------------------------------------------------ */
 
-  --card-surface: rgba(255, 255, 255, 0.06);
-  --card-surface-subtle: rgba(255, 255, 255, 0.04);
+  /* Backgrounds / Surfaces */
+  --bg-root: #0C1019;
+  --bg-layer: #121827;
+  --bg-layer-strong: #0A0F18;
+
+  --card-surface: #121827;
+  --card-surface-subtle: #0C1019;
 
   /* Text */
-  --text-primary: rgba(255, 255, 255, 0.92);
-  --text-secondary: rgba(255, 255, 255, 0.72);
-  --text-muted: rgba(255, 255, 255, 0.66);
+  --text-primary: #E6EBF5;
+  --text-secondary: #E6EBF5DB; /* 86% */
+  --text-muted: #9DA7BC;
 
-  --line-soft: rgba(255, 255, 255, 0.16);
+  /* Lines */
+  --line-soft: #E2E8F024; /* 14% */
 
-  --accent: #9bd0c9;
-  --accent-2: #497c92;
-  --accent-ink: #0b1020;
+  /* Accents */
+  --accent: #80B9B9;
+  --accent-2: #497C92;
+  --accent-ink: #07101A;
 
-  --focus-ring: rgba(155, 208, 201, 0.30);
-  --selection-bg: rgba(155, 208, 201, 0.18);
+  /* Interaction */
+  --focus-ring: #80B9B957;     /* 34% */
+  --selection-bg: #80B9B938;   /* 22% */
 
-  --glow-1: rgba(73, 124, 146, 0.14);
-  --glow-2: rgba(155, 208, 201, 0.08);
-
-  --shadow-accent: 0 10px 26px rgba(0, 0, 0, 0.45);
+  /* Decorative glow */
+  --glow-1: #32586D24; /* 14% */
+  --glow-2: #80B9B914; /* 8% */
 
   /* Links */
   --link: var(--text-primary);
   --link-hover: var(--accent);
 
   /* Pills / badges */
-  --pill-bg: rgba(255, 255, 255, 0.08);
-
-  --badge-bg: rgba(255, 255, 255, 0.10);
+  --pill-bg: #FFFFFF14;     /* 8% */
+  --badge-bg: #FFFFFF1A;    /* 10% */
   --badge-line: var(--line-soft);
   --badge-text: var(--text-muted);
 
@@ -69,13 +80,13 @@ We maintain only TWO themes:
   --input-bg: var(--card-surface-subtle);
   --input-bg-focus: var(--bg-layer);
   --input-text: var(--text-primary);
-  --input-placeholder: rgba(255, 255, 255, 0.55);
+  --input-placeholder: #FFFFFF8C; /* 55% */
 
   /* Dream textarea (theme overrides) */
-  --dream-input-bg: var(--input-bg);
-  --dream-input-bg-focus: var(--input-bg-focus);
-  --dream-input-text: var(--input-text);
-  --dream-input-placeholder: var(--input-placeholder);
+  --dream-input-bg: #32586D5C;        /* 36% */
+  --dream-input-bg-focus: #32586D85;  /* 52% */
+  --dream-input-text: #FFFFFFEB;      /* 92% */
+  --dream-input-placeholder: #FFFFFF8C;
 
   /* New Dream – container surface (theme overrides) */
   --newdream-surface-bg: var(--bg-layer);
@@ -83,91 +94,93 @@ We maintain only TWO themes:
   --newdream-surface-text: var(--text-primary);
   --newdream-surface-muted: var(--text-muted);
 
-  /* Status (theme-safe, readable in both) */
-  --success: rgba(120, 220, 170, 0.95);
-  --success-bg: rgba(120, 220, 170, 0.16);
+  /* Status (theme-safe) */
+  --success: #78DCAAF2;    /* rgba(120,220,170,0.95) */
+  --success-bg: #78DCAA29; /* 16% */
 
-  --warning: rgba(255, 200, 120, 0.95);
-  --warning-bg: rgba(255, 200, 120, 0.16);
+  --warning: #FFC878F2;    /* rgba(255,200,120,0.95) */
+  --warning-bg: #FFC87829; /* 16% */
 
-  --danger: rgba(255, 120, 120, 0.95);
-  --danger-bg: rgba(255, 120, 120, 0.16);
+  --danger: #FF7878F2;     /* rgba(255,120,120,0.95) */
+  --danger-bg: #FF787829;  /* 16% */
 
   /* Evening cards “paper” surfaces (theme overrides) */
-  --evening-card-paper: rgba(255, 247, 228, 0.55);
-  --evening-card-paper-strong: rgba(255, 247, 228, 0.70);
+  --evening-card-paper: #060C16C2;        /* 76% */
+  --evening-card-paper-strong: #040810DB; /* 86% */
 
-  /* Intents + phases (keep your existing values) */
-  --intent-biztonsag: rgba(120, 195, 255, 0.95);
-  --intent-lecsendesites: rgba(170, 140, 255, 0.95);
-  --intent-emlekezet: rgba(255, 190, 120, 0.95);
-  --intent-tudatossag: rgba(120, 220, 170, 0.95);
-  --intent-kreativ_inkubacio: rgba(255, 150, 190, 0.95);
-  --intent-irany_es_jelentes: rgba(255, 220, 120, 0.95);
-  --intent-test_es_jelenlet: rgba(160, 235, 255, 0.95);
+  /* ──────────────────────────────────────────────────────────── */
+  /* Intents + phases (keep your existing values; now HEX)         */
+  /* ──────────────────────────────────────────────────────────── */
 
-  --intent-biztonsag-bg: rgba(120, 195, 255, 0.20);
-  --intent-lecsendesites-bg: rgba(170, 140, 255, 0.18);
-  --intent-emlekezet-bg: rgba(255, 190, 120, 0.18);
-  --intent-tudatossag-bg: rgba(120, 220, 170, 0.18);
-  --intent-kreativ_inkubacio-bg: rgba(255, 150, 190, 0.18);
-  --intent-irany_es_jelentes-bg: rgba(255, 220, 120, 0.18);
-  --intent-test_es_jelenlet-bg: rgba(160, 235, 255, 0.18);
+  --intent-biztonsag: #78C3FFF2;
+  --intent-lecsendesites: #AA8CFFF2;
+  --intent-emlekezet: #FFBE78F2;
+  --intent-tudatossag: #78DCAAF2;
+  --intent-kreativ_inkubacio: #FF96BEF2;
+  --intent-irany_es_jelentes: #FFDC78F2;
+  --intent-test_es_jelenlet: #A0EBFFF2;
 
-  --phase-prep: rgba(255, 200, 120, 0.95);
-  --phase-in_bed: rgba(170, 140, 255, 0.95);
-  --phase-rescue: rgba(120, 195, 255, 0.95);
+  --intent-biztonsag-bg: #78C3FF33;        /* 20% */
+  --intent-lecsendesites-bg: #AA8CFF2E;    /* 18% */
+  --intent-emlekezet-bg: #FFBE782E;        /* 18% */
+  --intent-tudatossag-bg: #78DCAA2E;       /* 18% */
+  --intent-kreativ_inkubacio-bg: #FF96BE2E;/* 18% */
+  --intent-irany_es_jelentes-bg: #FFDC782E;/* 18% */
+  --intent-test_es_jelenlet-bg: #A0EBFF2E; /* 18% */
 
-  --phase-prep-bg: rgba(255, 200, 120, 0.18);
-  --phase-in_bed-bg: rgba(170, 140, 255, 0.18);
-  --phase-rescue-bg: rgba(120, 195, 255, 0.20);
+  --phase-prep: #FFC878F2;
+  --phase-in_bed: #AA8CFFF2;
+  --phase-rescue: #78C3FFF2;
+
+  --phase-prep-bg: #FFC8782E;   /* 18% */
+  --phase-in_bed-bg: #AA8CFF2E; /* 18% */
+  --phase-rescue-bg: #78C3FF33; /* 20% */
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/* 1) THEME: DAY  (morning + day)                                  */
+/* 1) THEME: DAY (morning + day)                                   */
 /* ────────────────────────────────────────────────────────────── */
 
 body[data-napszak="morning"],
 body[data-napszak="day"] {
   /* background “bőrkötés” */
-  --bg-root: rgb(121, 75, 78);
+  --bg-root: #6A4245;
 
   /* surfaces (papír) */
-  --bg-layer: rgba(255, 245, 240, 0.86);
-  --bg-layer-strong: #f2d8d0;
+  --bg-layer: #FFF5F0DB;        /* 86% */
+  --bg-layer-strong: #F2D8D0;
 
-  --card-surface: #fff1eb;
-  --card-surface-subtle: #f4dcd4;
+  --card-surface: #FFF1EB;
+  --card-surface-subtle: #F4DCD4;
 
-  /* primary sötét (normál szövegekhez) */
-  --text-primary: #23181a;
+  /* text */
+  --text-primary: #23181A;
   --text-muted: #594244;
 
-  /* secondary világos (shell title + hamburger alap) */
-  --text-secondary: rgba(255, 245, 240, 0.86);
+  /* secondary (shell title + hamburger alap) */
+  --text-secondary: #FFF5F0DB; /* 86% */
 
-  --line-soft: rgba(52, 24, 26, 0.22);
+  --line-soft: #34181A38; /* 22% */
 
-  /* accents (nappali arany/barnás) */
-  --accent: #c09651;
-  --accent-2: #8e4f39;
-  --accent-ink: #23181a;
+  /* accents */
+  --accent: #C09651;
+  --accent-2: #8E4F39;
+  --accent-ink: #23181A;
 
-  --focus-ring: rgba(192, 150, 81, 0.34);
-  --selection-bg: rgba(192, 150, 81, 0.20);
+  --focus-ring: #C0965157;    /* 34% */
+  --selection-bg: #C0965133;  /* 20% */
 
-  --glow-1: rgba(216, 88, 78, 0.18);
-  --glow-2: rgba(192, 150, 81, 0.14);
+  --glow-1: #D8584E2E; /* 18% */
+  --glow-2: #C0965124; /* 14% */
 
-  --shadow-accent: 0 10px 26px rgba(34, 14, 16, 0.22);
+  --shadow-accent: 0 10px 26px #220E1038; /* 22% */
 
   --link: var(--text-primary);
   --link-hover: var(--accent);
 
   /* pills/badges */
-  --pill-bg: rgba(52, 24, 26, 0.08);
-
-  --badge-bg: rgba(255, 245, 240, 0.28);
+  --pill-bg: #34181A14;      /* 8% */
+  --badge-bg: #FFF5F047;     /* 28% */
   --badge-line: var(--line-soft);
   --badge-text: var(--text-muted);
 
@@ -175,25 +188,23 @@ body[data-napszak="day"] {
   --input-bg: var(--card-surface-subtle);
   --input-bg-focus: var(--bg-layer);
   --input-text: var(--text-primary);
-  --input-placeholder: rgba(35, 24, 26, 0.42);
+  --input-placeholder: #23181A6B; /* 42% */
 
-  /* ✅ New Dream – a nagy kártya legyen sötét nappaliban */
-  --newdream-surface-bg: rgb(81, 57, 67);
-  --newdream-surface-border: rgba(255, 245, 240, 0.22);
-  --newdream-surface-text: rgba(255, 245, 240, 0.92);
-  --newdream-surface-muted: rgba(255, 245, 240, 0.72);
+  /* New Dream – a nagy kártya legyen sötét nappaliban */
+  --newdream-surface-bg: #513943;
+  --newdream-surface-border: #FFF5F038; /* 22% */
+  --newdream-surface-text: #FFF5F0EB;   /* 92% */
+  --newdream-surface-muted: #FFF5F0B8;  /* 72% */
 
-  /* ✅ Dream textarea: vissza a világos “vajpapírra” */
-  --dream-input-bg: rgba(255, 248, 232, 0.96);
-  --dream-input-bg-focus: rgba(255, 248, 232, 1);
+  /* Dream textarea: világos “vajpapír” */
+  --dream-input-bg: #FFF8E8F5;       /* 96% */
+  --dream-input-bg-focus: #FFF8E8;   /* 100% */
   --dream-input-text: var(--text-primary);
-
-  /* ✅ Placeholder legyen sötétebb világos alapon */
-  --dream-input-placeholder: rgba(35, 24, 26, 0.52);
+  --dream-input-placeholder: #23181A85; /* 52% */
 
   /* Evening cards – day fallback paper */
-  --evening-card-paper: rgba(255, 247, 228, 0.55);
-  --evening-card-paper-strong: rgba(255, 247, 228, 0.70);
+  --evening-card-paper: #FFF7E48C;        /* 55% */
+  --evening-card-paper-strong: #FFF7E4B3; /* 70% */
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -203,45 +214,43 @@ body[data-napszak="day"] {
 body[data-napszak="default"],
 body[data-napszak="evening"],
 body[data-napszak="night"] {
-  --bg-root: #0c1019;
+  --bg-root: #0C1019;
   --bg-layer: #121827;
-  --bg-layer-strong: #0a0f18;
+  --bg-layer-strong: #0A0F18;
 
   --card-surface: #121827;
-  --card-surface-subtle: #0c1019;
+  --card-surface-subtle: #0C1019;
 
-  --text-primary: #e6ebf5;
-  --text-secondary: rgba(230, 235, 245, 0.86);
-  --text-muted: #9da7bc;
+  --text-primary: #E6EBF5;
+  --text-secondary: #E6EBF5DB; /* 86% */
+  --text-muted: #9DA7BC;
 
-  --line-soft: rgba(226, 232, 240, 0.14);
+  --line-soft: #E2E8F024; /* 14% */
 
-  /* accents (kékes) */
-  --accent: #80b9b9;
-  --accent-2: #497c92;
-  --accent-ink: #07101a;
+  --accent: #80B9B9;
+  --accent-2: #497C92;
+  --accent-ink: #07101A;
 
-  --focus-ring: rgba(128, 185, 185, 0.34);
-  --selection-bg: rgba(128, 185, 185, 0.22);
+  --focus-ring: #80B9B957;    /* 34% */
+  --selection-bg: #80B9B938;  /* 22% */
 
-  --glow-1: rgba(50, 88, 109, 0.14);
-  --glow-2: rgba(128, 185, 185, 0.08);
+  --glow-1: #32586D24; /* 14% */
+  --glow-2: #80B9B914; /* 8% */
 
-  --shadow-accent: 0 10px 26px rgba(0, 0, 0, 0.60);
+  --shadow-accent: 0 10px 26px #00000099; /* 60% */
 
   --link: var(--text-primary);
   --link-hover: var(--accent);
 
-  --pill-bg: rgba(255, 255, 255, 0.08);
-
-  --badge-bg: rgba(255, 255, 255, 0.10);
+  --pill-bg: #FFFFFF14;   /* 8% */
+  --badge-bg: #FFFFFF1A;  /* 10% */
   --badge-line: var(--line-soft);
   --badge-text: var(--text-muted);
 
   --input-bg: var(--card-surface-subtle);
   --input-bg-focus: var(--bg-layer);
   --input-text: var(--text-primary);
-  --input-placeholder: rgba(255, 255, 255, 0.55);
+  --input-placeholder: #FFFFFF8C; /* 55% */
 
   /* New Dream surface defaults */
   --newdream-surface-bg: var(--bg-layer);
@@ -249,15 +258,15 @@ body[data-napszak="night"] {
   --newdream-surface-text: var(--text-primary);
   --newdream-surface-muted: var(--text-muted);
 
-  /* Dream textarea: sötétkék + fehér betű */
-  --dream-input-bg: rgba(50, 88, 109, 0.36);
-  --dream-input-bg-focus: rgba(50, 88, 109, 0.52);
-  --dream-input-text: rgba(255, 255, 255, 0.92);
-  --dream-input-placeholder: rgba(255, 255, 255, 0.55);
+  /* Dream textarea */
+  --dream-input-bg: #32586D5C;       /* 36% */
+  --dream-input-bg-focus: #32586D85; /* 52% */
+  --dream-input-text: #FFFFFFEB;     /* 92% */
+  --dream-input-placeholder: #FFFFFF8C;
 
   /* Evening cards: sötét “papír” */
-  --evening-card-paper: rgba(6, 12, 22, 0.76);
-  --evening-card-paper-strong: rgba(4, 8, 16, 0.86);
+  --evening-card-paper: #060C16C2;        /* 76% */
+  --evening-card-paper-strong: #040810DB; /* 86% */
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -310,7 +319,7 @@ p { margin: 0; line-height: 1.6; }
 .shell-title {
   font-size: 28px;
   margin-top: var(--space-2);
-  color: var(--text-secondary); /* ✅ világos nappaliban */
+  color: var(--text-secondary);
 }
 
 .surface-layer {
@@ -429,13 +438,13 @@ textarea:focus {
   font-weight: 900;
   line-height: 1;
   white-space: nowrap;
-  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 10px 18px #0000001A; /* 10% */
 }
 
 .pill--neutral {
   color: var(--text-muted);
-  border-color: rgba(127, 127, 127, 0.28);
-  background: rgba(255, 255, 255, 0.10);
+  border-color: #7F7F7F47;   /* 28% */
+  background: #FFFFFF1A;     /* 10% */
   box-shadow: none;
 }
 
@@ -447,7 +456,6 @@ textarea:focus {
   min-height: 60vh;
   resize: vertical;
   line-height: 1.65;
-
   background: var(--dream-input-bg);
   color: var(--dream-input-text);
 }
@@ -465,7 +473,7 @@ textarea:focus {
 
 .newdream-error {
   background: var(--bg-layer);
-  border: 1px solid rgba(220, 38, 38, 0.35);
+  border: 1px solid #DC262659; /* 35% */
   color: var(--text-primary);
   border-radius: 12px;
   padding: 10px 12px;
@@ -486,31 +494,31 @@ textarea:focus {
 
 .newdream-panel { padding: var(--space-1); }
 
-/* ✅ New Dream main card (the <section class="surface-layer card stack"> in Shell) */
+/* New Dream main card (the <section class="surface-layer card stack"> in Shell) */
 body[data-space="dream"] .shell > section.surface-layer.card.stack {
   background: var(--newdream-surface-bg);
   border-color: var(--newdream-surface-border);
   color: var(--newdream-surface-text);
 }
 
-/* ✅ Footer controls on the dark New Dream card */
+/* Footer controls on the dark New Dream card */
 body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-footer,
 body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-footer * {
   color: var(--newdream-surface-text);
 }
 
-/* ✅ Make non-primary buttons readable on dark surface (Törlés + stat) */
+/* Non-primary buttons readable on dark surface */
 body[data-space="dream"] .shell > section.surface-layer.card.stack .btn:not(.btn-primary) {
   color: var(--newdream-surface-text);
   border-color: var(--newdream-surface-border);
-  background: rgba(255, 245, 240, 0.06);
+  background: #FFF5F00F; /* 6% */
 }
 
 body[data-space="dream"] .shell > section.surface-layer.card.stack .btn:not(.btn-primary):hover:not(:disabled) {
-  background: rgba(255, 245, 240, 0.10);
+  background: #FFF5F01A; /* 10% */
 }
 
-/* ✅ Stat chip/button */
+/* Stat chip/button */
 body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-stat {
   color: var(--newdream-surface-text);
   border-color: var(--newdream-surface-border);
@@ -566,7 +574,7 @@ body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-sta
 
 .panel-body::-webkit-scrollbar-thumb,
 .dream-raw-text::-webkit-scrollbar-thumb {
-  background: rgba(127, 127, 127, 0.35);
+  background: #7F7F7F59; /* 35% */
   border-radius: 10px;
 }
 
@@ -575,7 +583,7 @@ body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-sta
 
 /* Firefox */
 .panel-body,
-.dream-raw-text { scrollbar-color: rgba(127, 127, 127, 0.35) transparent; scrollbar-width: thin; }
+.dream-raw-text { scrollbar-color: #7F7F7F59 transparent; scrollbar-width: thin; }
 
 /* ────────────────────────────────────────────────────────────── */
 /* 7) SPACE OVERRIDES                                              */
@@ -598,19 +606,12 @@ body[data-space="evening"] {
 .shell-topbar { display: flex; align-items: center; gap: 12px; }
 .shell-topbar-spacer { flex: 1; }
 
-/* Hamburger is a .btn.btn-secondary in your Shell (NOT .icon-btn) */
-/* ✅ Hamburger: light by default, dark on hover */
-.shell-topbar .btn.btn-secondary {
-  color: var(--text-secondary);
-}
-.shell-topbar .btn.btn-secondary:hover:not(:disabled) {
-  color: var(--text-primary);
-}
+/* Hamburger is a .btn.btn-secondary in your Shell */
+.shell-topbar .btn.btn-secondary { color: var(--text-secondary); }
+.shell-topbar .btn.btn-secondary:hover:not(:disabled) { color: var(--text-primary); }
 
 /* Info icon button (when it is displayed) should be dark by default */
-.shell-topbar .icon-btn {
-  color: var(--text-primary);
-}
+.shell-topbar .icon-btn { color: var(--text-primary); }
 
 .icon-btn {
   width: 40px;
