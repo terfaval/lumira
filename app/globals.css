@@ -25,57 +25,67 @@ a heavy UI framework.
 
   --shadow-soft: 0 18px 38px rgba(0, 0, 0, 0.06);
 
-  /* Fallback (ha valamiért nincs data-napszak) */
-  --bg-root: #f5f8f8;
-  --bg-layer: #ffffffdd;
-  --bg-layer-strong: #eef4f4;
+  /* ────────────────────────────────────────────────────────────── */
+  /* FALLBACK (ha valamiért nincs data-napszak)                      */
+  /* Nappali: pasztel bordós-barnás tér + sárgás törtfehér “papír”    */
+  /* ────────────────────────────────────────────────────────────── */
+
+  /* háttér */
+  --bg-root: #f2e7e5; /* pasztel bordós-barnás */
+
+  /* felületek (meleg törtfehér) */
+  --bg-layer: rgba(255, 250, 245, 0.86);
+  --bg-layer-strong: #fbf1ec;
 
   --text-primary: #1c2430;
-  --text-muted: #4f5b6a;
+  --text-muted: #5f5a57;
 
-  --line-soft: rgba(30, 41, 59, 0.12);
+  /* meleg kontúr */
+  --line-soft: rgba(60, 36, 32, 0.14);
 
-  --card-surface: #ffffff;
-  --card-surface-subtle: #f5f8f8;
+  /* kártyák */
+  --card-surface: #fffaf5;
+  --card-surface-subtle: #fbf1ec;
 
   --text: var(--text-primary);
   --border: var(--line-soft);
   --bg: var(--bg-layer);
 
-  /* Accent: 1 / nappali (Cerulean Blue) */
-  --accent: #80b9b9;
-  --accent-2: #497c92; /* Wedgewood Blue (nappali) mint mélyebb pár */
+  /* Accent (nappal): meleg napló-hangulat */
+  --accent: #c09651;   /* Golden Tan (nappali) */
+  --accent-2: #8e4f39; /* Earth Brown (nappali) */
 
   --accent-ink: #0b1020;
-  --focus-ring: rgba(128, 185, 185, 0.30);
-  --selection-bg: rgba(128, 185, 185, 0.18);
+  --focus-ring: rgba(192, 150, 81, 0.28);
+  --selection-bg: rgba(192, 150, 81, 0.18);
 
   --link: var(--text-primary);
   --link-hover: var(--accent);
 
-  --glow-1: rgba(128, 185, 185, 0.14);
-  --glow-2: rgba(128, 185, 185, 0.10);
+  /* finom meleg glow */
+  --glow-1: rgba(216, 88, 78, 0.10);  /* Warm Coral (nappali hangulat) */
+  --glow-2: rgba(192, 150, 81, 0.10); /* Golden Tan */
 
-  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.18);
+  --shadow-accent: 0 10px 26px rgba(58, 32, 26, 0.16);
 
-  --badge-bg: var(--card-surface-subtle);
+  --badge-bg: rgba(255, 250, 245, 0.35);
   --badge-line: var(--line-soft);
   --badge-text: var(--text-muted);
 
-  /* Dream textarea tokens (fallback = nappali papír) */
-  --dream-input-bg: rgba(255, 231, 168, 0.30);
-  --dream-input-bg-focus: rgba(255, 231, 168, 0.42);
+  /* Dream textarea tokens (nappali “vajpapír”) */
+  --dream-input-bg: rgba(255, 247, 228, 0.92);
+  --dream-input-bg-focus: rgba(255, 247, 228, 0.98);
   --dream-input-text: var(--text-primary);
-  --dream-input-placeholder: rgba(28, 36, 48, 0.55);
+  --dream-input-placeholder: rgba(28, 36, 48, 0.45);
 
   /* ────────────────────────────────────────────────────────────── */
-  /* Evening cards – PAPÍR (nappali = sárgás törtfehér)              */
+  /* Evening cards – PAPÍR                                          */
   /* ────────────────────────────────────────────────────────────── */
-  --evening-card-paper: rgba(255, 244, 222, 0.92);
-  --evening-card-paper-strong: rgba(255, 235, 190, 0.96);
+  --evening-card-paper: rgba(255, 247, 228, 0.55);
+  --evening-card-paper-strong: rgba(255, 247, 228, 0.70);
 
   /* Evening pills – háttér */
-  --evening-pill-bg: rgba(255, 255, 255, 0.22);
+  --evening-pill-bg: rgba(60, 36, 32, 0.06);
 
   /* ────────────────────────────────────────────────────────────── */
   /* Evening intent / phase colors (TEXT + BG)                       */
@@ -112,124 +122,121 @@ a heavy UI framework.
 
 /* ────────────────────────────────────────────────────────────── */
 /* 2) NAPSZAK TOKENS                                               */
-/*    - default/morning/day: világos, sárga textarea               */
-/*    - evening/night: sötét, kék textarea + fehér betű            */
+/*    - default/morning/day: bordós-barnás nappali + papír textarea */
+/*    - evening/night: sötét, kék textarea + fehér betű             */
 /* ────────────────────────────────────────────────────────────── */
 
 /* DEFAULT (ha FORCE_DEFAULT_THEME true, ez a legfontosabb) */
 body[data-napszak="default"] {
-  --bg-root: #f5f8f8;
-  --bg-layer: #ffffffdd;
-  --bg-layer-strong: #eef4f4;
+  --bg-root: #f2e7e5;
+
+  --bg-layer: rgba(255, 250, 245, 0.86);
+  --bg-layer-strong: #fbf1ec;
 
   --text-primary: #1c2430;
-  --text-muted: #4f5b6a;
+  --text-muted: #5f5a57;
 
-  --line-soft: rgba(30, 41, 59, 0.12);
+  --line-soft: rgba(60, 36, 32, 0.14);
 
-  --card-surface: #ffffff;
-  --card-surface-subtle: #f5f8f8;
+  --card-surface: #fffaf5;
+  --card-surface-subtle: #fbf1ec;
 
-  /* Accent: 1 / nappali */
-  --accent: #80b9b9;
-  --accent-2: #497c92;
+  --accent: #c09651;
+  --accent-2: #8e4f39;
 
   --accent-ink: #0b1020;
-  --focus-ring: rgba(128, 185, 185, 0.30);
-  --selection-bg: rgba(128, 185, 185, 0.18);
+  --focus-ring: rgba(192, 150, 81, 0.28);
+  --selection-bg: rgba(192, 150, 81, 0.18);
 
-  --glow-1: rgba(128, 185, 185, 0.14);
-  --glow-2: rgba(128, 185, 185, 0.10);
+  --glow-1: rgba(216, 88, 78, 0.10);
+  --glow-2: rgba(192, 150, 81, 0.10);
 
-  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.18);
+  --shadow-accent: 0 10px 26px rgba(58, 32, 26, 0.16);
 
-  /* Dream textarea: sárga (nappali Sunlit Yellow) */
-  --dream-input-bg: rgba(248, 192, 138, 0.30);
-  --dream-input-bg-focus: rgba(248, 192, 138, 0.42);
+  /* Dream textarea: sárgás törtfehér “papír” */
+  --dream-input-bg: rgba(255, 247, 228, 0.92);
+  --dream-input-bg-focus: rgba(255, 247, 228, 0.98);
   --dream-input-text: var(--text-primary);
-  --dream-input-placeholder: rgba(28, 36, 48, 0.55);
+  --dream-input-placeholder: rgba(28, 36, 48, 0.45);
 
-  /* Evening cards (nappali papír) */
-  --evening-card-paper: rgba(255, 244, 222, 0.92);
-  --evening-card-paper-strong: rgba(255, 235, 190, 0.96);
-  --evening-pill-bg: rgba(255, 255, 255, 0.22);
+  /* Evening cards (nappali papír fallback) */
+  --evening-card-paper: rgba(255, 247, 228, 0.55);
+  --evening-card-paper-strong: rgba(255, 247, 228, 0.70);
+  --evening-pill-bg: rgba(60, 36, 32, 0.06);
 }
 
-/* MORNING: maradhat a teljes téma később finomabb, de textarea sárga legyen ugyanaz */
+/* MORNING: ugyanaz a nappali paletta (később finomhangolható) */
 body[data-napszak="morning"] {
-  --bg-root: #f6f7f4;
-  --bg-layer: #ffffffdd;
-  --bg-layer-strong: #eef2ea;
+  --bg-root: #f2e7e5;
+
+  --bg-layer: rgba(255, 250, 245, 0.86);
+  --bg-layer-strong: #fbf1ec;
 
   --text-primary: #1c2430;
-  --text-muted: #4f5b6a;
+  --text-muted: #5f5a57;
 
-  --line-soft: rgba(30, 41, 59, 0.12);
+  --line-soft: rgba(60, 36, 32, 0.14);
 
-  --card-surface: #ffffff;
-  --card-surface-subtle: #f6f7f4;
+  --card-surface: #fffaf5;
+  --card-surface-subtle: #fbf1ec;
 
-  /* Accent marad egységesen a “1 / nappali” (később lehet, hogy külön akarsz) */
-  --accent: #80b9b9;
-  --accent-2: #497c92;
+  --accent: #c09651;
+  --accent-2: #8e4f39;
 
   --accent-ink: #0b1020;
-  --focus-ring: rgba(128, 185, 185, 0.30);
-  --selection-bg: rgba(128, 185, 185, 0.18);
+  --focus-ring: rgba(192, 150, 81, 0.28);
+  --selection-bg: rgba(192, 150, 81, 0.18);
 
-  --glow-1: rgba(128, 185, 185, 0.12);
-  --glow-2: rgba(128, 185, 185, 0.10);
+  --glow-1: rgba(216, 88, 78, 0.10);
+  --glow-2: rgba(192, 150, 81, 0.10);
 
-  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.16);
+  --shadow-accent: 0 10px 26px rgba(58, 32, 26, 0.16);
 
-  /* Dream textarea: sárga */
-  --dream-input-bg: rgba(248, 192, 138, 0.30);
-  --dream-input-bg-focus: rgba(248, 192, 138, 0.42);
+  --dream-input-bg: rgba(255, 247, 228, 0.92);
+  --dream-input-bg-focus: rgba(255, 247, 228, 0.98);
   --dream-input-text: var(--text-primary);
-  --dream-input-placeholder: rgba(28, 36, 48, 0.55);
+  --dream-input-placeholder: rgba(28, 36, 48, 0.45);
 
-  /* Evening cards (nappali papír) */
-  --evening-card-paper: rgba(255, 244, 222, 0.92);
-  --evening-card-paper-strong: rgba(255, 235, 190, 0.96);
-  --evening-pill-bg: rgba(255, 255, 255, 0.22);
+  --evening-card-paper: rgba(255, 247, 228, 0.55);
+  --evening-card-paper-strong: rgba(255, 247, 228, 0.70);
+  --evening-pill-bg: rgba(60, 36, 32, 0.06);
 }
 
-/* DAY: ugyanaz a textarea logika */
+/* DAY: ugyanaz a nappali paletta */
 body[data-napszak="day"] {
-  --bg-root: #f7f5f1;
-  --bg-layer: #ffffffdd;
-  --bg-layer-strong: #f0ede6;
+  --bg-root: #f2e7e5;
+
+  --bg-layer: rgba(255, 250, 245, 0.86);
+  --bg-layer-strong: #fbf1ec;
 
   --text-primary: #1c2430;
-  --text-muted: #4f5b6a;
+  --text-muted: #5f5a57;
 
-  --line-soft: rgba(30, 41, 59, 0.12);
+  --line-soft: rgba(60, 36, 32, 0.14);
 
-  --card-surface: #ffffff;
-  --card-surface-subtle: #f7f5f1;
+  --card-surface: #fffaf5;
+  --card-surface-subtle: #fbf1ec;
 
-  --accent: #80b9b9;
-  --accent-2: #497c92;
+  --accent: #c09651;
+  --accent-2: #8e4f39;
 
   --accent-ink: #0b1020;
-  --focus-ring: rgba(128, 185, 185, 0.30);
-  --selection-bg: rgba(128, 185, 185, 0.18);
+  --focus-ring: rgba(192, 150, 81, 0.28);
+  --selection-bg: rgba(192, 150, 81, 0.18);
 
-  --glow-1: rgba(128, 185, 185, 0.12);
-  --glow-2: rgba(128, 185, 185, 0.10);
+  --glow-1: rgba(216, 88, 78, 0.10);
+  --glow-2: rgba(192, 150, 81, 0.10);
 
-  --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.16);
+  --shadow-accent: 0 10px 26px rgba(58, 32, 26, 0.16);
 
-  /* Dream textarea: sárga */
-  --dream-input-bg: rgba(248, 192, 138, 0.30);
-  --dream-input-bg-focus: rgba(248, 192, 138, 0.42);
+  --dream-input-bg: rgba(255, 247, 228, 0.92);
+  --dream-input-bg-focus: rgba(255, 247, 228, 0.98);
   --dream-input-text: var(--text-primary);
-  --dream-input-placeholder: rgba(28, 36, 48, 0.55);
+  --dream-input-placeholder: rgba(28, 36, 48, 0.45);
 
-  /* Evening cards (nappali papír) */
-  --evening-card-paper: rgba(255, 244, 222, 0.92);
-  --evening-card-paper-strong: rgba(255, 235, 190, 0.96);
-  --evening-pill-bg: rgba(255, 255, 255, 0.22);
+  --evening-card-paper: rgba(255, 247, 228, 0.55);
+  --evening-card-paper-strong: rgba(255, 247, 228, 0.70);
+  --evening-pill-bg: rgba(60, 36, 32, 0.06);
 }
 
 /* EVENING: textarea sötétkék (Wedgewood Blue), fehér betű */
