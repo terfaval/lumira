@@ -57,6 +57,7 @@ All colors use HEX. Semi-transparent colors use 8-digit HEX (#RRGGBBAA).
   --accent: #80B9B9;
   --accent-2: #497C92;
   --accent-ink: #07101A;
+  --accent-hover: var(--accent); /* default fallback */
 
   /* Interaction */
   --focus-ring: #80B9B957;     /* 34% */
@@ -166,6 +167,7 @@ body[data-napszak="day"] {
   --accent: #C09651;
   --accent-2: #8E4F39;
   --accent-ink: #23181A;
+  --accent-hover: #B8893F;
 
   --focus-ring: #C0965157;    /* 34% */
   --selection-bg: #C0965133;  /* 20% */
@@ -230,6 +232,7 @@ body[data-napszak="night"] {
   --accent: #80B9B9;
   --accent-2: #497C92;
   --accent-ink: #07101A;
+  --accent-hover: #6FAEAE;
 
   --focus-ring: #80B9B957;    /* 34% */
   --selection-bg: #80B9B938;  /* 22% */
@@ -371,7 +374,10 @@ p { margin: 0; line-height: 1.6; }
   border-color: transparent;
 }
 
-.btn-primary:hover:not(:disabled) { box-shadow: var(--shadow-accent); }
+.btn-primary:hover:not(:disabled) { 
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-accent); 
+}
 
 .btn-secondary { background: transparent; }
 
