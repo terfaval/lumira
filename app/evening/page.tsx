@@ -1,14 +1,13 @@
-// /app/evening/page.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
-import { Card } from "@/components/Card";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import type { EveningCardCatalogItem } from "@/src/lib/types";
 import { EveningCardTile } from "@/components/EveningCardTile";
+import { EveningCardFlip } from "@/components/EveningCardFlip";
 
 type PhaseKey = "prep" | "in_bed" | "rescue";
 const PHASE_LABEL: Record<PhaseKey, string> = {
@@ -99,7 +98,7 @@ function shuffleDeterministic<T>(arr: T[], seed: number): T[] {
   return out;
 }
 
-/** Token mapping (a tile-hoz) */
+/** Token mapping (tile + flip headerhez) */
 function intentToken(intent: IntentKey | null) {
   if (!intent) return null;
   return { text: `--intent-${intent}` as const, bg: `--intent-${intent}-bg` as const };
@@ -182,8 +181,6 @@ function timeBucket(raw?: string): TimeFilterKey | null {
   return "t5plus";
 }
 
-type ViewPhase = "overview" | "practice";
-
 export default function EveningLanding() {
   const { loading } = useRequireAuth();
   const [cards, setCards] = useState<EveningCardCatalogItem[]>([]);
@@ -193,19 +190,16 @@ export default function EveningLanding() {
   const [selectedIntent, setSelectedIntent] = useState<IntentKey | "all">("all");
   const [selectedTime, setSelectedTime] = useState<TimeFilterKey>("all");
 
-  // ✅ “Tile kattintás -> nő + flip card overlay”
+  // overlay
   const [openSlug, setOpenSlug] = useState<string | null>(null);
-  const [viewPhase, setViewPhase] = useState<ViewPhase>("overview");
   const [finishing, setFinishing] = useState(false);
-  const [completed, setCompleted] = useState(false);
 
-  // ✅ grow-from-tile state
+  // grow-from-tile
   const [originRect, setOriginRect] = useState<DOMRect | null>(null);
   const [opening, setOpening] = useState(false);
 
   const [infoOpen, setInfoOpen] = useState(false);
 
-  const overlayRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const seedRef = useRef<number>(0);
@@ -321,25 +315,11 @@ export default function EveningLanding() {
     return openSlug ? cards.find((c) => c.slug === openSlug) ?? null : null;
   }, [openSlug, cards]);
 
-  const openCardPhase = openCard ? getPhase(openCard) : null;
-  const meta = (openCard?.content as any)?.meta as
-    | { time?: string; effect?: string; not_recommended?: string }
-    | undefined;
-
-  const tips = ((openCard?.content as any)?.tips ?? []) as string[];
-  const steps = (((openCard?.content as any)?.steps ?? []) as { question?: string }[]).filter(
-    (s) => (s?.question ?? "").trim().length > 0
-  );
-  const goal = ((openCard?.content as any)?.goal_md ?? "") as string;
-
-  // ✅ számoljuk ki az animált transformot a tile rect -> center felé
   function computeGrowStyle(rect: DOMRect | null, isOpening: boolean): React.CSSProperties {
     if (typeof window === "undefined") return {};
 
-    // final modal méret (a flip-shell alap méretéhez igazítva)
     const targetW = Math.min(860, window.innerWidth - 32);
     const targetH = Math.min(900, Math.floor(window.innerHeight * 0.86));
-
     const targetLeft = (window.innerWidth - targetW) / 2;
     const targetTop = (window.innerHeight - targetH) / 2;
 
@@ -369,38 +349,32 @@ export default function EveningLanding() {
       };
     }
 
-    return {
-      transform: "translate(0px, 0px) scale(1)",
-      opacity: 1,
-    };
+    return { transform: "translate(0px, 0px) scale(1)", opacity: 1 };
   }
 
   function openOverlay(slug: string, rect?: DOMRect) {
+    setErr(null);
     setOriginRect(rect ?? null);
     setOpenSlug(slug);
-    setViewPhase("overview");
-    setCompleted(false);
-    setFinishing(false);
 
-    // indító frame: “tile pozícióból”
     setOpening(true);
-    // következő frame: “középre nő”
     requestAnimationFrame(() => setOpening(false));
   }
 
   function closeOverlay() {
     setOpenSlug(null);
     setOriginRect(null);
-    setViewPhase("overview");
-    setCompleted(false);
-    setFinishing(false);
     setOpening(false);
+    setFinishing(false);
+    setErr(null);
   }
 
-  async function finishRun() {
+  async function saveUsage() {
     if (!openCard) return;
+
     setFinishing(true);
     setErr(null);
+
     try {
       const userId = await requireUserId();
       const contentMeta = (openCard.content as any)?.meta;
@@ -413,10 +387,10 @@ export default function EveningLanding() {
       });
 
       if (error) throw error;
-      setCompleted(true);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Nem sikerült menteni a befejezést.";
       setErr(message);
+      throw e;
     } finally {
       setFinishing(false);
     }
@@ -438,7 +412,7 @@ export default function EveningLanding() {
         phaseToken={phaseToken}
         tags={tags}
         huTag={huTag}
-        onOpen={openOverlay} // ✅ tile kattintás -> rect is jöhet
+        onOpen={openOverlay}
       />
     );
   }
@@ -542,11 +516,7 @@ export default function EveningLanding() {
 
             <div className="filter">
               <div className="filter-label">Idő</div>
-              <select
-                className="select"
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value as TimeFilterKey)}
-              >
+              <select className="select" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value as TimeFilterKey)}>
                 <option value="all">Bármennyi</option>
                 {allTimeBucketsInData.map((k) => (
                   <option key={k} value={k}>
@@ -559,11 +529,9 @@ export default function EveningLanding() {
 
           <div className="evening-grid">{orderedCards.map((c) => renderCardTile(c))}</div>
 
-          {/* ✅ Grow + Flip overlay */}
           {openSlug && (
             <div
               className="flip-overlay"
-              ref={overlayRef}
               role="dialog"
               aria-modal="true"
               onMouseDown={(e) => {
@@ -580,96 +548,26 @@ export default function EveningLanding() {
 
                 <div style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 10 }}>
                   Kattintás: megnyit • Indítás: fordul • ESC: bezárás
-                  {openCardPhase ? ` • ${PHASE_LABEL[openCardPhase]}` : ""}
                 </div>
 
                 {!openCard ? (
                   <div className="stack">{Spinner}</div>
-                ) : completed ? (
-                  <Card className="stack-tight" style={{ maxWidth: 720, margin: "0 auto" }}>
-                    <div style={{ fontWeight: 900 }}>Jó pihenést és szép álmokat.</div>
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-                      <button className="btn btn-primary" onClick={closeOverlay}>
-                        Kész
-                      </button>
-                    </div>
-                  </Card>
                 ) : (
-                  <div className={`flip3d ${viewPhase === "practice" ? "is-flipped" : ""}`}>
-                    {/* FRONT = overview */}
-                    <div className="flip-face flip-front">
-                      <Card className="stack-tight" style={{ maxWidth: 720, margin: "0 auto" }}>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                          {openCardPhase ? <div className="meta-block">{PHASE_LABEL[openCardPhase]}</div> : null}
-                          {meta?.time ? <div className="meta-block">{meta.time}</div> : null}
-                        </div>
-
-                        {meta?.effect ? <div style={{ fontWeight: 800 }}>{meta.effect}</div> : null}
-                        {goal ? <div style={{ color: "var(--text-muted)" }}>{goal}</div> : null}
-
-                        {meta?.not_recommended ? (
-                          <div className="disclaimer" style={{ marginTop: 10 }}>
-                            <div style={{ fontWeight: 800, marginBottom: 6 }}>Mikor ne</div>
-                            <div style={{ color: "var(--text-muted)" }}>{meta.not_recommended}</div>
-                          </div>
-                        ) : null}
-
-                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
-                          <button className="btn btn-primary" onClick={() => setViewPhase("practice")}>
-                            Indítás
-                          </button>
-                        </div>
-                      </Card>
-                    </div>
-
-                    {/* BACK = practice */}
-                    <div className="flip-face flip-back">
-                      <Card className="stack-tight" style={{ maxWidth: 720, margin: "0 auto" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-                          <div className="section-title" style={{ margin: 0 }}>
-                            Gyakorlat
-                          </div>
-                          <button className="btn btn-secondary" onClick={() => setViewPhase("overview")}>
-                            Vissza
-                          </button>
-                        </div>
-
-                        {tips?.length ? (
-                          <div className="stack-tight" style={{ marginTop: 10 }}>
-                            <div className="section-title">Tippek</div>
-                            <ul style={{ paddingLeft: 18, display: "grid", gap: 6, margin: 0 }}>
-                              {tips.map((t, i) => (
-                                <li key={i} style={{ color: "var(--text-muted)" }}>
-                                  {t}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : null}
-
-                        <div className="stack-tight" style={{ marginTop: 12 }}>
-                          <div className="section-title">Lépések</div>
-                          <div className="steps">
-                            {steps.map((s, idx) => (
-                              <div key={idx} className="step-row">
-                                <div className="step-num">{idx + 1}</div>
-                                <div className="step-text">{s.question}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
-                          <button className="btn btn-primary" onClick={finishRun} disabled={finishing}>
-                            {finishing ? "Mentés…" : "Befejezés"}
-                          </button>
-                        </div>
-                      </Card>
-                    </div>
-                  </div>
+                  <EveningCardFlip
+                    card={openCard}
+                    phaseLabel={PHASE_LABEL}
+                    intentLabel={INTENT_LABEL}
+                    getPhase={getPhase}
+                    getIntents={getIntents}
+                    intentToken={intentToken}
+                    phaseToken={phaseToken}
+                    huTag={huTag}
+                    onClose={closeOverlay}
+                    onSave={saveUsage}
+                    saving={finishing}
+                    error={err}
+                  />
                 )}
-
-                {err ? <div style={{ color: "crimson", marginTop: 10 }}>{err}</div> : null}
               </div>
             </div>
           )}
@@ -731,16 +629,6 @@ export default function EveningLanding() {
           align-items: center;
           justify-content: center;
           padding: 16px;
-          animation: overlayIn 160ms ease-out;
-        }
-
-        @keyframes overlayIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
         }
 
         .flip-shell {
@@ -769,37 +657,6 @@ export default function EveningLanding() {
           background: var(--bg);
           z-index: 2;
           border-bottom: 1px solid var(--border);
-        }
-
-        /* flip */
-        .flip3d {
-          position: relative;
-          width: 100%;
-          perspective: 1200px;
-        }
-
-        .flip-face {
-          backface-visibility: hidden;
-          transform-style: preserve-3d;
-          transition: transform 420ms cubic-bezier(0.2, 0.9, 0.2, 1);
-        }
-
-        .flip-front {
-          transform: rotateY(0deg);
-        }
-
-        .flip-back {
-          position: absolute;
-          inset: 0;
-          transform: rotateY(180deg);
-        }
-
-        .flip3d.is-flipped .flip-front {
-          transform: rotateY(-180deg);
-        }
-
-        .flip3d.is-flipped .flip-back {
-          transform: rotateY(0deg);
         }
       `}</style>
     </Shell>
