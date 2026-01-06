@@ -35,7 +35,9 @@ We maintain only TWO themes:
   --card-surface: rgba(255, 255, 255, 0.06);
   --card-surface-subtle: rgba(255, 255, 255, 0.04);
 
+  /* Text */
   --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.72);
   --text-muted: rgba(255, 255, 255, 0.66);
 
   --line-soft: rgba(255, 255, 255, 0.16);
@@ -131,9 +133,12 @@ body[data-napszak="day"] {
   --card-surface: #fff1eb;
   --card-surface-subtle: #f4dcd4;
 
-  /* ✅ Day szöveg = info gomb háttere (bg-layer) */
-  --text-primary: var(--bg-layer);
-  --text-muted: rgba(255, 245, 240, 0.72);
+  /* ✅ primary sötét (normál szövegekhez) */
+  --text-primary: #23181a;
+  --text-muted: #594244;
+
+  /* ✅ secondary világos (shell title + hamburger alap) */
+  --text-secondary: rgba(255, 245, 240, 0.86);
 
   --line-soft: rgba(52, 24, 26, 0.22);
 
@@ -164,13 +169,15 @@ body[data-napszak="day"] {
   --input-bg: var(--card-surface-subtle);
   --input-bg-focus: var(--bg-layer);
   --input-text: var(--text-primary);
-  --input-placeholder: rgba(255, 245, 240, 0.58);
+  --input-placeholder: rgba(35, 24, 26, 0.42);
 
-  /* ✅ Dream textarea: sötétebb (81,57,67) */
-  --dream-input-bg: rgb(81, 57, 67);
-  --dream-input-bg-focus: rgba(81, 57, 67, 0.92);
-  --dream-input-text: rgba(255, 245, 240, 0.92);
-  --dream-input-placeholder: rgba(255, 245, 240, 0.58);
+  /* ✅ Dream textarea: vissza a korábbi világosra */
+  --dream-input-bg: rgba(255, 248, 232, 0.96);
+  --dream-input-bg-focus: rgba(255, 248, 232, 1);
+  --dream-input-text: var(--text-primary);
+
+  /* ✅ Placeholder legyen sötétebb (hogy ne “tűnjön el” világos alapon) */
+  --dream-input-placeholder: rgba(35, 24, 26, 0.52);
 
   /* Evening cards – day fallback paper */
   --evening-card-paper: rgba(255, 247, 228, 0.55);
@@ -192,6 +199,7 @@ body[data-napszak="night"] {
   --card-surface-subtle: #0c1019;
 
   --text-primary: #e6ebf5;
+  --text-secondary: rgba(230, 235, 245, 0.86);
   --text-muted: #9da7bc;
 
   --line-soft: rgba(226, 232, 240, 0.14);
@@ -281,7 +289,11 @@ p { margin: 0; line-height: 1.6; }
 
 .shell--fluid { max-width: clamp(960px, 88vw, 1280px); }
 
-.shell-title { font-size: 28px; margin-top: var(--space-2); }
+.shell-title {
+  font-size: 28px;
+  margin-top: var(--space-2);
+  color: var(--text-secondary); /* ✅ shell title day-ben világos */
+}
 
 .surface-layer {
   background: var(--bg-layer);
@@ -316,7 +328,7 @@ p { margin: 0; line-height: 1.6; }
   background: var(--card-surface);
   cursor: pointer;
   color: var(--text-primary);
-  transition: transform 120ms ease, box-shadow 160ms ease, background 160ms ease;
+  transition: transform 120ms ease, box-shadow 160ms ease, background 160ms ease, color 160ms ease;
 }
 
 .btn:hover:not(:disabled) {
@@ -535,14 +547,18 @@ body[data-space="evening"] {
 /* 8) SHELL INFO UI                                                */
 /* ────────────────────────────────────────────────────────────── */
 
-.shell-topbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--text-primary); /* ✅ hamburger/icon default currentColor-hoz */
+.shell-topbar { display: flex; align-items: center; gap: 12px; }
+.shell-topbar-spacer { flex: 1; }
+
+/* ✅ hamburger/icon alap: secondary (világos nappaliban) */
+.shell-topbar .icon-btn {
+  color: var(--text-secondary);
 }
 
-.shell-topbar-spacer { flex: 1; }
+/* ✅ hover: primary */
+.shell-topbar .icon-btn:hover {
+  color: var(--text-primary);
+}
 
 .icon-btn {
   width: 40px;
@@ -555,7 +571,7 @@ body[data-space="evening"] {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 120ms ease, background 160ms ease;
+  transition: transform 120ms ease, background 160ms ease, color 160ms ease;
 }
 
 .icon-btn:hover {
