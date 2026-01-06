@@ -108,8 +108,8 @@ body[data-napszak="default"] {
   --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.18);
 
   /* Dream textarea: sárga (nappali Sunlit Yellow) */
-  --dream-input-bg: rgba(248, 192, 138, 0.42);       /* #f8c08a */
-  --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
+  --dream-input-bg: rgba(248, 192, 138, 0.30);
+  --dream-input-bg-focus: rgba(248, 192, 138, 0.42);
   --dream-input-text: var(--text-primary);
   --dream-input-placeholder: rgba(28, 36, 48, 0.55);
 
@@ -147,8 +147,8 @@ body[data-napszak="morning"] {
   --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.16);
 
   /* Dream textarea: sárga */
-  --dream-input-bg: rgba(248, 192, 138, 0.42);
-  --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
+  --dream-input-bg: rgba(248, 192, 138, 0.30);
+  --dream-input-bg-focus: rgba(248, 192, 138, 0.42);
   --dream-input-text: var(--text-primary);
   --dream-input-placeholder: rgba(28, 36, 48, 0.55);
 
@@ -185,8 +185,8 @@ body[data-napszak="day"] {
   --shadow-accent: 0 10px 26px rgba(34, 76, 86, 0.16);
 
   /* Dream textarea: sárga */
-  --dream-input-bg: rgba(248, 192, 138, 0.42);
-  --dream-input-bg-focus: rgba(248, 192, 138, 0.60);
+  --dream-input-bg: rgba(248, 192, 138, 0.30);
+  --dream-input-bg-focus: rgba(248, 192, 138, 0.42);
   --dream-input-text: var(--text-primary);
   --dream-input-placeholder: rgba(28, 36, 48, 0.55);
 
