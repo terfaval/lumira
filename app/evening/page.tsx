@@ -879,9 +879,9 @@ export default function EveningLanding() {
 
         /* TOP: bal pill csoport + jobb time pill */
         .card-top {
-          display: grid;
-          grid-template-columns: 1fr auto;
-          align-items: start;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
           gap: 10px;
         }
 
@@ -899,6 +899,7 @@ export default function EveningLanding() {
           justify-content: flex-end;
           align-items: center;
           white-space: nowrap;
+          flex: 0 0 auto;
           padding-top: 1px;
         }
 
@@ -906,7 +907,6 @@ export default function EveningLanding() {
           font-size: 12px;
           font-weight: 700;
           color: var(--text-muted);
-          padding-top: 2px;
           white-space: nowrap;
         }
 
@@ -1001,10 +1001,6 @@ export default function EveningLanding() {
         :global(.pill) {
           box-shadow: none !important;
           font-weight: 600 !important;
-        }
-
-        /* intent + phase: NE kapjon “sötét” pill-bg-t */
-          :global(.pill:not(.pill--neutral)) {
           background: transparent !important;
         }
       `}</style>
