@@ -788,19 +788,15 @@ export default function EveningLanding() {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
+          padding: 20px;
+          min-height: 260px;
           
-          padding: 18px;
-          min-height: 250px;
           gap: 0;
         }
 
-        /* TOP/MID/BOTTOM tagolás */
-          .card-top { margin-bottom: 14px; }
-          .card-mid { margin-bottom: 14px; }
-
         /* BOTTOM (tag-row) menjen le a kártya aljára */
         .tag-row {
-          margin-top: auto;
+          margin-top: 0;
           display: flex;
           gap: 10px;
           flex-wrap: wrap;
@@ -814,7 +810,7 @@ export default function EveningLanding() {
         /* TOP: bal pill csoport + jobb time pill */
         .card-top {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           justify-content: space-between;
           gap: 10px;
         }
@@ -834,7 +830,6 @@ export default function EveningLanding() {
           align-items: center;
           white-space: nowrap;
           flex: 0 0 auto;
-          padding-top: 1px;
         }
 
         .time-text {
@@ -848,6 +843,7 @@ export default function EveningLanding() {
         .card-mid {
           display: grid;
           gap: 8px;
+          padding: 8px 0;
         }
 
         .evening-card-title {
