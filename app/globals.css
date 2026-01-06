@@ -131,8 +131,9 @@ body[data-napszak="day"] {
   --card-surface: #fff1eb;
   --card-surface-subtle: #f4dcd4;
 
-  --text-primary: #23181a;
-  --text-muted: #594244;
+  /* ✅ Day szöveg = info gomb háttere (bg-layer) */
+  --text-primary: var(--bg-layer);
+  --text-muted: rgba(255, 245, 240, 0.72);
 
   --line-soft: rgba(52, 24, 26, 0.22);
 
@@ -163,13 +164,13 @@ body[data-napszak="day"] {
   --input-bg: var(--card-surface-subtle);
   --input-bg-focus: var(--bg-layer);
   --input-text: var(--text-primary);
-  --input-placeholder: rgba(35, 24, 26, 0.42);
+  --input-placeholder: rgba(255, 245, 240, 0.58);
 
-  /* Dream textarea: “vajpapír” */
-  --dream-input-bg: rgba(255, 248, 232, 0.96);
-  --dream-input-bg-focus: rgba(255, 248, 232, 1);
-  --dream-input-text: var(--text-primary);
-  --dream-input-placeholder: rgba(35, 24, 26, 0.42);
+  /* ✅ Dream textarea: sötétebb (81,57,67) */
+  --dream-input-bg: rgb(81, 57, 67);
+  --dream-input-bg-focus: rgba(81, 57, 67, 0.92);
+  --dream-input-text: rgba(255, 245, 240, 0.92);
+  --dream-input-placeholder: rgba(255, 245, 240, 0.58);
 
   /* Evening cards – day fallback paper */
   --evening-card-paper: rgba(255, 247, 228, 0.55);
@@ -456,7 +457,7 @@ textarea:focus {
 .newdream-panel { padding: var(--space-1); }
 
 /* ────────────────────────────────────────────────────────────── */
-/* 6) LAYOUT – Split etc. (your existing, mostly unchanged)        */
+/* 6) LAYOUT – Split etc.                                          */
 /* ────────────────────────────────────────────────────────────── */
 
 .split-layout { display: grid; gap: var(--space-3); }
@@ -531,10 +532,16 @@ body[data-space="evening"] {
 .shell.evening-shell .surface-layer { background: var(--bg-layer); }
 
 /* ────────────────────────────────────────────────────────────── */
-/* 8) SHELL INFO UI (unchanged)                                    */
+/* 8) SHELL INFO UI                                                */
 /* ────────────────────────────────────────────────────────────── */
 
-.shell-topbar { display: flex; align-items: center; gap: 12px; }
+.shell-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-primary); /* ✅ hamburger/icon default currentColor-hoz */
+}
+
 .shell-topbar-spacer { flex: 1; }
 
 .icon-btn {

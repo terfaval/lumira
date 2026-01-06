@@ -365,7 +365,7 @@ export default function EveningLanding() {
         style={{
           background: `linear-gradient(135deg,
             var(--evening-card-paper-strong) 0%,
-            var(--evening-card-paper) 72%,
+            var(--evening-card-paper) 42%,
             ${bgCorner} 125%)`,
         }}
       >
