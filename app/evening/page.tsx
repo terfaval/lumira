@@ -4,11 +4,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Card } from "@/components/Card";
-import { Pill } from "@/components/Pill";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import type { EveningCardCatalogItem } from "@/src/lib/types";
+import { EveningCardTile } from "@/components/EveningCardTile";
 
 type PhaseKey = "prep" | "in_bed" | "rescue";
 
@@ -104,7 +104,7 @@ function shuffleDeterministic<T>(arr: T[], seed: number): T[] {
   return out;
 }
 
-/** Token mapping: NINCS cssVar() olvasás, nincs regex alpha, mindent a CSS token ad. */
+/** Token mapping */
 function intentToken(intent: IntentKey | null) {
   if (!intent) return null;
   return {
@@ -121,9 +121,8 @@ function phaseToken(phase: PhaseKey | null) {
   };
 }
 
-// Tag HU (bővítve a jelenlegi katalógus alapján)
+// Tag HU
 export const TAG_HU: Record<string, string> = {
-  // cél / hatás
   mental_offload: "Fej kiürítése",
   downshift: "Lecsengés",
   sleep_onset: "Elalvás",
@@ -140,7 +139,6 @@ export const TAG_HU: Record<string, string> = {
   habit_seed: "Szokás indítása",
   day_close: "Napi lezárás",
 
-  // módszer / forma
   writing: "Írás",
   breath: "Légzés",
   body: "Testérzet",
@@ -160,35 +158,29 @@ function normalizeTagKey(t: string) {
 }
 
 /**
- * Idő parse:
- * - "3–5 perc", "1-3 perc", "1–2 perc", "30–90 mp", "1–3 perc vagy 3–5 perc"
- * Vissza: maxMinutes (kb), ha talál.
+ * Idő parse -> max minutes
  */
 function parseMaxMinutes(raw?: string): number | null {
   const s = (raw ?? "").toLowerCase();
 
-  // seconds ("mp") -> minutes
   const secMatches = [...s.matchAll(/(\d+)\s*[–-]\s*(\d+)\s*(mp|másodperc)/g)];
   if (secMatches.length) {
     const maxSec = Math.max(...secMatches.map((m) => Number(m[2] ?? 0)));
     if (Number.isFinite(maxSec) && maxSec > 0) return maxSec / 60;
   }
 
-  // minutes ("perc")
   const minMatches = [...s.matchAll(/(\d+)\s*[–-]\s*(\d+)\s*perc/g)];
   if (minMatches.length) {
     const maxMin = Math.max(...minMatches.map((m) => Number(m[2] ?? 0)));
     if (Number.isFinite(maxMin) && maxMin > 0) return maxMin;
   }
 
-  // single minute ("1 perc")
   const singleMin = s.match(/(\d+)\s*perc/);
   if (singleMin?.[1]) {
     const v = Number(singleMin[1]);
     if (Number.isFinite(v) && v > 0) return v;
   }
 
-  // single second ("45 mp")
   const singleSec = s.match(/(\d+)\s*(mp|másodperc)/);
   if (singleSec?.[1]) {
     const v = Number(singleSec[1]);
@@ -228,7 +220,6 @@ export default function EveningLanding() {
   const modalRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
-  // stabil seed a random sorrendhez
   const seedRef = useRef<number>(0);
   if (!seedRef.current) seedRef.current = Math.floor(Date.now() % 2147483647);
 
@@ -245,7 +236,6 @@ export default function EveningLanding() {
     })();
   }, []);
 
-  // lock scroll when modal open
   useEffect(() => {
     if (!openSlug) return;
     const prev = document.body.style.overflow;
@@ -255,7 +245,6 @@ export default function EveningLanding() {
     };
   }, [openSlug]);
 
-  // ESC close + basic focus trap
   useEffect(() => {
     if (!openSlug) return;
 
@@ -421,82 +410,23 @@ export default function EveningLanding() {
   }
 
   function renderCardTile(c: EveningCardCatalogItem) {
-    const m = (c.content as any)?.meta as
-      | { time?: string; effect?: string; not_recommended?: string }
-      | undefined;
-
-    const time = m?.time ?? "";
-    const g = ((c.content as any)?.goal_md ?? "") as string;
-
-    const p = getPhase(c);
-    const intents = getIntents(c);
-    const primaryIntent = intents[0] ?? null;
-
-    const intentTok = intentToken(primaryIntent);
-    const phaseTok = phaseToken(p);
-
-    // Tagok: HU + rövid
     const rawTags = (((c as any)?.tags ?? []) as string[]).map(normalizeTagKey).filter(Boolean);
     const tags = rawTags.slice(0, 2);
 
-    const bgCorner = intentTok ? `var(${intentTok.bg})` : "rgba(0,0,0,0)";
-
     return (
-      <Card
+      <EveningCardTile
         key={c.slug}
-        className="evening-card"
-        onClick={() => openModal(c.slug)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") openModal(c.slug);
-        }}
-        style={{
-          background: `linear-gradient(135deg,
-            var(--evening-card-paper-strong) 0%,
-            var(--evening-card-paper) 42%,
-            ${bgCorner} 125%)`,
-        }}
-      >
-        {/* TOP */}
-        <div className="card-top">
-          <div className="pill-row-left">
-            {primaryIntent ? (
-              <Pill variant="intent" colorVar={intentTok!.text}>
-                {INTENT_LABEL[primaryIntent]}
-              </Pill>
-            ) : null}
-
-            {p ? (
-              <Pill variant="phase" colorVar={phaseTok!.text}>
-                {PHASE_LABEL[p]}
-              </Pill>
-            ) : null}
-          </div>
-
-          {/* jobb: time (plain text, jobbra zárva) */}
-          {time ? <div className="time-text">{time}</div> : <div />}
-        </div>
-
-        {/* MID */}
-        <div className="card-mid">
-          <div className="evening-card-title">{c.title}</div>
-          {g ? <div className="evening-card-body">{g}</div> : null}
-        </div>
-
-        {/* BOTTOM */}
-        {tags.length ? (
-          <div className="tag-row">
-            {tags.map((t: string) => (
-              <Pill key={t} variant="neutral">
-                {huTag(t)}
-              </Pill>
-            ))}
-          </div>
-        ) : (
-          <div />
-        )}
-      </Card>
+        card={c}
+        phaseLabel={PHASE_LABEL}
+        intentLabel={INTENT_LABEL}
+        getPhase={getPhase}
+        getIntents={getIntents}
+        intentToken={intentToken}
+        phaseToken={phaseToken}
+        tags={tags}
+        huTag={huTag}
+        onOpen={openModal}
+      />
     );
   }
 
@@ -773,107 +703,6 @@ export default function EveningLanding() {
           }
         }
 
-        /* Card layout: vertical space-between */
-        .evening-card {
-          cursor: pointer;
-          border-radius: 18px;
-          transition: transform 160ms ease, box-shadow 160ms ease;
-
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-
-          padding: 22px;
-          min-height: 270px;
-
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-          gap: 0;
-        }
-
-        .evening-card:hover {
-          transform: translateY(0px) scale(1.03);
-          box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
-        }
-
-        /* TOP: bal pill csoport + jobb time (plain text) */
-        .card-top {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .pill-row-left {
-          display: flex;
-          gap: 10px;
-          align-items: center;
-          flex-wrap: wrap;
-          justify-content: flex-start;
-          flex: 1 1 auto;
-          min-width: 0;
-        }
-
-        .time-text {
-          margin-left: auto;
-          font-size: 12px;
-          font-weight: 700;
-          color: var(--text-muted);
-          white-space: nowrap;
-          flex: 0 0 auto;
-        }
-
-        /* middle wrapper (title + goal) */
-        .card-mid {
-          display: grid;
-          gap: 10px;
-          padding: 10px 0;
-        }
-
-        .evening-card-title {
-          font-size: 28px;
-          font-weight: 900;
-          letter-spacing: -0.015em;
-          line-height: 1.12;
-        }
-
-        .evening-card-body {
-          font-size: 11px;
-          color: var(--text-muted);
-          line-height: 1.45;
-        }
-
-        /* BOTTOM */
-        .tag-row {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-top: 0;
-        }
-
-        .steps {
-          display: grid;
-          gap: 10px;
-        }
-
-        .step-row {
-          display: grid;
-          grid-template-columns: 34px 1fr;
-          gap: 10px;
-          align-items: start;
-        }
-
-        .step-num {
-          font-size: 22px;
-          font-weight: 900;
-          line-height: 1;
-          opacity: 0.75;
-        }
-
-        .step-text {
-          font-size: 15px;
-          font-weight: 650;
-          line-height: 1.35;
-        }
-
         .evening-overlay {
           position: fixed;
           inset: 0;
@@ -908,14 +737,6 @@ export default function EveningLanding() {
           background: var(--bg);
           z-index: 1;
           border-bottom: 1px solid var(--border);
-        }
-
-        /* ✅ Pill tweaks: csak az intent/phase legyen "tiszta", a neutral maradjon a saját backgroundjával */
-        :global(.pill--intent),
-        :global(.pill--phase) {
-          box-shadow: none !important;
-          background: transparent !important;
-          font-weight: 650 !important;
         }
       `}</style>
     </Shell>
