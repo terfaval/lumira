@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Card } from "@/components/Card";
+import { Pill } from "@/components/Pill";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
@@ -72,10 +73,7 @@ function getIntents(card: EveningCardCatalogItem): IntentKey[] {
   return intents.filter((x): x is IntentKey => typeof x === "string" && allowed.has(x as IntentKey));
 }
 
-/**
- * Determinisztikus shuffle (hogy ne ugráljon minden renderre).
- * Mulberry32: gyors, elég jó UI-hoz.
- */
+/** Determinisztikus shuffle (UI stabilitás) */
 function mulberry32(seed: number) {
   return function () {
     let t = (seed += 0x6d2b79f5);
@@ -95,58 +93,24 @@ function shuffleDeterministic<T>(arr: T[], seed: number): T[] {
   return out;
 }
 
-function cssVar(name: string, fallback: string) {
-  if (typeof window === "undefined") return fallback;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return v || fallback;
-}
-
-function intentColor(intent: IntentKey | null): { text: string; bg: string } {
-  const map: Record<IntentKey, string> = {
-    biztonsag: "--intent-biztonsag",
-    lecsendesites: "--intent-lecsendesites",
-    emlekezet: "--intent-emlekezet",
-    tudatossag: "--intent-tudatossag",
-    kreativ_inkubacio: "--intent-kreativ_inkubacio",
-    irany_es_jelentes: "--intent-irany_es_jelentes",
-    test_es_jelenlet: "--intent-test_es_jelenlet",
+/** Token mapping: NINCS cssVar() olvasás, nincs regex alpha, mindent a CSS token ad. */
+function intentToken(intent: IntentKey | null) {
+  if (!intent) return null;
+  return {
+    text: `--intent-${intent}` as const,
+    bg: `--intent-${intent}-bg` as const,
   };
-
-  if (!intent) {
-    return { text: "rgba(200,200,200,0.95)", bg: "rgba(200,200,200,0.20)" };
-  }
-
-  const token = map[intent];
-  const text = cssVar(token, "rgba(200,200,200,0.95)");
-  const alpha = cssVar("--intent-glow-alpha", "0.32");
-
-  // bg = ugyanaz a szín, csak kisebb alpha-val (rgba(...) már alpha-s, de oké:
-  // itt egyszerűen visszaadjuk a text színt, és a gradientben “paper” viszi a lágyságot)
-  // Ha később akarod: átírhatjuk okosabb rgba parse-ra.
-  const bg = text.replace(/rgba\(([^)]+)\)/, (m) => {
-    // ha már rgba, hagyjuk: a paper úgyis puhít
-    return m;
-  });
-
-  // ha a token rgb lenne, akkor itt alpha-val egészítenénk ki.
-  // most rgba-kat adunk meg a tokenekben, így elég.
-  return { text, bg: bg.replace(/,\s*0\.\d+\)/, `, ${alpha})`) };
 }
 
-
-function phaseColor(phase: PhaseKey | null): string {
-  const map: Record<PhaseKey, string> = {
-    prep: "--phase-prep",
-    in_bed: "--phase-in_bed",
-    rescue: "--phase-rescue",
+function phaseToken(phase: PhaseKey | null) {
+  if (!phase) return null;
+  return {
+    text: `--phase-${phase}` as const,
+    bg: `--phase-${phase}-bg` as const,
   };
-  if (!phase) return "rgba(200,200,200,0.95)";
-  return cssVar(map[phase], "rgba(200,200,200,0.95)");
 }
 
-
-// Egyszerű magyarítás a “technical tag” stringekre.
-// Ha valami nincs benne, fallback az eredetire.
+// Tag HU
 const TAG_HU: Record<string, string> = {
   "sleep-prep": "Alvás előkészítés",
   sleep: "Alvás",
@@ -160,10 +124,10 @@ const TAG_HU: Record<string, string> = {
   memory: "Emlékezet",
   "dream-recall": "Álomemlékezet",
   lucid: "Lucid",
-  "dreamwork": "Álommunka",
+  dreamwork: "Álommunka",
   emotion: "Érzelem",
   "nervous-system": "Idegrendszer",
-  "downshift": "Lecsengés",
+  downshift: "Lecsengés",
   "body-awareness": "Testtudat",
   body: "Test",
   meaning: "Jelentés",
@@ -297,17 +261,12 @@ export default function EveningLanding() {
   const filteredCards = useMemo(() => {
     let out = cards;
 
-    if (selectedPhase !== "all") {
-      out = out.filter((c) => getPhase(c) === selectedPhase);
-    }
-    if (selectedIntent !== "all") {
-      out = out.filter((c) => getIntents(c).includes(selectedIntent));
-    }
+    if (selectedPhase !== "all") out = out.filter((c) => getPhase(c) === selectedPhase);
+    if (selectedIntent !== "all") out = out.filter((c) => getIntents(c).includes(selectedIntent));
 
     return out;
   }, [cards, selectedPhase, selectedIntent]);
 
-  // Alapsorrend: éjjel rescue elöl, különben prep+in_bed random, rescue a végén.
   const orderedCards = useMemo(() => {
     const hour = new Date().getHours();
     const isNight = hour >= 0 && hour <= 6;
@@ -318,10 +277,7 @@ export default function EveningLanding() {
     const otherShuffled = shuffleDeterministic(other, seedRef.current);
     const rescueShuffled = shuffleDeterministic(rescue, seedRef.current ^ 1337);
 
-    if (isNight) return [...rescueShuffled, ...otherShuffled];
-
-    // nappal/este: “random legyenek in-bed és prep”, rescue menjen hátra
-    return [...otherShuffled, ...rescueShuffled];
+    return isNight ? [...rescueShuffled, ...otherShuffled] : [...otherShuffled, ...rescueShuffled];
   }, [filteredCards]);
 
   const openCard = useMemo(() => {
@@ -386,13 +342,15 @@ export default function EveningLanding() {
     const g = ((c.content as any)?.goal_md ?? "") as string;
 
     const p = getPhase(c);
-    const intentKeys = getIntents(c);
-    const primaryIntent = intentKeys[0] ?? null;
+    const intents = getIntents(c);
+    const primaryIntent = intents[0] ?? null;
 
-    const pc = phaseColor(p);
-    const ic = intentColor(primaryIntent);
+    const intentTok = intentToken(primaryIntent);
+    const phaseTok = phaseToken(p);
 
     const tags = (((c as any)?.tags ?? []) as string[]).slice(0, 3);
+
+    const bgCorner = intentTok ? `var(${intentTok.bg})` : "rgba(0,0,0,0)";
 
     return (
       <Card
@@ -407,39 +365,40 @@ export default function EveningLanding() {
         style={{
           background: `linear-gradient(135deg,
             var(--evening-card-paper-strong) 0%,
-            var(--evening-card-paper) 30%,
-            ${ic.bg} 110%)`,
+            var(--evening-card-paper) 72%,
+            ${bgCorner} 125%)`,
         }}
       >
-        {/* top row: phase + intent + time (egy vonalban) */}
+        {/* top row: intent + phase (bal), time (jobb) */}
         <div className="card-top">
           <div className="pill-row">
+            {/* FONTOS: előbb INTENT, aztán PHASE */}
             {primaryIntent ? (
-              <span className="pill pill--intent" style={{ color: ic.text, borderColor: ic.text }}>
+              <Pill variant="intent" colorVar={intentTok!.text}>
                 {INTENT_LABEL[primaryIntent]}
-              </span>
+              </Pill>
             ) : null}
 
             {p ? (
-              <span className="pill pill--phase" style={{ color: pc, borderColor: pc }}>
+              <Pill variant="phase" colorVar={phaseTok!.text}>
                 {PHASE_LABEL[p]}
-              </span>
+              </Pill>
             ) : null}
           </div>
 
           {time ? <div className="card-time">{time}</div> : null}
         </div>
 
-        <div className="card-title">{c.title}</div>
+        <div className="evening-card-title">{c.title}</div>
 
-        {g ? <div className="card-body">{g}</div> : null}
+        {g ? <div className="evening-card-body">{g}</div> : null}
 
         {tags.length ? (
           <div className="tag-row">
             {tags.map((t: string) => (
-              <span key={t} className="pill pill--neutral">
+              <Pill key={t} variant="neutral">
                 {huTag(t)}
-              </span>
+              </Pill>
             ))}
           </div>
         ) : null}
@@ -475,49 +434,44 @@ export default function EveningLanding() {
   const openCardPhase = openCard ? getPhase(openCard) : null;
 
   return (
-  <Shell
-    title="Álom előkészítő gyakorlatok"
-    space="evening"
-    headerActions={
-      <button
-        type="button"
-        className="icon-btn"
-        aria-label="Infó"
-        aria-expanded={infoOpen}
-        onClick={() => setInfoOpen((v) => !v)}
-      >
-        <InfoIcon />
-      </button>
-    }
-    infoOpen={infoOpen}
-    onToggleInfo={() => setInfoOpen((v) => !v)}
-    infoPanel={
-      <div className="stack-tight">
+    <Shell
+      title="Álom előkészítő gyakorlatok"
+      space="evening"
+      headerActions={
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="Infó"
+          aria-expanded={infoOpen}
+          onClick={() => setInfoOpen((v) => !v)}
+        >
+          <InfoIcon />
+        </button>
+      }
+      infoOpen={infoOpen}
+      onToggleInfo={() => setInfoOpen((v) => !v)}
+      infoPanel={
+        <div className="stack-tight">
+          <p style={{ color: "var(--text-muted)" }}>
+            Ezek rövid, kíméletes gyakorlatok az elalvás előtti átmenethez, valamint azokra az éjszakai pillanatokra,
+            amikor túl éberen ébredsz és nehezedre esik visszaaludni.
+          </p>
 
-        <p style={{ color: "var(--text-muted)" }}>
-          Ezek rövid, kíméletes gyakorlatok az elalvás előtti átmenethez, valamint azokra 
-          az éjszakai pillanatokra, amikor túl éberen ébredsz és nehezedre esik visszaaludni.
-        </p>
-
-        <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-muted)", lineHeight: 1.7 }}>
-          <li>Az egyes fázisok és szándékok segítségével könnyebben tudsz választani, </li>
-          <li>hogy megtaláld az alkalomhoz és a céljaidhoz leginkább megfelelő gyakorlatot</li>
-          <li>Nyisd meg a kártyát, és csak annyit csinálj, amennyi ma belefér.</li>
-          <li>
-            Ha bármelyik gyakorlat élénkít vagy feszít, válts egyszerűbb, test- vagy légzésfókuszú kártyára.
-          </li>
-        </ul>
-      </div>
-    }
-  >
-
+          <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-muted)", lineHeight: 1.7 }}>
+            <li>Az egyes fázisok és szándékok segítségével könnyebben tudsz választani,</li>
+            <li>hogy megtaláld az alkalomhoz és a céljaidhoz leginkább megfelelő gyakorlatot</li>
+            <li>Nyisd meg a kártyát, és csak annyit csinálj, amennyi ma belefér.</li>
+            <li>Ha bármelyik gyakorlat élénkít vagy feszít, válts egyszerűbb, test- vagy légzésfókuszú kártyára.</li>
+          </ul>
+        </div>
+      }
+    >
       {loading ? (
         Spinner
       ) : (
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
 
-          {/* Filters (két dropdown egymás mellett) */}
           <div className="filters">
             <div className="filter">
               <div className="filter-label">Fázis</div>
@@ -554,7 +508,6 @@ export default function EveningLanding() {
 
           <div className="evening-grid">{orderedCards.map((c) => renderCardTile(c))}</div>
 
-          {/* modal */}
           {openSlug && (
             <div
               className="evening-overlay"
@@ -710,7 +663,6 @@ export default function EveningLanding() {
           }
         }
 
-        /* CARD */
         .evening-card {
           cursor: pointer;
           border-radius: 18px;
@@ -723,9 +675,11 @@ export default function EveningLanding() {
           box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
         }
 
+        /* Grid a top sorra: bal = pillek, jobb = idő */
         .card-top {
-          display: flex;
-          align-items: center;
+          display: grid;
+          grid-template-columns: 1fr auto;
+          align-items: start;
           gap: 10px;
           margin-bottom: 10px;
         }
@@ -735,53 +689,26 @@ export default function EveningLanding() {
           gap: 10px;
           align-items: center;
           flex-wrap: wrap;
-          flex: 1;
           justify-content: flex-start;
-        }
-
-        /* “nem kattintható lekerekített gomb” */
-        .pill {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          
-          min-height: 30px;
-          padding: 7px 12px;
-          
-          border-radius: 999px;
-          border: 2.25px solid currentColor;
-          background: var(--evening-pill-bg);
-
-          font-size: 11pt;
-          font-weight: 800;
-          line-height: 1;
-          white-space: nowrap;
-        }
-
-        .pill--neutral {
-          color: var(--text-muted);
-          border-color: var(--line-soft);     /* vagy var(--border) */
-          background: rgba(255, 255, 255, 0.06);
-          box-shadow: none;
+          min-width: 0;
         }
 
         .card-time {
-          margin-left: auto;
           font-size: 11px;
           color: var(--text-muted);
           white-space: nowrap;
-          font-weight: 700;
+          font-weight: 800;
+          padding-top: 2px;
         }
 
-        /* Title nagyobb + vastagabb */
-        .card-title {
+        .evening-card-title {
           font-size: 16px;
           font-weight: 900;
           letter-spacing: -0.01em;
           margin-bottom: 8px;
         }
 
-        .card-body {
+        .evening-card-body {
           font-size: 11px;
           color: var(--text-muted);
           line-height: 1.35;
@@ -789,33 +716,9 @@ export default function EveningLanding() {
 
         .tag-row {
           display: flex;
-          gap: 12px;
+          gap: 10px;
           flex-wrap: wrap;
           margin-top: 12px;
-        }
-
-        .tag {
-          font-size: 10px;
-          padding: 6px 10px;
-          border: 1px solid var(--border);
-          border-radius: 999px;
-          color: var(--text-muted);
-          background: rgba(255, 255, 255, 0.06);
-          white-space: nowrap;
-        }
-
-        .meta-block {
-          font-size: 11px;
-          padding: 6px 10px;
-          border: 1px solid var(--border);
-          border-radius: 999px;
-          color: var(--text-muted);
-          width: fit-content;
-        }
-
-        .disclaimer {
-          border-top: 1px solid var(--border);
-          padding-top: 10px;
         }
 
         .steps {
