@@ -209,7 +209,6 @@ function timeBucket(raw?: string): TimeFilterKey | null {
   return "t5plus";
 }
 
-
 export default function EveningLanding() {
   const { loading } = useRequireAuth();
   const [cards, setCards] = useState<EveningCardCatalogItem[]>([]);
@@ -440,7 +439,6 @@ export default function EveningLanding() {
     const rawTags = (((c as any)?.tags ?? []) as string[]).map(normalizeTagKey).filter(Boolean);
     const tags = rawTags.slice(0, 2);
 
-
     const bgCorner = intentTok ? `var(${intentTok.bg})` : "rgba(0,0,0,0)";
 
     return (
@@ -462,7 +460,6 @@ export default function EveningLanding() {
       >
         {/* TOP */}
         <div className="card-top">
-          {/* bal: intent + phase */}
           <div className="pill-row-left">
             {primaryIntent ? (
               <Pill variant="intent" colorVar={intentTok!.text}>
@@ -477,10 +474,8 @@ export default function EveningLanding() {
             ) : null}
           </div>
 
-          {/* jobb: time (plain text) */}
-          <div className="pill-row-right">
-            {time ? <div className="time-text">{time}</div> : null}
-          </div>
+          {/* jobb: time (plain text, jobbra zárva) */}
+          {time ? <div className="time-text">{time}</div> : <div />}
         </div>
 
         {/* MID */}
@@ -783,35 +778,27 @@ export default function EveningLanding() {
           cursor: pointer;
           border-radius: 18px;
           transition: transform 160ms ease, box-shadow 160ms ease;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          padding: 20px;
-          min-height: 260px;
-          
+
+          padding: 22px;
+          min-height: 270px;
+
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
           gap: 0;
         }
 
-        /* BOTTOM (tag-row) menjen le a kártya aljára */
-        .tag-row {
-          margin-top: 0;
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
-
         .evening-card:hover {
-          transform: translateY(0px) scale(1.08);
+          transform: translateY(0px) scale(1.03);
           box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
         }
 
-        /* TOP: bal pill csoport + jobb time pill */
+        /* TOP: bal pill csoport + jobb time (plain text) */
         .card-top {
           display: flex;
           align-items: center;
-          justify-content: space-between;
           gap: 10px;
         }
 
@@ -821,49 +808,45 @@ export default function EveningLanding() {
           align-items: center;
           flex-wrap: wrap;
           justify-content: flex-start;
+          flex: 1 1 auto;
           min-width: 0;
         }
 
-        .pill-row-right {
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          white-space: nowrap;
-          flex: 0 0 auto;
-        }
-
         .time-text {
+          margin-left: auto;
           font-size: 12px;
           font-weight: 700;
           color: var(--text-muted);
           white-space: nowrap;
+          flex: 0 0 auto;
         }
 
         /* middle wrapper (title + goal) */
         .card-mid {
           display: grid;
-          gap: 8px;
-          padding: 8px 0;
+          gap: 10px;
+          padding: 10px 0;
         }
 
         .evening-card-title {
-          font-size: 26px;
+          font-size: 28px;
           font-weight: 900;
           letter-spacing: -0.015em;
-          line-height: 1.15;
+          line-height: 1.12;
         }
 
         .evening-card-body {
           font-size: 11px;
           color: var(--text-muted);
-          line-height: 1.4;
+          line-height: 1.45;
         }
 
+        /* BOTTOM */
         .tag-row {
           display: flex;
           gap: 10px;
           flex-wrap: wrap;
-          margin-top: 2px;
+          margin-top: 0;
         }
 
         .steps {
@@ -927,11 +910,12 @@ export default function EveningLanding() {
           border-bottom: 1px solid var(--border);
         }
 
-        /* ✅ Pill tweaks (lokálisan ezen az oldalon): no shadow, not bold */
-        :global(.pill) {
+        /* ✅ Pill tweaks: csak az intent/phase legyen "tiszta", a neutral maradjon a saját backgroundjával */
+        :global(.pill--intent),
+        :global(.pill--phase) {
           box-shadow: none !important;
-          font-weight: 600 !important;
           background: transparent !important;
+          font-weight: 650 !important;
         }
       `}</style>
     </Shell>
