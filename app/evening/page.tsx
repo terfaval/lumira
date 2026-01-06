@@ -1,3 +1,4 @@
+// /app/evening/page.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -34,6 +35,16 @@ const INTENT_LABEL: Record<IntentKey, string> = {
   kreativ_inkubacio: "Inkubáció",
   irany_es_jelentes: "Irány / Jelentés",
   test_es_jelenlet: "Test / Jelenlét",
+};
+
+type TimeFilterKey = "all" | "t1" | "t2" | "t3" | "t5" | "t5plus";
+
+const TIME_LABEL: Record<Exclude<TimeFilterKey, "all">, string> = {
+  t1: "≤ 1 perc",
+  t2: "≤ 2 perc",
+  t3: "≤ 3 perc",
+  t5: "≤ 5 perc",
+  t5plus: "> 5 perc",
 };
 
 function InfoIcon() {
@@ -110,9 +121,10 @@ function phaseToken(phase: PhaseKey | null) {
   };
 }
 
-// Tag HU
+// Tag HU (bővítve a jelenlegi katalógus alapján)
 const TAG_HU: Record<string, string> = {
-  "sleep-prep": "Alvás előkészítés",
+  // már meglévők
+  "sleep-prep": "Elalvás előkészítés",
   sleep: "Alvás",
   rescue: "Éjjeli mentés",
   breath: "Légzés",
@@ -135,10 +147,156 @@ const TAG_HU: Record<string, string> = {
   gentle: "Szelíd",
   "imagery-rehearsal": "Kép-átírás",
   nightmares: "Rémálmok",
+
+  // hiányzók a katalógusból
+  "problem-solving": "Problémamegoldás",
+  habits: "Szokások",
+  "behavior-change": "Viselkedésváltozás",
+  "micro-step": "Mikrolépés",
+  consolidation: "Konszolidáció",
+  intention: "Szándék",
+  metacognition: "Metakogníció",
+  creativity: "Kreativitás",
+  inspiration: "Inspiráció",
+  imagery: "Képzelet",
+  symbols: "Szimbólumok",
+  "life-direction": "Életirány",
+  integration: "Integráció",
+  spiritual: "Spirituális",
+  gratitude: "Hála",
+  grounded: "Földelt",
+  "deep-sleep": "Mély alvás",
+  stress: "Stressz",
+  thoughts: "Gondolatok",
+  nightmare: "Rémálom",
+
+  // vegyes / legacy
+  prep: "Előkészítés",
 };
 
 function huTag(t: string): string {
   return TAG_HU[t] ?? t;
+}
+
+function normalizeTagKey(t: string) {
+  return (t ?? "").trim().toLowerCase();
+}
+
+/**
+ * Idő parse:
+ * - "3–5 perc", "1-3 perc", "1–2 perc", "30–90 mp", "1–3 perc vagy 3–5 perc"
+ * Vissza: maxMinutes (kb), ha talál.
+ */
+function parseMaxMinutes(raw?: string): number | null {
+  const s = (raw ?? "").toLowerCase();
+
+  // seconds ("mp") -> minutes
+  const secMatches = [...s.matchAll(/(\d+)\s*[–-]\s*(\d+)\s*(mp|másodperc)/g)];
+  if (secMatches.length) {
+    const maxSec = Math.max(...secMatches.map((m) => Number(m[2] ?? 0)));
+    if (Number.isFinite(maxSec) && maxSec > 0) return maxSec / 60;
+  }
+
+  // minutes ("perc")
+  const minMatches = [...s.matchAll(/(\d+)\s*[–-]\s*(\d+)\s*perc/g)];
+  if (minMatches.length) {
+    const maxMin = Math.max(...minMatches.map((m) => Number(m[2] ?? 0)));
+    if (Number.isFinite(maxMin) && maxMin > 0) return maxMin;
+  }
+
+  // single minute ("1 perc")
+  const singleMin = s.match(/(\d+)\s*perc/);
+  if (singleMin?.[1]) {
+    const v = Number(singleMin[1]);
+    if (Number.isFinite(v) && v > 0) return v;
+  }
+
+  // single second ("45 mp")
+  const singleSec = s.match(/(\d+)\s*(mp|másodperc)/);
+  if (singleSec?.[1]) {
+    const v = Number(singleSec[1]);
+    if (Number.isFinite(v) && v > 0) return v / 60;
+  }
+
+  return null;
+}
+
+function timeBucket(raw?: string): TimeFilterKey | null {
+  const maxMin = parseMaxMinutes(raw);
+  if (maxMin == null) return null;
+
+  if (maxMin <= 1.01) return "t1";
+  if (maxMin <= 2.01) return "t2";
+  if (maxMin <= 3.01) return "t3";
+  if (maxMin <= 5.01) return "t5";
+  return "t5plus";
+}
+
+/**
+ * Tag elrejtési logika:
+ * - Ne mutassuk azokat a tageket, amik már "phase" vagy "intent" értelemben benne vannak.
+ * Ez heurisztikus mapping a jelenlegi tag-ökoszisztémádra.
+ */
+function excludedTagsFor(phase: PhaseKey | null, intents: IntentKey[]): Set<string> {
+  const out = new Set<string>();
+
+  // phase -> tag-ek
+  if (phase === "prep") {
+    out.add("prep");
+    out.add("sleep-prep");
+    out.add("sleep");
+  }
+  if (phase === "in_bed") {
+    out.add("sleep-prep");
+    out.add("sleep");
+  }
+  if (phase === "rescue") {
+    out.add("rescue");
+    out.add("sleep");
+  }
+
+  // intents -> tag-ek
+  for (const i of intents) {
+    if (i === "biztonsag") {
+      out.add("safety");
+      out.add("grounding");
+    }
+    if (i === "lecsendesites") {
+      out.add("downshift");
+      out.add("stress");
+      out.add("breath");
+      out.add("nervous-system");
+    }
+    if (i === "emlekezet") {
+      out.add("memory");
+      out.add("dream-recall");
+    }
+    if (i === "tudatossag") {
+      out.add("lucid");
+      out.add("metacognition");
+    }
+    if (i === "kreativ_inkubacio") {
+      out.add("incubation");
+      out.add("creativity");
+      out.add("problem-solving");
+      out.add("inspiration");
+      out.add("imagery");
+    }
+    if (i === "irany_es_jelentes") {
+      out.add("meaning");
+      out.add("values");
+      out.add("life-direction");
+      out.add("symbols");
+    }
+    if (i === "test_es_jelenlet") {
+      out.add("body");
+      out.add("body-awareness");
+      out.add("integration");
+      out.add("grounding");
+    }
+  }
+
+  return out;
 }
 
 export default function EveningLanding() {
@@ -148,6 +306,7 @@ export default function EveningLanding() {
 
   const [selectedPhase, setSelectedPhase] = useState<PhaseKey | "all">("all");
   const [selectedIntent, setSelectedIntent] = useState<IntentKey | "all">("all");
+  const [selectedTime, setSelectedTime] = useState<TimeFilterKey>("all");
 
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [viewPhase, setViewPhase] = useState<"overview" | "practice">("overview");
@@ -258,14 +417,32 @@ export default function EveningLanding() {
     return order.filter((k) => s.has(k));
   }, [cards]);
 
+  const allTimeBucketsInData = useMemo(() => {
+    const s = new Set<Exclude<TimeFilterKey, "all">>();
+    for (const c of cards) {
+      const m = (c.content as any)?.meta as { time?: string } | undefined;
+      const b = timeBucket(m?.time);
+      if (b && b !== "all") s.add(b);
+    }
+    const order: Exclude<TimeFilterKey, "all">[] = ["t1", "t2", "t3", "t5", "t5plus"];
+    return order.filter((k) => s.has(k));
+  }, [cards]);
+
   const filteredCards = useMemo(() => {
     let out = cards;
 
     if (selectedPhase !== "all") out = out.filter((c) => getPhase(c) === selectedPhase);
     if (selectedIntent !== "all") out = out.filter((c) => getIntents(c).includes(selectedIntent));
 
+    if (selectedTime !== "all") {
+      out = out.filter((c) => {
+        const m = (c.content as any)?.meta as { time?: string } | undefined;
+        return timeBucket(m?.time) === selectedTime;
+      });
+    }
+
     return out;
-  }, [cards, selectedPhase, selectedIntent]);
+  }, [cards, selectedPhase, selectedIntent, selectedTime]);
 
   const orderedCards = useMemo(() => {
     const hour = new Date().getHours();
@@ -348,7 +525,10 @@ export default function EveningLanding() {
     const intentTok = intentToken(primaryIntent);
     const phaseTok = phaseToken(p);
 
-    const tags = (((c as any)?.tags ?? []) as string[]).slice(0, 3);
+    // Tagok: HU + rövid + ne legyen redundáns phase/intent alapján
+    const rawTags = (((c as any)?.tags ?? []) as string[]).map(normalizeTagKey).filter(Boolean);
+    const exclude = excludedTagsFor(p, intents);
+    const tags = rawTags.filter((t) => !exclude.has(t)).slice(0, 3);
 
     const bgCorner = intentTok ? `var(${intentTok.bg})` : "rgba(0,0,0,0)";
 
@@ -369,10 +549,10 @@ export default function EveningLanding() {
             ${bgCorner} 125%)`,
         }}
       >
-        {/* top row: intent + phase (bal), time (jobb) */}
+        {/* TOP */}
         <div className="card-top">
-          <div className="pill-row">
-            {/* FONTOS: előbb INTENT, aztán PHASE */}
+          {/* bal: intent + phase */}
+          <div className="pill-row-left">
             {primaryIntent ? (
               <Pill variant="intent" colorVar={intentTok!.text}>
                 {INTENT_LABEL[primaryIntent]}
@@ -386,13 +566,23 @@ export default function EveningLanding() {
             ) : null}
           </div>
 
-          {time ? <div className="card-time">{time}</div> : null}
+          {/* jobb: time pill */}
+          <div className="pill-row-right">
+            {time ? (
+              <Pill variant="neutral">
+                {time}
+              </Pill>
+            ) : null}
+          </div>
         </div>
 
-        <div className="evening-card-title">{c.title}</div>
+        {/* MID */}
+        <div className="card-mid">
+          <div className="evening-card-title">{c.title}</div>
+          {g ? <div className="evening-card-body">{g}</div> : null}
+        </div>
 
-        {g ? <div className="evening-card-body">{g}</div> : null}
-
+        {/* BOTTOM */}
         {tags.length ? (
           <div className="tag-row">
             {tags.map((t: string) => (
@@ -401,7 +591,9 @@ export default function EveningLanding() {
               </Pill>
             ))}
           </div>
-        ) : null}
+        ) : (
+          <div />
+        )}
       </Card>
     );
   }
@@ -500,6 +692,22 @@ export default function EveningLanding() {
                 {allIntentsInData.map((k) => (
                   <option key={k} value={k}>
                     {INTENT_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter">
+              <div className="filter-label">Idő</div>
+              <select
+                className="select"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value as TimeFilterKey)}
+              >
+                <option value="all">Bármennyi</option>
+                {allTimeBucketsInData.map((k) => (
+                  <option key={k} value={k}>
+                    {TIME_LABEL[k]}
                   </option>
                 ))}
               </select>
@@ -624,7 +832,7 @@ export default function EveningLanding() {
         }
         @media (min-width: 720px) {
           .filters {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
           }
         }
 
@@ -663,28 +871,34 @@ export default function EveningLanding() {
           }
         }
 
+        /* Card layout: vertical space-between */
         .evening-card {
           cursor: pointer;
           border-radius: 18px;
           transition: transform 160ms ease, box-shadow 160ms ease;
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-height: 220px;
+          gap: 14px;
         }
 
         .evening-card:hover {
-          transform: translateY(-2px) scale(1.02);
-          box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+          transform: translateY(-3px) scale(1.03);
+          box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
         }
 
-        /* Grid a top sorra: bal = pillek, jobb = idő */
+        /* TOP: bal pill csoport + jobb time pill */
         .card-top {
           display: grid;
           grid-template-columns: 1fr auto;
           align-items: start;
           gap: 10px;
-          margin-bottom: 10px;
         }
 
-        .pill-row {
+        .pill-row-left {
           display: flex;
           gap: 10px;
           align-items: center;
@@ -693,32 +907,38 @@ export default function EveningLanding() {
           min-width: 0;
         }
 
-        .card-time {
-          font-size: 11px;
-          color: var(--text-muted);
+        .pill-row-right {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
           white-space: nowrap;
-          font-weight: 800;
-          padding-top: 2px;
+          padding-top: 1px;
+        }
+
+        /* middle wrapper (title + goal) */
+        .card-mid {
+          display: grid;
+          gap: 8px;
         }
 
         .evening-card-title {
-          font-size: 16px;
+          font-size: 20px;
           font-weight: 900;
-          letter-spacing: -0.01em;
-          margin-bottom: 8px;
+          letter-spacing: -0.015em;
+          line-height: 1.15;
         }
 
         .evening-card-body {
           font-size: 11px;
           color: var(--text-muted);
-          line-height: 1.35;
+          line-height: 1.4;
         }
 
         .tag-row {
           display: flex;
           gap: 10px;
           flex-wrap: wrap;
-          margin-top: 12px;
+          margin-top: 2px;
         }
 
         .steps {
@@ -780,6 +1000,12 @@ export default function EveningLanding() {
           background: var(--bg);
           z-index: 1;
           border-bottom: 1px solid var(--border);
+        }
+
+        /* ✅ Pill tweaks (lokálisan ezen az oldalon): no shadow, not bold */
+        :global(.pill) {
+          box-shadow: none !important;
+          font-weight: 600 !important;
         }
       `}</style>
     </Shell>
