@@ -77,6 +77,12 @@ We maintain only TWO themes:
   --dream-input-text: var(--input-text);
   --dream-input-placeholder: var(--input-placeholder);
 
+  /* New Dream – container surface (theme overrides) */
+  --newdream-surface-bg: var(--bg-layer);
+  --newdream-surface-border: var(--line-soft);
+  --newdream-surface-text: var(--text-primary);
+  --newdream-surface-muted: var(--text-muted);
+
   /* Status (theme-safe, readable in both) */
   --success: rgba(120, 220, 170, 0.95);
   --success-bg: rgba(120, 220, 170, 0.16);
@@ -133,11 +139,11 @@ body[data-napszak="day"] {
   --card-surface: #fff1eb;
   --card-surface-subtle: #f4dcd4;
 
-  /* ✅ primary sötét (normál szövegekhez) */
+  /* primary sötét (normál szövegekhez) */
   --text-primary: #23181a;
   --text-muted: #594244;
 
-  /* ✅ secondary világos (shell title + hamburger alap) */
+  /* secondary világos (shell title + hamburger alap) */
   --text-secondary: rgba(255, 245, 240, 0.86);
 
   --line-soft: rgba(52, 24, 26, 0.22);
@@ -171,12 +177,18 @@ body[data-napszak="day"] {
   --input-text: var(--text-primary);
   --input-placeholder: rgba(35, 24, 26, 0.42);
 
-  /* ✅ Dream textarea: vissza a korábbi világosra */
+  /* ✅ New Dream – a nagy kártya legyen sötét nappaliban */
+  --newdream-surface-bg: rgb(81, 57, 67);
+  --newdream-surface-border: rgba(255, 245, 240, 0.22);
+  --newdream-surface-text: rgba(255, 245, 240, 0.92);
+  --newdream-surface-muted: rgba(255, 245, 240, 0.72);
+
+  /* ✅ Dream textarea: vissza a világos “vajpapírra” */
   --dream-input-bg: rgba(255, 248, 232, 0.96);
   --dream-input-bg-focus: rgba(255, 248, 232, 1);
   --dream-input-text: var(--text-primary);
 
-  /* ✅ Placeholder legyen sötétebb (hogy ne “tűnjön el” világos alapon) */
+  /* ✅ Placeholder legyen sötétebb világos alapon */
   --dream-input-placeholder: rgba(35, 24, 26, 0.52);
 
   /* Evening cards – day fallback paper */
@@ -230,6 +242,12 @@ body[data-napszak="night"] {
   --input-bg-focus: var(--bg-layer);
   --input-text: var(--text-primary);
   --input-placeholder: rgba(255, 255, 255, 0.55);
+
+  /* New Dream surface defaults */
+  --newdream-surface-bg: var(--bg-layer);
+  --newdream-surface-border: var(--line-soft);
+  --newdream-surface-text: var(--text-primary);
+  --newdream-surface-muted: var(--text-muted);
 
   /* Dream textarea: sötétkék + fehér betű */
   --dream-input-bg: rgba(50, 88, 109, 0.36);
@@ -292,7 +310,7 @@ p { margin: 0; line-height: 1.6; }
 .shell-title {
   font-size: 28px;
   margin-top: var(--space-2);
-  color: var(--text-secondary); /* ✅ shell title day-ben világos */
+  color: var(--text-secondary); /* ✅ világos nappaliban */
 }
 
 .surface-layer {
@@ -468,6 +486,36 @@ textarea:focus {
 
 .newdream-panel { padding: var(--space-1); }
 
+/* ✅ New Dream main card (the <section class="surface-layer card stack"> in Shell) */
+body[data-space="dream"] .shell > section.surface-layer.card.stack {
+  background: var(--newdream-surface-bg);
+  border-color: var(--newdream-surface-border);
+  color: var(--newdream-surface-text);
+}
+
+/* ✅ Footer controls on the dark New Dream card */
+body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-footer,
+body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-footer * {
+  color: var(--newdream-surface-text);
+}
+
+/* ✅ Make non-primary buttons readable on dark surface (Törlés + stat) */
+body[data-space="dream"] .shell > section.surface-layer.card.stack .btn:not(.btn-primary) {
+  color: var(--newdream-surface-text);
+  border-color: var(--newdream-surface-border);
+  background: rgba(255, 245, 240, 0.06);
+}
+
+body[data-space="dream"] .shell > section.surface-layer.card.stack .btn:not(.btn-primary):hover:not(:disabled) {
+  background: rgba(255, 245, 240, 0.10);
+}
+
+/* ✅ Stat chip/button */
+body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-stat {
+  color: var(--newdream-surface-text);
+  border-color: var(--newdream-surface-border);
+}
+
 /* ────────────────────────────────────────────────────────────── */
 /* 6) LAYOUT – Split etc.                                          */
 /* ────────────────────────────────────────────────────────────── */
@@ -550,13 +598,17 @@ body[data-space="evening"] {
 .shell-topbar { display: flex; align-items: center; gap: 12px; }
 .shell-topbar-spacer { flex: 1; }
 
-/* ✅ hamburger/icon alap: secondary (világos nappaliban) */
-.shell-topbar .icon-btn {
+/* Hamburger is a .btn.btn-secondary in your Shell (NOT .icon-btn) */
+/* ✅ Hamburger: light by default, dark on hover */
+.shell-topbar .btn.btn-secondary {
   color: var(--text-secondary);
 }
+.shell-topbar .btn.btn-secondary:hover:not(:disabled) {
+  color: var(--text-primary);
+}
 
-/* ✅ hover: primary */
-.shell-topbar .icon-btn:hover {
+/* Info icon button (when it is displayed) should be dark by default */
+.shell-topbar .icon-btn {
   color: var(--text-primary);
 }
 
