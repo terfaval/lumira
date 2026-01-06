@@ -407,21 +407,22 @@ export default function EveningLanding() {
         style={{
           background: `linear-gradient(135deg,
             var(--evening-card-paper-strong) 0%,
-            var(--evening-card-paper) 60%,
+            var(--evening-card-paper) 30%,
             ${ic.bg} 110%)`,
         }}
       >
         {/* top row: phase + intent + time (egy vonalban) */}
         <div className="card-top">
           <div className="pill-row">
-            {p ? (
-              <span className="pill" style={{ color: pc, borderColor: pc }}>
-                {PHASE_LABEL[p]}
+            {primaryIntent ? (
+              <span className="pill pill--intent" style={{ color: ic.text, borderColor: ic.text }}>
+                {INTENT_LABEL[primaryIntent]}
               </span>
             ) : null}
-            {primaryIntent ? (
-              <span className="pill" style={{ color: ic.text, borderColor: ic.text }}>
-                {INTENT_LABEL[primaryIntent]}
+
+            {p ? (
+              <span className="pill pill--phase" style={{ color: pc, borderColor: pc }}>
+                {PHASE_LABEL[p]}
               </span>
             ) : null}
           </div>
@@ -436,7 +437,7 @@ export default function EveningLanding() {
         {tags.length ? (
           <div className="tag-row">
             {tags.map((t: string) => (
-              <span key={t} className="tag">
+              <span key={t} className="pill pill--neutral">
                 {huTag(t)}
               </span>
             ))}
@@ -725,32 +726,47 @@ export default function EveningLanding() {
         .card-top {
           display: flex;
           align-items: center;
-          justify-content: space-between;
           gap: 10px;
           margin-bottom: 10px;
         }
 
         .pill-row {
           display: flex;
-          gap: 8px;
+          gap: 10px;
           align-items: center;
           flex-wrap: wrap;
+          flex: 1;
+          justify-content: flex-start;
         }
 
         /* “nem kattintható lekerekített gomb” */
         .pill {
-          font-size: 11pt;
-          padding: 6px 10px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          min-height: 30px;
+
+          padding: 7px 12px;
           border-radius: 999px;
-          border: 2.25px solid var(--border); /* inline felülírja a színt */
+
+          border: 2.25px solid currentColor;
           background: var(--evening-pill-bg);
+
+          font-size: 11pt;
           font-weight: 800;
           line-height: 1;
           white-space: nowrap;
         }
 
+        .pill--neutral {
+          color: var(--text-muted);
+          border-color: var(--line-soft);     /* vagy var(--border) */
+          background: rgba(255, 255, 255, 0.06);
+          box-shadow: none;
+        }
 
         .card-time {
+          margin-left: auto;
           font-size: 11px;
           color: var(--text-muted);
           white-space: nowrap;
