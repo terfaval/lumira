@@ -1,29 +1,36 @@
 .wrap {
   display: grid;
-  grid-template-columns: 35% 65%;
   gap: 16px;
   align-items: start;
+  grid-template-columns: 1fr;
 }
 
-@media (max-width: 980px) {
+@media (min-width: 900px) {
   .wrap {
-    grid-template-columns: 1fr;
+    grid-template-columns: 35% 65%;
   }
 }
 
+/* BAL: “színes kártya” = saját container */
 .leftTile {
   border-radius: 18px;
   border: 1px solid var(--line-soft);
-  padding: 22px;
-  min-height: 240px;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+
+  /* ✅ padding külön containerként */
+  padding: 18px;
 }
 
+/* JOBB: plain container (külön) */
 .rightPlain {
-  padding: 4px 0;
+  min-width: 0;
+
+  /* ✅ padding külön containerként */
+  padding: 18px;
+  border-radius: 18px;
+
+  /* “plain” – ne legyen olyan kártyás, csak enyhe keret */
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.02);
 }

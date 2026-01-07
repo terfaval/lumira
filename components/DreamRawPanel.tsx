@@ -1,23 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
 import type { DreamSession } from "@/src/lib/types";
+
+type DreamRaw = Pick<DreamSession, "id" | "raw_dream_text" | "created_at">;
 
 export function DreamRawPanel({
   sessionId,
   session,
+  variant = "default",
+  className = "",
 }: {
   sessionId: string;
-  session?: Pick<DreamSession, "id" | "raw_dream_text" | "created_at"> | null;
+  session?: DreamRaw | null;
+  /** default: a régi viselkedés, bare: semmi extra “doboz” styling */
+  variant?: "default" | "bare";
+  className?: string;
 }) {
-  const [fetchedSession, setFetchedSession] = useState<
-    Pick<DreamSession, "id" | "raw_dream_text" | "created_at"> | null
-  >(null);
+  const [fetchedSession, setFetchedSession] = useState<DreamRaw | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const displaySession = session?.raw_dream_text ? session : fetchedSession;
+  const displaySession = useMemo(() => {
+    return session?.raw_dream_text ? session : fetchedSession;
+  }, [session, fetchedSession]);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,6 +33,7 @@ export function DreamRawPanel({
     const load = async () => {
       setLoading(true);
       setError(null);
+
       const { data: sessionData, error: fetchError } = await supabase
         .from("dream_sessions")
         .select("id, raw_dream_text, created_at")
@@ -35,7 +43,8 @@ export function DreamRawPanel({
       if (cancelled) return;
 
       if (fetchError) setError(fetchError.message);
-      else setFetchedSession(sessionData as Pick<DreamSession, "id" | "raw_dream_text" | "created_at">);
+      else setFetchedSession(sessionData as DreamRaw);
+
       setLoading(false);
     };
 
@@ -45,11 +54,22 @@ export function DreamRawPanel({
     };
   }, [session, sessionId]);
 
+  const text =
+    loading && !displaySession
+      ? "Betöltés…"
+      : error
+        ? null
+        : displaySession?.raw_dream_text ?? "Nincs megjeleníthető álomszöveg.";
+
+  const rootClass =
+    variant === "bare"
+      ? `dream-raw-text dream-raw-text--bare ${className}`.trim()
+      : `dream-raw-text ${className}`.trim();
+
   return (
-    <div className="dream-raw-text" aria-live="polite">
-      {loading && !displaySession ? "Betöltés…" : null}
+    <div className={rootClass} aria-live="polite">
       {error ? <span style={{ color: "crimson" }}>Nem sikerült betölteni az álmot.</span> : null}
-      {!loading && !error ? displaySession?.raw_dream_text ?? "Nincs megjeleníthető álomszöveg." : null}
+      {!error ? text : null}
     </div>
   );
 }

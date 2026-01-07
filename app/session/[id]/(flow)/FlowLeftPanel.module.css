@@ -1,0 +1,60 @@
+.wrap {
+  display: grid;
+  gap: 12px;
+}
+
+/* cím + ceruza egy sorban */
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.titleText {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.012em;
+  line-height: 1.15;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ceruza csak hoverre */
+.pencilBtn {
+  opacity: 0;
+  transform: translateY(1px);
+  transition: opacity 140ms ease, transform 140ms ease;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.titleRow:hover .pencilBtn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pencilBtn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.titleInput {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--line-soft);
+  padding: 10px 12px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+.titleInput:focus {
+  border-color: var(--accent);
+}

@@ -3,8 +3,8 @@
 import type { ReactNode } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { Shell } from "@/components/Shell";
-import { DreamRawPanel } from "@/components/DreamRawPanel";
 import styles from "./layout.module.css";
+import FlowLeftPanel from "./FlowLeftPanel";
 
 function titleFromPath(pathname: string) {
   if (pathname.endsWith("/frame")) return "Keretezés";
@@ -30,7 +30,7 @@ export default function FlowShellClient({ children }: { children: ReactNode }) {
               var(--accent) 112%)`,
           }}
         >
-          {id ? <DreamRawPanel sessionId={id} /> : null}
+          {id ? <FlowLeftPanel sessionId={id} /> : null}
         </div>
 
         <div className={styles.rightPlain}>{children}</div>
