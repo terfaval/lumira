@@ -594,18 +594,31 @@ export default function EveningLanding() {
           font-size: 12px;
           color: var(--text-muted);
         }
+
         .select {
           width: 100%;
           border: 1px solid var(--border);
           border-radius: 12px;
           padding: 10px 12px;
-          background: transparent;
-          color: var(--text);
+
+          background: var(--select-bg);
+          color: var(--select-text);
           outline: none;
+
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
         }
+
         .select:focus {
           border-color: var(--text-muted);
         }
+
+        .select option {
+          background: var(--select-option-bg);
+          color: var(--select-option-text);
+        }
+
 
         .evening-grid {
           display: grid;
