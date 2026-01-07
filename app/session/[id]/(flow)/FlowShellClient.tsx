@@ -19,7 +19,7 @@ export default function FlowShellClient({ children }: { children: ReactNode }) {
   const title = titleFromPath(pathname);
 
   return (
-    <Shell title={title} space="dream" surface="none">
+    <Shell title={title} space="dream" surface="card">
       <div className={styles.wrap}>
         <div
           className={styles.leftTile}
