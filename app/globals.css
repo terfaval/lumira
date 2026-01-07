@@ -110,7 +110,7 @@ All colors use HEX. Semi-transparent colors use 8-digit HEX (#RRGGBBAA).
   --evening-card-paper-strong: #040810DB; /* 86% */
 
   /* Select (dropdown) */
-  --select-bg: var(--accent);
+  --select-bg: var(--card-surface);
   --select-text: var(--text-primary);
   --select-option-bg: var(--card-surface);
   --select-option-text: var(--text-primary);
