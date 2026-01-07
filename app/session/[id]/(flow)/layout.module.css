@@ -34,3 +34,18 @@
   border: 1px solid var(--line-soft);
   background: rgba(255, 255, 255, 0.02);
 }
+
+/* app/session/[id]/(flow)/layout.module.css */
+.wrap {
+  /* a Shell tartalmában ez fogja meg a magasságot */
+  height: calc(100dvh - var(--shell-header-h, 84px));
+  min-height: 0;
+  overflow: hidden; /* ettől nem az oldal görget */
+  padding: 0; /* ha a Shell már ad paddinget, itt ne duplázzunk */
+}
+
+/* a SplitLayout 100%-os magasságot tudjon */
+.flowInner {
+  height: 100%;
+  min-height: 0;
+}

@@ -58,3 +58,14 @@
 .titleInput:focus {
   border-color: var(--accent);
 }
+
+:global .dream-raw-text--bare {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+
+  white-space: pre-wrap;
+  line-height: 1.55;
+}

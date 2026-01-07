@@ -50,6 +50,20 @@ function isGenericTitle(title?: string | null) {
   return t === "álom" || t === "álomjelenet" || t === "jelenet" || t === "álomnapló";
 }
 
+/** reason legyen *garantáltan* 1 mondat */
+function toOneSentenceHu(input: string, maxLen = 170): string {
+  const s = sanitizeTitle(input);
+  if (!s) return "";
+
+  const m = s.match(/^(.+?[.!?])(\s|$)/);
+  let one = (m ? m[1] : s).trim();
+
+  if (one.length > maxLen) one = one.slice(0, maxLen - 1).trimEnd() + "…";
+  if (!/[.!?]$/.test(one)) one = one + ".";
+
+  return one;
+}
+
 function shuffleInPlace<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -64,16 +78,23 @@ function fallbackRecommendations(active: DirectionCatalogSummary[]): Recommended
   const safe = pool.slice(0, 3);
 
   const reasons = [
-    "Ez az irány segíthet egy konkrét részletnél időzni.",
-    "Ez a megközelítés lehetőséget ad az érzetek megfigyelésére.",
-    "Ez a lépésről lépésre vezetett irány biztonságos keretet ad a munkához.",
+    "Ez az irány segíthet egy konkrét álomrészletnél időzni.",
+    "Ez a megközelítés támogatja, hogy a képek és érzetek rétegei tisztábban kirajzolódjanak.",
+    "Ez az irány biztonságos keretet ad, hogy lépésről lépésre haladj a feldolgozásban.",
   ];
+
   return safe.map((d, idx) => ({
     slug: d.slug,
-    reason: reasons[idx] ?? reasons[reasons.length - 1],
+    reason: toOneSentenceHu(reasons[idx] ?? reasons[reasons.length - 1]),
   }));
 }
 
+/**
+ * Validáció:
+ * - 3 elem
+ * - slug allowed + egyedi
+ * - reason: 1 mondat (utólag levágjuk), nem üres
+ */
 function validateRecommendations(recs: unknown, allowed: Set<string>): RecommendedDirection[] | null {
   if (!Array.isArray(recs) || recs.length !== 3) return null;
 
@@ -82,9 +103,14 @@ function validateRecommendations(recs: unknown, allowed: Set<string>): Recommend
 
   for (const entry of recs) {
     const slug = typeof (entry as any)?.slug === "string" ? (entry as any).slug.trim() : null;
-    const reason = typeof (entry as any)?.reason === "string" ? (entry as any).reason.trim() : null;
-    if (!slug || !reason) return null;
+    const rawReason = typeof (entry as any)?.reason === "string" ? (entry as any).reason.trim() : null;
+
+    if (!slug || !rawReason) return null;
     if (!allowed.has(slug) || seen.has(slug)) return null;
+
+    const reason = toOneSentenceHu(rawReason);
+    if (!reason) return null;
+
     seen.add(slug);
     cleaned.push({ slug, reason });
   }
@@ -110,14 +136,14 @@ async function upsertSummaries(
         user_id: userId,
         ...(payload.title !== undefined ? { title: payload.title } : {}),
         ...(payload.framing_text !== undefined ? { framing_text: payload.framing_text } : {}),
-        ...(payload.recommended_directions !== undefined ? { recommended_directions: payload.recommended_directions } : {}),
+        ...(payload.recommended_directions !== undefined
+          ? { recommended_directions: payload.recommended_directions }
+          : {}),
       },
       { onConflict: "session_id" }
     );
 
-  if (error) {
-    console.warn("dream_session_summaries upsert failed:", error.message);
-  }
+  if (error) console.warn("dream_session_summaries upsert failed:", error.message);
 }
 
 async function appendLatentAnalysis(supabase: any, sessionId: string, output: any, meta: any) {
@@ -127,9 +153,7 @@ async function appendLatentAnalysis(supabase: any, sessionId: string, output: an
     p_meta: meta ?? {},
   });
 
-  if (error) {
-    console.warn("append_latent_analysis failed:", error.message);
-  }
+  if (error) console.warn("append_latent_analysis failed:", error.message);
 }
 
 async function generateLatent(
@@ -139,7 +163,6 @@ async function generateLatent(
   recommendations: RecommendedDirection[],
   allowedSlugs: string[]
 ) {
-  // belső latent: lehet erősebb hipotézis, de feltételes + alátámasztott, nem user-facing
   const resp = await client.chat.completions.create({
     model: "gpt-4o-mini",
     temperature: 0.35,
@@ -152,10 +175,10 @@ async function generateLatent(
           "Cél: segíteni a következő kérdések pontosítását és az álom fokozatos mélyítését.\n" +
           "Szabályok:\n" +
           "- Nem diagnózis, nem klinikai címkék.\n" +
-          "- Lehetnek erősebb hipotézisek, de feltételesen, az álom elemeivel alátámasztva.\n" +
+          "- Feltételes hipotézisek, az álom elemeivel alátámasztva.\n" +
           "- Ne adj tanácsot a felhasználónak.\n" +
           "- candidate_directions: csak a megadott slugokból.\n" +
-          'Kimenet: csak JSON objektum a következő kulcsokkal: kind, summary_hu, anchors, hypotheses, candidate_directions, question_seed, flags.',
+          'Kimenet: csak JSON objektum: kind, summary_hu, anchors, hypotheses, candidate_directions, question_seed, flags.',
       },
       {
         role: "user",
@@ -170,16 +193,60 @@ async function generateLatent(
     max_tokens: 650,
   });
 
-  const parsed = JSON.parse(resp.choices?.[0]?.message?.content ?? "{}");
-  return parsed;
+  return JSON.parse(resp.choices?.[0]?.message?.content ?? "{}");
 }
 
+/** anchors-ból determinisztikus cím (RAW-ból soha) */
+function pickFirstNonEmpty(arr: any): string {
+  if (!Array.isArray(arr)) return "";
+  for (const x of arr) {
+    if (typeof x === "string" && sanitizeTitle(x)) return sanitizeTitle(x);
+    if (x && typeof x === "object") {
+      const v =
+        (typeof x.label === "string" && sanitizeTitle(x.label)) ||
+        (typeof x.name === "string" && sanitizeTitle(x.name)) ||
+        (typeof x.text === "string" && sanitizeTitle(x.text));
+      if (v) return v;
+    }
+  }
+  return "";
+}
+
+function buildFallbackTitleFromAnchors(latent: any): string {
+  const a = latent?.anchors ?? {};
+  const who = pickFirstNonEmpty(a.characters);
+  const where = pickFirstNonEmpty(a.places);
+  const what = pickFirstNonEmpty(a.objects);
+  const beat = pickFirstNonEmpty(a.beats);
+
+  const candidates: string[] = [];
+  if (beat && where) candidates.push(`${beat} ${where}`);
+  if (what && where) candidates.push(`${what} ${where}`);
+  if (who && what) candidates.push(`${who} ${what}`);
+  if (where) candidates.push(where);
+  if (what) candidates.push(what);
+
+  for (const c of candidates) {
+    const t = titleCaseHungarian(sanitizeTitle(c));
+    const wc = countWords(t);
+    if (t && !isGenericTitle(t) && wc >= 2 && wc <= 4 && !looksSentenceLike(t)) return t;
+  }
+
+  // ha anchors gyenge/üres: semleges, de nem generikus tiltott cím
+  return "Különös álomkép";
+}
+
+/**
+ * Title: 2 körös generálás:
+ * 1) szigorú 2–4 szó
+ * 2) ha invalid: javító kör (ugyanúgy 2–4 szó, de “repair” jelleg)
+ * fallback: anchors-alapú determinisztikus (RAW-ból soha)
+ */
 async function ensureTitleFromLatent(
   client: OpenAI,
   framingText: string,
   existingAudit: Record<string, unknown>,
-  latentForTitle: any,
-  rawBackup: string
+  latentForTitle: any
 ) {
   const existingTitle = titleCaseHungarian(sanitizeTitle((existingAudit as any)?.title ?? ""));
   if (existingTitle && !isGenericTitle(existingTitle)) {
@@ -191,7 +258,7 @@ async function ensureTitleFromLatent(
 
   const anchors = latentForTitle?.anchors ?? null;
 
-  const system = [
+  const systemStrict = [
     "Adj egy rövid, magyar címet az álomhoz, a KULCSJELENETRE fókuszálva.",
     "Szabályok:",
     "- 2–4 szó (szigorú)",
@@ -199,45 +266,76 @@ async function ensureTitleFromLatent(
     "- Ne legyen mondat, ne legyen magyarázat",
     "- Ne legyen értelmezés/diagnózis",
     "- Tiltott generikus címek: Álom, Álomjelenet, Jelenet, Álomnapló",
-    "- Lehetőleg: 1 akció/állapot + 1 konkrét horgony (hely/objektum/szereplő) az anchors mezőből",
+    "- Kötelező: legalább 1 konkrét elem az anchors mezőből (szereplő/hely/tárgy/eseménycímke)",
     'Formátum: {"title":"..."}',
   ].join("\n");
 
-  const userPayload = {
-    framing_text: framingText,
-    anchors,
-    // csak vésztartalék; nem “szóvadászat”, inkább kontextus, ha anchors hiányos
-    dream_text_excerpt: rawBackup.slice(0, 700),
-  };
+  const userPayload = { framing_text: framingText, anchors };
 
-  let generated = "";
-  try {
-    const titleResp = await client.chat.completions.create({
+  const tryGenerate = async (mode: "strict" | "repair", lastBadTitle?: string) => {
+    const system =
+      mode === "strict"
+        ? systemStrict
+        : [
+            "Javítsd a címet úgy, hogy minden szabály teljesüljön.",
+            "Szabályok:",
+            "- 2–4 szó (szigorú)",
+            "- Nagybetűvel kezdődjön",
+            "- Ne legyen mondat / magyarázat",
+            "- Ne legyen értelmezés",
+            "- Legyen benne legalább 1 konkrét elem az anchors mezőből",
+            "- Tiltott: Álom, Álomjelenet, Jelenet, Álomnapló",
+            'Formátum: {"title":"..."}',
+          ].join("\n");
+
+    const resp = await client.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.2,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
-        { role: "user", content: JSON.stringify(userPayload) },
+        {
+          role: "user",
+          content: JSON.stringify(
+            mode === "strict"
+              ? userPayload
+              : { ...userPayload, previous_bad_title: lastBadTitle ?? "" }
+          ),
+        },
       ],
-      max_tokens: 60,
+      max_tokens: 70,
     });
 
-    const parsed = JSON.parse(titleResp.choices?.[0]?.message?.content ?? "{}");
-    generated = typeof parsed?.title === "string" ? parsed.title : "";
+    const parsed = JSON.parse(resp.choices?.[0]?.message?.content ?? "{}");
+    const generated = typeof parsed?.title === "string" ? parsed.title : "";
+    const finalTitle = titleCaseHungarian(sanitizeTitle(generated));
+    const wc = countWords(finalTitle);
+
+    const ok = !!finalTitle && !isGenericTitle(finalTitle) && wc >= 2 && wc <= 4 && !looksSentenceLike(finalTitle);
+    return { ok, title: finalTitle };
+  };
+
+  // 1) strict
+  let attempt1Title = "";
+  try {
+    const a1 = await tryGenerate("strict");
+    attempt1Title = a1.title;
+    if (a1.ok) return { title: a1.title, audit: { ...existingAudit, title: a1.title } };
   } catch {
-    generated = "";
+    // ignore
   }
 
-  let finalTitle = titleCaseHungarian(sanitizeTitle(generated));
-  const wc = countWords(finalTitle);
-
-  if (!finalTitle || isGenericTitle(finalTitle) || wc < 2 || wc > 4 || looksSentenceLike(finalTitle)) {
-    // Stabil, nem generikus fallback (nem raw tokenekből)
-    finalTitle = "Menekülés és veszély";
+  // 2) repair
+  try {
+    const a2 = await tryGenerate("repair", attempt1Title);
+    if (a2.ok) return { title: a2.title, audit: { ...existingAudit, title: a2.title } };
+  } catch {
+    // ignore
   }
 
-  return { title: finalTitle, audit: { ...existingAudit, title: finalTitle } };
+  // fallback (RAW nélkül)
+  const fallback = buildFallbackTitleFromAnchors(latentForTitle);
+  return { title: fallback, audit: { ...existingAudit, title: fallback } };
 }
 
 export async function POST(req: Request) {
@@ -277,8 +375,8 @@ export async function POST(req: Request) {
     // ---- rövid álom fallback ----
     if (raw.length < 20) {
       const framing =
-        "Az álomleírás nagyon rövid, de fontos, hogy időt szánj rá: " +
-        "pár mondatban írd le, mi történt és milyen érzések kísérték. Folytasd, amikor készen állsz.";
+        "Az álomleírás nagyon rövid, de fontos, hogy időt szánj rá: pár mondatban írd le, mi történt és milyen érzések kísérték. " +
+        "Folytasd, amikor készen állsz.";
 
       const recommended = fallbackRecommendations(activeDirections);
       const title = "Rövid álomjegyzet";
@@ -300,14 +398,12 @@ export async function POST(req: Request) {
 
       if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
-      // canonical: summaries is
       await upsertSummaries(supabase, sessionId, userId, {
         title,
         framing_text: framing,
         recommended_directions: recommended,
       });
 
-      // initial latent snapshot (fallback)
       await appendLatentAnalysis(
         supabase,
         sessionId,
@@ -370,6 +466,7 @@ export async function POST(req: Request) {
     const catalogForModel = activeDirections.map((d) => ({
       slug: d.slug,
       title: d.title,
+      // micro_description/description legyen az a kapaszkodó, amire a reason rámutat
       summary: (d.content as any)?.micro_description ?? d.description ?? "",
     }));
     shuffleInPlace(catalogForModel);
@@ -380,22 +477,25 @@ export async function POST(req: Request) {
       try {
         const recResp = await client.chat.completions.create({
           model: "gpt-4o-mini",
-          temperature: 0.4,
+          temperature: 0.35,
           response_format: { type: "json_object" },
           messages: [
             {
               role: "system",
               content:
-                "Feladat: válassz ki pontosan 3 releváns irányt a megadott katalógusból egy nyers álom alapján.\n" +
+                "Feladat: válassz ki pontosan 3 releváns irányt a katalógusból egy nyers álom alapján.\n" +
                 "Szabályok:\n" +
                 "- Csak a megadott slugokat használd.\n" +
                 "- Pontosan 3 különböző elemet adj vissza.\n" +
-                "- Ne tulajdoníts jelentést az álomnak, ne diagnosztizálj.\n" +
+                "- Ne magyarázd meg „mit jelent” az álom, ne diagnosztizálj.\n" +
+                "- A reason pontosan EGY mondat legyen.\n" +
+                "- A reason válaszoljon erre: miért hasznos EZ az irány a TOVÁBBI feldolgozáshoz ennél az álomnál.\n" +
+                "- A reasonben legyen (1) 1 konkrét álomrészlet (szereplő/hely/tárgy/jelenet) ÉS (2) 1 konkrét kapaszkodó az adott irány summary-jából.\n" +
                 'Formátum: {"recommended_directions":[{"slug":"...","reason":"..."},{"slug":"...","reason":"..."},{"slug":"...","reason":"..."}]}',
             },
             { role: "user", content: JSON.stringify({ dream_text: raw, framing, catalog: catalogForModel }) },
           ],
-          max_tokens: 400,
+          max_tokens: 440,
         });
 
         const parsed = JSON.parse(recResp.choices?.[0]?.message?.content ?? "{}");
@@ -407,16 +507,10 @@ export async function POST(req: Request) {
 
     if (!recommendations) recommendations = fallbackRecommendations(activeDirections);
 
-    // 3) LATENT (mindig, a frame-nél szülessen meg az initial)
+    // 3) LATENT (mindig)
     let latentParsed: any = null;
     try {
-      latentParsed = await generateLatent(
-        client,
-        raw,
-        framing,
-        recommendations,
-        Array.from(allowedSlugs)
-      );
+      latentParsed = await generateLatent(client, raw, framing, recommendations, Array.from(allowedSlugs));
 
       await appendLatentAnalysis(supabase, sessionId, latentParsed, {
         source: "frame",
@@ -428,17 +522,11 @@ export async function POST(req: Request) {
       latentParsed = null;
     }
 
-    // 4) TITLE (latent anchors + framing alapján; 2–4 szó)
-    const { title, audit: auditWithTitle } = await ensureTitleFromLatent(
-      client,
-      framing,
-      audit,
-      latentParsed,
-      raw
-    );
+    // 4) TITLE (2 kör + anchors fallback, RAW nélkül)
+    const { title, audit: auditWithTitle } = await ensureTitleFromLatent(client, framing, audit, latentParsed);
     audit = { ...auditWithTitle, recommended_directions: recommendations };
 
-    // 5) dream_sessions update (megmarad, mert a UI jelenleg innen is olvas)
+    // 5) dream_sessions update
     const { error: updErr } = await supabase
       .from("dream_sessions")
       .update({
@@ -451,7 +539,7 @@ export async function POST(req: Request) {
 
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
-    // 6) canonical: summaries is kapja meg (title + framing + reco)
+    // 6) canonical summaries
     await upsertSummaries(supabase, sessionId, userId, {
       title,
       framing_text: framing,

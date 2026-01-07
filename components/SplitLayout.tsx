@@ -1,61 +1,41 @@
 "use client";
 
 import React from "react";
+import styles from "./SplitLayout.module.css";
 
 type SplitLayoutProps = {
   leftTitle: string;
   left: React.ReactNode;
   rightTitle: string;
   right: React.ReactNode;
+  /** opcionális: ha a panel-body keretet nem akarod valamelyik oldalon */
+  leftBodyClassName?: string;
+  rightBodyClassName?: string;
 };
 
-export function SplitLayout({ leftTitle, left, rightTitle, right }: SplitLayoutProps) {
+export function SplitLayout({
+  leftTitle,
+  left,
+  rightTitle,
+  right,
+  leftBodyClassName = "",
+  rightBodyClassName = "",
+}: SplitLayoutProps) {
   return (
-    <div className="split">
-      <section className="panel">
-        <div className="panel-head">
+    <div className={styles.split}>
+      <section className={styles.panel}>
+        <div className={styles.panelHead}>
           <h3 className="split-panel-title">{leftTitle}</h3>
         </div>
-        <div className="panel-body">{left}</div>
+        <div className={[styles.panelBody, leftBodyClassName].filter(Boolean).join(" ")}>{left}</div>
       </section>
 
-      <section className="panel">
-        <div className="panel-head">
+      <section className={styles.panel}>
+        <div className={styles.panelHead}>
           <h3 className="split-panel-title">{rightTitle}</h3>
         </div>
-        <div className="panel-body">{right}</div>
+        <div className={[styles.panelBody, rightBodyClassName].filter(Boolean).join(" ")}>{right}</div>
       </section>
-
-      <style jsx>{`
-        .split {
-          display: grid;
-          gap: 14px;
-          align-items: start;
-          grid-template-columns: 1fr;
-        }
-
-        /* ✅ 35 / 65 desktopon */
-        @media (min-width: 960px) {
-          .split {
-            grid-template-columns: 0.35fr 0.65fr;
-          }
-        }
-
-        .panel {
-          min-width: 0;
-        }
-
-        .panel-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 10px;
-        }
-
-        .panel-body {
-          min-width: 0;
-        }
-      `}</style>
     </div>
   );
 }
