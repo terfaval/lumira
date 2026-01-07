@@ -80,6 +80,7 @@ export default function ArchiveControls({
   const show = (s: ArchiveStatusFilter) => availableStatuses.includes(s);
 
   return (
+    <div className="controls">
       <div className="filters">
         <div className="filter">
           <div className="filter-label">Állapot</div>
@@ -90,6 +91,7 @@ export default function ArchiveControls({
             {show("feldolgozott") && <option value="feldolgozott">Feldolgozott</option>}
             {show("lezart") && <option value="lezart">Lezárt</option>}
           </select>
+        </div>
 
         <div className="filter">
           <div className="filter-label">Időszak</div>
@@ -149,8 +151,7 @@ export default function ArchiveControls({
       <style jsx>{`
         .controls {
           display: grid;
-          gap: 10px;
-          padding: 12px;
+          gap: 12px;
         }
 
         /* ugyanaz a logika, mint az evening filters */
