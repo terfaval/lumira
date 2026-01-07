@@ -1,13 +1,8 @@
-// /app/session/[id]/frame/page.tsx //
-
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { SplitLayout } from "@/components/SplitLayout";
-import { DreamRawPanel } from "@/components/DreamRawPanel";
 import { supabase } from "@/src/lib/supabase/client";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { startDirection } from "@/src/lib/startDirection";
@@ -17,6 +12,7 @@ import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 export default function FramePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+
   const [session, setSession] = useState<DreamSession | null>(null);
   const [catalog, setCatalog] = useState<DirectionCatalogItem[]>([]);
   const [busy, setBusy] = useState(false);
@@ -34,6 +30,7 @@ export default function FramePage() {
       .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, created_at, updated_at")
       .eq("id", id)
       .single();
+
     if (error) setErr(error.message);
     else setSession(data as DreamSession);
   }, [id]);
@@ -45,6 +42,7 @@ export default function FramePage() {
       .eq("is_active", true)
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("slug", { ascending: true });
+
     if (error) {
       setErr(error.message);
       return;
@@ -53,28 +51,21 @@ export default function FramePage() {
   }, []);
 
   useEffect(() => {
-    loadSession();
+    void loadSession();
   }, [loadSession]);
 
   useEffect(() => {
-    loadCatalog();
+    void loadCatalog();
   }, [loadCatalog]);
 
   const runFraming = useCallback(async () => {
     setBusy(true);
     setErr(null);
     try {
-      const {
-        data: { session: authSession },
-      } = await supabase.auth.getSession();
-
-      const token = authSession?.access_token;
-
       const res = await fetchWithAuth("/api/frame", {
-      method: "POST",
-      json: { sessionId: id },
+        method: "POST",
+        json: { sessionId: id },
       });
-
 
       if (!res.ok) throw new Error(await res.text());
       await loadSession();
@@ -115,37 +106,28 @@ export default function FramePage() {
     if (catalog.length === 0) return;
 
     try {
-      const {
-        data: { session: authSession },
-      } = await supabase.auth.getSession();
-
-      const token = authSession?.access_token;
-
       const res = await fetchWithAuth("/api/synthesize", {
-      method: "POST",
-      json: {
-        session_id: id,
-        dream_text: session.raw_dream_text,
-        history: [],
-        prior_echoes: [],
-        catalog,
-        allowed_slugs: catalog.map((c) => c.slug),
+        method: "POST",
+        json: {
+          session_id: id,
+          dream_text: session.raw_dream_text,
+          history: [],
+          prior_echoes: [],
+          catalog,
+          allowed_slugs: catalog.map((c) => c.slug),
         },
       });
 
-
-      // Itt nem akarunk UI-t törni: ha hibázik, csak logoljuk/soft error
+      // soft fail
       if (!res.ok) {
-        // opcionális: const txt = await res.text();
-        // console.warn("synthesize failed", txt);
+        // no-op
       }
     } catch {
-      // no-op (MVP: háttér mentés, ne akadjon meg a UI)
+      // no-op
     }
   }, [id, session?.raw_dream_text, catalog]);
 
   useEffect(() => {
-    // csak akkor, ha már kész a framing (hogy legyen "stabil" input), és csak egyszer
     if (!framingReady) return;
     if (synthAttemptedRef.current) return;
 
@@ -199,73 +181,124 @@ export default function FramePage() {
     </>
   );
 
+  if (loading || !session) return Spinner;
+
   return (
-    <Shell title="Keretezés">
-      {loading || !session ? (
-        Spinner
+    <div className="plain">
+      {!framingReady ? (
+        <p className="muted">A keretezés készül, hamarosan megjelennek az ajánlott irányok.</p>
       ) : (
-        <SplitLayout
-          leftTitle="Nyers álom"
-          left={<DreamRawPanel sessionId={id} session={session} />}
-          rightTitle="Keretezés"
-          right={
-            <div className="stack">
-              {framingReady ? (
-                <>
-                  <div
-                    style={{
-                      whiteSpace: "pre-wrap"
-                    }}
-                  >
-                    {session.ai_framing_text}
-                  </div>
+        <div className="stack">
+          <div className="framing-text">{session.ai_framing_text}</div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gap: 12,
-                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                    }}
-                  >
-                    {recommendations.map((d) => (
-                      <button
-                        key={d.slug}
-                        type="button"
-                        disabled={busy}
-                        onClick={() => handleDirectionSelect(d.slug)}
-                        style={{ textAlign: "left" }}
-                        className="card"
-                      >
-                        <div className="stack-tight">
-                          <div style={{ fontWeight: 700 }}>{d.title}</div>
-                          <div style={{ opacity: 0.9 }}>{d.reason}</div>
-                          <div style={{ opacity: 0.7 }}>
-                            {(d.content as any)?.micro_description ?? d.description}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+          <div className="recs">
+            {recommendations.map((d) => (
+              <button
+                key={d.slug}
+                type="button"
+                disabled={busy}
+                onClick={() => handleDirectionSelect(d.slug)}
+                className="rec"
+              >
+                <div className="rec-title">{d.title}</div>
+                <div className="rec-reason">{d.reason}</div>
+                <div className="rec-micro">
+                  {(d.content as any)?.micro_description ?? d.description}
+                </div>
+              </button>
+            ))}
+          </div>
 
-                  <div style={{ display: "grid", gap: 12 }}>
-                    <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>
-                      További irányok
-                    </PrimaryButton>
-                    <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
-                      Később folytatom
-                    </PrimaryButton>
-                  </div>
-                </>
-              ) : (
-                <p style={{ color: "var(--text-muted)" }}>
-                  A keretezés készül, hamarosan megjelennek az ajánlott irányok.
-                </p>
-              )}
-              {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-            </div>
-          }
-        />
+          <div className="actions">
+            <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>
+              További irányok
+            </PrimaryButton>
+            <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
+              Később folytatom
+            </PrimaryButton>
+          </div>
+        </div>
       )}
-    </Shell>
+
+      {err && <p className="err">{err}</p>}
+
+      <style jsx>{`
+        .plain {
+          padding: 4px 0;
+        }
+
+        .stack {
+          display: grid;
+          gap: 14px;
+        }
+
+        .muted {
+          color: var(--text-muted);
+        }
+
+        .err {
+          margin-top: 12px;
+          color: crimson;
+        }
+
+        .framing-text {
+          white-space: pre-wrap;
+          line-height: 1.6;
+          font-size: 14px;
+        }
+
+        /* ✅ plainebb ajánlások: nem “card”, csak finom border */
+        .recs {
+          display: grid;
+          gap: 10px;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }
+
+        .rec {
+          text-align: left;
+          border-radius: 16px;
+          border: 1px solid var(--line-soft);
+          background: rgba(255, 255, 255, 0.02);
+          padding: 14px;
+          cursor: pointer;
+          transition: transform 140ms ease, border-color 140ms ease;
+        }
+
+        .rec:hover {
+          transform: translateY(-1px);
+          border-color: rgba(255, 255, 255, 0.16);
+        }
+
+        .rec:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        .rec-title {
+          font-weight: 800;
+          letter-spacing: -0.01em;
+          margin-bottom: 6px;
+        }
+
+        .rec-reason {
+          opacity: 0.9;
+          margin-bottom: 8px;
+          line-height: 1.45;
+        }
+
+        .rec-micro {
+          color: var(--text-muted);
+          opacity: 0.8;
+          font-size: 12px;
+          line-height: 1.45;
+        }
+
+        .actions {
+          display: grid;
+          gap: 10px;
+          max-width: 520px;
+        }
+      `}</style>
+    </div>
   );
 }

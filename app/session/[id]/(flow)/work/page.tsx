@@ -3,11 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Card } from "@/components/Card";
-import { SplitLayout } from "@/components/SplitLayout";
-import { DreamRawPanel } from "@/components/DreamRawPanel";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
@@ -58,7 +55,7 @@ export default function WorkPage() {
 
   const directionSlug = searchParams?.get("direction") ?? "";
 
-  // opcionális: egyszeri index-session (hogy dream_session_summaries ne maradjon üres)
+  // opcionális: egyszeri index-session
   const indexAttemptedRef = useRef(false);
 
   const directionBlocks = useMemo(
@@ -69,19 +66,13 @@ export default function WorkPage() {
             ? ({ ...block, content: normalizeContent(block.content) } as DirectionWorkBlock)
             : null
         )
-        .filter(
-          (b): b is DirectionWorkBlock =>
-            !!b && (!directionSlug || b.content.direction_slug === directionSlug)
-        ),
+        .filter((b): b is DirectionWorkBlock => !!b && (!directionSlug || b.content.direction_slug === directionSlug)),
     [blocks, directionSlug]
   );
 
-  // ✅ csak a legutolsó kártya látszik
   const currentBlock = useMemo(() => {
     if (directionBlocks.length === 0) return null;
-    const sorted = [...directionBlocks].sort(
-      (a, b) => (a.content.sequence ?? 0) - (b.content.sequence ?? 0)
-    );
+    const sorted = [...directionBlocks].sort((a, b) => (a.content.sequence ?? 0) - (b.content.sequence ?? 0));
     return sorted[sorted.length - 1];
   }, [directionBlocks]);
 
@@ -137,11 +128,7 @@ export default function WorkPage() {
     let cancelled = false;
 
     const loadSession = async () => {
-      const { data, error } = await supabase
-        .from("dream_sessions")
-        .select("raw_dream_text")
-        .eq("id", sessionId)
-        .single();
+      const { data, error } = await supabase.from("dream_sessions").select("raw_dream_text").eq("id", sessionId).single();
 
       if (cancelled) return;
 
@@ -209,10 +196,7 @@ export default function WorkPage() {
 
       const userId = await requireUserId();
 
-      const maxSeq = directionBlocks.reduce(
-        (max, block) => Math.max(max, block.content.sequence ?? 0),
-        0
-      );
+      const maxSeq = directionBlocks.reduce((max, block) => Math.max(max, block.content.sequence ?? 0), 0);
 
       const content: DirectionCardContent = {
         kind: "direction_card",
@@ -262,7 +246,6 @@ export default function WorkPage() {
     }
   }, [pendingNextPayload, processNextPayload]);
 
-  // ✅ első kártyát is az API generálja (nem hardcode)
   const ensureInitialBlock = useCallback(async () => {
     if (!directionSlug || !session) return;
 
@@ -292,7 +275,6 @@ export default function WorkPage() {
     setEnsuredInitial(true);
   }, [busy, directionBlocks.length, directionSlug, ensuredInitial, ensureInitialBlock, loaded, loading, session]);
 
-  // opcionális: index-session egyszer
   useEffect(() => {
     if (!session?.raw_dream_text) return;
     if (indexAttemptedRef.current) return;
@@ -328,20 +310,12 @@ export default function WorkPage() {
           },
         };
 
-        const { error } = await supabase
-          .from("work_blocks")
-          .update({ content: updatedContent })
-          .eq("id", block.id);
-
+        const { error } = await supabase.from("work_blocks").update({ content: updatedContent }).eq("id", block.id);
         if (error) throw error;
 
         setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content: updatedContent } : b)));
 
-        // history: explicit összeállítás, hogy ne “render lag” legyen
-        const updatedDirectionBlocks = directionBlocks.map((b) =>
-          b.id === block.id ? { ...b, content: updatedContent } : b
-        );
-
+        const updatedDirectionBlocks = directionBlocks.map((b) => (b.id === block.id ? { ...b, content: updatedContent } : b));
         const updatedHistory = buildHistory(updatedDirectionBlocks);
 
         const payload: NextPayload = {
@@ -354,7 +328,6 @@ export default function WorkPage() {
         };
 
         setPendingNextPayload(payload);
-
         await processNextPayload(payload);
       } catch (e: unknown) {
         console.error(e);
@@ -391,63 +364,80 @@ export default function WorkPage() {
     </>
   );
 
+  if (loading) return Spinner;
+
   return (
-    <Shell title="Kártyás feldolgozás" space="dream">
-      {loading ? (
-        Spinner
+    <div className="plain">
+      {!directionSlug ? (
+        <p className="muted">
+          Válassz egy irányt az <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj vissza ide.
+        </p>
+      ) : closureBlock ? (
+        <CenteredClosure block={closureBlock} sessionId={sessionId} />
       ) : (
-        <SplitLayout
-          leftTitle="Nyers álom"
-          left={<DreamRawPanel sessionId={sessionId} />}
-          rightTitle="Feldolgozás"
-          right={
-            !directionSlug ? (
-              <p style={{ color: "var(--text-muted)" }}>
-                Válassz egy irányt az{" "}
-                <Link href={`/session/${sessionId}/direction`}>irányválasztó</Link> oldalon, majd térj vissza ide.
-              </p>
-            ) : closureBlock ? (
-              // ✅ ha lezárás van, NINCS más blokk
-              <CenteredClosure block={closureBlock} sessionId={sessionId} />
-            ) : (
-              <div className="stack">
-                {!currentBlock ? (
-                  <p style={{ color: "var(--text-muted)" }}>
-                    {loaded ? "Kártya generálása..." : "Betöltés..."}
-                  </p>
-                ) : (
-                  <div className="stack">
-                    <BlockCard
-                      key={`${currentBlock.id}-${currentBlock.content.user?.answered_at ?? ""}-${currentBlock.content.user?.answer ?? ""}`}
-                      block={currentBlock}
-                      onSave={saveAnswer}
-                      busy={busy}
-                    />
+        <div className="stack">
+          {!currentBlock ? (
+            <p className="muted">{loaded ? "Kártya generálása..." : "Betöltés..."}</p>
+          ) : (
+            <div className="stack">
+              <BlockCard
+                key={`${currentBlock.id}-${currentBlock.content.user?.answered_at ?? ""}-${currentBlock.content.user?.answer ?? ""}`}
+                block={currentBlock}
+                onSave={saveAnswer}
+                busy={busy}
+              />
 
-                    {nextErr ? (
-                      <Card>
-                        <div className="stack-tight">
-                          <p style={{ color: "crimson" }}>Nem sikerült lekérni a következő kérdést.</p>
-                          <PrimaryButton onClick={handleRetryNext} disabled={busy}>
-                            Újra próbálom
-                          </PrimaryButton>
-                        </div>
-                      </Card>
-                    ) : null}
+              {nextErr ? (
+                <Card>
+                  <div className="stack-tight">
+                    <p style={{ color: "crimson" }}>Nem sikerült lekérni a következő kérdést.</p>
+                    <PrimaryButton onClick={handleRetryNext} disabled={busy}>
+                      Újra próbálom
+                    </PrimaryButton>
                   </div>
-                )}
+                </Card>
+              ) : null}
+            </div>
+          )}
 
-                {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
+          {err && <p className="err">{err}</p>}
 
-                {process.env.NODE_ENV === "development" && pendingNextPayload && (
-                  <p style={{ fontSize: 12, color: "var(--text-muted)" }}>következő kérésre várakozik…</p>
-                )}
-              </div>
-            )
-          }
-        />
+          {process.env.NODE_ENV === "development" && pendingNextPayload && (
+            <p className="dev">következő kérésre várakozik…</p>
+          )}
+        </div>
       )}
-    </Shell>
+
+      <style jsx>{`
+        .plain {
+          padding: 4px 0;
+        }
+
+        .stack {
+          display: grid;
+          gap: 14px;
+        }
+
+        .stack-tight {
+          display: grid;
+          gap: 10px;
+        }
+
+        .muted {
+          color: var(--text-muted);
+        }
+
+        .err {
+          margin-top: 12px;
+          color: crimson;
+        }
+
+        .dev {
+          font-size: 12px;
+          color: var(--text-muted);
+        }
+      `}</style>
+    </div>
   );
 }
 
@@ -486,14 +476,11 @@ function BlockCard({
           </div>
         )}
 
-        <div style={{ fontWeight: 700 }}>{block.content.ai?.question ?? ""}</div>
+        <div style={{ fontWeight: 800, letterSpacing: "-0.01em" }}>
+          {block.content.ai?.question ?? ""}
+        </div>
 
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          rows={4}
-          placeholder="Rögzítés (opcionális)"
-        />
+        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={4} placeholder="Rögzítés (opcionális)" />
 
         <div style={{ display: "flex", gap: 10 }}>
           <PrimaryButton onClick={() => onSave(block, draft)} disabled={busy}>
@@ -505,13 +492,7 @@ function BlockCard({
   );
 }
 
-function CenteredClosure({
-  block,
-  sessionId,
-}: {
-  block: NextResponse["work_block"];
-  sessionId: string;
-}) {
+function CenteredClosure({ block, sessionId }: { block: NextResponse["work_block"]; sessionId: string }) {
   return (
     <div
       style={{
@@ -529,19 +510,12 @@ function CenteredClosure({
   );
 }
 
-// ✅ lezárásnál 2 opció
-function ClosureCard({
-  block,
-  sessionId,
-}: {
-  block: NextResponse["work_block"];
-  sessionId: string;
-}) {
+function ClosureCard({ block, sessionId }: { block: NextResponse["work_block"]; sessionId: string }) {
   return (
     <Card>
       <div className="stack-tight">
         <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{block.lead_in}</div>
-        <div style={{ fontWeight: 700 }}>{block.question}</div>
+        <div style={{ fontWeight: 800, letterSpacing: "-0.01em" }}>{block.question}</div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
           <Link href={`/session/${sessionId}/direction`} style={{ textDecoration: "none" }}>
@@ -579,7 +553,6 @@ function normalizeContent(content: DirectionCardContent): DirectionCardContent {
   };
 }
 
-// ✅ FONTOS: több history-t küldünk (különben a 3. kérdés simán megismétli az 1.-et)
 function buildHistory(blocks: DirectionWorkBlock[]): HistoryItem[] {
   return [...blocks]
     .sort((a, b) => (a.content.sequence ?? 0) - (b.content.sequence ?? 0))
