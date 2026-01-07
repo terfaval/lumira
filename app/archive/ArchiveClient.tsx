@@ -106,7 +106,7 @@ function getSnippet(session: ArchiveSessionSummary): string {
   const s: any = session as any;
   const raw = compact(s.raw_dream_text as string | undefined | null);
   if (!raw) return "";
-  const max = 160;
+  const max = 320; // ✅ kétszer hosszabb
   return raw.length > max ? raw.slice(0, max - 1) + "…" : raw;
 }
 
@@ -265,14 +265,17 @@ export default function ArchiveClient() {
       <div className="stack">
         {error && <p style={{ color: "crimson" }}>{error}</p>}
 
-        <ArchiveControls
-          availableDirections={availableDirections}
-          availableStatuses={availableStatuses}
-          selectedStatus={status}
-          selectedDirections={directions}
-          selectedRange={range}
-          selectedSort={sort}
-        />
+        {/* ✅ Controls wrapper: 3 oszlop + irányok alatta (CSS-sel rásegítve) */}
+        <div className="archive-controls-wrap">
+          <ArchiveControls
+            availableDirections={availableDirections}
+            availableStatuses={availableStatuses}
+            selectedStatus={status}
+            selectedDirections={directions}
+            selectedRange={range}
+            selectedSort={sort}
+          />
+        </div>
 
         {isLoading ? (
           <div className="stack">{Spinner}</div>
@@ -310,7 +313,7 @@ export default function ArchiveClient() {
                       <div className="tile-left">
                         <div className="tile-title">{titleOf(session)}</div>
 
-                        {/* ✅ színes pill státusz */}
+                        {/* ✅ title + pill: vertikálisan középre */}
                         <Pill variant="neutral" colorVar={stTok.text} bgVar={stTok.bg}>
                           {formatStatusLabel(computedStatus)}
                         </Pill>
@@ -342,10 +345,11 @@ export default function ArchiveClient() {
         /* ✅ mindig 1 oszlop */
         .archive-grid {
           display: grid;
-          gap: 18px;
+          gap: 16px;
           grid-template-columns: 1fr;
         }
 
+        /* ✅ alacsonyabb tile */
         .archive-tile {
           cursor: pointer;
           border-radius: 18px;
@@ -355,21 +359,21 @@ export default function ArchiveClient() {
           flex-direction: column;
           justify-content: space-between;
 
-          padding: 22px;
-          min-height: 220px;
+          padding: 18px;
+          min-height: 170px;
 
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
           transition: transform 160ms ease, box-shadow 160ms ease;
         }
 
         .archive-tile:hover {
-          transform: scale(1.03);
+          transform: scale(1.02);
           box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
         }
 
         .tile-top {
           display: flex;
-          align-items: baseline;
+          align-items: center; /* ✅ baseline helyett center */
           justify-content: space-between;
           gap: 12px;
         }
@@ -377,7 +381,7 @@ export default function ArchiveClient() {
         .tile-left {
           display: flex;
           gap: 10px;
-          align-items: baseline;
+          align-items: center; /* ✅ title + pill center */
           flex-wrap: wrap;
           min-width: 0;
         }
@@ -392,11 +396,11 @@ export default function ArchiveClient() {
         .tile-right {
           color: var(--text-muted);
           font-size: 12px;
-          font-weight: 700;
+          font-weight: 800;
           white-space: nowrap;
         }
 
-        /* ✅ nagyobb snippet */
+        /* ✅ nagyobb + hosszabb snippet */
         .tile-snippet {
           margin-top: 10px;
           font-size: 14px;
@@ -411,7 +415,7 @@ export default function ArchiveClient() {
           justify-content: space-between;
           align-items: baseline;
           gap: 12px;
-          margin-top: 12px;
+          margin-top: 10px;
         }
 
         .tile-meta {
@@ -425,6 +429,33 @@ export default function ArchiveClient() {
           color: var(--text-muted);
           opacity: 0.7;
           white-space: nowrap;
+        }
+
+        /* ─────────────────────────────────────────────── */
+        /* ✅ Controls: 3 oszlop + irányok alatta          */
+        /* Ez “best effort” a belső classok alapján.      */
+        /* Ha a te ArchiveControls-od más neveket használ, */
+        /* csak a szelektorokat írd át.                   */
+        /* ─────────────────────────────────────────────── */
+
+        .archive-controls-wrap :global(.filters) {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        @media (min-width: 760px) {
+          .archive-controls-wrap :global(.filters) {
+            grid-template-columns: 1fr 1fr 1fr;
+            align-items: start;
+          }
+        }
+
+        /* ha van külön directions blokk, told le a 3 oszlop alá */
+        .archive-controls-wrap :global(.directions),
+        .archive-controls-wrap :global(.directions-wrap),
+        .archive-controls-wrap :global(.direction-pills),
+        .archive-controls-wrap :global(.directions-row) {
+          grid-column: 1 / -1;
         }
       `}</style>
     </Shell>
