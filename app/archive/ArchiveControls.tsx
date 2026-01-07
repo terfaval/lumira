@@ -23,7 +23,7 @@ const sortOptions = [
 
 type ArchiveControlsProps = {
   availableDirections: string[];
-  availableStatuses: ArchiveStatusFilter[]; // ✅ ez hiányzott
+  availableStatuses: ArchiveStatusFilter[];
   selectedStatus?: ArchiveStatusFilter;
   selectedDirections: string[];
   selectedRange: RangeOption;
@@ -80,22 +80,11 @@ export default function ArchiveControls({
   const show = (s: ArchiveStatusFilter) => availableStatuses.includes(s);
 
   return (
-    <div className="card" style={{ display: "grid", gap: 10, padding: 12 }}>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-          gap: 10,
-          alignItems: "end",
-        }}
-      >
-        <div style={{ display: "grid", gap: 6 }}>
-          <label style={{ fontWeight: 600, fontSize: 13 }}>Állapot</label>
-          <select
-            className="select"
-            value={selectedStatus ?? ""}
-            onChange={(e) => handleStatusChange(e.target.value)}
-          >
+    <div className="card controls">
+      <div className="filters">
+        <div className="filter">
+          <div className="filter-label">Állapot</div>
+          <select className="select" value={selectedStatus ?? ""} onChange={(e) => handleStatusChange(e.target.value)}>
             <option value="">Mind</option>
             {show("vazlat") && <option value="vazlat">Vázlat</option>}
             {show("erintett") && <option value="erintett">Érintett</option>}
@@ -104,8 +93,8 @@ export default function ArchiveControls({
           </select>
         </div>
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <label style={{ fontWeight: 600, fontSize: 13 }}>Időszak</label>
+        <div className="filter">
+          <div className="filter-label">Időszak</div>
           <select className="select" value={selectedRange} onChange={(e) => handleRangeChange(e.target.value)}>
             {rangeOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -115,8 +104,8 @@ export default function ArchiveControls({
           </select>
         </div>
 
-        <div style={{ display: "grid", gap: 6 }}>
-          <label style={{ fontWeight: 600, fontSize: 13 }}>Rendezés</label>
+        <div className="filter">
+          <div className="filter-label">Rendezés</div>
           <select className="select" value={selectedSort} onChange={(e) => handleSortChange(e.target.value)}>
             {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -127,16 +116,16 @@ export default function ArchiveControls({
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: 6 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <label style={{ fontWeight: 600, fontSize: 13 }}>Irányok</label>
-          <span style={{ color: "var(--text-muted)", fontSize: 12 }}>OR</span>
+      <div className="directions">
+        <div className="directions-head">
+          <div className="filter-label">Irányok</div>
+          <span className="or">OR</span>
         </div>
 
         {availableDirections.length === 0 ? (
           <span style={{ color: "var(--text-muted)" }}>Még nincs érintett irány.</span>
         ) : (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div className="direction-badges">
             {availableDirections.map((slug) => {
               const checked = selectedDirectionSet.has(slug);
               return (
@@ -158,6 +147,60 @@ export default function ArchiveControls({
           </div>
         )}
       </div>
+
+      <style jsx>{`
+        .controls {
+          display: grid;
+          gap: 10px;
+          padding: 12px;
+        }
+
+        /* ugyanaz a logika, mint az evening filters */
+        .filters {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 10px;
+          align-items: end;
+        }
+        @media (min-width: 720px) {
+          .filters {
+            grid-template-columns: 1fr 1fr 1fr;
+          }
+        }
+
+        .filter {
+          display: grid;
+          gap: 6px;
+        }
+
+        .filter-label {
+          font-size: 12px;
+          color: var(--text-muted);
+          font-weight: 600;
+        }
+
+        .directions {
+          display: grid;
+          gap: 6px;
+        }
+
+        .directions-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .or {
+          color: var(--text-muted);
+          font-size: 12px;
+        }
+
+        .direction-badges {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+      `}</style>
     </div>
   );
 }
