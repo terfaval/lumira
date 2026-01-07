@@ -1,3 +1,4 @@
+// /src/lib/archive.ts
 import { supabase } from "./supabase/client";
 import { isDirectionCardContent, type WorkBlock } from "./types";
 
@@ -14,7 +15,13 @@ export type ArchiveSessionSummary = {
   // snippethez
   raw_dream_text?: string | null;
 
+  /**
+   * touched_directions: direction slugok (belső “igazság” a work_blocks alapján)
+   * touched_groups: direction_catalog.content.group (UI-hoz, emberi csoportnév)
+   */
   touched_directions: string[];
+  touched_groups: string[];
+
   touched_directions_count: number;
   answered_cards_count: number;
   feldolgozottsag: Feldolgozottsag;
@@ -75,7 +82,7 @@ function extractAuditTitle(audit: unknown): string | null {
 }
 
 /**
- * ✅ Új: preferált title forrás:
+ * ✅ preferált title forrás:
  * 1) dream_session_summaries.title
  * 2) dream_sessions.ai_framing_audit.title (régi)
  * 3) "Álom"
@@ -88,6 +95,33 @@ function resolveTitle(session: any): string {
   if (auditTitle && !isGenericTitle(auditTitle)) return auditTitle;
 
   return "Álom";
+}
+
+/** group név tisztítás */
+function normalizeGroupName(x: unknown): string | null {
+  if (typeof x !== "string") return null;
+  const cleaned = x.trim().replace(/\s+/g, " ");
+  return cleaned ? cleaned : null;
+}
+
+/** direction_catalog slug -> content.group mapping */
+async function fetchDirectionGroupMap(slugs: string[]) {
+  if (slugs.length === 0) return new Map<string, string>();
+
+  const { data, error } = await supabase
+    .from("direction_catalog")
+    .select("slug, content")
+    .in("slug", slugs);
+
+  if (error) throw error;
+
+  const map = new Map<string, string>();
+  for (const row of (data ?? []) as any[]) {
+    const slug = typeof row?.slug === "string" ? row.slug : "";
+    const group = normalizeGroupName(row?.content?.group);
+    if (slug && group) map.set(slug, group);
+  }
+  return map;
 }
 
 export async function fetchArchiveSessions(userId: string, range?: RangeOption) {
@@ -143,6 +177,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
       answeredCount: 0,
     };
 
+    // ✅ work_blocks-ben a “nyers igazság” a slug
     touched.touchedSlugs.add(block.content.direction_slug);
 
     const answer = normalizeAnswer(block.content.user?.answer);
@@ -153,6 +188,11 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
     aggregates.set(block.session_id, touched);
   }
 
+  // ✅ slug -> group mapping a direction_catalog táblából
+  const allTouchedSlugs = Array.from(aggregates.values()).flatMap((a) => Array.from(a.touchedSlugs));
+  const uniqueTouchedSlugs = Array.from(new Set(allTouchedSlugs));
+  const slugToGroup = await fetchDirectionGroupMap(uniqueTouchedSlugs);
+
   const summaries: ArchiveSessionSummary[] = (sessions ?? []).map((session: any) => {
     const aggregate = aggregates.get(session.id) ?? {
       touchedSlugs: new Set<string>(),
@@ -161,6 +201,15 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
 
     const touched_directions = Array.from(aggregate.touchedSlugs);
     const touched_directions_count = touched_directions.length;
+
+    const touched_groups = Array.from(
+      new Set(
+        touched_directions
+          .map((slug) => slugToGroup.get(slug))
+          .filter((g): g is string => typeof g === "string" && g.length > 0)
+      )
+    );
+
     const answered_cards_count = aggregate.answeredCount;
     const feldolgozottsag = classifyFeldolgozottsag(touched_directions_count, answered_cards_count);
     const score = touched_directions_count * 10 + answered_cards_count;
@@ -171,7 +220,10 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
       created_at: session.created_at,
       status: session.status,
       raw_dream_text: session.raw_dream_text ?? null,
+
       touched_directions,
+      touched_groups,
+
       touched_directions_count,
       answered_cards_count,
       feldolgozottsag,
@@ -179,7 +231,8 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
     };
   });
 
-  const availableDirections = Array.from(new Set(summaries.flatMap((s) => s.touched_directions))).sort();
+  // ✅ UI-hoz group listát adunk vissza (változónév maradhat, hogy ne kelljen sok refactor)
+  const availableDirections = Array.from(new Set(summaries.flatMap((s) => s.touched_groups))).sort();
 
   return { summaries, availableDirections };
 }

@@ -3,7 +3,7 @@ import ArchiveClient from "./ArchiveClient";
 
 export default function Page() {
   return (
-    <Suspense fallback={<div />}>
+    <Suspense fallback={null}>
       <ArchiveClient />
     </Suspense>
   );

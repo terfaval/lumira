@@ -142,6 +142,19 @@ All colors use HEX. Semi-transparent colors use 8-digit HEX (#RRGGBBAA).
   --phase-prep-bg: #FFC8782E;   /* 18% */
   --phase-in_bed-bg: #AA8CFF2E; /* 18% */
   --phase-rescue-bg: #78C3FF33; /* 20% */
+
+  /* Archive status corner accents (pastel) */
+--status-vazlat: #C7B6FF;     /* pastel lavender */
+--status-vazlat-bg: #C7B6FF33;/* ~20% */
+
+--status-erintett: #FFC9A3;     /* pastel peach */
+--status-erintett-bg: #FFC9A333;/* ~20% */
+
+--status-feldolgozott: #AEE9D1;     /* pastel mint */
+--status-feldolgozott-bg: #AEE9D133;/* ~20% */
+
+--status-lezart: #A9D2FF;     /* pastel sky */
+--status-lezart-bg: #A9D2FF33;/* ~20% */
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -449,7 +462,7 @@ textarea:focus {
 /* SELECT (shared primitive) */
   .select {
     width: 100%;
-    border: 1px solid var(--border);
+    border: 1px solid var(--line-soft);
     border-radius: 12px;
     padding: 10px 12px;
 
