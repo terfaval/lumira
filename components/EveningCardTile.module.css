@@ -71,7 +71,5 @@
 /* Pill “sötétség” fix – csak ebben a komponensben */
 .wrap :global(.pill.pill--intent),
 .wrap :global(.pill.pill--phase) {
-  background: transparent;
   box-shadow: none;
-  font-weight: 650;
 }

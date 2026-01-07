@@ -83,13 +83,13 @@ export function EveningCardTile({
       <div className={styles.top}>
         <div className={styles.left}>
           {primaryIntent ? (
-            <Pill variant="intent" colorVar={intentTok!.text}>
+            <Pill variant="intent" colorVar={intentTok!.text} bgVar={intentTok!.bg}>
               {intentLabel[primaryIntent]}
             </Pill>
           ) : null}
 
           {p ? (
-            <Pill variant="phase" colorVar={phaseTok!.text}>
+            <Pill variant="phase" colorVar={phaseTok!.text} bgVar={phaseTok!.bg}>
               {phaseLabel[p]}
             </Pill>
           ) : null}

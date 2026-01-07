@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/Card";
 import { Shell } from "@/components/Shell";
+import { Pill } from "@/components/Pill";
 import {
   fetchArchiveSessions,
   type ArchiveSessionSummary,
@@ -32,20 +33,14 @@ function parseSort(value: string | undefined): SortOption {
   return sortOptions.find((opt) => opt === value) ?? "date_desc";
 }
 
-function applyFilters(
-  sessions: ArchiveSessionSummary[],
-  filters: { status?: ArchiveStatusFilter; directions: string[] }
-) {
+function applyFilters(sessions: ArchiveSessionSummary[], filters: { status?: ArchiveStatusFilter; directions: string[] }) {
   return sessions.filter((session) => {
     if (filters.status) {
       const computed = getComputedStatus(session);
       if (computed !== filters.status) return false;
     }
 
-    if (
-      filters.directions.length > 0 &&
-      !session.touched_groups.some((g) => filters.directions.includes(g))
-    ) {
+    if (filters.directions.length > 0 && !session.touched_groups.some((g) => filters.directions.includes(g))) {
       return false;
     }
 
@@ -115,12 +110,21 @@ function getSnippet(session: ArchiveSessionSummary): string {
   return raw.length > max ? raw.slice(0, max - 1) + "…" : raw;
 }
 
-/** status -> corner token */
+/** status -> corner token (bg) */
 function statusCornerBg(status: ArchiveStatusFilter) {
   if (status === "erintett") return "var(--status-erintett-bg)";
   if (status === "feldolgozott") return "var(--status-feldolgozott-bg)";
   if (status === "lezart") return "var(--status-lezart-bg)";
   return "var(--status-vazlat-bg)";
+}
+
+/** status -> pill tokens (text + bg) */
+function statusPillToken(status: ArchiveStatusFilter) {
+  if (status === "erintett") return { text: "--status-erintett" as const, bg: "--status-erintett-bg" as const };
+  if (status === "feldolgozott")
+    return { text: "--status-feldolgozott" as const, bg: "--status-feldolgozott-bg" as const };
+  if (status === "lezart") return { text: "--status-lezart" as const, bg: "--status-lezart-bg" as const };
+  return { text: "--status-vazlat" as const, bg: "--status-vazlat-bg" as const };
 }
 
 function InfoIcon() {
@@ -289,6 +293,7 @@ export default function ArchiveClient() {
               const progress = progressParts.length ? progressParts.join(" · ") : "—";
 
               const corner = statusCornerBg(computedStatus);
+              const stTok = statusPillToken(computedStatus);
 
               return (
                 <Link key={session.id} href={`/session/${session.id}`} style={{ textDecoration: "none" }}>
@@ -304,7 +309,11 @@ export default function ArchiveClient() {
                     <div className="tile-top">
                       <div className="tile-left">
                         <div className="tile-title">{titleOf(session)}</div>
-                        <span className="badge-muted">{formatStatusLabel(computedStatus)}</span>
+
+                        {/* ✅ színes pill státusz */}
+                        <Pill variant="neutral" colorVar={stTok.text} bgVar={stTok.bg}>
+                          {formatStatusLabel(computedStatus)}
+                        </Pill>
                       </div>
 
                       <div className="tile-right">{progress}</div>
@@ -330,15 +339,11 @@ export default function ArchiveClient() {
       </div>
 
       <style jsx>{`
+        /* ✅ mindig 1 oszlop */
         .archive-grid {
           display: grid;
           gap: 18px;
-          grid-template-columns: repeat(1, minmax(0, 1fr));
-        }
-        @media (min-width: 860px) {
-          .archive-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
+          grid-template-columns: 1fr;
         }
 
         .archive-tile {
@@ -391,13 +396,14 @@ export default function ArchiveClient() {
           white-space: nowrap;
         }
 
+        /* ✅ nagyobb snippet */
         .tile-snippet {
           margin-top: 10px;
-          font-size: 12px;
+          font-size: 14px;
           color: var(--text-muted);
-          opacity: 0.75;
+          opacity: 0.78;
           white-space: pre-wrap;
-          line-height: 1.45;
+          line-height: 1.55;
         }
 
         .tile-bottom {

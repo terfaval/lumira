@@ -80,7 +80,6 @@ export default function ArchiveControls({
   const show = (s: ArchiveStatusFilter) => availableStatuses.includes(s);
 
   return (
-    <div className="card controls">
       <div className="filters">
         <div className="filter">
           <div className="filter-label">Állapot</div>
@@ -91,7 +90,6 @@ export default function ArchiveControls({
             {show("feldolgozott") && <option value="feldolgozott">Feldolgozott</option>}
             {show("lezart") && <option value="lezart">Lezárt</option>}
           </select>
-        </div>
 
         <div className="filter">
           <div className="filter-label">Időszak</div>
