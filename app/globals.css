@@ -399,7 +399,6 @@ p { margin: 0; line-height: 1.6; }
 
 .btn-secondary { background: transparent; }
 
-.input-field,
 textarea {
   width: 100%;
   padding: 12px;
@@ -411,7 +410,6 @@ textarea {
   transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
 }
 
-.input-field:focus,
 textarea:focus {
   outline: none;
   border-color: var(--accent);
@@ -446,6 +444,33 @@ textarea:focus {
   border: none;
   border-top: 1px solid var(--line-soft);
   margin: var(--space-3) 0;
+}
+
+/* SELECT (shared primitive) */
+.select {
+  width: 100%;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  padding: 10px 12px;
+
+  background: var(--card-surface);
+  color: var(--text-primary);
+  outline: none;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+/* best-effort dropdown menu */
+.select option {
+  background: var(--card-surface);
+  color: var(--text-primary);
 }
 
 /* PILL */

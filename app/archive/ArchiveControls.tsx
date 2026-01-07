@@ -92,7 +92,7 @@ export default function ArchiveControls({
         <div style={{ display: "grid", gap: 6 }}>
           <label style={{ fontWeight: 600, fontSize: 13 }}>Állapot</label>
           <select
-            className="select"
+            className="archive"
             value={selectedStatus ?? ""}
             onChange={(e) => handleStatusChange(e.target.value)}
           >
@@ -106,7 +106,7 @@ export default function ArchiveControls({
 
         <div style={{ display: "grid", gap: 6 }}>
           <label style={{ fontWeight: 600, fontSize: 13 }}>Időszak</label>
-          <select className="select" value={selectedRange} onChange={(e) => handleRangeChange(e.target.value)}>
+          <select className="archive" value={selectedRange} onChange={(e) => handleRangeChange(e.target.value)}>
             {rangeOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
@@ -117,7 +117,7 @@ export default function ArchiveControls({
 
         <div style={{ display: "grid", gap: 6 }}>
           <label style={{ fontWeight: 600, fontSize: 13 }}>Rendezés</label>
-          <select className="select" value={selectedSort} onChange={(e) => handleSortChange(e.target.value)}>
+          <select className="archive" value={selectedSort} onChange={(e) => handleSortChange(e.target.value)}>
             {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
