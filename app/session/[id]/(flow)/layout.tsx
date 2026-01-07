@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Shell } from "@/components/Shell";
 import { DreamRawPanel } from "@/components/DreamRawPanel";
 import styles from "./layout.module.css";
 
@@ -12,7 +13,7 @@ export default async function FlowLayout({
   const { id } = await params;
 
   return (
-    <div className={styles.wrap}>
+    <Shell title="" space="dream" surface="none">
       <div className={styles.flowInner}>
         <div
           className={styles.leftTile}
@@ -23,12 +24,11 @@ export default async function FlowLayout({
               var(--accent) 112%)`,
           }}
         >
-          {/* itt már nincs extra “panel/keret”, csak a tartalom */}
           <DreamRawPanel sessionId={id} />
         </div>
 
         <div className={styles.rightPlain}>{children}</div>
       </div>
-    </div>
+    </Shell>
   );
 }

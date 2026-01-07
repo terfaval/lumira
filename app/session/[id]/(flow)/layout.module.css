@@ -1,20 +1,13 @@
 /* app/session/[id]/(flow)/layout.module.css */
 
-/* ez fogja meg a magasságot, és tiltja a page scrollt */
-.wrap {
-  height: calc(100dvh - var(--shell-header-h, 84px));
-  min-height: 0;
-  overflow: hidden; /* ettől nem az oldal görget */
-}
-
-/* ez a két oszlopos rács */
 .flowInner {
+  /* a Shell contentjén belül töltse ki a rendelkezésre álló teret */
   height: 100%;
   min-height: 0;
 
   display: grid;
   gap: 16px;
-  align-items: stretch; /* bal = jobb magasság */
+  align-items: stretch;
   grid-template-columns: 1fr;
 }
 
@@ -24,7 +17,6 @@
   }
 }
 
-/* BAL: színes “tile” */
 .leftTile {
   min-width: 0;
 
@@ -34,12 +26,10 @@
 
   padding: 18px;
 
-  /* itt görgünk, nem a page-en */
   overflow: auto;
   min-height: 0;
 }
 
-/* JOBB: plain */
 .rightPlain {
   min-width: 0;
 
@@ -48,7 +38,6 @@
   border: 1px solid var(--line-soft);
   background: rgba(255, 255, 255, 0.02);
 
-  /* itt görgünk, nem a page-en */
   overflow: auto;
   min-height: 0;
 }
