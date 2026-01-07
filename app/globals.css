@@ -115,7 +115,6 @@ All colors use HEX. Semi-transparent colors use 8-digit HEX (#RRGGBBAA).
   --select-option-bg: var(--card-surface);
   --select-option-text: var(--text-primary);
 
-
   /* ──────────────────────────────────────────────────────────── */
   /* Intents + phases (keep your existing values; now HEX)         */
   /* ──────────────────────────────────────────────────────────── */
@@ -214,6 +213,12 @@ body[data-napszak="day"] {
   /* Evening cards – day fallback paper */
   --evening-card-paper: #FFF7E48C;        /* 55% */
   --evening-card-paper-strong: #FFF7E4B3; /* 70% */
+
+  /* Select (dropdown) */
+  --select-bg: var(--card-surface);
+  --select-text: var(--text-primary);
+  --select-option-bg: var(--card-surface);
+  --select-option-text: var(--text-primary);
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -277,6 +282,12 @@ body[data-napszak="night"] {
   /* Evening cards: sötét “papír” */
   --evening-card-paper: #060C16C2;        /* 76% */
   --evening-card-paper-strong: #040810DB; /* 86% */
+
+  /* Select (dropdown) */
+  --select-bg: var(--card-surface);
+  --select-text: var(--text-primary);
+  --select-option-bg: var(--card-surface);
+  --select-option-text: var(--text-primary);
 }
 
 /* ────────────────────────────────────────────────────────────── */
