@@ -1,31 +1,40 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+import { Shell } from "@/components/Shell";
 import { DreamRawPanel } from "@/components/DreamRawPanel";
 import styles from "./layout.module.css";
 
+function titleFromPath(pathname: string) {
+  if (pathname.endsWith("/frame")) return "Keretezés";
+  if (pathname.includes("/work")) return "Kártyás feldolgozás";
+  if (pathname.endsWith("/direction")) return "Irányválasztás";
+  return "Session";
+}
+
 export default function FlowShellClient({ children }: { children: ReactNode }) {
   const { id } = useParams<{ id: string }>();
-
-  // Biztonsági fallback (ritkán kell, de jobb)
-  if (!id) return <div className={styles.rightPlain}>{children}</div>;
+  const pathname = usePathname();
+  const title = titleFromPath(pathname);
 
   return (
-    <div className={styles.wrap}>
-      <div
-        className={styles.leftTile}
-        style={{
-          background: `linear-gradient(135deg,
-            var(--evening-card-paper-strong) 0%,
-            var(--evening-card-paper) 44%,
-            var(--accent) 112%)`,
-        }}
-      >
-        <DreamRawPanel sessionId={id} />
-      </div>
+    <Shell title={title} space="dream">
+      <div className={styles.wrap}>
+        <div
+          className={styles.leftTile}
+          style={{
+            background: `linear-gradient(135deg,
+              var(--evening-card-paper-strong) 0%,
+              var(--evening-card-paper) 44%,
+              var(--accent) 112%)`,
+          }}
+        >
+          {id ? <DreamRawPanel sessionId={id} /> : null}
+        </div>
 
-      <div className={styles.rightPlain}>{children}</div>
-    </div>
+        <div className={styles.rightPlain}>{children}</div>
+      </div>
+    </Shell>
   );
 }

@@ -19,8 +19,6 @@ export default function FramePage() {
   const [err, setErr] = useState<string | null>(null);
   const { loading } = useRequireAuth();
   const attemptedRef = useRef(false);
-
-  // ✅ synthesize-t csak egyszer indítsuk el
   const synthAttemptedRef = useRef(false);
 
   const loadSession = useCallback(async () => {
@@ -30,7 +28,6 @@ export default function FramePage() {
       .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, created_at, updated_at")
       .eq("id", id)
       .single();
-
     if (error) setErr(error.message);
     else setSession(data as DreamSession);
   }, [id]);
@@ -42,20 +39,16 @@ export default function FramePage() {
       .eq("is_active", true)
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("slug", { ascending: true });
-
-    if (error) {
-      setErr(error.message);
-      return;
-    }
+    if (error) return setErr(error.message);
     setCatalog((data ?? []) as DirectionCatalogItem[]);
   }, []);
 
   useEffect(() => {
-    void loadSession();
+    loadSession();
   }, [loadSession]);
 
   useEffect(() => {
-    void loadCatalog();
+    loadCatalog();
   }, [loadCatalog]);
 
   const runFraming = useCallback(async () => {
@@ -66,12 +59,10 @@ export default function FramePage() {
         method: "POST",
         json: { sessionId: id },
       });
-
       if (!res.ok) throw new Error(await res.text());
       await loadSession();
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Hiba";
-      setErr(message);
+      setErr(e instanceof Error ? e.message : "Hiba");
     } finally {
       setBusy(false);
     }
@@ -100,7 +91,6 @@ export default function FramePage() {
     }
   }, [session, busy, runFraming, framingReady]);
 
-  // ✅ synthesize: háttérelemzés mentése a dream_session_summaries.latent_analysis mezőbe
   const runSynthesizeForBackground = useCallback(async () => {
     if (!session?.raw_dream_text) return;
     if (catalog.length === 0) return;
@@ -117,10 +107,8 @@ export default function FramePage() {
           allowed_slugs: catalog.map((c) => c.slug),
         },
       });
-
-      // soft fail
       if (!res.ok) {
-        // no-op
+        // soft-fail
       }
     } catch {
       // no-op
@@ -130,7 +118,6 @@ export default function FramePage() {
   useEffect(() => {
     if (!framingReady) return;
     if (synthAttemptedRef.current) return;
-
     synthAttemptedRef.current = true;
     void runSynthesizeForBackground();
   }, [framingReady, runSynthesizeForBackground]);
@@ -147,8 +134,7 @@ export default function FramePage() {
         }
         router.push(`/session/${id}/work?direction=${encodeURIComponent(slug)}`);
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : "Hiba";
-        setErr(message);
+        setErr(e instanceof Error ? e.message : "Hiba");
       } finally {
         setBusy(false);
       }
@@ -156,149 +142,59 @@ export default function FramePage() {
     [id, router]
   );
 
-  const Spinner = (
-    <>
-      <div
-        aria-label="Betöltés"
-        className="spinner"
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: "999px",
-          border: "2px solid var(--border)",
-          borderTopColor: "var(--text-muted)",
-          animation: "spin 0.9s linear infinite",
-          marginTop: 8,
-        }}
-      />
-      <style jsx>{`
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
-    </>
-  );
-
-  if (loading || !session) return Spinner;
+  if (loading || !session) {
+    return (
+      <div className="stack">
+        <p style={{ color: "var(--text-muted)" }}>Betöltés…</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="plain">
-      {!framingReady ? (
-        <p className="muted">A keretezés készül, hamarosan megjelennek az ajánlott irányok.</p>
-      ) : (
-        <div className="stack">
-          <div className="framing-text">{session.ai_framing_text}</div>
+    <div className="stack">
+      {framingReady ? (
+        <>
+          <div style={{ whiteSpace: "pre-wrap" }}>{session.ai_framing_text}</div>
 
-          <div className="recs">
+          <div
+            style={{
+              display: "grid",
+              gap: 12,
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            }}
+          >
             {recommendations.map((d) => (
               <button
                 key={d.slug}
                 type="button"
                 disabled={busy}
                 onClick={() => handleDirectionSelect(d.slug)}
-                className="rec"
+                style={{ textAlign: "left" }}
+                className="card"
               >
-                <div className="rec-title">{d.title}</div>
-                <div className="rec-reason">{d.reason}</div>
-                <div className="rec-micro">
-                  {(d.content as any)?.micro_description ?? d.description}
+                <div className="stack-tight">
+                  <div style={{ fontWeight: 800 }}>{d.title}</div>
+                  <div style={{ opacity: 0.9 }}>{d.reason}</div>
+                  <div style={{ opacity: 0.7 }}>
+                    {(d.content as any)?.micro_description ?? d.description}
+                  </div>
                 </div>
               </button>
             ))}
           </div>
 
-          <div className="actions">
-            <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>
-              További irányok
-            </PrimaryButton>
+          <div style={{ display: "grid", gap: 12 }}>
+            <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>További irányok</PrimaryButton>
             <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
               Később folytatom
             </PrimaryButton>
           </div>
-        </div>
+        </>
+      ) : (
+        <p style={{ color: "var(--text-muted)" }}>A keretezés készül, hamarosan megjelennek az ajánlott irányok.</p>
       )}
 
-      {err && <p className="err">{err}</p>}
-
-      <style jsx>{`
-        .plain {
-          padding: 4px 0;
-        }
-
-        .stack {
-          display: grid;
-          gap: 14px;
-        }
-
-        .muted {
-          color: var(--text-muted);
-        }
-
-        .err {
-          margin-top: 12px;
-          color: crimson;
-        }
-
-        .framing-text {
-          white-space: pre-wrap;
-          line-height: 1.6;
-          font-size: 14px;
-        }
-
-        /* ✅ plainebb ajánlások: nem “card”, csak finom border */
-        .recs {
-          display: grid;
-          gap: 10px;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        }
-
-        .rec {
-          text-align: left;
-          border-radius: 16px;
-          border: 1px solid var(--line-soft);
-          background: rgba(255, 255, 255, 0.02);
-          padding: 14px;
-          cursor: pointer;
-          transition: transform 140ms ease, border-color 140ms ease;
-        }
-
-        .rec:hover {
-          transform: translateY(-1px);
-          border-color: rgba(255, 255, 255, 0.16);
-        }
-
-        .rec:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-
-        .rec-title {
-          font-weight: 800;
-          letter-spacing: -0.01em;
-          margin-bottom: 6px;
-        }
-
-        .rec-reason {
-          opacity: 0.9;
-          margin-bottom: 8px;
-          line-height: 1.45;
-        }
-
-        .rec-micro {
-          color: var(--text-muted);
-          opacity: 0.8;
-          font-size: 12px;
-          line-height: 1.45;
-        }
-
-        .actions {
-          display: grid;
-          gap: 10px;
-          max-width: 520px;
-        }
-      `}</style>
+      {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
     </div>
   );
 }
