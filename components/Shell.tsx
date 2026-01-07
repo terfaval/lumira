@@ -14,6 +14,7 @@ export function Shell({
   infoPanel,
   infoOpen,
   onToggleInfo,
+  surface = "card",
 }: {
   title: string;
   children: ReactNode;
@@ -22,6 +23,7 @@ export function Shell({
   infoPanel?: ReactNode;
   infoOpen?: boolean;
   onToggleInfo?: () => void;
+  surface?: "card" | "none",
 }) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -89,9 +91,16 @@ export function Shell({
       )}
 
       {/* Tartalom */}
-      <section className="surface-layer card stack" style={{ marginTop: "var(--space-3)" }}>
-        {children}
-      </section>
+      {surface === "none" ? (
+        <section style={{ marginTop: "var(--space-3)", minHeight: 0 }}>
+          {children}
+        </section>
+      ) : (
+        <section className="surface-layer card stack" style={{ marginTop: "var(--space-3)" }}>
+          {children}
+        </section>
+      )}
+
 
       <SidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} space={space} onLogout={logout} />
     </div>
