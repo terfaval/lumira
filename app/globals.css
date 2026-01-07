@@ -447,25 +447,29 @@ textarea:focus {
 }
 
 /* SELECT (shared primitive) */
-.select {
-  width: 100%;
-  border: 1px solid var(--line-soft);
-  border-radius: 12px;
-  padding: 10px 12px;
+  .select {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
 
-  background: var(--card-surface);
-  color: var(--text-primary);
-  outline: none;
+    background: var(--select-bg);
+    color: var(--select-text);
+    outline: none;
 
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-}
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+  }
 
-.select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px var(--focus-ring);
-}
+  .select:focus {
+    border-color: var(--text-muted);
+  }
+
+  .select option {
+    background: var(--select-option-bg);
+    color: var(--select-option-text);
+  }
 
 /* best-effort dropdown menu */
 .select option {
