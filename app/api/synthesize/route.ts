@@ -113,6 +113,26 @@ function capFirst(s: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
+// --- place casing helper (hu) ---
+// Egyszavas, önmagában álló generikus helyszavak, amiket nem emelünk tulajdonnév szintre:
+const GENERIC_PLACE_NOUNS = new Set([
+  "utca","út","híd","vár","alagút","kilátó","gát","lépcső","park","tér","ház","központ","csarnok"
+]);
+
+function smartFormatPlace(raw: string): string {
+  const t = (raw ?? "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+
+  // Ha pontosan EGY generikus szó, hagyjuk kisbetűsen (vagy akár el is dobhatnánk – most csak kisbetűsítjük).
+  const parts = t.split(" ");
+  if (parts.length === 1 && GENERIC_PLACE_NOUNS.has(parts[0].toLowerCase())) {
+    return parts[0].toLowerCase();
+  }
+
+  // Különben csak normalizáljuk a szóközöket; a modell által adott ékezeteket/casinget megőrizzük.
+  return t;
+}
+
 function sanitizeFlags(flags: unknown, dreamTooShort: boolean): Flags {
   const raw = (flags ?? {}) as Partial<Flags>;
   const safety: SafetyValue =
@@ -138,7 +158,7 @@ function sanitizePriorEchoesUsed(values: unknown, allowedSessionIds: Set<string>
 function sanitizeAnchors(anchors: unknown): Anchors {
   const raw = (anchors ?? {}) as Partial<Anchors>;
   const characters = dedupeCaseFold(clampArray(raw.characters, MAX_ANCHOR_ITEMS)).map(capFirst);
-  const places = dedupeCaseFold(clampArray(raw.places, MAX_ANCHOR_ITEMS)).map(capFirst);
+  const places = dedupeCaseFold(clampArray(raw.places, MAX_ANCHOR_ITEMS).map(smartFormatPlace));
   const objects = dedupeCaseFold(clampArray(raw.objects, MAX_ANCHOR_ITEMS));
   const beats = dedupeCaseFold(clampArray(raw.beats, MAX_ANCHOR_ITEMS));
   const felt_words = dedupeCaseFold(
@@ -244,6 +264,20 @@ function sanitizeOutput(
     prior_echoes_used: sanitizePriorEchoesUsed(obj.prior_echoes_used, priorEchoSessionIds),
     flags,
   };
+}
+
+function safeSanitizeOutput(
+  raw: unknown,
+  allowedSlugs: string[],
+  dreamTooShort: boolean,
+  priorEchoSessionIds: Set<string>
+): SynthesizeOutput {
+  try {
+    return sanitizeOutput(raw, allowedSlugs, dreamTooShort, priorEchoSessionIds);
+  } catch (e) {
+    console.warn("sanitizeOutput failed:", (e as Error)?.message);
+    return defaultOutput();
+  }
 }
 
 function detectSafety(dreamText: string): SafetyValue {
@@ -364,7 +398,9 @@ export async function POST(req: Request) {
       "- Read and consider the ENTIRE dream_text; do not prioritize the beginning.",
       "- Anchors must quote literal or near-literal items from dream_text.",
       "- beats: cover EARLY + MIDDLE + LATE events in rough CHRONOLOGICAL order (early→late), include at least one clear TURNING POINT / CLIMAX if present.",
+      "- Ensure one LATE beat captures the final location/event mentioned in dream_text.",
       "- places: include recognizable PROPER NOUNS with correct Hungarian accents if present, and include COMPOUND/DERIVED locations when they appear literally (e.g., lookout / tourist center).",
+      "- Do not include bare generic nouns alone (e.g., standalone 'utca', 'híd'); include full forms when present (e.g., 'Attila utca').",
       "- objects: include salient tools / devices / substances explicitly mentioned (e.g., vehicles, drones, injections, substances). Do NOT invent.",
       "- felt_words must be lowercase simple lemmas/stems (e.g., félelem, feszültség, megkönnyebbülés).",
       "- Normalize obvious casing/spacing; deduplicate items.",
@@ -419,7 +455,9 @@ export async function POST(req: Request) {
       }
     }
 
-    const output = sanitizeOutput(parsed, allowedSlugs, false, priorEchoSessionIds);
+    // const output = sanitizeOutput(parsed, allowedSlugs, false, priorEchoSessionIds);
+    const output = safeSanitizeOutput(parsed, allowedSlugs, false, priorEchoSessionIds);
+
 
     await persistLatentAppendLog(req, {
       sessionId,
