@@ -1,20 +1,19 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
+import type { SynthesizeOutput } from "@/app/api/synthesize/route";
 
 const SAFETY_VALUES = ["none", "self_harm", "reality_confusion", "other"] as const;
 
-// ✅ több history, hogy ne ismételje az első kérdést a 3.-nál
 const MAX_HISTORY = 8;
-
 const MAX_PRIOR_ECHOES = 2;
-const LEAD_IN_LIMIT = 280;
-const QUESTION_LIMIT = 160;
+
+const LEAD_IN_LIMIT = 720; // ✅ hosszabb lead_in
+const QUESTION_LIMIT = 180; // picit engedékenyebb
 const CTA_LIMIT = 120;
 const BRIEF_ANSWER_LIMIT = 30;
 
-// low novelty / repetition
-const SIMILARITY_THRESHOLD = 0.72; // 0.68–0.78 között érdemes hangolni
+const SIMILARITY_THRESHOLD = 0.72;
 const RECENT_QS_FOR_SIMILARITY = 6;
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -72,7 +71,6 @@ type RequestBody = {
   history?: HistoryItem[];
   synth?: SynthInput;
   prior_echoes?: PriorEcho[];
-  catalog?: unknown;
   allowed_slugs?: unknown;
 };
 
@@ -83,23 +81,8 @@ function sanitizeSafety(flags?: SynthInput["flags"]): SafetyValue {
 
 function detectSafety(dreamText: string): SafetyValue {
   const text = dreamText.toLowerCase();
-  const selfHarmKeywords = [
-    "suicide",
-    "kill myself",
-    "end my life",
-    "öngyilk",
-    "megölöm magam",
-    "véget vetek",
-    "nem akarok élni",
-  ];
-  const realityConfusionKeywords = [
-    "can't tell what's real",
-    "not real",
-    "hallucinat",
-    "nem valós",
-    "nem tudom mi a valós",
-    "realitás",
-  ];
+  const selfHarmKeywords = ["suicide", "kill myself", "end my life", "öngyilk", "megölöm magam", "véget vetek", "nem akarok élni"];
+  const realityConfusionKeywords = ["can't tell what's real", "not real", "hallucinat", "nem valós", "nem tudom mi a valós", "realitás"];
 
   if (selfHarmKeywords.some((kw) => text.includes(kw))) return "self_harm";
   if (realityConfusionKeywords.some((kw) => text.includes(kw))) return "reality_confusion";
@@ -135,13 +118,9 @@ function sanitizeAllowedSlugs(allowed: unknown, fallbackSlug?: string): string[]
       .filter((s): s is string => typeof s === "string")
       .map((s) => s.trim())
       .filter(Boolean)
-      .slice(0, 10);
+      .slice(0, 12);
   }
-
-  if (fallbackSlug && typeof fallbackSlug === "string" && fallbackSlug.trim()) {
-    return [fallbackSlug.trim()];
-  }
-
+  if (fallbackSlug && typeof fallbackSlug === "string" && fallbackSlug.trim()) return [fallbackSlug.trim()];
   return [];
 }
 
@@ -156,15 +135,14 @@ function unwrapDirection(direction: DirectionInput | undefined | null): Directio
   const outputSpec = asRecord(content?.output_spec) ?? asRecord((direction as any).output_spec) ?? undefined;
   const safety = asRecord(content?.safety) ?? asRecord((direction as any).safety) ?? undefined;
   const focusModel = asRecord(content?.focus_model) ?? asRecord((direction as any).focus_model) ?? undefined;
-  const selectionHints =
-    asRecord(content?.selection_hints) ?? asRecord((direction as any).selection_hints) ?? undefined;
+  const selectionHints = asRecord(content?.selection_hints) ?? asRecord((direction as any).selection_hints) ?? undefined;
 
   const microDescriptionCandidate =
     typeof (content as any)?.micro_description === "string"
       ? (content as any).micro_description
       : typeof (direction as any)?.micro_description === "string"
-        ? (direction as any).micro_description
-        : undefined;
+      ? (direction as any).micro_description
+      : undefined;
 
   const normalized: DirectionNormalized = {
     slug: typeof (direction as any)?.slug === "string" ? (direction as any).slug : undefined,
@@ -206,20 +184,17 @@ function detectUserBriefStreak(history: HistoryItem[], streak?: number): boolean
   return recent.every((h) => (h.answer ?? "").trim().length <= BRIEF_ANSWER_LIMIT);
 }
 
-function shouldStop(
-  direction: DirectionNormalized | undefined,
-  history: HistoryItem[]
-): { suggest_stop: boolean; reason: string | null } {
+function shouldStop(direction: DirectionNormalized | undefined, history: HistoryItem[]) {
   const stopCriteria = direction?.stop_criteria ?? {};
-  const maxCards = typeof stopCriteria.max_cards === "number" ? stopCriteria.max_cards : undefined;
+  const maxCards = typeof (stopCriteria as any).max_cards === "number" ? (stopCriteria as any).max_cards : undefined;
 
-  if (maxCards && history.length >= maxCards) return { suggest_stop: true, reason: "max_cards" };
-  if (detectRepetition(history, !!stopCriteria.stop_if_repetition_detected))
-    return { suggest_stop: true, reason: "repetition" };
-  if (detectUserBriefStreak(history, stopCriteria.stop_if_user_brief_streak as number | undefined))
-    return { suggest_stop: true, reason: "user_brief_streak" };
+  if (maxCards && history.length >= maxCards) return { suggest_stop: true, reason: "max_cards" as const };
+  if (detectRepetition(history, !!(stopCriteria as any).stop_if_repetition_detected))
+    return { suggest_stop: true, reason: "repetition" as const };
+  if (detectUserBriefStreak(history, (stopCriteria as any).stop_if_user_brief_streak))
+    return { suggest_stop: true, reason: "user_brief_streak" as const };
 
-  return { suggest_stop: false, reason: null };
+  return { suggest_stop: false, reason: null as string | null };
 }
 
 function clampText(text: string, limit: number): string {
@@ -248,12 +223,11 @@ function makeClosureResponse(reason: string | null, safety: SafetyValue): WorkBl
   };
 }
 
-// ✅ low-novelty sablon lezárás
 function makeLowNoveltyClosure(safety: SafetyValue): WorkBlockResponse {
   return {
     work_block: clampWorkBlock({
       lead_in:
-        "Ebben az irányban most nem látok több olyan érdemi, új kérdést, ami valóban hozzáadna a feldolgozáshoz. Ezért ezt az irányt most lezárjuk.",
+        "Ebben az irányban most nem látok több olyan érdemi, új fókuszt, ami valóban hozzáadna a feldolgozáshoz, ezért ezt az irányt most lezárjuk.",
       question: "Hogyan szeretnéd folytatni?",
       cta: null,
     }),
@@ -262,7 +236,7 @@ function makeLowNoveltyClosure(safety: SafetyValue): WorkBlockResponse {
   };
 }
 
-// --- lead_in tisztítás: ne kerülhessen kérdés az átvezetőbe ---
+// lead_in tisztítás: ne kerülhessen kérdés az átvezetőbe
 function cleanLeadIn(leadIn: string): string {
   const t = (leadIn ?? "").trim();
   if (!t) return "";
@@ -274,6 +248,29 @@ function cleanLeadIn(leadIn: string): string {
   return t;
 }
 
+// question: 1 mondat, kérdés (1 ?) vagy feladat (0 ?), nincs lista/kettőspont/pontosvessző, nincs sortörés
+function isSingleSentencePrompt(s: string): boolean {
+  const t = (s ?? "").trim();
+  if (!t) return false;
+  if ((t.match(/\n/g) ?? []).length > 0) return false;
+
+  const qCount = (t.match(/\?/g) ?? []).length;
+  if (qCount > 1) return false;
+
+  // ha kérdés, legyen a végén '?'
+  if (qCount === 1 && !t.endsWith("?")) return false;
+
+  // egy mondat: ne legyen benne belső '.' vagy '!' (kérdésnél a '?' a végén ok)
+  const inner = t.endsWith("?") ? t.slice(0, -1) : t;
+  if (/[.!]/.test(inner)) return false;
+
+  // UI-törők
+  if (/[;:]/.test(t)) return false;
+  if (/\d+\)/.test(t) || /^\s*[-*]\s+/m.test(t)) return false;
+
+  return true;
+}
+
 function validateModelOutput(parsed: unknown): WorkBlockResponse | null {
   if (!parsed || typeof parsed !== "object") return null;
   const obj = parsed as Record<string, any>;
@@ -283,25 +280,20 @@ function validateModelOutput(parsed: unknown): WorkBlockResponse | null {
 
   if (!workBlock || typeof workBlock !== "object") return null;
 
-  const question = typeof workBlock.question === "string" ? workBlock.question.trim() : "";
-  if (!question) return null;
+  const questionRaw = typeof workBlock.question === "string" ? workBlock.question.trim() : "";
+  if (!questionRaw) return null;
+  if (!isSingleSentencePrompt(questionRaw)) return null;
 
   const leadInRaw = typeof workBlock.lead_in === "string" ? workBlock.lead_in : "";
   const leadIn = cleanLeadIn(leadInRaw);
   const cta = typeof workBlock.cta === "string" ? workBlock.cta : null;
 
-  const questionMarkCount = (question.match(/\?/g) ?? []).length;
-  const hasNumberedList = /\d+\)/.test(question);
-  const lineBreakCount = (question.match(/\n/g) ?? []).length;
-  if (questionMarkCount > 1 || hasNumberedList || lineBreakCount >= 2) return null;
-
   const suggestStop = Boolean(stopSignal?.suggest_stop);
   const reason = typeof stopSignal?.reason === "string" ? stopSignal.reason : null;
-
   const safety = SAFETY_VALUES.includes(flags?.safety as SafetyValue) ? (flags.safety as SafetyValue) : "none";
 
   return {
-    work_block: clampWorkBlock({ lead_in: leadIn, question, cta }),
+    work_block: clampWorkBlock({ lead_in: leadIn, question: questionRaw, cta }),
     stop_signal: { suggest_stop: suggestStop, reason },
     flags: { safety },
   };
@@ -313,9 +305,7 @@ function buildDirectionForAI(direction: DirectionNormalized | undefined) {
   const methodSpec = direction.method_spec ?? {};
   const methodSpecForAI: Record<string, unknown> = {};
 
-  if (typeof (methodSpec as any)?.question_style === "string") {
-    methodSpecForAI.question_style = (methodSpec as any).question_style;
-  }
+  if (typeof (methodSpec as any)?.question_style === "string") methodSpecForAI.question_style = (methodSpec as any).question_style;
   if ("aim" in methodSpec) methodSpecForAI.aim = (methodSpec as any).aim;
   if ("do" in methodSpec) methodSpecForAI.do = (methodSpec as any).do;
   if ("dont" in methodSpec) methodSpecForAI.dont = (methodSpec as any).dont;
@@ -334,7 +324,7 @@ function buildDirectionForAI(direction: DirectionNormalized | undefined) {
   return Object.keys(directionForAI).length ? directionForAI : undefined;
 }
 
-// ---------- repetition & similarity helpers ----------
+// similarity helpers (maradnak)
 function normalizeQ(s: string) {
   return s
     .toLowerCase()
@@ -342,57 +332,25 @@ function normalizeQ(s: string) {
     .replace(/\s+/g, " ")
     .trim();
 }
-
 function tokenSet(s: string) {
-  const stop = new Set([
-    "a",
-    "az",
-    "és",
-    "hogy",
-    "de",
-    "ha",
-    "is",
-    "nem",
-    "mi",
-    "mit",
-    "most",
-    "itt",
-    "volt",
-    "van",
-    "lesz",
-    "egy",
-    "egyik",
-    "melyik",
-    "milyen",
-    "szerint",
-    "inkább",
-    "kicsit",
-    "hogyan",
-    "amikor",
-    "ami",
-    "azt",
-  ]);
-
+  const stop = new Set(["a","az","és","hogy","de","ha","is","nem","mi","mit","most","itt","volt","van","lesz","egy","egyik","melyik","milyen","szerint","inkább","kicsit","hogyan","amikor","ami","azt"]);
   return new Set(
     normalizeQ(s)
       .split(" ")
       .filter((w) => w.length >= 3 && !stop.has(w))
   );
 }
-
 function jaccard(a: Set<string>, b: Set<string>) {
   let inter = 0;
   for (const x of a) if (b.has(x)) inter++;
   const union = a.size + b.size - inter;
   return union === 0 ? 0 : inter / union;
 }
-
 function isTooSimilar(newQ: string, prevQs: string[], threshold = SIMILARITY_THRESHOLD) {
   const a = tokenSet(newQ);
   if (a.size === 0) return false;
   return prevQs.some((prev) => jaccard(a, tokenSet(prev)) >= threshold);
 }
-
 function isExactRepeat(newQ: string, prevQs: string[]) {
   const n = normalizeQ(newQ);
   if (!n) return false;
@@ -413,18 +371,15 @@ async function parseModelJSON(rawContent: string): Promise<unknown> {
   }
 }
 
-async function runLatentSynthesisSidecar(args: {
+// ✅ synthesize: most már VISSZA is olvassuk
+async function runLatentSynthesis(args: {
   req: Request;
-  body: RequestBody;
+  sessionId: string;
   dreamText: string;
-  direction: DirectionNormalized | null;
   history: HistoryItem[];
   priorEchoes: PriorEcho[];
-}) {
-  const sessionId = typeof args.body.session_id === "string" ? args.body.session_id : undefined;
-  if (!sessionId) return;
-
-  const allowedSlugs = sanitizeAllowedSlugs(args.body.allowed_slugs, args.direction?.slug);
+  allowedSlugs: string[];
+}): Promise<SynthesizeOutput | null> {
   const url = new URL("/api/synthesize", args.req.url).toString();
 
   const cookieHeader = args.req.headers.get("cookie") ?? "";
@@ -440,21 +395,25 @@ async function runLatentSynthesisSidecar(args: {
         ...(authHeader ? { authorization: authHeader } : {}),
       },
       body: JSON.stringify({
-        session_id: sessionId,
+        session_id: args.sessionId,
         dream_text: args.dreamText,
         history: args.history,
         prior_echoes: args.priorEchoes,
-        catalog: args.body.catalog ?? null,
-        allowed_slugs: allowedSlugs,
+        allowed_slugs: args.allowedSlugs,
       }),
     });
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      console.warn("synthesize sidecar non-OK", res.status, text.slice(0, 400));
+      console.warn("synthesize non-OK", res.status, text.slice(0, 400));
+      return null;
     }
+
+    const json = (await res.json().catch(() => null)) as SynthesizeOutput | null;
+    return json ?? null;
   } catch (err) {
-    console.warn("synthesize sidecar failed", err);
+    console.warn("synthesize failed", err);
+    return null;
   }
 }
 
@@ -477,15 +436,7 @@ export async function POST(req: Request) {
     if (!direction) return NextResponse.json({ error: "Missing direction" }, { status: 400 });
     if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
 
-    await runLatentSynthesisSidecar({
-      req,
-      body,
-      dreamText,
-      direction,
-      history,
-      priorEchoes,
-    });
-
+    // safety gate
     if (safetyFlag !== "none") return NextResponse.json(makeClosureResponse("safety", safetyFlag));
 
     const detectedSafety = detectSafety(dreamText);
@@ -496,35 +447,53 @@ export async function POST(req: Request) {
 
     const directionForAI = buildDirectionForAI(direction);
 
+    const allowedSlugs = sanitizeAllowedSlugs(body.allowed_slugs, direction.slug);
+    const synth = await runLatentSynthesis({
+      req,
+      sessionId,
+      dreamText,
+      history,
+      priorEchoes,
+      allowedSlugs,
+    });
+
     const prevQsAll = history.map((h) => h.question).filter(Boolean);
     const prevQsRecent = prevQsAll.slice(-RECENT_QS_FOR_SIMILARITY);
 
     const baseSystemPrompt = [
       "Magyar nyelvű API vagy, kizárólag a megadott JSON sémát adod vissza.",
-      "Szerep: a következő kártyára egyetlen, irányhoz illeszkedő kérdést generálsz.",
+      "Szerep: a következő kártyára egy WORK blokkot generálsz: lead_in + question (+ opcionális cta).",
       "",
-      "LEAD_IN vs KÉRDÉS:",
-      "- lead_in = 1 rövid átvezető mondat (NEM kérdés, NEM tartalmaz '?').",
-      "- question = pontosan 1 kérdés, 1 kérdőjellel.",
+      "LEAD_IN vs FÓKUSZ-MAG:",
+      "- lead_in = 2–4 mondatnyi térnyitó ráhangolás, amely finoman a direction irányába tereli a figyelmet.",
+      "- lead_in NEM kérdés és NEM tartalmaz '?' jelet.",
+      "",
+      "- question = a kártya egyetlen mondata (UI-kötelező), ami egy fókusz-aktus:",
+      "  - VAGY 1 kérdés (pontosan 1 '?' a végén),",
+      "  - VAGY 1 feladat/utasítás (0 '?').",
+      "  - Mindig 1 mondat: nincs felsorolás, nincs kettőspont, nincs pontosvessző, nincs sortörés.",
       "",
       "KÖTELEZŐ ILLESZKEDÉS AZ IRÁNYHOZ:",
-      "- A direction.method_spec.question_style szerint formáld a kérdést.",
+      "- A direction.method_spec.question_style szerint formáld a question-t.",
       "- Használd a direction.micro_description + focus_model + selection_hints elemeit.",
       "",
+      "LATENS SZINTÉZIS (ha van):",
+      "- Ha kapsz synth.question_seed.target_anchor-t, akkor a lead_in nyissa meg ezt mint fókuszpontot,",
+      "- és a question irányítsa a figyelmet erre az anchor-ra a direction stílusában.",
+      "",
       "ANTI-GENERIKUS SZABÁLY:",
-      "- A kérdésben legyen legalább 1 konkrét horgony a dream_text-ből VAGY a legutóbbi answer-ből.",
-      "- Ne kérdezz általánosan horgony nélkül.",
+      "- A question tartalmazzon 1 konkrét horgonyt a dream_text-ből VAGY a legutóbbi answer-ből.",
+      "- + legyen benne 1 irány-nyelvi fókusz (a direction szókészletéből).",
       "",
       "SZIGORÚ NEM-ISMÉTLÉS:",
-      "- Tilos megismételni vagy parafrazálni bármelyik korábbi kérdést.",
+      "- Tilos megismételni vagy parafrazálni bármelyik korábbi kérdést/feladatot.",
       "- Ha hasonló lenne, válts teljesen más konkrét részletre ugyanabban az irányban.",
       "",
       "Biztonság:",
       "- Ne értelmezd az álmot, ne diagnosztizálj, ne szimbólumszótár.",
       "",
       "Formai szabályok:",
-      "- Pontosan 1 kérdés; ne legyen felsorolás; legfeljebb 1 kérdőjel.",
-      "- Karakterlimitek: lead_in <= 280, question <= 160, cta <= 120.",
+      "- Karakterlimitek: lead_in <= 720, question <= 180, cta <= 120.",
       "- Mindig legyen stop_signal mező (normál: suggest_stop=false).",
       "",
       "Kimenet kizárólag JSON ebben a sémában:",
@@ -536,6 +505,7 @@ export async function POST(req: Request) {
       direction: directionForAI ?? {},
       history,
       prior_echoes: priorEchoes,
+      synth: synth ?? null,
     };
 
     async function callModel(extraRules: string[] = []) {
@@ -551,7 +521,7 @@ export async function POST(req: Request) {
           { role: "system", content: systemPrompt },
           { role: "user", content: JSON.stringify(userPayload) },
         ],
-        max_tokens: 500,
+        max_tokens: 650,
       });
 
       const rawContent = completion.choices?.[0]?.message?.content ?? "";
@@ -570,25 +540,19 @@ export async function POST(req: Request) {
 
     if (!tooSimilar1) return NextResponse.json(first);
 
-    // 2) retry: explicit tiltás + kötelező fókuszváltás
+    // 2) retry
     const retry = await callModel([
       `TILOS: ezekkel megegyező vagy ezek parafrázisa: ${prevQsRecent.join(" | ")}`,
       "KÖTELEZŐ: válts teljesen más konkrét részletre (szereplő/helyszín/tárgy/jelenetváltás/testérzet), de maradj az irány keretében.",
-      "Ha nem tudsz érdemben új kérdést, akkor add vissza a sémát úgy, hogy stop_signal.suggest_stop=true és reason='low_novelty'.",
+      "Ha nem tudsz érdemben új fókuszt, add vissza a sémát úgy, hogy stop_signal.suggest_stop=true és reason='low_novelty'.",
     ]);
 
-    // ha a modell mégis kérdést ad, ellenőrizzük újra
     const tooSimilar2 =
       (prevQsRecent.length > 0 && isTooSimilar(retry.work_block.question, prevQsRecent)) ||
       isExactRepeat(retry.work_block.question, prevQsAll);
 
-    // ha a modell maga stop-ot kér, azt engedjük át
     if (retry.stop_signal?.suggest_stop) return NextResponse.json(retry);
-
-    if (tooSimilar2) {
-      // 3) kontrollált lezárás (UI már tudja kezelni)
-      return NextResponse.json(makeLowNoveltyClosure(safetyFlag));
-    }
+    if (tooSimilar2) return NextResponse.json(makeLowNoveltyClosure(safetyFlag));
 
     return NextResponse.json(retry);
   } catch (e: unknown) {

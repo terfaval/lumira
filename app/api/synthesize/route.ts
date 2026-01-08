@@ -1,8 +1,8 @@
-// /app/api/synthesize/route.ts //
+// /app/api/synthesize/route.ts
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/src/lib/supabase/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
+import { supabaseServer } from "@/src/lib/supabase/server";
 
 const MIN_DREAM_LENGTH = 20;
 const MAX_ANCHOR_ITEMS = 6;
@@ -23,7 +23,9 @@ const ALLOWED_PREFERRED_STYLES = [
   "perspective_shift_single",
   "creative_transform_single",
   "closure_choice_single",
-];
+  "choice_point_single",
+  "association_single",
+] as const;
 
 const SAFETY_VALUES = ["none", "self_harm", "reality_confusion", "other"] as const;
 type SafetyValue = (typeof SAFETY_VALUES)[number];
@@ -32,11 +34,10 @@ type HistoryItem = { question: string; answer: string | null };
 type PriorEcho = { session_id: string; anchor_summary: string; created_at: string };
 
 type SynthesizeInput = {
-  session_id?: string; // ✅ új (opcionális) – ha megadod, appendeljük a latent logba
+  session_id?: string;
   dream_text?: string;
   history?: HistoryItem[];
   prior_echoes?: PriorEcho[];
-  catalog?: unknown;
   allowed_slugs?: string[];
 };
 
@@ -52,7 +53,7 @@ type QuestionSeed = { preferred_style: string; target_anchor: string };
 type PriorEchoUsed = { session_id: string; matched_items: string[] };
 type Flags = { safety: SafetyValue; too_short: boolean };
 
-type SynthesizeOutput = {
+export type SynthesizeOutput = {
   anchors: Anchors;
   candidate_directions: string[];
   question_seed: QuestionSeed;
@@ -101,8 +102,8 @@ function sanitizePriorEchoesUsed(values: unknown, allowedSessionIds: Set<string>
   return values
     .slice(0, MAX_PRIOR_ECHOES_USED)
     .map((item) => ({
-      session_id: typeof item?.session_id === "string" ? item.session_id : "",
-      matched_items: clampArray(item?.matched_items, MAX_MATCHED_ITEMS),
+      session_id: typeof (item as any)?.session_id === "string" ? (item as any).session_id : "",
+      matched_items: clampArray((item as any)?.matched_items, MAX_MATCHED_ITEMS),
     }))
     .filter((p) => p.session_id && allowedSessionIds.has(p.session_id));
 }
@@ -122,7 +123,7 @@ function sanitizeQuestionSeed(seed: unknown): QuestionSeed {
   const raw = (seed ?? {}) as Partial<QuestionSeed>;
   return {
     preferred_style:
-      typeof raw.preferred_style === "string" && ALLOWED_PREFERRED_STYLES.includes(raw.preferred_style)
+      typeof raw.preferred_style === "string" && (ALLOWED_PREFERRED_STYLES as readonly string[]).includes(raw.preferred_style)
         ? raw.preferred_style
         : "",
     target_anchor: typeof raw.target_anchor === "string" ? raw.target_anchor : "",
@@ -214,23 +215,8 @@ function sanitizeOutput(
 
 function detectSafety(dreamText: string): SafetyValue {
   const lower = dreamText.toLowerCase();
-  const selfHarmKeywords = [
-    "suicide",
-    "kill myself",
-    "end my life",
-    "öngyilk",
-    "megölöm magam",
-    "véget vetek",
-    "nem akarok élni",
-  ];
-  const realityConfusionKeywords = [
-    "not real",
-    "can't tell what's real",
-    "hallucinat",
-    "nem valós",
-    "nem tudom mi a valós",
-    "realitás",
-  ];
+  const selfHarmKeywords = ["suicide", "kill myself", "end my life", "öngyilk", "megölöm magam", "véget vetek", "nem akarok élni"];
+  const realityConfusionKeywords = ["not real", "can't tell what's real", "hallucinat", "nem valós", "nem tudom mi a valós", "realitás"];
 
   if (selfHarmKeywords.some((kw) => lower.includes(kw))) return "self_harm";
   if (realityConfusionKeywords.some((kw) => lower.includes(kw))) return "reality_confusion";
@@ -241,7 +227,8 @@ function clampHistory(history: unknown): HistoryItem[] {
   if (!Array.isArray(history)) return [];
   const items = history.filter(
     (item) =>
-      typeof item?.question === "string" && (typeof item?.answer === "string" || item?.answer === null)
+      typeof (item as any)?.question === "string" &&
+      (typeof (item as any)?.answer === "string" || (item as any)?.answer === null)
   );
   return items.slice(-4);
 }
@@ -251,52 +238,17 @@ function clampPriorEchoes(priorEchoes: unknown): PriorEcho[] {
   return priorEchoes
     .slice(0, MAX_PRIOR_ECHOES_USED)
     .map((echo) => ({
-      session_id: typeof echo?.session_id === "string" ? echo.session_id : "",
+      session_id: typeof (echo as any)?.session_id === "string" ? (echo as any).session_id : "",
       anchor_summary:
-        typeof echo?.anchor_summary === "string" ? echo.anchor_summary.slice(0, MAX_ANCHOR_SUMMARY_LENGTH) : "",
-      created_at: typeof echo?.created_at === "string" ? echo.created_at : "",
+        typeof (echo as any)?.anchor_summary === "string"
+          ? (echo as any).anchor_summary.slice(0, MAX_ANCHOR_SUMMARY_LENGTH)
+          : "",
+      created_at: typeof (echo as any)?.created_at === "string" ? (echo as any).created_at : "",
     }))
     .filter((echo) => echo.session_id && echo.anchor_summary);
 }
 
-function reduceCatalogForAI(catalog: unknown): unknown {
-  const pickFields = (item: any) => {
-    const slug = typeof item?.slug === "string" ? item.slug : undefined;
-    const content = item?.content && typeof item.content === "object" ? item.content : {};
-    if (!slug) return null;
-    return {
-      slug,
-      content: {
-        method_spec: (content as any)?.method_spec,
-        selection_hints: (content as any)?.selection_hints,
-        stop_criteria: (content as any)?.stop_criteria,
-        output_spec: (content as any)?.output_spec,
-        safety: (content as any)?.safety,
-        micro_description: (content as any)?.micro_description,
-      },
-    };
-  };
-
-  if (Array.isArray(catalog)) {
-    const reduced = catalog.map((item) => pickFields(item)).filter((item) => item !== null);
-    return reduced;
-  }
-
-  if (catalog && typeof catalog === "object") {
-    const possibleArrays = ["directions", "items"];
-    for (const key of possibleArrays) {
-      const candidate = (catalog as Record<string, unknown>)[key];
-      if (Array.isArray(candidate)) {
-        const reduced = candidate.map((item) => pickFields(item)).filter((item) => item !== null);
-        return reduced;
-      }
-    }
-  }
-
-  return null;
-}
-
-// ✅ ÚJ: közös mentő helper az append loghoz (RPC)
+// append log helper (RPC)
 async function persistLatentAppendLog(req: Request, args: { sessionId?: string; output: SynthesizeOutput; meta: Record<string, unknown> }) {
   const { sessionId, output, meta } = args;
   if (!sessionId) return;
@@ -319,30 +271,21 @@ export async function POST(req: Request) {
     const body = (await req.json()) as SynthesizeInput;
 
     const sessionId = typeof body.session_id === "string" ? body.session_id : undefined;
-
     const dreamText = (body.dream_text ?? "").trim();
+
     const allowedSlugs = (body.allowed_slugs ?? [])
       .filter((s) => typeof s === "string")
       .map((s) => s.trim())
       .filter(Boolean);
 
-    if (!dreamText) {
-      return NextResponse.json({ error: "Missing dream_text" }, { status: 400 });
-    }
+    if (!dreamText) return NextResponse.json({ error: "Missing dream_text" }, { status: 400 });
 
     const tooShort = dreamText.length < MIN_DREAM_LENGTH;
-
     if (tooShort) {
       const output = defaultOutput();
       output.flags.too_short = true;
 
-      // ✅ append log + snapshot, ha van session_id
-      await persistLatentAppendLog(req, {
-        sessionId,
-        output,
-        meta: { source: "synthesize", note: "too_short" },
-      });
-
+      await persistLatentAppendLog(req, { sessionId, output, meta: { source: "synthesize", note: "too_short" } });
       return NextResponse.json(output);
     }
 
@@ -363,7 +306,20 @@ export async function POST(req: Request) {
     const history = clampHistory(body.history);
     const priorEchoes = clampPriorEchoes(body.prior_echoes);
     const priorEchoSessionIds = new Set(priorEchoes.map((p) => p.session_id));
-    const catalogForAI = reduceCatalogForAI(body.catalog ?? null);
+
+    // ✅ catalog: DB-ből (nem kliensből)
+    const sb = await supabaseServer(); // service-role jellegű olvasás, RLS-től független
+    const { data: rows, error: catErr } = await sb
+      .from("direction_catalog")
+      .select("slug, title, description, content, tags, sort_order, is_active")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true });
+
+    if (catErr) {
+      console.warn("direction_catalog fetch failed", catErr.message);
+    }
+
+    const catalogForAI = Array.isArray(rows) ? rows : [];
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -374,8 +330,8 @@ export async function POST(req: Request) {
       "- Output JSON only using the specified schema.",
       "- Anchors must quote literal or near-literal items from dream_text.",
       "- candidate_directions: ranked list of 3-5 slugs, subset of allowed_slugs.",
-      "- Respect method_spec and selection_hints to match dream features to catalog.",
-      "- prior_echoes_used obey dir-06: literal_or_near_literal_only, max_reference_items=2, differences_first.",
+      "- Use catalog to match dream features to directions (content.method_spec, focus_model, selection_hints).",
+      "- prior_echoes_used obey dir-06 constraints: literal_or_near_literal_only, max_reference_items=2, differences_first.",
       "- Flags: safety can be none | self_harm | reality_confusion | other. If safety triggered, candidate_directions must be empty.",
       "- If dream_text too short, set flags.too_short=true and candidate_directions=[].",
       "- Never interpret meaning, diagnose, or offer therapy language.",
@@ -425,7 +381,6 @@ export async function POST(req: Request) {
 
     const output = sanitizeOutput(parsed, allowedSlugs, false, priorEchoSessionIds);
 
-    // ✅ append log + snapshot, ha van session_id
     await persistLatentAppendLog(req, {
       sessionId,
       output,
