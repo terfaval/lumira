@@ -8,7 +8,7 @@
   gap: var(--space-3); /* ✅ 8) token */
   align-items: stretch;
   grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 @media (min-width: 900px) {
@@ -20,6 +20,7 @@
 .leftTile {
   min-width: 0;
   min-height: 0;
+  height: 100%;
 
   border-radius: 18px;
   border: 1px solid var(--line-soft);
@@ -32,6 +33,7 @@
 .rightPlain {
   min-width: 0;
   min-height: 0;
+  height: 100%;
 
   padding: var(--space-3); /* ✅ token */
   background: transparent;
