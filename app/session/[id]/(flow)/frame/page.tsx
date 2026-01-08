@@ -165,21 +165,14 @@ export default function FramePage() {
           </div>
 
 
-          <div
-            style={{
-              display: "grid",
-              gap: 12,
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            }}
-          >
+          <div className="direction-grid">
             {recommendations.map((d) => (
               <button
                 key={d.slug}
                 type="button"
                 disabled={busy}
                 onClick={() => handleDirectionSelect(d.slug)}
-                style={{ textAlign: "left" }}
-                className="card"
+                className="direction-card"
               >
                 <div className="stack-tight">
                   <div style={{ fontWeight: 800 }}>{d.title}</div>
@@ -199,6 +192,76 @@ export default function FramePage() {
       ) : (
         <p style={{ color: "var(--text-muted)" }}>A keretezés készül, hamarosan megjelennek az ajánlott irányok.</p>
       )}
+
+      <style jsx>{`
+  .direction-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  /* tablet */
+  @media (min-width: 700px) {
+    .direction-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* desktop: mindig 3 */
+  @media (min-width: 1024px) {
+    .direction-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .direction-card {
+    text-align: left;
+    cursor: pointer;
+
+    border-radius: 16px;
+    border: 1px solid var(--line-soft);
+    background: var(--card-surface);
+
+    padding: 14px;
+    box-shadow: var(--shadow-soft);
+
+    transition:
+      transform 160ms ease,
+      box-shadow 200ms ease,
+      background 200ms ease,
+      border-color 200ms ease,
+      backdrop-filter 200ms ease;
+  }
+
+  .direction-card:hover:not(:disabled) {
+    transform: scale(1.03);
+    border-color: var(--accent);
+    
+
+    /* glassy effect */
+    background: linear-gradient(
+      135deg,
+      rgba(128, 185, 185, 0.16),
+      rgba(255, 255, 255, 0.04)
+    );
+    backdrop-filter: blur(6px);
+
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.35),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .direction-card:active:not(:disabled) {
+    transform: scale(1.01);
+  }
+
+  .direction-card:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`}</style>
+
 
       {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
     </div>
