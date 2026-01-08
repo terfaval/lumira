@@ -9,7 +9,7 @@ type Napszak = "default" | "morning" | "day" | "evening" | "night";
  * - true  => mindig "default" téma
  * - false => napszak szerinti automata téma
  */
-const FORCE_DEFAULT_THEME = false;
+const FORCE_DEFAULT_THEME = true;
 
 function resolveNapszak(date: Date): Exclude<Napszak, "default"> {
   const hour = date.getHours();
