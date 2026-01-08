@@ -118,6 +118,8 @@ export default function FlowShellClient({ children }: { children: ReactNode }) {
         <div
           className={styles.leftTile}
           style={{
+            height: "100%",
+            minHeight: 0,
             background: `linear-gradient(120deg,
               var(--evening-card-paper-strong) 0%,
               var(--evening-card-paper) 75%,

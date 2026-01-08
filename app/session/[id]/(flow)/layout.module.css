@@ -8,6 +8,7 @@
   gap: var(--space-3); /* ✅ 8) token */
   align-items: stretch;
   grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
 }
 
 @media (min-width: 900px) {

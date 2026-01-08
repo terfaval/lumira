@@ -340,6 +340,8 @@ p { margin: 0; line-height: 1.6; }
 /* 4) UI PRIMITIVES                                                */
 /* ────────────────────────────────────────────────────────────── */
 
+
+
 .shell {
   max-width: 840px;
   margin: 0 auto;
@@ -670,10 +672,13 @@ body[data-space="evening"] {
 /* ────────────────────────────────────────────────────────────── */
 
 /* Globals.css */
+html, body { height: 100%; }
+main { min-height: 100dvh; }
 
 /* a Shell töltse ki a viewportot */
 .shell {
   min-height: 100dvh;
+  display: grid;
   grid-template-rows: auto 1fr; /* topbar + content */
 }
 
@@ -690,6 +695,9 @@ body[data-space="evening"] {
 .surface-ghost {
   /* ugyanaz a layout “konténer” élmény */
   min-height: 0;
+  height: 100%;
+  display: grid; 
+  grid-template-rows: 1fr;
   border-radius: var(--radius-card);
 
   /* de vizuálisan semmi */
