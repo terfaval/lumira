@@ -1,5 +1,5 @@
 // 📁 /src/lib/dream/text.ts
-// Közös szöveg- és JSON utilok.
+// Közös szöveg-, anchor- és JSON utilok.
 
 import {
   TITLE_MAX,
@@ -12,6 +12,7 @@ import {
   FALLBACK_TITLES,
   HU_STOPWORDS,
   SIMILARITY_THRESHOLD_DEFAULT,
+  MIN_FRAMING_CHARS,
 } from "./const";
 
 export function sanitizeWhitespace(t: string): string {
@@ -71,10 +72,8 @@ export function isAcceptableTitle(title: string): boolean {
   if (isGenericTitle(t)) return false;
   const wc = countWords(t);
   if (wc < TITLE_MIN_WORDS || wc > TITLE_MAX_WORDS) return false;
-  // több mondat / túl sok mondatzáró
   const endPunct = (t.match(/[.!?]/g) ?? []).length;
   if (endPunct >= 2) return false;
-  // maradjon rövid/ütős
   if (t.length > TITLE_MAX) return false;
   return true;
 }
@@ -93,9 +92,38 @@ export function shuffleInPlace<T>(arr: T[]): T[] {
   return arr;
 }
 
+// —— Anchor utilok ——
+export function pickTopAnchors(anchors: { characters?: string[]; places?: string[]; objects?: string[]; beats?: string[]; felt_words?: string[] }, max = 8): string[] {
+  const pools = [anchors?.characters ?? [], anchors?.places ?? [], anchors?.objects ?? [], anchors?.beats ?? []];
+  const flat = pools.flat().map((s) => (s ?? '').trim()).filter(Boolean);
+  const uniq = Array.from(new Set(flat));
+  return uniq.sort((a,b)=>b.length-a.length).slice(0, max);
+}
+
+export function countAnchorMentions(text: string, anchors: string[]): number {
+  const t = (text ?? '').toLowerCase();
+  let count = 0;
+  for (const a of anchors) {
+    const q = (a ?? '').toLowerCase().trim();
+    if (!q || q.length < 3) continue;
+    if (t.includes(q)) count++;
+  }
+  return count;
+}
+
+export function titleHasAnchor(title: string, anchors: string[]): boolean {
+  return countAnchorMentions(title, anchors) >= 1;
+}
+
+// —— Framing ellenőrzés ——
 export function isNonTrivialFraming(t: string): boolean {
   const s = sanitizeWhitespace(t);
-  return s.length >= 100; // kicsit szigorúbb: 2–4 mondat
+  return s.length >= MIN_FRAMING_CHARS; // rugalmas: kb. 2–4 mondat
+}
+
+export function isFramingAnchored(framing: string, anchors: string[], minMentions = 2) {
+  const s = sanitizeWhitespace(framing);
+  return countAnchorMentions(s, anchors) >= minMentions || s.length >= MIN_FRAMING_CHARS;
 }
 
 // —— Safety ——

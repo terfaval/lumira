@@ -17,8 +17,9 @@ export const MAX_HISTORY = 8;
 export const MAX_PRIOR_ECHOES = 2;
 export const MAX_CANDIDATES = 5;
 export const MIN_CANDIDATES = 3;
-export const MAX_ANCHOR_ITEMS = 6;
+export const MAX_ANCHOR_ITEMS = 6; // anchorok listázásához (synthesize)
 export const MAX_MATCHED_ITEMS = 2;
+export const MIN_FRAMING_CHARS = 100; // rugalmas minimum: kb. 2–4 mondat
 
 export const SIMILARITY_THRESHOLD_DEFAULT = 0.72;
 export const RECENT_QS_FOR_SIMILARITY = 6;
@@ -47,14 +48,13 @@ export const REALITY_CONFUSION_KEYWORDS = [
   "can't tell what's real",
   "hallucinat",
   "nem valós",
-  "nem igaz",
   "nem tudom mi a valós",
   "realitás",
   "összemosódik a valóság",
   "nem tudok felébredni",
 ];
 
-// 12+ semleges fallback cím – kevésbé ismétlődik.
+// 12+ semleges fallback cím – kevésbé ismétlődik (csak végső vészfék).
 export const FALLBACK_TITLES = [
   "Kulcsjelenet",
   "Álomkép",
