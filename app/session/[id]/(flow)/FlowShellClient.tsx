@@ -122,7 +122,7 @@ export default function FlowShellClient({ children }: { children: ReactNode }) {
           style={{
             background: `linear-gradient(135deg,
               var(--evening-card-paper-strong) 0%,
-              var(--evening-card-paper) 44%,
+              var(--evening-card-paper) 75%,
               var(--accent) 112%)`,
           }}
         >
