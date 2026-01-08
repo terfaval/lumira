@@ -98,7 +98,7 @@ export default function FlowShellClient({ children }: { children: ReactNode }) {
     <Shell
       title={title}
       space="dream"
-      surface="none"
+      surface="ghost"
       headerActions={
         <button
           type="button"

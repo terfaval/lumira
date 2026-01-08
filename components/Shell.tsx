@@ -23,7 +23,7 @@ export function Shell({
   infoPanel?: ReactNode;
   infoOpen?: boolean;
   onToggleInfo?: () => void;
-  surface?: "card" | "none",
+  surface?: "card" | "none" | "ghost";
 }) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -34,9 +34,10 @@ export function Shell({
   }
 
   return (
-    <div className={`shell shell--fluid ${space === "evening" ? "evening-shell" : ""}`}
-    style={{ position: "relative" }}>
-
+    <div
+      className={`shell shell--fluid ${space === "evening" ? "evening-shell" : ""}`}
+      style={{ position: "relative" }}
+    >
       <NapszakInitializer space={space} />
 
       {/* Felső sáv */}
@@ -95,13 +96,21 @@ export function Shell({
         <section style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%" }}>
           {children}
         </section>
+      ) : surface === "ghost" ? (
+        <section
+          className="surface-ghost stack"
+          style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%" }}
+        >
+          {children}
+        </section>
       ) : (
-        <section className="surface-layer card stack" 
-        style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%" }}>
+        <section
+          className="surface-layer card stack"
+          style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%" }}
+        >
           {children}
         </section>
       )}
-
 
       <SidebarDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} space={space} onLogout={logout} />
     </div>

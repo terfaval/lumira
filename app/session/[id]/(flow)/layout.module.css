@@ -27,7 +27,7 @@
   padding: 18px;
 
   /* ✅ NE itt scrollozzunk, a belső panelek fognak */
-  overflow: hidden;
+  overflow: auto; 
 }
 
 .rightPlain {
@@ -40,5 +40,5 @@
   background: transparent;
 
   /* ✅ NE itt scrollozzunk, a SplitLayout panelBody görget */
-  overflow: hidden;
+  overflow: auto; 
 }

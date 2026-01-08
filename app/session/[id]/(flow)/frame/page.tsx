@@ -188,7 +188,7 @@ export default function FramePage() {
                 >
                   <div className="stack-tight">
                     <div style={{ fontWeight: 800 }}>{d.title}</div>
-                    <div style={{ opacity: 0.9 }}>{d.reason}</div>
+                    <div style={{ opacity: 0.9 }}>{(d.content as any)?.micro_description ?? d.description}</div>
                   </div>
                 </button>
               ))}
