@@ -217,14 +217,14 @@ export function SidebarDrawer({
           transition: transform 200ms ease;
           display: grid;
           grid-template-rows: auto 1fr auto;
-          padding: 14px;
+          padding: var(--space-3);
         }
         .drawer-root.is-open .drawer-sheet {
           transform: translateX(0);
         }
 
         .drawer-section {
-          padding: 10px 4px 14px;
+          padding: var(--space-2) var(--space-1) var(--space-3);
           border-bottom: 1px solid var(--line-soft);
         }
         .drawer-section:last-of-type {
@@ -234,18 +234,18 @@ export function SidebarDrawer({
         .drawer-top {
           display: grid;
           gap: 8px;
-          padding-top: 6px;
+          padding-top: var(--space-1);
         }
 
         .drawer-section-head {
-          margin-bottom: 10px;
+          margin-bottom: var(--space-2);
         }
 
         /* egységes tipó */
         .drawer-navlink {
           display: inline-flex;
           align-items: center;
-          padding: 10px 12px;
+          padding: var(--space-2) var(--space-3);
           border-radius: 12px;
           border: 1px solid var(--line-soft);
           background: var(--card-surface);
@@ -263,7 +263,7 @@ export function SidebarDrawer({
         }
 
         .drawer-navlink--title {
-          padding: 6px 8px;
+          padding: var(--space-1) var(--space-2);
           border: none;
           background: transparent;
         }
@@ -291,7 +291,7 @@ export function SidebarDrawer({
         }
 
         .drawer-list-item {
-          padding-bottom: 10px;
+          padding-bottom: var(--space-2);
           border-bottom: 1px solid var(--line-soft);
         }
         .drawer-list-item:last-child {
@@ -302,7 +302,7 @@ export function SidebarDrawer({
         .drawer-item {
           display: grid;
           gap: 6px;
-          padding: 12px;
+          padding: var(--space-3);
           border: 1px solid var(--line-soft);
           border-radius: 14px;
           background: var(--card-surface);
@@ -330,7 +330,7 @@ export function SidebarDrawer({
         }
 
         .drawer-footer {
-          padding: 10px 4px 6px;
+          padding: var(--space-2) var(--space-1) var(--space-1);
           border-top: 1px solid var(--line-soft);
         }
 

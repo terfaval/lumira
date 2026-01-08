@@ -68,7 +68,7 @@ export default function SessionListPage() {
       {loading ? (
         Spinner
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
+        <div style={{ display: "grid", gap: "var(--space-3)" }}>
           <p style={{ opacity: 0.8 }}>
             Itt folytathatod a megkezdett álmaidat — bármikor megállhatsz, és később visszatérhetsz.
           </p>
@@ -78,7 +78,7 @@ export default function SessionListPage() {
             style={{
               display: "inline-flex",
               width: "fit-content",
-              padding: "10px 16px",
+              padding: "var(--space-2) var(--space-3)",
               borderRadius: 10,
               background: "#111827",
               color: "white",
@@ -92,7 +92,7 @@ export default function SessionListPage() {
           {activeSessions.length === 0 ? (
             <p style={{ color: "var(--text-muted)" }}>Nincs folyamatban lévő álmod.</p>
           ) : (
-            <div style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "grid", gap: "var(--space-2)" }}>
               {activeSessions.map((s) => (
                 <Link
                   key={s.id}
@@ -100,12 +100,12 @@ export default function SessionListPage() {
                   style={{
                     border: "1px solid #ddd",
                     borderRadius: 10,
-                    padding: 12,
+                    padding: "var(--space-3)",
                     display: "grid",
-                    gap: 6,
+                    gap: "var(--space-1)",
                   }}
                 >
-                  <div style={{ fontWeight: 700, display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+                  <div style={{ fontWeight: 700, display: "flex", gap: "var(--space-2)", alignItems: "baseline", flexWrap: "wrap" }}>
                     <span>Álom</span>
                     <span style={{ opacity: 0.6, fontWeight: 600 }}>#{s.id.slice(0, 8)}</span>
                     <span style={{ opacity: 0.7, fontSize: 12 }}>{s.status}</span>

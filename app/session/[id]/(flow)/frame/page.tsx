@@ -218,7 +218,7 @@ export default function FramePage() {
       </div>
 
       {err && (
-        <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>
+        <p style={{ marginTop: "var(--space-3)", color: "crimson" }}>{err}</p>
       )}
 
       <style jsx>{`
@@ -228,12 +228,12 @@ export default function FramePage() {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          padding-block: 8px;
+          padding-block: var(--space-2);
         }
 
         .direction-grid {
           display: grid;
-          gap: 14px;
+          gap: var(--space-3);
           grid-template-columns: 1fr;
           align-items: stretch;
         }
@@ -252,7 +252,7 @@ export default function FramePage() {
 
         .direction-actions {
           display: flex;
-          gap: 12px;
+          gap: var(--space-3);
           flex-wrap: wrap;
           align-items: center;
         }
@@ -264,7 +264,7 @@ export default function FramePage() {
           border-radius: 16px;
           border: 1px solid var(--line-soft);
           background: var(--card-surface);
-          padding: 14px;
+          padding: var(--space-3);
           box-shadow: var(--shadow-soft);
           color: var(--text-primary);
 

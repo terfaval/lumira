@@ -27,7 +27,7 @@ export function FlowLoadingOverlay({
           inset: 0;
           display: grid;
           place-items: center;
-          padding: 18px;
+          padding: var(--space-4);
           z-index: 100;
           background: rgba(0, 0, 0, 0.28);
           backdrop-filter: blur(6px);
@@ -43,9 +43,9 @@ export function FlowLoadingOverlay({
             rgba(255, 255, 255, 0.03)
           );
           box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
-          padding: 16px 16px;
+          padding: var(--space-3);
           display: flex;
-          gap: 14px;
+          gap: var(--space-3);
           align-items: center;
         }
 
@@ -61,7 +61,7 @@ export function FlowLoadingOverlay({
 
         .flow-overlay-text {
           display: grid;
-          gap: 4px;
+          gap: var(--space-1);
           min-width: 0;
         }
 

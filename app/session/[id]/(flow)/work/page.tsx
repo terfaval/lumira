@@ -411,7 +411,7 @@ function BlockCard({
           <style jsx>{`
             .work-actions {
               display: flex;
-              gap: 10px;
+              gap: var(--space-2);
               justify-content: flex-end; /* ✅ jobbra zár */
               flex-wrap: wrap;
               align-items: center;
@@ -442,11 +442,11 @@ function ClosureCard({ block, sessionId }: { block: NextResponse["work_block"]; 
           <style jsx>{`
             .closure-actions {
               display: flex;
-              gap: 10px;
+              gap: var(--space-2);
               justify-content: flex-end; /* ✅ jobbra zár */
               flex-wrap: wrap;
               align-items: center;
-              margin-top: 8px;
+              margin-top: var(--space-2);
             }
           `}</style>
         </div>

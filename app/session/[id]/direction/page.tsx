@@ -85,7 +85,7 @@ export default function DirectionPage() {
           border: "2px solid var(--border)",
           borderTopColor: "var(--text-muted)",
           animation: "spin 0.9s linear infinite",
-          marginTop: 8,
+          marginTop: "var(--space-2)",
         }}
       />
       <style jsx>{`
@@ -141,7 +141,7 @@ export default function DirectionPage() {
               ))}
             </div>
 
-            {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
+            {err && <p style={{ marginTop: "var(--space-3)", color: "crimson" }}>{err}</p>}
           </>
         )}
       </div>
@@ -153,7 +153,7 @@ export default function DirectionPage() {
           background: rgba(0,0,0,0.28);
           display: grid;
           place-items: center;
-          padding: 16px;
+          padding: var(--space-3);
           z-index: 50;
         }
         .direction-sheet {
@@ -161,11 +161,11 @@ export default function DirectionPage() {
           max-height: min(86dvh, 860px);
           overflow: auto;
           display: grid;
-          gap: 12px;
+          gap: var(--space-3);
         }
         .direction-grid {
           display: grid;
-          gap: 10px;
+          gap: var(--space-2);
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
         @media (max-width: 999px) {
