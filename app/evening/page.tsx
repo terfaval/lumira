@@ -578,8 +578,8 @@ export default function EveningLanding() {
         .filters {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 10px;
-          margin-top: 4px;
+          gap: var(--space-2);
+          margin-top: var(--space-1);
         }
         @media (min-width: 720px) {
           .filters {
@@ -588,7 +588,7 @@ export default function EveningLanding() {
         }
         .filter {
           display: grid;
-          gap: 6px;
+          gap: var(--space-1);
         }
         .filter-label {
           font-size: 12px;
@@ -597,7 +597,7 @@ export default function EveningLanding() {
 
         .evening-grid {
           display: grid;
-          gap: 18px;
+          gap: var(--space-4);
           grid-template-columns: repeat(1, minmax(0, 1fr));
           margin-top: 6px;
         }
@@ -616,7 +616,7 @@ export default function EveningLanding() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 16px;
+          padding: var(--space-3);
         }
 
         .flip-shell {
@@ -627,7 +627,7 @@ export default function EveningLanding() {
           border-radius: 18px;
           background: var(--bg);
           box-shadow: 0 24px 90px rgba(0, 0, 0, 0.55);
-          padding: 14px;
+          padding: var(--space-3);
 
           transform-origin: center;
           transition: transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 220ms ease-out;
@@ -638,8 +638,8 @@ export default function EveningLanding() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
-          padding: 6px 6px 12px 6px;
+          gap: var(--space-3);
+          padding: var(--space-1) var(--space-1) var(--space-3);
           position: sticky;
           top: 0;
           background: var(--bg);

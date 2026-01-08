@@ -1,4 +1,4 @@
-// /app/api/synthesize/route.ts
+// /app/api/synthesize/route.ts (patched v1.1)
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
@@ -77,13 +77,33 @@ const defaultOutput = (): SynthesizeOutput => ({
   flags: { safety: "none", too_short: false },
 });
 
+// ────────────────────────────────────────────────────────────────────────────────
+// Helpers: sanitize & small normalizers
+// ────────────────────────────────────────────────────────────────────────────────
 function clampArray(values: unknown, max: number): string[] {
   if (!Array.isArray(values)) return [];
   return values
     .filter((v) => typeof v === "string")
     .slice(0, max)
-    .map((v) => v.trim())
+    .map((v) => (v || "").replace(/\s+/g, " ").trim())
     .filter(Boolean);
+}
+
+function dedupeCaseFold(arr: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const s of arr) {
+    const key = s.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+  }
+  return out;
+}
+
+function capFirst(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function sanitizeFlags(flags: unknown, dreamTooShort: boolean): Flags {
@@ -110,13 +130,12 @@ function sanitizePriorEchoesUsed(values: unknown, allowedSessionIds: Set<string>
 
 function sanitizeAnchors(anchors: unknown): Anchors {
   const raw = (anchors ?? {}) as Partial<Anchors>;
-  return {
-    characters: clampArray(raw.characters, MAX_ANCHOR_ITEMS),
-    places: clampArray(raw.places, MAX_ANCHOR_ITEMS),
-    objects: clampArray(raw.objects, MAX_ANCHOR_ITEMS),
-    beats: clampArray(raw.beats, MAX_ANCHOR_ITEMS),
-    felt_words: clampArray(raw.felt_words, MAX_ANCHOR_ITEMS),
-  };
+  const characters = dedupeCaseFold(clampArray(raw.characters, MAX_ANCHOR_ITEMS)).map(capFirst);
+  const places = dedupeCaseFold(clampArray(raw.places, MAX_ANCHOR_ITEMS)).map(capFirst);
+  const objects = dedupeCaseFold(clampArray(raw.objects, MAX_ANCHOR_ITEMS));
+  const beats = dedupeCaseFold(clampArray(raw.beats, MAX_ANCHOR_ITEMS));
+  const felt_words = dedupeCaseFold(clampArray(raw.felt_words, MAX_ANCHOR_ITEMS));
+  return { characters, places, objects, beats, felt_words };
 }
 
 function sanitizeQuestionSeed(seed: unknown): QuestionSeed {
@@ -174,9 +193,12 @@ function sanitizeCandidates(
     }
   };
 
-  addByKeywords(["narrativ", "struktur"]);
-  addByKeywords(["test", "lenyomat"]);
-  addByKeywords(["lezar", "elenged"]);
+  // bővített kulcsszavak
+  addByKeywords(["narrativ", "perspektiv"]);
+  addByKeywords(["visszalepes"]);
+  addByKeywords(["folytatas"]);
+  addByKeywords(["erzelm"]);
+  addByKeywords(["testi", "lenyomat"]);
 
   if (filtered.length + fallback.length < targetLength) {
     for (const slug of allowedPool) {
@@ -308,7 +330,7 @@ export async function POST(req: Request) {
     const priorEchoSessionIds = new Set(priorEchoes.map((p) => p.session_id));
 
     // ✅ catalog: DB-ből (nem kliensből)
-    const sb = await supabaseServer(); // service-role jellegű olvasás, RLS-től független
+    const sb = await supabaseServer();
     const { data: rows, error: catErr } = await sb
       .from("direction_catalog")
       .select("slug, title, description, content, tags, sort_order, is_active")
@@ -328,7 +350,12 @@ export async function POST(req: Request) {
       "Task: latent synthesis for dream direction selection and question seeding.",
       "Rules:",
       "- Output JSON only using the specified schema.",
+      "- Read and consider the ENTIRE dream_text; do not prioritize the beginning.",
       "- Anchors must quote literal or near-literal items from dream_text.",
+      "- beats should be listed in rough CHRONOLOGICAL order (early→late).",
+      "- places must include recognizable PROPER NOUNS with correct Hungarian accents if present (e.g., Logodi, Lánchíd, Vár).",
+      "- Normalize obvious casing/spacing; deduplicate items.",
+      "- Aim for rich coverage if present: beats ≥4, places ≥3, objects ≥3, characters ≥2, felt_words ≥2 (subject to max caps).",
       "- candidate_directions: ranked list of 3-5 slugs, subset of allowed_slugs.",
       "- Use catalog to match dream features to directions (content.method_spec, focus_model, selection_hints).",
       "- prior_echoes_used obey dir-06 constraints: literal_or_near_literal_only, max_reference_items=2, differences_first.",
@@ -361,7 +388,7 @@ export async function POST(req: Request) {
         { role: "system", content: systemPrompt },
         { role: "user", content: JSON.stringify(userPayload) },
       ],
-      max_tokens: 650,
+      max_tokens: 700,
     });
 
     const rawContent = completion.choices?.[0]?.message?.content ?? "";

@@ -345,7 +345,7 @@ export default function ArchiveClient() {
         /* ✅ mindig 1 oszlop */
         .archive-grid {
           display: grid;
-          gap: 16px;
+          gap: var(--space-3);
           grid-template-columns: 1fr;
         }
 
@@ -359,7 +359,7 @@ export default function ArchiveClient() {
           flex-direction: column;
           justify-content: space-between;
 
-          padding: 18px;
+          padding: var(--space-4);
           min-height: 170px;
 
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
@@ -375,12 +375,12 @@ export default function ArchiveClient() {
           display: flex;
           align-items: center; /* ✅ baseline helyett center */
           justify-content: space-between;
-          gap: 12px;
+          gap: var(--space-3);
         }
 
         .tile-left {
           display: flex;
-          gap: 10px;
+          gap: var(--space-2);
           align-items: center; /* ✅ title + pill center */
           flex-wrap: wrap;
           min-width: 0;
@@ -414,7 +414,7 @@ export default function ArchiveClient() {
           display: flex;
           justify-content: space-between;
           align-items: baseline;
-          gap: 12px;
+          gap: var(--space-3);
           margin-top: 10px;
         }
 
@@ -441,7 +441,7 @@ export default function ArchiveClient() {
         .archive-controls-wrap :global(.filters) {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 12px;
+          gap: var(--space-3);
         }
         @media (min-width: 760px) {
           .archive-controls-wrap :global(.filters) {

@@ -151,14 +151,14 @@ export default function ArchiveControls({
       <style jsx>{`
         .controls {
           display: grid;
-          gap: 12px;
+          gap: var(--space-3);
         }
 
         /* ugyanaz a logika, mint az evening filters */
         .filters {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 10px;
+          gap: var(--space-2);
           align-items: end;
         }
         @media (min-width: 720px) {
@@ -169,7 +169,7 @@ export default function ArchiveControls({
 
         .filter {
           display: grid;
-          gap: 6px;
+          gap: var(--space-1);
         }
 
         .filter-label {
@@ -180,7 +180,7 @@ export default function ArchiveControls({
 
         .directions {
           display: grid;
-          gap: 6px;
+          gap: var(--space-1);
         }
 
         .directions-head {
@@ -196,7 +196,7 @@ export default function ArchiveControls({
 
         .direction-badges {
           display: flex;
-          gap: 8px;
+          gap: var(--space-2);
           flex-wrap: wrap;
         }
       `}</style>

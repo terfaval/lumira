@@ -39,30 +39,30 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ maxWidth: 420, margin: "0 auto", padding: 24, display: "grid", gap: 12 }}>
+    <main style={{ maxWidth: 420, margin: "0 auto", padding: "var(--space-4)", display: "grid", gap: "var(--space-3)" }}>
       <h1>Belépés</h1>
-      <form onSubmit={handleSubmit} style={{ display: "grid", gap: 10 }}>
-        <label style={{ display: "grid", gap: 4 }}>
+      <form onSubmit={handleSubmit} style={{ display: "grid", gap: "var(--space-2)" }}>
+        <label style={{ display: "grid", gap: "var(--space-1)" }}>
           <span>Email</span>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ padding: 10, borderRadius: 8, border: "1px solid #ccc" }}
+            style={{ padding: "var(--space-2)", borderRadius: 8, border: "1px solid #ccc" }}
           />
         </label>
-        <label style={{ display: "grid", gap: 4 }}>
+        <label style={{ display: "grid", gap: "var(--space-1)" }}>
           <span>Jelszó</span>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ padding: 10, borderRadius: 8, border: "1px solid #ccc" }}
+            style={{ padding: "var(--space-2)", borderRadius: 8, border: "1px solid #ccc" }}
           />
         </label>
-        <button type="submit" disabled={busy} style={{ padding: 12, borderRadius: 10, border: 0, background: "black", color: "white" }}>
+        <button type="submit" disabled={busy} style={{ padding: "var(--space-3)", borderRadius: 10, border: 0, background: "black", color: "white" }}>
           {busy ? "Belépés..." : "Belépés"}
         </button>
       </form>
