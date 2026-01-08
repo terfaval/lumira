@@ -89,21 +89,28 @@ function clampArray(values: unknown, max: number): string[] {
     .filter(Boolean);
 }
 
-function dedupeCaseFold(arr: string[]): string[] {
-  const seen = new Set<string>();
+function caseFold(s: string): string {
+  return (s ?? "").normalize("NFKC").toLowerCase().trim();
+}
+
+function dedupeCaseFold(items: string[]): string[] {
   const out: string[] = [];
-  for (const s of arr) {
-    const key = s.toLowerCase();
+  const seen = new Set<string>();
+  for (const raw of items ?? []) {
+    const t = (raw ?? "").trim();
+    if (!t) continue;
+    const key = caseFold(t);
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push(s);
+    out.push(t);
   }
   return out;
 }
 
 function capFirst(s: string): string {
-  if (!s) return s;
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  const t = (s ?? "").trim();
+  if (!t) return "";
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 function sanitizeFlags(flags: unknown, dreamTooShort: boolean): Flags {
@@ -134,17 +141,21 @@ function sanitizeAnchors(anchors: unknown): Anchors {
   const places = dedupeCaseFold(clampArray(raw.places, MAX_ANCHOR_ITEMS)).map(capFirst);
   const objects = dedupeCaseFold(clampArray(raw.objects, MAX_ANCHOR_ITEMS));
   const beats = dedupeCaseFold(clampArray(raw.beats, MAX_ANCHOR_ITEMS));
-  const felt_words = dedupeCaseFold(clampArray(raw.felt_words, MAX_ANCHOR_ITEMS));
+  const felt_words = dedupeCaseFold(
+    clampArray(raw.felt_words, MAX_ANCHOR_ITEMS).map((w) => w.toLowerCase())
+  );
   return { characters, places, objects, beats, felt_words };
 }
 
 function sanitizeQuestionSeed(seed: unknown): QuestionSeed {
   const raw = (seed ?? {}) as Partial<QuestionSeed>;
+  const style =
+    typeof raw.preferred_style === "string" && 
+    (ALLOWED_PREFERRED_STYLES as readonly string[]).includes(raw.preferred_style)
+      ? raw.preferred_style
+      : "open_question_single"; // stable default
   return {
-    preferred_style:
-      typeof raw.preferred_style === "string" && (ALLOWED_PREFERRED_STYLES as readonly string[]).includes(raw.preferred_style)
-        ? raw.preferred_style
-        : "",
+    preferred_style: style,
     target_anchor: typeof raw.target_anchor === "string" ? raw.target_anchor : "",
   };
 }
@@ -352,8 +363,10 @@ export async function POST(req: Request) {
       "- Output JSON only using the specified schema.",
       "- Read and consider the ENTIRE dream_text; do not prioritize the beginning.",
       "- Anchors must quote literal or near-literal items from dream_text.",
-      "- beats should be listed in rough CHRONOLOGICAL order (early→late).",
-      "- places must include recognizable PROPER NOUNS with correct Hungarian accents if present (e.g., Logodi, Lánchíd, Vár).",
+      "- beats: cover EARLY + MIDDLE + LATE events in rough CHRONOLOGICAL order (early→late), include at least one clear TURNING POINT / CLIMAX if present.",
+      "- places: include recognizable PROPER NOUNS with correct Hungarian accents if present, and include COMPOUND/DERIVED locations when they appear literally (e.g., lookout / tourist center).",
+      "- objects: include salient tools / devices / substances explicitly mentioned (e.g., vehicles, drones, injections, substances). Do NOT invent.",
+      "- felt_words must be lowercase simple lemmas/stems (e.g., félelem, feszültség, megkönnyebbülés).",
       "- Normalize obvious casing/spacing; deduplicate items.",
       "- Aim for rich coverage if present: beats ≥4, places ≥3, objects ≥3, characters ≥2, felt_words ≥2 (subject to max caps).",
       "- candidate_directions: ranked list of 3-5 slugs, subset of allowed_slugs.",
