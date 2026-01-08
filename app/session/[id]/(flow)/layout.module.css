@@ -35,9 +35,9 @@
   min-height: 0;
 
   padding: 18px;
-  border-radius: 18px;
-  border: 1px solid var(--line-soft);
-  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0;
+  border: 0;
+  background: transparent;
 
   /* ✅ NE itt scrollozzunk, a SplitLayout panelBody görget */
   overflow: hidden;

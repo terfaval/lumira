@@ -173,10 +173,7 @@ export default function FramePage() {
 
             <div className="stack-tight">
               <p className="section-title">
-                Válassz egy irányt a folytatáshoz
-              </p>
-              <p style={{ color: "var(--text-muted)" }}>
-                Válassz egy irányt, ha tovább dolgoznál az álommal.
+                Válassz egy irányt, ha tovább dolgoznál az álommal
               </p>
             </div>
 

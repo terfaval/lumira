@@ -35,14 +35,13 @@ function infoFromPath(pathname: string) {
       title: "Keretezés",
       body: (
         <div className="stack-tight">
-          <p className="section-title">Mi ez?</p>
           <p style={{ color: "var(--text-muted)" }}>
-            Itt kapsz néhány lehetséges “folytatási irányt” az álomhoz. Ezek nem kész megfejtések,
+            Itt kapsz néhány lehetséges irányt az álomhoz. Ezek nem kész megfejtések,
             hanem nézőpontok — válaszd azt, amelyik most a leginkább megmozdít.
           </p>
           <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-muted)", lineHeight: 1.7 }}>
-            <li>Nem kell tökéletesen választani — később lehet váltani.</li>
             <li>Ha most semmi nem rezonál: menj a “További irányok”-ra.</li>
+            <li>De később is folytathatod, ha most ennyi elég volt.</li>
           </ul>
         </div>
       ),
@@ -54,10 +53,9 @@ function infoFromPath(pathname: string) {
       title: "Kártyás feldolgozás",
       body: (
         <div className="stack-tight">
-          <p className="section-title">Hogyan használd?</p>
           <p style={{ color: "var(--text-muted)" }}>
-            Itt kérdések/kártyák mentén bontod ki az álmot. Nem kell mindent megválaszolni — elég,
-            ha azt viszed tovább, ami most él.
+            Itt az egyes kártyák mentén jobban kibonthatod, elmélyülhetsz az álomban. 
+            Nem kell mindent megválaszolni — elég, ha azt viszed tovább, ami most él.
           </p>
         </div>
       ),

@@ -311,6 +311,7 @@ export default function WorkPage() {
   }
 
   return (
+    <div className="work-center">
     <div className="stack">
       {!currentBlock ? (
         <p style={{ color: "var(--text-muted)" }}>{loaded ? "Kártya generálása..." : "Betöltés..."}</p>
@@ -337,6 +338,17 @@ export default function WorkPage() {
       )}
 
       {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
+
+      <style jsx>{`
+      .work-center {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-block: 8px;
+      }
+    `}</style>
+    </div>
     </div>
   );
 }
@@ -359,15 +371,41 @@ function BlockCard({
   return (
     <Card>
       <div className="stack-tight">
-        {!!block.content.ai?.context && <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{block.content.ai.context}</div>}
+        {!!block.content.ai?.context && (
+          <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>
+            {block.content.ai.context}
+          </div>
+        )}
+
         <div style={{ fontWeight: 800 }}>{block.content.ai?.question ?? ""}</div>
 
-        <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={4} placeholder="Rögzítés (opcionális)" />
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={4}
+          placeholder="Rögzítés (opcionális)"
+        />
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div className="work-actions">
+          <Link href="/archive" style={{ textDecoration: "none" }}>
+            <PrimaryButton variant="secondary" disabled={busy}>
+              Később folytatom
+            </PrimaryButton>
+          </Link>
+
           <PrimaryButton onClick={() => onSave(block, draft)} disabled={busy}>
             Rögzítés
           </PrimaryButton>
+
+          <style jsx>{`
+            .work-actions {
+              display: flex;
+              gap: 10px;
+              justify-content: flex-end; /* ✅ jobbra zár */
+              flex-wrap: wrap;
+              align-items: center;
+            }
+          `}</style>
         </div>
       </div>
     </Card>
@@ -381,17 +419,30 @@ function ClosureCard({ block, sessionId }: { block: NextResponse["work_block"]; 
         <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{block.lead_in}</div>
         <div style={{ fontWeight: 800 }}>{block.question}</div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
+        <div className="closure-actions">
           <Link href={`/session/${sessionId}/direction`} style={{ textDecoration: "none" }}>
-            <PrimaryButton>További irányok</PrimaryButton>
+            <PrimaryButton variant="secondary">További irányok</PrimaryButton>
           </Link>
 
           <Link href={`/archive`} style={{ textDecoration: "none" }}>
-            <PrimaryButton>Vissza az Álomnaplóhoz</PrimaryButton>
+            <PrimaryButton variant="secondary">Később folytatom</PrimaryButton>
           </Link>
+
+          <style jsx>{`
+            .closure-actions {
+              display: flex;
+              gap: 10px;
+              justify-content: flex-end; /* ✅ jobbra zár */
+              flex-wrap: wrap;
+              align-items: center;
+              margin-top: 8px;
+            }
+          `}</style>
         </div>
 
-        <p style={{ color: "var(--text-muted)", margin: 0 }}>Ha szeretnéd, később bármikor visszatérhetsz ugyanebbe a sessionbe.</p>
+        <p style={{ color: "var(--text-muted)", margin: 0 }}>
+          Ha szeretnéd, később bármikor visszatérhetsz ugyanebbe a sessionbe.
+        </p>
       </div>
     </Card>
   );
