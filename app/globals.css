@@ -802,3 +802,8 @@ body[data-space="evening"] {
 
 @keyframes flowSpin { to { transform: rotate(360deg); } }
 
+.work-answer {
+  min-height: 140px;
+  resize: vertical;
+  line-height: 1.65;
+}

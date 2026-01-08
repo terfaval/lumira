@@ -7,6 +7,8 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
+import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
+import { FlowLoadingOverlay } from "@/components/FlowLoadingOverlay";
 
 function InfoIcon() {
   return (
@@ -22,11 +24,22 @@ function InfoIcon() {
   );
 }
 
+function safeTextFromUnknown(e: unknown): string {
+  if (e instanceof Error) return e.message || "Hiba";
+  if (typeof e === "string") return e;
+  try {
+    return JSON.stringify(e);
+  } catch {
+    return "Hiba";
+  }
+}
+
 export default function NewDream() {
   const router = useRouter();
   const [text, setText] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [blockingFlow, setBlockingFlow] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const { loading } = useRequireAuth();
 
@@ -47,6 +60,8 @@ export default function NewDream() {
     }
 
     setBusy(true);
+    setBlockingFlow(true);
+
     try {
       const userId = await requireUserId();
 
@@ -61,11 +76,24 @@ export default function NewDream() {
         .single();
 
       if (error) throw error;
+      const sessionId = (data as any)?.id as string | undefined;
+      if (!sessionId) throw new Error("Nem jött vissza session id.");
 
-      router.push(`/session/${data.id}/frame`);
+      // ✅ BLOKKOLÓ: ne menjünk tovább, amíg a frame bundle nincs kész
+      const res = await fetchWithAuth("/api/frame", {
+        method: "POST",
+        json: { sessionId },
+      });
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || "Nem sikerült előkészíteni a keretezést.");
+      }
+
+      router.push(`/session/${sessionId}/frame`);
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Hiba";
-      setErr(message);
+      setErr(safeTextFromUnknown(e));
+      setBlockingFlow(false);
     } finally {
       setBusy(false);
     }
@@ -107,6 +135,13 @@ export default function NewDream() {
         </div>
       }
     >
+      {/* ✅ overlay a Shell-en BELÜL, hogy absolute inset működjön */}
+      <FlowLoadingOverlay
+        open={blockingFlow}
+        title="Keretezés készül…"
+        subtitle="Cím + keretezés + 3 ajánlott irány előkészítése."
+      />
+
       {loading ? (
         <div
           aria-label="Betöltés"
@@ -123,7 +158,6 @@ export default function NewDream() {
         />
       ) : (
         <div className="stack">
-          {/* ⬇️ NINCS belső Card — így eltűnik a “plusz container” */}
           <div className="newdream-panel stack-tight">
             <textarea
               className="textarea-dream"
@@ -132,10 +166,11 @@ export default function NewDream() {
               placeholder="Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is."
               rows={10}
               aria-invalid={!!err}
+              disabled={busy || blockingFlow}
               onKeyDown={(e) => {
                 if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
                   e.preventDefault();
-                  if (!busy && !stats.empty) void createSession();
+                  if (!busy && !blockingFlow && !stats.empty) void createSession();
                 }
               }}
             />
@@ -153,13 +188,13 @@ export default function NewDream() {
                     setErr(null);
                     setText("");
                   }}
-                  disabled={busy || !text.length}
+                  disabled={busy || blockingFlow || !text.length}
                 >
                   Törlés
                 </button>
 
-                <PrimaryButton onClick={createSession} disabled={busy || stats.empty}>
-                  {busy ? "Rögzítés…" : "Rögzítés"}
+                <PrimaryButton onClick={createSession} disabled={busy || blockingFlow || stats.empty}>
+                  {blockingFlow ? "Előkészítés…" : busy ? "Rögzítés…" : "Rögzítés"}
                 </PrimaryButton>
               </div>
             </div>

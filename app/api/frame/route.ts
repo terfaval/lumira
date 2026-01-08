@@ -555,7 +555,7 @@ export async function POST(req: Request) {
             recommended_directions,
           },
           // ⚠️ PATCH: ha nálad unique (session_id,user_id), akkor ezt cseréld: "session_id,user_id"
-          { onConflict: "session_id, user_id" }
+          { onConflict: "session_id,user_id" }
         ),
     ]);
 
@@ -595,7 +595,7 @@ async function upsertSummaries(
         ...(payload.recommended_directions !== undefined ? { recommended_directions: payload.recommended_directions } : {}),
       },
       // ⚠️ PATCH: ha nálad unique (session_id,user_id), akkor ezt cseréld: "session_id,user_id"
-      { onConflict: "session_id, user_id" }
+      { onConflict: "session_id,user_id" }
     );
   if (error) console.warn("dream_session_summaries upsert failed:", error.message);
 }

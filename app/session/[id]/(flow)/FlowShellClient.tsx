@@ -127,7 +127,11 @@ export default function FlowShellClient({ children }: { children: ReactNode }) {
           {id ? <FlowLeftPanel sessionId={id} /> : null}
         </div>
 
-        <div className={styles.rightPlain}>{children}</div>
+        <div className={styles.rightPlain}>
+          <div style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
+            {children}
+          </div>
+        </div>
       </div>
     </Shell>
   );

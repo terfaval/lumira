@@ -311,10 +311,21 @@ export default function WorkPage() {
   }
 
   return (
-    <div className="work-center">
+  <div
+    className="work-center"
+    style={{
+      minHeight: "100%",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      paddingBlock: 8,
+    }}
+  >
     <div className="stack">
       {!currentBlock ? (
-        <p style={{ color: "var(--text-muted)" }}>{loaded ? "Kártya generálása..." : "Betöltés..."}</p>
+        <p style={{ color: "var(--text-muted)" }}>
+          {loaded ? "Kártya generálása..." : "Betöltés..."}
+        </p>
       ) : (
         <div className="stack">
           <BlockCard
@@ -338,19 +349,9 @@ export default function WorkPage() {
       )}
 
       {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
-
-      <style jsx>{`
-      .work-center {
-        min-height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding-block: 8px;
-      }
-    `}</style>
     </div>
-    </div>
-  );
+  </div>
+);
 }
 
 function BlockCard({
@@ -372,18 +373,28 @@ function BlockCard({
     <Card>
       <div className="stack-tight">
         {!!block.content.ai?.context && (
-          <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>
+          <div 
+          style={{ 
+            whiteSpace: "pre-wrap",
+            color: "var(--text-muted)",
+            fontSize: 13,
+            lineHeight: 1.55,
+          }}
+          >
             {block.content.ai.context}
           </div>
         )}
 
-        <div style={{ fontWeight: 800 }}>{block.content.ai?.question ?? ""}</div>
+        <div style={{ fontWeight: 850, fontSize: 18, letterSpacing: "-0.01em" }}>
+          {block.content.ai?.question ?? ""}
+        </div>
 
         <textarea
+          className="work-answer"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          rows={4}
-          placeholder="Rögzítés (opcionális)"
+          rows={5}
+          placeholder="Fejtsd ki szabadon"
         />
 
         <div className="work-actions">
