@@ -1,7 +1,6 @@
 /* app/session/[id]/(flow)/layout.module.css */
 
 .flowInner {
-  /* a Shell contentjén belül töltse ki a rendelkezésre álló teret */
   height: 100%;
   min-height: 0;
 
@@ -19,6 +18,7 @@
 
 .leftTile {
   min-width: 0;
+  min-height: 0;
 
   border-radius: 18px;
   border: 1px solid var(--line-soft);
@@ -26,18 +26,19 @@
 
   padding: 18px;
 
-  overflow: auto;
-  min-height: 0;
+  /* ✅ NE itt scrollozzunk, a belső panelek fognak */
+  overflow: hidden;
 }
 
 .rightPlain {
   min-width: 0;
+  min-height: 0;
 
   padding: 18px;
   border-radius: 18px;
   border: 1px solid var(--line-soft);
   background: rgba(255, 255, 255, 0.02);
 
-  overflow: auto;
-  min-height: 0;
+  /* ✅ NE itt scrollozzunk, a SplitLayout panelBody görget */
+  overflow: hidden;
 }

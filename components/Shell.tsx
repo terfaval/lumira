@@ -92,11 +92,12 @@ export function Shell({
 
       {/* Tartalom */}
       {surface === "none" ? (
-        <section style={{ marginTop: "var(--space-3)", minHeight: 0 }}>
+        <section style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%" }}>
           {children}
         </section>
       ) : (
-        <section className="surface-layer card stack" style={{ marginTop: "var(--space-3)" }}>
+        <section className="surface-layer card stack" 
+        style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%" }}>
           {children}
         </section>
       )}

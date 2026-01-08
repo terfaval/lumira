@@ -669,6 +669,24 @@ body[data-space="evening"] {
 /* 8) SHELL INFO UI                                                */
 /* ────────────────────────────────────────────────────────────── */
 
+/* Globals.css */
+
+/* a Shell töltse ki a viewportot */
+.shell {
+  min-height: 100dvh;
+  grid-template-rows: auto 1fr; /* topbar + content */
+}
+
+/* a Shell-ben a tartalom section engedje a gyerekeit zsugorodni/görgetni */
+.shell > section {
+  min-height: 0;
+}
+
+/* ha van surface-layer, az se akadjon a scrollban */
+.surface-layer {
+  min-height: 0;
+}
+
 .shell-topbar { display: flex; align-items: center; gap: 12px; }
 .shell-topbar-spacer { flex: 1; }
 

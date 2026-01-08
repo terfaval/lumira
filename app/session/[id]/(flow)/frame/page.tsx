@@ -156,6 +156,15 @@ export default function FramePage() {
         <>
           <div style={{ whiteSpace: "pre-wrap" }}>{session.ai_framing_text}</div>
 
+          <div className="stack-tight">
+            <p className="section-title">Válassz egy irányt a folytatáshoz</p>
+            <p style={{ color: "var(--text-muted)" }}>
+              Ezek az ajánlások lehetséges nézőpontok az álom kibontásához. Nem kész megfejtések —
+              válaszd azt, amelyik most a leginkább megmozdít.
+            </p>
+          </div>
+
+
           <div
             style={{
               display: "grid",
@@ -175,9 +184,6 @@ export default function FramePage() {
                 <div className="stack-tight">
                   <div style={{ fontWeight: 800 }}>{d.title}</div>
                   <div style={{ opacity: 0.9 }}>{d.reason}</div>
-                  <div style={{ opacity: 0.7 }}>
-                    {(d.content as any)?.micro_description ?? d.description}
-                  </div>
                 </div>
               </button>
             ))}
