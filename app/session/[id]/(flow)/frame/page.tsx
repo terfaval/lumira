@@ -158,10 +158,6 @@ export default function FramePage() {
 
           <div className="stack-tight">
             <p className="section-title">Válassz egy irányt a folytatáshoz</p>
-            <p style={{ color: "var(--text-muted)" }}>
-              Ezek az ajánlások lehetséges nézőpontok az álom kibontásához. Nem kész megfejtések —
-              válaszd azt, amelyik most a leginkább megmozdít.
-            </p>
           </div>
 
 
@@ -182,8 +178,8 @@ export default function FramePage() {
             ))}
           </div>
 
-          <div style={{ display: "grid", gap: 12 }}>
-            <PrimaryButton onClick={() => router.push(`/session/${id}/direction`)}>További irányok</PrimaryButton>
+          <div className="direction-actions">
+            <PrimaryButton variant="secondary" onClick={() => router.push(`/session/${id}/direction`)}>További irányok</PrimaryButton>
             <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
               Később folytatom
             </PrimaryButton>
@@ -216,50 +212,67 @@ export default function FramePage() {
   }
 
   .direction-card {
-    text-align: left;
-    cursor: pointer;
+  text-align: left;
+  cursor: pointer;
 
-    border-radius: 16px;
-    border: 1px solid var(--line-soft);
-    background: var(--card-surface);
+  border-radius: 16px;
+  border: 1px solid var(--line-soft);
+  background: var(--card-surface);
 
-    padding: 14px;
-    box-shadow: var(--shadow-soft);
+  padding: 14px;
+  box-shadow: var(--shadow-soft);
 
-    transition:
-      transform 160ms ease,
-      box-shadow 200ms ease,
-      background 200ms ease,
-      border-color 200ms ease,
-      backdrop-filter 200ms ease;
-  }
+  color: var(--text-primary);
 
-  .direction-card:hover:not(:disabled) {
-    transform: scale(1.03);
-    border-color: var(--accent);
-    
+  transition:
+    transform 160ms ease,
+    box-shadow 200ms ease,
+    background 200ms ease,
+    border-color 200ms ease,
+    color 160ms ease,
+    backdrop-filter 200ms ease;
+}
 
-    /* glassy effect */
-    background: linear-gradient(
-      135deg,
-      rgba(128, 185, 185, 0.16),
-      rgba(255, 255, 255, 0.04)
-    );
-    backdrop-filter: blur(6px);
+.direction-card:hover:not(:disabled) {
+  transform: scale(1.03);
 
-    box-shadow:
-      0 18px 40px rgba(0, 0, 0, 0.35),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  }
+  border-color: var(--accent);
 
-  .direction-card:active:not(:disabled) {
-    transform: scale(1.01);
-  }
+  /* accent + accent-2 glass */
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    var(--accent-2) 100%
+  );
 
-  .direction-card:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+  color: var(--accent-ink);
+
+  backdrop-filter: blur(8px);
+
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.direction-card:hover:not(:disabled) * {
+  color: var(--accent-ink);
+}
+
+.direction-card:active:not(:disabled) {
+  transform: scale(1.01);
+}
+
+.direction-card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.direction-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
 `}</style>
 
 
