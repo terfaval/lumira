@@ -592,30 +592,27 @@ body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-sta
   border-color: var(--newdream-surface-border);
 }
 
-/* ──────────────────────────────────────────────────────────── */
-/* Direction group pills                                         */
-/* ──────────────────────────────────────────────────────────── */
-
+/* Globals.css — add these tokens under your existing intent/phase tokens (in :root) */
+/* Direction groups */
 :root {
-  --dirgroup-memory: #FFBE78F2;
-  --dirgroup-memory-bg: #FFBE782E; /* ~18% */
+  --dirgroup-memory: #78C3FFF2;
+  --dirgroup-memory-bg: #78C3FF33;
 
   --dirgroup-somatic: #78DCAAF2;
-  --dirgroup-somatic-bg: #78DCAA2E; /* ~18% */
+  --dirgroup-somatic-bg: #78DCAA2E;
 
-  --dirgroup-patterns: #78C3FFF2;
-  --dirgroup-patterns-bg: #78C3FF33; /* ~20% */
+  --dirgroup-patterns: #FFBE78F2;
+  --dirgroup-patterns-bg: #FFBE782E;
 
   --dirgroup-meaning: #FFDC78F2;
-  --dirgroup-meaning-bg: #FFDC782E; /* ~18% */
+  --dirgroup-meaning-bg: #FFDC782E;
 
-  --dirgroup-creative: #AA8CFFF2;
-  --dirgroup-creative-bg: #AA8CFF2E; /* ~18% */
+  --dirgroup-creative: #FF96BEF2;
+  --dirgroup-creative-bg: #FF96BE2E;
 
-  --dirgroup-other: #9DA7BCF2;
-  --dirgroup-other-bg: #9DA7BC24; /* ~14% */
+  --dirgroup-other: #A0EBFFF2;
+  --dirgroup-other-bg: #A0EBFF2E;
 }
-
 
 /* ────────────────────────────────────────────────────────────── */
 /* 6) LAYOUT – Split etc.                                          */

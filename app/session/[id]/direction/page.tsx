@@ -7,6 +7,8 @@ import { supabase } from "@/src/lib/supabase/client";
 import { startDirection } from "@/src/lib/startDirection";
 import type { DirectionCatalogItem } from "@/src/lib/types";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
+import { Pill } from "@/components/Pill";
+import { DirectionTile } from "@/components/DirectionTile";
 
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
 
@@ -24,45 +26,14 @@ function groupKeyFromLabel(raw: unknown): GroupKey {
   return "other";
 }
 
-function groupLabel(raw: unknown): string {
-  const s = String(raw ?? "").trim();
-  return s || "Egyéb";
-}
-
 /** Pill token mapping (CSS custom properties) */
 function groupToken(k: GroupKey) {
   return { text: `--dirgroup-${k}` as const, bg: `--dirgroup-${k}-bg` as const };
 }
 
-function Pill({
-  label,
-  token,
-  neutral = false,
-}: {
-  label: string;
-  token?: { text: string; bg: string } | null;
-  neutral?: boolean;
-}) {
-  if (neutral || !token) {
-    return (
-      <span className="pill pill--neutral" style={{ fontSize: 12 }}>
-        {label}
-      </span>
-    );
-  }
-  return (
-    <span
-      className="pill"
-      style={{
-        color: `var(${token.text})`,
-        background: `var(${token.bg})`,
-        borderColor: `var(${token.text})`,
-        fontSize: 12,
-      }}
-    >
-      {label}
-    </span>
-  );
+function groupLabel(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  return s || "Egyéb";
 }
 
 /** Determinisztikus shuffle (UI stabilitás) */
@@ -86,7 +57,47 @@ function shuffleDeterministic<T>(arr: T[], seed: number): T[] {
 
 function safeStringArray(x: unknown): string[] {
   if (!Array.isArray(x)) return [];
-  return x.filter((s): s is string => typeof s === "string").map((s) => s.trim()).filter(Boolean);
+  return x
+    .filter((s): s is string => typeof s === "string")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function computeGrowStyle(rect: DOMRect | null, isOpening: boolean): React.CSSProperties {
+  if (typeof window === "undefined") return {};
+
+  const targetW = Math.min(860, window.innerWidth - 32);
+  const targetH = Math.min(900, Math.floor(window.innerHeight * 0.86));
+  const targetLeft = (window.innerWidth - targetW) / 2;
+  const targetTop = (window.innerHeight - targetH) / 2;
+
+  if (!rect) {
+    return {
+      transform: isOpening ? "scale(0.98) translateY(8px)" : "scale(1) translateY(0)",
+      opacity: isOpening ? 0.75 : 1,
+    };
+  }
+
+  const fromCX = rect.left + rect.width / 2;
+  const fromCY = rect.top + rect.height / 2;
+  const toCX = targetLeft + targetW / 2;
+  const toCY = targetTop + targetH / 2;
+
+  const dx = fromCX - toCX;
+  const dy = fromCY - toCY;
+
+  const sx = Math.max(0.06, rect.width / targetW);
+  const sy = Math.max(0.06, rect.height / targetH);
+  const s = Math.min(sx, sy);
+
+  if (isOpening) {
+    return {
+      transform: `translate(${dx}px, ${dy}px) scale(${s})`,
+      opacity: 0.6,
+    };
+  }
+
+  return { transform: "translate(0px, 0px) scale(1)", opacity: 1 };
 }
 
 export default function DirectionPage() {
@@ -101,9 +112,13 @@ export default function DirectionPage() {
   // filters
   const [selectedGroup, setSelectedGroup] = useState<GroupKey | "all">("all");
 
-  // overlay
+  // inner overlay (details)
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // grow-from-tile
+  const [originRect, setOriginRect] = useState<DOMRect | null>(null);
+  const [opening, setOpening] = useState(false);
 
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
@@ -116,7 +131,7 @@ export default function DirectionPage() {
 
     const { data: cat, error: catErr } = await supabase
       .from("direction_catalog")
-      .select("slug, title, description, is_active, content")
+      .select("slug, title, description, is_active, content, tags, sort_order, version")
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
 
@@ -142,11 +157,11 @@ export default function DirectionPage() {
     load();
   }, [load]);
 
-  const openCard = useMemo(() => {
+  const openDirection = useMemo(() => {
     return openSlug ? catalog.find((c) => c.slug === openSlug) ?? null : null;
   }, [openSlug, catalog]);
 
-  // lock scroll while overlay open
+  // lock scroll while inner overlay open
   useEffect(() => {
     if (!openSlug) return;
     const prev = document.body.style.overflow;
@@ -175,17 +190,21 @@ export default function DirectionPage() {
 
   function closeOverlay() {
     setOpenSlug(null);
+    setOriginRect(null);
+    setOpening(false);
     setErr(null);
-    setBusy(false);
   }
 
-  function openOverlay(slug: string) {
+  function openOverlay(slug: string, rect?: DOMRect) {
     setErr(null);
+    setOriginRect(rect ?? null);
     setOpenSlug(slug);
+
+    setOpening(true);
+    requestAnimationFrame(() => setOpening(false));
   }
 
   const groupsInData = useMemo(() => {
-    // készítsünk “key -> label” mappingot a dropdownhoz (a leggyakoribb labelt vesszük)
     const counts: Record<GroupKey, Record<string, number>> = {
       memory: {},
       somatic: {},
@@ -207,17 +226,13 @@ export default function DirectionPage() {
       .map((k) => {
         const labels = counts[k];
         const bestLabel =
-          Object.entries(labels).sort((a, b) => b[1] - a[1])[0]?.[0] ??
-          (k === "other" ? "Egyéb" : k);
+          Object.entries(labels).sort((a, b) => b[1] - a[1])[0]?.[0] ?? (k === "other" ? "Egyéb" : k);
         return { key: k, label: bestLabel };
       })
-      .filter((x) => x.label && (Object.keys(counts[x.key]).length > 0));
+      .filter((x) => x.label && Object.keys(counts[x.key]).length > 0);
 
-    // fix order (szép UX)
     const order: GroupKey[] = ["memory", "somatic", "patterns", "meaning", "creative", "other"];
-    return order
-      .map((k) => out.find((x) => x.key === k))
-      .filter(Boolean) as { key: GroupKey; label: string }[];
+    return order.map((k) => out.find((x) => x.key === k)).filter(Boolean) as { key: GroupKey; label: string }[];
   }, [catalog]);
 
   const filtered = useMemo(() => {
@@ -229,7 +244,6 @@ export default function DirectionPage() {
   }, [catalog, selectedGroup]);
 
   const ordered = useMemo(() => {
-    // stabil, de “élő” érzet: determinisztikus shuffle a filterelt listán
     return shuffleDeterministic(filtered, seedRef.current);
   }, [filtered]);
 
@@ -285,51 +299,28 @@ export default function DirectionPage() {
     const rawGroup = (d as any)?.content?.group;
     const gKey = groupKeyFromLabel(rawGroup);
     const gLabel = groupLabel(rawGroup);
-    const token = groupToken(gKey);
     const chosen = !!selected[d.slug];
-
-    // tags: max 2 (ha van)
     const tags = safeStringArray((d as any)?.tags).slice(0, 2);
 
     return (
-      <button
+      <DirectionTile
         key={d.slug}
-        type="button"
-        onClick={() => openOverlay(d.slug)}
-        className="direction-tile"
-        style={{ textAlign: "left" }}
-      >
-        <div className="direction-tile-top">
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-            <Pill label={gLabel} token={token} />
-            {chosen && <Pill label="Korábban kiválasztva" neutral />}
-            {tags.map((t) => (
-              <Pill key={t} label={t} neutral />
-            ))}
-          </div>
-
-          <div className="direction-title">{d.title}</div>
-
-          <div className="direction-desc">
-            {(d as any)?.content?.micro_description ?? d.description ?? ""}
-          </div>
-        </div>
-
-        <div className="direction-tile-bottom">
-          <span className="direction-hint">Megnyitás</span>
-          <span aria-hidden="true" className="direction-arrow">
-            →
-          </span>
-        </div>
-      </button>
+        dir={d}
+        groupKey={gKey}
+        groupLabel={gLabel}
+        token={groupToken(gKey)}
+        chosen={chosen}
+        tags={tags}
+        onOpen={(slug, rect) => openOverlay(slug, rect)}
+      />
     );
   }
 
   // overlay content extraction
   const overlayData = useMemo(() => {
-    if (!openCard) return null;
+    if (!openDirection) return null;
 
-    const c = (openCard as any)?.content ?? {};
+    const c = (openDirection as any)?.content ?? {};
     const method = c?.method_spec ?? {};
     const safety = c?.safety ?? {};
     const stop = c?.stop_criteria ?? {};
@@ -346,7 +337,6 @@ export default function DirectionPage() {
       goal: typeof c?.goal_md === "string" ? c.goal_md : null,
 
       maxCards: typeof stop?.max_cards === "number" ? stop.max_cards : null,
-      stopRule: typeof method?.stop_rule === "string" ? method.stop_rule : null,
 
       role: typeof contract?.role === "string" ? contract.role : null,
       toneTags: safeStringArray(contract?.tone_tags),
@@ -357,7 +347,7 @@ export default function DirectionPage() {
       boundaries: typeof safety?.boundaries_md === "string" ? safety.boundaries_md : null,
       flags: safeStringArray(safety?.flags),
     };
-  }, [openCard]);
+  }, [openDirection]);
 
   return (
     <div
@@ -421,20 +411,30 @@ export default function DirectionPage() {
                   if (e.target === e.currentTarget) closeOverlay();
                 }}
               >
-                <div className="flip-shell">
+                <div className="flip-shell" style={computeGrowStyle(originRect, opening)}>
                   <div className="flip-shell-head">
                     <div style={{ display: "grid", gap: 8 }}>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                         {overlayData ? (
-                          <Pill label={overlayData.groupLabel} token={groupToken(overlayData.groupKey)} />
+                          <Pill
+                            variant="neutral"
+                            colorVar={groupToken(overlayData.groupKey).text}
+                            bgVar={groupToken(overlayData.groupKey).bg}
+                          >
+                            {overlayData.groupLabel}
+                          </Pill>
                         ) : null}
-                        {openCard && selected[openCard.slug] ? <Pill label="Korábban kiválasztva" neutral /> : null}
+
+                        {openDirection && selected[openDirection.slug] ? (
+                          <Pill variant="neutral">Korábban kiválasztva</Pill>
+                        ) : null}
+
                         {overlayData?.flags?.length ? (
-                          <Pill label={`Safety: ${overlayData.flags.join(", ")}`} neutral />
+                          <Pill variant="neutral">{`Safety: ${overlayData.flags.join(", ")}`}</Pill>
                         ) : null}
                       </div>
 
-                      <div style={{ fontWeight: 900, fontSize: 18 }}>{openCard?.title ?? "Irány"}</div>
+                      <div style={{ fontWeight: 900, fontSize: 18 }}>{openDirection?.title ?? "Irány"}</div>
                     </div>
 
                     <button className="btn btn-secondary" onClick={closeOverlay} ref={closeBtnRef}>
@@ -446,7 +446,7 @@ export default function DirectionPage() {
                     Megnyitás: részletek • Indítás: Work • ESC: bezárás
                   </div>
 
-                  {!openCard ? (
+                  {!openDirection ? (
                     <div className="stack">{Spinner}</div>
                   ) : (
                     <div className="stack">
@@ -496,15 +496,12 @@ export default function DirectionPage() {
                               {overlayData?.toneTags?.length ? ` • Tone: ${overlayData.toneTags.join(", ")}` : ""}
                             </div>
                           </div>
+
                           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                             <button className="btn btn-secondary" onClick={closeOverlay} disabled={busy}>
                               Mégsem
                             </button>
-                            <button
-                              className="btn btn-primary"
-                              onClick={() => handleStart(openCard.slug)}
-                              disabled={busy}
-                            >
+                            <button className="btn btn-primary" onClick={() => handleStart(openDirection.slug)} disabled={busy}>
                               {busy ? "Indítás..." : "Indítás"}
                             </button>
                           </div>
@@ -615,55 +612,6 @@ export default function DirectionPage() {
           }
         }
 
-        .direction-tile {
-          border: 1px solid var(--line-soft);
-          border-radius: 18px;
-          background: linear-gradient(
-            135deg,
-            var(--evening-card-paper-strong) 0%,
-            var(--evening-card-paper) 44%,
-            var(--accent) 112%
-          );
-          box-shadow: var(--shadow-soft);
-          padding: var(--space-3);
-          display: grid;
-          gap: var(--space-3);
-          cursor: pointer;
-          transition: transform 160ms ease, box-shadow 200ms ease;
-          color: inherit;
-        }
-
-        .direction-tile:hover {
-          transform: translateY(-2px) scale(1.01);
-          box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
-        }
-
-        .direction-tile-top {
-          display: grid;
-          gap: 10px;
-        }
-
-        .direction-title {
-          font-weight: 900;
-          font-size: 18px;
-          letter-spacing: -0.01em;
-        }
-
-        .direction-desc {
-          color: rgba(255, 255, 255, 0.82);
-          font-size: 13px;
-          line-height: 1.6;
-        }
-
-        .direction-tile-bottom {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          color: rgba(255, 255, 255, 0.75);
-          font-size: 12px;
-        }
-
         .flip-overlay {
           position: fixed;
           inset: 0;
@@ -685,6 +633,10 @@ export default function DirectionPage() {
           background: var(--bg-layer);
           box-shadow: 0 24px 90px rgba(0, 0, 0, 0.55);
           padding: var(--space-3);
+
+          transform-origin: center;
+          transition: transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 220ms ease-out;
+          will-change: transform, opacity;
         }
 
         .flip-shell-head {
