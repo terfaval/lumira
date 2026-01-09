@@ -71,4 +71,7 @@
 
   white-space: pre-wrap;
   line-height: 1.55;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
 }
