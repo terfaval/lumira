@@ -1,3 +1,4 @@
+// /app/(...)/new/page.tsx  – TELJES, javított
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -43,6 +44,8 @@ export default function NewDream() {
   const [infoOpen, setInfoOpen] = useState(false);
   const { loading } = useRequireAuth();
 
+  const [step, setStep] = useState<"index"|"synth"|"frame"|"idle">("idle");
+
   const stats = useMemo(() => {
     const trimmed = text.trim();
     const chars = text.length;
@@ -50,6 +53,18 @@ export default function NewDream() {
     const empty = !trimmed;
     return { chars, words, empty };
   }, [text]);
+
+  async function fetchActiveSlugs(): Promise<string[]> {
+    const { data, error } = await supabase
+      .from("direction_catalog")
+      .select("slug")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true, nullsFirst: false })
+      .order("slug", { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []).map((r: any) => r.slug).filter(Boolean);
+  }
 
   async function createSession() {
     setErr(null);
@@ -61,6 +76,7 @@ export default function NewDream() {
 
     setBusy(true);
     setBlockingFlow(true);
+    setStep("idle");
 
     try {
       const userId = await requireUserId();
@@ -79,25 +95,77 @@ export default function NewDream() {
       const sessionId = (data as any)?.id as string | undefined;
       if (!sessionId) throw new Error("Nem jött vissza session id.");
 
-      // ✅ BLOKKOLÓ: ne menjünk tovább, amíg a frame bundle nincs kész
-      const res = await fetchWithAuth("/api/frame", {
-        method: "POST",
-        json: { sessionId },
-      });
+      // 1) INDEX – anchor_summary + embedding (blokkolva)
+      setStep("index");
+      {
+        const res = await fetchWithAuth("/api/index-session", {
+          method: "POST",
+          json: { session_id: sessionId, dream_text: text, force: true },
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error(t || "Indexelés nem sikerült.");
+        }
+      }
 
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || "Nem sikerült előkészíteni a keretezést.");
+      // 2) SYNTHESIZE – latent elemzés (blokkolva)
+      setStep("synth");
+      const activeSlugs = await fetchActiveSlugs().catch(() => []);
+      {
+        const res = await fetchWithAuth("/api/synthesize", {
+          method: "POST",
+          json: {
+            session_id: sessionId,
+            dream_text: text,
+            history: [],
+            prior_echoes: [],
+            // a szerver a katalógust maga olvassa DB-ből; itt csak az engedélyezett slugs kellenek
+            allowed_slugs: activeSlugs,
+          },
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error(t || "Latens szintézis nem sikerült.");
+        }
+      }
+
+      // 3) FRAME – cím + keretezés + 3 ajánlott irány (blokkolva)
+      setStep("frame");
+      {
+        const res = await fetchWithAuth("/api/frame", {
+          method: "POST",
+          json: { sessionId },
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error(t || "Nem sikerült előkészíteni a keretezést.");
+        }
       }
 
       router.push(`/session/${sessionId}/frame`);
     } catch (e: unknown) {
       setErr(safeTextFromUnknown(e));
       setBlockingFlow(false);
+      setStep("idle");
     } finally {
       setBusy(false);
     }
   }
+
+  const overlayTitle =
+    step === "index" ? "Indexelés készül…" :
+    step === "synth" ? "Latens szintézis készül…" :
+    step === "frame" ? "Keretezés készül…" :
+    "Előkészítés…";
+
+  const overlaySubtitle =
+    step === "index"
+      ? "Horgony-összefoglaló és beágyazás."
+      : step === "synth"
+      ? "Fókuszpontok és irányjelöltek előkészítése."
+      : step === "frame"
+      ? "Cím + keretezés + 3 ajánlott irány."
+      : "Álom feldolgozásának előkészítése.";
 
   return (
     <Shell
@@ -135,12 +203,8 @@ export default function NewDream() {
         </div>
       }
     >
-      {/* ✅ overlay a Shell-en BELÜL, hogy absolute inset működjön */}
-      <FlowLoadingOverlay
-        open={blockingFlow}
-        title="Keretezés készül…"
-        subtitle="Cím + keretezés + 3 ajánlott irány előkészítése."
-      />
+      {/* blokkoló overlay – lépésfüggő szöveg */}
+      <FlowLoadingOverlay open={blockingFlow} title={overlayTitle} subtitle={overlaySubtitle} />
 
       {loading ? (
         <div

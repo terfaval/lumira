@@ -386,7 +386,7 @@ export async function POST(req: Request) {
           .from("dream_session_summaries")
           .upsert(
             { session_id: sessionId, user_id: userId, title, framing_text, recommended_directions },
-            { onConflict: "session_id,user_id" }
+            { onConflict: "session_id" }
           ),
       ]);
 
@@ -528,7 +528,7 @@ export async function POST(req: Request) {
         .from("dream_session_summaries")
         .upsert(
           { session_id: sessionId, user_id: userId, title, framing_text, recommended_directions },
-          { onConflict: "session_id,user_id" }
+          { onConflict: "session_id" }
         ),
     ]);
 
@@ -556,7 +556,7 @@ async function upsertSummaries(
         ...(payload.framing_text !== undefined ? { framing_text: payload.framing_text } : {}),
         ...(payload.recommended_directions !== undefined ? { recommended_directions: payload.recommended_directions } : {}),
       },
-      { onConflict: "session_id,user_id" }
+      { onConflict: "session_id" }
     );
   if (error) console.warn("dream_session_summaries upsert failed:", error.message);
 }

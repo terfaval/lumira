@@ -1,3 +1,4 @@
+// /app/(...)/session/[id]/frame/page.tsx – TELJES, javított
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -18,8 +19,9 @@ export default function FramePage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const { loading } = useRequireAuth();
+
   const attemptedRef = useRef(false);
-  const synthAttemptedRef = useRef(false);
+  const bgAttemptedRef = useRef(false);
 
   const loadSession = useCallback(async () => {
     setErr(null);
@@ -101,36 +103,42 @@ export default function FramePage() {
     }
   }, [session, busy, runFraming, framingReady]);
 
-  const runSynthesizeForBackground = useCallback(async () => {
+  // Háttér: idempotens index -> synth (csak ha már van framing, hogy a UI ne blokkoljon)
+  const runBackgroundIndexAndSynthesize = useCallback(async () => {
     if (!session?.raw_dream_text) return;
-    if (catalog.length === 0) return;
 
     try {
-      const res = await fetchWithAuth("/api/synthesize", {
+      // 1) INDEX – biztos hívás (idempotens)
+      await fetchWithAuth("/api/index-session", {
         method: "POST",
-        json: {
-          session_id: id,
-          dream_text: session.raw_dream_text,
-          history: [],
-          prior_echoes: [],
-          catalog,
-          allowed_slugs: catalog.map((c) => c.slug),
-        },
+        json: { session_id: id, dream_text: session.raw_dream_text, force: false },
       });
-      if (!res.ok) {
-        /* soft fail */
+
+      // 2) SYNTHESIZE – allowed_slugs a katalógusból
+      const allowed = catalog.map((c) => c.slug);
+      if (allowed.length > 0) {
+        await fetchWithAuth("/api/synthesize", {
+          method: "POST",
+          json: {
+            session_id: id,
+            dream_text: session.raw_dream_text,
+            history: [],
+            prior_echoes: [],
+            allowed_slugs: allowed,
+          },
+        });
       }
     } catch {
-      /* no-op */
+      /* soft fail */
     }
   }, [id, session?.raw_dream_text, catalog]);
 
   useEffect(() => {
     if (!framingReady) return;
-    if (synthAttemptedRef.current) return;
-    synthAttemptedRef.current = true;
-    void runSynthesizeForBackground();
-  }, [framingReady, runSynthesizeForBackground]);
+    if (bgAttemptedRef.current) return;
+    bgAttemptedRef.current = true;
+    void runBackgroundIndexAndSynthesize();
+  }, [framingReady, runBackgroundIndexAndSynthesize]);
 
   const handleDirectionSelect = useCallback(
     async (slug: string) => {
@@ -188,7 +196,9 @@ export default function FramePage() {
                 >
                   <div className="stack-tight">
                     <div style={{ fontWeight: 800 }}>{d.title}</div>
-                    <div style={{ opacity: 0.9 }}>{(d.content as any)?.micro_description ?? d.description}</div>
+                    <div style={{ opacity: 0.9 }}>
+                      {(d.content as any)?.micro_description ?? d.description}
+                    </div>
                   </div>
                 </button>
               ))}
