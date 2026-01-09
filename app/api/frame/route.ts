@@ -116,6 +116,54 @@ function repairRecommendedWithFallback(
   return result.length === 3 ? result : null;
 }
 
+// ── Perspektíva/nézőpont ellenőrzők (durva, de hasznos kapuk) ────────────────
+function hasFirstPersonMarkers(text: string): boolean {
+  const t = (text || "").toLowerCase();
+  // gyakori 1. sz. ragozások és névmások — nem teljes, de jó jelzők
+  const hints = [" megütöm", " felmászok", " menekülök", " futok", " találom", " pihenek", " leütöm", " elterelem", " én "];
+  return hints.some(h => t.includes(h));
+}
+
+function isSecondPersonStyle(text: string): boolean {
+  const t = (text || "").toLowerCase();
+  // elég, ha több helyen 2. sz. múlt idejű alakok megjelennek
+  const okHints = ["tál", "tél", "tad", "ted", "tátok", "tétek", "ták", "tétek"]; // heurisztika
+  const hitCount = okHints.reduce((acc, h) => acc + (t.includes(h) ? 1 : 0), 0);
+  // ne legyen 1. személy és legyen legalább némi 2. személy múlt-nyom
+  return !hasFirstPersonMarkers(t) && hitCount >= 1;
+}
+
+function textMentionsAtLeast(text: string, anchors: string[], n: number): boolean {
+  if (!text || !anchors?.length) return n <= 0;
+  const lower = text.toLowerCase();
+  let hits = 0;
+  const seen = new Set<string>();
+  for (const a of anchors) {
+    const key = (a || "").toLowerCase().trim();
+    if (!key || seen.has(key)) continue;
+    if (lower.includes(key)) {
+      seen.add(key);
+      hits++;
+      if (hits >= n) return true;
+    }
+  }
+  return false;
+}
+
+function isGoodTitle(title: string, anchors: string[]): boolean {
+  // legyen rendes cím és legalább 1 konkrét anchor benne
+  return isAcceptableTitle(title) && textMentionsAtLeast(title, anchors, 1);
+}
+
+function isGoodFraming(framing: string, anchors: string[], minAnchors = 2): boolean {
+  // legyen értelmes hossz, „te” múlt idejű nézőpont, és legalább 2–4 anchor
+  return (
+    isNonTrivialFraming(framing) &&
+    isSecondPersonStyle(framing) &&
+    textMentionsAtLeast(framing, anchors, minAnchors)
+  );
+}
+
 // ────────────────────────────────────────────────────────────────────────────────
 // Latent synthesis (to get anchors)
 // ────────────────────────────────────────────────────────────────────────────────
@@ -164,49 +212,48 @@ function buildModelPayload(params: {
   catalog: { slug: string; title: string; micro: string }[];
   topAnchors: string[];
 }) {
-  const rawExcerpt = params.raw.slice(0, 5000); // olvasson többet
+  const rawExcerpt = params.raw.slice(0, 7000); // olvasson bővebben
   return {
     dream_text: rawExcerpt,
     catalog: params.catalog,
-    top_anchors: params.topAnchors, // új: kulcs-elemek
+    top_anchors: params.topAnchors,
     constraints: {
       title_words_preferred: "2-4",
       title_words_allowed: "2-6",
       title_must_include_anchor: true,
       require_exactly_3_slugs: true,
       title_max_chars: TITLE_MAX,
-      framing_min_chars: MIN_FRAMING_CHARS,
+      framing_min_chars: MIN_FRAMING_CHARS, // marad, de nem limitáljuk túl erősen
       framing_should_cover_multiple_anchors: true,
       must_read_entire_dream_text: true,
+      last_sentence_must_describe_closing_scene: true,
     },
   };
 }
 
 function systemPrompt(): string {
   return [
-    "Feladat: adj vissza egy JSON objektumot egy álomhoz.",
-    "A JSON kulcsai:",
-    '- title: rövid magyar cím (preferált 2–4 szó; elfogadott 2–6).',
-    "- framing_text: 2–5 mondat (rugalmas), a legfontosabb ELEMEKET emeli ki, több kulcspontot is visszatükröz.",
-    "- recommended_slugs: pontosan 3 különböző slug a megadott katalógusból.",
+    "Adj vissza EGY darab JSON objektumot egy álomhoz.",
+    'Kulcsok: {"title": string, "framing_text": string, "recommended_slugs": string[3]}',
     "",
-    "Kötelező elvek:",
-    "- Olvasd el az EGÉSZ dream_text-et (nem csak a legelejét).",
-    "- A title tartalmazzon legalább 1 konkrét elemet a top_anchors listából.",
-    "- A framing_text tükrözzön vissza több kulcselemet (legalább 2 különböző anchor).",
-    "- Ne értelmezz/diagnosztizálj; maradj megfigyelő, konkrétumokat említs.",
+    "Kötelező stílus és nézőpont:",
+    "- Magyar nyelv.",
+    "- MÁSODIK SZEMÉLY, MÚLT IDŐ (pl. „futottál”, „felmásztál”, „megütötted”).",
+    "- Nyitás javasolt formula: „Az álmodban …”.",
+    "- Tárgyilagos megfigyelő hang, nincs értelmezés vagy diagnózis.",
     "",
-    "Szabályok a title-hoz:",
-    "- Kezdődjön nagybetűvel.",
-    "- Ne legyen több mondat, ne legyen magyarázat.",
-    "- Kerüld a generikus címeket: Álom, Álomjelenet, Jelenet, Álomnapló.",
-    `- Legyen <= ${TITLE_MAX} karakter, és tartalmazzon legalább egy top_anchors elemet.`,
+    "Tartalmi elvárások:",
+    "- Olvasd el az EGÉSZ dream_text-et (eleje–közepe–vége).",
+    "- A title tartalmazzon legalább 1 konkrét TOP ANCHOR-t.",
+    "- A framing_text tartalmazzon legalább 2–4 KONKRÉT TOP ANCHOR-t (hely, szereplő, tárgy vagy fordulat).",
+    "- Legyen 3–7 mondat (szükség esetén 8), hogy kényelmesen lefedje a történetet.",
+    "- Az UTOLSÓ MONDAT foglalja össze a ZÁRÓJELENETET (hely + esemény).",
     "",
-    "Szabályok a recommended_slugs-hoz:",
-    "- Csak a katalógusban szereplő slugokat használd.",
-    "- Pontosan 3 elem.",
+    "Ajánlott irányok:",
+    "- Pontosan 3 különböző slug a megadott katalógusból (recommended_slugs).",
     "",
-    'Kimenet formátum: {"title":"...","framing_text":"...","recommended_slugs":["...","...","..."]}',
+    "Formátum:",
+    '{"title":"...","framing_text":"...","recommended_slugs":["slug-1","slug-2","slug-3"]}',
   ].join("\n");
 }
 
@@ -435,13 +482,58 @@ export async function POST(req: Request) {
       : null;
 
     if (fromSummaries) {
-      const out: OutputPayload = { sessionId, title: fromSummaries.title, framing_text: fromSummaries.framing_text, recommended_directions: asRecommendedDirections(fromSummaries.recommended_slugs) };
-      return NextResponse.json(out);
-    }
+  const out: OutputPayload = {
+    sessionId,
+    title: fromSummaries.title,
+    framing_text: fromSummaries.framing_text,
+    recommended_directions: asRecommendedDirections(fromSummaries.recommended_slugs),
+  };
+
+  const auditOut = {
+    model: "reuse_summaries",
+    usage: null,
+    title: out.title,
+    framing_text: out.framing_text,
+    recommended_directions: out.recommended_directions,
+    frame_mode: "reuse",
+    frame_constraints: { title_max: TITLE_MAX, framing_min: MIN_FRAMING_CHARS, anchors_used: (topAnchors ?? []).length },
+  };
+
+  await Promise.all([
+    supabase
+      .from("dream_sessions")
+      .update({ ai_framing_text: out.framing_text, ai_framing_audit: auditOut, status: "framed" })
+      .eq("id", sessionId)
+      .eq("user_id", userId),
+    supabase
+      .from("dream_session_summaries")
+      .upsert(
+        {
+          session_id: sessionId,
+          user_id: userId,
+          title: out.title,
+          framing_text: out.framing_text,
+          recommended_directions: out.recommended_directions,
+        },
+        { onConflict: "session_id" }
+      ),
+  ]);
+
+  return NextResponse.json(out);
+}
+
 
     const audit = (session.ai_framing_audit as any) ?? {};
+    
     const fromAudit = validateExistingBundle(
-      { title: audit?.title, framing_text: session.ai_framing_text, recommended_directions: audit?.recommended_directions },
+      { 
+        title: audit?.title, 
+        framing_text: 
+        (typeof audit?.framing_text === "string" && audit.framing_text.trim())
+          ? audit.framing_text
+          : (session.ai_framing_text ?? ""),
+        recommended_directions: audit?.recommended_directions,
+      },
       allowedSet
     );
 
@@ -470,13 +562,15 @@ export async function POST(req: Request) {
       framing_text = gen.parsed.framing_text;
       recommended_slugs = gen.parsed.recommended_slugs;
 
-      const anchoredOk = (!topAnchors.length || (titleHasAnchor(title, topAnchors) && isFramingAnchored(framing_text, topAnchors, 2)));
-      const firstOk = isAcceptableTitle(title) && isNonTrivialFraming(framing_text) && !!recommended_slugs && anchoredOk;
+      const anchoredOk = (!topAnchors.length || (isGoodTitle(title, topAnchors) && isGoodFraming(framing_text, topAnchors, 2)));
+      const firstOk = !!recommended_slugs && anchoredOk;
+
 
       if (!firstOk) {
         const gen2 = await generateBundleOneCall({ client, raw, allowed: allowedCatalog, allowedSet, topAnchors, overrides: { temperature: 0.2, max_tokens: 340 } });
-        const anchoredOk2 = (!topAnchors.length || (titleHasAnchor(gen2.parsed.title, topAnchors) && isFramingAnchored(gen2.parsed.framing_text, topAnchors, 2)));
-        const secondOk = isAcceptableTitle(gen2.parsed.title) && isNonTrivialFraming(gen2.parsed.framing_text) && !!gen2.parsed.recommended_slugs && anchoredOk2;
+        const anchoredOk2 = (!topAnchors.length || (isGoodTitle(gen2.parsed.title, topAnchors) && isGoodFraming(gen2.parsed.framing_text, topAnchors, 2)));
+        const secondOk = !!gen2.parsed.recommended_slugs && anchoredOk2;
+
         if (secondOk) {
           title = gen2.parsed.title;
           framing_text = gen2.parsed.framing_text;
@@ -489,6 +583,7 @@ export async function POST(req: Request) {
         model: "gpt-4o-mini",
         usage: null,
         title,
+        framing_text,
         recommended_directions: recommended_slugs ? asRecommendedDirections(recommended_slugs) : undefined,
       };
 
@@ -496,8 +591,8 @@ export async function POST(req: Request) {
 
       if (needRepair) {
         const repaired = await repairBundleQuick({ client, raw, allowedSlugs, allowedSet, bad: { title, framing_text, recommended_slugs }, topAnchors });
-        if (isAcceptableTitle(repaired.title) && (!topAnchors.length || titleHasAnchor(repaired.title, topAnchors))) title = repaired.title;
-        if (isNonTrivialFraming(repaired.framing_text) && (!topAnchors.length || isFramingAnchored(repaired.framing_text, topAnchors, 2))) framing_text = repaired.framing_text;
+        if (isGoodTitle(repaired.title, topAnchors)) title = repaired.title;
+        if (isGoodFraming(repaired.framing_text, topAnchors, 2)) framing_text = repaired.framing_text;
         if (repaired.recommended_slugs) recommended_slugs = repaired.recommended_slugs;
       }
     } catch (e) {
