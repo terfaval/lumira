@@ -116,6 +116,37 @@ function repairRecommendedWithFallback(
   return result.length === 3 ? result : null;
 }
 
+function normalizeHu(s: string) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, ""); // ékezetek levétele
+}
+
+function fuzzyIncludes(hay: string, needle: string): boolean {
+  const H = normalizeHu(hay);
+  const N = normalizeHu(needle);
+  if (!H || !N) return false;
+  // engedünk egyszerű toldalék-variánsokat: "lanchid", "lanchidon", "lanchidonrol"
+  return H.includes(N) || H.includes(N + "n") || H.includes(N + "on") || H.includes(N + "rol") || H.includes(N + "ban") || H.includes(N + "nal");
+}
+
+function textMentionsAtLeastFuzzy(text: string, anchors: string[], n: number): boolean {
+  if (!text || !anchors?.length) return n <= 0;
+  let hits = 0;
+  const seen = new Set<string>();
+  for (const a of anchors) {
+    const key = (a || "").trim();
+    if (!key || seen.has(key)) continue;
+    if (fuzzyIncludes(text, key)) {
+      seen.add(key);
+      hits++;
+      if (hits >= n) return true;
+    }
+  }
+  return false;
+}
+
 // ── Perspektíva/nézőpont ellenőrzők (durva, de hasznos kapuk) ────────────────
 function hasFirstPersonMarkers(text: string): boolean {
   const t = (text || "").toLowerCase();
@@ -163,6 +194,44 @@ function isGoodFraming(framing: string, anchors: string[], minAnchors = 2): bool
     textMentionsAtLeast(framing, anchors, minAnchors)
   );
 }
+
+async function repairTitleOnly(client: OpenAI, raw: string, topAnchors: string[]): Promise<string> {
+  const sys = [
+    "Adj vissza EGY rövid magyar címet ÁLOMHOZ.",
+    "Követelmények:",
+    "- 2–6 szó.",
+    "- Tartalmazzon legalább 1 TOP ANCHOR-t szóalakban (hely/szereplő/tárgy).",
+    "- Legyen cselekvő, képszerű (pl. „Futás a Lánchíd alatt”).",
+    "- Nincs írásjel a végén, nincs magyarázat.",
+    'Formátum: {"title":"..."}'
+  ].join("\n");
+
+  const user = { dream_excerpt: raw.slice(0, 1500), top_anchors: topAnchors.slice(0, 5) };
+
+  const resp = await withTimeout(
+    (signal) =>
+      client.chat.completions.create(
+        {
+          model: "gpt-4o-mini",
+          temperature: 0.55,
+          max_tokens: 40,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: JSON.stringify(user) },
+          ],
+        },
+        { signal }
+      ),
+    5000
+  );
+
+  const content = resp.choices?.[0]?.message?.content ?? "";
+  const parsed = safeJsonParse<any>(content);
+  const t = typeof parsed?.title === "string" ? parsed.title : "";
+  return titleCaseHungarian(t);
+}
+
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Latent synthesis (to get anchors)

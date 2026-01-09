@@ -1,5 +1,6 @@
 // 📁 /src/lib/dream/text.ts
 // Közös szöveg-, anchor- és JSON utilok.
+// (patched – anchor matching + framing anchoring + better top anchors)
 
 import {
   TITLE_MAX,
@@ -15,6 +16,9 @@ import {
   MIN_FRAMING_CHARS,
 } from "./const";
 
+// ────────────────────────────────────────────────────────────────────────────────
+// Basic text utils
+// ────────────────────────────────────────────────────────────────────────────────
 export function sanitizeWhitespace(t: string): string {
   return (t ?? "").replace(/\s+/g, " ").trim();
 }
@@ -26,17 +30,29 @@ export function truncateAt(str: string, max: number): string {
 }
 
 export function safeJsonParse<T = unknown>(text: string): T | null {
-  try { return JSON.parse(text) as T; } catch { return null; }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
 }
 
-export async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
+export async function withTimeout<T>(
+  fn: (signal: AbortSignal) => Promise<T>,
+  ms: number
+): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
-  try { return await fn(controller.signal); }
-  finally { clearTimeout(timer); }
+  try {
+    return await fn(controller.signal);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-// —— Cím segédek ——
+// ────────────────────────────────────────────────────────────────────────────────
+// Title helpers
+// ────────────────────────────────────────────────────────────────────────────────
 export function sanitizeTitle(t: string): string {
   return truncateAt(sanitizeWhitespace(t), TITLE_MAX);
 }
@@ -70,10 +86,13 @@ export function isAcceptableTitle(title: string): boolean {
   const t = titleCaseHungarian(sanitizeTitle(title));
   if (!t) return false;
   if (isGenericTitle(t)) return false;
+
   const wc = countWords(t);
   if (wc < TITLE_MIN_WORDS || wc > TITLE_MAX_WORDS) return false;
+
   const endPunct = (t.match(/[.!?]/g) ?? []).length;
   if (endPunct >= 2) return false;
+
   if (t.length > TITLE_MAX) return false;
   return true;
 }
@@ -92,21 +111,91 @@ export function shuffleInPlace<T>(arr: T[]): T[] {
   return arr;
 }
 
-// —— Anchor utilok ——
-export function pickTopAnchors(anchors: { characters?: string[]; places?: string[]; objects?: string[]; beats?: string[]; felt_words?: string[] }, max = 8): string[] {
-  const pools = [anchors?.characters ?? [], anchors?.places ?? [], anchors?.objects ?? [], anchors?.beats ?? []];
-  const flat = pools.flat().map((s) => (s ?? '').trim()).filter(Boolean);
-  const uniq = Array.from(new Set(flat));
-  return uniq.sort((a,b)=>b.length-a.length).slice(0, max);
+// ────────────────────────────────────────────────────────────────────────────────
+// Anchor utils (fuzzy matching, Hungarian-friendly-ish)
+// ────────────────────────────────────────────────────────────────────────────────
+
+// Ékezetek eltávolítása (a matchinghez), pl. "Lánchíd" -> "Lanchid"
+function stripDiacriticsHu(s: string): string {
+  return (s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+// Lazább normalizálás: kisbetű, ékezet nélkül, írásjelek -> space
+function normLoose(s: string): string {
+  return stripDiacriticsHu(s)
+    .toLowerCase()
+    .replace(/["'“”„”.,!?…:;()\/\\\-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Anchor említés ellenőrzése:
+// - full includes (loose)
+// - multiword: tokok mind megvannak (ragozás-állóbb)
+// - singleword: prefix match (utca ~ utcán, lánchíd ~ lánchídon)
+function anchorMentioned(text: string, anchor: string): boolean {
+  const t = normLoose(text);
+  const a = normLoose(anchor);
+  if (!a || a.length < 3) return false;
+
+  if (t.includes(a)) return true;
+
+  const aToks = a.split(" ").filter((w) => w.length >= 3);
+  if (aToks.length >= 2) {
+    return aToks.every((tok) => t.includes(tok));
+  }
+
+  const words = t.split(" ").filter(Boolean);
+  return words.some((w) => w.startsWith(a) || a.startsWith(w));
+}
+
+// Kiemelt anchor lista összeállítása: prioritás + diverzitás
+export function pickTopAnchors(
+  anchors: {
+    characters?: string[];
+    places?: string[];
+    objects?: string[];
+    beats?: string[];
+    felt_words?: string[];
+  },
+  max = 8
+): string[] {
+  const pick = (arr: string[] | undefined, n: number) =>
+    (arr ?? [])
+      .map((s) => (s ?? "").trim())
+      .filter(Boolean)
+      .slice(0, n);
+
+  // Prioritás: helyek + beatek, majd karakterek + tárgyak
+  const places = pick(anchors?.places, 4);
+  const beats = pick(anchors?.beats, 3);
+  const chars = pick(anchors?.characters, 2);
+  const objs = pick(anchors?.objects, 2);
+
+  const merged = [...places, ...beats, ...chars, ...objs]
+    .map((s) => sanitizeWhitespace(s))
+    .filter(Boolean);
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+
+  for (const m of merged) {
+    const key = normLoose(m);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(m);
+    if (out.length >= max) break;
+  }
+  return out;
 }
 
 export function countAnchorMentions(text: string, anchors: string[]): number {
-  const t = (text ?? '').toLowerCase();
   let count = 0;
-  for (const a of anchors) {
-    const q = (a ?? '').toLowerCase().trim();
-    if (!q || q.length < 3) continue;
-    if (t.includes(q)) count++;
+  for (const a of anchors ?? []) {
+    if (typeof a !== "string") continue;
+    if (anchorMentioned(text, a)) count++;
   }
   return count;
 }
@@ -115,18 +204,29 @@ export function titleHasAnchor(title: string, anchors: string[]): boolean {
   return countAnchorMentions(title, anchors) >= 1;
 }
 
-// —— Framing ellenőrzés ——
+// ────────────────────────────────────────────────────────────────────────────────
+// Framing checks
+// ────────────────────────────────────────────────────────────────────────────────
 export function isNonTrivialFraming(t: string): boolean {
   const s = sanitizeWhitespace(t);
-  return s.length >= MIN_FRAMING_CHARS; // rugalmas: kb. 2–4 mondat
+  return s.length >= MIN_FRAMING_CHARS;
 }
 
-export function isFramingAnchored(framing: string, anchors: string[], minMentions = 2) {
+// Fontos: ha vannak anchorok, akkor NE engedjük át pusztán a hossz miatt.
+// Ha NINCS anchor (pl. synth fail), akkor maradhat a hossz alapú minimum.
+export function isFramingAnchored(
+  framing: string,
+  anchors: string[],
+  minMentions = 2
+) {
   const s = sanitizeWhitespace(framing);
-  return countAnchorMentions(s, anchors) >= minMentions || s.length >= MIN_FRAMING_CHARS;
+  if (!anchors || anchors.length === 0) return s.length >= MIN_FRAMING_CHARS;
+  return countAnchorMentions(s, anchors) >= minMentions;
 }
 
-// —— Safety ——
+// ────────────────────────────────────────────────────────────────────────────────
+// Safety
+// ────────────────────────────────────────────────────────────────────────────────
 export function detectSafety(text: string): SafetyValue {
   const lower = (text ?? "").toLowerCase();
   if (SELF_HARM_KEYWORDS.some((kw) => lower.includes(kw))) return "self_harm";
@@ -134,7 +234,9 @@ export function detectSafety(text: string): SafetyValue {
   return "none";
 }
 
-// —— Hasonlóság segédek ——
+// ────────────────────────────────────────────────────────────────────────────────
+// Similarity helpers (question repetition control)
+// ────────────────────────────────────────────────────────────────────────────────
 export function normalizeQ(s: string) {
   return (s ?? "")
     .toLowerCase()
@@ -144,7 +246,9 @@ export function normalizeQ(s: string) {
 }
 
 export function tokenSet(s: string) {
-  const toks = normalizeQ(s).split(" ").filter((w) => w.length >= 3 && !HU_STOPWORDS.has(w));
+  const toks = normalizeQ(s)
+    .split(" ")
+    .filter((w) => w.length >= 3 && !HU_STOPWORDS.has(w));
   return new Set(toks);
 }
 
@@ -155,7 +259,11 @@ export function jaccard(a: Set<string>, b: Set<string>) {
   return union === 0 ? 0 : inter / union;
 }
 
-export function isTooSimilar(newQ: string, prevQs: string[], threshold = SIMILARITY_THRESHOLD_DEFAULT) {
+export function isTooSimilar(
+  newQ: string,
+  prevQs: string[],
+  threshold = SIMILARITY_THRESHOLD_DEFAULT
+) {
   const a = tokenSet(newQ);
   if (a.size < 6) return false; // rövid kérdésnél ne büntessük túl
   return prevQs.some((prev) => jaccard(a, tokenSet(prev)) >= threshold);
