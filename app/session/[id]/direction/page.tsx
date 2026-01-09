@@ -8,34 +8,30 @@ import { startDirection } from "@/src/lib/startDirection";
 import type { DirectionCatalogItem } from "@/src/lib/types";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
-type GroupKey =
-  | "access"
-  | "emotion_body"
-  | "patterns"
-  | "meaning"
-  | "integration"
-  | "other";
+type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
 
-const GROUP_LABEL: Record<GroupKey, string> = {
-  access: "Hozzáférés",
-  emotion_body: "Érzet / Test",
-  patterns: "Mintázatok",
-  meaning: "Jelentés-közeli",
-  integration: "Integráció",
-  other: "Egyéb",
-};
+/** A DB-ben lévő magyar group címkéből stabil key */
+function groupKeyFromLabel(raw: unknown): GroupKey {
+  const label = String(raw ?? "").trim().toLowerCase();
 
-function normalizeGroupKey(raw: unknown): GroupKey {
-  const s = String(raw ?? "").trim().toLowerCase();
-  const allowed = new Set<GroupKey>(["access", "emotion_body", "patterns", "meaning", "integration"]);
-  if (allowed.has(s as GroupKey)) return s as GroupKey;
+  // a te adataid alapján:
+  if (label.includes("álomemlékezet")) return "memory";
+  if (label.includes("érzelmi") || label.includes("testi")) return "somatic";
+  if (label.includes("mintázat")) return "patterns";
+  if (label.includes("jelent")) return "meaning";
+  if (label.includes("kreatív")) return "creative";
+
   return "other";
 }
 
-/** Token mapping (pillhez) */
-function groupToken(group: GroupKey | null) {
-  if (!group) return null;
-  return { text: `--dirgroup-${group}` as const, bg: `--dirgroup-${group}-bg` as const };
+function groupLabel(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  return s || "Egyéb";
+}
+
+/** Pill token mapping (CSS custom properties) */
+function groupToken(k: GroupKey) {
+  return { text: `--dirgroup-${k}` as const, bg: `--dirgroup-${k}-bg` as const };
 }
 
 function Pill({
@@ -88,6 +84,11 @@ function shuffleDeterministic<T>(arr: T[], seed: number): T[] {
   return out;
 }
 
+function safeStringArray(x: unknown): string[] {
+  if (!Array.isArray(x)) return [];
+  return x.filter((s): s is string => typeof s === "string").map((s) => s.trim()).filter(Boolean);
+}
+
 export default function DirectionPage() {
   const { id: sessionId } = useParams<{ id: string }>();
   const router = useRouter();
@@ -117,7 +118,7 @@ export default function DirectionPage() {
       .from("direction_catalog")
       .select("slug, title, description, is_active, content")
       .eq("is_active", true)
-      .order("slug", { ascending: true });
+      .order("sort_order", { ascending: true });
 
     if (catErr) return setErr(catErr.message);
     setCatalog((cat ?? []) as DirectionCatalogItem[]);
@@ -183,20 +184,46 @@ export default function DirectionPage() {
     setOpenSlug(slug);
   }
 
-  const allGroupsInData = useMemo(() => {
-    const s = new Set<GroupKey>();
+  const groupsInData = useMemo(() => {
+    // készítsünk “key -> label” mappingot a dropdownhoz (a leggyakoribb labelt vesszük)
+    const counts: Record<GroupKey, Record<string, number>> = {
+      memory: {},
+      somatic: {},
+      patterns: {},
+      meaning: {},
+      creative: {},
+      other: {},
+    };
+
     for (const d of catalog) {
-      const g = normalizeGroupKey((d as any)?.content?.group);
-      s.add(g);
+      const raw = (d as any)?.content?.group;
+      const k = groupKeyFromLabel(raw);
+      const label = groupLabel(raw);
+      counts[k][label] = (counts[k][label] ?? 0) + 1;
     }
-    const order: GroupKey[] = ["access", "emotion_body", "patterns", "meaning", "integration", "other"];
-    return order.filter((k) => s.has(k));
+
+    const keys = Object.keys(counts) as GroupKey[];
+    const out = keys
+      .map((k) => {
+        const labels = counts[k];
+        const bestLabel =
+          Object.entries(labels).sort((a, b) => b[1] - a[1])[0]?.[0] ??
+          (k === "other" ? "Egyéb" : k);
+        return { key: k, label: bestLabel };
+      })
+      .filter((x) => x.label && (Object.keys(counts[x.key]).length > 0));
+
+    // fix order (szép UX)
+    const order: GroupKey[] = ["memory", "somatic", "patterns", "meaning", "creative", "other"];
+    return order
+      .map((k) => out.find((x) => x.key === k))
+      .filter(Boolean) as { key: GroupKey; label: string }[];
   }, [catalog]);
 
   const filtered = useMemo(() => {
     let out = catalog;
     if (selectedGroup !== "all") {
-      out = out.filter((d) => normalizeGroupKey((d as any)?.content?.group) === selectedGroup);
+      out = out.filter((d) => groupKeyFromLabel((d as any)?.content?.group) === selectedGroup);
     }
     return out;
   }, [catalog, selectedGroup]);
@@ -255,9 +282,14 @@ export default function DirectionPage() {
   );
 
   function renderTile(d: DirectionCatalogItem) {
-    const gKey = normalizeGroupKey((d as any)?.content?.group);
+    const rawGroup = (d as any)?.content?.group;
+    const gKey = groupKeyFromLabel(rawGroup);
+    const gLabel = groupLabel(rawGroup);
     const token = groupToken(gKey);
     const chosen = !!selected[d.slug];
+
+    // tags: max 2 (ha van)
+    const tags = safeStringArray((d as any)?.tags).slice(0, 2);
 
     return (
       <button
@@ -269,12 +301,18 @@ export default function DirectionPage() {
       >
         <div className="direction-tile-top">
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-            <Pill label={GROUP_LABEL[gKey]} token={token} />
+            <Pill label={gLabel} token={token} />
             {chosen && <Pill label="Korábban kiválasztva" neutral />}
+            {tags.map((t) => (
+              <Pill key={t} label={t} neutral />
+            ))}
           </div>
 
           <div className="direction-title">{d.title}</div>
-          {d.description ? <div className="direction-desc">{d.description}</div> : null}
+
+          <div className="direction-desc">
+            {(d as any)?.content?.micro_description ?? d.description ?? ""}
+          </div>
         </div>
 
         <div className="direction-tile-bottom">
@@ -286,6 +324,40 @@ export default function DirectionPage() {
       </button>
     );
   }
+
+  // overlay content extraction
+  const overlayData = useMemo(() => {
+    if (!openCard) return null;
+
+    const c = (openCard as any)?.content ?? {};
+    const method = c?.method_spec ?? {};
+    const safety = c?.safety ?? {};
+    const stop = c?.stop_criteria ?? {};
+    const contract = c?.ai_contract ?? {};
+
+    const doList = safeStringArray(method?.do);
+    const dontList = safeStringArray(method?.dont);
+
+    return {
+      groupLabel: groupLabel(c?.group),
+      groupKey: groupKeyFromLabel(c?.group),
+
+      micro: typeof c?.micro_description === "string" ? c.micro_description : null,
+      goal: typeof c?.goal_md === "string" ? c.goal_md : null,
+
+      maxCards: typeof stop?.max_cards === "number" ? stop.max_cards : null,
+      stopRule: typeof method?.stop_rule === "string" ? method.stop_rule : null,
+
+      role: typeof contract?.role === "string" ? contract.role : null,
+      toneTags: safeStringArray(contract?.tone_tags),
+
+      doList,
+      dontList,
+
+      boundaries: typeof safety?.boundaries_md === "string" ? safety.boundaries_md : null,
+      flags: safeStringArray(safety?.flags),
+    };
+  }, [openCard]);
 
   return (
     <div
@@ -301,7 +373,9 @@ export default function DirectionPage() {
         <div className="direction-head">
           <div className="direction-head-left">
             <div className="split-panel-title">Irányválasztás</div>
-            <div className="direction-subtitle">Válassz egy irányt – vagy csak nézd meg őket, és lépj vissza.</div>
+            <div className="direction-subtitle">
+              Válassz egy irányt – nyisd meg, nézd meg a keretet, és csak akkor indítsd, ha ma belefér.
+            </div>
           </div>
           <button className="btn btn-secondary" onClick={() => router.back()} aria-label="Bezárás">
             Bezárás
@@ -323,16 +397,16 @@ export default function DirectionPage() {
                   onChange={(e) => setSelectedGroup(e.target.value as GroupKey | "all")}
                 >
                   <option value="all">Minden csoport</option>
-                  {allGroupsInData.map((k) => (
-                    <option key={k} value={k}>
-                      {GROUP_LABEL[k]}
+                  {groupsInData.map((g) => (
+                    <option key={g.key} value={g.key}>
+                      {g.label}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="filter-note">
-                Tipp: nyisd meg az irányt, olvasd el, és csak akkor indítsd, ha ma belefér.
+                Tipp: ha az álom felkavaró, válassz testi/grounding fókuszt, és tarts rövid lépéseket.
               </div>
             </div>
 
@@ -349,14 +423,17 @@ export default function DirectionPage() {
               >
                 <div className="flip-shell">
                   <div className="flip-shell-head">
-                    <div style={{ display: "grid", gap: 6 }}>
+                    <div style={{ display: "grid", gap: 8 }}>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                        {(() => {
-                          const gKey = openCard ? normalizeGroupKey((openCard as any)?.content?.group) : null;
-                          return gKey ? <Pill label={GROUP_LABEL[gKey]} token={groupToken(gKey)} /> : null;
-                        })()}
+                        {overlayData ? (
+                          <Pill label={overlayData.groupLabel} token={groupToken(overlayData.groupKey)} />
+                        ) : null}
                         {openCard && selected[openCard.slug] ? <Pill label="Korábban kiválasztva" neutral /> : null}
+                        {overlayData?.flags?.length ? (
+                          <Pill label={`Safety: ${overlayData.flags.join(", ")}`} neutral />
+                        ) : null}
                       </div>
+
                       <div style={{ fontWeight: 900, fontSize: 18 }}>{openCard?.title ?? "Irány"}</div>
                     </div>
 
@@ -366,35 +443,79 @@ export default function DirectionPage() {
                   </div>
 
                   <div style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 10 }}>
-                    Kattintás: megnyit • Indítás: indít • ESC: bezárás
+                    Megnyitás: részletek • Indítás: Work • ESC: bezárás
                   </div>
 
                   {!openCard ? (
                     <div className="stack">{Spinner}</div>
                   ) : (
                     <div className="stack">
-                      {openCard.description ? (
+                      {overlayData?.micro ? (
                         <div className="card-muted" style={{ padding: "var(--space-3)" }}>
-                          <div style={{ color: "var(--text-primary)", fontWeight: 700, marginBottom: 6 }}>
-                            Rövid leírás
-                          </div>
-                          <div style={{ color: "var(--text-muted)" }}>{openCard.description}</div>
+                          <div style={{ fontWeight: 800, marginBottom: 6 }}>Röviden</div>
+                          <div style={{ color: "var(--text-muted)" }}>{overlayData.micro}</div>
                         </div>
                       ) : null}
 
-                      {/* Ha később van content.summary / content.goal_md / meta, ide könnyű beakasztani */}
-                      {/* <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(openCard.content, null, 2)}</pre> */}
+                      {overlayData?.goal ? (
+                        <div className="card-muted" style={{ padding: "var(--space-3)" }}>
+                          <div style={{ fontWeight: 800, marginBottom: 6 }}>Cél</div>
+                          <div style={{ color: "var(--text-muted)" }}>{overlayData.goal}</div>
+                        </div>
+                      ) : null}
+
+                      <div className="two-col">
+                        <div className="card-muted" style={{ padding: "var(--space-3)" }}>
+                          <div style={{ fontWeight: 800, marginBottom: 10 }}>Mit csinálunk</div>
+                          <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-muted)", lineHeight: 1.7 }}>
+                            {(overlayData?.doList ?? []).map((t) => (
+                              <li key={t}>{t}</li>
+                            ))}
+                            {!overlayData?.doList?.length ? <li>Nincs megadva.</li> : null}
+                          </ul>
+                        </div>
+
+                        <div className="card-muted" style={{ padding: "var(--space-3)" }}>
+                          <div style={{ fontWeight: 800, marginBottom: 10 }}>Mit kerüljünk</div>
+                          <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-muted)", lineHeight: 1.7 }}>
+                            {(overlayData?.dontList ?? []).map((t) => (
+                              <li key={t}>{t}</li>
+                            ))}
+                            {!overlayData?.dontList?.length ? <li>Nincs megadva.</li> : null}
+                          </ul>
+                        </div>
+                      </div>
+
+                      <div className="card-muted" style={{ padding: "var(--space-3)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                          <div style={{ display: "grid", gap: 6 }}>
+                            <div style={{ fontWeight: 800 }}>Leállás / keret</div>
+                            <div style={{ color: "var(--text-muted)" }}>
+                              {overlayData?.maxCards ? `Max. lépések: ${overlayData.maxCards}` : "Max. lépések: –"}
+                              {overlayData?.role ? ` • Szerep: ${overlayData.role}` : ""}
+                              {overlayData?.toneTags?.length ? ` • Tone: ${overlayData.toneTags.join(", ")}` : ""}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                            <button className="btn btn-secondary" onClick={closeOverlay} disabled={busy}>
+                              Mégsem
+                            </button>
+                            <button
+                              className="btn btn-primary"
+                              onClick={() => handleStart(openCard.slug)}
+                              disabled={busy}
+                            >
+                              {busy ? "Indítás..." : "Indítás"}
+                            </button>
+                          </div>
+                        </div>
+
+                        {overlayData?.boundaries ? (
+                          <div style={{ marginTop: 12, color: "var(--text-muted)" }}>{overlayData.boundaries}</div>
+                        ) : null}
+                      </div>
 
                       {err && <p style={{ color: "crimson" }}>{err}</p>}
-
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
-                        <button className="btn btn-secondary" onClick={closeOverlay} disabled={busy}>
-                          Mégsem
-                        </button>
-                        <button className="btn btn-primary" onClick={() => handleStart(openCard.slug)} disabled={busy}>
-                          {busy ? "Indítás..." : "Indítás"}
-                        </button>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -508,7 +629,7 @@ export default function DirectionPage() {
           display: grid;
           gap: var(--space-3);
           cursor: pointer;
-          transition: transform 160ms ease, box-shadow 200ms ease, filter 200ms ease;
+          transition: transform 160ms ease, box-shadow 200ms ease;
           color: inherit;
         }
 
@@ -541,15 +662,6 @@ export default function DirectionPage() {
           gap: 10px;
           color: rgba(255, 255, 255, 0.75);
           font-size: 12px;
-        }
-
-        .direction-hint {
-          opacity: 0.9;
-        }
-
-        .direction-arrow {
-          font-size: 16px;
-          opacity: 0.9;
         }
 
         .flip-overlay {
@@ -586,6 +698,17 @@ export default function DirectionPage() {
           background: var(--bg-layer);
           z-index: 2;
           border-bottom: 1px solid var(--line-soft);
+        }
+
+        .two-col {
+          display: grid;
+          gap: var(--space-3);
+          grid-template-columns: 1fr;
+        }
+        @media (min-width: 860px) {
+          .two-col {
+            grid-template-columns: 1fr 1fr;
+          }
         }
 
         @media (max-width: 679px) {

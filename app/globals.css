@@ -593,24 +593,24 @@ body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-sta
 }
 
 /* ──────────────────────────────────────────────────────────── */
-/* Direction groups (pill colors)                               */
+/* Direction group pills                                         */
 /* ──────────────────────────────────────────────────────────── */
 
 :root {
-  --dirgroup-access: #78C3FFF2;
-  --dirgroup-access-bg: #78C3FF33; /* ~20% */
+  --dirgroup-memory: #FFBE78F2;
+  --dirgroup-memory-bg: #FFBE782E; /* ~18% */
 
-  --dirgroup-emotion_body: #78DCAAF2;
-  --dirgroup-emotion_body-bg: #78DCAA2E; /* ~18% */
+  --dirgroup-somatic: #78DCAAF2;
+  --dirgroup-somatic-bg: #78DCAA2E; /* ~18% */
 
-  --dirgroup-patterns: #FFBE78F2;
-  --dirgroup-patterns-bg: #FFBE782E; /* ~18% */
+  --dirgroup-patterns: #78C3FFF2;
+  --dirgroup-patterns-bg: #78C3FF33; /* ~20% */
 
   --dirgroup-meaning: #FFDC78F2;
   --dirgroup-meaning-bg: #FFDC782E; /* ~18% */
 
-  --dirgroup-integration: #AA8CFFF2;
-  --dirgroup-integration-bg: #AA8CFF2E; /* ~18% */
+  --dirgroup-creative: #AA8CFFF2;
+  --dirgroup-creative-bg: #AA8CFF2E; /* ~18% */
 
   --dirgroup-other: #9DA7BCF2;
   --dirgroup-other-bg: #9DA7BC24; /* ~14% */
