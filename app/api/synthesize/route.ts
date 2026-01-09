@@ -113,24 +113,28 @@ function capFirst(s: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-// --- place casing helper (hu) ---
-// Egyszavas, önmagában álló generikus helyszavak, amiket nem emelünk tulajdonnév szintre:
+// --- place casing helper (hu, improved) ---
 const GENERIC_PLACE_NOUNS = new Set([
   "utca","út","híd","vár","alagút","kilátó","gát","lépcső","park","tér","ház","központ","csarnok"
 ]);
+const LOWER_EXCEPTIONS = new Set(["a","az","és","vagy","de","mint","stílusú","/"]);
+
+function titleishHu(s: string): string {
+  return s.split(/(\s+|\/)/).map(part => {
+    if (LOWER_EXCEPTIONS.has(part.toLowerCase())) return part.toLowerCase();
+    if (/^\s+$|^\.$/.test(part)) return part;
+    return part.charAt(0).toUpperCase() + part.slice(1);
+  }).join("");
+}
 
 function smartFormatPlace(raw: string): string {
   const t = (raw ?? "").replace(/\s+/g, " ").trim();
   if (!t) return "";
-
-  // Ha pontosan EGY generikus szó, hagyjuk kisbetűsen (vagy akár el is dobhatnánk – most csak kisbetűsítjük).
   const parts = t.split(" ");
   if (parts.length === 1 && GENERIC_PLACE_NOUNS.has(parts[0].toLowerCase())) {
     return parts[0].toLowerCase();
   }
-
-  // Különben csak normalizáljuk a szóközöket; a modell által adott ékezeteket/casinget megőrizzük.
-  return t;
+  return titleishHu(t);
 }
 
 function sanitizeFlags(flags: unknown, dreamTooShort: boolean): Flags {
@@ -207,7 +211,11 @@ function sanitizeCandidates(
     if (filtered.length >= MAX_CANDIDATES) break;
   }
 
-  const targetLength = Math.min(MIN_CANDIDATES, MAX_CANDIDATES, allowedSlugs.length);
+  const targetLength = Math.min(
+  Math.max(MIN_CANDIDATES, 0),
+  MAX_CANDIDATES,
+  allowedSlugs.length
+);
   if (filtered.length >= targetLength || targetLength === 0) return filtered;
 
   const filteredSet = new Set(filtered);
@@ -398,10 +406,11 @@ export async function POST(req: Request) {
       "- Read and consider the ENTIRE dream_text; do not prioritize the beginning.",
       "- Anchors must quote literal or near-literal items from dream_text.",
       "- beats: cover EARLY + MIDDLE + LATE events in rough CHRONOLOGICAL order (early→late), include at least one clear TURNING POINT / CLIMAX if present.",
-      "- Ensure one LATE beat captures the final location/event mentioned in dream_text.",
+      "- Ensure one LATE beat captures the final distinct location/event mentioned in dream_text (the closing scene).",
       "- places: include recognizable PROPER NOUNS with correct Hungarian accents if present, and include COMPOUND/DERIVED locations when they appear literally (e.g., lookout / tourist center).",
       "- Do not include bare generic nouns alone (e.g., standalone 'utca', 'híd'); include full forms when present (e.g., 'Attila utca').",
-      "- objects: include salient tools / devices / substances explicitly mentioned (e.g., vehicles, drones, injections, substances). Do NOT invent.",
+      "- characters: include distinct antagonists/allies mentioned explicitly (e.g., 'másik tag', 'asszisztens', 'ismerős') as separate items; do not collapse into one.",
+      "- objects: include any explicitly used tool/device/substance (e.g., lighter/fire, drone, injection/poison, barrier/fence, logs), without inventing.",
       "- felt_words must be lowercase simple lemmas/stems (e.g., félelem, feszültség, megkönnyebbülés).",
       "- Normalize obvious casing/spacing; deduplicate items.",
       "- Aim for rich coverage if present: beats ≥4, places ≥3, objects ≥3, characters ≥2, felt_words ≥2 (subject to max caps).",
