@@ -97,7 +97,7 @@ export async function POST(req: Request) {
             embedding: null,
           },
           // fontos: session_id + user_id
-          { onConflict: "session_id,user_id" }
+          { onConflict: "session_id" }
         );
 
       if (upsertShortErr) {
@@ -180,7 +180,7 @@ export async function POST(req: Request) {
           embedding,
           // updated_at handled by trigger (ha van)
         },
-        { onConflict: "session_id,user_id" }
+        { onConflict: "session_id" }
       );
 
     if (upsertError) {
