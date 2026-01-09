@@ -1,6 +1,9 @@
 .wrap {
   display: grid;
+  grid-template-rows: auto 1fr;
   gap: var(--space-3);
+  min-height: 0;
+  height: 100%;
 }
 
 /* cím + ceruza egy sorban */

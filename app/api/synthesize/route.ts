@@ -1,4 +1,3 @@
-// /app/api/synthesize/route.ts (patched v1.1)
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
@@ -78,7 +77,7 @@ const defaultOutput = (): SynthesizeOutput => ({
 });
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Helpers: sanitize & small normalizers
+// Helpers
 // ────────────────────────────────────────────────────────────────────────────────
 function clampArray(values: unknown, max: number): string[] {
   if (!Array.isArray(values)) return [];
@@ -113,9 +112,9 @@ function capFirst(s: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-// --- place casing helper (hu, improved) ---
+// --- helynév formázás (hu) — utótagok kisbetűn, előtag nagy kezdővel ---
 const GENERIC_PLACE_NOUNS = new Set([
-  "utca","út","híd","vár","alagút","kilátó","gát","lépcső","park","tér","ház","központ","csarnok"
+  "utca","út","híd","tér","rakpart","alagút","vár","kilátó","gát","lépcső","park","központ","csarnok","torony"
 ]);
 const LOWER_EXCEPTIONS = new Set(["a","az","és","vagy","de","mint","stílusú","/"]);
 
@@ -134,6 +133,16 @@ function smartFormatPlace(raw: string): string {
   if (parts.length === 1 && GENERIC_PLACE_NOUNS.has(parts[0].toLowerCase())) {
     return parts[0].toLowerCase();
   }
+  const last = parts[parts.length - 1].toLowerCase();
+  if (GENERIC_PLACE_NOUNS.has(last)) {
+    const head = parts.slice(0, -1).join(" ").trim();
+    if (!head) return titleishHu(t);
+    const headFixed = head
+      .split(" ")
+      .map(p => p ? p.charAt(0).toUpperCase() + p.slice(1) : p)
+      .join(" ");
+    return `${headFixed} ${last}`;
+  }
   return titleishHu(t);
 }
 
@@ -141,11 +150,7 @@ function sanitizeFlags(flags: unknown, dreamTooShort: boolean): Flags {
   const raw = (flags ?? {}) as Partial<Flags>;
   const safety: SafetyValue =
     SAFETY_VALUES.includes(raw.safety as SafetyValue) ? (raw.safety as SafetyValue) : "none";
-
-  return {
-    safety,
-    too_short: dreamTooShort || Boolean(raw.too_short),
-  };
+  return { safety, too_short: dreamTooShort || Boolean(raw.too_short) };
 }
 
 function sanitizePriorEchoesUsed(values: unknown, allowedSessionIds: Set<string>): PriorEchoUsed[] {
@@ -159,25 +164,44 @@ function sanitizePriorEchoesUsed(values: unknown, allowedSessionIds: Set<string>
     .filter((p) => p.session_id && allowedSessionIds.has(p.session_id));
 }
 
+function ensureLateBeat(rawBeats: string[], rawPlaces: string[], rawCharacters: string[]): string[] {
+  let beats = [...rawBeats];
+  const hasGateInPlaces = rawPlaces.some(p => p.toLowerCase().includes("gát"));
+  const hasNarrInBeats = rawBeats.some(b => b.toLowerCase().includes("narr"));
+  const hasAssistant = rawCharacters.some(c => c.toLowerCase().includes("asszisztens"));
+
+  // ha van gát a helyekben, de nincs a beatek között → tegyünk be egy záró beatet
+  if (hasGateInPlaces && !beats.some(b => b.toLowerCase().includes("gát"))) {
+    if (beats.length < MAX_ANCHOR_ITEMS) beats = [...beats, "gáthoz ér / záró jelenet"];
+  }
+  // ha van asszisztens, de nincs narráció említve → jelöljük meg a lezárást
+  if (hasAssistant && !hasNarrInBeats) {
+    if (beats.length < MAX_ANCHOR_ITEMS) beats = [...beats, "asszisztens narrációja (lezárás)"];
+  }
+  return beats;
+}
+
 function sanitizeAnchors(anchors: unknown): Anchors {
   const raw = (anchors ?? {}) as Partial<Anchors>;
   const characters = dedupeCaseFold(clampArray(raw.characters, MAX_ANCHOR_ITEMS)).map(capFirst);
   const places = dedupeCaseFold(clampArray(raw.places, MAX_ANCHOR_ITEMS).map(smartFormatPlace));
   const objects = dedupeCaseFold(clampArray(raw.objects, MAX_ANCHOR_ITEMS));
-  const beats = dedupeCaseFold(clampArray(raw.beats, MAX_ANCHOR_ITEMS));
-  const felt_words = dedupeCaseFold(
-    clampArray(raw.felt_words, MAX_ANCHOR_ITEMS).map((w) => w.toLowerCase())
-  );
+  let beats = dedupeCaseFold(clampArray(raw.beats, MAX_ANCHOR_ITEMS));
+  const felt_words = dedupeCaseFold(clampArray(raw.felt_words, MAX_ANCHOR_ITEMS).map((w) => w.toLowerCase()));
+
+  // késői jelenet biztosítása
+  beats = ensureLateBeat(beats, clampArray(raw.places, MAX_ANCHOR_ITEMS), clampArray(raw.characters, MAX_ANCHOR_ITEMS));
+
   return { characters, places, objects, beats, felt_words };
 }
 
 function sanitizeQuestionSeed(seed: unknown): QuestionSeed {
   const raw = (seed ?? {}) as Partial<QuestionSeed>;
   const style =
-    typeof raw.preferred_style === "string" && 
+    typeof raw.preferred_style === "string" &&
     (ALLOWED_PREFERRED_STYLES as readonly string[]).includes(raw.preferred_style)
       ? raw.preferred_style
-      : "open_question_single"; // stable default
+      : "open_question_single";
   return {
     preferred_style: style,
     target_anchor: typeof raw.target_anchor === "string" ? raw.target_anchor : "",
@@ -211,11 +235,7 @@ function sanitizeCandidates(
     if (filtered.length >= MAX_CANDIDATES) break;
   }
 
-  const targetLength = Math.min(
-  Math.max(MIN_CANDIDATES, 0),
-  MAX_CANDIDATES,
-  allowedSlugs.length
-);
+  const targetLength = Math.min(Math.max(MIN_CANDIDATES, 0), MAX_CANDIDATES, allowedSlugs.length);
   if (filtered.length >= targetLength || targetLength === 0) return filtered;
 
   const filteredSet = new Set(filtered);
@@ -232,7 +252,6 @@ function sanitizeCandidates(
     }
   };
 
-  // bővített kulcsszavak
   addByKeywords(["narrativ", "perspektiv"]);
   addByKeywords(["visszalepes"]);
   addByKeywords(["folytatas"]);
@@ -382,7 +401,7 @@ export async function POST(req: Request) {
     const priorEchoes = clampPriorEchoes(body.prior_echoes);
     const priorEchoSessionIds = new Set(priorEchoes.map((p) => p.session_id));
 
-    // ✅ catalog: DB-ből (nem kliensből)
+    // ✅ catalog: DB-ből
     const sb = await supabaseServer();
     const { data: rows, error: catErr } = await sb
       .from("direction_catalog")
@@ -390,10 +409,7 @@ export async function POST(req: Request) {
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
 
-    if (catErr) {
-      console.warn("direction_catalog fetch failed", catErr.message);
-    }
-
+    if (catErr) console.warn("direction_catalog fetch failed", catErr.message);
     const catalogForAI = Array.isArray(rows) ? rows : [];
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -464,9 +480,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // const output = sanitizeOutput(parsed, allowedSlugs, false, priorEchoSessionIds);
     const output = safeSanitizeOutput(parsed, allowedSlugs, false, priorEchoSessionIds);
-
 
     await persistLatentAppendLog(req, {
       sessionId,
