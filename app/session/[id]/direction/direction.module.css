@@ -40,6 +40,8 @@
   line-height: 1;
   cursor: pointer;
   z-index: 5;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .close:hover {
@@ -80,6 +82,7 @@
 
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   align-items: stretch;
 
   transition: transform 160ms ease, box-shadow 160ms ease;
@@ -111,6 +114,11 @@
   font-size: 16px;
 }
 
+.cardTop {
+  display: grid;
+  gap: 12px;
+}
+
 .groupRow {
   display: flex;
   gap: 10px;
@@ -119,31 +127,10 @@
 }
 
 .title {
-  margin-top: 12px;
   font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.015em;
   line-height: 1.12;
-}
-
-.pills {
-  margin-top: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.descWrap {
-  margin-top: 12px;
-  display: grid;
-  gap: 10px;
-}
-
-.reason {
-  font-size: 12px;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.86);
 }
 
 .desc {
@@ -152,12 +139,20 @@
   color: var(--text-muted);
 }
 
-/* gomb lent: a kártya “stretch” miatt ez tényleg alulra megy */
-.cardBottom {
-  margin-top: auto;
+/* bottom row: pillek + gomb egy sorban */
+.cardBottomRow {
   display: flex;
-  justify-content: flex-end;
-  padding-top: 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.bottomPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 @media (max-width: 679px) {
@@ -165,5 +160,15 @@
     width: 100%;
     max-height: 100dvh;
     border-radius: 0;
+  }
+
+  .cardBottomRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cardBottomRow :global(.btn.btn-primary) {
+    width: 100%;
   }
 }
