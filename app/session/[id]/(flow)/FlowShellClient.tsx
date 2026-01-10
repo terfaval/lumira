@@ -2,7 +2,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import styles from "./layout.module.css";
@@ -36,8 +36,8 @@ function infoFromPath(pathname: string) {
       body: (
         <div className="stack-tight">
           <p style={{ color: "var(--text-muted)" }}>
-            Itt kapsz néhány lehetséges irányt az álomhoz. Ezek nem kész megfejtések,
-            hanem nézőpontok — válaszd azt, amelyik most a leginkább megmozdít.
+            Itt kapsz néhány lehetséges irányt az álomhoz. Ezek nem kész megfejtések, hanem nézőpontok — válaszd azt,
+            amelyik most a leginkább megmozdít.
           </p>
           <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-muted)", lineHeight: 1.7 }}>
             <li>Ha most semmi nem rezonál: menj a “További irányok”-ra.</li>
@@ -54,8 +54,8 @@ function infoFromPath(pathname: string) {
       body: (
         <div className="stack-tight">
           <p style={{ color: "var(--text-muted)" }}>
-            Itt az egyes kártyák mentén jobban kibonthatod, elmélyülhetsz az álomban. 
-            Nem kell mindent megválaszolni — elég, ha azt viszed tovább, ami most él.
+            Itt az egyes kártyák mentén jobban kibonthatod, elmélyülhetsz az álomban. Nem kell mindent megválaszolni —
+            elég, ha azt viszed tovább, ami most él.
           </p>
         </div>
       ),
@@ -86,13 +86,24 @@ function infoFromPath(pathname: string) {
   };
 }
 
-export default function FlowShellClient({ children }: { children: ReactNode }) {
+export default function FlowShellClient({
+  children,
+  modal,
+}: {
+  children: ReactNode;
+  modal?: ReactNode;
+}) {
   const { id } = useParams<{ id: string }>();
   const pathname = usePathname();
   const title = titleFromPath(pathname);
 
   const [infoOpen, setInfoOpen] = useState(false);
   const info = useMemo(() => infoFromPath(pathname), [pathname]);
+
+  // ha modal nyitva van, ne legyen nyitva az info panel (kellemesebb UX)
+  useEffect(() => {
+    if (modal) setInfoOpen(false);
+  }, [modal]);
 
   return (
     <Shell
@@ -130,11 +141,12 @@ export default function FlowShellClient({ children }: { children: ReactNode }) {
         </div>
 
         <div className={styles.rightPlain}>
-          <div style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>
-            {children}
-          </div>
+          <div style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>{children}</div>
         </div>
       </div>
+
+      {/* ✅ EZ A LÉNYEG: ide ül rá a @modal slot (pl. direction) */}
+      {modal ?? null}
     </Shell>
   );
 }
