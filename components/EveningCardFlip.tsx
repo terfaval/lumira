@@ -122,12 +122,7 @@ export function EveningCardFlip({
         {/* header ~ tile */}
         <div className={styles.top}>
           <div className={styles.left}>
-          {time ? (
-              <Pill variant="neutral">
-                      {time}
-                    </Pill>
-                  ) : null}
-                  
+
           {primaryIntent ? (
               <Pill variant="intent" colorVar={intentTok!.text}>
                 {intentLabel[primaryIntent]}
@@ -169,6 +164,12 @@ export function EveningCardFlip({
             <div className={styles.block}>
               {effect ? <div className={styles.effect}>{effect}</div> : null}
 
+              {time ? (
+              <Pill variant="neutral">
+                      {time}
+                    </Pill>
+                  ) : null}
+                  
               {overlayTags.length ? (
                 <div className={styles.tagsRow}>
                   {overlayTags.map((t) => (
