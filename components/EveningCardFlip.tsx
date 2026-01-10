@@ -140,7 +140,6 @@ export function EveningCardFlip({
 
         <div className={styles.mid}>
           <div className={styles.title}>{card.title}</div>
-          {goal && view !== "rest" ? <div className={styles.body}>{goal}</div> : null}
         </div>
 
         {view === "rest" ? (
@@ -217,7 +216,6 @@ export function EveningCardFlip({
 
         <div className={styles.mid}>
           <div className={styles.title}>{card.title}</div>
-          {goal ? <div className={styles.body}>{goal}</div> : null}
         </div>
 
         {/* tips block with lamp */}

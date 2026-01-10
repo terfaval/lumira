@@ -539,15 +539,10 @@ export default function EveningLanding() {
               }}
             >
               <div className="flip-shell" style={computeGrowStyle(originRect, opening)}>
-                <div className="flip-shell-head">
-                  <div style={{ fontWeight: 900 }}>{openCard?.title ?? "Esti kártya"}</div>
+                <div className="flip-shell-sticky">
                   <button className="btn btn-secondary" onClick={closeOverlay} ref={closeBtnRef}>
-                    Bezárás
+                    X
                   </button>
-                </div>
-
-                <div style={{ color: "var(--text-muted)", fontSize: 12, marginBottom: 10 }}>
-                  Kattintás: megnyit • Indítás: fordul • ESC: bezárás
                 </div>
 
                 {!openCard ? (
@@ -634,18 +629,20 @@ export default function EveningLanding() {
           will-change: transform, opacity;
         }
 
-        .flip-shell-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: var(--space-3);
-          padding: var(--space-1) var(--space-1) var(--space-3);
-          position: sticky;
-          top: 0;
-          background: var(--bg);
-          z-index: 2;
-          border-bottom: 1px solid var(--border);
-        }
+        .flip-shell-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+
+  display: flex;
+  justify-content: flex-end;
+
+  padding: var(--space-2) var(--space-2) var(--space-3);
+  margin: calc(var(--space-3) * -1) calc(var(--space-3) * -1) var(--space-3);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(6px);
+}ís
       `}</style>
     </Shell>
   );
