@@ -65,6 +65,13 @@ function groupLabel(raw: unknown): string {
   return s || "Egyéb";
 }
 
+function groupOrderKey(k: GroupKey): number {
+  // ✅ fix UX order (és ez adja a “helyes sorrendet” a csoportosításhoz)
+  const order: GroupKey[] = ["memory", "somatic", "patterns", "meaning", "creative", "other"];
+  const idx = order.indexOf(k);
+  return idx === -1 ? 999 : idx;
+}
+
 export default function DirectionPage() {
   const { id: sessionId } = useParams<{ id: string }>();
   const router = useRouter();
@@ -79,14 +86,12 @@ export default function DirectionPage() {
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const close = useCallback(() => {
-    // modal jelleg: vissza az előző oldalra
     router.back();
   }, [router]);
 
   const load = useCallback(async () => {
     setErr(null);
 
-    // 1) catalog
     const { data: cat, error: catErr } = await supabase
       .from("direction_catalog")
       .select("slug, title, description, is_active, content, tags, sort_order")
@@ -96,7 +101,6 @@ export default function DirectionPage() {
     if (catErr) return setErr(catErr.message);
     setCatalog((cat ?? []) as DirectionCatalogItem[]);
 
-    // 2) selected choices
     const { data: ch, error: chErr } = await supabase
       .from("morning_direction_choices")
       .select("direction_slug")
@@ -110,7 +114,6 @@ export default function DirectionPage() {
     });
     setSelected(m);
 
-    // 3) recommended_directions session summaryból
     const { data: sum, error: sumErr } = await supabase
       .from("dream_session_summaries")
       .select("recommended_directions")
@@ -151,54 +154,52 @@ export default function DirectionPage() {
   }, [close]);
 
   const orderedAll = useMemo(() => {
-    return [...catalog].sort((a, b) => getSortOrder(a) - getSortOrder(b));
+    // ✅ mindig sort_order, aztán title stabil tie-breakerrel
+    return [...catalog].sort((a, b) => {
+      const d = getSortOrder(a) - getSortOrder(b);
+      if (d !== 0) return d;
+      return String(a.title ?? "").localeCompare(String(b.title ?? ""), "hu");
+    });
   }, [catalog]);
 
   const recommended = useMemo(() => {
-    const slugs = recommendedRaw.map((r) => r.slug).slice(0, 3);
+    // ✅ ajánlott: pontosan a summary sorrendjében (max 3), nem sort_order szerint
+    const slugs = recommendedRaw.map((r) => r.slug).filter(Boolean).slice(0, 3);
+    if (!slugs.length) return orderedAll.slice(0, 3);
 
-    if (slugs.length) {
-      const bySlug = new Map(orderedAll.map((d) => [d.slug, d]));
-      const picked = slugs.map((s) => bySlug.get(s)).filter(Boolean) as DirectionCatalogItem[];
-      return picked;
-    }
-
-    // fallback: sort_order első 3
-    return orderedAll.slice(0, 3);
+    const bySlug = new Map(orderedAll.map((d) => [d.slug, d]));
+    const picked = slugs.map((s) => bySlug.get(s)).filter(Boolean) as DirectionCatalogItem[];
+    return picked.length ? picked : orderedAll.slice(0, 3);
   }, [orderedAll, recommendedRaw]);
 
-  const recommendedReasonBySlug = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const r of recommendedRaw) {
-      if (r.slug && r.reason) m.set(r.slug, r.reason);
-    }
-    return m;
-  }, [recommendedRaw]);
-
-  const rest = useMemo(() => {
-    const recSlugs = new Set(recommended.map((d) => d.slug));
-    return orderedAll.filter((d) => !recSlugs.has(d.slug));
-  }, [orderedAll, recommended]);
-
   const restGroupedFlattened = useMemo(() => {
-    const order: GroupKey[] = ["memory", "somatic", "patterns", "meaning", "creative", "other"];
+    const recSlugs = new Set(recommended.map((d) => d.slug));
+    const rest = orderedAll.filter((d) => !recSlugs.has(d.slug));
+
+    // ✅ group szerint csoportosít, de NEM ír köztes címet; a sorrend:
+    // group order (fix), azon belül sort_order
     const buckets = new Map<GroupKey, DirectionCatalogItem[]>();
-    for (const k of order) buckets.set(k, []);
+    for (const k of ["memory", "somatic", "patterns", "meaning", "creative", "other"] as GroupKey[]) {
+      buckets.set(k, []);
+    }
 
     for (const d of rest) {
-      const raw = (d as any)?.content?.group;
-      const k = groupKeyFromLabel(raw);
+      const k = groupKeyFromLabel((d as any)?.content?.group);
       buckets.get(k)!.push(d);
     }
 
-    // sort_order a bucketeken belül, és bucket order szerint fűzzük össze
     const out: DirectionCatalogItem[] = [];
-    for (const k of order) {
-      const items = (buckets.get(k) ?? []).sort((a, b) => getSortOrder(a) - getSortOrder(b));
+    const keys = Array.from(buckets.keys()).sort((a, b) => groupOrderKey(a) - groupOrderKey(b));
+    for (const k of keys) {
+      const items = (buckets.get(k) ?? []).sort((a, b) => {
+        const d = getSortOrder(a) - getSortOrder(b);
+        if (d !== 0) return d;
+        return String(a.title ?? "").localeCompare(String(b.title ?? ""), "hu");
+      });
       out.push(...items);
     }
     return out;
-  }, [rest]);
+  }, [orderedAll, recommended]);
 
   const handleStart = useCallback(
     async (slug: string) => {
@@ -232,13 +233,7 @@ export default function DirectionPage() {
     const tags = safeStringArray((d as any)?.tags).slice(0, 2);
 
     const micro =
-      ((d as any)?.content?.micro_description as string | undefined) ??
-      (d.description ?? "");
-
-    const reason =
-      opts?.recommended && recommendedReasonBySlug.get(d.slug)
-        ? recommendedReasonBySlug.get(d.slug)!
-        : null;
+      ((d as any)?.content?.micro_description as string | undefined) ?? (d.description ?? "");
 
     const isBusy = busySlug === d.slug;
 
@@ -259,34 +254,30 @@ export default function DirectionPage() {
           </div>
         ) : null}
 
-        {/* 1) GROUP pill felül */}
-        <div className={styles.groupRow}>
-          <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
-            {gLabel}
-          </Pill>
-        </div>
-
-        {/* 2) Cím */}
-        <div className={styles.title}>{d.title}</div>
-
-        {/* 3) Egyéb pillek */}
-        <div className={styles.pills}>
-          {chosen ? <Pill variant="neutral">Korábban kiválasztva</Pill> : null}
-          {tags.map((t) => (
-            <Pill key={t} variant="neutral">
-              {huTagDir(t)}
+        {/* TOP: group + cím + leírás */}
+        <div className={styles.cardTop}>
+          <div className={styles.groupRow}>
+            <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
+              {gLabel}
             </Pill>
-          ))}
-        </div>
+          </div>
 
-        {/* 4) Leírás (és opcionális reason) */}
-        <div className={styles.descWrap}>
-          {reason ? <div className={styles.reason}>{reason}</div> : null}
+          <div className={styles.title}>{d.title}</div>
+
           {micro ? <div className={styles.desc}>{micro}</div> : null}
         </div>
 
-        {/* 5) Indítás alul */}
-        <div className={styles.cardBottom}>
+        {/* ACTIONS: balra pill sáv, jobbra indítás */}
+        <div className={styles.actions}>
+          <div className={styles.actionPills}>
+            {chosen ? <Pill variant="neutral">Korábban kiválasztva</Pill> : null}
+            {tags.map((t) => (
+              <Pill key={t} variant="neutral">
+                {huTagDir(t)}
+              </Pill>
+            ))}
+          </div>
+
           <button
             className="btn btn-primary"
             onClick={() => handleStart(d.slug)}
@@ -306,7 +297,6 @@ export default function DirectionPage() {
       role="dialog"
       aria-modal="true"
       onMouseDown={(e) => {
-        // háttérre katt: zár
         if (e.target === e.currentTarget) close();
       }}
     >
@@ -327,12 +317,10 @@ export default function DirectionPage() {
           <div className={styles.stack}>
             {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}
 
-            {/* Ajánlott: nincs felirat, csak a csillag ikon a kártyákon */}
             <div className={styles.grid}>
               {recommended.map((d) => renderCard(d, { recommended: true }))}
             </div>
 
-            {/* Többi: group szerint blokkosítva (vizuális címkék nélkül), sort_order-rel */}
             <div className={styles.grid}>{restGroupedFlattened.map((d) => renderCard(d))}</div>
           </div>
         )}
