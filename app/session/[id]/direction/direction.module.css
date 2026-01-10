@@ -17,9 +17,7 @@
 
   border: 1px solid var(--line-soft);
   border-radius: 18px;
-  background: var(--bg-layer);
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.55);
-
+  background: transparent;
   padding: var(--space-3);
   position: relative;
 }
