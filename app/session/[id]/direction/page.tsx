@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
 import { startDirection } from "@/src/lib/startDirection";
@@ -11,8 +11,6 @@ import styles from "./direction.module.css";
 import { huTagDir } from "@/src/lib/tags/dirTagsHu";
 
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
-
-/** recommended_directions jsonb elemei (a te frame route-od alapján) */
 type RecommendedDirection = { slug: string; reason?: string };
 
 function safeStringArray(x: unknown): string[] {
@@ -21,6 +19,23 @@ function safeStringArray(x: unknown): string[] {
     .filter((s): s is string => typeof s === "string")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+function safeRecommendedDirections(x: unknown): RecommendedDirection[] {
+  if (!Array.isArray(x)) return [];
+  const out: RecommendedDirection[] = [];
+  for (const item of x) {
+    if (!item || typeof item !== "object") continue;
+    const slug = (item as any).slug;
+    const reason = (item as any).reason;
+    if (typeof slug === "string" && slug.trim()) {
+      out.push({
+        slug: slug.trim(),
+        reason: typeof reason === "string" ? reason : undefined,
+      });
+    }
+  }
+  return out;
 }
 
 function getSortOrder(d: DirectionCatalogItem): number {
@@ -50,23 +65,6 @@ function groupLabel(raw: unknown): string {
   return s || "Egyéb";
 }
 
-function safeRecommendedDirections(x: unknown): RecommendedDirection[] {
-  if (!Array.isArray(x)) return [];
-  const out: RecommendedDirection[] = [];
-  for (const item of x) {
-    if (!item || typeof item !== "object") continue;
-    const slug = (item as any).slug;
-    const reason = (item as any).reason;
-    if (typeof slug === "string" && slug.trim()) {
-      out.push({
-        slug: slug.trim(),
-        reason: typeof reason === "string" ? reason : undefined,
-      });
-    }
-  }
-  return out;
-}
-
 export default function DirectionPage() {
   const { id: sessionId } = useParams<{ id: string }>();
   const router = useRouter();
@@ -74,11 +72,16 @@ export default function DirectionPage() {
 
   const [catalog, setCatalog] = useState<DirectionCatalogItem[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [recommendedRaw, setRecommendedRaw] = useState<RecommendedDirection[]>([]);
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // NEW: recommended slugs + reason sessionhez
-  const [recommendedRaw, setRecommendedRaw] = useState<RecommendedDirection[]>([]);
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  const close = useCallback(() => {
+    // modal jelleg: vissza az előző oldalra
+    router.back();
+  }, [router]);
 
   const load = useCallback(async () => {
     setErr(null);
@@ -107,17 +110,14 @@ export default function DirectionPage() {
     });
     setSelected(m);
 
-    // 3) recommended_directions a dream_session_summaries-ből (session szerint)
+    // 3) recommended_directions session summaryból
     const { data: sum, error: sumErr } = await supabase
       .from("dream_session_summaries")
       .select("recommended_directions")
       .eq("session_id", sessionId)
       .maybeSingle();
 
-    if (sumErr) {
-      // ezt nem tesszük hard errorrá, csak jelzünk (de az oldal működjön)
-      console.warn("dream_session_summaries load error:", sumErr.message);
-    }
+    if (sumErr) console.warn("dream_session_summaries load error:", sumErr.message);
 
     const rec = safeRecommendedDirections((sum as any)?.recommended_directions);
     setRecommendedRaw(rec);
@@ -127,12 +127,34 @@ export default function DirectionPage() {
     load();
   }, [load]);
 
+  // lock scroll while modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  // ESC + focus X
+  useEffect(() => {
+    closeBtnRef.current?.focus();
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [close]);
+
   const orderedAll = useMemo(() => {
     return [...catalog].sort((a, b) => getSortOrder(a) - getSortOrder(b));
   }, [catalog]);
 
   const recommended = useMemo(() => {
-    // prioritás: DB ajánlások
     const slugs = recommendedRaw.map((r) => r.slug).slice(0, 3);
 
     if (slugs.length) {
@@ -141,7 +163,7 @@ export default function DirectionPage() {
       return picked;
     }
 
-    // fallback: első 3 sort_order
+    // fallback: sort_order első 3
     return orderedAll.slice(0, 3);
   }, [orderedAll, recommendedRaw]);
 
@@ -158,35 +180,24 @@ export default function DirectionPage() {
     return orderedAll.filter((d) => !recSlugs.has(d.slug));
   }, [orderedAll, recommended]);
 
-  const grouped = useMemo(() => {
-    const buckets: Record<GroupKey, { label: string; items: DirectionCatalogItem[] }> = {
-      memory: { label: "Álomemlékezet erősítése", items: [] },
-      somatic: { label: "Érzelmi és testi lenyomat", items: [] },
-      patterns: { label: "Mintázatok keresése", items: [] },
-      meaning: { label: "Jelentések keresése", items: [] },
-      creative: { label: "Kreatív integráció", items: [] },
-      other: { label: "Egyéb", items: [] },
-    };
+  const restGroupedFlattened = useMemo(() => {
+    const order: GroupKey[] = ["memory", "somatic", "patterns", "meaning", "creative", "other"];
+    const buckets = new Map<GroupKey, DirectionCatalogItem[]>();
+    for (const k of order) buckets.set(k, []);
 
     for (const d of rest) {
       const raw = (d as any)?.content?.group;
       const k = groupKeyFromLabel(raw);
-      const label = groupLabel(raw);
-
-      // ha DB label van, használjuk
-      if (label && k !== "other") buckets[k].label = label;
-
-      buckets[k].items.push(d);
+      buckets.get(k)!.push(d);
     }
 
-    const order: GroupKey[] = ["memory", "somatic", "patterns", "meaning", "creative", "other"];
-    return order
-      .map((k) => ({ key: k, label: buckets[k].label, items: buckets[k].items }))
-      .filter((g) => g.items.length > 0)
-      .map((g) => ({
-        ...g,
-        items: g.items.sort((a, b) => getSortOrder(a) - getSortOrder(b)),
-      }));
+    // sort_order a bucketeken belül, és bucket order szerint fűzzük össze
+    const out: DirectionCatalogItem[] = [];
+    for (const k of order) {
+      const items = (buckets.get(k) ?? []).sort((a, b) => getSortOrder(a) - getSortOrder(b));
+      out.push(...items);
+    }
+    return out;
   }, [rest]);
 
   const handleStart = useCallback(
@@ -211,28 +222,25 @@ export default function DirectionPage() {
     [router, sessionId]
   );
 
-  function renderCard(d: DirectionCatalogItem, opts?: { isRecommended?: boolean }) {
+  function renderCard(d: DirectionCatalogItem, opts?: { recommended?: boolean }) {
     const rawGroup = (d as any)?.content?.group;
     const gKey = groupKeyFromLabel(rawGroup);
     const gLabel = groupLabel(rawGroup);
     const token = groupToken(gKey);
 
     const chosen = !!selected[d.slug];
-
-    // tags: max 2
     const tags = safeStringArray((d as any)?.tags).slice(0, 2);
 
-    // micro desc preference: micro_description -> description
     const micro =
       ((d as any)?.content?.micro_description as string | undefined) ??
       (d.description ?? "");
 
-    const isBusy = busySlug === d.slug;
-
     const reason =
-      opts?.isRecommended && recommendedReasonBySlug.get(d.slug)
+      opts?.recommended && recommendedReasonBySlug.get(d.slug)
         ? recommendedReasonBySlug.get(d.slug)!
         : null;
+
+    const isBusy = busySlug === d.slug;
 
     return (
       <div
@@ -245,29 +253,39 @@ export default function DirectionPage() {
             var(${token.bg}) 110%)`,
         }}
       >
-        <div className={styles.cardTop}>
-          <div className={styles.title}>{d.title}</div>
-
-          {/* ✅ pillek: cím alatt, leírás fölött */}
-          <div className={styles.pills}>
-            <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
-              {gLabel}
-            </Pill>
-
-            {opts?.isRecommended ? <Pill variant="neutral">Ajánlott</Pill> : null}
-            {chosen ? <Pill variant="neutral">Korábban kiválasztva</Pill> : null}
-
-            {tags.map((t) => (
-              <Pill key={t} variant="neutral">
-                {huTagDir(t)}
-              </Pill>
-            ))}
+        {opts?.recommended ? (
+          <div className={styles.recoIcon} title="Ajánlott" aria-label="Ajánlott">
+            ★
           </div>
+        ) : null}
 
+        {/* 1) GROUP pill felül */}
+        <div className={styles.groupRow}>
+          <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
+            {gLabel}
+          </Pill>
+        </div>
+
+        {/* 2) Cím */}
+        <div className={styles.title}>{d.title}</div>
+
+        {/* 3) Egyéb pillek */}
+        <div className={styles.pills}>
+          {chosen ? <Pill variant="neutral">Korábban kiválasztva</Pill> : null}
+          {tags.map((t) => (
+            <Pill key={t} variant="neutral">
+              {huTagDir(t)}
+            </Pill>
+          ))}
+        </div>
+
+        {/* 4) Leírás (és opcionális reason) */}
+        <div className={styles.descWrap}>
           {reason ? <div className={styles.reason}>{reason}</div> : null}
           {micro ? <div className={styles.desc}>{micro}</div> : null}
         </div>
 
+        {/* 5) Indítás alul */}
         <div className={styles.cardBottom}>
           <button
             className="btn btn-primary"
@@ -283,53 +301,42 @@ export default function DirectionPage() {
   }
 
   return (
-    <div className={styles.wrap}>
-      <div className={styles.head}>
-        <div>
-          <div className="split-panel-title">Irányválasztás</div>
-          <div className={styles.subtitle}>
-            Válassz egy irányt, és indítsd el. Ha felkavaró az álom, testi/grounding fókusz ajánlott.
-          </div>
-        </div>
-
-        <button className="btn btn-secondary" onClick={() => router.back()}>
-          Bezárás
+    <div
+      className={styles.overlay}
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(e) => {
+        // háttérre katt: zár
+        if (e.target === e.currentTarget) close();
+      }}
+    >
+      <div className={styles.panel} role="document">
+        <button
+          ref={closeBtnRef}
+          className={styles.close}
+          onClick={close}
+          aria-label="Bezárás"
+          type="button"
+        >
+          ×
         </button>
-      </div>
 
-      {loading ? (
-        <div className={styles.loading}>Betöltés...</div>
-      ) : (
-        <>
-          {err ? <p style={{ color: "crimson", marginTop: 10 }}>{err}</p> : null}
+        {loading ? (
+          <div className={styles.loading}>Betöltés...</div>
+        ) : (
+          <div className={styles.stack}>
+            {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}
 
-          {/* Ajánlott */}
-          <section className={styles.section}>
-            <div className={styles.sectionHead}>
-              <div className={styles.sectionTitle}>Ajánlott</div>
-              <div className={styles.sectionNote}>
-                Ezeket a rendszer a session summary alapján javasolja.
-              </div>
-            </div>
-
+            {/* Ajánlott: nincs felirat, csak a csillag ikon a kártyákon */}
             <div className={styles.grid}>
-              {recommended.map((d) => renderCard(d, { isRecommended: true }))}
+              {recommended.map((d) => renderCard(d, { recommended: true }))}
             </div>
-          </section>
 
-          {/* Többi: group szerint */}
-          {grouped.map((g) => (
-            <section key={g.key} className={styles.section}>
-              <div className={styles.sectionHead}>
-                <div className={styles.sectionTitle}>{g.label}</div>
-                <div className={styles.sectionNote}>Sort_order szerint rendezve.</div>
-              </div>
-
-              <div className={styles.grid}>{g.items.map((d) => renderCard(d))}</div>
-            </section>
-          ))}
-        </>
-      )}
+            {/* Többi: group szerint blokkosítva (vizuális címkék nélkül), sort_order-rel */}
+            <div className={styles.grid}>{restGroupedFlattened.map((d) => renderCard(d))}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
