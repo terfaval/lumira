@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/Card";
 import { Shell } from "@/components/Shell";
 import { Pill } from "@/components/Pill";
@@ -142,7 +142,6 @@ function InfoIcon() {
 }
 
 export default function ArchiveClient() {
-  const router = useRouter();
   const sp = useSearchParams();
 
   const status = parseStatus(sp.get("status") ?? undefined);
@@ -266,7 +265,6 @@ export default function ArchiveClient() {
       <div className="stack">
         {error && <p style={{ color: "crimson" }}>{error}</p>}
 
-        {/* ✅ Controls wrapper: 3 oszlop + irányok alatta (CSS-sel rásegítve) */}
         <div className="archive-controls-wrap">
           <ArchiveControls
             availableDirections={availableDirections}
@@ -300,48 +298,56 @@ export default function ArchiveClient() {
               const stTok = statusPillToken(computedStatus);
 
               return (
-  <div
-    key={session.id}
-    role="link"
-    tabIndex={0}
-    onClick={() => router.push(`/session/${session.id}/summary`)}
-    onKeyDown={(e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        router.push(`/session/${session.id}/summary`);
-      }
-    }}
-    style={{ textDecoration: "none" }}
-  >
-    <div
-      className="archive-tile"
-      style={{
-        background: `linear-gradient(135deg,
-          var(--evening-card-paper-strong) 0%,
-          var(--evening-card-paper) 42%,
-          ${corner} 110%)`,
-      }}
-    >
-      {/* a tile belseje maradhat ugyanaz */}
-      ...
-    </div>
-  </div>
-);
+                <Link key={session.id} href={`/session/${session.id}/summary`} style={{ textDecoration: "none" }}>
+                  <div
+                    className="archive-tile"
+                    style={{
+                      background: `linear-gradient(135deg,
+                        var(--evening-card-paper-strong) 0%,
+                        var(--evening-card-paper) 42%,
+                        ${corner} 110%)`,
+                    }}
+                  >
+                    <div className="tile-top">
+                      <div className="tile-left">
+                        <div className="tile-title">{titleOf(session)}</div>
 
+                        <Pill variant="neutral" colorVar={stTok.text} bgVar={stTok.bg}>
+                          {formatStatusLabel(computedStatus)}
+                        </Pill>
+                      </div>
+
+                      <div className="tile-right">{progress}</div>
+                    </div>
+
+                    {snippet ? <div className="tile-snippet">{snippet}</div> : null}
+
+                    <div className="tile-bottom">
+                      {session.touched_directions_count > 0 ? (
+                        <div className="tile-meta">{session.touched_directions_count} érintett irány</div>
+                      ) : (
+                        <div className="tile-meta">—</div>
+                      )}
+
+                      <div className="tile-date">
+                        {session.created_at ? new Date(session.created_at).toLocaleString("hu-HU") : ""}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
             })}
           </div>
         )}
       </div>
 
       <style jsx>{`
-        /* ✅ mindig 1 oszlop */
         .archive-grid {
           display: grid;
           gap: var(--space-3);
           grid-template-columns: 1fr;
         }
 
-        /* ✅ alacsonyabb tile */
         .archive-tile {
           cursor: pointer;
           border-radius: 18px;
@@ -365,7 +371,7 @@ export default function ArchiveClient() {
 
         .tile-top {
           display: flex;
-          align-items: center; /* ✅ baseline helyett center */
+          align-items: center;
           justify-content: space-between;
           gap: var(--space-3);
         }
@@ -373,7 +379,7 @@ export default function ArchiveClient() {
         .tile-left {
           display: flex;
           gap: var(--space-2);
-          align-items: center; /* ✅ title + pill center */
+          align-items: center;
           flex-wrap: wrap;
           min-width: 0;
         }
@@ -392,7 +398,6 @@ export default function ArchiveClient() {
           white-space: nowrap;
         }
 
-        /* ✅ nagyobb + hosszabb snippet */
         .tile-snippet {
           margin-top: 10px;
           font-size: 14px;
@@ -423,13 +428,6 @@ export default function ArchiveClient() {
           white-space: nowrap;
         }
 
-        /* ─────────────────────────────────────────────── */
-        /* ✅ Controls: 3 oszlop + irányok alatta          */
-        /* Ez “best effort” a belső classok alapján.      */
-        /* Ha a te ArchiveControls-od más neveket használ, */
-        /* csak a szelektorokat írd át.                   */
-        /* ─────────────────────────────────────────────── */
-
         .archive-controls-wrap :global(.filters) {
           display: grid;
           grid-template-columns: 1fr;
@@ -442,7 +440,6 @@ export default function ArchiveClient() {
           }
         }
 
-        /* ha van külön directions blokk, told le a 3 oszlop alá */
         .archive-controls-wrap :global(.directions),
         .archive-controls-wrap :global(.directions-wrap),
         .archive-controls-wrap :global(.direction-pills),
