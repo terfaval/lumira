@@ -17,8 +17,6 @@ import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { requireUserId } from "@/src/lib/db";
 import ArchiveControls from "./ArchiveControls";
 
-const router = useRouter();
-
 type ArchiveStatusFilter = Feldolgozottsag | "lezart";
 
 const rangeOptions: RangeOption[] = ["all", "7", "30", "90", "365"];
@@ -144,6 +142,7 @@ function InfoIcon() {
 }
 
 export default function ArchiveClient() {
+  const router = useRouter();
   const sp = useSearchParams();
 
   const status = parseStatus(sp.get("status") ?? undefined);
