@@ -122,7 +122,13 @@ export function EveningCardFlip({
         {/* header ~ tile */}
         <div className={styles.top}>
           <div className={styles.left}>
-            {primaryIntent ? (
+          {time ? (
+              <Pill variant="neutral">
+                      {time}
+                    </Pill>
+                  ) : null}
+                  
+          {primaryIntent ? (
               <Pill variant="intent" colorVar={intentTok!.text}>
                 {intentLabel[primaryIntent]}
               </Pill>
@@ -135,8 +141,7 @@ export function EveningCardFlip({
             ) : null}
           </div>
 
-          {time ? <div className={styles.time}>{time}</div> : null}
-        </div>
+          </div>
 
         <div className={styles.mid}>
           <div className={styles.title}>{card.title}</div>

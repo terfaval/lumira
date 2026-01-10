@@ -1,0 +1,557 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { supabase } from "@/src/lib/supabase/client";
+import { useRequireAuth } from "@/src/hooks/useRequireAuth";
+import { Shell } from "@/components/Shell";
+import { Card } from "@/components/Card";
+import { Pill } from "@/components/Pill";
+import { startDirection } from "@/src/lib/startDirection";
+import type {
+  DreamSession,
+  DirectionCatalogItem,
+  DirectionCardContent,
+  WorkBlock,
+} from "@/src/lib/types";
+
+import styles from "./summary.module.css";
+
+// Type for recommended direction records
+type RecommendedDirection = { slug: string; reason?: string };
+
+// Keys for grouping directions, matching those on the direction selection page
+type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
+
+// Helper: safely convert unknown arrays into string arrays
+function safeStringArray(x: unknown): string[] {
+  if (!Array.isArray(x)) return [];
+  return x
+    .filter((s): s is string => typeof s === "string")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+// Parse recommended directions from JSON
+function safeRecommendedDirections(x: unknown): RecommendedDirection[] {
+  if (!Array.isArray(x)) return [];
+  const out: RecommendedDirection[] = [];
+  for (const item of x) {
+    if (!item || typeof item !== "object") continue;
+    const slug = (item as any).slug;
+    const reason = (item as any).reason;
+    if (typeof slug === "string" && slug.trim()) {
+      out.push({ slug: slug.trim(), reason: typeof reason === "string" ? reason : undefined });
+    }
+  }
+  return out;
+}
+
+// Convert Hungarian group labels into stable keys
+function groupKeyFromLabel(raw: unknown): GroupKey {
+  const label = String(raw ?? "").trim().toLowerCase();
+  if (label.includes("álomemlékezet")) return "memory";
+  if (label.includes("érzelmi") || label.includes("testi")) return "somatic";
+  if (label.includes("mintázat")) return "patterns";
+  if (label.includes("jelent")) return "meaning";
+  if (label.includes("kreatív")) return "creative";
+  return "other";
+}
+
+// Provide CSS variable tokens for a given group key
+function groupToken(k: GroupKey) {
+  return { text: `--dirgroup-${k}` as const, bg: `--dirgroup-${k}-bg` as const };
+}
+
+// Normalize group label: fall back to “Egyéb” if empty
+function groupLabel(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  return s || "Egyéb";
+}
+
+// Determine ordering of groups in UI
+function groupOrderKey(k: GroupKey): number {
+  const order: GroupKey[] = ["memory", "somatic", "patterns", "meaning", "creative", "other"];
+  const idx = order.indexOf(k);
+  return idx === -1 ? 999 : idx;
+}
+
+// Compute a compact title for a session based on summary or raw text
+function titleOf(session: DreamSession | null, summary: { title?: string | null } | null): string {
+  // Use summary title if available
+  const t = String(summary?.title ?? "").trim();
+  if (t) return t;
+  // Fallback to first line of raw dream text
+  const raw = String(session?.raw_dream_text ?? "").trim().replace(/\s+/g, " ");
+  if (!raw) return "Cím nélküli álom";
+  return raw.length > 42 ? raw.slice(0, 41) + "…" : raw;
+}
+
+// Check if block content is a direction card
+function isDirectionCard(content: unknown): content is DirectionCardContent {
+  if (!content || typeof content !== "object") return false;
+  return (content as any).kind === "direction_card" && typeof (content as any).direction_slug === "string";
+}
+
+export default function SessionSummary() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const { loading } = useRequireAuth();
+
+  const [session, setSession] = useState<DreamSession | null>(null);
+  const [summary, setSummary] = useState<{ title?: string | null; framing_text?: string | null; recommended_directions?: any } | null>(null);
+  const [workBlocks, setWorkBlocks] = useState<WorkBlock[]>([]);
+  const [directionCatalog, setDirectionCatalog] = useState<DirectionCatalogItem[]>([]);
+  const [selectedDirs, setSelectedDirs] = useState<Record<string, boolean>>({});
+  const [recommendedRaw, setRecommendedRaw] = useState<RecommendedDirection[]>([]);
+  const [showRest, setShowRest] = useState(false);
+  const [tab, setTab] = useState<'raw' | 'summary'>('raw');
+  // Keep active card index per direction slug; defaults handled in getter
+  const [activeIndex, setActiveIndex] = useState<Record<string, number>>({});
+  const [err, setErr] = useState<string | null>(null);
+
+  // Load session, summary, work blocks and directions on mount
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      try {
+        setErr(null);
+        // Load session details (raw text, status, created/archived)
+        const { data: sessionData, error: sessErr } = await supabase
+          .from('dream_sessions')
+          .select('id, raw_dream_text, ai_framing_text, status, created_at, updated_at, archived_at')
+          .eq('id', id)
+          .single();
+        if (sessErr) throw new Error(sessErr.message);
+        setSession(sessionData as DreamSession);
+
+        // Load session summary (title, framing text, recommended directions)
+        const { data: summaryData, error: summaryErr } = await supabase
+          .from('dream_session_summaries')
+          .select('title, framing_text, recommended_directions')
+          .eq('session_id', id)
+          .maybeSingle();
+        if (summaryErr) {
+          console.warn('Summary fetch error:', summaryErr.message);
+        }
+        setSummary((summaryData ?? null) as any);
+        const rec = safeRecommendedDirections((summaryData as any)?.recommended_directions);
+        setRecommendedRaw(rec);
+
+        // Load work blocks of type dream_analysis
+        const { data: blocks, error: wbErr } = await supabase
+          .from('work_blocks')
+          .select('id, session_id, user_id, block_type, content, created_at, updated_at')
+          .eq('session_id', id)
+          .eq('block_type', 'dream_analysis')
+          .order('created_at', { ascending: true });
+        if (wbErr) throw new Error(wbErr.message);
+        setWorkBlocks((blocks ?? []) as WorkBlock[]);
+
+        // Load selected direction slugs
+        const { data: choices, error: choiceErr } = await supabase
+          .from('morning_direction_choices')
+          .select('direction_slug')
+          .eq('session_id', id);
+        if (choiceErr) throw new Error(choiceErr.message);
+        const sel: Record<string, boolean> = {};
+        (choices ?? []).forEach((row: any) => {
+          const s = row.direction_slug;
+          if (typeof s === 'string') sel[s] = true;
+        });
+        setSelectedDirs(sel);
+
+        // Load full direction catalog (active)
+        const { data: cat, error: catErr } = await supabase
+          .from('direction_catalog')
+          .select('slug, title, description, content, tags, sort_order, is_active')
+          .eq('is_active', true);
+        if (catErr) throw new Error(catErr.message);
+        setDirectionCatalog((cat ?? []) as DirectionCatalogItem[]);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Hiba történt az összkép betöltésekor.';
+        setErr(message);
+      }
+    })();
+  }, [id]);
+
+  // Map work blocks into grouped decks keyed by direction slug
+  const deckData = useMemo(() => {
+    const map = new Map<string, { slug: string; blocks: WorkBlock[] }>();
+    for (const b of workBlocks) {
+      if (!isDirectionCard(b.content)) continue;
+      const slug = (b.content as any).direction_slug as string;
+      if (!map.has(slug)) map.set(slug, { slug, blocks: [] });
+      map.get(slug)!.blocks.push(b);
+    }
+    // Sort blocks within each group by sequence (if available)
+    const decks: { slug: string; blocks: WorkBlock[] }[] = [];
+    map.forEach((v) => {
+      v.blocks.sort((a, b) => {
+        const as = (a.content as any).sequence ?? 0;
+        const bs = (b.content as any).sequence ?? 0;
+        return as - bs;
+      });
+      decks.push(v);
+    });
+    // order decks by first card creation time (asc)
+    decks.sort((a, b) => {
+      const aTime = new Date(a.blocks[0].created_at).getTime();
+      const bTime = new Date(b.blocks[0].created_at).getTime();
+      return aTime - bTime;
+    });
+    return decks;
+  }, [workBlocks]);
+
+  // On deck change, ensure active indices exist
+  useEffect(() => {
+    setActiveIndex((prev) => {
+      const updated: Record<string, number> = { ...prev };
+      for (const deck of deckData) {
+        if (typeof updated[deck.slug] !== 'number') updated[deck.slug] = 0;
+      }
+      return updated;
+    });
+  }, [deckData]);
+
+  // Build a slug→catalog map for quick lookups
+  const catalogBySlug = useMemo(() => {
+    const m = new Map<string, DirectionCatalogItem>();
+    for (const d of directionCatalog) m.set(d.slug, d);
+    return m;
+  }, [directionCatalog]);
+
+  // Compute recommended directions: prefer summary suggestions if available; filter out selected
+  const recommendedDirs = useMemo(() => {
+    // get all available (not selected) directions
+    const notSelected = directionCatalog.filter((d) => !selectedDirs[d.slug]);
+    // Determine base list sorted by sort_order then title
+    const orderedAll = [...notSelected].sort((a, b) => {
+      const d = (a as any)?.sort_order - (b as any)?.sort_order;
+      if (d !== 0) return d;
+      return String(a.title ?? '').localeCompare(String(b.title ?? ''), 'hu');
+    });
+    // Build list of suggested slugs from summary (if present)
+    const suggested = recommendedRaw
+      .map((r) => r.slug)
+      .filter((s) => s && !selectedDirs[s]);
+    const slugs = suggested.slice(0, 3);
+    if (slugs.length > 0) {
+      const bySlug = new Map<string, DirectionCatalogItem>();
+      orderedAll.forEach((d) => bySlug.set(d.slug, d));
+      const picked = slugs
+        .map((s) => bySlug.get(s))
+        .filter((d): d is DirectionCatalogItem => !!d)
+        .slice(0, 3);
+      if (picked.length > 0) return picked;
+    }
+    return orderedAll.slice(0, 3);
+  }, [directionCatalog, recommendedRaw, selectedDirs]);
+
+  // Compute rest directions (not selected and not in recommended) grouped and flattened
+  const restDirs = useMemo(() => {
+    const recSet = new Set(recommendedDirs.map((d) => d.slug));
+    const candidates = directionCatalog.filter((d) => !selectedDirs[d.slug] && !recSet.has(d.slug));
+    // Bucket by group key
+    const buckets = new Map<GroupKey, DirectionCatalogItem[]>();
+    for (const k of ["memory", "somatic", "patterns", "meaning", "creative", "other"] as GroupKey[]) {
+      buckets.set(k, []);
+    }
+    for (const d of candidates) {
+      const gKey = groupKeyFromLabel((d as any)?.content?.group);
+      buckets.get(gKey)!.push(d);
+    }
+    const out: DirectionCatalogItem[] = [];
+    const keys = Array.from(buckets.keys()).sort((a, b) => groupOrderKey(a) - groupOrderKey(b));
+    for (const k of keys) {
+      const items = (buckets.get(k) ?? []).sort((a, b) => {
+        const d = (a as any)?.sort_order - (b as any)?.sort_order;
+        if (d !== 0) return d;
+        return String(a.title ?? '').localeCompare(String(b.title ?? ''), 'hu');
+      });
+      out.push(...items);
+    }
+    return out;
+  }, [directionCatalog, recommendedDirs, selectedDirs]);
+
+  // Compute simple stats: answered vs total work blocks, distinct directions started
+  const stats = useMemo(() => {
+    const total = workBlocks.length;
+    let answered = 0;
+    for (const b of workBlocks) {
+      if (!isDirectionCard(b.content)) continue;
+      const state = (b.content as any).state ?? 'open';
+      if (state === 'answered') answered++;
+    }
+    const directions = new Set<string>();
+    for (const deck of deckData) directions.add(deck.slug);
+    return { total, answered, directions: directions.size };
+  }, [workBlocks, deckData]);
+
+  // Handle starting a new direction
+  const handleStartDirection = useCallback(
+    async (slug: string) => {
+      setErr(null);
+      try {
+        const result = await startDirection(id, slug);
+        if (!result.success) {
+          setErr(result.error ?? 'Hiba történt az irány indítása során.');
+          return;
+        }
+        // Update selectedDirs state
+        setSelectedDirs((prev) => ({ ...prev, [slug]: true }));
+        // Navigate to work page for this direction
+        router.push(`/session/${id}/work?direction=${encodeURIComponent(slug)}`);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Hiba történt az irány indítása során.';
+        setErr(message);
+      }
+    },
+    [id, router]
+  );
+
+  // Render a deck row
+  function renderDeckRow(deck: { slug: string; blocks: WorkBlock[] }) {
+    const meta = catalogBySlug.get(deck.slug);
+    const groupRaw = (meta as any)?.content?.group;
+    const gKey = groupKeyFromLabel(groupRaw);
+    const gLabel = groupLabel(groupRaw);
+    const token = groupToken(gKey);
+    const dirTitle = meta?.title ?? deck.slug;
+    const blocks = deck.blocks;
+    const active = activeIndex[deck.slug] ?? 0;
+    const answeredCount = blocks.filter((b) => {
+      const state = (b.content as any).state ?? 'open';
+      return state === 'answered';
+    }).length;
+    return (
+      <div key={deck.slug} className={styles.deckRow}>
+        <div className={styles.deckHeader}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
+              {gLabel}
+            </Pill>
+            <span className={styles.deckTitle}>{dirTitle}</span>
+          </div>
+          <span className={styles.deckStatus}>{answeredCount}/{blocks.length}</span>
+        </div>
+        <div className={styles.deck}>
+          {blocks.map((b, idx) => {
+            const isActive = idx === active;
+            const topOffset = isActive ? 0 : (idx - active) * 8 + 60;
+            const cardClass = isActive ? styles.activeCard : styles.collapsedCard;
+            // Determine question and answer
+            const content = b.content as any;
+            const question = content.ai?.question ?? '';
+            const answer = content.user?.answer ?? null;
+            return (
+              <div
+                key={b.id}
+                className={`${styles.card} ${cardClass}`}
+                style={{ top: `${topOffset}px` }}
+              >
+                <div className={styles.cardHeader}>
+                  <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
+                    {gLabel}
+                  </Pill>
+                  <span>{idx + 1}.</span>
+                </div>
+                {isActive ? (
+                  <>
+                    <div className={styles.cardQuestion}>{question || '—'}</div>
+                    <div className={styles.cardAnswer}>
+                      {answer ? answer : <em style={{ color: 'var(--text-muted)' }}>Nincs válasz</em>}
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            );
+          })}
+          {blocks.length > 1 ? (
+            <div className={styles.navButtons}>
+              <button
+                onClick={() =>
+                  setActiveIndex((prev) => ({
+                    ...prev,
+                    [deck.slug]: Math.max(0, active - 1),
+                  }))
+                }
+                disabled={active <= 0}
+                aria-label="Előző kártya"
+              >
+                ◀
+              </button>
+              <button
+                onClick={() =>
+                  setActiveIndex((prev) => ({
+                    ...prev,
+                    [deck.slug]: Math.min(blocks.length - 1, active + 1),
+                  }))
+                }
+                disabled={active >= blocks.length - 1}
+                aria-label="Következő kártya"
+              >
+                ▶
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  // Render a direction card (recommended/rest) with start button
+  function renderDirCard(d: DirectionCatalogItem) {
+    const gRaw = (d as any)?.content?.group;
+    const gKey = groupKeyFromLabel(gRaw);
+    const gLabel = groupLabel(gRaw);
+    const token = groupToken(gKey);
+    const tags = safeStringArray((d as any)?.tags).slice(0, 2);
+    const micro = ((d as any)?.content?.micro_description ?? d.description ?? '') as string;
+    const chosen = !!selectedDirs[d.slug];
+    return (
+      <div key={d.slug} className={styles.dirCard}>
+        <div className={styles.dirCardTop}>
+          <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
+            {gLabel}
+          </Pill>
+          {chosen && <Pill variant="neutral">Korábban kiválasztva</Pill>}
+        </div>
+        <div className={styles.dirTitle}>{d.title}</div>
+        {micro && <div className={styles.dirDesc}>{micro}</div>}
+        <div className={styles.dirTags}>
+          {tags.map((t) => (
+            <Pill key={t} variant="neutral">
+              {t}
+            </Pill>
+          ))}
+        </div>
+        <div className={styles.dirActions}>
+          <button
+            className="btn btn-primary"
+            onClick={() => handleStartDirection(d.slug)}
+            aria-label={`Indítás: ${d.title}`}
+          >
+            Indítás
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Shell title="Álom összkép" space="dream">
+        <p style={{ color: 'var(--text-muted)' }}>Betöltés…</p>
+      </Shell>
+    );
+  }
+
+  if (err) {
+    return (
+      <Shell title="Álom összkép" space="dream">
+        <p style={{ color: 'crimson' }}>{err}</p>
+      </Shell>
+    );
+  }
+
+  if (!session) {
+    return (
+      <Shell title="Álom összkép" space="dream">
+        <p style={{ color: 'var(--text-muted)' }}>Betöltés…</p>
+      </Shell>
+    );
+  }
+
+  const title = titleOf(session, summary);
+  const framing = summary?.framing_text ?? session.ai_framing_text ?? null;
+
+  return (
+    <Shell title="Álom összkép" space="dream">
+      <div className={styles.summaryWrap}>
+        <h1 className={styles.dreamTitle}>{title}</h1>
+        {/* Tab selector */}
+        <div className={styles.tabs} role="tablist">
+          <button
+            className={`${styles.tabButton} ${tab === 'raw' ? styles.tabActive : ''}`}
+            role="tab"
+            aria-selected={tab === 'raw'}
+            onClick={() => setTab('raw')}
+          >
+            Nyers álom
+          </button>
+          <button
+            className={`${styles.tabButton} ${tab === 'summary' ? styles.tabActive : ''}`}
+            role="tab"
+            aria-selected={tab === 'summary'}
+            onClick={() => setTab('summary')}
+          >
+            AI összefoglaló
+          </button>
+        </div>
+        {/* Tab content */}
+        <Card>
+          <div className="stack-tight">
+            {tab === 'raw' ? (
+              <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-muted)' }}>{session.raw_dream_text}</div>
+            ) : (
+              <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-muted)' }}>{framing ?? '—'}</div>
+            )}
+          </div>
+        </Card>
+        {/* Stats */}
+        <div className={styles.stats}>
+          <div className={styles.statsItem}>{stats.answered}/{stats.total} kártya rögzítve</div>
+          <div className={styles.statsItem}>{stats.directions} irány érintve</div>
+        </div>
+        {/* Work decks */}
+        <div className={styles.decks}>
+          {deckData.length === 0 ? (
+            <Card>
+              <p style={{ color: 'var(--text-muted)', margin: 0 }}>Még nincsenek kártyák ebben az álomban.</p>
+            </Card>
+          ) : (
+            deckData.map((deck) => renderDeckRow(deck))
+          )}
+        </div>
+        {/* Recommended directions */}
+        <div className={styles.recommendSection}>
+          <h2 style={{ margin: 0, fontSize: '20px' }}>Ajánlott irányok</h2>
+          <div className={styles.dirGrid}>
+            {recommendedDirs.map((d) => renderDirCard(d))}
+          </div>
+        </div>
+        {/* Show rest directions toggle */}
+        {restDirs.length > 0 && !showRest ? (
+          <div style={{ textAlign: 'center' }}>
+            <button className={styles.moreButton} onClick={() => setShowRest(true)}>
+              Más irányt keresek
+            </button>
+          </div>
+        ) : null}
+        {/* Rest directions list */}
+        {showRest && restDirs.length > 0 ? (
+          <div className={styles.recommendSection} style={{ marginTop: 'var(--space-3)' }}>
+            <h2 style={{ margin: 0, fontSize: '20px' }}>További irányok</h2>
+            <div className={styles.dirGrid}>
+              {restDirs.map((d) => renderDirCard(d))}
+            </div>
+          </div>
+        ) : null}
+        {/* Navigation to work/direction/back (fallback for sessions with no blocks) */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <Link href={`/session/${id}/work`} className="btn btn-primary">
+            Feldolgozás
+          </Link>
+          <Link href={`/session/${id}/direction`} className="btn btn-secondary">
+            Irányok
+          </Link>
+          <Link href="/archive" className="btn btn-secondary">
+            Vissza
+          </Link>
+        </div>
+      </div>
+    </Shell>
+  );
+}

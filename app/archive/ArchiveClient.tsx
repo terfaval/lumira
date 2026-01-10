@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Card } from "@/components/Card";
 import { Shell } from "@/components/Shell";
 import { Pill } from "@/components/Pill";
@@ -16,6 +16,8 @@ import {
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { requireUserId } from "@/src/lib/db";
 import ArchiveControls from "./ArchiveControls";
+
+const router = useRouter();
 
 type ArchiveStatusFilter = Feldolgozottsag | "lezart";
 
@@ -299,43 +301,34 @@ export default function ArchiveClient() {
               const stTok = statusPillToken(computedStatus);
 
               return (
-                <Link key={session.id} href={`/session/${session.id}`} style={{ textDecoration: "none" }}>
-                  <div
-                    className="archive-tile"
-                    style={{
-                      background: `linear-gradient(135deg,
-                        var(--evening-card-paper-strong) 0%,
-                        var(--evening-card-paper) 42%,
-                        ${corner} 110%)`,
-                    }}
-                  >
-                    <div className="tile-top">
-                      <div className="tile-left">
-                        <div className="tile-title">{titleOf(session)}</div>
+  <div
+    key={session.id}
+    role="link"
+    tabIndex={0}
+    onClick={() => router.push(`/session/${session.id}/summary`)}
+    onKeyDown={(e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        router.push(`/session/${session.id}/summary`);
+      }
+    }}
+    style={{ textDecoration: "none" }}
+  >
+    <div
+      className="archive-tile"
+      style={{
+        background: `linear-gradient(135deg,
+          var(--evening-card-paper-strong) 0%,
+          var(--evening-card-paper) 42%,
+          ${corner} 110%)`,
+      }}
+    >
+      {/* a tile belseje maradhat ugyanaz */}
+      ...
+    </div>
+  </div>
+);
 
-                        {/* ✅ title + pill: vertikálisan középre */}
-                        <Pill variant="neutral" colorVar={stTok.text} bgVar={stTok.bg}>
-                          {formatStatusLabel(computedStatus)}
-                        </Pill>
-                      </div>
-
-                      <div className="tile-right">{progress}</div>
-                    </div>
-
-                    {snippet ? <div className="tile-snippet">{snippet}</div> : null}
-
-                    <div className="tile-bottom">
-                      {session.touched_directions_count > 0 ? (
-                        <div className="tile-meta">{session.touched_directions_count} érintett irány</div>
-                      ) : (
-                        <div className="tile-meta">—</div>
-                      )}
-
-                      <div className="tile-date">{new Date(session.created_at).toLocaleString("hu-HU")}</div>
-                    </div>
-                  </div>
-                </Link>
-              );
             })}
           </div>
         )}

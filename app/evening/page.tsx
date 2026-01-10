@@ -516,7 +516,11 @@ export default function EveningLanding() {
 
             <div className="filter">
               <div className="filter-label">Idő</div>
-              <select className="select" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value as TimeFilterKey)}>
+              <select
+                className="select"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value as TimeFilterKey)}
+              >
                 <option value="all">Bármennyi</option>
                 {allTimeBucketsInData.map((k) => (
                   <option key={k} value={k}>
@@ -538,13 +542,18 @@ export default function EveningLanding() {
                 if (e.target === e.currentTarget) closeOverlay();
               }}
             >
-              <div className="flip-shell" style={computeGrowStyle(originRect, opening)}>
-                <div className="flip-shell-sticky">
-                  <button className="btn btn-secondary" onClick={closeOverlay} ref={closeBtnRef}>
-                    X
-                  </button>
-                </div>
+              {/* ✅ X a kártyán kívül, nem blur-ös shell head */}
+              <button
+                className="flip-x"
+                aria-label="Bezárás"
+                onClick={closeOverlay}
+                ref={closeBtnRef}
+                type="button"
+              >
+                ×
+              </button>
 
+              <div className="flip-shell" style={computeGrowStyle(originRect, opening)}>
                 {!openCard ? (
                   <div className="stack">{Spinner}</div>
                 ) : (
@@ -616,33 +625,45 @@ export default function EveningLanding() {
 
         .flip-shell {
           width: min(860px, 100%);
-          max-height: min(86vh, 900px);
+          max-height: min(92vh, 860px);
           overflow: auto;
           border: 1px solid var(--border);
           border-radius: 18px;
           background: var(--bg);
           box-shadow: 0 24px 90px rgba(0, 0, 0, 0.55);
-          padding: var(--space-3);
+          padding: var(--space-2);
 
           transform-origin: center;
           transition: transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 220ms ease-out;
           will-change: transform, opacity;
         }
 
-        .flip-shell-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 3;
+        .flip-x {
+          position: fixed;
+          top: 18px;
+          right: 18px;
+          z-index: 70;
 
-  display: flex;
-  justify-content: flex-end;
+          width: 44px;
+          height: 44px;
+          border-radius: 14px;
 
-  padding: var(--space-2) var(--space-2) var(--space-3);
-  margin: calc(var(--space-3) * -1) calc(var(--space-3) * -1) var(--space-3);
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(6px);
-}ís
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          background: rgba(0, 0, 0, 0.35);
+          color: rgba(255, 255, 255, 0.92);
+
+          font-size: 28px;
+          line-height: 1;
+          display: grid;
+          place-items: center;
+
+          backdrop-filter: blur(8px);
+          transition: transform 120ms ease;
+        }
+
+        .flip-x:hover {
+          transform: scale(1.03);
+        }
       `}</style>
     </Shell>
   );
