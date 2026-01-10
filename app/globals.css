@@ -689,6 +689,37 @@ body[data-space="evening"] {
 .shell.evening-shell .card,
 .shell.evening-shell .surface-layer { background: var(--bg-layer); }
 
+/* ───────────────────────────────────────────── */
+/* GLOBAL SCROLLBAR – minimal / translucent     */
+/* ───────────────────────────────────────────── */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* WebKit browsers */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.32);
+}
+
 /* ────────────────────────────────────────────────────────────── */
 /* 8) SHELL INFO UI                                                */
 /* ────────────────────────────────────────────────────────────── */
