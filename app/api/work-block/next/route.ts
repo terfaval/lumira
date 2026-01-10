@@ -1,3 +1,5 @@
+// /app/api/work-block/next/route.ts //
+
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
@@ -15,6 +17,10 @@ const BRIEF_ANSWER_LIMIT = 30;
 
 const SIMILARITY_THRESHOLD = 0.72;
 const RECENT_QS_FOR_SIMILARITY = 6;
+
+// ✅ latent log (prompt + audit)
+const MAX_LATENT_LOG_TAIL = 6;
+const ANSWER_EXCERPT_LIMIT = 120;
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -417,11 +423,99 @@ async function runLatentSynthesis(args: {
   }
 }
 
+// ────────────────────────────────────────────────────────────────────────────────
+// ✅ Latent log read + work append log
+// ────────────────────────────────────────────────────────────────────────────────
+
+function safeArray(x: any): any[] {
+  return Array.isArray(x) ? x : [];
+}
+
+function clampExcerpt(s: string, limit: number) {
+  const t = (s ?? "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  return t.length > limit ? t.slice(0, limit) : t;
+}
+
+function buildLatentLogTail(log: any, limit = MAX_LATENT_LOG_TAIL) {
+  const arr = safeArray(log)
+    .map((e) => (e && typeof e === "object" ? e : null))
+    .filter(Boolean) as any[];
+
+  const tail = arr.slice(-limit);
+
+  // csak egy kompakt kivonatot adunk a promptba
+  return tail.map((e) => {
+    const meta = e?.meta && typeof e.meta === "object" ? e.meta : {};
+    return {
+      ts: typeof e?.ts === "string" ? e.ts : null,
+      source: typeof meta?.source === "string" ? meta.source : null,
+      event: typeof meta?.event === "string" ? meta.event : null,
+      direction_slug: typeof meta?.direction_slug === "string" ? meta.direction_slug : null,
+      question: typeof meta?.question === "string" ? meta.question : null,
+      answer_len: typeof meta?.answer_len === "number" ? meta.answer_len : null,
+      stop_reason: typeof meta?.stop_reason === "string" ? meta.stop_reason : null,
+    };
+  });
+}
+
+async function fetchLatentFromDb(args: {
+  supabase: any;
+  sessionId: string;
+  userId: string;
+}) {
+  try {
+    const { data, error } = await args.supabase
+      .from("dream_session_summaries")
+      .select("latent_analysis, latent_analysis_log")
+      .eq("session_id", args.sessionId)
+      .eq("user_id", args.userId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("fetch latent db failed", error.message);
+      return { latent_analysis: null as any, latent_log_tail: [] as any[] };
+    }
+
+    const latent_analysis = (data as any)?.latent_analysis ?? null;
+    const latent_log_tail = buildLatentLogTail((data as any)?.latent_analysis_log ?? null);
+
+    return { latent_analysis, latent_log_tail };
+  } catch (e: any) {
+    console.warn("fetch latent db exception", e?.message ?? e);
+    return { latent_analysis: null as any, latent_log_tail: [] as any[] };
+  }
+}
+
+async function appendWorkLog(req: Request, args: {
+  sessionId: string;
+  meta: Record<string, unknown>;
+}) {
+  try {
+    const supabase = await supabaseServerAuthed(req);
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return;
+
+    // ✅ p_output = null → csak log, snapshotot nem bántjuk (DB patch kell hozzá)
+    const { error } = await supabase.rpc("append_latent_analysis", {
+      p_session_id: args.sessionId,
+      p_output: null,
+      p_meta: args.meta,
+    });
+
+    if (error) console.warn("append_latent_analysis(work) failed", error.message);
+  } catch (e: any) {
+    console.warn("appendWorkLog exception", e?.message ?? e);
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const supabase = await supabaseServerAuthed(req);
     const { data: authData } = await supabase.auth.getUser();
     if (!authData?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const userId = authData.user.id;
 
     const body = (await req.json()) as RequestBody;
 
@@ -436,14 +530,69 @@ export async function POST(req: Request) {
     if (!direction) return NextResponse.json({ error: "Missing direction" }, { status: 400 });
     if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
 
+    const lastAnswer = history.length ? (history[history.length - 1]?.answer ?? "") : "";
+    const answerExcerpt = clampExcerpt(lastAnswer, ANSWER_EXCERPT_LIMIT);
+    const answerLen = (lastAnswer ?? "").trim().length;
+
+    // ✅ DB latent + log tail (work memóriának)
+    const dbLatentPack = await fetchLatentFromDb({ supabase, sessionId, userId });
+
     // safety gate
-    if (safetyFlag !== "none") return NextResponse.json(makeClosureResponse("safety", safetyFlag));
+    if (safetyFlag !== "none") {
+      const out = makeClosureResponse("safety", safetyFlag);
+      await appendWorkLog(req, {
+        sessionId,
+        meta: {
+          source: "work",
+          event: "stop_pre",
+          stop_reason: "safety",
+          safety: safetyFlag,
+          direction_slug: direction.slug ?? null,
+          history_count: history.length,
+          answer_len: answerLen,
+          answer_excerpt: answerExcerpt,
+        },
+      });
+      return NextResponse.json(out);
+    }
 
     const detectedSafety = detectSafety(dreamText);
-    if (detectedSafety !== "none") return NextResponse.json(makeClosureResponse("safety", detectedSafety));
+    if (detectedSafety !== "none") {
+      const out = makeClosureResponse("safety", detectedSafety);
+      await appendWorkLog(req, {
+        sessionId,
+        meta: {
+          source: "work",
+          event: "stop_pre",
+          stop_reason: "safety",
+          safety: detectedSafety,
+          direction_slug: direction.slug ?? null,
+          history_count: history.length,
+          answer_len: answerLen,
+          answer_excerpt: answerExcerpt,
+        },
+      });
+      return NextResponse.json(out);
+    }
 
     const stopSignal = shouldStop(direction, history);
-    if (stopSignal.suggest_stop) return NextResponse.json(makeClosureResponse(stopSignal.reason, safetyFlag));
+    if (stopSignal.suggest_stop) {
+      const out = makeClosureResponse(stopSignal.reason, safetyFlag);
+      await appendWorkLog(req, {
+        sessionId,
+        meta: {
+          source: "work",
+          event: "stop_pre",
+          stop_reason: stopSignal.reason,
+          safety: safetyFlag,
+          direction_slug: direction.slug ?? null,
+          history_count: history.length,
+          answer_len: answerLen,
+          answer_excerpt: answerExcerpt,
+        },
+      });
+      return NextResponse.json(out);
+    }
 
     const directionForAI = buildDirectionForAI(direction);
 
@@ -481,6 +630,10 @@ export async function POST(req: Request) {
       "- Ha kapsz synth.question_seed.target_anchor-t, akkor a lead_in nyissa meg ezt mint fókuszpontot,",
       "- és a question irányítsa a figyelmet erre az anchor-ra a direction stílusában.",
       "",
+      "WORK-MEMÓRIA (latent_log_tail):",
+      "- A latent_log_tail a korábbi work lépések KIVONATA.",
+      "- Tilos ismételni/újrafogalmazni a korábbi kérdéseket; kerüld az ugyanoda vezető fókuszt is.",
+      "",
       "ANTI-GENERIKUS SZABÁLY:",
       "- A question tartalmazzon 1 konkrét horgonyt a dream_text-ből VAGY a legutóbbi answer-ből.",
       "- + legyen benne 1 irány-nyelvi fókusz (a direction szókészletéből).",
@@ -506,6 +659,11 @@ export async function POST(req: Request) {
       history,
       prior_echoes: priorEchoes,
       synth: synth ?? null,
+
+      // ✅ prompt extra context
+      latent_analysis_snapshot: dbLatentPack.latent_analysis ?? null,
+      latent_log_tail: dbLatentPack.latent_log_tail ?? [],
+      last_answer_excerpt: answerExcerpt,
     };
 
     async function callModel(extraRules: string[] = []) {
@@ -538,7 +696,23 @@ export async function POST(req: Request) {
       (prevQsRecent.length > 0 && isTooSimilar(first.work_block.question, prevQsRecent)) ||
       isExactRepeat(first.work_block.question, prevQsAll);
 
-    if (!tooSimilar1) return NextResponse.json(first);
+    if (!tooSimilar1) {
+      await appendWorkLog(req, {
+        sessionId,
+        meta: {
+          source: "work",
+          event: "work_step_generated",
+          direction_slug: direction.slug ?? null,
+          question: first.work_block.question,
+          history_count: history.length,
+          answer_len: answerLen,
+          answer_excerpt: answerExcerpt,
+          stop_reason: first.stop_signal?.suggest_stop ? first.stop_signal.reason : null,
+          similarity_retry: false,
+        },
+      });
+      return NextResponse.json(first);
+    }
 
     // 2) retry
     const retry = await callModel([
@@ -551,8 +725,57 @@ export async function POST(req: Request) {
       (prevQsRecent.length > 0 && isTooSimilar(retry.work_block.question, prevQsRecent)) ||
       isExactRepeat(retry.work_block.question, prevQsAll);
 
-    if (retry.stop_signal?.suggest_stop) return NextResponse.json(retry);
-    if (tooSimilar2) return NextResponse.json(makeLowNoveltyClosure(safetyFlag));
+    if (retry.stop_signal?.suggest_stop) {
+      await appendWorkLog(req, {
+        sessionId,
+        meta: {
+          source: "work",
+          event: "stop_post",
+          direction_slug: direction.slug ?? null,
+          question: retry.work_block.question,
+          history_count: history.length,
+          answer_len: answerLen,
+          answer_excerpt: answerExcerpt,
+          stop_reason: retry.stop_signal.reason ?? "low_novelty",
+          similarity_retry: true,
+        },
+      });
+      return NextResponse.json(retry);
+    }
+
+    if (tooSimilar2) {
+      const out = makeLowNoveltyClosure(safetyFlag);
+      await appendWorkLog(req, {
+        sessionId,
+        meta: {
+          source: "work",
+          event: "stop_post",
+          direction_slug: direction.slug ?? null,
+          history_count: history.length,
+          answer_len: answerLen,
+          answer_excerpt: answerExcerpt,
+          stop_reason: "low_novelty",
+          similarity_retry: true,
+          note: "second_try_still_similar",
+        },
+      });
+      return NextResponse.json(out);
+    }
+
+    await appendWorkLog(req, {
+      sessionId,
+      meta: {
+        source: "work",
+        event: "work_step_generated",
+        direction_slug: direction.slug ?? null,
+        question: retry.work_block.question,
+        history_count: history.length,
+        answer_len: answerLen,
+        answer_excerpt: answerExcerpt,
+        stop_reason: retry.stop_signal?.suggest_stop ? retry.stop_signal.reason : null,
+        similarity_retry: true,
+      },
+    });
 
     return NextResponse.json(retry);
   } catch (e: unknown) {
