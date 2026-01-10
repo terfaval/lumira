@@ -67,7 +67,7 @@
 
 /* content blocks */
 .block {
-  border: none
+  border: none;
   background: transparent;
   padding: var(--space-2);
   display: grid;
