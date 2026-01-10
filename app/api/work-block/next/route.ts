@@ -765,7 +765,7 @@ export async function POST(req: Request) {
     await appendWorkLog(req, {
       sessionId,
       meta: {
-        source: "work",
+        source: "work", 
         event: "work_step_generated",
         direction_slug: direction.slug ?? null,
         question: retry.work_block.question,
