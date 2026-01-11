@@ -946,7 +946,7 @@ main { min-height: 100dvh; }
 .brand-lockup:hover .brand-word {
   opacity: 1;
   transform: translateX(0);
-  max-width: 120px;
+  max-width: 100%;
 }
 
 .brand-lockup:hover .brand-mark {
