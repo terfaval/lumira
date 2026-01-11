@@ -246,6 +246,13 @@ function clampText(text: string, limit: number): string {
   return trimmed.length > limit ? trimmed.slice(0, limit) : trimmed;
 }
 
+function clampExcerpt(text: string, limit: number): string {
+  const t = (text ?? "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  if (limit <= 1) return t.slice(0, Math.max(0, limit));
+  return t.length > limit ? t.slice(0, limit - 1).trimEnd() + "…" : t;
+}
+
 // Apply character limits to a work block's fields.
 function clampWorkBlock(block: WorkBlock): WorkBlock {
   return {
