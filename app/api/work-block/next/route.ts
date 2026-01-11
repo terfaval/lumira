@@ -1,39 +1,47 @@
-// Modified work-block route for improved latent logging and anchor guidance.
-// This version uses the new append_latent_log_event RPC to append log events
-// without overwriting the latent_analysis snapshot, and adds a rule to
-// encourage selection of a new anchor when revisiting a direction.
+// Modified work-block route with enhanced anchor selection and logging.
+// This version adds tracking of used anchors per direction and passes
+// a filtered list of available anchors to the model to encourage
+// diversification. It also logs the anchor used in each generated work
+// block event. To integrate into the repository, replace the existing
+// route file with this one and ensure the new RPC `append_latent_log_event`
+// exists in your Supabase instance.
 
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import type { SynthesizeOutput } from "@/app/api/synthesize/route";
 
-// Safety flags returned by synthesize and used by work logic.
+// -----------------------------------------------------------------------------
+// Constants
+// -----------------------------------------------------------------------------
+
+// Allowed safety flags.
 const SAFETY_VALUES = ["none", "self_harm", "reality_confusion", "other"] as const;
 
-// History and prior echo limits.
+// Limits for history and prior echo arrays.
 const MAX_HISTORY = 8;
 const MAX_PRIOR_ECHOES = 2;
 
-// Character limits for generated work blocks.
-const LEAD_IN_LIMIT = 720;    // Longer lead_in allowed.
-const QUESTION_LIMIT = 180;   // Slightly more permissive.
+// Character limits for various fields in a work block.
+const LEAD_IN_LIMIT = 720;
+const QUESTION_LIMIT = 180;
 const CTA_LIMIT = 120;
 const BRIEF_ANSWER_LIMIT = 30;
 
-// Similarity thresholds for de-duplication.
+// Similarity detection thresholds.
 const SIMILARITY_THRESHOLD = 0.72;
 const RECENT_QS_FOR_SIMILARITY = 6;
 
-// Latent log tail sizes and answer excerpt sizes.
+// Latent log tail and excerpt size.
 const MAX_LATENT_LOG_TAIL = 6;
 const ANSWER_EXCERPT_LIMIT = 120;
-// Number of latent log entries to include in the prompt for continuity.
-const MAX_LOG_TAIL = 10;
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Type definitions.
+// -----------------------------------------------------------------------------
+// Type definitions
+// -----------------------------------------------------------------------------
+
 type SafetyValue = (typeof SAFETY_VALUES)[number];
 type HistoryItem = { question: string; answer: string | null };
 type PriorEcho = { session_id: string; anchor_summary: string; created_at: string };
@@ -89,23 +97,42 @@ type RequestBody = {
   allowed_slugs?: unknown;
 };
 
-// Sanitize synthesizer flags into a proper SafetyValue.
+// -----------------------------------------------------------------------------
+// Helper functions
+// -----------------------------------------------------------------------------
+
+// Sanitize synthesizer flags into a valid SafetyValue.
 function sanitizeSafety(flags?: SynthInput["flags"]): SafetyValue {
   const safety = flags?.safety ?? "none";
   return SAFETY_VALUES.includes(safety as SafetyValue) ? (safety as SafetyValue) : "none";
 }
 
-// Basic keyword based safety detection for dream text.
+// Perform simple keyword-based detection of self-harm or reality confusion.
 function detectSafety(dreamText: string): SafetyValue {
   const text = dreamText.toLowerCase();
-  const selfHarmKeywords = ["suicide", "kill myself", "end my life", "öngyilk", "megölöm magam", "véget vetek", "nem akarok élni"];
-  const realityConfusionKeywords = ["can't tell what's real", "not real", "hallucinat", "nem valós", "nem tudom mi a valós", "realitás"];
+  const selfHarmKeywords = [
+    "suicide",
+    "kill myself",
+    "end my life",
+    "öngyilk",
+    "megölöm magam",
+    "véget vetek",
+    "nem akarok élni",
+  ];
+  const realityConfusionKeywords = [
+    "can't tell what's real",
+    "not real",
+    "hallucinat",
+    "nem valós",
+    "nem tudom mi a valós",
+    "realitás",
+  ];
   if (selfHarmKeywords.some((kw) => text.includes(kw))) return "self_harm";
   if (realityConfusionKeywords.some((kw) => text.includes(kw))) return "reality_confusion";
   return "none";
 }
 
-// Clamp history to the most recent MAX_HISTORY entries and normalize fields.
+// Clamp history to last MAX_HISTORY entries and normalise fields.
 function sanitizeHistory(history: HistoryItem[] | undefined): HistoryItem[] {
   if (!Array.isArray(history)) return [];
   return history
@@ -117,7 +144,7 @@ function sanitizeHistory(history: HistoryItem[] | undefined): HistoryItem[] {
     .filter((h) => h.question);
 }
 
-// Clamp prior echoes to the most recent MAX_PRIOR_ECHOES and normalize fields.
+// Clamp prior echoes to first MAX_PRIOR_ECHOES entries and normalise fields.
 function sanitizePriorEchoes(echoes: PriorEcho[] | undefined): PriorEcho[] {
   if (!Array.isArray(echoes)) return [];
   return echoes
@@ -130,7 +157,7 @@ function sanitizePriorEchoes(echoes: PriorEcho[] | undefined): PriorEcho[] {
     .filter((p) => p.session_id && p.anchor_summary && p.created_at);
 }
 
-// Normalize allowed slugs list; fallback to the direction slug if needed.
+// Normalise allowed slugs. If none supplied, fallback to the direction slug.
 function sanitizeAllowedSlugs(allowed: unknown, fallbackSlug?: string): string[] {
   if (Array.isArray(allowed)) {
     return allowed
@@ -143,8 +170,7 @@ function sanitizeAllowedSlugs(allowed: unknown, fallbackSlug?: string): string[]
   return [];
 }
 
-// Unwrap a user-supplied direction object into a normalized form.  If neither
-// a slug nor any config keys are provided, return null to signal invalid.
+// Transform a user-supplied direction to a normalised one; return null if empty.
 function unwrapDirection(direction: DirectionInput | undefined | null): DirectionNormalized | null {
   if (!direction || typeof direction !== "object") return null;
   const asRecord = (val: unknown) => (val && typeof val === "object" ? (val as Record<string, unknown>) : undefined);
@@ -184,7 +210,7 @@ function unwrapDirection(direction: DirectionInput | undefined | null): Directio
   return normalized;
 }
 
-// Detect repetition in history: last question + answer identical to previous.
+// Detect if the last two history entries are identical (question and answer).
 function detectRepetition(history: HistoryItem[], stopIfRepetition?: boolean): boolean {
   if (!stopIfRepetition) return false;
   if (history.length < 2) return false;
@@ -193,7 +219,7 @@ function detectRepetition(history: HistoryItem[], stopIfRepetition?: boolean): b
   return last.question === prev.question && (last.answer ?? "") === (prev.answer ?? "");
 }
 
-// Detect a streak of brief answers to decide whether to stop.
+// Detect a streak of brief answers.
 function detectUserBriefStreak(history: HistoryItem[], streak?: number): boolean {
   if (!streak || streak <= 0) return false;
   const recent = history.slice(-streak);
@@ -201,7 +227,7 @@ function detectUserBriefStreak(history: HistoryItem[], streak?: number): boolean
   return recent.every((h) => (h.answer ?? "").trim().length <= BRIEF_ANSWER_LIMIT);
 }
 
-// Evaluate stop conditions based on direction stop criteria and history.
+// Determine if the conversation should stop based on direction criteria.
 function shouldStop(direction: DirectionNormalized | undefined, history: HistoryItem[]) {
   const stopCriteria = direction?.stop_criteria ?? {};
   const maxCards = typeof (stopCriteria as any).max_cards === "number" ? (stopCriteria as any).max_cards : undefined;
@@ -213,14 +239,14 @@ function shouldStop(direction: DirectionNormalized | undefined, history: History
   return { suggest_stop: false, reason: null as string | null };
 }
 
-// Clamp text length to limit.
+// Clamp a string to a maximum length.
 function clampText(text: string, limit: number): string {
   if (!text) return "";
   const trimmed = text.trim();
   return trimmed.length > limit ? trimmed.slice(0, limit) : trimmed;
 }
 
-// Clamp each part of a work block to its character limit.
+// Apply character limits to a work block's fields.
 function clampWorkBlock(block: WorkBlock): WorkBlock {
   return {
     lead_in: clampText(block.lead_in, LEAD_IN_LIMIT),
@@ -229,7 +255,7 @@ function clampWorkBlock(block: WorkBlock): WorkBlock {
   };
 }
 
-// Build a closure work block response with a standard message.
+// Create a closure work block response.
 function makeClosureResponse(reason: string | null, safety: SafetyValue): WorkBlockResponse {
   return {
     work_block: clampWorkBlock({
@@ -242,7 +268,7 @@ function makeClosureResponse(reason: string | null, safety: SafetyValue): WorkBl
   };
 }
 
-// Build a low novelty closure block response.
+// Create a low-novelty closure work block response.
 function makeLowNoveltyClosure(safety: SafetyValue): WorkBlockResponse {
   return {
     work_block: clampWorkBlock({
@@ -256,7 +282,7 @@ function makeLowNoveltyClosure(safety: SafetyValue): WorkBlockResponse {
   };
 }
 
-// Clean the lead_in: remove any text after a question mark, if present.
+// Remove any text after a question mark in the lead-in to avoid sneaky questions.
 function cleanLeadIn(leadIn: string): string {
   const t = (leadIn ?? "").trim();
   if (!t) return "";
@@ -268,9 +294,7 @@ function cleanLeadIn(leadIn: string): string {
   return t;
 }
 
-// Validate that the question conforms to our UI constraints: a single sentence
-// ending in '?' or no question mark, no lists or internal punctuation that
-// breaks into multiple sentences.
+// Validate that a question is a single sentence and meets UI constraints.
 function isSingleSentencePrompt(s: string): boolean {
   const t = (s ?? "").trim();
   if (!t) return false;
@@ -285,7 +309,7 @@ function isSingleSentencePrompt(s: string): boolean {
   return true;
 }
 
-// Sanitize the model output into a WorkBlockResponse or return null on error.
+// Validate and sanitise the model output into a WorkBlockResponse.
 function validateModelOutput(parsed: unknown): WorkBlockResponse | null {
   if (!parsed || typeof parsed !== "object") return null;
   const obj = parsed as Record<string, any>;
@@ -309,8 +333,7 @@ function validateModelOutput(parsed: unknown): WorkBlockResponse | null {
   };
 }
 
-// Convert a normalized direction into a structure sent to the model.  We only
-// include keys that are present and relevant for question generation.
+// Build a model-friendly direction object.
 function buildDirectionForAI(direction: DirectionNormalized | undefined) {
   if (!direction) return undefined;
   const methodSpec = direction.method_spec ?? {};
@@ -332,7 +355,7 @@ function buildDirectionForAI(direction: DirectionNormalized | undefined) {
   return Object.keys(directionForAI).length ? directionForAI : undefined;
 }
 
-// Helpers for similarity detection.
+// Similarity detection helpers.
 function normalizeQ(s: string) {
   return s
     .toLowerCase()
@@ -365,7 +388,7 @@ function isExactRepeat(newQ: string, prevQs: string[]) {
   return prevQs.some((p) => normalizeQ(p) === n);
 }
 
-// Attempt to parse JSON returned from the model, with fallback to salvage partial.
+// Parse JSON from the model, salvaging partial if necessary.
 async function parseModelJSON(rawContent: string): Promise<unknown> {
   try {
     return JSON.parse(rawContent);
@@ -380,7 +403,7 @@ async function parseModelJSON(rawContent: string): Promise<unknown> {
   }
 }
 
-// Call synthesize route to generate latent anchors, candidate directions and seed.
+// Call the synthesizer to get latent analysis.
 async function runLatentSynthesis(args: {
   req: Request;
   sessionId: string;
@@ -422,22 +445,17 @@ async function runLatentSynthesis(args: {
   }
 }
 
-// ────────────────────────────────────────────────────────────────────────────────
-// Latent log read + work append log (new RPC)
-// ────────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
+// Latent log helpers
+// -----------------------------------------------------------------------------
 
+// Safely cast to array.
 function safeArray(x: any): any[] {
   return Array.isArray(x) ? x : [];
 }
 
-function clampExcerpt(s: string, limit: number) {
-  const t = (s ?? "").replace(/\s+/g, " ").trim();
-  if (!t) return "";
-  return t.length > limit ? t.slice(0, limit) : t;
-}
-
-// Build a compact tail from the latent log, only including metadata needed for
-// non-repeat enforcement.  The tail size is limited to MAX_LATENT_LOG_TAIL.
+// Build a tail of latent log entries including event and meta info.  We include
+// enough detail for non-repeat enforcement, but not full outputs.
 function buildLatentLogTail(log: any, limit = MAX_LATENT_LOG_TAIL) {
   const arr = safeArray(log)
     .map((e) => (e && typeof e === "object" ? e : null))
@@ -452,13 +470,14 @@ function buildLatentLogTail(log: any, limit = MAX_LATENT_LOG_TAIL) {
       event: typeof ev?.type === "string" ? ev.type : null,
       direction_slug: typeof ev?.direction_slug === "string" ? ev.direction_slug : null,
       question: typeof ev?.question === "string" ? ev.question : null,
+      anchor_used: typeof ev?.anchor_used === "string" ? ev.anchor_used : null,
       answer_len: typeof meta?.answer_len === "number" ? meta.answer_len : null,
       stop_reason: typeof ev?.reason === "string" ? ev.reason : null,
     };
   });
 }
 
-// Fetch latent_analysis and latent_analysis_log from the DB and return a tail.
+// Fetch latent_analysis and latent log tail for a session.
 async function fetchLatentFromDb(args: {
   supabase: any;
   sessionId: string;
@@ -484,9 +503,7 @@ async function fetchLatentFromDb(args: {
   }
 }
 
-// Append a work event to the latent_analysis_log using the new RPC.  The event
-// describes what happened (e.g. type, direction, question) and meta contains
-// auxiliary data such as the model used.
+// Append a work-related event to the latent log via RPC.
 async function appendLatentLogEvent(req: Request, args: {
   sessionId: string;
   event: Record<string, unknown>;
@@ -507,7 +524,71 @@ async function appendLatentLogEvent(req: Request, args: {
   }
 }
 
-// The main POST handler: generate the next work block for a given session/direction.
+// -----------------------------------------------------------------------------
+// Anchor detection helpers
+// -----------------------------------------------------------------------------
+
+// Flatten anchors from latent analysis or synth output into a single array of strings.
+function getAnchorCandidates(latent: any, synth: any): string[] {
+  const list: string[] = [];
+  const add = (val: any) => {
+    if (Array.isArray(val)) {
+      for (const s of val) if (typeof s === "string") list.push(s);
+    }
+  };
+  if (latent && typeof latent === "object" && latent.anchors) {
+    add(latent.anchors.characters);
+    add(latent.anchors.places);
+    add(latent.anchors.objects);
+    add(latent.anchors.beats);
+    add(latent.anchors.felt_words);
+  }
+  if (synth && typeof synth === "object" && synth.anchors) {
+    add(synth.anchors.characters);
+    add(synth.anchors.places);
+    add(synth.anchors.objects);
+    add(synth.anchors.beats);
+    add(synth.anchors.felt_words);
+  }
+  // Deduplicate (case-insensitive) and keep original case of first occurrence.
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of list) {
+    const key = item.toLowerCase().trim();
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      out.push(item);
+    }
+  }
+  return out;
+}
+
+// Detect which anchor from the candidate list appears in the question.  We
+// require that all words of the anchor appear in the question (case-insensitive).
+function detectAnchorUsed(question: string, anchors: string[]): string | null {
+  const q = (question ?? "").toLowerCase();
+  for (const anchor of anchors) {
+    const parts = anchor.toLowerCase().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) continue;
+    if (parts.every((p) => q.includes(p))) return anchor;
+  }
+  return null;
+}
+
+// Extract used anchors for the current direction from previous questions.
+function extractUsedAnchors(prevQs: string[], candidates: string[]): Set<string> {
+  const used = new Set<string>();
+  for (const q of prevQs) {
+    const a = detectAnchorUsed(q, candidates);
+    if (a) used.add(a);
+  }
+  return used;
+}
+
+// -----------------------------------------------------------------------------
+// Main handler
+// -----------------------------------------------------------------------------
+
 export async function POST(req: Request) {
   try {
     const supabase = await supabaseServerAuthed(req);
@@ -524,16 +605,13 @@ export async function POST(req: Request) {
     if (!dreamText) return NextResponse.json({ error: "Missing dream_text" }, { status: 400 });
     if (!direction) return NextResponse.json({ error: "Missing direction" }, { status: 400 });
     if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
-
-    // Compute last answer excerpt for prompt context and meta logging.
+    // Compute answer excerpt and length for prompt context and logging.
     const lastAnswer = history.length ? (history[history.length - 1]?.answer ?? "") : "";
     const answerExcerpt = clampExcerpt(lastAnswer, ANSWER_EXCERPT_LIMIT);
     const answerLen = (lastAnswer ?? "").trim().length;
-
-    // Read latent analysis snapshot and log tail for prompt continuity.
+    // Read latent snapshot and log tail.
     const dbLatentPack = await fetchLatentFromDb({ supabase, sessionId, userId });
-
-    // Pre-safety gate: stop immediately on explicit safety flags or detection.
+    // Safety gates.
     if (safetyFlag !== "none") {
       const out = makeClosureResponse("safety", safetyFlag);
       await appendLatentLogEvent(req, {
@@ -573,8 +651,6 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(out);
     }
-
-    // Stop if direction's max cards, repetition or brief streak reached.
     const stopSignal = shouldStop(direction, history);
     if (stopSignal.suggest_stop) {
       const out = makeClosureResponse(stopSignal.reason, safetyFlag);
@@ -595,8 +671,7 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(out);
     }
-
-    // Build direction spec for the AI.
+    // Prepare direction spec and allowed slugs.
     const directionForAI = buildDirectionForAI(direction);
     const allowedSlugs = sanitizeAllowedSlugs(body.allowed_slugs, direction.slug);
     const synth = await runLatentSynthesis({
@@ -607,11 +682,15 @@ export async function POST(req: Request) {
       priorEchoes,
       allowedSlugs,
     });
-
     const prevQsAll = history.map((h) => h.question).filter(Boolean);
     const prevQsRecent = prevQsAll.slice(-RECENT_QS_FOR_SIMILARITY);
-
-    // System prompt with additional guidance to select a new anchor when repeating.
+    // Build anchor candidate list from latent snapshot and synth.
+    const anchorCandidates = getAnchorCandidates(dbLatentPack.latent_analysis, synth);
+    // Determine which anchors have been used in previous questions for this direction.
+    const usedAnchors = extractUsedAnchors(prevQsAll, anchorCandidates);
+    // Filter anchors to those not yet used.
+    const availableAnchors = anchorCandidates.filter((a) => !usedAnchors.has(a));
+    // System prompt instructing the model to select new anchors.
     const baseSystemPrompt = [
       "Magyar nyelvű API vagy, kizárólag a megadott JSON sémát adod vissza.",
       "Szerep: a következő kártyára egy WORK blokkot generálsz: lead_in + question (+ opcionális cta).",
@@ -636,7 +715,9 @@ export async function POST(req: Request) {
       "WORK-MEMÓRIA (latent_log_tail):",
       "- A latent_log_tail a korábbi work lépések KIVONATA.",
       "- Tilos ismételni vagy újrafogalmazni a korábbi kérdéseket; kerüld az ugyanoda vezető fókuszt is.",
-      "- Ha van synth.anchors vagy latent_log_tail, válassz olyan anchor-t, ami eddig még NEM volt fókuszban ugyanebben az irányban.",
+      availableAnchors.length > 0
+        ? `- Válassz PONTOSAN 1 horgonyt az alábbi listából, amit eddig NEM használtunk: ${availableAnchors.join(" | ")}`
+        : "- Nincs több új horgony ebben az irányban; ha elfogyott, jelezd low_novelty-t.",
       "",
       "ANTI-GENERIKUS SZABÁLY:",
       "- A question tartalmazzon 1 konkrét horgonyt a dream_text-ből VAGY a legutóbbi answer-ből.",
@@ -654,11 +735,9 @@ export async function POST(req: Request) {
       "- Mindig legyen stop_signal mező (normál: suggest_stop=false).",
       "",
       "Kimenet kizárólag JSON ebben a sémában:",
-      "{\"work_block\":{\"lead_in\":\"\",\"question\":\"\",\"cta\":\"\"},\"stop_signal\":{\"suggest_stop\":false,\"reason\":null},\"flags\":{\"safety\":\"none\"}}",
+      '{"work_block":{"lead_in":"","question":"","cta":""},"stop_signal":{"suggest_stop":false,"reason":null},"flags":{"safety":"none"}}',
     ].join("\n");
-
-    // Build the user payload for the model with extra context: latent snapshot,
-    // latent log tail and last answer excerpt.
+    // Build the user payload with latent snapshot, log tail and last answer excerpt.
     const userPayload = {
       dream_text: dreamText,
       direction: directionForAI ?? {},
@@ -668,9 +747,9 @@ export async function POST(req: Request) {
       latent_analysis_snapshot: dbLatentPack.latent_analysis ?? null,
       latent_log_tail: dbLatentPack.latent_log_tail ?? [],
       last_answer_excerpt: answerExcerpt,
+      available_anchors: availableAnchors,
     };
-
-    // Helper to call the model with optional extra rules appended to the system prompt.
+    // Helper to call the model with optional extra rules.
     async function callModel(extraRules: string[] = []) {
       const systemPrompt = [baseSystemPrompt, ...extraRules].join("\n");
       const completion = await client.chat.completions.create({
@@ -691,12 +770,13 @@ export async function POST(req: Request) {
       if (!sanitized) throw new Error("Invalid model output");
       return sanitized;
     }
-
-    // First attempt: generate a work block.
+    // First attempt to generate a work block.
     const first = await callModel();
     const tooSimilar1 =
       (prevQsRecent.length > 0 && isTooSimilar(first.work_block.question, prevQsRecent)) ||
       isExactRepeat(first.work_block.question, prevQsAll);
+    // Compute anchor used in this question.
+    const anchorUsedFirst = detectAnchorUsed(first.work_block.question, anchorCandidates);
     if (!tooSimilar1) {
       await appendLatentLogEvent(req, {
         sessionId,
@@ -705,6 +785,7 @@ export async function POST(req: Request) {
           direction_slug: direction.slug ?? null,
           question: first.work_block.question,
           reason: first.stop_signal?.suggest_stop ? first.stop_signal.reason : null,
+          anchor_used: anchorUsedFirst ?? null,
         },
         meta: {
           source: "work-block/next",
@@ -717,18 +798,19 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(first);
     }
-
-    // Retry with stricter anti-repeat rules if the first question is too similar.
+    // Retry if similar: instruct to pick a new anchor or stop for low novelty.
     const retry = await callModel([
       `TILOS: ezekkel megegyező vagy ezek parafrázisa: ${prevQsRecent.join(" | ")}`,
-      "Ha van synth.anchors és/vagy latent_log_tail, válassz olyan konkrét fókuszt (szereplő/helyszín/tárgy/testérzet), ami eddig még nem volt fókuszban ugyanabban az irányban.",
+      availableAnchors.length > 0
+        ? `Válassz egy másik horgonyt a listából (elérhető anchors: ${availableAnchors.join(" | ")}).`
+        : `Nincs új horgony, ezért low_novelty lehet a helyes válasz.`,
       "KÖTELEZŐ: válts teljesen más konkrét részletre ugyanabban az irányban.",
       "Ha nem tudsz érdemben új fókuszt, add vissza a sémát úgy, hogy stop_signal.suggest_stop=true és reason='low_novelty'.",
     ]);
-
     const tooSimilar2 =
       (prevQsRecent.length > 0 && isTooSimilar(retry.work_block.question, prevQsRecent)) ||
       isExactRepeat(retry.work_block.question, prevQsAll);
+    const anchorUsedRetry = detectAnchorUsed(retry.work_block.question, anchorCandidates);
     if (retry.stop_signal?.suggest_stop) {
       await appendLatentLogEvent(req, {
         sessionId,
@@ -737,6 +819,7 @@ export async function POST(req: Request) {
           reason: retry.stop_signal.reason ?? "low_novelty",
           direction_slug: direction.slug ?? null,
           question: retry.work_block.question,
+          anchor_used: anchorUsedRetry ?? null,
         },
         meta: {
           source: "work-block/next",
@@ -757,6 +840,8 @@ export async function POST(req: Request) {
           type: "stop_post",
           reason: "low_novelty",
           direction_slug: direction.slug ?? null,
+          question: null,
+          anchor_used: null,
         },
         meta: {
           source: "work-block/next",
@@ -770,7 +855,6 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(out);
     }
-
     await appendLatentLogEvent(req, {
       sessionId,
       event: {
@@ -778,6 +862,7 @@ export async function POST(req: Request) {
         direction_slug: direction.slug ?? null,
         question: retry.work_block.question,
         reason: retry.stop_signal?.suggest_stop ? retry.stop_signal.reason : null,
+        anchor_used: anchorUsedRetry ?? null,
       },
       meta: {
         source: "work-block/next",
@@ -789,7 +874,6 @@ export async function POST(req: Request) {
       },
     });
     return NextResponse.json(retry);
-
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

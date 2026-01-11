@@ -1,35 +1,21 @@
-/*
-  Styles for the dream session summary page.  This page introduces a richer
-  overview of a recorded dream with tabs for raw/AI text, per–direction work
-  decks, and suggestions for new directions.  Colours and spacing make use
-  of existing CSS variables defined globally.
-
-  Note: The layout uses CSS grid and absolute positioning to create a
-  “deck” effect where multiple cards are partially visible behind the active
-  card.  Navigation buttons allow the user to cycle through cards in a
-  particular direction.
-*/
-
 .summaryWrap {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-}
 
-.dreamTitle {
-  font-size: 28px;
-  font-weight: 900;
-  margin: 0;
-  line-height: 1.2;
+  /* fontos: ne tudja a gyerek elem széthúzni a layoutot */
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* Tabs */
 .tabs {
   display: inline-flex;
   border-radius: 999px;
-  background: var(--surface);
+  background: none;
   padding: 4px;
 }
+
 .tabButton {
   cursor: pointer;
   padding: 6px 14px;
@@ -41,199 +27,14 @@
   color: var(--text-muted);
   transition: background 0.2s ease, color 0.2s ease;
 }
+
 .tabButton:hover {
   color: var(--text);
 }
+
 .tabActive {
   background: var(--primary);
   color: var(--surface);
-}
-
-/* Stats section */
-.stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.statsItem {
-  padding: 6px 10px;
-  background: var(--evening-card-paper);
-  border: 1px solid var(--line-soft);
-  border-radius: 10px;
-}
-
-/* Work decks */
-.decks {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.deckRow {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.deckHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-.deckTitle {
-  font-size: 16px;
-  font-weight: 700;
-}
-.deckStatus {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-/* Container for the stack of cards */
-.deck {
-  position: relative;
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  /* reserve some space for the collapsed cards */
-  padding-top: 60px;
-}
-
-/* Individual card; absolute positioning creates overlap */
-.card {
-  position: absolute;
-  left: 0;
-  right: 0;
-  margin-left: auto;
-  margin-right: auto;
-  border-radius: 14px;
-  border: 1px solid var(--line-soft);
-  background: var(--evening-card-paper);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-/* Height of collapsed cards */
-.collapsedCard {
-  height: 44px;
-  pointer-events: none;
-  opacity: 0.75;
-  backdrop-filter: blur(0.5px);
-}
-
-.activeCard {
-  position: relative;
-  z-index: 10;
-  padding: var(--space-3);
-  min-height: 180px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
-  pointer-events: auto;
-}
-
-.cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 12px;
-  font-weight: 700;
-  margin-bottom: var(--space-2);
-}
-.cardQuestion {
-  font-size: 16px;
-  font-weight: 800;
-  margin-bottom: var(--space-2);
-}
-.cardAnswer {
-  font-size: 14px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  color: var(--text-muted);
-}
-
-.navButtons {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-.navButtons button {
-  cursor: pointer;
-  border: none;
-  background: var(--primary);
-  color: var(--surface);
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: background 0.2s ease;
-}
-.navButtons button:disabled {
-  background: var(--line-soft);
-  cursor: default;
-  color: var(--text-muted);
-}
-
-/* Recommended directions */
-.recommendSection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.dirGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-3);
-}
-.dirCard {
-  border-radius: 14px;
-  border: 1px solid var(--line-soft);
-  background: var(--evening-card-paper);
-  padding: var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-.dirCardTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-2);
-}
-.dirTitle {
-  font-size: 16px;
-  font-weight: 800;
-  margin: 0;
-}
-.dirDesc {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-.dirTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-.dirActions {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--space-2);
-}
-.moreButton {
-  cursor: pointer;
-  border: none;
-  background: var(--secondary);
-  color: var(--surface);
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 14px;
 }
 
 /* Fix back button */
@@ -272,7 +73,7 @@
   height: 36px;
   border-radius: 999px;
   cursor: pointer;
-  opacity: 0.35;
+  opacity: 0.28;
   transition: opacity 140ms ease, transform 140ms ease;
 }
 
@@ -281,9 +82,9 @@
   transform: translateY(-1px);
 }
 
-/* Try: show on header hover (may need tweaking depending on Shell markup) */
-:global(header:hover) .headerEditBtn {
-  opacity: 1;
+.headerEditBtn:disabled {
+  opacity: 0.18;
+  cursor: default;
 }
 
 /* Glass panel for text */
@@ -314,7 +115,7 @@
   font-size: 14px;
 }
 
-/* Stats as cards (no global Card background needed) */
+/* Stats */
 .stats {
   display: grid;
   grid-template-columns: 1fr;
@@ -349,13 +150,7 @@
   color: var(--text);
 }
 
-/* Gallery / carousel */
-.gallerySection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
+/* Section head */
 .sectionHead {
   display: flex;
   align-items: center;
@@ -391,18 +186,35 @@
   padding: 10px 2px;
 }
 
+/* Gallery / carousel (viewport) */
+.gallerySection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  /* ez fogja meg a kilógást */
+  overflow: hidden;
+}
+
+/* The scroller itself */
 .carousel {
   display: flex;
-  gap: 18px;
+  gap: 14px;
+
   overflow-x: auto;
+  overflow-y: hidden;
+
   padding: 8px 2px 14px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+
+  max-width: 100%;
 }
 
+/* iTunes “peek”: card is not full width, so next card peeks in */
 .carouselCard {
   flex: 0 0 auto;
-  width: min(78vw, 380px);
+  width: min(86vw, 420px);
   scroll-snap-align: start;
 
   border-radius: 18px;
@@ -458,6 +270,72 @@
   font-size: 13px;
   color: var(--text-muted);
   opacity: 0.75;
+}
+
+/* Recommended directions */
+.recommendSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dirGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+.dirCard {
+  border-radius: 14px;
+  border: 1px solid var(--line-soft);
+  background: var(--evening-card-paper);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dirCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dirTitle {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.dirDesc {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.dirTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.dirActions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.moreButton {
+  cursor: pointer;
+  border: none;
+  background: var(--secondary);
+  color: var(--surface);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
 }
 
 /* Title edit overlay */

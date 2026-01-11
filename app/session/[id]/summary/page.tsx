@@ -422,10 +422,12 @@ export default function SessionSummary() {
           aria-label="Cím szerkesztése"
           onClick={() => setEditingTitle(true)}
           disabled={savingTitle || loading || !session}
+          title="Cím szerkesztése"
         >
           ✎
         </button>
       }
+      surface="none"
     >
       {/* Fix back button */}
       <button type="button" className={styles.backBtn} aria-label="Vissza az álomnaplóhoz" onClick={() => router.push("/archive")}>
@@ -502,11 +504,7 @@ export default function SessionSummary() {
             {/* Glass text panel */}
             <div className={styles.glassPanel}>
               <div className={styles.glassInner}>
-                {tab === "raw" ? (
-                  <div className={styles.textBlock}>{session.raw_dream_text}</div>
-                ) : (
-                  <div className={styles.textBlock}>{framing ?? "—"}</div>
-                )}
+                {tab === "raw" ? <div className={styles.textBlock}>{session.raw_dream_text}</div> : <div className={styles.textBlock}>{framing ?? "—"}</div>}
               </div>
             </div>
 
@@ -537,12 +535,7 @@ export default function SessionSummary() {
               <div className={styles.sectionHead}>
                 <h2 className={styles.sectionTitle}>Kártyák</h2>
 
-                <button
-                  type="button"
-                  className={styles.continueBtn}
-                  onClick={() => router.push(`/session/${id}/work`)}
-                  aria-label="Folytatás"
-                >
+                <button type="button" className={styles.continueBtn} onClick={() => router.push(`/session/${id}/work`)} aria-label="Folytatás" title="Folytatás">
                   +
                 </button>
               </div>
@@ -560,7 +553,6 @@ export default function SessionSummary() {
                         key={c.id}
                         className={styles.carouselCard}
                         style={{
-                          marginLeft: idx === 0 ? 0 : -18,
                           transform: `translateY(${idx % 2 === 0 ? 0 : 8}px)`,
                         }}
                       >
@@ -571,11 +563,7 @@ export default function SessionSummary() {
 
                         <div className={styles.carouselQ}>{c.question || "—"}</div>
 
-                        {c.isAnswered ? (
-                          <div className={styles.carouselA}>{c.answer}</div>
-                        ) : (
-                          <div className={styles.carouselAEmpty}>Nincs válasz</div>
-                        )}
+                        {c.isAnswered ? <div className={styles.carouselA}>{c.answer}</div> : <div className={styles.carouselAEmpty}>Nincs válasz</div>}
                       </div>
                     );
                   })}
