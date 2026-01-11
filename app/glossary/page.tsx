@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { supabase } from "@/src/lib/supabase/client";
@@ -15,6 +16,7 @@ type GlossaryItem = {
   categories: string[] | null;
   notes: string | null;
   is_nightmare: boolean;
+  is_suggested?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -24,6 +26,7 @@ export default function GlossaryPage() {
   const { loading } = useRequireAuth();
 
   const [items, setItems] = useState<GlossaryItem[]>([]);
+  const [suggestions, setSuggestions] = useState<GlossaryItem[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -40,12 +43,60 @@ export default function GlossaryPage() {
   const [editNotes, setEditNotes] = useState("");
   const [editNightmare, setEditNightmare] = useState(false);
 
+  // filtering and sorting state
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [sortOption, setSortOption] = useState<string>("created_desc");
+
+  // derive list of unique categories from items for filtering options
+  const uniqueCategories = Array.from(
+    new Set(
+      items
+        .flatMap((item) => item.categories ?? [])
+        .map((c) => c.trim())
+        .filter((c) => c.length > 0)
+    )
+  );
+
+  // apply search, filter and sorting to items list
+  const filteredItems = items
+    .filter((item) => {
+      // filter by category
+      if (filterCategory !== "all") {
+        if (!item.categories || !item.categories.includes(filterCategory)) {
+          return false;
+        }
+      }
+      // filter by search term
+      if (searchTerm.trim().length > 0) {
+        const term = searchTerm.trim().toLowerCase();
+        if (!item.name.toLowerCase().includes(term) && !(item.notes ?? '').toLowerCase().includes(term)) {
+          return false;
+        }
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sortOption) {
+        case "name_asc":
+          return a.name.localeCompare(b.name);
+        case "name_desc":
+          return b.name.localeCompare(a.name);
+        case "created_asc":
+          return a.created_at.localeCompare(b.created_at);
+        case "created_desc":
+        default:
+          return b.created_at.localeCompare(a.created_at);
+      }
+    });
+
   async function loadItems() {
     setBusy(true);
     setErr(null);
     const { data, error } = await supabase
       .from("dream_glossary_items")
       .select("*")
+      .eq("is_suggested", false)
       .order("created_at", { ascending: false });
     if (error) {
       setErr(error.message || "Nem sikerült betölteni az álomszótár elemeit.");
@@ -56,9 +107,28 @@ export default function GlossaryPage() {
     setBusy(false);
   }
 
+  async function loadSuggestions() {
+    // Fetch items marked as suggestions (no note yet)
+    setBusy(true);
+    const { data, error } = await supabase
+      .from("dream_glossary_items")
+      .select("*")
+      .eq("is_suggested", true)
+      .order("created_at", { ascending: false });
+    if (error) {
+      // suggestions fetch error is non-fatal; show error message separately
+      // but don't overwrite global error if one exists
+      console.error(error.message);
+    } else {
+      setSuggestions((data as any) ?? []);
+    }
+    setBusy(false);
+  }
+
   useEffect(() => {
     if (!loading) {
       void loadItems();
+      void loadSuggestions();
     }
   }, [loading]);
 
@@ -86,12 +156,14 @@ export default function GlossaryPage() {
       categories: cats,
       notes: newNotes.trim(),
       is_nightmare: newNightmare,
+      is_suggested: false,
     });
     if (error) {
       setErr(error.message || "Nem sikerült hozzáadni az elemet.");
     } else {
       resetForm();
       await loadItems();
+      await loadSuggestions();
     }
     setBusy(false);
   }
@@ -133,6 +205,7 @@ export default function GlossaryPage() {
         categories: cats,
         notes: editNotes.trim(),
         is_nightmare: editNightmare,
+        is_suggested: false,
       })
       .eq("id", editingId);
     if (error) {
@@ -140,6 +213,7 @@ export default function GlossaryPage() {
     } else {
       cancelEdit();
       await loadItems();
+      await loadSuggestions();
     }
     setBusy(false);
   }
@@ -181,8 +255,61 @@ export default function GlossaryPage() {
           </div>
         )}
 
-        {/* Új elem form */}
+        {/* Javasolt elemek szekció */}
         <div className="stack-tight">
+          <h2 style={{ margin: 0, fontSize: 20 }}>Javasolt elemek</h2>
+          {suggestions.length === 0 ? (
+            <p style={{ color: "var(--text-muted)" }}>Nincs olyan elem, ami elégszer ismétlődött volna.</p>
+          ) : (
+            <>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  display: "grid",
+                  gap: "var(--space-3)",
+                }}
+              >
+                {suggestions.slice(0, 3).map((sugg) => (
+                  <li
+                    key={sugg.id}
+                    className="card"
+                    style={{ padding: "var(--space-3)" }}
+                  >
+                    <div
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                    >
+                      <div className="stack-tight">
+                        <div style={{ fontWeight: 700, fontSize: 16 }}>{sugg.name}</div>
+                        {sugg.categories && sugg.categories.length > 0 && (
+                          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                            Kategóriák: {sugg.categories.join(", ")}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 12, color: "var(--status-warning)" }}>Jegyzet hiányzik</div>
+                      </div>
+                      <Link href="/glossary/suggestions" legacyBehavior>
+                        <a className="btn btn-secondary">Jegyzet hozzáadása</a>
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              {/* CTA button to full list */}
+              <div style={{ marginTop: 8 }}>
+                <Link href="/glossary/suggestions" legacyBehavior>
+                  <a>
+                    <PrimaryButton>Összes javasolt elem</PrimaryButton>
+                  </a>
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Új elem form */}
+        <div className="stack-tight" style={{ marginTop: 32 }}>
           <h2 style={{ margin: 0, fontSize: 20 }}>Új elem hozzáadása</h2>
           <div className="stack">
             <label>
@@ -233,16 +360,70 @@ export default function GlossaryPage() {
           </div>
         </div>
 
-        {/* Lista */}
+        {/* Rögzített elemek */}
         <div className="stack" style={{ marginTop: 32 }}>
           <h2 style={{ margin: 0, fontSize: 20 }}>Rögzített elemek</h2>
+          {/* Filter and sort controls */}
+          <div
+            style={{
+              marginTop: 12,
+              marginBottom: 12,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 12,
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Keresés név vagy jegyzet alapján…"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input"
+              style={{ flex: "1 1 200px", minWidth: 200 }}
+              disabled={busy}
+            />
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="input"
+              style={{ flex: "0 0 200px" }}
+              disabled={busy}
+            >
+              <option value="all">Minden kategória</option>
+              {uniqueCategories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="input"
+              style={{ flex: "0 0 200px" }}
+              disabled={busy}
+            >
+              <option value="created_desc">Dátum – legújabb elöl</option>
+              <option value="created_asc">Dátum – legrégebbi elöl</option>
+              <option value="name_asc">Név – A-Z</option>
+              <option value="name_desc">Név – Z-A</option>
+            </select>
+          </div>
           {busy && items.length === 0 ? (
             <div>Betöltés…</div>
-          ) : items.length === 0 ? (
-            <p style={{ color: "var(--text-muted)" }}>Még nincs felvett elem.</p>
+          ) : filteredItems.length === 0 ? (
+            <p style={{ color: "var(--text-muted)" }}>Nincs olyan elem, amely megfelel a szűrésnek.</p>
           ) : (
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "var(--space-3)" }}>
-              {items.map((item) =>
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                display: "grid",
+                gap: "var(--space-3)",
+              }}
+            >
+              {filteredItems.map((item) =>
                 editingId === item.id ? (
                   <li key={item.id} className="card" style={{ padding: "var(--space-3)" }}>
                     <div className="stack">
@@ -309,7 +490,15 @@ export default function GlossaryPage() {
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div style={{ fontWeight: 700, fontSize: 18 }}>{item.name}</div>
                         {item.is_nightmare ? (
-                          <span style={{ background: "var(--status-erintett-bg)", color: "var(--status-erintett)", padding: "2px 8px", borderRadius: 6, fontSize: 12 }}>
+                          <span
+                            style={{
+                              background: "var(--status-erintett-bg)",
+                              color: "var(--status-erintett)",
+                              padding: "2px 8px",
+                              borderRadius: 6,
+                              fontSize: 12,
+                            }}
+                          >
                             Rémálom
                           </span>
                         ) : null}
@@ -320,7 +509,9 @@ export default function GlossaryPage() {
                         </div>
                       )}
                       {item.notes && (
-                        <div style={{ fontSize: 14, marginTop: 8, whiteSpace: "pre-wrap" }}>
+                        <div
+                          style={{ fontSize: 14, marginTop: 8, whiteSpace: "pre-wrap" }}
+                        >
                           {item.notes}
                         </div>
                       )}
