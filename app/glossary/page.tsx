@@ -43,6 +43,41 @@ export default function GlossaryPage() {
   const [editNotes, setEditNotes] = useState("");
   const [editNightmare, setEditNightmare] = useState(false);
 
+  // modal for adding new items
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  // Predefined category options for new entries. These can be extended later.
+  const CATEGORY_OPTIONS = [
+    "Szereplő",
+    "Helyszín",
+    "Tárgy",
+    "Érzelem",
+    "Elem",
+    "Hang",
+    "Cselekvés",
+    "Időjárás",
+  ];
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [customCategoryInput, setCustomCategoryInput] = useState<string>("");
+
+  function toggleCategory(cat: string) {
+    setSelectedCategories((prev) => {
+      if (prev.includes(cat)) {
+        return prev.filter((c) => c !== cat);
+      } else {
+        return [...prev, cat];
+      }
+    });
+  }
+
+  function addCustomCategory() {
+    const cat = customCategoryInput.trim();
+    if (cat.length > 0 && !selectedCategories.includes(cat)) {
+      setSelectedCategories((prev) => [...prev, cat]);
+    }
+    setCustomCategoryInput("");
+  }
+
   // filtering and sorting state
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -137,6 +172,8 @@ export default function GlossaryPage() {
     setNewCategories("");
     setNewNotes("");
     setNewNightmare(false);
+    setSelectedCategories([]);
+    setCustomCategoryInput("");
   }
 
   async function onAddItem() {
@@ -147,10 +184,12 @@ export default function GlossaryPage() {
       return;
     }
     setBusy(true);
-    const cats = newCategories
+    // Combine selected categories and any additional comma-separated categories typed by the user.
+    const extraCats = customCategoryInput
       .split(",")
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
+    const cats = Array.from(new Set([...selectedCategories, ...extraCats]));
     const { error } = await supabase.from("dream_glossary_items").insert({
       name,
       categories: cats,
@@ -255,7 +294,7 @@ export default function GlossaryPage() {
           </div>
         }
       >
-        <div className="stack" style={{ maxWidth: 720 }}>
+        <div className="stack" style={{ width: "100%" }}>
           {err && (
             <div style={{ color: "crimson" }} role="alert">
               {err}
@@ -291,7 +330,7 @@ export default function GlossaryPage() {
         </div>
       }
     >
-      <div className="stack" style={{ maxWidth: 720 }}>
+      <div className="stack" style={{ width: "100%" }}>
         {err && (
           <div style={{ color: "crimson" }} role="alert">
             {err}
@@ -301,107 +340,82 @@ export default function GlossaryPage() {
         {/* Javasolt elemek szekció */}
         <div className="stack-tight">
           <h2 style={{ margin: 0, fontSize: 20 }}>Javasolt elemek</h2>
-          {suggestions.length === 0 ? (
-            <p style={{ color: "var(--text-muted)" }}>Nincs olyan elem, ami elégszer ismétlődött volna.</p>
-          ) : (
-            <>
-              <ul
+          <ul
+            style={{
+              listStyle: "none",
+              padding: 0,
+              margin: 0,
+              display: "grid",
+              gap: "var(--space-3)",
+              gridTemplateColumns: "repeat(4, 1fr)",
+            }}
+          >
+            {/* CTA card to add new entry */}
+            <li
+              className="card"
+              style={{
+                padding: "var(--space-3)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              onClick={() => setShowAddModal(true)}
+            >
+              <div
                 style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: 0,
-                  display: "grid",
-                  gap: "var(--space-3)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  gap: 4,
                 }}
               >
-                {suggestions.slice(0, 3).map((sugg) => (
-                  <li
-                    key={sugg.id}
-                    className="card"
-                    style={{ padding: "var(--space-3)" }}
-                  >
-                    <div
-                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                    >
-                      <div className="stack-tight">
-                        <div style={{ fontWeight: 700, fontSize: 16 }}>{sugg.name}</div>
-                        {sugg.categories && sugg.categories.length > 0 && (
-                          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                            Kategóriák: {sugg.categories.join(", ")}
-                          </div>
-                        )}
-                        <div style={{ fontSize: 12, color: "var(--status-warning)" }}>Jegyzet hiányzik</div>
-                      </div>
-                      <Link href="/glossary/suggestions" legacyBehavior>
-                        <a className="btn btn-secondary">Jegyzet hozzáadása</a>
-                      </Link>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              {/* CTA button to full list */}
-              <div style={{ marginTop: 8 }}>
-                <Link href="/glossary/suggestions" legacyBehavior>
-                  <a>
-                    <PrimaryButton>Összes javasolt elem</PrimaryButton>
-                  </a>
-                </Link>
+                <span style={{ fontSize: 32, lineHeight: 1 }}>+</span>
+                <span style={{ fontWeight: 500 }}>Jegyzet hozzáadása</span>
               </div>
-            </>
+            </li>
+            {/* Show up to three suggestion cards next to the CTA */}
+            {suggestions.slice(0, 3).map((sugg) => (
+              <li
+                key={sugg.id}
+                className="card"
+                style={{ padding: "var(--space-3)" }}
+              >
+                <div className="stack-tight">
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>{sugg.name}</div>
+                  {sugg.categories && sugg.categories.length > 0 && (
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                      Kategóriák: {sugg.categories.join(", ")}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 12, color: "var(--status-warning)" }}>Jegyzet hiányzik</div>
+                  <Link href="/glossary/suggestions" legacyBehavior>
+                    <a className="btn btn-secondary" style={{ marginTop: 8 }}>Jegyzet hozzáadása</a>
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {/* If there are no suggestions, show a note below the grid */}
+          {suggestions.length === 0 && (
+            <p style={{ color: "var(--text-muted)", marginTop: 8 }}>
+              Nincs olyan elem, ami elégszer ismétlődött volna.
+            </p>
+          )}
+          {/* CTA button to full list if more than 3 suggestions */}
+          {suggestions.length > 3 && (
+            <div style={{ marginTop: 8 }}>
+              <Link href="/glossary/suggestions" legacyBehavior>
+                <a>
+                  <PrimaryButton>Összes javasolt elem</PrimaryButton>
+                </a>
+              </Link>
+            </div>
           )}
         </div>
 
-        {/* Új elem form */}
-        <div className="stack-tight" style={{ marginTop: 32 }}>
-          <h2 style={{ margin: 0, fontSize: 20 }}>Új elem hozzáadása</h2>
-          <div className="stack">
-            <label>
-              <span>Név</span>
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="input"
-                disabled={busy}
-              />
-            </label>
-            <label>
-              <span>Kategóriák (vesszővel elválasztva)</span>
-              <input
-                type="text"
-                value={newCategories}
-                onChange={(e) => setNewCategories(e.target.value)}
-                className="input"
-                disabled={busy}
-              />
-            </label>
-            <label>
-              <span>Jegyzet</span>
-              <textarea
-                value={newNotes}
-                onChange={(e) => setNewNotes(e.target.value)}
-                className="textarea"
-                rows={4}
-                disabled={busy}
-              />
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <input
-                type="checkbox"
-                checked={newNightmare}
-                onChange={(e) => setNewNightmare(e.target.checked)}
-                disabled={busy}
-              />
-              <span>Rémálom elem</span>
-            </label>
-            <PrimaryButton
-              onClick={onAddItem}
-              disabled={busy || newName.trim().length === 0}
-            >
-              {busy ? "Mentés…" : "Hozzáadás"}
-            </PrimaryButton>
-          </div>
-        </div>
 
         {/* Rögzített elemek */}
         <div className="stack" style={{ marginTop: 32 }}>
@@ -584,6 +598,161 @@ export default function GlossaryPage() {
           )}
         </div>
       </div>
-    </Shell>
+        {/* Add New Item modal overlay */}
+        {showAddModal && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0, 0, 0, 0.5)",
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "center",
+              paddingTop: "10vh",
+            }}
+          >
+            <div
+              className="card"
+              style={{
+                width: "100%",
+                maxWidth: 600,
+                background: "var(--surface)",
+                padding: "var(--space-4)",
+              }}
+            >
+              <h2 style={{ marginTop: 0, marginBottom: 16 }}>Új elem hozzáadása</h2>
+              <div className="stack">
+                <label>
+                  <span>Név</span>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="input"
+                    disabled={busy}
+                  />
+                </label>
+                <div>
+                  <span>Kategóriák</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 8,
+                      marginTop: 4,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {CATEGORY_OPTIONS.map((cat, idx) => {
+                      const selected = selectedCategories.includes(cat);
+                      // assign a pastel color for each category
+                      const palette = [
+                        "#FFCDD2",
+                        "#F8BBD0",
+                        "#E1BEE7",
+                        "#D1C4E9",
+                        "#C5CAE9",
+                        "#BBDEFB",
+                        "#B3E5FC",
+                        "#B2EBF2",
+                      ];
+                      const color = palette[idx % palette.length];
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => toggleCategory(cat)}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: 9999,
+                            border: "1px solid var(--border)",
+                            background: selected ? color : "var(--surface-muted)",
+                            color: selected ? "var(--text)" : "var(--text-muted)",
+                            cursor: "pointer",
+                          }}
+                          disabled={busy}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                    <input
+                      type="text"
+                      placeholder="Új kategória..."
+                      value={customCategoryInput}
+                      onChange={(e) => setCustomCategoryInput(e.target.value)}
+                      className="input"
+                      disabled={busy}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addCustomCategory();
+                        }
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => addCustomCategory()}
+                      disabled={busy || customCategoryInput.trim().length === 0}
+                    >
+                      Hozzáad
+                    </button>
+                  </div>
+                </div>
+                <label>
+                  <span>Jegyzet</span>
+                  <textarea
+                    value={newNotes}
+                    onChange={(e) => setNewNotes(e.target.value)}
+                    className="textarea"
+                    rows={4}
+                    disabled={busy}
+                  />
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <input
+                    type="checkbox"
+                    checked={newNightmare}
+                    onChange={(e) => setNewNightmare(e.target.checked)}
+                    disabled={busy}
+                  />
+                  <span>Rémálom elem</span>
+                </label>
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      resetForm();
+                      setShowAddModal(false);
+                    }}
+                    disabled={busy}
+                  >
+                    Mégse
+                  </button>
+                  <PrimaryButton
+                    onClick={async () => {
+                      await onAddItem();
+                      // close modal only if add succeeded and no error
+                      if (!err) {
+                        setShowAddModal(false);
+                        resetForm();
+                      }
+                    }}
+                    disabled={busy || newName.trim().length === 0}
+                  >
+                    Mentés
+                  </PrimaryButton>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </Shell>
   );
 }
