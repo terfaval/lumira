@@ -1,11 +1,25 @@
-/* app/session/[id]/(flow)/layout.module.css */
+/* Modified layout module for FlowShellClient
+ *
+ * This file replicates the original layout.module.css used by the flow pages,
+ * while also adding styles to support session title editing. The new classes
+ * mirror those found on the summary page (headerEditBtn and the title edit
+ * overlay) so that the same look and feel can be achieved when editing the
+ * title from the flow pages. Additionally, an editButton class is provided
+ * for the pencil icon in the shell header. Place this file in the same
+ * directory as your FlowShellClient component and import it instead of
+ * layout.module.css.
+ */
+
+/* ────────────────────────────────────────────────────────────── */
+/*  Original flow layout styles                                    */
+/* ────────────────────────────────────────────────────────────── */
 
 .flowInner {
   height: 100%;
   min-height: 0;
 
   display: grid;
-  gap: var(--space-3); /* ✅ 8) token */
+  gap: var(--space-3);
   align-items: stretch;
   grid-template-columns: 1fr;
   grid-template-rows: minmax(0, 1fr);
@@ -26,8 +40,8 @@
   border: 1px solid var(--line-soft);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
 
-  padding: var(--space-3); /* ✅ token */
-  overflow: auto; /* ✅ itt scrollozunk */
+  padding: var(--space-3);
+  overflow: auto;
 }
 
 .rightPlain {
@@ -35,10 +49,112 @@
   min-height: 0;
   height: 100%;
 
-  padding: var(--space-3); /* ✅ token */
+  padding: var(--space-3);
   background: transparent;
   border: 0;
   border-radius: 0;
 
-  overflow: auto; /* ✅ és itt scrollozunk */
+  overflow: auto;
+}
+
+/* ────────────────────────────────────────────────────────────── */
+/*  Additional styles for title editing (from summary.module.css)  */
+/* ────────────────────────────────────────────────────────────── */
+
+/* Button for editing the title in the shell header. Mirrors the
+   .headerEditBtn styles from the summary page. */
+.editButton {
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0.28;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.editButton:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.editButton:disabled {
+  opacity: 0.18;
+  cursor: default;
+}
+
+/* Overlay for the title editing modal. This darkens the screen and
+   centers the editing card, matching the summary page’s overlay. */
+.titleEditOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.42);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+/* Card container for the title editing form. */
+.titleEditCard {
+  width: min(560px, 92vw);
+  border-radius: 18px;
+  border: 1px solid var(--line-soft);
+  background: rgba(20, 20, 26, 0.7);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+  padding: var(--space-4);
+}
+
+/* Label above the input in the edit card. */
+.titleEditLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+
+/* Input field for editing the title. */
+.titleEditInput {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  padding: 12px 14px;
+  font-size: 16px;
+  font-weight: 800;
+  outline: none;
+}
+
+/* Container for the action buttons in the edit card. */
+.titleEditActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: var(--space-3);
+}
+
+/* Secondary button for canceling the edit. */
+.titleEditBtn,
+.titleEditBtnPrimary {
+  border-radius: 12px;
+  border: 1px solid var(--line-soft);
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.titleEditBtn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+/* Primary button for saving the edited title. */
+.titleEditBtnPrimary {
+  background: var(--primary);
+  color: var(--surface);
+  border-color: transparent;
 }

@@ -5,7 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { supabase } from "@/src/lib/supabase/client";
-import styles from "./layout.module.css";
+// Import the modified layout CSS which contains the original layout styles
+// and additional classes to support title editing. See layout_modified.module.css.
+import styles from "./layout_modified.module.css";
 import FlowLeftPanel from "./FlowLeftPanel";
 
 /**
@@ -120,11 +122,15 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
   const { id } = useParams<{ id: string }>();
   const pathname = usePathname();
 
-  // State for the dream title and its loading/editing status.
+  // State for the dream title and its loading/editing status. When editing,
+  // a draft copy of the title is held separately in `draftTitle`. A
+  // `savingTitle` flag is used to provide feedback while persisting the
+  // updated title to Supabase (mirroring the summary page behaviour).
   const [dreamTitle, setDreamTitle] = useState<string>("Álom");
   const [titleLoading, setTitleLoading] = useState(true);
   const [editingTitle, setEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
+  const [savingTitle, setSavingTitle] = useState(false);
 
   // Compute a safe title (collapse whitespace, fall back to Álom).
   const safeTitle = useMemo(() => {
@@ -170,6 +176,23 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
     if (error) console.warn("title save failed", error.message);
   }
 
+  // When the user confirms the edit via the overlay, persist the draft.
+  async function handleTitleSave() {
+    const next = (draftTitle ?? "").trim();
+    // If nothing was entered, reset the draft and exit editing without saving.
+    if (!next) {
+      setDraftTitle(safeTitle);
+      setEditingTitle(false);
+      return;
+    }
+    setSavingTitle(true);
+    try {
+      await saveTitle(next);
+    } finally {
+      setSavingTitle(false);
+    }
+  }
+
   // Info panel state (toggled via the info button).
   const [infoOpen, setInfoOpen] = useState(false);
   const info = useMemo(() => infoFromPath(pathname), [pathname]);
@@ -182,6 +205,21 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
       surface="ghost"
       headerActions={
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+          {/* Title edit button comes first, matching the summary page UI. */}
+          <button
+            type="button"
+            className={styles.editButton}
+            aria-label="Cím szerkesztése"
+            onClick={() => {
+              setDraftTitle(safeTitle);
+              setEditingTitle(true);
+            }}
+            disabled={titleLoading || savingTitle}
+            title="Cím szerkesztése"
+          >
+            {/* Use a unicode pencil character like the summary page */}
+            ✎
+          </button>
           {/* Info button */}
           <button
             type="button"
@@ -192,47 +230,6 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
           >
             <InfoIcon />
           </button>
-          {/* Title editing controls */}
-          {editingTitle ? (
-            <input
-              value={draftTitle}
-              autoFocus
-              onChange={(e) => setDraftTitle(e.target.value)}
-              onBlur={() => void saveTitle(draftTitle)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  void saveTitle(draftTitle);
-                }
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  setEditingTitle(false);
-                }
-              }}
-              aria-label="Cím szerkesztése"
-              style={{
-                borderRadius: 12,
-                border: "1px solid var(--line-soft)",
-                padding: "var(--space-2) var(--space-3)",
-                fontWeight: 800,
-                background: "rgba(255, 255, 255, 0.08)",
-                color: "var(--text)",
-                minWidth: 120,
-              }}
-            />
-          ) : (
-            <button
-              type="button"
-              className="icon-btn"
-              aria-label="Cím szerkesztése"
-              onClick={() => {
-                setDraftTitle(safeTitle);
-                setEditingTitle(true);
-              }}
-            >
-              <PencilIcon />
-            </button>
-          )}
         </div>
       }
       infoOpen={infoOpen}
@@ -245,6 +242,8 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
           style={{
             height: "100%",
             minHeight: 0,
+            maxHeight: "100vh",
+            overflowY: "auto",
             background: `linear-gradient(120deg, var(--evening-card-paper-strong) 0%, var(--evening-card-paper) 75%, var(--accent) 112%)`,
           }}
         >
@@ -256,6 +255,52 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
       </div>
       {/* Render the modal slot if provided */}
       {modal ?? null}
+      {/* Overlay for editing the title, mimicking the summary page UI */}
+      {editingTitle ? (
+        <div className={styles.titleEditOverlay} role="dialog" aria-label="Cím szerkesztése">
+          <div className={styles.titleEditCard}>
+            <div className={styles.titleEditLabel}>Cím szerkesztése</div>
+            <input
+              className={styles.titleEditInput}
+              value={draftTitle}
+              onChange={(e) => setDraftTitle(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void handleTitleSave();
+                }
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setDraftTitle(safeTitle);
+                  setEditingTitle(false);
+                }
+              }}
+            />
+            <div className={styles.titleEditActions}>
+              <button
+                type="button"
+                className={styles.titleEditBtn}
+                onClick={() => {
+                  setDraftTitle(safeTitle);
+                  setEditingTitle(false);
+                }}
+                disabled={savingTitle}
+              >
+                Mégse
+              </button>
+              <button
+                type="button"
+                className={styles.titleEditBtnPrimary}
+                onClick={() => void handleTitleSave()}
+                disabled={savingTitle}
+              >
+                {savingTitle ? "Mentés…" : "Mentés"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </Shell>
   );
 }

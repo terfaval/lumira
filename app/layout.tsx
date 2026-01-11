@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NapszakInitializer } from "@/components/NapszakInitializer";
+import FractalLayerGate from "@/components/FractalLayerGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +28,12 @@ export default function RootLayout({
     <html lang="hu">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NapszakInitializer />
-        <main>{children}</main>
+
+        {/* ✅ háttér – csak bizonyos space-ekben */}
+        <FractalLayerGate />
+
+        {/* ✅ a teljes UI mindig a fraktál fölött */}
+        <main style={{ position: "relative", zIndex: 1 }}>{children}</main>
       </body>
     </html>
   );
