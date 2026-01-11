@@ -7,7 +7,7 @@ import { Shell } from "@/components/Shell";
 import { supabase } from "@/src/lib/supabase/client";
 // Import the modified layout CSS which contains the original layout styles
 // and additional classes to support title editing. See layout_modified.module.css.
-import styles from "./layout_modified.module.css";
+import styles from "./layout.module.css";
 import FlowLeftPanel from "./FlowLeftPanel";
 
 /**
