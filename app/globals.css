@@ -893,7 +893,7 @@ main { min-height: 100dvh; }
   z-index: 50;        /* a sidebar fölé/ alá hangolható */
 }
 
-/* BRAND LOCKUP – alap */
+/* BRAND LOCKUP */
 .brand-lockup {
   display: inline-flex;
   align-items: center;
@@ -903,16 +903,19 @@ main { min-height: 100dvh; }
   white-space: nowrap;
 }
 
-/* ICON */
+/* ICON – alapból látszik */
 .brand-mark {
   flex-shrink: 0;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 /* WORD – alapból rejtve */
 .brand-word {
   font-family: var(--font-space-grotesk), var(--font-geist-sans), system-ui, sans-serif;
   font-weight: 400;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   font-size: 14px;
   line-height: 1;
 
@@ -927,12 +930,27 @@ main { min-height: 100dvh; }
     max-width 180ms ease;
 }
 
-/* HOVER – név megjelenik */
+/* HOVER – ikon eltűnik */
+.brand-lockup:hover .brand-mark {
+  opacity: 0;
+  transform: scale(0.92);
+}
+
+/* HOVER – szó megjelenik */
 .brand-lockup:hover .brand-word {
   opacity: 1;
   transform: translateX(0);
   max-width: 120px;
 }
+
+.brand-lockup:hover .brand-mark {
+  transition-delay: 0ms;
+}
+
+.brand-lockup:hover .brand-word {
+  transition-delay: 60ms;
+}
+
 
 .shell-brand {
   display: inline-flex;
