@@ -5,7 +5,8 @@
 
   /* fontos: ne tudja a gyerek elem széthúzni a layoutot */
   max-width: 100%;
-  overflow-x: hidden;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 /* Tabs */
@@ -193,7 +194,9 @@
   gap: var(--space-2);
 
   /* ez fogja meg a kilógást */
-  overflow: hidden;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 /* The scroller itself */
@@ -204,17 +207,21 @@
   overflow-x: auto;
   overflow-y: hidden;
 
-  padding: 8px 2px 14px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: var(--space-2) var(--space-2) var(--space-2);
   scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--space-2);
   -webkit-overflow-scrolling: touch;
 
-  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* iTunes “peek”: card is not full width, so next card peeks in */
 .carouselCard {
   flex: 0 0 auto;
-  width: min(86vw, 420px);
+  width: clamp(260px, 86vw, 420px);
   scroll-snap-align: start;
 
   border-radius: 18px;
@@ -281,7 +288,7 @@
 
 .dirGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: var(--space-3);
 }
 

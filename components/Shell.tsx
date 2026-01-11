@@ -36,7 +36,7 @@ export function Shell({
   return (
     <div
       className={`shell shell--fluid ${space === "evening" ? "evening-shell" : ""}`}
-      style={{ position: "relative" }}
+      style={{ position: "relative", minWidth: 0, overflowX: "clip" }}
     >
       <NapszakInitializer space={space} />
 
@@ -93,20 +93,20 @@ export function Shell({
 
       {/* Tartalom */}
       {surface === "none" ? (
-        <section style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%" }}>
+        <section style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%", minWidth: 0, overflowX: "clip" }}>
           {children}
         </section>
       ) : surface === "ghost" ? (
         <section
           className="surface-ghost stack"
-          style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%" }}
+          style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%", minWidth: 0, overflowX: "clip" }}
         >
           {children}
         </section>
       ) : (
         <section
           className="surface-layer card stack"
-          style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%" }}
+          style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%", minWidth: 0, overflowX: "clip" }}
         >
           {children}
         </section>
