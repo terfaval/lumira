@@ -868,3 +868,36 @@ main { min-height: 100dvh; }
   resize: vertical;
   line-height: 1.65;
 }
+
+/* Brand (Space Grotesk) */
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text, currentColor); /* napszak tokenekhez igazítható */
+}
+
+.brand-word {
+  font-family: var(--font-space-grotesk), var(--font-base);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Shell topbar layering */
+.shell-topbar {
+  position: sticky;   /* ha nem kell sticky, lehet sima relative */
+  top: 0;
+  z-index: 50;        /* a sidebar fölé/ alá hangolható */
+}
+
+/* brand blokknak adunk “biztos” réteget */
+.shell-brand {
+  display: inline-flex;
+  align-items: center;
+  margin-right: var(--space-2);
+  z-index: 999;
+  position: relative;
+}

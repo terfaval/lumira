@@ -10,6 +10,7 @@ const MIN_CANDIDATES = 3;
 const MAX_PRIOR_ECHOES_USED = 2;
 const MAX_MATCHED_ITEMS = 2;
 const MAX_ANCHOR_SUMMARY_LENGTH = 800;
+const OPENAI_TIMEOUT_MS = 15000;
 
 const ALLOWED_PREFERRED_STYLES = [
   "sequence_probe_single",
@@ -75,6 +76,16 @@ const defaultOutput = (): SynthesizeOutput => ({
   prior_echoes_used: [],
   flags: { safety: "none", too_short: false },
 });
+
+async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fn(controller.signal);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -454,16 +465,23 @@ export async function POST(req: Request) {
       allowed_slugs: allowedSlugs,
     };
 
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: JSON.stringify(userPayload) },
-      ],
-      max_tokens: 700,
-    });
+    const completion = await withTimeout(
+      (signal) =>
+        client.chat.completions.create(
+          {
+            model: "gpt-4o-mini",
+            temperature: 0,
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: JSON.stringify(userPayload) },
+            ],
+            max_tokens: 700,
+          },
+          { signal }
+        ),
+      OPENAI_TIMEOUT_MS
+    );
 
     const rawContent = completion.choices?.[0]?.message?.content ?? "";
 

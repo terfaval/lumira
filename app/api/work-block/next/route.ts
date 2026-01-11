@@ -35,6 +35,7 @@ const RECENT_QS_FOR_SIMILARITY = 6;
 // Latent log tail and excerpt size.
 const MAX_LATENT_LOG_TAIL = 6;
 const ANSWER_EXCERPT_LIMIT = 120;
+const OPENAI_TIMEOUT_MS = 15000;
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -100,6 +101,15 @@ type RequestBody = {
 // -----------------------------------------------------------------------------
 // Helper functions
 // -----------------------------------------------------------------------------
+async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fn(controller.signal);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // Sanitize synthesizer flags into a valid SafetyValue.
 function sanitizeSafety(flags?: SynthInput["flags"]): SafetyValue {
@@ -759,18 +769,25 @@ export async function POST(req: Request) {
     // Helper to call the model with optional extra rules.
     async function callModel(extraRules: string[] = []) {
       const systemPrompt = [baseSystemPrompt, ...extraRules].join("\n");
-      const completion = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        temperature: 0.35,
-        presence_penalty: 0.3,
-        frequency_penalty: 0.3,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: JSON.stringify(userPayload) },
-        ],
-        max_tokens: 650,
-      });
+      const completion = await withTimeout(
+        (signal) =>
+          client.chat.completions.create(
+            {
+              model: "gpt-4o-mini",
+              temperature: 0.35,
+              presence_penalty: 0.3,
+              frequency_penalty: 0.3,
+              response_format: { type: "json_object" },
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: JSON.stringify(userPayload) },
+              ],
+              max_tokens: 650,
+            },
+            { signal }
+          ),
+        OPENAI_TIMEOUT_MS
+      );
       const rawContent = completion.choices?.[0]?.message?.content ?? "";
       const parsed = await parseModelJSON(rawContent);
       const sanitized = validateModelOutput(parsed);

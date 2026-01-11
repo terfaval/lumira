@@ -13,10 +13,8 @@ export default function FractalLayerGate() {
       const space = body.getAttribute("data-space");
       const napszak = body.getAttribute("data-napszak");
 
-      // ✅ javaslat: csak esti tér + flow alatt
-      // állítsd tetszés szerint:
-      const okSpace = space === "evening" || space === "flow";
-      const okNapszak = napszak === "evening" || napszak === "night" || napszak === "default";
+      const okSpace = !space || ["dream", "evening", "flow"].includes(space);
+      const okNapszak = !napszak || ["morning", "day", "evening", "night", "default"].includes(napszak);
 
       setEnabled(okSpace && okNapszak);
     };

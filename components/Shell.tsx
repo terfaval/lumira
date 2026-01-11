@@ -1,3 +1,4 @@
+// components/Shell.tsx
 "use client";
 
 import { ReactNode, useState } from "react";
@@ -5,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
 import { NapszakInitializer } from "./NapszakInitializer";
 import { SidebarDrawer } from "./SidebarDrawer";
+import { BrandLockup } from "@/components/brand/BrandLockup";
+
 
 export function Shell({
   title,
@@ -42,6 +45,11 @@ export function Shell({
 
       {/* Felső sáv */}
       <div className="shell-topbar">
+        {/* BRAND bal felső sarokban */}
+        <div className="shell-brand">
+          <BrandLockup />
+        </div>
+
         <button
           type="button"
           aria-label="Menü"
@@ -70,8 +78,6 @@ export function Shell({
 
         {headerActions}
 
-        {/* opcionális: ha a headerActions-ben nem rakod bele, itt is lehetne info gomb;
-            most csak a struktúrát tartjuk meg */}
         {onToggleInfo && (
           <button
             type="button"
@@ -84,7 +90,6 @@ export function Shell({
         )}
       </div>
 
-      {/* Info panel (lenyíló) */}
       {infoPanel && (
         <div className={`info-panel info-panel--overlay ${infoOpen ? "info-panel--open" : ""}`}>
           <div className="info-panel-inner">{infoPanel}</div>
@@ -97,17 +102,11 @@ export function Shell({
           {children}
         </section>
       ) : surface === "ghost" ? (
-        <section
-          className="surface-ghost stack"
-          style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%", minWidth: 0, overflowX: "clip" }}
-        >
+        <section className="surface-ghost stack" style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%", minWidth: 0, overflowX: "clip" }}>
           {children}
         </section>
       ) : (
-        <section
-          className="surface-layer card stack"
-          style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%", minWidth: 0, overflowX: "clip" }}
-        >
+        <section className="surface-layer card stack" style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%", minWidth: 0, overflowX: "clip" }}>
           {children}
         </section>
       )}
