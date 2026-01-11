@@ -8,7 +8,7 @@ export function BrandLockup({ href = "/" }: { href?: string }) {
         className="brand-lockup"
         aria-label="Lumira"
     >
-      <LumiraMark size={22} className="brand-mark" />
+      <LumiraMark size={34} className="brand-mark" />
       <span className="brand-word">lumira</span>
     </Link>
   );
