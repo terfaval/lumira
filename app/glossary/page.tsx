@@ -231,6 +231,49 @@ export default function GlossaryPage() {
     setBusy(false);
   }
 
+  // Determine if we should allow access to the glossary. If there are fewer than 10 suggested items,
+  // the glossary is hidden until more recurring elements appear.
+  const readyForGate = !loading && !busy;
+  const allowGlossary = suggestions.length >= 10;
+
+  if (readyForGate && !allowGlossary) {
+    return (
+      <Shell
+        title="Álomszótár"
+        space="dream"
+        headerActions={null}
+        infoOpen={false}
+        onToggleInfo={() => {}}
+        infoPanel={
+          <div className="stack-tight">
+            <p className="section-title">Álomszótár</p>
+            <p style={{ color: "var(--text-muted)" }}>
+              Az álomszótár akkor válik elérhetővé, ha már legalább tíz olyan elem ismétlődött az álmaidban,
+              amelyhez jegyzeteket írhatsz. Rögzítsd tovább az álmaidat, hogy össze tudjuk gyűjteni a
+              visszatérő szereplőket, helyszíneket vagy motívumokat!
+            </p>
+          </div>
+        }
+      >
+        <div className="stack" style={{ maxWidth: 720 }}>
+          {err && (
+            <div style={{ color: "crimson" }} role="alert">
+              {err}
+            </div>
+          )}
+          {busy ? (
+            <div>Betöltés…</div>
+          ) : (
+            <p style={{ color: "var(--text-muted)" }}>
+              Jelenleg {suggestions.length} javasolt elem található. Legalább 10 elem szükséges az álomszótár
+              megnyitásához.
+            </p>
+          )}
+        </div>
+      </Shell>
+    );
+  }
+
   return (
     <Shell
       title="Álomszótár"
