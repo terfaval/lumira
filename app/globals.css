@@ -869,98 +869,84 @@ main { min-height: 100dvh; }
   line-height: 1.65;
 }
 
-/* Brand (Space Grotesk) */
-.brand-lockup {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  color: var(--text, currentColor); /* napszak tokenekhez igazítható */
-}
-
-.brand-word {
-  font-family: var(--font-space-grotesk), var(--font-base);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  font-size: 16px;
-  line-height: 1;
-}
-
-/* Shell topbar layering */
-.shell-topbar {
-  position: sticky;   /* ha nem kell sticky, lehet sima relative */
-  top: 0;
-  z-index: 50;        /* a sidebar fölé/ alá hangolható */
-}
-
-/* BRAND LOCKUP */
-.brand-lockup {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-
-/* ICON – alapból látszik */
-.brand-mark {
-  flex-shrink: 0;
-  opacity: 0.9;
-  transform: scale(1);
-  transition:
-    opacity 180ms ease,
-    transform 180ms ease;
-}
-
-/* WORD – alapból rejtve */
-.brand-word {
-  font-family: var(--font-space-grotesk), var(--font-geist-sans), system-ui, sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  font-size: 15px;
-  line-height: 1;
-
-  opacity: 0;
-  transform: translateX(-8px);
-  max-width: 0;
-  overflow: hidden;
-
-  transition:
-    opacity 200ms ease,
-    transform 200ms ease,
-    max-width 200ms ease;
-}
-
-.brand-lockup:not(:hover) .brand-mark {
-  filter: drop-shadow(0 0 6px rgba(255,255,255,0.06));
-}
-
-/* HOVER – ikon eltűnik */
-.brand-lockup:hover .brand-mark {
-  opacity: 0;
-  transform: scale(0.85);
-}
-
-/* HOVER – szó megjelenik */
-.brand-lockup:hover .brand-word {
-  opacity: 1;
-  transform: translateX(0);
-  max-width: 100%;
-}
-
-.brand-lockup:hover .brand-mark {
-  transition-delay: 0ms;
-}
-
-.brand-lockup:hover .brand-word {
-  transition-delay: 60ms;
-}
+/* ───────────────────────────────────────────── */
+/* BRAND LOCKUP – centered + wink hover          */
+/* ───────────────────────────────────────────── */
 
 .shell-brand {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   margin-left: var(--space-2);
   position: relative;
-  z-index: 40; /* vagy amit korábban választottál */
+  z-index: 40; /* drawer fölé/alá: igény szerint */
+}
+
+/* Fix "slot" a header jobb szélén: nincs layout shift */
+.brand-lockup {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;   /* slot */
+  height: 34px;
+
+  text-decoration: none;
+  color: var(--text-primary);
+  overflow: visible;
+}
+
+/* ICON – abszolút középen */
+.brand-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: 50% 60%;
+
+  opacity: 0.92;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.06));
+
+  transition:
+    opacity 170ms ease,
+    transform 170ms ease;
+}
+
+/* WORD – abszolút középen, alapból rejtve */
+.brand-word {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.98);
+
+  font-family: var(--font-space-grotesk), var(--font-base);
+  font-weight: 400;
+  letter-spacing: 0.10em;
+  font-size: 15px;
+  line-height: 1;
+  white-space: nowrap;
+
+  opacity: 0;
+  pointer-events: none;
+
+  transition:
+    opacity 170ms ease,
+    transform 170ms ease;
+}
+
+/* HOVER: "wink" – ikon összenyom + eltűnik, szó feljön középről */
+.brand-lockup:hover .brand-mark {
+  opacity: 0;
+  transform: translate(-50%, -50%) scaleX(1.02) scaleY(0.12);
+}
+
+.brand-lockup:hover .brand-word {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* opcionális: a szó csak hover alatt legyen kattintható vizuálisan */
+.brand-lockup:hover .brand-word {
+  pointer-events: none;
 }
