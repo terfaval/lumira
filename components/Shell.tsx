@@ -45,10 +45,6 @@ export function Shell({
 
       {/* Felső sáv */}
       <div className="shell-topbar">
-        {/* BRAND bal felső sarokban */}
-        <div className="shell-brand">
-          <BrandLockup />
-        </div>
 
         <button
           type="button"
@@ -88,6 +84,11 @@ export function Shell({
             style={{ display: "none" }}
           />
         )}
+
+        {/* BRAND bal felső sarokban */}
+        <div className="shell-brand">
+          <BrandLockup />
+        </div>
       </div>
 
       {infoPanel && (

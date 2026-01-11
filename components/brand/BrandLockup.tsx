@@ -3,9 +3,13 @@ import { LumiraMark } from "./LumiraMark";
 
 export function BrandLockup({ href = "/" }: { href?: string }) {
   return (
-    <Link href={href} className="brand-lockup" aria-label="Lumira">
+    <Link 
+        href={href}
+        className="brand-lockup"
+        aria-label="Lumira"
+    >
       <LumiraMark size={22} className="brand-mark" />
-      <span className="brand-word">Lumira</span>
+      <span className="brand-word">lumira</span>
     </Link>
   );
 }

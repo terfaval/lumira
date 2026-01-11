@@ -893,11 +893,51 @@ main { min-height: 100dvh; }
   z-index: 50;        /* a sidebar fölé/ alá hangolható */
 }
 
-/* brand blokknak adunk “biztos” réteget */
+/* BRAND LOCKUP – alap */
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* ICON */
+.brand-mark {
+  flex-shrink: 0;
+}
+
+/* WORD – alapból rejtve */
+.brand-word {
+  font-family: var(--font-space-grotesk), var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  font-size: 14px;
+  line-height: 1;
+
+  opacity: 0;
+  transform: translateX(-6px);
+  max-width: 0;
+  overflow: hidden;
+
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    max-width 180ms ease;
+}
+
+/* HOVER – név megjelenik */
+.brand-lockup:hover .brand-word {
+  opacity: 1;
+  transform: translateX(0);
+  max-width: 120px;
+}
+
 .shell-brand {
   display: inline-flex;
   align-items: center;
-  margin-right: var(--space-2);
-  z-index: 999;
+  margin-left: var(--space-2);
   position: relative;
+  z-index: 40; /* vagy amit korábban választottál */
 }
