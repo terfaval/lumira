@@ -140,6 +140,11 @@ export function SidebarDrawer({
           >
             Új álom rögzítése
           </Link>
+
+          {/* Új álomszótár oldal linkje */}
+          <Link href="/glossary" className="drawer-navlink" onClick={onClose}>
+            Álomszótár
+          </Link>
         </div>
 
         {/* Álomnapló */}
@@ -257,7 +262,7 @@ export function SidebarDrawer({
         .drawer-navlink:hover {
           background: var(--card-surface-subtle);
         }
-        .drawer-navlink[aria-current="page"] {
+        .drawer-navlink[aria-current='page'] {
           border-color: var(--line-strong, var(--line-soft));
           box-shadow: var(--shadow-soft);
         }
