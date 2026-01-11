@@ -242,7 +242,7 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
           style={{
             height: "100%",
             minHeight: 0,
-            maxHeight: "100vh",
+            maxHeight: "80vh",
             overflowY: "auto",
             background: `linear-gradient(120deg, var(--evening-card-paper-strong) 0%, var(--evening-card-paper) 75%, var(--accent) 112%)`,
           }}
