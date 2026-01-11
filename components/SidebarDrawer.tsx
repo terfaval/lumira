@@ -27,6 +27,33 @@ export function SidebarDrawer({
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [recent, setRecent] = useState<DreamRow[]>([]);
+
+  // state for enabling the glossary link based on number of suggested glossary items
+  const [glossaryAccess, setGlossaryAccess] = useState<boolean>(false);
+
+  /**
+   * Checks if there are at least 10 suggested glossary items (rows in dream_glossary_items
+   * with is_suggested = true). If so, enables the glossary link. Otherwise hides it.
+   */
+  const checkGlossaryAccess = useCallback(async () => {
+    try {
+      // Use Supabase count to get the number of suggested items. The `.select('*', { count: 'exact', head: true })`
+      // signature returns only the count when `head: true`.
+      const { count, error } = await supabase
+        .from("dream_glossary_items")
+        .select("id", { count: "exact", head: true })
+        .eq("is_suggested", true);
+      if (error) {
+        console.error("Glossary access check error:", error.message);
+        setGlossaryAccess(false);
+      } else {
+        setGlossaryAccess((count ?? 0) >= 10);
+      }
+    } catch (e: unknown) {
+      console.error(e);
+      setGlossaryAccess(false);
+    }
+  }, []);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   /* ESC zárás */
@@ -38,6 +65,13 @@ export function SidebarDrawer({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  // when the drawer opens, check whether to show the glossary link
+  useEffect(() => {
+    if (open) {
+      void checkGlossaryAccess();
+    }
+  }, [open, checkGlossaryAccess]);
 
   /* Kívülre katt zárás */
   const onBackdropClick = useCallback(
@@ -141,10 +175,12 @@ export function SidebarDrawer({
             Új álom rögzítése
           </Link>
 
-          {/* Új álomszótár oldal linkje */}
-          <Link href="/glossary" className="drawer-navlink" onClick={onClose}>
-            Álomszótár
-          </Link>
+          {/* Álomszótár link csak akkor látható, ha van legalább 10 javasolt bejegyzés */}
+          {glossaryAccess && (
+            <Link href="/glossary" className="drawer-navlink" onClick={onClose}>
+              Álomszótár
+            </Link>
+          )}
         </div>
 
         {/* Álomnapló */}
