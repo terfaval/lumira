@@ -32,8 +32,12 @@ export default function FractalLayerGate() {
       enabled={enabled}
       opacity={0.085}
       baseZoom={2.6}
-      zoomSpeed={0.009}
-      iterations={300}
+      zoomSpeed={0}
+      zoomMode="loop"
+      timeWrapSeconds={600}
+      zoomLoopSeconds={240}
+      zoomAmplitude={0.45}
+      iterations={220}
       maxDevicePixelRatio={1.5}
     />
   );

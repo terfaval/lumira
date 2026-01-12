@@ -74,8 +74,8 @@ void main() {
   // ultra slow drift
   float drift = 0.00055;
   vec2 c0 = u_center + vec2(
-    drift * cos(u_time * 0.07),
-    drift * sin(u_time * 0.05)
+    drift * cos(u_time * 0.06),
+    drift * sin(u_time * 0.047)
   );
 
   // zoom
@@ -135,6 +135,18 @@ type Props = {
   /** smaller = slower zoom-in */
   zoomSpeed?: number;
 
+  /** wrap time to avoid float precision drift */
+  timeWrapSeconds?: number;
+
+  /** loop duration for log-zoom */
+  zoomLoopSeconds?: number;
+
+  /** log-zoom amplitude */
+  zoomAmplitude?: number;
+
+  /** zoom behavior */
+  zoomMode?: "loop" | "fixed" | "exp";
+
   /** iterations 80–220 */
   iterations?: number;
 
@@ -156,6 +168,10 @@ export default function FractalBackground({
   opacity = 0.085,
   baseZoom = 1.6,
   zoomSpeed = 0.010,
+  timeWrapSeconds = 600,
+  zoomLoopSeconds = 240,
+  zoomAmplitude = 0.45,
+  zoomMode = "loop",
   iterations = 150,
   maxDevicePixelRatio = 1.5,
   vars,
@@ -272,7 +288,7 @@ export default function FractalBackground({
     window.addEventListener("resize", onResize);
 
     // if your app changes data-napszak dynamically, re-read tokens periodically (cheap)
-    let lastTokenRead = 0;
+    let lastTokenReadRaw = 0;
 
     resize();
     readTokenColors();
@@ -282,15 +298,26 @@ export default function FractalBackground({
     gl.uniform1i(uIter, Math.max(40, Math.min(320, iterations)));
 
     const loop = (now: number) => {
-      const t = (now - start) / 1000;
+      const tRaw = (now - start) / 1000;
+      const t = reduced ? 0.0 : (tRaw % timeWrapSeconds);
 
       // re-read colors ~1x/sec to follow theme flips (day/night)
-      if (!reduced && (t - lastTokenRead) > 1.0) {
+      if (!reduced && (tRaw - lastTokenReadRaw) > 1.0) {
         readTokenColors();
-        lastTokenRead = t;
+        lastTokenReadRaw = tRaw;
       }
 
-      const z = baseZoom * Math.exp((reduced ? 0.0 : zoomSpeed) * t);
+      let z = baseZoom;
+      if (!reduced) {
+        if (zoomMode === "fixed") {
+          z = baseZoom;
+        } else if (zoomMode === "exp") {
+          z = baseZoom * Math.exp(zoomSpeed * tRaw);
+        } else {
+          const phase = (t / zoomLoopSeconds) * Math.PI * 2.0;
+          z = baseZoom * Math.exp(zoomAmplitude * Math.sin(phase));
+        }
+      }
 
       gl.uniform1f(uTime, reduced ? 0.0 : t);
       gl.uniform1f(uZoom, z);
@@ -310,7 +337,20 @@ export default function FractalBackground({
       gl.deleteShader(vs);
       gl.deleteShader(fs);
     };
-  }, [enabled, opacity, baseZoom, zoomSpeed, iterations, maxDevicePixelRatio, reduced, vars]);
+  }, [
+    enabled,
+    opacity,
+    baseZoom,
+    zoomSpeed,
+    timeWrapSeconds,
+    zoomLoopSeconds,
+    zoomAmplitude,
+    zoomMode,
+    iterations,
+    maxDevicePixelRatio,
+    reduced,
+    vars,
+  ]);
 
   if (!enabled) return null;
 
