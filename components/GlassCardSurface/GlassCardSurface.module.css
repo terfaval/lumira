@@ -1,5 +1,6 @@
 .surface {
   position: relative;
+  isolation: isolate;
 
   border-radius: 18px;
   border: 1px solid var(--line-soft);
@@ -10,45 +11,67 @@
 
   padding: var(--space-3);
 
-  /* “glass” */
   backdrop-filter: blur(18px) saturate(145%);
   -webkit-backdrop-filter: blur(18px) saturate(145%);
 
-  /* extra depth */
   box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
-
-  overflow: hidden; /* kell a gloss highlight-hoz */
+  overflow: hidden;
 }
 
-/* finom glossy “csík” */
+/* keep content above overlays */
+.surface > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* glossy highlight */
 .surface::before {
   content: "";
   position: absolute;
   inset: -40% -20% auto -20%;
   height: 60%;
-
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.26),
     rgba(255, 255, 255, 0.10) 40%,
     rgba(255, 255, 255, 0) 70%
   );
-
   transform: rotate(-8deg);
   pointer-events: none;
   opacity: 0.9;
+  z-index: 1;
 }
 
-/* finom “szemcsézettség”, hogy ne legyen túl steril */
+/* grain */
 .surface::after {
   content: "";
   position: absolute;
   inset: 0;
-
   background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
   background-size: 22px 22px;
   opacity: 0.12;
-
   pointer-events: none;
   mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+.glossOff::before {
+  opacity: 0;
+}
+
+.grainOff::after {
+  opacity: 0;
+}
+
+.foreground {
+  position: relative;
+  z-index: 3;
+}
+
+/* Fallback safety: only rely on color-mix where supported */
+@supports not (color: color-mix(in srgb, white 50%, transparent)) {
+  /* If some consumer passes color-mix into inline background (soft literal),
+     browsers that don't support it may drop that stop.
+     This is OK because the rest of the gradient still renders.
+     Keep this block as documentation/safety net. */
 }

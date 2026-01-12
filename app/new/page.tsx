@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { GlassCardForeground, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
@@ -172,7 +172,7 @@ export default function NewDream() {
 
   // ✅ visszafogottabb corner szín (accent “lejjebb véve”)
   // Ha az --accent túl erős, ez finom, esti “hint”.
-  const cornerSoft = "rgba(255,255,255,0.06)";
+  const cornerSoft = "rgba(255,255,255,0.08)";
 
   return (
     <Shell
@@ -229,9 +229,9 @@ export default function NewDream() {
       ) : (
         <>
           {/* ✅ nincs extra “hátsó” wrapper/panel — a GlassCardSurface a fő felület */}
-          <GlassCardSurface paper="evening" corner={cornerSoft} minHeight="auto">
+          <GlassCardSurface paper="evening" corner={cornerSoft} cornerMode="soft" minHeight="auto">
             {/* ✅ minden interaktív elem “előrébb” kerül, hogy ne kapjon csillanást */}
-            <div className="newdream-fore stack-tight">
+            <GlassCardForeground className="newdream-fore stack-tight">
               <textarea
                 className="textarea-dream textarea-no-gloss"
                 value={text}
@@ -271,7 +271,7 @@ export default function NewDream() {
                   </PrimaryButton>
                 </div>
               </div>
-            </div>
+            </GlassCardForeground>
           </GlassCardSurface>
 
           {err && (
@@ -287,12 +287,6 @@ export default function NewDream() {
           to {
             transform: rotate(360deg);
           }
-        }
-
-        /* ✅ a “csillanás” ne üljön rá a textarea-ra: hozzuk előre a contentet */
-        :global(.newdream-fore) {
-          position: relative;
-          z-index: 2;
         }
 
         /* ✅ a textarea kapjon saját, mattabb hátteret (ne tűnjön üvegesnek) */
