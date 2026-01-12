@@ -120,7 +120,6 @@ export default function NewDream() {
             dream_text: text,
             history: [],
             prior_echoes: [],
-            // a szerver a katalógust maga olvassa DB-ből; itt csak az engedélyezett slugs kellenek
             allowed_slugs: activeSlugs,
           },
         });
@@ -171,6 +170,10 @@ export default function NewDream() {
       ? "Cím + keretezés + 3 ajánlott irány."
       : "Álom feldolgozásának előkészítése.";
 
+  // ✅ visszafogottabb corner szín (accent “lejjebb véve”)
+  // Ha az --accent túl erős, ez finom, esti “hint”.
+  const cornerSoft = "rgba(255,255,255,0.06)";
+
   return (
     <Shell
       title="Új álom rögzítése"
@@ -193,8 +196,8 @@ export default function NewDream() {
           <p className="section-title">Rögzítés</p>
 
           <p style={{ color: "var(--text-muted)" }}>
-            Itt csak a rögzítés a cél. Nem kell szépen megfogalmazni, nem kell “értelmes” legyen. Amit
-            most ki tudsz menteni, az később is dolgozható.
+            Itt csak a rögzítés a cél. Nem kell szépen megfogalmazni, nem kell “értelmes” legyen.
+            Amit most ki tudsz menteni, az később is dolgozható.
           </p>
 
           <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-muted)", lineHeight: 1.7 }}>
@@ -207,7 +210,6 @@ export default function NewDream() {
         </div>
       }
     >
-      {/* blokkoló overlay – lépésfüggő szöveg */}
       <FlowLoadingOverlay open={blockingFlow} title={overlayTitle} subtitle={overlaySubtitle} />
 
       {loading ? (
@@ -225,12 +227,13 @@ export default function NewDream() {
           }}
         />
       ) : (
-        <div className="stack">
-          {/* ✅ egységes “glass” felület, EveningCardFlip-alap */}
-          <GlassCardSurface paper="evening" corner="--accent" minHeight="auto">
-            <div className="stack-tight">
+        <>
+          {/* ✅ nincs extra “hátsó” wrapper/panel — a GlassCardSurface a fő felület */}
+          <GlassCardSurface paper="evening" corner={cornerSoft} minHeight="auto">
+            {/* ✅ minden interaktív elem “előrébb” kerül, hogy ne kapjon csillanást */}
+            <div className="newdream-fore stack-tight">
               <textarea
-                className="textarea-dream"
+                className="textarea-dream textarea-no-gloss"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is."
@@ -276,7 +279,7 @@ export default function NewDream() {
               {err}
             </div>
           )}
-        </div>
+        </>
       )}
 
       <style jsx>{`
@@ -284,6 +287,26 @@ export default function NewDream() {
           to {
             transform: rotate(360deg);
           }
+        }
+
+        /* ✅ a “csillanás” ne üljön rá a textarea-ra: hozzuk előre a contentet */
+        :global(.newdream-fore) {
+          position: relative;
+          z-index: 2;
+        }
+
+        /* ✅ a textarea kapjon saját, mattabb hátteret (ne tűnjön üvegesnek) */
+        :global(.textarea-no-gloss) {
+          position: relative;
+          z-index: 2;
+
+          /* mattabb felület: csökkenti a sheen érzetet */
+          background: rgba(0, 0, 0, 0.18);
+          border: 1px solid rgba(255, 255, 255, 0.10);
+
+          /* fontos: ne próbáljon “üveget” csinálni ő maga */
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
         }
       `}</style>
     </Shell>
