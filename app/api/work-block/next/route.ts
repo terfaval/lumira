@@ -181,19 +181,39 @@ function sanitizePriorEchoes(echoes: PriorEcho[] | undefined): PriorEcho[] {
     .filter((p) => p.session_id && p.anchor_summary && p.created_at);
 }
 
-function extractObservationAnchors(observation: DreamObservation | null): string[] {
+type AnchorKind = "characters" | "objects" | "beats" | "places" | "felt_words" | "other";
+type AnchorCandidate = { label: string; kind: AnchorKind; priority: number };
+
+const ANCHOR_PRIORITY: Record<AnchorKind, number> = {
+  characters: 5,
+  objects: 4,
+  beats: 3,
+  places: 2,
+  felt_words: 1,
+  other: 0,
+};
+
+function extractObservationAnchors(observation: DreamObservation | null): AnchorCandidate[] {
   if (!observation) return [];
-  const labels = [
-    ...observation.entities.characters,
-    ...observation.entities.places,
-    ...observation.entities.objects,
-    ...observation.entities.other,
-    ...observation.motifs,
-    ...observation.tone,
-    ...observation.structure,
-    ...observation.body,
-  ].map((item) => item.label);
-  return labels.filter(Boolean);
+  const list: AnchorCandidate[] = [];
+  const add = (kind: AnchorKind, items: { label: string }[]) => {
+    for (const item of items) {
+      if (typeof item?.label === "string" && item.label.trim()) {
+        list.push({ label: item.label, kind, priority: ANCHOR_PRIORITY[kind] });
+      }
+    }
+  };
+
+  add("characters", observation.entities.characters);
+  add("places", observation.entities.places);
+  add("objects", observation.entities.objects);
+  add("other", observation.entities.other);
+  add("other", observation.motifs);
+  add("other", observation.tone);
+  add("other", observation.structure);
+  add("other", observation.body);
+
+  return list;
 }
 
 function sanitizeAllowedSlugs(allowed: unknown, fallbackSlug?: string): string[] {
@@ -709,70 +729,103 @@ function shouldStop(direction: DirectionNormalized | undefined, history: History
 // Anchors
 // -----------------------------------------------------------------------------
 
-function getAnchorCandidates(latent: any, synth: any): string[] {
-  const list: string[] = [];
-
-  const add = (val: any) => {
-    if (Array.isArray(val)) {
-      for (const s of val) if (typeof s === "string") list.push(s);
+function addAnchorCandidates(list: AnchorCandidate[], kind: AnchorKind, values: unknown) {
+  if (!Array.isArray(values)) return;
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) {
+      list.push({ label: value, kind, priority: ANCHOR_PRIORITY[kind] });
     }
-  };
+  }
+}
+
+function getAnchorCandidates(latent: any, synth: any): AnchorCandidate[] {
+  const list: AnchorCandidate[] = [];
 
   if (latent && typeof latent === "object" && latent.anchors) {
-    add(latent.anchors.characters);
-    add(latent.anchors.places);
-    add(latent.anchors.objects);
-    add(latent.anchors.beats);
-    add(latent.anchors.felt_words);
+    addAnchorCandidates(list, "characters", latent.anchors.characters);
+    addAnchorCandidates(list, "places", latent.anchors.places);
+    addAnchorCandidates(list, "objects", latent.anchors.objects);
+    addAnchorCandidates(list, "beats", latent.anchors.beats);
+    addAnchorCandidates(list, "felt_words", latent.anchors.felt_words);
   }
 
   if (synth && typeof synth === "object" && synth.anchors) {
-    add(synth.anchors.characters);
-    add(synth.anchors.places);
-    add(synth.anchors.objects);
-    add(synth.anchors.beats);
-    add(synth.anchors.felt_words);
+    addAnchorCandidates(list, "characters", synth.anchors.characters);
+    addAnchorCandidates(list, "places", synth.anchors.places);
+    addAnchorCandidates(list, "objects", synth.anchors.objects);
+    addAnchorCandidates(list, "beats", synth.anchors.beats);
+    addAnchorCandidates(list, "felt_words", synth.anchors.felt_words);
   }
 
+  return mergeAnchorCandidatesDetailed(list, []);
+}
+
+function mergeAnchorCandidatesDetailed(base: AnchorCandidate[], extra: AnchorCandidate[]): AnchorCandidate[] {
+  const out: AnchorCandidate[] = [];
+  const indexByKey = new Map<string, number>();
+
+  for (const item of [...base, ...extra]) {
+    const key = item.label.toLowerCase().trim();
+    if (!key) continue;
+    const existingIndex = indexByKey.get(key);
+    if (existingIndex === undefined) {
+      indexByKey.set(key, out.length);
+      out.push(item);
+      continue;
+    }
+    const existing = out[existingIndex];
+    if (item.priority > existing.priority) out[existingIndex] = item;
+  }
+
+  return out;
+}
+
+function flattenAnchorCandidates(candidates: AnchorCandidate[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
+  for (const item of candidates) {
+    const key = item.label.toLowerCase().trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(item.label);
+  }
+  return out;
+}
 
-  for (const item of list) {
-    const key = item.toLowerCase().trim();
-    if (key && !seen.has(key)) {
-      seen.add(key);
-      out.push(item);
+function detectAnchorUsed(question: string, anchors: AnchorCandidate[]): string | null {
+  const q = (question ?? "").toLowerCase();
+  let best: { anchor: AnchorCandidate; wordCount: number; length: number } | null = null;
+
+  for (const anchor of anchors) {
+    const parts = anchor.label.toLowerCase().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) continue;
+    if (!parts.every((p) => q.includes(p))) continue;
+    const candidate = { anchor, wordCount: parts.length, length: anchor.label.length };
+    if (!best) {
+      best = candidate;
+      continue;
+    }
+    if (candidate.anchor.priority > best.anchor.priority) {
+      best = candidate;
+      continue;
+    }
+    if (candidate.anchor.priority === best.anchor.priority && candidate.wordCount > best.wordCount) {
+      best = candidate;
+      continue;
+    }
+    if (
+      candidate.anchor.priority === best.anchor.priority &&
+      candidate.wordCount === best.wordCount &&
+      candidate.length > best.length
+    ) {
+      best = candidate;
     }
   }
 
-  return out;
+  return best?.anchor.label ?? null;
 }
 
-function mergeAnchorCandidates(base: string[], extra: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-
-  for (const item of [...base, ...extra]) {
-    const key = item.toLowerCase().trim();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    out.push(item);
-  }
-
-  return out;
-}
-
-function detectAnchorUsed(question: string, anchors: string[]): string | null {
-  const q = (question ?? "").toLowerCase();
-  for (const anchor of anchors) {
-    const parts = anchor.toLowerCase().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) continue;
-    if (parts.every((p) => q.includes(p))) return anchor;
-  }
-  return null;
-}
-
-function extractUsedAnchors(prevQs: string[], candidates: string[]): Set<string> {
+function extractUsedAnchors(prevQs: string[], candidates: AnchorCandidate[]): Set<string> {
   const used = new Set<string>();
   for (const q of prevQs) {
     const a = detectAnchorUsed(q, candidates);
@@ -959,12 +1012,13 @@ export async function POST(req: Request) {
     const prevQsAll = history.map((h) => h.question).filter(Boolean);
     const prevQsRecent = prevQsAll.slice(-RECENT_QS_FOR_SIMILARITY);
 
-    const anchorCandidates = mergeAnchorCandidates(
+    const anchorCandidatesDetailed = mergeAnchorCandidatesDetailed(
       getAnchorCandidates(dbLatentPack.latent_analysis, synth),
       observationAnchors
     );
+    const anchorCandidates = flattenAnchorCandidates(anchorCandidatesDetailed);
 
-    const usedAnchors = extractUsedAnchors(prevQsAll, anchorCandidates);
+    const usedAnchors = extractUsedAnchors(prevQsAll, anchorCandidatesDetailed);
     const availableAnchors = anchorCandidates.filter((a) => !usedAnchors.has(a));
 
     const baseSystemPrompt = buildBaseSystemPrompt(availableAnchors);
@@ -1029,7 +1083,7 @@ export async function POST(req: Request) {
       (prevQsRecent.length > 0 && isTooSimilar(first.work_block.question, prevQsRecent)) ||
       isExactRepeat(first.work_block.question, prevQsAll);
 
-    const anchorUsedFirst = detectAnchorUsed(first.work_block.question, anchorCandidates);
+    const anchorUsedFirst = detectAnchorUsed(first.work_block.question, anchorCandidatesDetailed);
 
     if (!tooSimilar1) {
       await appendLatentLogEvent(req, {
@@ -1068,7 +1122,7 @@ export async function POST(req: Request) {
       (prevQsRecent.length > 0 && isTooSimilar(retry.work_block.question, prevQsRecent)) ||
       isExactRepeat(retry.work_block.question, prevQsAll);
 
-    const anchorUsedRetry = detectAnchorUsed(retry.work_block.question, anchorCandidates);
+    const anchorUsedRetry = detectAnchorUsed(retry.work_block.question, anchorCandidatesDetailed);
 
     if (retry.stop_signal?.suggest_stop) {
       await appendLatentLogEvent(req, {

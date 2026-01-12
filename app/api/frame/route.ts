@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
+import { hasDreamObservation } from "@/src/lib/dream/observationServer";
 
 import { TITLE_MAX } from "@/src/lib/dream/const";
 import {
@@ -490,6 +491,36 @@ async function repairBundleQuick(params: {
   };
 }
 
+async function ensureObservation(params: {
+  req: Request;
+  supabase: Awaited<ReturnType<typeof supabaseServerAuthed>>;
+  sessionId: string;
+  userId: string;
+  dreamText: string;
+}) {
+  const { req, supabase, sessionId, userId, dreamText } = params;
+  const hasObs = await hasDreamObservation({ supabase, sessionId, userId });
+  if (hasObs) return;
+
+  try {
+    const response = await fetch(new URL("/api/observe", req.url), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        cookie: req.headers.get("cookie") ?? "",
+        "x-observe-source": "frame",
+      },
+      body: JSON.stringify({ session_id: sessionId, dream_text: dreamText }),
+    });
+
+    if (!response.ok) {
+      console.warn("frame: observe call failed", response.status, response.statusText);
+    }
+  } catch (error) {
+    console.warn("frame: observe call failed", error);
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────────────────
 // Route
 // ────────────────────────────────────────────────────────────────────────────────
@@ -503,35 +534,54 @@ export async function POST(req: Request) {
     if (!authData?.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     const userId = authData.user.id;
 
-    const [{ data: session }, { data: summary }, { data: observationRow }] = await Promise.all([
-      supabase
-        .from("dream_sessions")
-        .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, user_id")
-        .eq("id", sessionId)
-        .eq("user_id", userId)
-        .single(),
-      supabase
-        .from("dream_session_summaries")
-        .select("title, framing_text, recommended_directions, latent_analysis")
-        .eq("session_id", sessionId)
-        .eq("user_id", userId)
-        .maybeSingle(),
-        supabase
-        .from("dream_observation")
-        .select("obs")
-        .eq("session_id", sessionId)
-        .eq("user_id", userId)
-        .maybeSingle(),
-    ]);
+    // 1) session + summary párhuzamosan
+const [{ data: session }, { data: summary }] = await Promise.all([
+  supabase
+    .from("dream_sessions")
+    .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, user_id")
+    .eq("id", sessionId)
+    .eq("user_id", userId)
+    .single(),
+  supabase
+    .from("dream_session_summaries")
+    .select("title, framing_text, recommended_directions, latent_analysis")
+    .eq("session_id", sessionId)
+    .eq("user_id", userId)
+    .maybeSingle(),
+]);
 
-    if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
-    const raw = sanitizeWhitespace(session.raw_dream_text ?? "");
-    const observation = parseDreamObservation(observationRow?.obs ?? null);
-    const compactObservation = compactDreamObservation(observation);
-    const targetSentences = clampTargetSentences(raw);
+const raw = sanitizeWhitespace(session.raw_dream_text ?? "");
 
-    // short guard
+// 2) observation első olvasás
+let { data: observationRow } = await supabase
+  .from("dream_observation")
+  .select("obs")
+  .eq("session_id", sessionId)
+  .eq("user_id", userId)
+  .maybeSingle();
+
+// 3) ha nincs, generáld le MOST, és olvasd vissza
+if (!observationRow?.obs) {
+  await ensureObservation({ req, supabase, sessionId, userId, dreamText: raw });
+
+  const refetch = await supabase
+    .from("dream_observation")
+    .select("obs")
+    .eq("session_id", sessionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  observationRow = refetch.data ?? null;
+}
+
+
+const observation = parseDreamObservation(observationRow?.obs ?? null);
+const compactObservation = compactDreamObservation(observation);
+const targetSentences = clampTargetSentences(raw);
+
+// short guard
     if (raw.length < MIN_RAW_LEN) {
       const title = "Rövid álomjegyzet";
       const framing_text =
@@ -569,6 +619,8 @@ export async function POST(req: Request) {
           .from("dream_session_summaries")
           .upsert({ session_id: sessionId, user_id: userId, title, framing_text, recommended_directions }, { onConflict: "session_id" }),
       ]);
+
+      await ensureObservation({ req, supabase, sessionId, userId, dreamText: raw });
 
       return NextResponse.json({ sessionId, title, framing_text, recommended_directions } satisfies OutputPayload);
     }
@@ -664,6 +716,8 @@ export async function POST(req: Request) {
             { onConflict: "session_id" }
           ),
       ]);
+
+      await ensureObservation({ req, supabase, sessionId, userId, dreamText: raw });
 
       return NextResponse.json(out);
     }
@@ -797,6 +851,8 @@ export async function POST(req: Request) {
         .from("dream_session_summaries")
         .upsert({ session_id: sessionId, user_id: userId, title, framing_text, recommended_directions }, { onConflict: "session_id" }),
     ]);
+
+    await ensureObservation({ req, supabase, sessionId, userId, dreamText: raw });
 
     const out: OutputPayload = { sessionId, title, framing_text, recommended_directions };
     return NextResponse.json(out);
