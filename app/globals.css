@@ -384,73 +384,17 @@ p { margin: 0; line-height: 1.6; }
 .stack-tight { display: grid; gap: var(--space-2); }
 
 .glass-card {
-  position: relative;
-  overflow: hidden;
-
-  border-radius: calc(var(--radius-card) + 6px);
-  border: 1px solid color-mix(in oklab, var(--line-soft), #ffffff24);
-  box-shadow:
-    0 18px 48px #0000002E,
-    inset 0 1px 0 #FFFFFF2B;
-
-  /* 1) áttetsző “üveg” alap + színátmenet */
-  background:
-    linear-gradient(
-      140deg,
-      color-mix(in oklab, var(--evening-card-paper-strong), #ffffff22) 0%,
-      color-mix(in oklab, var(--evening-card-paper), #ffffff12) 42%,
-      color-mix(in oklab, var(--evening-card-paper), #00000010) 100%
-    );
-
-  /* 2) valódi üveg érzet: blur + kis szaturáció/kontraszt */
-  backdrop-filter: blur(18px) saturate(1.25) contrast(1.05);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25) contrast(1.05);
+  border-radius: calc(var(--radius-card) + 4px);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-soft);
+  background: linear-gradient(
+    180deg,
+    var(--evening-card-paper-strong),
+    var(--evening-card-paper)
+  );
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
-
-/* 3) glossy “glare” réteg */
-.glass-card::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  pointer-events: none;
-
-  background:
-    radial-gradient(1200px 260px at 22% 8%,
-      rgba(255,255,255,0.28),
-      rgba(255,255,255,0.10) 35%,
-      rgba(255,255,255,0.00) 60%),
-    linear-gradient(180deg,
-      rgba(255,255,255,0.18),
-      rgba(255,255,255,0.00) 42%);
-
-  opacity: 0.9;
-  transform: translateZ(0);
-}
-
-/* 4) finom “fényperem” alul-jobb (kicsit 3D) */
-.glass-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-
-  background:
-    radial-gradient(700px 420px at 82% 92%,
-      color-mix(in oklab, var(--accent), transparent 78%),
-      transparent 62%);
-
-  opacity: 0.55;
-  transform: translateZ(0);
-}
-
-/* Ha szeretnéd: hover alatt picit “él” az üveg */
-.glass-card:hover {
-  box-shadow:
-    0 22px 58px #00000036,
-    inset 0 1px 0 #FFFFFF36;
-  border-color: color-mix(in oklab, var(--line-soft), #ffffff38);
-}
-
 
 .auth-page {
   min-height: calc(100vh - var(--space-5));
