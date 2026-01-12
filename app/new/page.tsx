@@ -1,4 +1,4 @@
-// /app/(...)/new/page.tsx  – TELJES, javított
+// /app/(...)/new/page.tsx  – TELJES, javított (Shell wrapper kivéve + variant + matte well)
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -174,14 +174,14 @@ export default function NewDream() {
       ? "Cím + keretezés + 3 ajánlott irány."
       : "Álom feldolgozásának előkészítése.";
 
-  // soft corner hint (subtle)
+  // subtle corner hint (can be swapped later)
   const cornerSoft = "rgba(255,255,255,0.08)";
 
   return (
     <Shell
       title="Új álom rögzítése"
       space="dream"
-      surface="none"
+      surface="none" // ✅ fontos: ne legyen Shell card wrapper, mert mi adjuk a fő felületet
       headerActions={
         <button
           type="button"
@@ -233,16 +233,15 @@ export default function NewDream() {
       ) : (
         <>
           <GlassCardSurface
+            variant="soft"
             paper="evening"
             corner={cornerSoft}
             cornerMode="soft"
-            minHeight="auto"
-            /* New page: keep it calmer, let the writing be the focus */
-            gloss={true}
-            grain={true}
+            // (ha később kell, helyben felülírható)
+            // gloss={false}
+            // grain={false}
           >
             <GlassCardForeground className="stack-tight">
-              {/* ✅ interactive matte well inside glass */}
               <GlassCardMatte padding="md" tone="evening">
                 <textarea
                   className="newdream-textarea"

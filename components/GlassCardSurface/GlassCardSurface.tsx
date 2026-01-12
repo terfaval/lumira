@@ -11,11 +11,18 @@ function cx(...xs: Array<string | undefined | false>) {
 }
 
 export type GlassCardPaper = "evening" | "plain";
+export type GlassCardVariant = "hero" | "soft" | "flat";
 
 export type GlassCardSurfaceProps = {
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
+
+  /** Visual preset. Default: "soft" */
+  variant?: GlassCardVariant;
+
+  /** Background preset. Default: "evening" */
+  paper?: GlassCardPaper;
 
   /** Optional corner accent source (CSS var like "--accent" or literal color). */
   corner?: CornerVar | null;
@@ -23,19 +30,16 @@ export type GlassCardSurfaceProps = {
   /** Corner intensity mode. Default: "accent" */
   cornerMode?: "soft" | "accent";
 
-  /** Background preset. Default: "evening" */
-  paper?: GlassCardPaper;
-
-  /** Toggle glossy highlight overlay. Default: true */
+  /** Toggle glossy highlight overlay. If omitted, variant decides. */
   gloss?: boolean;
 
-  /** Toggle grain/noise overlay. Default: true */
+  /** Toggle grain/noise overlay. If omitted, variant decides. */
   grain?: boolean;
 
   /** Optional override for the "soft" corner fallback color (used when corner is a CSS var). */
   cornerSoftFallback?: string;
 
-  /** Min height, default: 60vh (EveningCardFlip parity) */
+  /** Min height. Default: "60vh" (hero parity). */
   minHeight?: string;
 };
 
@@ -97,26 +101,44 @@ export function GlassCardMatte({
   );
 }
 
+function variantDefaults(variant: GlassCardVariant) {
+  // Defaults chosen to keep EveningCardFlip "hero"-ish, and app-wide surfaces calmer.
+  switch (variant) {
+    case "hero":
+      return { gloss: true, grain: true, minHeight: "60vh" };
+    case "soft":
+      return { gloss: true, grain: true, minHeight: "auto" };
+    case "flat":
+      return { gloss: false, grain: false, minHeight: "auto" };
+  }
+}
+
 export function GlassCardSurface({
   children,
   className,
   style,
+  variant = "soft",
+  paper = "evening",
   corner = null,
   cornerMode = "accent",
-  paper = "evening",
-  gloss = true,
-  grain = true,
+  gloss,
+  grain,
   cornerSoftFallback = "rgba(255,255,255,0.06)",
-  minHeight = "60vh",
+  minHeight,
 }: GlassCardSurfaceProps) {
+  const vd = variantDefaults(variant);
+  const finalGloss = gloss ?? vd.gloss;
+  const finalGrain = grain ?? vd.grain;
+  const finalMinHeight = minHeight ?? vd.minHeight;
+
   const cornerIsVar = Boolean(corner && corner.startsWith("--"));
   const cornerValue = corner ? (cornerIsVar ? `var(${corner})` : corner) : null;
 
   const cornerAccent = cornerValue ?? "rgba(0,0,0,0)";
 
   // Soft corner:
-  // - if corner is a CSS var: use provided fallback (we can't compute a mix reliably)
-  // - if literal color: use CSS color-mix (may be ignored on unsupported browsers; gradient still renders)
+  // - if corner is a CSS var: use fallback (we can't compute a mix reliably)
+  // - if literal color: use CSS color-mix (browsers without support may ignore that stop; gradient still renders)
   const softLiteral = cornerValue ? `color-mix(in srgb, ${cornerValue} 30%, transparent)` : "transparent";
   const cornerSoft = corner
     ? cornerIsVar
@@ -139,9 +161,18 @@ export function GlassCardSurface({
 
   return (
     <div
-      className={cx(styles.surface, !gloss && styles.glossOff, !grain && styles.grainOff, className)}
-      style={{ ...style, background, minHeight }}
+      className={cx(
+        styles.surface,
+        variant === "hero" && styles.variantHero,
+        variant === "soft" && styles.variantSoft,
+        variant === "flat" && styles.variantFlat,
+        !finalGloss && styles.glossOff,
+        !finalGrain && styles.grainOff,
+        className
+      )}
+      style={{ ...style, background, minHeight: finalMinHeight }}
       data-paper={paper}
+      data-variant={variant}
       data-corner-mode={cornerMode}
     >
       {children}
