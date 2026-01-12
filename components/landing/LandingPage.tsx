@@ -82,14 +82,18 @@ export function LandingPage() {
           <div className={styles.heroRight}>
             <div className={styles.heroRightInner}>
               <p className={styles.toolIntro}>
-                A Lumira egy egyszerű eszköz álmaid rögzítéséhez és visszanézéséhez. Nem fejt meg
-                helyetted semmit: inkább segít észrevenni, mi maradt meg, és ad egy kíméletes
-                keretet, ha szeretnél továbbmenni. Használhatod reggel pár mondatra, vagy este
+                Egy egyszerű eszköz álmaid rögzítéséhez és visszanézéséhez. 
+                <br />
+                Nem fejt meg helyetted semmit: inkább segít észrevenni, mi maradt meg,
+                és ad egy kíméletes keretet, ha szeretnél továbbmenni. 
+                <br />
+                Használhatod reggel pár mondatra, vagy este
+                <br />
                 rövid hangolásként — a saját tempódban.
               </p>
 
               <Link href="/new" className={`btn btn-primary ${styles.heroCta}`}>
-                Új álom
+                Kezdj bele
               </Link>
             </div>
           </div>
@@ -231,7 +235,7 @@ export function LandingPage() {
             Indíts egy új álmot. Rögzíts pár sort, nézd vissza, és állj meg ott, ahol ma jó.
           </div>
           <Link href="/new" className={`btn btn-primary ${styles.footerCta}`}>
-            Új álom
+            Rögzítsd az első álmodat
           </Link>
         </div>
       </section>
