@@ -10,13 +10,11 @@
   padding: 22px;
   min-height: 270px;
 
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .card:hover {
   transform: scale(1.03);
-  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
 }
 
 .top {

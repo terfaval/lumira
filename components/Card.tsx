@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 
 type CardProps = {
   children: ReactNode;
@@ -12,13 +13,14 @@ export function Card({
   className = "",
   ...rest
 }: CardProps) {
-  const tone = muted ? "card-muted" : "";
   return (
-    <div
+    <GlassCardSurface
+      variant="flat"
+      paper={muted ? "plain" : "evening"}
+      className={className}
       {...rest}
-      className={["card", tone, className].filter(Boolean).join(" ")}
     >
       {children}
-    </div>
+    </GlassCardSurface>
   );
 }

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Card } from "@/components/Card";
 import { Shell } from "@/components/Shell";
 import { Pill } from "@/components/Pill";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import {
   fetchArchiveSessions,
   type ArchiveSessionSummary,
@@ -108,14 +109,6 @@ function getSnippet(session: ArchiveSessionSummary): string {
   if (!raw) return "";
   const max = 320; // ✅ kétszer hosszabb
   return raw.length > max ? raw.slice(0, max - 1) + "…" : raw;
-}
-
-/** status -> corner token (bg) */
-function statusCornerBg(status: ArchiveStatusFilter) {
-  if (status === "erintett") return "var(--status-erintett-bg)";
-  if (status === "feldolgozott") return "var(--status-feldolgozott-bg)";
-  if (status === "lezart") return "var(--status-lezart-bg)";
-  return "var(--status-vazlat-bg)";
 }
 
 /** status -> pill tokens (text + bg) */
@@ -294,19 +287,15 @@ export default function ArchiveClient() {
               ].filter(Boolean);
               const progress = progressParts.length ? progressParts.join(" · ") : "—";
 
-              const corner = statusCornerBg(computedStatus);
               const stTok = statusPillToken(computedStatus);
 
               return (
                 <Link key={session.id} href={`/session/${session.id}/summary`} style={{ textDecoration: "none" }}>
-                  <div
+                  <GlassCardSurface
                     className="archive-tile"
-                    style={{
-                      background: `linear-gradient(135deg,
-                        var(--evening-card-paper-strong) 0%,
-                        var(--evening-card-paper) 42%,
-                        ${corner} 110%)`,
-                    }}
+                    variant="soft"
+                    paper="evening"
+                    corner={stTok.bg}
                   >
                     <div className="tile-top">
                       <div className="tile-left">
@@ -333,7 +322,7 @@ export default function ArchiveClient() {
                         {session.created_at ? new Date(session.created_at).toLocaleString("hu-HU") : ""}
                       </div>
                     </div>
-                  </div>
+                  </GlassCardSurface>
                 </Link>
               );
             })}
@@ -351,8 +340,7 @@ export default function ArchiveClient() {
         .archive-tile {
           cursor: pointer;
           border-radius: 18px;
-          border: 1px solid var(--line-soft);
-
+          
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -360,13 +348,11 @@ export default function ArchiveClient() {
           padding: var(--space-4);
           min-height: 170px;
 
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
           transition: transform 160ms ease, box-shadow 160ms ease;
         }
 
         .archive-tile:hover {
           transform: scale(1.02);
-          box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
         }
 
         .tile-top {

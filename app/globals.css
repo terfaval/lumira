@@ -499,6 +499,21 @@ textarea:focus {
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
+.matte-input,
+.matte-textarea,
+.matte-select {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.matte-input:focus,
+.matte-textarea:focus,
+.matte-select:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 .badge-muted {
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-pill);
@@ -712,8 +727,6 @@ body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-sta
 .dream-raw-text {
   white-space: pre-wrap;
   color: var(--text-muted);
-  background: var(--card-surface-subtle);
-  border: 1px solid var(--line-soft);
   border-radius: 12px;
   padding: var(--space-2);
   height: 100%;
@@ -888,9 +901,6 @@ main { min-height: 100dvh; }
   margin-top: var(--space-3);
   padding: var(--space-3);
   border-radius: var(--radius-card);
-  border: 1px solid var(--line-soft);
-  background: var(--bg-layer);
-  box-shadow: var(--shadow-soft);
 }
 
 .flow-loading-overlay{

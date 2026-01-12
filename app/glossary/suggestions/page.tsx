@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
@@ -225,8 +226,9 @@ export default function SuggestionsPage() {
           >
             {filteredItems.map((item) =>
               editingId === item.id ? (
-                <li key={item.id} className="card" style={{ padding: "var(--space-3)" }}>
-                  <div className="stack">
+                <li key={item.id}>
+                  <GlassCardSurface style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
+                    <div className="stack">
                     <label>
                       <span>Név</span>
                       <input
@@ -283,10 +285,12 @@ export default function SuggestionsPage() {
                       </PrimaryButton>
                     </div>
                   </div>
+                  </GlassCardSurface>
                 </li>
               ) : (
-                <li key={item.id} className="card" style={{ padding: "var(--space-3)" }}>
-                  <div className="stack-tight">
+                <li key={item.id}>
+                  <GlassCardSurface style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
+                    <div className="stack-tight">
                     <div
                       style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
                     >
@@ -330,6 +334,7 @@ export default function SuggestionsPage() {
                       </button>
                     </div>
                   </div>
+                  </GlassCardSurface>
                 </li>
               )
             )}

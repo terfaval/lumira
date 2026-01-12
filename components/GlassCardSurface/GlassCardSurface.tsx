@@ -1,7 +1,7 @@
 // /components/GlassCardSurface/GlassCardSurface.tsx
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode, HTMLAttributes } from "react";
 import styles from "./GlassCardSurface.module.css";
 
 type CornerVar = `--${string}` | string;
@@ -41,7 +41,7 @@ export type GlassCardSurfaceProps = {
 
   /** Min height. Default: "60vh" (hero parity). */
   minHeight?: string;
-};
+} & HTMLAttributes<HTMLDivElement>;
 
 export type GlassCardForegroundProps = {
   children: ReactNode;
@@ -125,6 +125,7 @@ export function GlassCardSurface({
   grain,
   cornerSoftFallback = "rgba(255,255,255,0.06)",
   minHeight,
+  ...rest
 }: GlassCardSurfaceProps) {
   const vd = variantDefaults(variant);
   const finalGloss = gloss ?? vd.gloss;
@@ -174,6 +175,7 @@ export function GlassCardSurface({
       data-paper={paper}
       data-variant={variant}
       data-corner-mode={cornerMode}
+      {...rest}
     >
       {children}
     </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useCallback, useRef, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 
 type Space = "dream" | "evening";
 
@@ -155,83 +156,85 @@ export function SidebarDrawer({
       onClick={onBackdropClick}
     >
       <aside className="drawer-sheet" role="document" aria-label="Oldalsáv">
-        {/* Felső fix opciók */}
-        <div className="drawer-section drawer-top">
-          <Link href="/about" className="drawer-navlink" onClick={onClose}>
-            Mi a Lumira?
-          </Link>
-          
-          <Link
-            href="/evening"
-            className="drawer-navlink"
-            onClick={onClose}
-            aria-current={space === "evening" ? "page" : undefined}
-          >
-            Álom előkészítés
-          </Link>
-
-          <Link
-            href="/"
-            className="drawer-navlink"
-            onClick={onClose}
-            aria-current={space === "dream" ? "page" : undefined}
-          >
-            Új álom rögzítése
-          </Link>
-
-          {/* Álomszótár link csak akkor látható, ha van legalább 10 javasolt bejegyzés */}
-          {glossaryAccess && (
-            <Link href="/glossary" className="drawer-navlink" onClick={onClose}>
-              Álomszótár
+        <GlassCardSurface className="drawer-surface" variant="soft" paper="evening">
+          {/* Felső fix opciók */}
+          <div className="drawer-section drawer-top">
+            <Link href="/about" className="drawer-navlink" onClick={onClose}>
+              Mi a Lumira?
             </Link>
-          )}
-        </div>
-
-        {/* Álomnapló */}
-        <div className="drawer-section">
-          <div className="drawer-section-head">
+            
             <Link
-              href="/archive"
-              className="drawer-navlink drawer-navlink--title"
+              href="/evening"
+              className="drawer-navlink"
               onClick={onClose}
+              aria-current={space === "evening" ? "page" : undefined}
             >
-              Álomnapló
+              Álom előkészítés
             </Link>
+
+            <Link
+              href="/"
+              className="drawer-navlink"
+              onClick={onClose}
+              aria-current={space === "dream" ? "page" : undefined}
+            >
+              Új álom rögzítése
+            </Link>
+
+            {/* Álomszótár link csak akkor látható, ha van legalább 10 javasolt bejegyzés */}
+            {glossaryAccess && (
+              <Link href="/glossary" className="drawer-navlink" onClick={onClose}>
+                Álomszótár
+              </Link>
+            )}
           </div>
 
-          {loading ? (
-            <div className="drawer-muted">Betöltés…</div>
-          ) : err ? (
-            <div className="drawer-error">Nem sikerült betölteni: {err}</div>
-          ) : recent.length === 0 ? (
-            <div className="drawer-muted">Még nincs rögzített álom.</div>
-          ) : (
-            <ul className="drawer-list">
-              {recent.map((r) => (
-                <li key={r.session_id} className="drawer-list-item">
-                  <Link
-                    href={`/session/${r.session_id}/frame`}
-                    className="drawer-item"
-                    onClick={onClose}
-                  >
-                    <div className="drawer-item-title">{titleOf(r)}</div>
-                    <div className="drawer-item-snippet">{snippet(r.raw_dream_text)}</div>
-                    <div className="drawer-item-meta">
-                      {new Date(r.created_at).toLocaleString("hu-HU")}
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+          {/* Álomnapló */}
+          <div className="drawer-section">
+            <div className="drawer-section-head">
+              <Link
+                href="/archive"
+                className="drawer-navlink drawer-navlink--title"
+                onClick={onClose}
+              >
+                Álomnapló
+              </Link>
+            </div>
 
-        {/* Kilépés */}
-        <div className="drawer-footer">
-          <button className="btn btn-secondary drawer-logout" onClick={onLogout}>
-            Kilépés
-          </button>
-        </div>
+            {loading ? (
+              <div className="drawer-muted">Betöltés…</div>
+            ) : err ? (
+              <div className="drawer-error">Nem sikerült betölteni: {err}</div>
+            ) : recent.length === 0 ? (
+              <div className="drawer-muted">Még nincs rögzített álom.</div>
+            ) : (
+              <ul className="drawer-list">
+                {recent.map((r) => (
+                  <li key={r.session_id} className="drawer-list-item">
+                    <Link
+                      href={`/session/${r.session_id}/frame`}
+                      className="drawer-item"
+                      onClick={onClose}
+                    >
+                      <div className="drawer-item-title">{titleOf(r)}</div>
+                      <div className="drawer-item-snippet">{snippet(r.raw_dream_text)}</div>
+                      <div className="drawer-item-meta">
+                        {new Date(r.created_at).toLocaleString("hu-HU")}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Kilépés */}
+          <div className="drawer-footer">
+            <button className="btn btn-secondary drawer-logout" onClick={onLogout}>
+              Kilépés
+            </button>
+          </div>
+        </GlassCardSurface>
       </aside>
 
       <style jsx>{`
@@ -255,17 +258,18 @@ export function SidebarDrawer({
           left: 0;
           width: min(360px, 92vw);
           height: 100dvh;
-          background: var(--bg-layer);
-          border-right: 1px solid var(--line-soft);
-          box-shadow: var(--shadow-soft);
           transform: translateX(-100%);
           transition: transform 200ms ease;
-          display: grid;
-          grid-template-rows: auto 1fr auto;
-          padding: var(--space-3);
         }
         .drawer-root.is-open .drawer-sheet {
           transform: translateX(0);
+        }
+
+        .drawer-surface {
+          height: 100%;
+          display: grid;
+          grid-template-rows: auto 1fr auto;
+          padding: var(--space-3);
         }
 
         .drawer-section {

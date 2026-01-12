@@ -6,6 +6,7 @@ import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { Shell } from "@/components/Shell";
 import { Pill } from "@/components/Pill";
+import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { startDirection } from "@/src/lib/startDirection";
 import type { DreamSession, DirectionCatalogItem, DirectionCardContent, WorkBlock } from "@/src/lib/types";
 
@@ -380,7 +381,7 @@ export default function SessionSummary() {
     const chosen = !!selectedDirs[d.slug];
 
     return (
-      <div key={d.slug} className={styles.dirCard}>
+      <GlassCardSurface key={d.slug} className={styles.dirCard} variant="soft" paper="evening" corner={token.bg}>
         <div className={styles.dirCardTop}>
           <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
             {gLabel}
@@ -405,7 +406,7 @@ export default function SessionSummary() {
             Indítás
           </button>
         </div>
-      </div>
+      </GlassCardSurface>
     );
   }
 
@@ -437,22 +438,24 @@ export default function SessionSummary() {
       {/* Title edit overlay */}
       {editingTitle ? (
         <div className={styles.titleEditOverlay} role="dialog" aria-label="Cím szerkesztése">
-          <div className={styles.titleEditCard}>
+          <GlassCardSurface className={styles.titleEditCard} variant="soft" paper="evening">
             <div className={styles.titleEditLabel}>Cím szerkesztése</div>
 
-            <input
-              className={styles.titleEditInput}
-              value={draftTitle}
-              onChange={(e) => setDraftTitle(e.target.value)}
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") saveTitle();
-                if (e.key === "Escape") {
-                  setDraftTitle(title);
-                  setEditingTitle(false);
-                }
-              }}
-            />
+            <GlassCardMatte padding="sm" tone="evening">
+              <input
+                className={styles.titleEditInput}
+                value={draftTitle}
+                onChange={(e) => setDraftTitle(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveTitle();
+                  if (e.key === "Escape") {
+                    setDraftTitle(title);
+                    setEditingTitle(false);
+                  }
+                }}
+              />
+            </GlassCardMatte>
 
             <div className={styles.titleEditActions}>
               <button
@@ -470,9 +473,9 @@ export default function SessionSummary() {
                 {savingTitle ? "Mentés…" : "Mentés"}
               </button>
             </div>
-          </div>
+          </GlassCardSurface>
         </div>
-      ) : null}
+      ) : null} 
 
       <div className={styles.summaryWrap}>
         {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}
@@ -510,24 +513,24 @@ export default function SessionSummary() {
 
             {/* Stats */}
             <div className={styles.stats}>
-              <div className={styles.statsItem}>
+              <GlassCardSurface className={styles.statsItem} variant="flat" paper="evening">
                 <div className={styles.statsLabel}>Álom hossza</div>
                 <div className={styles.statsValue}>
                   {dreamLength.chars} karakter · {dreamLength.words} szó
                 </div>
-              </div>
+              </GlassCardSurface>
 
-              <div className={styles.statsItem}>
+              <GlassCardSurface className={styles.statsItem} variant="flat" paper="evening">
                 <div className={styles.statsLabel}>Rögzített kártyák</div>
                 <div className={styles.statsValue}>
                   {stats.answered}/{stats.total}
                 </div>
-              </div>
+              </GlassCardSurface>
 
-              <div className={styles.statsItem}>
+              <GlassCardSurface className={styles.statsItem} variant="flat" paper="evening">
                 <div className={styles.statsLabel}>Érintett irányok</div>
                 <div className={styles.statsValue}>{stats.directions}</div>
-              </div>
+              </GlassCardSurface>
             </div>
 
             {/* Gallery */}
@@ -549,9 +552,11 @@ export default function SessionSummary() {
                     const dirTitle = meta?.title ?? c.directionSlug;
 
                     return (
-                      <div
+                      <GlassCardSurface
                         key={c.id}
                         className={styles.carouselCard}
+                        variant="flat"
+                        paper="evening"
                         style={{
                           transform: `translateY(${idx % 2 === 0 ? 0 : 8}px)`,
                         }}
@@ -564,7 +569,7 @@ export default function SessionSummary() {
                         <div className={styles.carouselQ}>{c.question || "—"}</div>
 
                         {c.isAnswered ? <div className={styles.carouselA}>{c.answer}</div> : <div className={styles.carouselAEmpty}>Nincs válasz</div>}
-                      </div>
+                      </GlassCardSurface>
                     );
                   })}
                 </div>

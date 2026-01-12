@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
+import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,28 +41,32 @@ export default function LoginPage() {
 
   return (
     <main className="auth-page">
-      <section className="glass-card auth-card">
+      <GlassCardSurface className="auth-card" variant="soft" paper="evening">
         <h1>Belépés</h1>
         <form onSubmit={handleSubmit} className="auth-form">
           <label className="auth-label">
             <span>Email</span>
-            <input
-              className="auth-input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <GlassCardMatte padding="sm" tone="evening">
+              <input
+                className="auth-input matte-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </GlassCardMatte>
           </label>
           <label className="auth-label">
             <span>Jelszó</span>
-            <input
-              className="auth-input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <GlassCardMatte padding="sm" tone="evening">
+              <input
+                className="auth-input matte-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </GlassCardMatte>
           </label>
           <div className="auth-actions">
             <button type="submit" disabled={busy} className="btn btn-primary">
@@ -73,7 +78,7 @@ export default function LoginPage() {
         <p style={{ opacity: 0.8 }}>
           Nincs még fiókod? <Link href="/signup">Regisztráció</Link>
         </p>
-      </section>
+      </GlassCardSurface>
     </main>
   );
 }

@@ -2,6 +2,7 @@
 "use client";
 
 import { Pill } from "@/components/Pill";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import styles from "./DirectionTile.module.css";
 import type { DirectionCatalogItem } from "@/src/lib/types";
 
@@ -21,30 +22,25 @@ type Props = {
 export function DirectionTile({ dir, groupLabel, token, chosen, tags, onOpen }: Props) {
   const micro = ((dir as any)?.content?.micro_description ?? dir.description ?? "") as string;
 
-  const bgCorner = token ? `var(${token.bg})` : "rgba(0,0,0,0)";
-
   function openFrom(el: HTMLElement | null) {
     const rect = el?.getBoundingClientRect();
     onOpen(dir.slug, rect);
   }
 
   return (
-    <div
+    <GlassCardSurface
       className={`${styles.wrap} ${styles.card}`}
       role="button"
       tabIndex={0}
+      variant="soft"
+      paper="evening"
+      corner={token?.bg ?? null}
       onClick={(e) => openFrom(e.currentTarget as HTMLElement)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           openFrom(e.currentTarget as HTMLElement);
         }
-      }}
-      style={{
-        background: `linear-gradient(135deg,
-          var(--evening-card-paper-strong) 0%,
-          var(--evening-card-paper) 42%,
-          ${bgCorner} 110%)`,
       }}
     >
       {/* TOP */}
@@ -78,6 +74,6 @@ export function DirectionTile({ dir, groupLabel, token, chosen, tags, onOpen }: 
           Megnyitás <span aria-hidden="true">→</span>
         </span>
       </div>
-    </div>
+    </GlassCardSurface>
   );
 }

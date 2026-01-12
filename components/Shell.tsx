@@ -7,6 +7,7 @@ import { supabase } from "@/src/lib/supabase/client";
 import { NapszakInitializer } from "./NapszakInitializer";
 import { SidebarDrawer } from "./SidebarDrawer";
 import { BrandLockup } from "@/components/brand/BrandLockup";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 
 
 export function Shell({
@@ -93,7 +94,9 @@ export function Shell({
 
       {infoPanel && (
         <div className={`info-panel info-panel--overlay ${infoOpen ? "info-panel--open" : ""}`}>
-          <div className="info-panel-inner">{infoPanel}</div>
+          <GlassCardSurface className="info-panel-inner" variant="flat" paper="evening">
+            {infoPanel}
+          </GlassCardSurface>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LumiraMark } from "@/components/brand/LumiraMark";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import styles from "./LandingPage.module.css";
 
 const howStepsTop = [
@@ -106,7 +107,7 @@ export function LandingPage() {
 
         <div className={styles.howTop}>
           {howStepsTop.map((s) => (
-            <article key={s.title} className={styles.glassCard}>
+            <GlassCardSurface key={s.title} className={styles.glassCard} variant="soft" paper="evening">
               <div className={styles.howStepHead}>
                 <img
                   src={s.icon}
@@ -119,12 +120,12 @@ export function LandingPage() {
                 <div className={styles.cardTitle}>{s.title}</div>
               </div>
               <div className={styles.cardBody}>{s.body}</div>
-            </article>
+            </GlassCardSurface>
           ))}
         </div>
 
         <div className={styles.howStopRow}>
-          <article className={`${styles.glassCard} ${styles.stopCard}`}>
+          <GlassCardSurface className={`${styles.glassCard} ${styles.stopCard}`} variant="soft" paper="evening">
             <div className={styles.stopInner}>
               <img
                 src={howStop.icon}
@@ -139,7 +140,7 @@ export function LandingPage() {
                 <div className={styles.cardBody}>{howStop.body}</div>
               </div>
             </div>
-          </article>
+          </GlassCardSurface>
         </div>
       </section>
 
@@ -149,7 +150,7 @@ export function LandingPage() {
 
         <div className={styles.adaptPrimaryRow}>
           {adaptPrimary.map((x) => (
-            <article key={x.key} className={`${styles.glassCard} ${styles.adaptPrimaryCard}`}>
+            <GlassCardSurface key={x.key} className={`${styles.glassCard} ${styles.adaptPrimaryCard}`} variant="soft" paper="evening">
               <div className={styles.adaptPrimaryInner}>
                 <div className={styles.adaptPrimaryIconCol}>
                   <img
@@ -166,7 +167,7 @@ export function LandingPage() {
                   <div className={styles.cardBody}>{x.body}</div>
                 </div>
               </div>
-            </article>
+            </GlassCardSurface>
           ))}
         </div>
 
@@ -211,19 +212,16 @@ export function LandingPage() {
               body: "Egy egyszerű jelzés a végén: most elég. Nem kell tovább dolgozni — jöhet az alvás.",
             },
           ].map((card) => (
-            <article
+            <GlassCardSurface
               key={card.title}
               className={`${styles.glassCard} ${styles.eveningCard}`}
-              style={{
-                background: `linear-gradient(135deg,
-                  var(--evening-card-paper-strong) 0%,
-                  var(--evening-card-paper) 42%,
-                  var(--glow-2) 120%)`,
-              }}
+              variant="soft"
+              paper="evening"
+              corner="--glow-2"
             >
               <div className={styles.cardTitle}>{card.title}</div>
               <div className={styles.cardBody}>{card.body}</div>
-            </article>
+            </GlassCardSurface>
           ))}
         </div>
       </section>

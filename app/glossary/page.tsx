@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
@@ -351,50 +352,55 @@ export default function GlossaryPage() {
             }}
           >
             {/* CTA card to add new entry */}
-            <li
-              className="card"
-              style={{
-                padding: "var(--space-3)",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              onClick={() => setShowAddModal(true)}
-            >
-              <div
+            <li>
+              <GlassCardSurface
                 style={{
+                  padding: "var(--space-3)",
+                  cursor: "pointer",
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  textAlign: "center",
-                  gap: 4,
                 }}
+                variant="flat"
+                paper="evening"
+                onClick={() => setShowAddModal(true)}
               >
-                <span style={{ fontSize: 32, lineHeight: 1 }}>+</span>
-                <span style={{ fontWeight: 500 }}>Jegyzet hozzáadása</span>
-              </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    gap: 4,
+                  }}
+                >
+                  <span style={{ fontSize: 32, lineHeight: 1 }}>+</span>
+                  <span style={{ fontWeight: 500 }}>Jegyzet hozzáadása</span>
+                </div>
+              </GlassCardSurface>
             </li>
             {/* Show up to three suggestion cards next to the CTA */}
             {suggestions.slice(0, 3).map((sugg) => (
-              <li
-                key={sugg.id}
-                className="card"
-                style={{ padding: "var(--space-3)" }}
-              >
-                <div className="stack-tight">
-                  <div style={{ fontWeight: 700, fontSize: 16 }}>{sugg.name}</div>
-                  {sugg.categories && sugg.categories.length > 0 && (
-                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                      Kategóriák: {sugg.categories.join(", ")}
-                    </div>
-                  )}
-                  <div style={{ fontSize: 12, color: "var(--status-warning)" }}>Jegyzet hiányzik</div>
-                  <Link href="/glossary/suggestions" legacyBehavior>
-                    <a className="btn btn-secondary" style={{ marginTop: 8 }}>Jegyzet hozzáadása</a>
-                  </Link>
-                </div>
+              <li key={sugg.id}>
+                <GlassCardSurface
+                  style={{ padding: "var(--space-3)" }}
+                  variant="flat"
+                  paper="evening"
+                >
+                  <div className="stack-tight">
+                    <div style={{ fontWeight: 700, fontSize: 16 }}>{sugg.name}</div>
+                    {sugg.categories && sugg.categories.length > 0 && (
+                      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                        Kategóriák: {sugg.categories.join(", ")}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 12, color: "var(--status-warning)" }}>Jegyzet hiányzik</div>
+                    <Link href="/glossary/suggestions" legacyBehavior>
+                      <a className="btn btn-secondary" style={{ marginTop: 8 }}>Jegyzet hozzáadása</a>
+                    </Link>
+                  </div>
+                </GlassCardSurface>
               </li>
             ))}
           </ul>
@@ -482,8 +488,9 @@ export default function GlossaryPage() {
             >
               {filteredItems.map((item) =>
                 editingId === item.id ? (
-                  <li key={item.id} className="card" style={{ padding: "var(--space-3)" }}>
-                    <div className="stack">
+                  <li key={item.id}>
+                    <GlassCardSurface style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
+                      <div className="stack">
                       <label>
                         <span>Név</span>
                         <input
@@ -540,10 +547,12 @@ export default function GlossaryPage() {
                         </PrimaryButton>
                       </div>
                     </div>
+                    </GlassCardSurface>
                   </li>
                 ) : (
-                  <li key={item.id} className="card" style={{ padding: "var(--space-3)" }}>
-                    <div className="stack-tight">
+                  <li key={item.id}>
+                    <GlassCardSurface style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
+                      <div className="stack-tight">
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div style={{ fontWeight: 700, fontSize: 18 }}>{item.name}</div>
                         {item.is_nightmare ? (
@@ -590,7 +599,8 @@ export default function GlossaryPage() {
                           Törlés
                         </button>
                       </div>
-                    </div>
+                      </div>
+                    </GlassCardSurface>
                   </li>
                 )
               )}
@@ -612,26 +622,28 @@ export default function GlossaryPage() {
               paddingTop: "10vh",
             }}
           >
-            <div
-              className="card"
+            <GlassCardSurface
               style={{
                 width: "100%",
                 maxWidth: 600,
-                background: "var(--surface)",
                 padding: "var(--space-4)",
               }}
+              variant="soft"
+              paper="evening"
             >
               <h2 style={{ marginTop: 0, marginBottom: 16 }}>Új elem hozzáadása</h2>
               <div className="stack">
                 <label>
                   <span>Név</span>
-                  <input
-                    type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    className="input"
-                    disabled={busy}
-                  />
+                  <GlassCardMatte padding="sm" tone="evening">
+                    <input
+                      type="text"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      className="input matte-input"
+                      disabled={busy}
+                    />
+                  </GlassCardMatte>
                 </label>
                 <div>
                   <span>Kategóriák</span>
@@ -679,21 +691,23 @@ export default function GlossaryPage() {
                     })}
                   </div>
                   <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                    <input
-                      type="text"
-                      placeholder="Új kategória..."
-                      value={customCategoryInput}
-                      onChange={(e) => setCustomCategoryInput(e.target.value)}
-                      className="input"
-                      disabled={busy}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addCustomCategory();
-                        }
-                      }}
-                      style={{ flex: 1 }}
-                    />
+                    <GlassCardMatte padding="sm" tone="evening" style={{ flex: 1 }}>
+                      <input
+                        type="text"
+                        placeholder="Új kategória..."
+                        value={customCategoryInput}
+                        onChange={(e) => setCustomCategoryInput(e.target.value)}
+                        className="input matte-input"
+                        disabled={busy}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addCustomCategory();
+                          }
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                    </GlassCardMatte>
                     <button
                       type="button"
                       className="btn btn-secondary"
@@ -706,23 +720,28 @@ export default function GlossaryPage() {
                 </div>
                 <label>
                   <span>Jegyzet</span>
-                  <textarea
-                    value={newNotes}
-                    onChange={(e) => setNewNotes(e.target.value)}
-                    className="textarea"
-                    rows={4}
-                    disabled={busy}
-                  />
+                  <GlassCardMatte padding="sm" tone="evening">
+                    <textarea
+                      value={newNotes}
+                      onChange={(e) => setNewNotes(e.target.value)}
+                      className="textarea matte-textarea"
+                      rows={4}
+                      disabled={busy}
+                    />
+                  </GlassCardMatte>
                 </label>
-                <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <input
-                    type="checkbox"
-                    checked={newNightmare}
-                    onChange={(e) => setNewNightmare(e.target.checked)}
-                    disabled={busy}
-                  />
-                  <span>Rémálom elem</span>
-                </label>
+                <GlassCardMatte padding="sm" tone="evening">
+                  <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <input
+                      type="checkbox"
+                      checked={newNightmare}
+                      onChange={(e) => setNewNightmare(e.target.checked)}
+                      disabled={busy}
+                      className="matte-input"
+                    />
+                    <span>Rémálom elem</span>
+                  </label>
+                </GlassCardMatte>
                 <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                   <button
                     type="button"
@@ -750,7 +769,7 @@ export default function GlossaryPage() {
                   </PrimaryButton>
                 </div>
               </div>
-            </div>
+            </GlassCardSurface>
           </div>
         )}
       </Shell>

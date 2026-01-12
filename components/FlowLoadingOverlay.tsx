@@ -1,5 +1,7 @@
 "use client";
 
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+
 export function FlowLoadingOverlay({
   open,
   title = "Betöltés…",
@@ -13,13 +15,13 @@ export function FlowLoadingOverlay({
 
   return (
     <div className="flow-overlay" role="status" aria-live="polite" aria-label={title}>
-      <div className="flow-overlay-card">
+      <GlassCardSurface className="flow-overlay-card" variant="soft" paper="evening">
         <div className="spinner" aria-hidden="true" />
         <div className="flow-overlay-text">
           <div className="flow-overlay-title">{title}</div>
           <div className="flow-overlay-subtitle">{subtitle}</div>
         </div>
-      </div>
+      </GlassCardSurface>
 
       <style jsx>{`
         .flow-overlay {
@@ -36,13 +38,6 @@ export function FlowLoadingOverlay({
         .flow-overlay-card {
           width: min(520px, 92vw);
           border-radius: 18px;
-          border: 1px solid var(--line-soft);
-          background: linear-gradient(
-            135deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.03)
-          );
-          box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
           padding: var(--space-3);
           display: flex;
           gap: var(--space-3);

@@ -7,6 +7,7 @@ import { startDirection } from "@/src/lib/startDirection";
 import type { DirectionCatalogItem } from "@/src/lib/types";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { Pill } from "@/components/Pill";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import styles from "./direction.module.css";
 import { huTagDir } from "@/src/lib/tags/dirTagsHu";
 
@@ -238,15 +239,12 @@ export default function DirectionPage() {
     const isBusy = busySlug === d.slug;
 
     return (
-      <div
+      <GlassCardSurface
         key={d.slug}
         className={styles.card}
-        style={{
-          background: `linear-gradient(135deg,
-            var(--evening-card-paper-strong) 0%,
-            var(--evening-card-paper) 42%,
-            var(${token.bg}) 110%)`,
-        }}
+        variant="soft"
+        paper="evening"
+        corner={token.bg}
       >
         {opts?.recommended ? (
           <div className={styles.recoIcon} title="Ajánlott" aria-label="Ajánlott">
@@ -287,7 +285,7 @@ export default function DirectionPage() {
             {isBusy ? "Indítás..." : "Indítás"}
           </button>
         </div>
-      </div>
+      </GlassCardSurface>
     );
   }
 
@@ -300,7 +298,7 @@ export default function DirectionPage() {
         if (e.target === e.currentTarget) close();
       }}
     >
-      <div className={styles.panel} role="document">
+      <GlassCardSurface className={styles.panel} role="document" variant="soft" paper="evening">
         <button
           ref={closeBtnRef}
           className={styles.close}
@@ -324,7 +322,7 @@ export default function DirectionPage() {
             <div className={styles.grid}>{restGroupedFlattened.map((d) => renderCard(d))}</div>
           </div>
         )}
-      </div>
+      </GlassCardSurface>
     </div>
   );
 }

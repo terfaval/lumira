@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
 import type { DreamSession } from "@/src/lib/types";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 
 type DreamRaw = Pick<DreamSession, "id" | "raw_dream_text" | "created_at">;
 
@@ -66,10 +67,19 @@ export function DreamRawPanel({
       ? `dream-raw-text dream-raw-text--bare ${className}`.trim()
       : `dream-raw-text ${className}`.trim();
 
+  if (variant === "bare") {
+    return (
+      <div className={rootClass} aria-live="polite">
+        {error ? <span style={{ color: "crimson" }}>Nem sikerült betölteni az álmot.</span> : null}
+        {!error ? text : null}
+      </div>
+    );
+  }
+
   return (
-    <div className={rootClass} aria-live="polite">
+    <GlassCardSurface className={rootClass} aria-live="polite" variant="flat" paper="evening">
       {error ? <span style={{ color: "crimson" }}>Nem sikerült betölteni az álmot.</span> : null}
       {!error ? text : null}
-    </div>
+    </GlassCardSurface>
   );
 }

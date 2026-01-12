@@ -16,7 +16,6 @@
   overflow: auto;
 
   border-radius: 18px;
-  background: transparent;
   padding: var(--space-3);
   position: relative;
 }
@@ -74,9 +73,7 @@
 /* card */
 .card {
   border-radius: 18px;
-  border: 1px solid var(--line-soft);
-  box-shadow: var(--shadow-soft);
-
+  
   padding: 22px;
   min-height: 230px;
 
@@ -91,7 +88,6 @@
 
 .card:hover {
   transform: scale(1.02);
-  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
 }
 
 /* ajánlott ikon a kártyán */

@@ -106,18 +106,6 @@
 
 .glassCard {
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.38);
-
-  background: linear-gradient(
-    180deg,
-    rgba(6, 12, 22, 0.78),
-    rgba(6, 12, 22, 0.42)
-  );
-
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-
   padding: var(--space-4);
 }
 
@@ -302,9 +290,6 @@
   }
 }
 
-.eveningCard {
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
-}
 
 /* -------------------------------- */
 /* FOOTER                             */

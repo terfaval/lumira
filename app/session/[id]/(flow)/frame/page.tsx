@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { supabase } from "@/src/lib/supabase/client";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { startDirection } from "@/src/lib/startDirection";
@@ -194,12 +195,14 @@ export default function FramePage() {
                   onClick={() => handleDirectionSelect(d.slug)}
                   className="direction-card"
                 >
-                  <div className="stack-tight">
-                    <div style={{ fontWeight: 800 }}>{d.title}</div>
-                    <div style={{ opacity: 0.9 }}>
-                      {(d.content as any)?.micro_description ?? d.description}
+                  <GlassCardSurface className="direction-card-surface" variant="soft" paper="evening">
+                    <div className="stack-tight">
+                      <div style={{ fontWeight: 800 }}>{d.title}</div>
+                      <div style={{ opacity: 0.9 }}>
+                        {(d.content as any)?.micro_description ?? d.description}
+                      </div>
                     </div>
-                  </div>
+                  </GlassCardSurface>
                 </button>
               ))}
             </div>
@@ -270,46 +273,28 @@ export default function FramePage() {
         .direction-card {
           text-align: left;
           cursor: pointer;
+          background: none;
+          border: none;
+          padding: 0;
+          width: 100%;
+        }
 
-          border-radius: 16px;
-          border: 1px solid var(--line-soft);
-          background: var(--card-surface);
-          padding: var(--space-3);
-          box-shadow: var(--shadow-soft);
+        .direction-card-surface {
+          text-align: left;
           color: var(--text-primary);
-
           transition:
             transform 160ms ease,
             box-shadow 200ms ease,
-            background 200ms ease,
             border-color 200ms ease,
-            color 160ms ease,
-            backdrop-filter 200ms ease;
+            color 160ms ease;
         }
 
-        .direction-card:hover:not(:disabled) {
+        .direction-card:hover:not(:disabled) .direction-card-surface {
           transform: scale(1.025);
           border-color: var(--accent);
-
-          background: linear-gradient(
-            135deg,
-            var(--accent) 0%,
-            var(--accent-2) 100%
-          );
-
-          color: var(--accent-ink);
-          backdrop-filter: blur(8px);
-
-          box-shadow:
-            0 18px 40px rgba(0, 0, 0, 0.35),
-            inset 0 0 0 1px rgba(255, 255, 255, 0.18);
         }
 
-        .direction-card:hover:not(:disabled) * {
-          color: var(--accent-ink);
-        }
-
-        .direction-card:active:not(:disabled) {
+        .direction-card:active:not(:disabled) .direction-card-surface {
           transform: scale(1.01);
         }
 

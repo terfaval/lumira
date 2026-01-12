@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { Shell } from "@/components/Shell";
+import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { supabase } from "@/src/lib/supabase/client";
 // Import the modified layout CSS which contains the original layout styles
 // and additional classes to support title editing. See layout_modified.module.css.
@@ -258,25 +259,27 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
       {/* Overlay for editing the title, mimicking the summary page UI */}
       {editingTitle ? (
         <div className={styles.titleEditOverlay} role="dialog" aria-label="Cím szerkesztése">
-          <div className={styles.titleEditCard}>
+          <GlassCardSurface className={styles.titleEditCard} variant="soft" paper="evening">
             <div className={styles.titleEditLabel}>Cím szerkesztése</div>
-            <input
-              className={styles.titleEditInput}
-              value={draftTitle}
-              onChange={(e) => setDraftTitle(e.target.value)}
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  void handleTitleSave();
-                }
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  setDraftTitle(safeTitle);
-                  setEditingTitle(false);
-                }
-              }}
-            />
+            <GlassCardMatte padding="sm" tone="evening">
+              <input
+                className={styles.titleEditInput}
+                value={draftTitle}
+                onChange={(e) => setDraftTitle(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleTitleSave();
+                  }
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    setDraftTitle(safeTitle);
+                    setEditingTitle(false);
+                  }
+                }}
+              />
+            </GlassCardMatte>
             <div className={styles.titleEditActions}>
               <button
                 type="button"
@@ -298,7 +301,7 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
                 {savingTitle ? "Mentés…" : "Mentés"}
               </button>
             </div>
-          </div>
+          </GlassCardSurface>
         </div>
       ) : null}
     </Shell>
