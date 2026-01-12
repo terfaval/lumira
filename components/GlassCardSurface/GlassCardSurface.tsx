@@ -1,3 +1,4 @@
+// /components/GlassCardSurface/GlassCardSurface.tsx
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
@@ -5,38 +6,40 @@ import styles from "./GlassCardSurface.module.css";
 
 type CornerVar = `--${string}` | string;
 
-type Props = {
-  children: ReactNode;
-  className?: string;
-  style?: CSSProperties;
-
-  /** Optional corner accent source (CSS var or literal color). */
-  corner?: CornerVar | null;
-
-  /** Corner intensity mode. */
-  cornerMode?: "soft" | "accent";
-
-  /** Paper preset. Optional, defaults to "evening". */
-  paper?: "evening" | "plain";
-
-  /** Toggle glossy sheen overlay. Default true. */
-  gloss?: boolean;
-
-  /** Toggle grain/noise overlay. Default true. */
-  grain?: boolean;
-
-  /** Optional override for the "soft" corner fallback color. */
-  cornerSoftFallback?: string;
-
-  /** Min height, defaults to 60vh (EveningCardFlip parity). */
-  minHeight?: string;
-};
-
 function cx(...xs: Array<string | undefined | false>) {
   return xs.filter(Boolean).join(" ");
 }
 
-type ForegroundProps = {
+export type GlassCardPaper = "evening" | "plain";
+
+export type GlassCardSurfaceProps = {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+
+  /** Optional corner accent source (CSS var like "--accent" or literal color). */
+  corner?: CornerVar | null;
+
+  /** Corner intensity mode. Default: "accent" */
+  cornerMode?: "soft" | "accent";
+
+  /** Background preset. Default: "evening" */
+  paper?: GlassCardPaper;
+
+  /** Toggle glossy highlight overlay. Default: true */
+  gloss?: boolean;
+
+  /** Toggle grain/noise overlay. Default: true */
+  grain?: boolean;
+
+  /** Optional override for the "soft" corner fallback color (used when corner is a CSS var). */
+  cornerSoftFallback?: string;
+
+  /** Min height, default: 60vh (EveningCardFlip parity) */
+  minHeight?: string;
+};
+
+export type GlassCardForegroundProps = {
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -44,11 +47,51 @@ type ForegroundProps = {
 
 /**
  * Recommended wrapper for interactive content (textarea/input/select/buttons),
- * so they always sit above overlays and can be styled "matte".
+ * so it always sits above overlays.
  */
-export function GlassCardForeground({ children, className, style }: ForegroundProps) {
+export function GlassCardForeground({ children, className, style }: GlassCardForegroundProps) {
   return (
     <div className={cx(styles.foreground, className)} style={style}>
+      {children}
+    </div>
+  );
+}
+
+export type GlassCardMatteProps = {
+  children: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+
+  /** Visual tone for the matte well. Default: "evening" */
+  tone?: "evening" | "plain";
+
+  /** Inner padding size. Default: "md" */
+  padding?: "sm" | "md" | "lg";
+};
+
+/**
+ * Matte “paper well” to place inside a glass surface.
+ * Use this around inputs/textareas/editors so they do NOT inherit the glass sheen.
+ */
+export function GlassCardMatte({
+  children,
+  className,
+  style,
+  tone = "evening",
+  padding = "md",
+}: GlassCardMatteProps) {
+  return (
+    <div
+      className={cx(
+        styles.matte,
+        tone === "plain" && styles.matteTonePlain,
+        padding === "sm" && styles.mattePadSm,
+        padding === "md" && styles.mattePadMd,
+        padding === "lg" && styles.mattePadLg,
+        className
+      )}
+      style={style}
+    >
       {children}
     </div>
   );
@@ -65,7 +108,7 @@ export function GlassCardSurface({
   grain = true,
   cornerSoftFallback = "rgba(255,255,255,0.06)",
   minHeight = "60vh",
-}: Props) {
+}: GlassCardSurfaceProps) {
   const cornerIsVar = Boolean(corner && corner.startsWith("--"));
   const cornerValue = corner ? (cornerIsVar ? `var(${corner})` : corner) : null;
 
@@ -73,7 +116,7 @@ export function GlassCardSurface({
 
   // Soft corner:
   // - if corner is a CSS var: use provided fallback (we can't compute a mix reliably)
-  // - if literal color: use CSS color-mix when supported (CSS handles fallback via @supports in module)
+  // - if literal color: use CSS color-mix (may be ignored on unsupported browsers; gradient still renders)
   const softLiteral = cornerValue ? `color-mix(in srgb, ${cornerValue} 30%, transparent)` : "transparent";
   const cornerSoft = corner
     ? cornerIsVar

@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
-import { GlassCardForeground, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import {
+  GlassCardForeground,
+  GlassCardMatte,
+  GlassCardSurface,
+} from "@/components/GlassCardSurface/GlassCardSurface";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
@@ -96,7 +100,7 @@ export default function NewDream() {
       const sessionId = (data as any)?.id as string | undefined;
       if (!sessionId) throw new Error("Nem jött vissza session id.");
 
-      // 1) INDEX – anchor_summary + embedding (blokkolva)
+      // 1) INDEX
       setStep("index");
       {
         const res = await fetchWithAuth("/api/index-session", {
@@ -109,7 +113,7 @@ export default function NewDream() {
         }
       }
 
-      // 2) SYNTHESIZE – latent elemzés (blokkolva)
+      // 2) SYNTHESIZE
       setStep("synth");
       const activeSlugs = await fetchActiveSlugs().catch(() => []);
       {
@@ -129,7 +133,7 @@ export default function NewDream() {
         }
       }
 
-      // 3) FRAME – cím + keretezés + 3 ajánlott irány (blokkolva)
+      // 3) FRAME
       setStep("frame");
       {
         const res = await fetchWithAuth("/api/frame", {
@@ -170,8 +174,7 @@ export default function NewDream() {
       ? "Cím + keretezés + 3 ajánlott irány."
       : "Álom feldolgozásának előkészítése.";
 
-  // ✅ visszafogottabb corner szín (accent “lejjebb véve”)
-  // Ha az --accent túl erős, ez finom, esti “hint”.
+  // soft corner hint (subtle)
   const cornerSoft = "rgba(255,255,255,0.08)";
 
   return (
@@ -196,8 +199,8 @@ export default function NewDream() {
           <p className="section-title">Rögzítés</p>
 
           <p style={{ color: "var(--text-muted)" }}>
-            Itt csak a rögzítés a cél. Nem kell szépen megfogalmazni, nem kell “értelmes” legyen.
-            Amit most ki tudsz menteni, az később is dolgozható.
+            Itt csak a rögzítés a cél. Nem kell szépen megfogalmazni, nem kell “értelmes” legyen. Amit
+            most ki tudsz menteni, az később is dolgozható.
           </p>
 
           <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-muted)", lineHeight: 1.7 }}>
@@ -228,25 +231,34 @@ export default function NewDream() {
         />
       ) : (
         <>
-          {/* ✅ nincs extra “hátsó” wrapper/panel — a GlassCardSurface a fő felület */}
-          <GlassCardSurface paper="evening" corner={cornerSoft} cornerMode="soft" minHeight="auto">
-            {/* ✅ minden interaktív elem “előrébb” kerül, hogy ne kapjon csillanást */}
-            <GlassCardForeground className="newdream-fore stack-tight">
-              <textarea
-                className="textarea-dream textarea-no-gloss"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is."
-                rows={10}
-                aria-invalid={!!err}
-                disabled={busy || blockingFlow}
-                onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                    e.preventDefault();
-                    if (!busy && !blockingFlow && !stats.empty) void createSession();
-                  }
-                }}
-              />
+          <GlassCardSurface
+            paper="evening"
+            corner={cornerSoft}
+            cornerMode="soft"
+            minHeight="auto"
+            /* New page: keep it calmer, let the writing be the focus */
+            gloss={true}
+            grain={true}
+          >
+            <GlassCardForeground className="stack-tight">
+              {/* ✅ interactive matte well inside glass */}
+              <GlassCardMatte padding="md" tone="evening">
+                <textarea
+                  className="newdream-textarea"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder="Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is."
+                  rows={10}
+                  aria-invalid={!!err}
+                  disabled={busy || blockingFlow}
+                  onKeyDown={(e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                      e.preventDefault();
+                      if (!busy && !blockingFlow && !stats.empty) void createSession();
+                    }
+                  }}
+                />
+              </GlassCardMatte>
 
               <div className="newdream-footer">
                 <span className="badge-muted newdream-stat">
@@ -289,18 +301,25 @@ export default function NewDream() {
           }
         }
 
-        /* ✅ a textarea kapjon saját, mattabb hátteret (ne tűnjön üvegesnek) */
-        :global(.textarea-no-gloss) {
-          position: relative;
-          z-index: 2;
+        /* textarea becomes "content", not a surface */
+        :global(.newdream-textarea) {
+          width: 100%;
+          min-height: 44vh;
 
-          /* mattabb felület: csökkenti a sheen érzetet */
-          background: rgba(0, 0, 0, 0.18);
-          border: 1px solid rgba(255, 255, 255, 0.10);
+          background: transparent;
+          border: none;
+          outline: none;
 
-          /* fontos: ne próbáljon “üveget” csinálni ő maga */
-          backdrop-filter: none;
-          -webkit-backdrop-filter: none;
+          resize: vertical;
+
+          color: rgba(255, 255, 255, 0.92);
+          font-size: 15px;
+          line-height: 1.65;
+          letter-spacing: -0.01em;
+        }
+
+        :global(.newdream-textarea::placeholder) {
+          color: rgba(255, 255, 255, 0.55);
         }
       `}</style>
     </Shell>
