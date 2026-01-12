@@ -1,28 +1,26 @@
 import Link from "next/link";
+import { BrandLockup } from "@/components/brand/BrandLockup";
+import styles from "./LandingPage.module.css";
 
 const howItWorksSteps = [
   {
     title: "Álomtér rögzítése",
-    body:
-      "Röviden leírod, ami benned maradt az éjszakából. Ez a kiindulópont, amit később is elővehetsz.",
+    body: "Röviden leírod, ami benned maradt az éjszakából. Ez a kiindulópont, amit később is elővehetsz.",
     icon: "/icons/morning.svg",
   },
   {
     title: "Visszatükrözés (opcionális)",
-    body:
-      "Kaphatsz egy semleges tükröt a szövegedről, ha szeretnéd. Megerősít, de nem magyaráz helyetted.",
+    body: "Kaphatsz egy semleges tükröt a szövegedről, ha szeretnéd. Megerősít, de nem magyaráz helyetted.",
     icon: "/icons/reflective.svg",
   },
   {
     title: "Irányválasztás (opcionális)",
-    body:
-      "Megnézheted, merre érdemes továbbmenned. Te döntesz, hogy mélyebbre mész vagy megállsz.",
+    body: "Megnézheted, merre érdemes továbbmenned. Te döntesz, hogy mélyebbre mész vagy megállsz.",
     icon: "/icons/focus.svg",
   },
   {
     title: "Munka vagy megállás",
-    body:
-      "Dönthetsz a folytatásról, vagy le is zárhatod a folyamatot. A tempó és a mélység mindig a tied.",
+    body: "Dönthetsz a folytatásról, vagy le is zárhatod. A tempó és a mélység mindig a tied.",
     icon: "/icons/work.svg",
   },
 ];
@@ -40,96 +38,104 @@ const adaptivityItems = [
 
 export function LandingPage() {
   return (
-    <main className="landing">
-      <section className="landing-hero">
-        <div className="landing-hero__logo" aria-label="Lumira">
-          Lumira
+    <main className={styles.page}>
+      {/* HERO */}
+      <section className={styles.hero}>
+        <div className={styles.heroInner}>
+          {/* lockup: felül logo, alatta név */}
+          <div className={styles.heroBrand}>
+            <BrandLockup href="/about" />
+          </div>
+
+          {/* one-liner: két sor, feszes */}
+          <p className={styles.tagline}>
+            Csendes technológia
+            <br />
+            belső tapasztalatokhoz
+          </p>
+
+          <Link href="/new" className={styles.cta}>
+            Tovább
+          </Link>
         </div>
-        <p className="landing-hero__tagline">Csendes technológia belső tapasztalatokhoz</p>
-        <Link href="/new" className="btn btn-primary landing-hero__cta">
-          Tovább
-        </Link>
       </section>
 
-      <section className="landing-tool-intro">
-        <p>
-          A Lumira egy eszköz, nem értelmezés. Segít rögzíteni és rendezni, de a jelentést
-          mindig te adod meg. Használhatod egyszerűen vagy mélyebben is, ahogy éppen szeretnéd.
+      {/* TOOL INTRO */}
+      <section className={styles.section}>
+        <p className={styles.lead}>
+          A Lumira egy eszköz, nem értelmezés. Segít rögzíteni és rendezni, de a jelentést mindig te adod meg.
+          Használhatod egyszerűen vagy mélyebben is, ahogy éppen szeretnéd.
         </p>
       </section>
 
-      <section className="landing-how">
-        <h2>Hogyan működik</h2>
-        <ol className="landing-how__list">
+      {/* HOW IT WORKS */}
+      <section className={styles.section}>
+        <h2 className={styles.h2}>Hogyan működik</h2>
+
+        <ol className={styles.howList}>
           {howItWorksSteps.map((step) => (
-            <li key={step.title} className="landing-how__item">
-              <img
-                src={step.icon}
-                alt=""
-                className="landing-how__icon"
-                width={40}
-                height={40}
-                loading="lazy"
-              />
-              <div className="landing-how__content">
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
+            <li key={step.title} className={styles.howItem}>
+              <img src={step.icon} alt="" className={styles.howIcon} width={44} height={44} loading="lazy" />
+              <div className={styles.howContent}>
+                <h3 className={styles.h3}>{step.title}</h3>
+                <p className={styles.p}>{step.body}</p>
               </div>
             </li>
           ))}
         </ol>
       </section>
 
-      <section className="landing-adaptivity">
-        <h2>Egy eszköz, többféle használatban.</h2>
-        <div className="landing-adaptivity__grid">
+      {/* ADAPTIVITY GRID */}
+      <section className={styles.section}>
+        <h2 className={styles.h2}>Többféleképpen használható.</h2>
+
+        <div className={styles.adaptGrid}>
           {adaptivityItems.map((item) => (
-            <div key={item.label} className="landing-adaptivity__item">
-              <img
-                src={item.icon}
-                alt=""
-                className="landing-adaptivity__icon"
-                width={44}
-                height={44}
-                loading="lazy"
-              />
-              <span className="landing-adaptivity__label">{item.label}</span>
+            <div key={item.label} className={styles.adaptItem}>
+              <img src={item.icon} alt="" className={styles.adaptIcon} width={48} height={48} loading="lazy" />
+              <div className={styles.adaptLabel}>{item.label}</div>
             </div>
           ))}
         </div>
-        <p className="landing-adaptivity__summary">
+
+        <p className={styles.pMuted}>
           Ugyanaz az alap, mégis más ritmusokhoz, helyzetekhez és szándékokhoz illeszkedik.
         </p>
       </section>
 
-      <section className="landing-evening">
-        <h2>Esti előnézet</h2>
-        <div className="landing-evening__grid">
+      {/* EVENING PREVIEW — evening-kártya “alap” stílus */}
+      <section className={styles.section}>
+        <h2 className={styles.h2}>Esti előnézet</h2>
+
+        <div className={styles.eveningGrid}>
           {[
-            {
-              title: "Csendes indulás",
-              body: "Pár sor, ami segít rendezni a napot és megérkezni az estére.",
-            },
-            {
-              title: "Finom fókusz",
-              body: "Rövid feljegyzés arról, mi az, amit most szeretnél megfigyelni.",
-            },
-            {
-              title: "Lassú lezárás",
-              body: "Egy visszafogott emlékeztető, hogy meg is állhatsz, ha így jó.",
-            },
+            { title: "Csendes indulás", body: "Pár sor, ami segít rendezni a napot és megérkezni az estére." },
+            { title: "Finom fókusz", body: "Rövid feljegyzés arról, mi az, amit most szeretnél megfigyelni." },
+            { title: "Lassú lezárás", body: "Egy visszafogott emlékeztető, hogy meg is állhatsz, ha így jó." },
           ].map((card) => (
-            <article key={card.title} className="landing-evening__card">
-              <h3>{card.title}</h3>
-              <p>{card.body}</p>
+            <article
+              key={card.title}
+              className={styles.eveningCard}
+              style={{
+                background: `linear-gradient(135deg,
+                  var(--evening-card-paper-strong) 0%,
+                  var(--evening-card-paper) 42%,
+                  rgba(0,0,0,0) 110%)`,
+              }}
+            >
+              <div className={styles.eveningTitle}>{card.title}</div>
+              <div className={styles.eveningBody}>{card.body}</div>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="landing-footer">
-        <p>Ha szeretnél, kezdhetsz egy új álomtérrel, vagy csak körbenézhetsz.</p>
-        <Link href="/new" className="btn btn-primary landing-footer__cta">
+      {/* FOOTER CTA */}
+      <section className={styles.footer}>
+        <p className={styles.footerLine}>
+          Egy eszköz az álmaidhoz — rögzítéshez, fókuszhoz, munkához.
+        </p>
+        <Link href="/new" className={styles.cta}>
           Új álom
         </Link>
       </section>
