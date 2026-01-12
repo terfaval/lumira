@@ -793,14 +793,21 @@ function flattenAnchorCandidates(candidates: AnchorCandidate[]): string[] {
 }
 
 function detectAnchorUsed(question: string, anchors: AnchorCandidate[]): string | null {
-  const q = (question ?? "").toLowerCase();
+  const qTokens = tokenSet(question);
   let best: { anchor: AnchorCandidate; wordCount: number; length: number } | null = null;
 
   for (const anchor of anchors) {
-    const parts = anchor.label.toLowerCase().split(/\s+/).filter(Boolean);
-    if (parts.length === 0) continue;
-    if (!parts.every((p) => q.includes(p))) continue;
-    const candidate = { anchor, wordCount: parts.length, length: anchor.label.length };
+    const aTokens = tokenSet(anchor.label);
+    if (aTokens.size === 0) continue;
+    let hasAllTokens = true;
+    for (const token of aTokens) {
+      if (!qTokens.has(token)) {
+        hasAllTokens = false;
+        break;
+      }
+    }
+    if (!hasAllTokens) continue;
+    const candidate = { anchor, wordCount: aTokens.size, length: anchor.label.length };
     if (!best) {
       best = candidate;
       continue;

@@ -505,11 +505,16 @@ async function ensureObservation(params: {
   try {
     const response = await fetch(new URL("/api/observe", req.url), {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        cookie: req.headers.get("cookie") ?? "",
-        "x-observe-source": "frame",
-      },
+      headers: (() => {
+        const cookieHeader = req.headers.get("cookie") ?? "";
+        const authHeader = req.headers.get("authorization") ?? "";
+        return {
+          "content-type": "application/json",
+          ...(cookieHeader ? { cookie: cookieHeader } : {}),
+          ...(authHeader ? { authorization: authHeader } : {}),
+          "x-observe-source": "frame",
+        };
+      })(),
       body: JSON.stringify({ session_id: sessionId, dream_text: dreamText }),
     });
 
@@ -536,50 +541,53 @@ export async function POST(req: Request) {
 
     // 1) session + summary párhuzamosan
 const [{ data: session }, { data: summary }] = await Promise.all([
-  supabase
-    .from("dream_sessions")
-    .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, user_id")
-    .eq("id", sessionId)
-    .eq("user_id", userId)
-    .single(),
-  supabase
-    .from("dream_session_summaries")
-    .select("title, framing_text, recommended_directions, latent_analysis")
-    .eq("session_id", sessionId)
-    .eq("user_id", userId)
-    .maybeSingle(),
-]);
+      supabase
+        .from("dream_sessions")
+        .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, user_id")
+        .eq("id", sessionId)
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("dream_session_summaries")
+        .select("title, framing_text, recommended_directions, latent_analysis")
+        .eq("session_id", sessionId)
+        .eq("user_id", userId)
+        .maybeSingle(),
+    ]);
 
-if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
-const raw = sanitizeWhitespace(session.raw_dream_text ?? "");
+    const raw = sanitizeWhitespace(session.raw_dream_text ?? "");
 
-// 2) observation első olvasás
-let { data: observationRow } = await supabase
-  .from("dream_observation")
-  .select("obs")
-  .eq("session_id", sessionId)
-  .eq("user_id", userId)
-  .maybeSingle();
+    // 2) observation első olvasás
+    let observationRow =
+      (
+        await supabase
+          .from("dream_observation")
+          .select("obs")
+          .eq("session_id", sessionId)
+          .eq("user_id", userId)
+          .maybeSingle()
+      ).data ?? null;
 
-// 3) ha nincs, generáld le MOST, és olvasd vissza
-if (!observationRow?.obs) {
-  await ensureObservation({ req, supabase, sessionId, userId, dreamText: raw });
+    // 3) ha nincs, generáld le MOST, és olvasd vissza
+    if (!observationRow?.obs) {
+      await ensureObservation({ req, supabase, sessionId, userId, dreamText: raw });
 
-  const refetch = await supabase
-    .from("dream_observation")
-    .select("obs")
-    .eq("session_id", sessionId)
-    .eq("user_id", userId)
-    .maybeSingle();
+      observationRow =
+        (
+          await supabase
+            .from("dream_observation")
+            .select("obs")
+            .eq("session_id", sessionId)
+            .eq("user_id", userId)
+            .maybeSingle()
+        ).data ?? null;
+    }
 
-  observationRow = refetch.data ?? null;
-}
-
-
-const observation = parseDreamObservation(observationRow?.obs ?? null);
-const compactObservation = compactDreamObservation(observation);
-const targetSentences = clampTargetSentences(raw);
+    const observation = parseDreamObservation(observationRow?.obs ?? null);
+    const compactObservation = compactDreamObservation(observation);
+    const targetSentences = clampTargetSentences(raw);
 
 // short guard
     if (raw.length < MIN_RAW_LEN) {
