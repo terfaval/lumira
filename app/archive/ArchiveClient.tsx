@@ -224,6 +224,7 @@ export default function ArchiveClient() {
   return (
     <Shell
       title="Álomnapló"
+      surface="none"
       headerActions={
         <button
           type="button"
