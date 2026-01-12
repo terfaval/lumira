@@ -381,27 +381,29 @@ export default function SessionSummary() {
     const chosen = !!selectedDirs[d.slug];
 
     return (
-      <GlassCardSurface key={d.slug} className={styles.dirCard} variant="soft" paper="evening" corner={token.bg}>
-        <div className={styles.dirCardTop}>
+      <GlassCardSurface key={d.slug} className={`${styles.dirCard} ${styles.gridCard}`} variant="soft" paper="evening" corner={token.bg}>
+        <div className={`${styles.dirCardTop} ${styles.gridCardHeader}`}>
           <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
             {gLabel}
           </Pill>
           {chosen ? <Pill variant="neutral">Korábban kiválasztva</Pill> : null}
         </div>
 
-        <div className={styles.dirTitle}>{d.title}</div>
+        <div className={`${styles.dirContent} ${styles.gridCardBody}`}>
+          <div className={styles.dirTitle}>{d.title}</div>
 
-        {micro ? <div className={styles.dirDesc}>{micro}</div> : null}
+          {micro ? <div className={styles.dirDesc}>{micro}</div> : null}
 
-        <div className={styles.dirTags}>
-          {tags.map((t) => (
-            <Pill key={t} variant="neutral">
-              {t}
-            </Pill>
-          ))}
+          <div className={styles.dirTags}>
+            {tags.map((t) => (
+              <Pill key={t} variant="neutral">
+                {t}
+              </Pill>
+            ))}
+          </div>
         </div>
 
-        <div className={styles.dirActions}>
+        <div className={`${styles.dirActions} ${styles.gridCardFooter}`}>
           <button className="btn btn-primary" onClick={() => handleStartDirection(d.slug)} aria-label={`Indítás: ${d.title}`}>
             Indítás
           </button>
@@ -513,23 +515,23 @@ export default function SessionSummary() {
 
             {/* Stats */}
             <div className={styles.stats}>
-              <GlassCardSurface className={styles.statsItem} variant="flat" paper="evening">
-                <div className={styles.statsLabel}>Álom hossza</div>
-                <div className={styles.statsValue}>
+              <GlassCardSurface className={`${styles.statsItem} ${styles.gridCard}`} variant="flat" paper="evening">
+                <div className={`${styles.statsLabel} ${styles.gridCardHeader}`}>Álom hossza</div>
+                <div className={`${styles.statsValue} ${styles.gridCardBody}`}>
                   {dreamLength.chars} karakter · {dreamLength.words} szó
                 </div>
               </GlassCardSurface>
 
-              <GlassCardSurface className={styles.statsItem} variant="flat" paper="evening">
-                <div className={styles.statsLabel}>Rögzített kártyák</div>
-                <div className={styles.statsValue}>
+              <GlassCardSurface className={`${styles.statsItem} ${styles.gridCard}`} variant="flat" paper="evening">
+                <div className={`${styles.statsLabel} ${styles.gridCardHeader}`}>Rögzített kártyák</div>
+                <div className={`${styles.statsValue} ${styles.gridCardBody}`}>
                   {stats.answered}/{stats.total}
                 </div>
               </GlassCardSurface>
 
-              <GlassCardSurface className={styles.statsItem} variant="flat" paper="evening">
-                <div className={styles.statsLabel}>Érintett irányok</div>
-                <div className={styles.statsValue}>{stats.directions}</div>
+              <GlassCardSurface className={`${styles.statsItem} ${styles.gridCard}`} variant="flat" paper="evening">
+                <div className={`${styles.statsLabel} ${styles.gridCardHeader}`}>Érintett irányok</div>
+                <div className={`${styles.statsValue} ${styles.gridCardBody}`}>{stats.directions}</div>
               </GlassCardSurface>
             </div>
 
@@ -554,21 +556,27 @@ export default function SessionSummary() {
                     return (
                       <GlassCardSurface
                         key={c.id}
-                        className={styles.carouselCard}
+                        className={`${styles.carouselCard} ${styles.gridCard}`}
                         variant="flat"
                         paper="evening"
                         style={{
                           transform: `translateY(${idx % 2 === 0 ? 0 : 8}px)`,
                         }}
                       >
-                        <div className={styles.carouselTop}>
+                        <div className={`${styles.carouselTop} ${styles.gridCardHeader}`}>
                           <div className={styles.carouselMeta}>{dirTitle}</div>
                           <div className={styles.carouselState}>{c.isAnswered ? "Megválaszolt" : "Megnyitott"}</div>
                         </div>
 
-                        <div className={styles.carouselQ}>{c.question || "—"}</div>
+                        <div className={`${styles.carouselBody} ${styles.gridCardBody}`}>
+                          <div className={styles.carouselQ}>{c.question || "—"}</div>
 
-                        {c.isAnswered ? <div className={styles.carouselA}>{c.answer}</div> : <div className={styles.carouselAEmpty}>Nincs válasz</div>}
+                          {c.isAnswered ? (
+                            <div className={styles.carouselA}>{c.answer}</div>
+                          ) : (
+                            <div className={styles.carouselAEmpty}>Nincs válasz</div>
+                          )}
+                        </div>
                       </GlassCardSurface>
                     );
                   })}

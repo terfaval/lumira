@@ -310,7 +310,11 @@ export default function ArchiveClient() {
                       <div className="tile-right">{progress}</div>
                     </div>
 
-                    {snippet ? <div className="tile-snippet">{snippet}</div> : null}
+                    {snippet ? (
+                      <div className="tile-snippet">{snippet}</div>
+                    ) : (
+                      <div className="tile-snippet tile-snippet--empty" aria-hidden="true" />
+                    )}
 
                     <div className="tile-bottom">
                       {session.touched_directions_count > 0 ? (
@@ -345,6 +349,7 @@ export default function ArchiveClient() {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
+          height: 100%;
 
           padding: var(--space-4);
           min-height: 170px;
@@ -361,6 +366,7 @@ export default function ArchiveClient() {
           align-items: center;
           justify-content: space-between;
           gap: var(--space-3);
+          flex: 0 0 auto;
         }
 
         .tile-left {
@@ -392,6 +398,11 @@ export default function ArchiveClient() {
           opacity: 0.78;
           white-space: pre-wrap;
           line-height: 1.55;
+          flex: 1 1 auto;
+        }
+
+        .tile-snippet--empty {
+          margin-top: 0;
         }
 
         .tile-bottom {
@@ -400,6 +411,7 @@ export default function ArchiveClient() {
           align-items: baseline;
           gap: var(--space-3);
           margin-top: 10px;
+          flex: 0 0 auto;
         }
 
         .tile-meta {

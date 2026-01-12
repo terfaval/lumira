@@ -107,8 +107,8 @@ export function LandingPage() {
 
         <div className={styles.howTop}>
           {howStepsTop.map((s) => (
-            <GlassCardSurface key={s.title} className={styles.glassCard} variant="soft" paper="evening">
-              <div className={styles.howStepHead}>
+            <GlassCardSurface key={s.title} className={`${styles.glassCard} ${styles.gridCard}`} variant="soft" paper="evening">
+              <div className={`${styles.howStepHead} ${styles.gridCardHeader}`}>
                 <img
                   src={s.icon}
                   alt=""
@@ -119,7 +119,7 @@ export function LandingPage() {
                 />
                 <div className={styles.cardTitle}>{s.title}</div>
               </div>
-              <div className={styles.cardBody}>{s.body}</div>
+              <div className={`${styles.cardBody} ${styles.gridCardBody}`}>{s.body}</div>
             </GlassCardSurface>
           ))}
         </div>
@@ -150,8 +150,8 @@ export function LandingPage() {
 
         <div className={styles.adaptPrimaryRow}>
           {adaptPrimary.map((x) => (
-            <GlassCardSurface key={x.key} className={`${styles.glassCard} ${styles.adaptPrimaryCard}`} variant="soft" paper="evening">
-              <div className={styles.adaptPrimaryInner}>
+            <GlassCardSurface key={x.key} className={`${styles.glassCard} ${styles.adaptPrimaryCard} ${styles.gridCard}`} variant="soft" paper="evening">
+              <div className={`${styles.adaptPrimaryInner} ${styles.gridCardBody}`}>
                 <div className={styles.adaptPrimaryIconCol}>
                   <img
                     src={x.icon}
@@ -214,13 +214,13 @@ export function LandingPage() {
           ].map((card) => (
             <GlassCardSurface
               key={card.title}
-              className={`${styles.glassCard} ${styles.eveningCard}`}
+              className={`${styles.glassCard} ${styles.eveningCard} ${styles.gridCard}`}
               variant="soft"
               paper="evening"
               corner="--glow-2"
             >
-              <div className={styles.cardTitle}>{card.title}</div>
-              <div className={styles.cardBody}>{card.body}</div>
+              <div className={`${styles.cardTitle} ${styles.gridCardHeader}`}>{card.title}</div>
+              <div className={`${styles.cardBody} ${styles.gridCardBody}`}>{card.body}</div>
             </GlassCardSurface>
           ))}
         </div>

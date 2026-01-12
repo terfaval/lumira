@@ -227,48 +227,49 @@ export default function SuggestionsPage() {
             {filteredItems.map((item) =>
               editingId === item.id ? (
                 <li key={item.id}>
-                  <GlassCardSurface style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
-                    <div className="stack">
-                    <label>
-                      <span>Név</span>
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="input"
-                        disabled={busy}
-                      />
-                    </label>
-                    <label>
-                      <span>Kategóriák (vesszővel elválasztva)</span>
-                      <input
-                        type="text"
-                        value={editCategories}
-                        onChange={(e) => setEditCategories(e.target.value)}
-                        className="input"
-                        disabled={busy}
-                      />
-                    </label>
-                    <label>
-                      <span>Jegyzet</span>
-                      <textarea
-                        value={editNotes}
-                        onChange={(e) => setEditNotes(e.target.value)}
-                        className="textarea"
-                        rows={4}
-                        disabled={busy}
-                      />
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <input
-                        type="checkbox"
-                        checked={editNightmare}
-                        onChange={(e) => setEditNightmare(e.target.checked)}
-                        disabled={busy}
-                      />
-                      <span>Rémálom elem</span>
-                    </label>
-                    <div style={{ display: "flex", gap: 8 }}>
+                  <GlassCardSurface className="glossary-grid-card" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
+                    <div className="glossary-card-body stack">
+                      <label>
+                        <span>Név</span>
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="input"
+                          disabled={busy}
+                        />
+                      </label>
+                      <label>
+                        <span>Kategóriák (vesszővel elválasztva)</span>
+                        <input
+                          type="text"
+                          value={editCategories}
+                          onChange={(e) => setEditCategories(e.target.value)}
+                          className="input"
+                          disabled={busy}
+                        />
+                      </label>
+                      <label>
+                        <span>Jegyzet</span>
+                        <textarea
+                          value={editNotes}
+                          onChange={(e) => setEditNotes(e.target.value)}
+                          className="textarea"
+                          rows={4}
+                          disabled={busy}
+                        />
+                      </label>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <input
+                          type="checkbox"
+                          checked={editNightmare}
+                          onChange={(e) => setEditNightmare(e.target.checked)}
+                          disabled={busy}
+                        />
+                        <span>Rémálom elem</span>
+                      </label>
+                    </div>
+                    <div className="glossary-card-footer">
                       <button
                         type="button"
                         className="btn btn-secondary"
@@ -284,38 +285,38 @@ export default function SuggestionsPage() {
                         Mentés
                       </PrimaryButton>
                     </div>
-                  </div>
                   </GlassCardSurface>
                 </li>
               ) : (
                 <li key={item.id}>
-                  <GlassCardSurface style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
-                    <div className="stack-tight">
-                    <div
-                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                    >
-                      <div style={{ fontWeight: 700, fontSize: 18 }}>{item.name}</div>
-                      {item.is_nightmare ? (
-                        <span
-                          style={{
-                            background: "var(--status-erintett-bg)",
-                            color: "var(--status-erintett)",
-                            padding: "2px 8px",
-                            borderRadius: 6,
-                            fontSize: 12,
-                          }}
-                        >
-                          Rémálom
-                        </span>
-                      ) : null}
-                    </div>
-                    {item.categories && item.categories.length > 0 && (
-                      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                        Kategóriák: {item.categories.join(", ")}
+                  <GlassCardSurface className="glossary-grid-card" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
+                    <div className="glossary-card-body stack-tight">
+                      <div
+                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                      >
+                        <div style={{ fontWeight: 700, fontSize: 18 }}>{item.name}</div>
+                        {item.is_nightmare ? (
+                          <span
+                            style={{
+                              background: "var(--status-erintett-bg)",
+                              color: "var(--status-erintett)",
+                              padding: "2px 8px",
+                              borderRadius: 6,
+                              fontSize: 12,
+                            }}
+                          >
+                            Rémálom
+                          </span>
+                        ) : null}
                       </div>
-                    )}
-                    <div style={{ fontSize: 12, color: "var(--status-warning)" }}>Jegyzet hiányzik</div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                      {item.categories && item.categories.length > 0 && (
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                          Kategóriák: {item.categories.join(", ")}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 12, color: "var(--status-warning)" }}>Jegyzet hiányzik</div>
+                    </div>
+                    <div className="glossary-card-footer">
                       <button
                         type="button"
                         className="btn btn-secondary"
@@ -333,7 +334,6 @@ export default function SuggestionsPage() {
                         Elutasítás
                       </button>
                     </div>
-                  </div>
                   </GlassCardSurface>
                 </li>
               )
@@ -345,6 +345,26 @@ export default function SuggestionsPage() {
             <a className="btn btn-secondary">Vissza az álomszótárhoz</a>
           </Link>
         </div>
+        <style jsx>{`
+          .glossary-grid-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .glossary-card-body {
+            flex: 1 1 auto;
+          }
+
+          .glossary-card-footer {
+            flex: 0 0 auto;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 12px;
+          }
+        `}</style>
       </div>
     </Shell>
   );

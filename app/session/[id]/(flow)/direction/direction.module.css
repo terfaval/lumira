@@ -81,6 +81,7 @@
   flex-direction: column;
   justify-content: space-between;
   align-items: stretch;
+  height: 100%;
 
   transition: transform 160ms ease, box-shadow 160ms ease;
   position: relative;
@@ -113,6 +114,7 @@
 .cardTop {
   display: grid;
   gap: 12px;
+  flex: 1 1 auto;
 }
 
 .groupRow {
@@ -142,6 +144,7 @@
   justify-content: space-between;
   gap: 16px;
   margin-top: 16px;
+  flex: 0 0 auto;
 }
 
 .actionPills {

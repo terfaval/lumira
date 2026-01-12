@@ -116,6 +116,24 @@
   font-size: 14px;
 }
 
+.gridCard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.gridCardHeader {
+  flex: 0 0 auto;
+}
+
+.gridCardBody {
+  flex: 1 1 auto;
+}
+
+.gridCardFooter {
+  flex: 0 0 auto;
+}
+
 /* Stats */
 .stats {
   display: grid;
@@ -254,6 +272,12 @@
   margin-bottom: 10px;
 }
 
+.carouselBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .carouselA {
   font-size: 13px;
   line-height: 1.55;
@@ -292,6 +316,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--space-2);
+}
+
+.dirContent {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
 }
 

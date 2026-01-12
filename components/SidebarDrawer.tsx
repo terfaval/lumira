@@ -173,7 +173,7 @@ export function SidebarDrawer({
             </Link>
 
             <Link
-              href="/"
+              href="/new"
               className="drawer-navlink"
               onClick={onClose}
               aria-current={space === "dream" ? "page" : undefined}

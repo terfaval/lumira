@@ -109,6 +109,24 @@
   padding: var(--space-4);
 }
 
+.gridCard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.gridCardHeader {
+  flex: 0 0 auto;
+}
+
+.gridCardBody {
+  flex: 1 1 auto;
+}
+
+.gridCardFooter {
+  flex: 0 0 auto;
+}
+
 .cardTitle {
   font-weight: 800;
   font-size: 16px;
