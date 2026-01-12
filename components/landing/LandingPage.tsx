@@ -42,23 +42,19 @@ const adaptPrimary = [
 
 const adaptSecondary = [
   {
-    label: "Reflektív",
-    body: "Akkor jó, ha szeretnél egy nyugodt visszanézést és pár tiszta kérdést, értelmezés nélkül.",
+    body: "Ha szeretnél egy nyugodt visszanézést és pár tiszta kérdést, értelmezés nélkül.",
     icon: "/icons/reflective.svg",
   },
   {
-    label: "Kreatív",
-    body: "Akkor jó, ha képekből és motívumokból inspirációt vinnél tovább — anélkül, hogy rendet kellene tenned.",
+    body: "Ha képekből és motívumokból inspirációt vinnél tovább — anélkül, hogy rendet kellene tenned.",
     icon: "/icons/creative.svg",
   },
   {
-    label: "Lazítás",
-    body: "Akkor jó, ha lefekvés előtt lecsendesítenéd a rendszert, és inkább pihenni szeretnél, nem elemezni.",
+    body: "Ha lefekvés előtt lecsendesítenéd a rendszert, és inkább pihenni szeretnél, nem elemezni.",
     icon: "/icons/relax.svg",
   },
   {
-    label: "Lucid",
-    body: "Akkor jó, ha a tudatosság irány érdekel, és finoman hangolnál rá — erőlködés és célhajszolás nélkül.",
+    body: "Ha a tudatosság irány érdekel, és finoman hangolnál rá — erőlködés és célhajszolás nélkül.",
     icon: "/icons/lucid.svg",
   },
 ];
@@ -107,8 +103,17 @@ export function LandingPage() {
         <div className={styles.howTop}>
           {howStepsTop.map((s) => (
             <article key={s.title} className={styles.glassCard}>
-              <img src={s.icon} alt="" width={64} height={64} className={styles.bigIcon} loading="lazy" />
-              <div className={styles.cardTitle}>{s.title}</div>
+              <div className={styles.howStepHead}>
+                <img
+                  src={s.icon}
+                  alt=""
+                  width={64}
+                  height={64}
+                  className={styles.bigIcon}
+                  loading="lazy"
+                />
+                <div className={styles.cardTitle}>{s.title}</div>
+              </div>
               <div className={styles.cardBody}>{s.body}</div>
             </article>
           ))}
@@ -143,7 +148,14 @@ export function LandingPage() {
             <article key={x.key} className={`${styles.glassCard} ${styles.adaptPrimaryCard}`}>
               <div className={styles.adaptPrimaryInner}>
                 <div className={styles.adaptPrimaryIconCol}>
-                  <img src={x.icon} alt="" width={72} height={72} className={styles.bigIcon} loading="lazy" />
+                  <img
+                    src={x.icon}
+                    alt=""
+                    width={72}
+                    height={72}
+                    className={styles.bigIcon}
+                    loading="lazy"
+                  />
                   <div className={styles.adaptPrimaryLabel}>{x.title}</div>
                 </div>
                 <div className={styles.adaptPrimaryTextCol}>
@@ -161,9 +173,15 @@ export function LandingPage() {
 
         <div className={styles.adaptSecondaryGrid}>
           {adaptSecondary.map((item) => (
-            <div key={item.label} className={styles.adaptSecondaryItem}>
-              <img src={item.icon} alt="" width={64} height={64} className={styles.bigIcon} loading="lazy" />
-              <div className={styles.adaptSecondaryLabel}>{item.label}</div>
+            <div key={item.icon} className={styles.adaptSecondaryItem}>
+              <img
+                src={item.icon}
+                alt=""
+                width={64}
+                height={64}
+                className={styles.bigIcon}
+                loading="lazy"
+              />
               <div className={styles.cardBody}>{item.body}</div>
             </div>
           ))}
@@ -176,9 +194,18 @@ export function LandingPage() {
 
         <div className={styles.eveningGrid}>
           {[
-            { title: "Csendes indulás", body: "Rövid rendezés lefekvés előtt: mi maradjon kint, mi jöhet be az éjszakába." },
-            { title: "Alvás-hangolás", body: "Választható gyakorlatok: emlékezet, lecsendesítés, rémálom-csökkentés, inkubáció — ami ma jól esik." },
-            { title: "Finom lezárás", body: "Egy egyszerű jelzés a végén: most elég. Nem kell tovább dolgozni — jöhet az alvás." },
+            {
+              title: "Csendes indulás",
+              body: "Rövid rendezés lefekvés előtt: mi maradjon kint, mi jöhet be az éjszakába.",
+            },
+            {
+              title: "Alvás-hangolás",
+              body: "Választható gyakorlatok: emlékezet, lecsendesítés, rémálom-csökkentés, inkubáció — ami ma jól esik.",
+            },
+            {
+              title: "Finom lezárás",
+              body: "Egy egyszerű jelzés a végén: most elég. Nem kell tovább dolgozni — jöhet az alvás.",
+            },
           ].map((card) => (
             <article
               key={card.title}
