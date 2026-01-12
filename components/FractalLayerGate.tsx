@@ -31,9 +31,9 @@ export default function FractalLayerGate() {
     <FractalBackground
       enabled={enabled}
       opacity={0.085}
-      baseZoom={1.7}
+      baseZoom={2.6}
       zoomSpeed={0.009}
-      iterations={150}
+      iterations={300}
       maxDevicePixelRatio={1.5}
     />
   );
