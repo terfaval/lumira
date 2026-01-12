@@ -39,37 +39,41 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ maxWidth: 420, margin: "0 auto", padding: "var(--space-4)", display: "grid", gap: "var(--space-3)" }}>
-      <h1>Belépés</h1>
-      <form onSubmit={handleSubmit} style={{ display: "grid", gap: "var(--space-2)" }}>
-        <label style={{ display: "grid", gap: "var(--space-1)" }}>
-          <span>Email</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ padding: "var(--space-2)", borderRadius: 8, border: "1px solid #ccc" }}
-          />
-        </label>
-        <label style={{ display: "grid", gap: "var(--space-1)" }}>
-          <span>Jelszó</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ padding: "var(--space-2)", borderRadius: 8, border: "1px solid #ccc" }}
-          />
-        </label>
-        <button type="submit" disabled={busy} style={{ padding: "var(--space-3)", borderRadius: 10, border: 0, background: "black", color: "white" }}>
-          {busy ? "Belépés..." : "Belépés"}
-        </button>
-      </form>
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
-      <p style={{ opacity: 0.8 }}>
-        Nincs még fiókod? <Link href="/signup">Regisztráció</Link>
-      </p>
+    <main className="auth-page">
+      <section className="glass-card auth-card">
+        <h1>Belépés</h1>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <label className="auth-label">
+            <span>Email</span>
+            <input
+              className="auth-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </label>
+          <label className="auth-label">
+            <span>Jelszó</span>
+            <input
+              className="auth-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </label>
+          <div className="auth-actions">
+            <button type="submit" disabled={busy} className="btn btn-primary">
+              {busy ? "Belépés..." : "Belépés"}
+            </button>
+          </div>
+        </form>
+        {error && <p style={{ color: "crimson" }}>{error}</p>}
+        <p style={{ opacity: 0.8 }}>
+          Nincs még fiókod? <Link href="/signup">Regisztráció</Link>
+        </p>
+      </section>
     </main>
   );
 }
