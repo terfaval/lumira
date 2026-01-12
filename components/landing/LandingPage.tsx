@@ -71,8 +71,9 @@ export function LandingPage() {
           <div className={styles.heroRight}>
             <div className={styles.heroRightInner}>
               <p className={styles.toolIntro}>
-                A Lumira egy eszköz: rögzítéshez, visszanézéshez, és kíméletes álommunkához.
-                Nem mondja meg, „mit jelent” — csak rendet tart a folyamatban.
+                A Lumira egy eszköz:
+                rögzítéshez, visszanézéshez, 
+                és kíméletes álommunkához.
               </p>
 
               <Link href="/new" className={`btn btn-primary ${styles.heroCta}`}>
@@ -99,10 +100,22 @@ export function LandingPage() {
 
         <div className={styles.howStopRow}>
           <article className={`${styles.glassCard} ${styles.stopCard}`}>
-            <img src={howStop.icon} alt="" width={64} height={64} className={styles.bigIcon} loading="lazy" />
-            <div className={styles.cardTitle}>{howStop.title}</div>
-            <div className={styles.cardBody}>{howStop.body}</div>
-          </article>
+  <div className={styles.stopInner}>
+    <img
+      src={howStop.icon}
+      alt=""
+      width={72}
+      height={72}
+      className={styles.bigIcon}
+      loading="lazy"
+    />
+
+    <div className={styles.stopText}>
+      <div className={styles.cardTitle}>{howStop.title}</div>
+      <div className={styles.cardBody}>{howStop.body}</div>
+    </div>
+  </div>
+</article>
         </div>
       </section>
 
