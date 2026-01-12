@@ -181,6 +181,7 @@ export default function NewDream() {
     <Shell
       title="Új álom rögzítése"
       space="dream"
+      surface="none"
       headerActions={
         <button
           type="button"
