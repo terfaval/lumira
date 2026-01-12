@@ -2,6 +2,7 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
+import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
 
 import { TITLE_MAX } from "@/src/lib/dream/const";
 import {
@@ -42,6 +43,8 @@ type OutputPayload = {
 };
 
 const DEFAULT_REASON = "Javasolt feldolgozási irány a következő lépéshez.";
+const RECOMMENDATION_MIN = 2;
+const RECOMMENDATION_MAX = 4;
 
 // ✅ Style-safe fallback: 2. személy, múlt idő + 1 rövid invite
 const FALLBACK_FRAMING_2P =
@@ -52,14 +55,22 @@ const MIN_RAW_LEN = 20;
 // ────────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ────────────────────────────────────────────────────────────────────────────────
+function recommendationTargetCount(allowedCount: number): number {
+  if (allowedCount <= 0) return 0;
+  const baseline = Math.min(allowedCount, 3);
+  return Math.max(RECOMMENDATION_MIN, Math.min(RECOMMENDATION_MAX, baseline));
+}
+
 function fallbackRecommendationsFromAllowed(allowedSlugs: string[]): RecommendedDirection[] {
   const pool = [...allowedSlugs];
   shuffleInPlace(pool);
-  return pool.slice(0, 3).map((slug) => ({ slug, reason: DEFAULT_REASON }));
+  const count = recommendationTargetCount(pool.length);
+  if (count === 0) return [];
+  return pool.slice(0, count).map((slug) => ({ slug, reason: DEFAULT_REASON }));
 }
 
 function normalizeRecommendedSlugs(slugs: unknown, allowed: Set<string>): string[] | null {
-  if (!Array.isArray(slugs) || slugs.length !== 3) return null;
+  if (!Array.isArray(slugs) || slugs.length < RECOMMENDATION_MIN || slugs.length > RECOMMENDATION_MAX) return null;
   const seen = new Set<string>();
   const out: string[] = [];
 
@@ -76,7 +87,7 @@ function normalizeRecommendedSlugs(slugs: unknown, allowed: Set<string>): string
     seen.add(slug);
     out.push(slug);
   }
-  return out.length === 3 ? out : null;
+  return out.length >= RECOMMENDATION_MIN && out.length <= RECOMMENDATION_MAX ? out : null;
 }
 
 function asRecommendedDirections(slugs: string[]): RecommendedDirection[] {
@@ -94,7 +105,7 @@ function repairRecommendedWithFallback(raw: unknown, allowedSlugs: string[]): st
   const maybe = parseMaybeJson<any>(raw);
   const slugs = maybe ?? raw;
 
-  if (!Array.isArray(slugs) || slugs.length !== 3) return null;
+  if (!Array.isArray(slugs) || slugs.length < RECOMMENDATION_MIN || slugs.length > RECOMMENDATION_MAX) return null;
 
   const allowed = new Set(allowedSlugs);
   const result: string[] = [];
@@ -109,14 +120,14 @@ function repairRecommendedWithFallback(raw: unknown, allowedSlugs: string[]): st
     if (slug && allowed.has(slug) && !result.includes(slug)) result.push(slug);
   }
 
-  if (result.length === 3) return result;
+  if (result.length >= RECOMMENDATION_MIN && result.length <= RECOMMENDATION_MAX) return result;
 
   const pool = shuffleInPlace([...allowedSlugs]);
   for (const slug of pool) {
-    if (result.length >= 3) break;
+    if (result.length >= RECOMMENDATION_MAX) break;
     if (!result.includes(slug)) result.push(slug);
   }
-  return result.length === 3 ? result : null;
+  return result.length >= RECOMMENDATION_MIN && result.length <= RECOMMENDATION_MAX ? result : null;
 }
 
 // ── Perspektíva/nézőpont ellenőrzők ────────────────────────────────────────────
@@ -281,6 +292,7 @@ function compactLatentNote(latent: any | null) {
 function buildModelPayload(params: {
   raw: string;
   latent: any | null;
+  observation: ReturnType<typeof compactDreamObservation> | null;
   catalog: { slug: string; title: string; micro: string }[];
   topAnchors: string[];
   targetSentences: { target: number; min: number; max: number };
@@ -289,6 +301,7 @@ function buildModelPayload(params: {
   return {
     dream_text: rawExcerpt,
     latent_note: compactLatentNote(params.latent),
+    dream_observation: params.observation,
     catalog: params.catalog,
     top_anchors: params.topAnchors,
     constraints: {
@@ -316,11 +329,12 @@ function buildModelPayload(params: {
 function systemPrompt(): string {
   return [
     "Adj vissza EGY darab JSON objektumot egy álomhoz.",
-    'Kulcsok: {"title": string, "framing_text": string, "recommended_slugs": string[3]}',
+    'Kulcsok: {"title": string, "framing_text": string, "recommended_slugs": string[2..4]}',
     "",
     "Bemenetek:",
     "- dream_text: a nyers álomleírás.",
     "- latent_note: jegyzet (anchorok/érzelmi szavak/fordulók) – NEM tényforrás, csak fókusz.",
+    "- dream_observation: megfigyelések (nem értelmezések), használd a konkrét elemekhez és ajánlott irányokhoz.",
     "",
     "Kötelező stílus:",
     "- Magyar nyelv.",
@@ -336,16 +350,17 @@ function systemPrompt(): string {
     "Óvatos megfigyelés (opcionális, max 1 mondat):",
     "- Csak így kezdődhet: „Lehet, hogy (csak óvatos megfigyelés) …”",
     "- TILOS: „ez azt jelenti”, „arra utal”, „valószínűleg”, „tükrözte a szorongásaidat”, diagnózis, biztos pszichologizálás.",
+    "- Ha dream_observation.safety.flag nem 'none': lassíts, ne mélyíts, ne erőltesd.",
     "",
     "Anchor szabályok:",
     "- A title tartalmazzon legalább 1 TOP ANCHOR-t.",
     "- A framing_text tartalmazzon legalább 2–4 TOP ANCHOR-t.",
     "",
     "Ajánlott irányok:",
-    "- Pontosan 3 különböző slug a katalógusból.",
+    "- Pontosan 2-4 különböző slug a katalógusból.",
     "",
     "Formátum:",
-    '{"title":"...","framing_text":"...","recommended_slugs":["slug-1","slug-2","slug-3"]}',
+    '{"title":"...","framing_text":"...","recommended_slugs":["slug-1","slug-2"]}',
   ].join("\n");
 }
 
@@ -353,6 +368,7 @@ async function generateBundleOneCall(params: {
   client: OpenAI;
   raw: string;
   latent: any | null;
+  observation: ReturnType<typeof compactDreamObservation> | null;
   allowed: { slug: string; title: string; micro: string }[];
   allowedSet: Set<string>;
   topAnchors: string[];
@@ -362,6 +378,7 @@ async function generateBundleOneCall(params: {
   const payload = buildModelPayload({
     raw: params.raw,
     latent: params.latent,
+    observation: params.observation,
     catalog: params.allowed,
     topAnchors: params.topAnchors,
     targetSentences: params.targetSentences,
@@ -411,6 +428,7 @@ async function repairBundleQuick(params: {
   client: OpenAI;
   raw: string;
   latent: any | null;
+  observation: ReturnType<typeof compactDreamObservation> | null;
   allowedSlugs: string[];
   allowedSet: Set<string>;
   bad: { title?: string; framing_text?: string; recommended_slugs?: any };
@@ -426,13 +444,14 @@ async function repairBundleQuick(params: {
     "framing_text: 2–4 top anchor említés.",
     "Óvatos megfigyelés: opcionális, max 1 mondat, csak így: „Lehet, hogy (csak óvatos megfigyelés) …”.",
     "Óvatos megfigyelés: tilos biztos jelentés/diagnózis.",
-    "recommended_slugs: pontosan 3, különböző, allowed_slugs-ból.",
-    'Formátum: {"title":"...","framing_text":"...","recommended_slugs":["...","...","..."]}',
+    "recommended_slugs: 2–4, különböző, allowed_slugs-ból.",
+    'Formátum: {"title":"...","framing_text":"...","recommended_slugs":["...","..."]}',
   ].join("\n");
 
   const user = {
     dream_text,
     latent_note: compactLatentNote(params.latent),
+    dream_observation: params.observation,
     allowed_slugs: params.allowedSlugs,
     top_anchors: params.topAnchors,
     previous: params.bad,
@@ -484,7 +503,7 @@ export async function POST(req: Request) {
     if (!authData?.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     const userId = authData.user.id;
 
-    const [{ data: session }, { data: summary }] = await Promise.all([
+    const [{ data: session }, { data: summary }, { data: observationRow }] = await Promise.all([
       supabase
         .from("dream_sessions")
         .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, user_id")
@@ -497,11 +516,19 @@ export async function POST(req: Request) {
         .eq("session_id", sessionId)
         .eq("user_id", userId)
         .maybeSingle(),
+        supabase
+        .from("dream_observation")
+        .select("obs")
+        .eq("session_id", sessionId)
+        .eq("user_id", userId)
+        .maybeSingle(),
     ]);
 
     if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
 
     const raw = sanitizeWhitespace(session.raw_dream_text ?? "");
+    const observation = parseDreamObservation(observationRow?.obs ?? null);
+    const compactObservation = compactDreamObservation(observation);
     const targetSentences = clampTargetSentences(raw);
 
     // short guard
@@ -520,7 +547,7 @@ export async function POST(req: Request) {
       if (dirErr) return NextResponse.json({ error: dirErr.message }, { status: 500 });
 
       const allowedSlugs = (dirs ?? []).filter((d: any) => d.is_active).map((d: any) => d.slug);
-      const recommended_directions = allowedSlugs.length >= 3 ? fallbackRecommendationsFromAllowed(allowedSlugs) : [];
+      const recommended_directions = allowedSlugs.length >= RECOMMENDATION_MIN ? fallbackRecommendationsFromAllowed(allowedSlugs) : [];
 
       await Promise.all([
         supabase
@@ -666,6 +693,7 @@ export async function POST(req: Request) {
         allowedSet,
         topAnchors,
         targetSentences,
+        observation: compactObservation,
       });
       usedAI = true;
 
@@ -691,6 +719,7 @@ export async function POST(req: Request) {
           bad: { title, framing_text, recommended_slugs },
           topAnchors,
           targetSentences,
+          observation: compactObservation,
         });
 
         lastModelRaw = repaired.raw_text ?? lastModelRaw;
@@ -727,7 +756,12 @@ export async function POST(req: Request) {
     // Final guards (style-safe)
     if (!isAcceptableTitle(title)) title = stableFallbackTitle(raw);
     if (!isNonTrivialFraming(framing_text) || !isSecondPersonStyle(framing_text)) framing_text = FALLBACK_FRAMING_2P;
-    if (!recommended_slugs) recommended_slugs = allowedSlugs.length >= 3 ? shuffleInPlace([...allowedSlugs]).slice(0, 3) : [];
+    if (!recommended_slugs) {
+      recommended_slugs =
+        allowedSlugs.length >= RECOMMENDATION_MIN
+          ? fallbackRecommendationsFromAllowed(allowedSlugs).map((item) => item.slug)
+          : [];
+    }
 
     const recommended_directions = asRecommendedDirections(recommended_slugs);
 
