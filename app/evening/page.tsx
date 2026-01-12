@@ -446,6 +446,7 @@ export default function EveningLanding() {
     <Shell
       title="Álom előkészítő gyakorlatok"
       space="evening"
+      surface="none"
       headerActions={
         <button
           type="button"

@@ -318,6 +318,7 @@ export default function GlossaryPage() {
     <Shell
       title="Álomszótár"
       space="dream"
+      surface="none"
       headerActions={null}
       infoOpen={false}
       onToggleInfo={() => {}}
