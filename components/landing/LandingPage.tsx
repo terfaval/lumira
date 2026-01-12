@@ -1,35 +1,47 @@
 import Link from "next/link";
-import { BrandLockup } from "@/components/brand/BrandLockup";
+import { LumiraMark } from "@/components/brand/LumiraMark";
 import styles from "./LandingPage.module.css";
 
-const howItWorksSteps = [
+const howStepsTop = [
   {
     title: "Álomtér rögzítése",
-    body: "Röviden leírod, ami benned maradt az éjszakából. Ez a kiindulópont, amit később is elővehetsz.",
+    body: "Röviden leírod, ami benned maradt.",
     icon: "/icons/morning.svg",
   },
   {
-    title: "Visszatükrözés (opcionális)",
-    body: "Kaphatsz egy semleges tükröt a szövegedről, ha szeretnéd. Megerősít, de nem magyaráz helyetted.",
+    title: "Visszatükrözés",
+    body: "Egy semleges keret — értelmezés nélkül.",
     icon: "/icons/reflective.svg",
   },
   {
-    title: "Irányválasztás (opcionális)",
-    body: "Megnézheted, merre érdemes továbbmenned. Te döntesz, hogy mélyebbre mész vagy megállsz.",
+    title: "Irányválasztás",
+    body: "Válassz fókuszt. Te döntesz, merre.",
     icon: "/icons/focus.svg",
-  },
-  {
-    title: "Munka vagy megállás",
-    body: "Dönthetsz a folytatásról, vagy le is zárhatod. A tempó és a mélység mindig a tied.",
-    icon: "/icons/work.svg",
   },
 ];
 
-const adaptivityItems = [
-  { label: "Reggel", icon: "/icons/morning.svg" },
-  { label: "Éjjel", icon: "/icons/night.svg" },
-  { label: "Fókusz", icon: "/icons/focus.svg" },
-  { label: "Munka", icon: "/icons/work.svg" },
+const howStop = {
+  title: "Megállás bármikor",
+  body: "Nem kell végigmenni. Megállhatsz, lezárhatsz, később folytathatod.",
+  icon: "/icons/relax.svg",
+};
+
+const adaptPrimary = [
+  {
+    key: "morning",
+    title: "Reggel",
+    icon: "/icons/morning.svg",
+    body: "Gyors rögzítés, amikor még friss. Töredék is elég.",
+  },
+  {
+    key: "night",
+    title: "Éjjel",
+    icon: "/icons/night.svg",
+    body: "Ha felébredsz: rövid lecsendesítés vagy visszaalvás-támasz.",
+  },
+];
+
+const adaptSecondary = [
   { label: "Reflektív", icon: "/icons/reflective.svg" },
   { label: "Kreatív", icon: "/icons/creative.svg" },
   { label: "Lazítás", icon: "/icons/relax.svg" },
@@ -39,105 +51,130 @@ const adaptivityItems = [
 export function LandingPage() {
   return (
     <main className={styles.page}>
-      {/* HERO */}
+      {/* HERO: 2-column grid */}
       <section className={styles.hero}>
-        <div className={styles.heroInner}>
-          {/* lockup: felül logo, alatta név */}
-          <div className={styles.heroBrand}>
-            <BrandLockup href="/about" />
+        <div className={styles.heroGrid}>
+          {/* LEFT: mark + name + one-liner (Space Grotesk), centered */}
+          <div className={styles.heroLeft}>
+            <div className={styles.heroLeftInner}>
+              <LumiraMark size={56} className={styles.heroMark} />
+              <div className={styles.heroName}>lumira</div>
+              <div className={styles.heroOneLiner}>
+                Csendes technológia
+                <br />
+                belső tapasztalatokhoz
+              </div>
+            </div>
           </div>
 
-          {/* one-liner: két sor, feszes */}
-          <p className={styles.tagline}>
-            Csendes technológia
-            <br />
-            belső tapasztalatokhoz
-          </p>
+          {/* RIGHT: tool intro + CTA, centered */}
+          <div className={styles.heroRight}>
+            <div className={styles.heroRightInner}>
+              <p className={styles.toolIntro}>
+                A Lumira egy eszköz: rögzítéshez, visszanézéshez, és kíméletes álommunkához.
+                Nem mondja meg, „mit jelent” — csak rendet tart a folyamatban.
+              </p>
 
-          <Link href="/new" className={styles.cta}>
-            Tovább
-          </Link>
+              <Link href="/new" className={`btn btn-primary ${styles.heroCta}`}>
+                Új álom
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* TOOL INTRO */}
-      <section className={styles.section}>
-        <p className={styles.lead}>
-          A Lumira egy eszköz, nem értelmezés. Segít rögzíteni és rendezni, de a jelentést mindig te adod meg.
-          Használhatod egyszerűen vagy mélyebben is, ahogy éppen szeretnéd.
-        </p>
-      </section>
-
-      {/* HOW IT WORKS */}
+      {/* HOW IT WORKS: 3 top + 1 bottom */}
       <section className={styles.section}>
         <h2 className={styles.h2}>Hogyan működik</h2>
 
-        <ol className={styles.howList}>
-          {howItWorksSteps.map((step) => (
-            <li key={step.title} className={styles.howItem}>
-              <img src={step.icon} alt="" className={styles.howIcon} width={44} height={44} loading="lazy" />
-              <div className={styles.howContent}>
-                <h3 className={styles.h3}>{step.title}</h3>
-                <p className={styles.p}>{step.body}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* ADAPTIVITY GRID */}
-      <section className={styles.section}>
-        <h2 className={styles.h2}>Többféleképpen használható.</h2>
-
-        <div className={styles.adaptGrid}>
-          {adaptivityItems.map((item) => (
-            <div key={item.label} className={styles.adaptItem}>
-              <img src={item.icon} alt="" className={styles.adaptIcon} width={48} height={48} loading="lazy" />
-              <div className={styles.adaptLabel}>{item.label}</div>
-            </div>
+        <div className={styles.howTop}>
+          {howStepsTop.map((s) => (
+            <article key={s.title} className={styles.glassCard}>
+              <img src={s.icon} alt="" width={64} height={64} className={styles.bigIcon} loading="lazy" />
+              <div className={styles.cardTitle}>{s.title}</div>
+              <div className={styles.cardBody}>{s.body}</div>
+            </article>
           ))}
         </div>
 
-        <p className={styles.pMuted}>
-          Ugyanaz az alap, mégis más ritmusokhoz, helyzetekhez és szándékokhoz illeszkedik.
-        </p>
+        <div className={styles.howStopRow}>
+          <article className={`${styles.glassCard} ${styles.stopCard}`}>
+            <img src={howStop.icon} alt="" width={64} height={64} className={styles.bigIcon} loading="lazy" />
+            <div className={styles.cardTitle}>{howStop.title}</div>
+            <div className={styles.cardBody}>{howStop.body}</div>
+          </article>
+        </div>
       </section>
 
-      {/* EVENING PREVIEW — evening-kártya “alap” stílus */}
+      {/* ADAPTIVITY: morning/night split cards + separator + 4 icons */}
+      <section className={styles.section}>
+        <h2 className={styles.h2}>Többféleképpen használható</h2>
+
+        <div className={styles.adaptPrimaryRow}>
+          {adaptPrimary.map((x) => (
+            <article key={x.key} className={`${styles.glassCard} ${styles.adaptPrimaryCard}`}>
+              <div className={styles.adaptPrimaryInner}>
+                <div className={styles.adaptPrimaryIconCol}>
+                  <img src={x.icon} alt="" width={72} height={72} className={styles.bigIcon} loading="lazy" />
+                  <div className={styles.adaptPrimaryLabel}>{x.title}</div>
+                </div>
+                <div className={styles.adaptPrimaryTextCol}>
+                  <div className={styles.cardBody}>{x.body}</div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className={styles.adaptNote}>
+          Sokféle célra használható — ugyanazzal a csendes alaplogikával.
+        </div>
+
+        <div className={styles.adaptSecondaryGrid}>
+          {adaptSecondary.map((item) => (
+            <div key={item.label} className={styles.adaptSecondaryItem}>
+              <img src={item.icon} alt="" width={64} height={64} className={styles.bigIcon} loading="lazy" />
+              <div className={styles.adaptSecondaryLabel}>{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* EVENING PREVIEW */}
       <section className={styles.section}>
         <h2 className={styles.h2}>Esti előnézet</h2>
 
         <div className={styles.eveningGrid}>
           {[
             { title: "Csendes indulás", body: "Pár sor, ami segít rendezni a napot és megérkezni az estére." },
-            { title: "Finom fókusz", body: "Rövid feljegyzés arról, mi az, amit most szeretnél megfigyelni." },
-            { title: "Lassú lezárás", body: "Egy visszafogott emlékeztető, hogy meg is állhatsz, ha így jó." },
+            { title: "Finom fókusz", body: "Rövid hangolás arra, mit szeretnél ma megfigyelni." },
+            { title: "Lassú lezárás", body: "Egy egyszerű jelzés: most elég, pihenhetsz." },
           ].map((card) => (
             <article
               key={card.title}
-              className={styles.eveningCard}
+              className={`${styles.glassCard} ${styles.eveningCard}`}
               style={{
                 background: `linear-gradient(135deg,
                   var(--evening-card-paper-strong) 0%,
                   var(--evening-card-paper) 42%,
-                  rgba(0,0,0,0) 110%)`,
+                  var(--glow-2) 120%)`,
               }}
             >
-              <div className={styles.eveningTitle}>{card.title}</div>
-              <div className={styles.eveningBody}>{card.body}</div>
+              <div className={styles.cardTitle}>{card.title}</div>
+              <div className={styles.cardBody}>{card.body}</div>
             </article>
           ))}
         </div>
       </section>
 
-      {/* FOOTER CTA */}
+      {/* FOOTER CTA centered + padding weight */}
       <section className={styles.footer}>
-        <p className={styles.footerLine}>
-          Egy eszköz az álmaidhoz — rögzítéshez, fókuszhoz, munkához.
-        </p>
-        <Link href="/new" className={styles.cta}>
-          Új álom
-        </Link>
+        <div className={styles.footerInner}>
+          <div className={styles.footerLine}>Ha szeretnéd: indíts egy új álmot, és menj csak addig, ameddig ma jó.</div>
+          <Link href="/new" className={`btn btn-primary ${styles.footerCta}`}>
+            Új álom
+          </Link>
+        </div>
       </section>
     </main>
   );
