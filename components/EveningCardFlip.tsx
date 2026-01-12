@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { EveningCardCatalogItem } from "@/src/lib/types";
 import { Pill } from "@/components/Pill";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import styles from "./EveningCardFlip.module.css";
 
 type PhaseKey = "prep" | "in_bed" | "rescue";
@@ -99,31 +100,28 @@ export function EveningCardFlip({
     return raw.slice(0, 6);
   }, [card]);
 
-  const bgCorner = intentTok ? `var(${intentTok.bg})` : "rgba(0,0,0,0)";
-  const paperBg = `linear-gradient(135deg,
-    var(--evening-card-paper-strong) 0%,
-    var(--evening-card-paper) 42%,
-    ${bgCorner} 110%)`;
-
   // 0 = overview (front), 180 = practice (back), 360 = rest (front again)
   const rot = view === "overview" ? 0 : view === "practice" ? 180 : 360;
 
   async function handleSaveAndRest() {
     await onSave();
     // ha a page error-t állít, az itt is megjelenik; viszont rest csak siker után
-    // (ha error van, view marad practice)
     setView("rest");
   }
 
   return (
     <div className={styles.flip3d} style={{ transform: `rotateY(${rot}deg)` }}>
       {/* FRONT = OVERVIEW + REST */}
-      <div className={styles.face} style={{ background: paperBg }}>
+      <GlassCardSurface
+        className={styles.face}
+        corner={intentTok ? intentTok.bg : null}
+        paper="evening"
+        minHeight="60vh"
+      >
         {/* header ~ tile */}
         <div className={styles.top}>
           <div className={styles.left}>
-
-          {primaryIntent ? (
+            {primaryIntent ? (
               <Pill variant="intent" colorVar={intentTok!.text}>
                 {intentLabel[primaryIntent]}
               </Pill>
@@ -135,8 +133,7 @@ export function EveningCardFlip({
               </Pill>
             ) : null}
           </div>
-
-          </div>
+        </div>
 
         <div className={styles.mid}>
           <div className={styles.title}>{card.title}</div>
@@ -165,11 +162,11 @@ export function EveningCardFlip({
               {effect ? <div className={styles.effect}>{effect}</div> : null}
 
               {time ? (
-              <Pill variant="neutral">
-                      {time}
-                    </Pill>
-                  ) : null}
-                  
+                <Pill variant="neutral">
+                  {time}
+                </Pill>
+              ) : null}
+
               {overlayTags.length ? (
                 <div className={styles.tagsRow}>
                   {overlayTags.map((t) => (
@@ -179,6 +176,8 @@ export function EveningCardFlip({
                   ))}
                 </div>
               ) : null}
+
+              {goal ? <div className={styles.body}>{goal}</div> : null}
 
               {notRec ? (
                 <div className={styles.notrec}>
@@ -197,10 +196,15 @@ export function EveningCardFlip({
             {error ? <div className={styles.inlineError}>{error}</div> : null}
           </>
         )}
-      </div>
+      </GlassCardSurface>
 
       {/* BACK = PRACTICE */}
-      <div className={`${styles.face} ${styles.back}`} style={{ background: paperBg }}>
+      <GlassCardSurface
+        className={`${styles.face} ${styles.back}`}
+        corner={intentTok ? intentTok.bg : null}
+        paper="evening"
+        minHeight="60vh"
+      >
         {/* header ~ tile */}
         <div className={styles.top}>
           <div className={styles.left}>
@@ -273,7 +277,7 @@ export function EveningCardFlip({
         </div>
 
         {error ? <div className={styles.inlineError}>{error}</div> : null}
-      </div>
+      </GlassCardSurface>
     </div>
   );
 }

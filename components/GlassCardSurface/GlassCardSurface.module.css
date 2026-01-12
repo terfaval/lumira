@@ -1,0 +1,54 @@
+.surface {
+  position: relative;
+
+  border-radius: 18px;
+  border: 1px solid var(--line-soft);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  padding: var(--space-3);
+
+  /* “glass” */
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+
+  /* extra depth */
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
+
+  overflow: hidden; /* kell a gloss highlight-hoz */
+}
+
+/* finom glossy “csík” */
+.surface::before {
+  content: "";
+  position: absolute;
+  inset: -40% -20% auto -20%;
+  height: 60%;
+
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.26),
+    rgba(255, 255, 255, 0.10) 40%,
+    rgba(255, 255, 255, 0) 70%
+  );
+
+  transform: rotate(-8deg);
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* finom “szemcsézettség”, hogy ne legyen túl steril */
+.surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.12;
+
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}

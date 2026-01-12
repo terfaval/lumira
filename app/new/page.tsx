@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
@@ -44,7 +45,7 @@ export default function NewDream() {
   const [infoOpen, setInfoOpen] = useState(false);
   const { loading } = useRequireAuth();
 
-  const [step, setStep] = useState<"index"|"synth"|"frame"|"idle">("idle");
+  const [step, setStep] = useState<"index" | "synth" | "frame" | "idle">("idle");
 
   const stats = useMemo(() => {
     const trimmed = text.trim();
@@ -153,10 +154,13 @@ export default function NewDream() {
   }
 
   const overlayTitle =
-    step === "index" ? "Indexelés készül…" :
-    step === "synth" ? "Latens szintézis készül…" :
-    step === "frame" ? "Keretezés készül…" :
-    "Előkészítés…";
+    step === "index"
+      ? "Indexelés készül…"
+      : step === "synth"
+      ? "Latens szintézis készül…"
+      : step === "frame"
+      ? "Keretezés készül…"
+      : "Előkészítés…";
 
   const overlaySubtitle =
     step === "index"
@@ -189,8 +193,8 @@ export default function NewDream() {
           <p className="section-title">Rögzítés</p>
 
           <p style={{ color: "var(--text-muted)" }}>
-            Itt csak a rögzítés a cél. Nem kell szépen megfogalmazni, nem kell “értelmes” legyen.
-            Amit most ki tudsz menteni, az később is dolgozható.
+            Itt csak a rögzítés a cél. Nem kell szépen megfogalmazni, nem kell “értelmes” legyen. Amit
+            most ki tudsz menteni, az később is dolgozható.
           </p>
 
           <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-muted)", lineHeight: 1.7 }}>
@@ -222,47 +226,50 @@ export default function NewDream() {
         />
       ) : (
         <div className="stack">
-          <div className="newdream-panel stack-tight">
-            <textarea
-              className="textarea-dream"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is."
-              rows={10}
-              aria-invalid={!!err}
-              disabled={busy || blockingFlow}
-              onKeyDown={(e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-                  e.preventDefault();
-                  if (!busy && !blockingFlow && !stats.empty) void createSession();
-                }
-              }}
-            />
+          {/* ✅ egységes “glass” felület, EveningCardFlip-alap */}
+          <GlassCardSurface paper="evening" corner="--accent" minHeight="auto">
+            <div className="stack-tight">
+              <textarea
+                className="textarea-dream"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is."
+                rows={10}
+                aria-invalid={!!err}
+                disabled={busy || blockingFlow}
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                    e.preventDefault();
+                    if (!busy && !blockingFlow && !stats.empty) void createSession();
+                  }
+                }}
+              />
 
-            <div className="newdream-footer">
-              <span className="badge-muted newdream-stat">
-                {stats.words} szó · {stats.chars} karakter
-              </span>
+              <div className="newdream-footer">
+                <span className="badge-muted newdream-stat">
+                  {stats.words} szó · {stats.chars} karakter
+                </span>
 
-              <div className="newdream-actions">
-                <button
-                  className="btn btn-secondary"
-                  type="button"
-                  onClick={() => {
-                    setErr(null);
-                    setText("");
-                  }}
-                  disabled={busy || blockingFlow || !text.length}
-                >
-                  Törlés
-                </button>
+                <div className="newdream-actions">
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    onClick={() => {
+                      setErr(null);
+                      setText("");
+                    }}
+                    disabled={busy || blockingFlow || !text.length}
+                  >
+                    Törlés
+                  </button>
 
-                <PrimaryButton onClick={createSession} disabled={busy || blockingFlow || stats.empty}>
-                  {blockingFlow ? "Előkészítés…" : busy ? "Rögzítés…" : "Rögzítés"}
-                </PrimaryButton>
+                  <PrimaryButton onClick={createSession} disabled={busy || blockingFlow || stats.empty}>
+                    {blockingFlow ? "Előkészítés…" : busy ? "Rögzítés…" : "Rögzítés"}
+                  </PrimaryButton>
+                </div>
               </div>
             </div>
-          </div>
+          </GlassCardSurface>
 
           {err && (
             <div className="newdream-error" role="alert">
