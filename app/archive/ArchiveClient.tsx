@@ -293,7 +293,7 @@ export default function ArchiveClient() {
                 <Link key={session.id} href={`/session/${session.id}/summary`} style={{ textDecoration: "none" }}>
                   <GlassCardSurface
                     className="archive-tile"
-                    variant="soft"
+                    variant="flat"
                     paper="evening"
                     corner={stTok.bg}
                   >
