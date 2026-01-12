@@ -5,25 +5,24 @@ import styles from "./LandingPage.module.css";
 const howStepsTop = [
   {
     title: "Álomtér rögzítése",
-    body: "Röviden leírod, ami benned maradt.",
-    icon: "/icons/morning.svg",
+    body: "Írd le gyorsan, ami megmaradt: képek, mondatok, hangulat, pár részlet. Nem kell szépnek lennie — elég, ha később visszaidézhető.",
+    icon: "/icons/dreamspace.svg",
   },
   {
     title: "Visszatükrözés",
-    body: "Egy semleges keret — értelmezés nélkül.",
-    icon: "/icons/reflective.svg",
+    body: "Kapsz egy semleges összefoglalót és pár kapaszkodót: mi erős, mi ismétlődik, hol van nyitott kérdés. Nincs megfejtés, csak tiszta keret.",
+    icon: "/icons/reflection.svg",
   },
   {
     title: "Irányválasztás",
-    body: "Válassz fókuszt. Te döntesz, merre.",
-    icon: "/icons/focus.svg",
+    body: "Válassz egy fókuszt a folytatáshoz: emlék elmélyítése, érzelem, test, mintázatok vagy kreatív használat. Te döntesz, mennyire mész bele.",
+    icon: "/icons/direction.svg",
   },
 ];
 
 const howStop = {
-  title: "Megállás bármikor",
-  body: "Nem kell végigmenni. Megállhatsz, lezárhatsz, később folytathatod.",
-  icon: "/icons/relax.svg",
+  body: "Nem kell végigmenni. Ha elég volt, megállhatsz, lezárhatod egy mondattal, és folytathatod később — amikor újra jólesik.",
+  icon: "/icons/stop.svg",
 };
 
 const adaptPrimary = [
@@ -31,21 +30,37 @@ const adaptPrimary = [
     key: "morning",
     title: "Reggel",
     icon: "/icons/morning.svg",
-    body: "Gyors rögzítés, amikor még friss. Töredék is elég.",
+    body: "Ébredés után pár perc: gyors rögzítés, mielőtt szétesik az emlék. Írhatsz címszavakat is — később ráér kibontani.",
   },
   {
     key: "night",
     title: "Éjjel",
     icon: "/icons/night.svg",
-    body: "Ha felébredsz: rövid lecsendesítés vagy visszaalvás-támasz.",
+    body: "Ha felébredsz vagy lefekvés előtt jár az agyad: választható, rövid gyakorlatok segítenek lecsendesíteni, fókuszt adni, vagy visszaaludni.",
   },
 ];
 
 const adaptSecondary = [
-  { label: "Reflektív", icon: "/icons/reflective.svg" },
-  { label: "Kreatív", icon: "/icons/creative.svg" },
-  { label: "Lazítás", icon: "/icons/relax.svg" },
-  { label: "Lucid", icon: "/icons/lucid.svg" },
+  {
+    label: "Reflektív",
+    body: "Akkor jó, ha szeretnél egy nyugodt visszanézést és pár tiszta kérdést, értelmezés nélkül.",
+    icon: "/icons/reflective.svg",
+  },
+  {
+    label: "Kreatív",
+    body: "Akkor jó, ha képekből és motívumokból inspirációt vinnél tovább — anélkül, hogy rendet kellene tenned.",
+    icon: "/icons/creative.svg",
+  },
+  {
+    label: "Lazítás",
+    body: "Akkor jó, ha lefekvés előtt lecsendesítenéd a rendszert, és inkább pihenni szeretnél, nem elemezni.",
+    icon: "/icons/relax.svg",
+  },
+  {
+    label: "Lucid",
+    body: "Akkor jó, ha a tudatosság irány érdekel, és finoman hangolnál rá — erőlködés és célhajszolás nélkül.",
+    icon: "/icons/lucid.svg",
+  },
 ];
 
 export function LandingPage() {
@@ -71,9 +86,10 @@ export function LandingPage() {
           <div className={styles.heroRight}>
             <div className={styles.heroRightInner}>
               <p className={styles.toolIntro}>
-                A Lumira egy eszköz:
-                rögzítéshez, visszanézéshez, 
-                és kíméletes álommunkához.
+                A Lumira egy egyszerű eszköz álmaid rögzítéséhez és visszanézéséhez. Nem fejt meg
+                helyetted semmit: inkább segít észrevenni, mi maradt meg, és ad egy kíméletes
+                keretet, ha szeretnél továbbmenni. Használhatod reggel pár mondatra, vagy este
+                rövid hangolásként — a saját tempódban.
               </p>
 
               <Link href="/new" className={`btn btn-primary ${styles.heroCta}`}>
@@ -100,22 +116,21 @@ export function LandingPage() {
 
         <div className={styles.howStopRow}>
           <article className={`${styles.glassCard} ${styles.stopCard}`}>
-  <div className={styles.stopInner}>
-    <img
-      src={howStop.icon}
-      alt=""
-      width={72}
-      height={72}
-      className={styles.bigIcon}
-      loading="lazy"
-    />
+            <div className={styles.stopInner}>
+              <img
+                src={howStop.icon}
+                alt=""
+                width={72}
+                height={72}
+                className={styles.bigIcon}
+                loading="lazy"
+              />
 
-    <div className={styles.stopText}>
-      <div className={styles.cardTitle}>{howStop.title}</div>
-      <div className={styles.cardBody}>{howStop.body}</div>
-    </div>
-  </div>
-</article>
+              <div className={styles.stopText}>
+                <div className={styles.cardBody}>{howStop.body}</div>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -140,7 +155,8 @@ export function LandingPage() {
         </div>
 
         <div className={styles.adaptNote}>
-          Sokféle célra használható — ugyanazzal a csendes alaplogikával.
+          Ugyanaz az alap: rögzítesz, visszanézed, és csak akkor mélyítesz, ha szeretnél. Válassz úgy,
+          ahogy ma működik.
         </div>
 
         <div className={styles.adaptSecondaryGrid}>
@@ -148,6 +164,7 @@ export function LandingPage() {
             <div key={item.label} className={styles.adaptSecondaryItem}>
               <img src={item.icon} alt="" width={64} height={64} className={styles.bigIcon} loading="lazy" />
               <div className={styles.adaptSecondaryLabel}>{item.label}</div>
+              <div className={styles.cardBody}>{item.body}</div>
             </div>
           ))}
         </div>
@@ -159,9 +176,9 @@ export function LandingPage() {
 
         <div className={styles.eveningGrid}>
           {[
-            { title: "Csendes indulás", body: "Pár sor, ami segít rendezni a napot és megérkezni az estére." },
-            { title: "Finom fókusz", body: "Rövid hangolás arra, mit szeretnél ma megfigyelni." },
-            { title: "Lassú lezárás", body: "Egy egyszerű jelzés: most elég, pihenhetsz." },
+            { title: "Csendes indulás", body: "Rövid rendezés lefekvés előtt: mi maradjon kint, mi jöhet be az éjszakába." },
+            { title: "Alvás-hangolás", body: "Választható gyakorlatok: emlékezet, lecsendesítés, rémálom-csökkentés, inkubáció — ami ma jól esik." },
+            { title: "Finom lezárás", body: "Egy egyszerű jelzés a végén: most elég. Nem kell tovább dolgozni — jöhet az alvás." },
           ].map((card) => (
             <article
               key={card.title}
@@ -183,7 +200,9 @@ export function LandingPage() {
       {/* FOOTER CTA centered + padding weight */}
       <section className={styles.footer}>
         <div className={styles.footerInner}>
-          <div className={styles.footerLine}>Ha szeretnéd: indíts egy új álmot, és menj csak addig, ameddig ma jó.</div>
+          <div className={styles.footerLine}>
+            Indíts egy új álmot. Rögzíts pár sort, nézd vissza, és állj meg ott, ahol ma jó.
+          </div>
           <Link href="/new" className={`btn btn-primary ${styles.footerCta}`}>
             Új álom
           </Link>
