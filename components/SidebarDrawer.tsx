@@ -157,6 +157,10 @@ export function SidebarDrawer({
       <aside className="drawer-sheet" role="document" aria-label="Oldalsáv">
         {/* Felső fix opciók */}
         <div className="drawer-section drawer-top">
+          <Link href="/about" className="drawer-navlink" onClick={onClose}>
+            Mi a Lumira?
+          </Link>
+          
           <Link
             href="/evening"
             className="drawer-navlink"
