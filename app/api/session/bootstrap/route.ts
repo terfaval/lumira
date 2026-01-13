@@ -72,36 +72,35 @@ export async function POST(req: Request) {
 
     const dreamText = String(session.raw_dream_text ?? "").trim();
 
-    // Kick tasks. Best-effort: even if one fails, others can succeed.
-    // Observe and index can run in parallel. Synthesize depends on observe ideally,
-    // but we still run it in parallel (it will fetch observation from DB).
-    // 1) Observe MUST happen first (primary truth for synth/frame)
-const observe = await safePost(req, "/api/observe", {
-  session_id: sessionId,
-  dream_text: dreamText,
-  force,
-});
+    // 0) Start index in parallel (non-blocking for initial framing)
+    const indexPromise = safePost(req, "/api/index-session", {
+      session_id: sessionId,
+      dream_text: dreamText,
+      force,
+    });
 
-// 2) Index can run in parallel (non-blocking for initial framing)
-const indexPromise = safePost(req, "/api/index-session", {
-  session_id: sessionId,
-  dream_text: dreamText,
-  force,
-});
+    // 1) Observe first (primary truth for synth/frame)
+    const observe = await safePost(req, "/api/observe", {
+      session_id: sessionId,
+      dream_text: dreamText,
+      force,
+    });
 
-// 3) Synthesize should happen after observe (uses observation as primary truth)
-const synth = await safePost(req, "/api/synthesize", {
-  session_id: sessionId,
-  dream_text: dreamText,
-  force,
-});
+    // 2) Synthesize after observe (so latent can rely on observation)
+    const synth = await safePost(req, "/api/synthesize", {
+      session_id: sessionId,
+      dream_text: dreamText,
+      force,
+    });
 
-// 4) Frame should happen after synth (and observe already done)
-const frame = await safePost(req, "/api/frame", { sessionId });
+    // 3) Frame after synth (and observe already done) — also forward force
+    const frame = await safePost(req, "/api/frame", {
+      sessionId,
+      force, // ✅ important: let frame know we are forcing refresh
+    });
 
-// 5) Await index last (best-effort); do not block frame
-const index = await indexPromise;
-
+    // 4) Await index last (best-effort)
+    const index = await indexPromise;
 
     return NextResponse.json({
       ok: true,

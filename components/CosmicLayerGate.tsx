@@ -35,10 +35,11 @@ export default function CosmicLayerGate() {
   if (!enabled) return null;
 
   return (
-    <div className={styles.veils} aria-hidden="true">
-      <div className={styles.base} />
-      <div className={styles.auras} />
-      <div className={styles.noise} />
-    </div>
-  );
+  <div className={styles.veils} aria-hidden="true">
+    <div className={styles.base} />
+    <div className={styles.auras} />
+    <div className={styles.specks} />
+    <div className={styles.noise} />
+  </div>
+);
 }
