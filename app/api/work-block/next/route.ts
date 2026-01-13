@@ -5,6 +5,11 @@
 // - similarity avoidance + “low_novelty” graceful stop
 // - latent log tail enforcement + RPC logging (append_latent_log_event)
 // - single, clean callModel() implementation + hard fallbacks
+//
+// UPDATED:
+// - Uses work_question_ledger to avoid re-asking the same anchors (keyed, not string-matching only)
+// - Writes each accepted question into work_question_ledger with anchor_keys
+// - Keeps the existing similarity / repetition guards (belt + suspenders)
 
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
@@ -119,14 +124,14 @@ type DirectionProfile = {
   title?: string;
   micro_description?: string;
   ai_contract: {
-    role: string;                 // pl. "guide"
-    stance: string[];             // pl. ["non-clinical","descriptive-only"]
-    tone_tags: string[];          // pl. ["gentle","slow","minimal-friction"]
+    role: string; // pl. "guide"
+    stance: string[]; // pl. ["non-clinical","descriptive-only"]
+    tone_tags: string[]; // pl. ["gentle","slow","minimal-friction"]
     pacing: { max_steps: number; max_depth: number };
   };
-  question_style: string;         // pl. "sequence_probe_single"
+  question_style: string; // pl. "sequence_probe_single"
   focus_model: { primary: string[]; secondary: string[] };
-  anchor_policy: AnchorPolicy;    // required|preferred|optional
+  anchor_policy: AnchorPolicy; // required|preferred|optional
   stop_criteria: {
     max_cards?: number;
     stop_if_user_brief_streak?: number;
@@ -135,7 +140,6 @@ type DirectionProfile = {
   };
   mini_lexicon: string[];
 };
-
 
 // -----------------------------------------------------------------------------
 // Utils
@@ -440,7 +444,6 @@ function coverageScore(question: string, recentAnswersText: string): number {
   return q.size === 0 ? 0 : covered / q.size;
 }
 
-
 async function parseModelJSON(rawContent: string): Promise<unknown> {
   try {
     return JSON.parse(rawContent);
@@ -453,6 +456,61 @@ async function parseModelJSON(rawContent: string): Promise<unknown> {
     }
     throw new Error("Invalid JSON from model");
   }
+}
+
+// -----------------------------------------------------------------------------
+// Anchor key normalisation (for ledger)
+// -----------------------------------------------------------------------------
+
+const HU_STOP = new Set([
+  "a",
+  "az",
+  "egy",
+  "és",
+  "vagy",
+  "hogy",
+  "de",
+  "mert",
+  "amikor",
+  "ahogy",
+  "már",
+  "még",
+  "is",
+  "se",
+  "sem",
+  "ott",
+  "itt",
+  "oda",
+  "ide",
+  "innen",
+  "onnan",
+  "valami",
+  "valaki",
+  "nagyon",
+  "kicsit",
+]);
+
+function stripDiacritics(s: string) {
+  return (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Stable-ish anchor key for "did we already ask about this anchor?"
+ * - lower
+ * - strip diacritics
+ * - keep alnum tokens
+ * - drop short/stop words
+ */
+function anchorKey(raw: string): string {
+  const s = (raw || "").toLowerCase().trim();
+  if (!s) return "";
+  const tokens = stripDiacritics(s)
+    .split(/[^a-z0-9]+/g)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .filter((t) => t.length > 2)
+    .filter((t) => !HU_STOP.has(t));
+  return tokens.join(" ");
 }
 
 // -----------------------------------------------------------------------------
@@ -522,9 +580,7 @@ async function fetchRecentWorkBlocks(args: {
       }
     );
 
-    return mapped.filter(
-      (row: RecentWorkBlock | null): row is RecentWorkBlock => !!row && Boolean(row.created_at)
-    );
+    return mapped.filter((row: RecentWorkBlock | null): row is RecentWorkBlock => !!row && Boolean(row.created_at));
   } catch (error) {
     console.warn("fetch recent work blocks exception", error);
     return [];
@@ -605,6 +661,66 @@ async function appendLatentLogEvent(
     if (error) console.warn("append_latent_log_event failed", error.message);
   } catch (e: any) {
     console.warn("appendLatentLogEvent exception", e?.message ?? e);
+  }
+}
+
+// NEW: ledger helpers (anti-reask at anchor level)
+async function fetchUsedAnchorKeysFromLedger(args: {
+  supabase: any;
+  sessionId: string;
+  userId: string;
+  directionSlug?: string;
+  limit?: number;
+}): Promise<Set<string>> {
+  const used = new Set<string>();
+  try {
+    let q = args.supabase
+      .from("work_question_ledger")
+      .select("anchor_keys, created_at")
+      .eq("session_id", args.sessionId)
+      .eq("user_id", args.userId)
+      .order("created_at", { ascending: false })
+      .limit(args.limit ?? 60);
+
+    if (args.directionSlug) q = q.eq("direction_slug", args.directionSlug);
+
+    const { data, error } = await q;
+    if (error) {
+      console.warn("fetch ledger failed", error.message);
+      return used;
+    }
+
+    for (const row of data ?? []) {
+      const keys = (row as any)?.anchor_keys;
+      if (Array.isArray(keys)) for (const k of keys) if (typeof k === "string" && k.trim()) used.add(k.trim());
+    }
+    return used;
+  } catch (e: any) {
+    console.warn("fetch ledger exception", e?.message ?? e);
+    return used;
+  }
+}
+
+async function insertLedgerQuestion(args: {
+  supabase: any;
+  sessionId: string;
+  userId: string;
+  directionSlug?: string;
+  questionText: string;
+  questionIntent?: string | null;
+  anchorKeys: string[];
+}) {
+  try {
+    await args.supabase.from("work_question_ledger").insert({
+      session_id: args.sessionId,
+      user_id: args.userId,
+      direction_slug: args.directionSlug ?? "unknown",
+      question_text: args.questionText,
+      question_intent: args.questionIntent ?? null,
+      anchor_keys: args.anchorKeys,
+    });
+  } catch (e: any) {
+    console.warn("insert ledger exception", e?.message ?? e);
   }
 }
 
@@ -706,36 +822,6 @@ function unwrapDirection(direction: DirectionInput | undefined | null): Directio
   return normalized;
 }
 
-function buildDirectionForAI(direction: DirectionNormalized | undefined) {
-  if (!direction) return undefined;
-
-  const methodSpec = direction.method_spec ?? {};
-  const methodSpecForAI: Record<string, unknown> = {};
-
-  if (typeof (methodSpec as any)?.question_style === "string") {
-    methodSpecForAI.question_style = (methodSpec as any).question_style;
-  }
-  if ("aim" in methodSpec) methodSpecForAI.aim = (methodSpec as any).aim;
-  if ("do" in methodSpec) methodSpecForAI.do = (methodSpec as any).do;
-  if ("dont" in methodSpec) methodSpecForAI.dont = (methodSpec as any).dont;
-
-  const directionForAI: Record<string, unknown> = {};
-
-  if (direction.slug) directionForAI.slug = direction.slug;
-  if (direction.title) directionForAI.title = direction.title;
-  if (direction.micro_description) directionForAI.micro_description = direction.micro_description;
-
-  if (Object.keys(methodSpecForAI).length) directionForAI.method_spec = methodSpecForAI;
-
-  if (direction.stop_criteria) directionForAI.stop_criteria = direction.stop_criteria;
-  if (direction.output_spec) directionForAI.output_spec = direction.output_spec;
-  if (direction.safety) directionForAI.safety = direction.safety;
-  if (direction.focus_model) directionForAI.focus_model = direction.focus_model;
-  if (direction.selection_hints) directionForAI.selection_hints = direction.selection_hints;
-
-  return Object.keys(directionForAI).length ? directionForAI : undefined;
-}
-
 function buildDirectionProfile(direction: DirectionNormalized): DirectionProfile {
   const method = (direction.method_spec ?? {}) as any;
   const focus = (direction.focus_model ?? {}) as any;
@@ -769,8 +855,12 @@ function buildDirectionProfile(direction: DirectionNormalized): DirectionProfile
     micro_description: direction.micro_description,
     ai_contract: {
       role: typeof contract.role === "string" ? contract.role : "guide",
-      stance: Array.isArray(contract.stance) ? contract.stance.filter((x: any) => typeof x === "string").slice(0, 6) : ["non-clinical", "descriptive-only"],
-      tone_tags: Array.isArray(contract.tone_tags) ? contract.tone_tags.filter((x: any) => typeof x === "string").slice(0, 6) : ["gentle", "slow", "minimal-friction"],
+      stance: Array.isArray(contract.stance)
+        ? contract.stance.filter((x: any) => typeof x === "string").slice(0, 6)
+        : ["non-clinical", "descriptive-only"],
+      tone_tags: Array.isArray(contract.tone_tags)
+        ? contract.tone_tags.filter((x: any) => typeof x === "string").slice(0, 6)
+        : ["gentle", "slow", "minimal-friction"],
       pacing: {
         max_steps: typeof contract?.pacing?.max_steps === "number" ? contract.pacing.max_steps : 4,
         max_depth: typeof contract?.pacing?.max_depth === "number" ? contract.pacing.max_depth : 2,
@@ -788,7 +878,6 @@ function buildDirectionProfile(direction: DirectionNormalized): DirectionProfile
     mini_lexicon,
   };
 }
-
 
 // -----------------------------------------------------------------------------
 // Stop rules
@@ -951,13 +1040,15 @@ function buildBaseSystemPrompt(profile: DirectionProfile, availableAnchors: stri
 
   const anchorRules =
     profile.anchor_policy === "required"
-      ? (availableAnchors.length > 0
-          ? `- KÖTELEZŐ: válassz PONTOSAN 1 új horgonyt a listából, és szerepeljen a question-ben: ${availableAnchors.join(" | ")}`
-          : `- NINCS új horgony: add vissza stop_signal.suggest_stop=true és reason="low_novelty".`)
+      ? availableAnchors.length > 0
+        ? `- KÖTELEZŐ: válassz PONTOSAN 1 új horgonyt a listából, és szerepeljen a question-ben: ${availableAnchors.join(
+            " | "
+          )}`
+        : `- NINCS új horgony: add vissza stop_signal.suggest_stop=true és reason="low_novelty".`
       : profile.anchor_policy === "preferred"
-        ? (availableAnchors.length > 0
-            ? `- ELŐNY: használj 1 új horgonyt, ha van: ${availableAnchors.join(" | ")}`
-            : `- Ha nincs új horgony, támaszkodhatsz a last_answer_excerpt-re (konkrét részlet!), de maradj az irány stílusában.`)
+        ? availableAnchors.length > 0
+          ? `- ELŐNY: használj 1 új horgonyt, ha van: ${availableAnchors.join(" | ")}`
+          : `- Ha nincs új horgony, támaszkodhatsz a last_answer_excerpt-re (konkrét részlet!), de maradj az irány stílusában.`
         : `- A horgony opcionális. Elsődleges: az irány stílusa + konkrét jelenet/sorrend/érzékleti fókusz.`;
 
   return [
@@ -1000,7 +1091,6 @@ function buildBaseSystemPrompt(profile: DirectionProfile, availableAnchors: stri
     .join("\n");
 }
 
-
 function buildSafetyExtraRules(compactObs: ReturnType<typeof compactDreamObservation> | null): string[] {
   const flag = compactObs?.safety?.flag;
   if (!flag || flag === "none") return [];
@@ -1035,16 +1125,36 @@ export async function POST(req: Request) {
     if (!direction) return NextResponse.json({ error: "Missing direction" }, { status: 400 });
     if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
 
+    // ✅ after this point, always use sessionIdSafe (string)
+    const sessionIdSafe: string = sessionId;
+    const directionSlug = direction.slug ?? "unknown";
+
     const lastAnswer = history.length ? (history[history.length - 1]?.answer ?? "") : "";
     const answerExcerpt = clampExcerpt(lastAnswer, ANSWER_EXCERPT_LIMIT);
     const answerLen = (lastAnswer ?? "").trim().length;
 
     const shouldFetchRecent = history.length < 2; // ha van folyamat, ne zavarjon promptban
-const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
-  fetchLatentFromDb({ supabase, sessionId, userId }),
-  fetchDreamObservation({ supabase, sessionId, userId }),
-  shouldFetchRecent ? fetchRecentWorkBlocks({ supabase, sessionId, directionSlug: direction.slug, limit: 3 }) : Promise.resolve([]),
-]);
+
+    const [dbLatentPack, observation, recentWorkBlocks, ledgerUsedKeys] = await Promise.all([
+      fetchLatentFromDb({ supabase, sessionId: sessionIdSafe, userId }),
+      fetchDreamObservation({ supabase, sessionId: sessionIdSafe, userId }),
+      shouldFetchRecent
+        ? fetchRecentWorkBlocks({
+            supabase,
+            sessionId: sessionIdSafe,
+            directionSlug: direction.slug,
+            limit: 3,
+          })
+        : Promise.resolve([]),
+      // NEW: anchor-level memory (direction scoped!)
+      fetchUsedAnchorKeysFromLedger({
+        supabase,
+        sessionId: sessionIdSafe,
+        userId,
+        directionSlug,
+        limit: 80,
+      }),
+    ]);
 
     const compactObservation = compactDreamObservation(observation);
     const observationAnchors = extractObservationAnchors(observation);
@@ -1053,7 +1163,7 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
     if (safetyFlag !== "none") {
       const out = makeClosureResponse("safety", safetyFlag);
       await appendLatentLogEvent(req, {
-        sessionId,
+        sessionId: sessionIdSafe,
         event: { type: "stop_pre", reason: "safety", direction_slug: direction.slug ?? null },
         meta: {
           source: "work-block/next",
@@ -1070,7 +1180,7 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
     if (detectedSafety !== "none") {
       const out = makeClosureResponse("safety", detectedSafety);
       await appendLatentLogEvent(req, {
-        sessionId,
+        sessionId: sessionIdSafe,
         event: { type: "stop_pre", reason: "safety", direction_slug: direction.slug ?? null },
         meta: {
           source: "work-block/next",
@@ -1087,7 +1197,7 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
     if (stopSignal.suggest_stop) {
       const out = makeClosureResponse(stopSignal.reason, "none");
       await appendLatentLogEvent(req, {
-        sessionId,
+        sessionId: sessionIdSafe,
         event: { type: "stop_pre", reason: stopSignal.reason, direction_slug: direction.slug ?? null },
         meta: {
           source: "work-block/next",
@@ -1105,7 +1215,7 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
 
     const synth = await runLatentSynthesis({
       req,
-      sessionId,
+      sessionId: sessionIdSafe, // ✅ fixed
       dreamText,
       history,
       priorEchoes,
@@ -1121,12 +1231,27 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
     );
     const anchorCandidates = flattenAnchorCandidates(anchorCandidatesDetailed);
 
-    const usedAnchors = extractUsedAnchors(prevQsAll, anchorCandidatesDetailed);
-    const availableAnchors = anchorCandidates.filter((a) => !usedAnchors.has(a));
+    // OLD (text-level used anchors from prev questions)
+    const usedAnchorsByText = extractUsedAnchors(prevQsAll, anchorCandidatesDetailed);
+
+    // NEW: unify used keys:
+    // - keys from ledger (direction-scoped)
+    // - keys inferred from history (best-effort)
+    const usedKeys = new Set<string>(ledgerUsedKeys);
+    for (const label of usedAnchorsByText) {
+      const k = anchorKey(label);
+      if (k) usedKeys.add(k);
+    }
+
+    // Available anchors: exclude if its key is used
+    const availableAnchors = anchorCandidates.filter((label) => {
+      const k = anchorKey(label);
+      if (!k) return false;
+      return !usedKeys.has(k);
+    });
 
     const profile = buildDirectionProfile(direction);
     const baseSystemPrompt = buildBaseSystemPrompt(profile, availableAnchors);
-
 
     const userPayload = {
       dream_text: dreamText,
@@ -1182,6 +1307,27 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
       }
     }
 
+    // Helper: persist question to ledger (best-effort)
+    async function persistAcceptedQuestion(questionText: string) {
+      const anchorLabel = detectAnchorUsed(questionText, anchorCandidatesDetailed);
+      const k = anchorLabel ? anchorKey(anchorLabel) : "";
+      const keys = k ? [k] : [];
+      // also mark "used" in-memory for this request to reduce weirdness on retry
+      for (const kk of keys) usedKeys.add(kk);
+
+      await insertLedgerQuestion({
+        supabase,
+        sessionId: sessionIdSafe, // ✅ fixed
+        userId,
+        directionSlug,
+        questionText,
+        questionIntent: profile.question_style ?? null,
+        anchorKeys: keys,
+      });
+
+      return { anchorLabel, anchorKey: k || null };
+    }
+
     // Attempt 1
     const first = await callModel(safetyExtraRules);
 
@@ -1189,17 +1335,22 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
       (prevQsRecent.length > 0 && isTooSimilar(first.work_block.question, prevQsRecent)) ||
       isExactRepeat(first.work_block.question, prevQsAll);
 
-    const anchorUsedFirst = detectAnchorUsed(first.work_block.question, anchorCandidatesDetailed);
+    // NEW: if the question uses an anchor key we already asked (ledger), treat as "too similar" even if wording differs
+    const anchorLabelFirst = detectAnchorUsed(first.work_block.question, anchorCandidatesDetailed);
+    const anchorKeyFirst = anchorLabelFirst ? anchorKey(anchorLabelFirst) : "";
+    const ledgerRepeat1 = anchorKeyFirst ? usedKeys.has(anchorKeyFirst) : false;
 
-    if (!tooSimilar1) {
+    if (!tooSimilar1 && !ledgerRepeat1 && !first.stop_signal?.suggest_stop) {
+      const persisted = await persistAcceptedQuestion(first.work_block.question);
+
       await appendLatentLogEvent(req, {
-        sessionId,
+        sessionId: sessionIdSafe, // ✅ fixed
         event: {
           type: "work_step_generated",
           direction_slug: direction.slug ?? null,
           question: first.work_block.question,
           reason: first.stop_signal?.suggest_stop ? first.stop_signal.reason : null,
-          anchor_used: anchorUsedFirst ?? null,
+          anchor_used: persisted.anchorLabel ?? null,
         },
         meta: {
           source: "work-block/next",
@@ -1208,8 +1359,11 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
           answer_len: answerLen,
           answer_excerpt: answerExcerpt,
           similarity_retry: false,
+          ledger_repeat: false,
+          anchor_key: persisted.anchorKey,
         },
       });
+
       return NextResponse.json(first);
     }
 
@@ -1228,17 +1382,19 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
       (prevQsRecent.length > 0 && isTooSimilar(retry.work_block.question, prevQsRecent)) ||
       isExactRepeat(retry.work_block.question, prevQsAll);
 
-    const anchorUsedRetry = detectAnchorUsed(retry.work_block.question, anchorCandidatesDetailed);
+    const anchorLabelRetry = detectAnchorUsed(retry.work_block.question, anchorCandidatesDetailed);
+    const anchorKeyRetry = anchorLabelRetry ? anchorKey(anchorLabelRetry) : "";
+    const ledgerRepeat2 = anchorKeyRetry ? usedKeys.has(anchorKeyRetry) : false;
 
     if (retry.stop_signal?.suggest_stop) {
       await appendLatentLogEvent(req, {
-        sessionId,
+        sessionId: sessionIdSafe, // ✅ fixed
         event: {
           type: "stop_post",
           reason: retry.stop_signal.reason ?? "low_novelty",
           direction_slug: direction.slug ?? null,
           question: retry.work_block.question,
-          anchor_used: anchorUsedRetry ?? null,
+          anchor_used: anchorLabelRetry ?? null,
         },
         meta: {
           source: "work-block/next",
@@ -1247,15 +1403,17 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
           answer_len: answerLen,
           answer_excerpt: answerExcerpt,
           similarity_retry: true,
+          ledger_repeat: ledgerRepeat2,
+          anchor_key: anchorKeyRetry || null,
         },
       });
       return NextResponse.json(retry);
     }
 
-    if (tooSimilar2) {
+    if (tooSimilar2 || ledgerRepeat2) {
       const out = makeLowNoveltyClosure("none");
       await appendLatentLogEvent(req, {
-        sessionId,
+        sessionId: sessionIdSafe, // ✅ fixed
         event: {
           type: "stop_post",
           reason: "low_novelty",
@@ -1270,20 +1428,24 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
           answer_len: answerLen,
           answer_excerpt: answerExcerpt,
           similarity_retry: true,
-          note: "second_try_still_similar",
+          ledger_repeat: Boolean(ledgerRepeat2),
+          note: tooSimilar2 ? "second_try_still_similar" : "second_try_reused_anchor_key",
         },
       });
       return NextResponse.json(out);
     }
 
+    // Accept retry -> persist
+    const persistedRetry = await persistAcceptedQuestion(retry.work_block.question);
+
     await appendLatentLogEvent(req, {
-      sessionId,
+      sessionId: sessionIdSafe, // ✅ fixed
       event: {
         type: "work_step_generated",
         direction_slug: direction.slug ?? null,
         question: retry.work_block.question,
         reason: retry.stop_signal?.suggest_stop ? retry.stop_signal.reason : null,
-        anchor_used: anchorUsedRetry ?? null,
+        anchor_used: persistedRetry.anchorLabel ?? null,
       },
       meta: {
         source: "work-block/next",
@@ -1292,6 +1454,8 @@ const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
         answer_len: answerLen,
         answer_excerpt: answerExcerpt,
         similarity_retry: true,
+        ledger_repeat: false,
+        anchor_key: persistedRetry.anchorKey,
       },
     });
 

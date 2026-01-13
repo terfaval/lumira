@@ -128,6 +128,82 @@ function mapObsSafetyToFlags(obsFlag?: string): SafetyValue {
   return "none";
 }
 
+/**
+ * Lightweight “anchor key” normalizer (for event logging / later de-dup).
+ * Keep it local for now so synthesize works “in one file”.
+ */
+const HU_STOP = new Set([
+  "a",
+  "az",
+  "egy",
+  "és",
+  "vagy",
+  "hogy",
+  "de",
+  "mert",
+  "amikor",
+  "ahogy",
+  "már",
+  "még",
+  "is",
+  "se",
+  "sem",
+  "ott",
+  "itt",
+  "oda",
+  "ide",
+  "innen",
+  "onnan",
+  "valami",
+  "valaki",
+  "nagyon",
+  "kicsit",
+]);
+
+function stripDiacritics(s: string) {
+  return (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function anchorKey(raw: string): string {
+  const s = (raw || "").toLowerCase().trim();
+  if (!s) return "";
+  const tokens = stripDiacritics(s)
+    .split(/[^a-zA-Z0-9áéíóöőúüű]+/g)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 2)
+    .filter((t) => !HU_STOP.has(t));
+  return tokens.join(" ").trim();
+}
+
+function anchorKeysFromStrings(arr: unknown): string[] {
+  if (!Array.isArray(arr)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const x of arr) {
+    if (typeof x !== "string") continue;
+    const k = anchorKey(x);
+    if (!k) continue;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(k);
+  }
+  return out;
+}
+
+function anchorKeysFromOutput(out: SynthesizeOutput): string[] {
+  const a = out?.anchors;
+  const all = [
+    ...(a?.characters ?? []),
+    ...(a?.places ?? []),
+    ...(a?.objects ?? []),
+    ...(a?.beats ?? []),
+    ...(a?.felt_words ?? []),
+    // also include target anchor as a key
+    ...(out?.question_seed?.target_anchor ? [out.question_seed.target_anchor] : []),
+  ];
+  return anchorKeysFromStrings(all);
+}
+
 function systemPrompt(): string {
   return [
     "You are an API that emits strict JSON (no prose, no markdown).",
@@ -301,6 +377,34 @@ async function persistLatent(supabase: any, sessionId: string, userId: string, o
   if (error) console.warn("synthesize: persist latent failed", error.message);
 }
 
+/**
+ * Optional: log synth output as an event (enables smarter WORK de-dup later).
+ * Safe if table doesn't exist yet; it will just warn and continue.
+ */
+async function persistSynthesizeEvent(supabase: any, sessionId: string, userId: string, output: SynthesizeOutput) {
+  try {
+    const payload = {
+      anchors: output.anchors,
+      candidate_directions: output.candidate_directions,
+      question_seed: output.question_seed,
+      flags: output.flags,
+    };
+
+    const { error } = await supabase.from("dream_observation_events").insert({
+      session_id: sessionId,
+      user_id: userId,
+      kind: "system_synth",
+      payload,
+      anchor_keys: anchorKeysFromOutput(output),
+    });
+
+    if (error) console.warn("synthesize: persist event failed", error.message);
+  } catch (e: any) {
+    // table missing / RLS / etc — best-effort only
+    console.warn("synthesize: persist event exception", e?.message ?? e);
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as SynthesizeInput;
@@ -355,6 +459,7 @@ export async function POST(req: Request) {
       const out = defaultOutput();
       out.flags.too_short = true;
       await persistLatent(supabase, sessionId, userId, out);
+      await persistSynthesizeEvent(supabase, sessionId, userId, out);
       return NextResponse.json(out);
     }
 
@@ -365,6 +470,7 @@ export async function POST(req: Request) {
       out.flags.safety = obsSafety;
       out.candidate_directions = [];
       await persistLatent(supabase, sessionId, userId, out);
+      await persistSynthesizeEvent(supabase, sessionId, userId, out);
       return NextResponse.json(out);
     }
 
@@ -376,6 +482,7 @@ export async function POST(req: Request) {
         out.flags.safety = fallbackSafety;
         out.candidate_directions = [];
         await persistLatent(supabase, sessionId, userId, out);
+        await persistSynthesizeEvent(supabase, sessionId, userId, out);
         return NextResponse.json(out);
       }
     }
@@ -425,6 +532,7 @@ export async function POST(req: Request) {
 
     const out = sanitizeOutput(parsed, allowedPool, defaultOutput());
     await persistLatent(supabase, sessionId, userId, out);
+    await persistSynthesizeEvent(supabase, sessionId, userId, out);
     return NextResponse.json(out);
   } catch (e: any) {
     return NextResponse.json({ error: e?.message ?? "Unknown error" }, { status: 500 });

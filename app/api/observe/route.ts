@@ -30,7 +30,10 @@ function sanitizeText(input: string): string {
   return (input ?? "").replace(/\s+/g, " ").trim();
 }
 
-async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
+async function withTimeout<T>(
+  fn: (signal: AbortSignal) => Promise<T>,
+  ms: number
+): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
@@ -67,6 +70,123 @@ function emptyObs() {
     safety: { flag: "none", evidence: [] as string[] },
   } as const;
 }
+
+/* ────────────────────────────────────────────────────────────── */
+/*  Event/Anchor helpers (for dream_observation_events logging)    */
+/* ────────────────────────────────────────────────────────────── */
+
+const HU_STOP = new Set([
+  "a",
+  "az",
+  "egy",
+  "és",
+  "vagy",
+  "hogy",
+  "de",
+  "mert",
+  "amikor",
+  "ahogy",
+  "már",
+  "még",
+  "is",
+  "se",
+  "sem",
+  "ott",
+  "itt",
+  "oda",
+  "ide",
+  "innen",
+  "onnan",
+  "valami",
+  "valaki",
+  "nagyon",
+  "kicsit",
+]);
+
+function stripDiacritics(s: string) {
+  // Kulcsképzéshez jó; megjelenítéshez ne használd.
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function anchorKey(raw: string): string {
+  const s = (raw || "").toLowerCase().trim();
+  if (!s) return "";
+  const tokens = stripDiacritics(s)
+    .split(/[^a-zA-Z0-9áéíóöőúüű]+/g)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 2)
+    .filter((t) => !HU_STOP.has(t));
+  return tokens.join(" ");
+}
+
+function uniq(arr: string[]) {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const s of arr) {
+    if (!s) continue;
+    if (seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+  }
+  return out;
+}
+
+function labelsFromList(list: any): string[] {
+  if (!Array.isArray(list)) return [];
+  const out: string[] = [];
+  for (const it of list) {
+    const label = (it as any)?.label;
+    if (typeof label === "string") out.push(label);
+  }
+  return out;
+}
+
+function buildAnchorKeysFromObservation(observation: any): string[] {
+  const obs = observation || {};
+  const entities = obs.entities || {};
+
+  const rawLabels: string[] = [
+    ...labelsFromList(entities.characters),
+    ...labelsFromList(entities.places),
+    ...labelsFromList(entities.objects),
+    ...labelsFromList(entities.other),
+    ...labelsFromList(obs.beats),
+    ...labelsFromList(obs.motifs),
+    ...labelsFromList(obs.tone),
+    ...labelsFromList(obs.structure),
+    ...labelsFromList(obs.body),
+  ];
+
+  const keys = rawLabels
+    .map((s) => anchorKey(s))
+    .filter(Boolean);
+
+  return uniq(keys);
+}
+
+async function safeInsertObservationEvent(params: {
+  supabase: any;
+  sessionId: string;
+  userId: string;
+  kind: "system_extract";
+  payload: any;
+  anchorKeys: string[];
+}) {
+  try {
+    const { error } = await params.supabase.from("dream_observation_events").insert({
+      session_id: params.sessionId,
+      user_id: params.userId,
+      kind: params.kind,
+      payload: params.payload ?? {},
+      anchor_keys: params.anchorKeys ?? [],
+    });
+    if (error) console.warn("observe: event insert failed", error);
+  } catch (e) {
+    console.warn("observe: event insert exception", e);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────── */
 
 function buildSystemPrompt(): string {
   return [
@@ -126,7 +246,11 @@ function parseModelJSON(rawContent: string): unknown {
   }
 }
 
-async function fetchSessionDreamText(supabase: any, sessionId: string, userId: string): Promise<string | null> {
+async function fetchSessionDreamText(
+  supabase: any,
+  sessionId: string,
+  userId: string
+): Promise<string | null> {
   const { data: session, error: sessionError } = await supabase
     .from("dream_sessions")
     .select("id, raw_dream_text, user_id")
@@ -154,11 +278,13 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as RequestBody;
     const sessionId = body.session_id;
-    if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
+    if (!sessionId)
+      return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
 
     const supabase = await supabaseServerAuthed(req);
     const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    if (!authData?.user)
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     const userId = authData.user.id;
 
     const mode: "initial" | "refresh" = body.mode === "refresh" ? "refresh" : "initial";
@@ -178,8 +304,31 @@ export async function POST(req: Request) {
         .from("dream_observation")
         .upsert({ session_id: sessionId, user_id: userId, obs: empty }, { onConflict: "session_id" });
 
-      if (upsertError) return NextResponse.json({ error: "Observation write failed" }, { status: 500 });
-      return NextResponse.json({ ok: true, session_id: sessionId, has_obs: true, mode, too_short: true });
+      if (upsertError)
+        return NextResponse.json({ error: "Observation write failed" }, { status: 500 });
+
+      // Log as system_extract event (non-fatal if it fails)
+      await safeInsertObservationEvent({
+        supabase,
+        sessionId,
+        userId,
+        kind: "system_extract",
+        payload: {
+          mode,
+          too_short: true,
+          raw_delta_used: false,
+          observation: empty,
+        },
+        anchorKeys: buildAnchorKeysFromObservation(empty),
+      });
+
+      return NextResponse.json({
+        ok: true,
+        session_id: sessionId,
+        has_obs: true,
+        mode,
+        too_short: true,
+      });
     }
 
     const existingObs = mode === "refresh" ? await fetchExistingObservation(supabase, sessionId, userId) : null;
@@ -242,7 +391,26 @@ export async function POST(req: Request) {
       .from("dream_observation")
       .upsert({ session_id: sessionId, user_id: userId, obs: observation }, { onConflict: "session_id" });
 
-    if (upsertError) return NextResponse.json({ error: "Observation write failed" }, { status: 500 });
+    if (upsertError)
+      return NextResponse.json({ error: "Observation write failed" }, { status: 500 });
+
+    // Log as system_extract event (non-fatal if it fails)
+    const obsAnchorKeys = buildAnchorKeysFromObservation(observation);
+    await safeInsertObservationEvent({
+      supabase,
+      sessionId,
+      userId,
+      kind: "system_extract",
+      payload: {
+        mode,
+        raw_delta_used: Boolean(rawDelta),
+        // store full observation for downstream reasoning (events timeline)
+        observation,
+        // small audit hints (optional)
+        history_used: history?.length ?? 0,
+      },
+      anchorKeys: obsAnchorKeys,
+    });
 
     return NextResponse.json({
       ok: true,
