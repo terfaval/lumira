@@ -310,10 +310,6 @@ body[data-napszak="night"] {
 * { box-sizing: border-box; }
 
 body {
-  background:
-    radial-gradient(circle at 20% 20%, var(--glow-1), transparent 40%),
-    radial-gradient(circle at 80% 0%, var(--glow-2), transparent 36%),
-    var(--bg-root);
   color: var(--text-primary);
   font-family: var(--font-base);
   margin: 0;
@@ -1075,6 +1071,8 @@ main { min-height: 100dvh; }
 
   animation: cosmicDrift 140s ease-in-out infinite;
   will-change: transform;
+
+  outline: 2px solid red;
 }
 
 @keyframes cosmicDrift {
