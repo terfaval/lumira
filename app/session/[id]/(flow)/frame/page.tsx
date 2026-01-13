@@ -162,24 +162,15 @@ export default function FramePage() {
                   disabled={busy}
                   onClick={() => handleDirectionSelect(d.slug)}
                   className="direction-card"
+                  >
                   // ✅ CSS varok hoverhez (a GlassCardSurface background var()-t használ, így élőben vált)
-                  style={
-                    {
-                      // alap: visszafogott corner
-                      "--frame-corner": "rgba(255,255,255,0.08)",
-                      "--frame-border": "var(--line-soft)",
-                      "--frame-text": "var(--text-primary)",
-                      "--frame-text-hover": "var(--accent-ink)",
-                      "--frame-scale": "1",
-                    } as React.CSSProperties
-                  }
-                >
                   <GlassCardSurface
                     className="direction-card-surface"
                     variant="soft"
                     paper="evening"
-                    corner="--frame-corner"
-                    cornerMode="accent"
+                    minHeight="100%"
+                    // corner="--frame-corner"
+                    // cornerMode="accent"
                     // ✅ a surface tényleg töltse ki a gombot
                     style={{ height: "100%" }}
                   >
@@ -212,121 +203,126 @@ export default function FramePage() {
       {err && <p style={{ marginTop: "var(--space-3)", color: "crimson" }}>{err}</p>}
 
       <style jsx>{`
-        .frame-center {
-          min-height: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding-block: var(--space-2);
-        }
+  .frame-center {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: var(--space-2);
+  }
 
-        .direction-grid {
-          display: grid;
-          gap: var(--space-3);
-          grid-template-columns: 1fr;
-          align-items: stretch;
-        }
+  .direction-grid {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: 1fr;
+    align-items: stretch; /* ✅ grid itemek egy magasságra */
+  }
 
-        @media (min-width: 700px) {
-          .direction-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
+  @media (min-width: 700px) {
+    .direction-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
 
-        @media (min-width: 1024px) {
-          .direction-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-        }
+  @media (min-width: 1024px) {
+    .direction-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
 
-        .direction-actions {
-          display: flex;
-          gap: var(--space-3);
-          flex-wrap: wrap;
-          align-items: center;
-        }
+  .direction-actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    align-items: center;
+  }
 
-        /* ✅ a gomb legyen “card wrapper”: ettől biztos a skálázódás */
-        .direction-card {
-          text-align: left;
-          cursor: pointer;
-          background: none;
-          border: none;
-          padding: 0;
-          width: 100%;
-          height: 100%;
+  /* ✅ a gomb töltse ki a grid-cellát */
+  .direction-card {
+    text-align: left;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+  }
 
-          display: flex; /* fontos a 100% height kitöltéshez */
-          transform: scale(var(--frame-scale));
-          transform-origin: center;
-          transition: transform 180ms ease;
-        }
+  /* ✅ Alap “viselkedés” változók (ezeket hoveren cseréljük) */
+  .direction-card {
+    --frame-corner: rgba(0, 0, 0, 0);   /* alapból nincs színes sarok */
+    --frame-border: var(--line-soft);
+    --frame-text: var(--text-primary);
+  }
 
-        /* ✅ hover: nő + színesebb (corner + border + filter) */
-        .direction-card:hover:not(:disabled) {
-          transform: scale(1.03);
-        }
+  /* ✅ A GlassCardSurface doboz: töltse ki a gomb magasságát */
+  .direction-card-surface {
+    width: 100%;
+    height: 100%;
+    border-color: var(--frame-border);
 
-        .direction-card:hover:not(:disabled) {
-          /* erősebb corner szín: accent + accent-2 jelleg */
-          --frame-corner: color-mix(in srgb, var(--accent) 24%, transparent);
-          --frame-border: color-mix(in srgb, var(--accent-2) 40%, transparent);
-        }
+    transition:
+      transform 180ms ease,
+      box-shadow 220ms ease,
+      border-color 220ms ease,
+      filter 220ms ease,
+      color 180ms ease;
 
-        .direction-card:active:not(:disabled) {
-          transform: scale(1.015);
-        }
+    will-change: transform, box-shadow, filter;
+    color: var(--frame-text);
+  }
 
-        .direction-card:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
+  /* ✅ belső layout: top/bottom “szélekre zárva” (akkor is jó, ha később teszel alulra elemet) */
+  .direction-card-inner {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
 
-        /* ✅ a surface kapja a border/filter átmenetet is */
-        .direction-card-surface {
-          width: 100%;
-          height: 100%;
-          border-color: var(--frame-border);
-          transition: border-color 200ms ease, filter 200ms ease;
-        }
+  .direction-card-top {
+    display: grid;
+    gap: var(--space-2);
+  }
 
-        .direction-card:hover:not(:disabled) .direction-card-surface {
-          filter: saturate(1.18) brightness(1.04);
-        }
+  .direction-card-title {
+    font-weight: 800;
+    color: var(--frame-text); /* ✅ title is vált */
+  }
 
-        /* ✅ belső “top-bottom” layout: egységes magasság + jó ritmus */
-        .direction-card-inner {
-          height: 100%;
-          min-height: 0;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          gap: var(--space-2);
-          color: var(--frame-text);
-          transition: color 160ms ease;
-        }
+  .direction-card-desc {
+    opacity: 0.9;
+    color: var(--frame-text);
+  }
 
-        .direction-card-title {
-          font-weight: 900;
-          letter-spacing: -0.01em;
-          color: var(--frame-text);
-          transition: color 160ms ease;
-        }
+  /* ✅ HOVER: most tényleg színeződik az “üveg”, mert a corner változik */
+  .direction-card:hover:not(:disabled) {
+    --frame-corner: var(--accent);
+    --frame-border: var(--accent-2);
+    --frame-text: var(--accent-ink);
+  }
 
-        .direction-card-body {
-          opacity: 0.92;
-          line-height: 1.45;
-          color: var(--frame-text);
-          transition: color 160ms ease;
-        }
+  .direction-card:hover:not(:disabled) .direction-card-surface {
+    transform: translateY(-2px) scale(1.045);
+    filter: saturate(1.18) brightness(1.05);
+    box-shadow:
+      0 22px 56px rgba(0, 0, 0, 0.28),
+      0 0 0 1px var(--frame-border);
+  }
 
-        /* ✅ hover: title + body is váltson, ne csak valami rész */
-        .direction-card:hover:not(:disabled) .direction-card-inner,
-        .direction-card:hover:not(:disabled) .direction-card-title,
-        .direction-card:hover:not(:disabled) .direction-card-body {
-          color: var(--frame-text-hover);
-        }
-      `}</style>
+  .direction-card:active:not(:disabled) .direction-card-surface {
+    transform: translateY(-1px) scale(1.02);
+  }
+
+  .direction-card:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`}</style>
+
     </div>
   );
 }
