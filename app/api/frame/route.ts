@@ -62,6 +62,31 @@ function recommendationTargetCount(allowedCount: number): number {
   return Math.max(RECOMMENDATION_MIN, Math.min(RECOMMENDATION_MAX, baseline));
 }
 
+function pickTopAnchorsFromObservation(
+  obs: ReturnType<typeof compactDreamObservation> | null,
+  max = 8
+): string[] {
+  if (!obs) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+
+  const push = (label: any) => {
+    const s = typeof label === "string" ? label.trim() : "";
+    const key = s.toLowerCase();
+    if (!s || seen.has(key)) return;
+    seen.add(key);
+    out.push(s);
+  };
+
+  for (const it of (obs.entities?.places ?? [])) push(it?.label);
+  for (const it of (obs.entities?.objects ?? [])) push(it?.label);
+  for (const it of (obs.entities?.characters ?? [])) push(it?.label);
+  for (const it of (obs.motifs ?? [])) push(it?.label);
+
+  return out.slice(0, max);
+}
+
+
 function fallbackRecommendationsFromAllowed(allowedSlugs: string[]): RecommendedDirection[] {
   const pool = [...allowedSlugs];
   shuffleInPlace(pool);
@@ -570,21 +595,6 @@ const [{ data: session }, { data: summary }] = await Promise.all([
           .maybeSingle()
       ).data ?? null;
 
-    // 3) ha nincs, generáld le MOST, és olvasd vissza
-    if (!observationRow?.obs) {
-      await ensureObservation({ req, supabase, sessionId, userId, dreamText: raw });
-
-      observationRow =
-        (
-          await supabase
-            .from("dream_observation")
-            .select("obs")
-            .eq("session_id", sessionId)
-            .eq("user_id", userId)
-            .maybeSingle()
-        ).data ?? null;
-    }
-
     const observation = parseDreamObservation(observationRow?.obs ?? null);
     const compactObservation = compactDreamObservation(observation);
     const targetSentences = clampTargetSentences(raw);
@@ -653,12 +663,59 @@ const [{ data: session }, { data: summary }] = await Promise.all([
     }));
     const allowedSlugs = allowedCatalog.map((x) => x.slug);
 
-    // Prefer DB latent; fallback to synthesize
-    const dbLatent = parseMaybeJson<any>(summary?.latent_analysis);
-    let latent = dbLatent;
-    if (!latent) latent = (await runLatentSynthesis({ req, sessionId, dreamText: raw, allowedSlugs })) ?? null;
+    // Prefer DB latent only (frame does not synthesize)
+const dbLatent = parseMaybeJson<any>(summary?.latent_analysis);
+const latent = dbLatent ?? null;
 
-    const topAnchors = pickTopAnchors(latent?.anchors ?? {}, 8);
+// anchors: latent -> observation -> (empty)
+const topAnchors =
+  pickTopAnchors(latent?.anchors ?? {}, 8).length
+    ? pickTopAnchors(latent?.anchors ?? {}, 8)
+    : pickTopAnchorsFromObservation(compactObservation, 8);
+
+    const hasObs = !!observationRow?.obs;
+const hasLatent = !!latent;
+const hasAnchors = topAnchors.length > 0;
+
+// Ha nincs meg az a minimum, amiből jó minőségű keret készül,
+// ne erőltesd az AI-t — menj style-safe fallbackra.
+if (!hasAnchors && !hasObs && !hasLatent) {
+  const title = stableFallbackTitle(raw);
+  const framing_text = FALLBACK_FRAMING_2P;
+  const recommended_directions =
+    allowedSlugs.length >= RECOMMENDATION_MIN ? fallbackRecommendationsFromAllowed(allowedSlugs) : [];
+
+  const auditOut = {
+    model: "fallback_missing_inputs",
+    title,
+    framing_text,
+    recommended_directions,
+    frame_mode: "fallback_missing_inputs",
+    frame_constraints: {
+      title_max: TITLE_MAX,
+      sentence_target: targetSentences.target,
+      sentence_min: targetSentences.min,
+      sentence_max: targetSentences.max,
+      anchors_used: 0,
+      latent_source: "none",
+      has_observation: false,
+    },
+  };
+
+  await Promise.all([
+    supabase
+      .from("dream_sessions")
+      .update({ ai_framing_text: framing_text, ai_framing_audit: auditOut, status: "framed" })
+      .eq("id", sessionId)
+      .eq("user_id", userId),
+    supabase
+      .from("dream_session_summaries")
+      .upsert({ session_id: sessionId, user_id: userId, title, framing_text, recommended_directions }, { onConflict: "session_id" }),
+  ]);
+
+  return NextResponse.json({ sessionId, title, framing_text, recommended_directions } satisfies OutputPayload);
+}
+
 
     // Reuse summaries if REALLY good (and within sentence window)
     const fromSummariesRaw = summary
@@ -724,8 +781,6 @@ const [{ data: session }, { data: summary }] = await Promise.all([
             { onConflict: "session_id" }
           ),
       ]);
-
-      await ensureObservation({ req, supabase, sessionId, userId, dreamText: raw });
 
       return NextResponse.json(out);
     }

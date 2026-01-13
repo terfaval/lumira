@@ -1098,7 +1098,7 @@ main { min-height: 100dvh; }
   opacity: var(--cosmic-noise);
 
   /* Rakj be egy nagyon finom zajképet (lásd lent) */
-  background-image: url("/textures/noise-soft.png");
+  background-image: url("/public/noise-soft.png");
   background-repeat: repeat;
   background-size: 320px 320px;
 
