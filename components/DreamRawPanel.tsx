@@ -77,7 +77,7 @@ export function DreamRawPanel({
   }
 
   return (
-    <GlassCardSurface className={rootClass} aria-live="polite" variant="flat" paper="evening">
+    <GlassCardSurface className={rootClass} aria-live="polite" variant="soft" paper="plain">
       {error ? <span style={{ color: "crimson" }}>Nem sikerült betölteni az álmot.</span> : null}
       {!error ? text : null}
     </GlassCardSurface>

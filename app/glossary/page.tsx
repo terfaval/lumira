@@ -356,6 +356,7 @@ export default function GlossaryPage() {
             <li>
               <GlassCardSurface
                 className="glossary-grid-card"
+                minHeight="100%"
                 style={{
                   padding: "var(--space-3)",
                   cursor: "pointer",
