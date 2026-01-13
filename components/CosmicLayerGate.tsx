@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import styles from "./CosmicLayerGate.module.css";
 import { registerObserver } from "@/src/lib/perfDebug";
 
 export default function CosmicLayerGate() {
@@ -13,7 +14,6 @@ export default function CosmicLayerGate() {
       const space = body.getAttribute("data-space");
       const napszak = body.getAttribute("data-napszak");
 
-      // ugyanaz a gating logika, mint a fraktálnál
       const okSpace = !space || ["dream", "evening", "flow"].includes(space);
       const okNapszak = !napszak || ["morning", "day", "evening", "night", "default"].includes(napszak);
 
@@ -35,10 +35,10 @@ export default function CosmicLayerGate() {
   if (!enabled) return null;
 
   return (
-    <div className="cosmic-veils" aria-hidden="true">
-      <div className="cosmic-base" />
-      <div className="cosmic-auras" />
-      <div className="cosmic-noise" />
+    <div className={styles.veils} aria-hidden="true">
+      <div className={styles.base} />
+      <div className={styles.auras} />
+      <div className={styles.noise} />
     </div>
   );
 }
