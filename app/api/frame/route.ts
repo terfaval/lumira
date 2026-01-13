@@ -70,18 +70,24 @@ function pickTopAnchorsFromObservation(
   const seen = new Set<string>();
   const out: string[] = [];
 
-  const push = (label: any) => {
-    const s = typeof label === "string" ? label.trim() : "";
+  const push = (label?: string) => {
+    const s = (label ?? "").trim();
     const key = s.toLowerCase();
     if (!s || seen.has(key)) return;
     seen.add(key);
     out.push(s);
   };
 
-  for (const it of (obs.entities?.places ?? [])) push(it?.label);
-  for (const it of (obs.entities?.objects ?? [])) push(it?.label);
-  for (const it of (obs.entities?.characters ?? [])) push(it?.label);
-  for (const it of (obs.motifs ?? [])) push(it?.label);
+  const labelOf = (it: unknown): string | undefined => {
+    if (typeof it === "string") return it;
+    const l = (it as any)?.label;
+    return typeof l === "string" ? l : undefined;
+  };
+
+  for (const it of (obs.entities?.places ?? [])) push(labelOf(it));
+  for (const it of (obs.entities?.objects ?? [])) push(labelOf(it));
+  for (const it of (obs.entities?.characters ?? [])) push(labelOf(it));
+  for (const it of (obs.motifs ?? [])) push(labelOf(it));
 
   return out.slice(0, max);
 }
@@ -638,8 +644,6 @@ const [{ data: session }, { data: summary }] = await Promise.all([
           .upsert({ session_id: sessionId, user_id: userId, title, framing_text, recommended_directions }, { onConflict: "session_id" }),
       ]);
 
-      await ensureObservation({ req, supabase, sessionId, userId, dreamText: raw });
-
       return NextResponse.json({ sessionId, title, framing_text, recommended_directions } satisfies OutputPayload);
     }
 
@@ -668,10 +672,9 @@ const dbLatent = parseMaybeJson<any>(summary?.latent_analysis);
 const latent = dbLatent ?? null;
 
 // anchors: latent -> observation -> (empty)
-const topAnchors =
-  pickTopAnchors(latent?.anchors ?? {}, 8).length
-    ? pickTopAnchors(latent?.anchors ?? {}, 8)
-    : pickTopAnchorsFromObservation(compactObservation, 8);
+const latentAnchors = pickTopAnchors(latent?.anchors ?? {}, 8);
+const topAnchors = latentAnchors.length ? latentAnchors : pickTopAnchorsFromObservation(compactObservation, 8);
+
 
     const hasObs = !!observationRow?.obs;
 const hasLatent = !!latent;
