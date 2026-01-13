@@ -2,7 +2,6 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
-import { supabaseServer } from "@/src/lib/supabase/server";
 import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
 
 export const runtime = "nodejs";
@@ -40,7 +39,7 @@ type PriorEcho = { session_id: string; anchor_summary: string; created_at: strin
 
 type SynthesizeInput = {
   session_id?: string;
-  dream_text?: string;          // optional (sanity only)
+  dream_text?: string; // optional (sanity only)
   history?: HistoryItem[];
   prior_echoes?: PriorEcho[];
   allowed_slugs?: string[];
@@ -260,9 +259,32 @@ async function fetchSessionDreamText(supabase: any, sessionId: string, userId: s
   return clean || null;
 }
 
-async function fetchCatalogForAI() {
-  const sb = await supabaseServer();
-  const { data: rows } = await sb
+// ✅ best-effort ensure observation exists (same idea as frame)
+async function ensureObservation(args: { req: Request; sessionId: string; dreamText: string }) {
+  const url = new URL("/api/observe", args.req.url).toString();
+  const cookieHeader = args.req.headers.get("cookie") ?? "";
+  const authHeader = args.req.headers.get("authorization") ?? "";
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "content-type": "application/json",
+        ...(cookieHeader ? { cookie: cookieHeader } : {}),
+        ...(authHeader ? { authorization: authHeader } : {}),
+        "x-observe-source": "synthesize",
+      },
+      body: JSON.stringify({ session_id: args.sessionId, dream_text: args.dreamText }),
+    });
+  } catch (e) {
+    console.warn("synthesize: ensureObservation failed", e);
+  }
+}
+
+// ✅ use the SAME authed supabase instance (no supabaseServer() here)
+async function fetchCatalogForAI(supabase: any) {
+  const { data: rows } = await supabase
     .from("direction_catalog")
     .select("slug, title, description, content, tags, sort_order, is_active")
     .eq("is_active", true)
@@ -309,15 +331,19 @@ export async function POST(req: Request) {
       }
     }
 
-    // Load observation (primary truth)
-    const observation = await fetchObservation(supabase, sessionId, userId);
-
     // dream_text sanity: from request or DB (optional)
     const dreamTextReq = String(body.dream_text ?? "").trim();
     const dreamTextDb = dreamTextReq ? null : await fetchSessionDreamText(supabase, sessionId, userId);
     const dreamText = dreamTextReq || dreamTextDb || "";
 
     const tooShort = dreamText ? dreamText.length < MIN_DREAM_LENGTH : false;
+
+    // Try to load observation; if missing but we have text, generate it now (best-effort) then re-load.
+    let observation = await fetchObservation(supabase, sessionId, userId);
+    if (!observation && dreamText) {
+      await ensureObservation({ req, sessionId, dreamText });
+      observation = await fetchObservation(supabase, sessionId, userId);
+    }
 
     // If no observation and no dreamText, we can't do meaningful synthesize
     if (!observation && !dreamText) {
@@ -354,7 +380,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const catalog = await fetchCatalogForAI();
+    const catalog = await fetchCatalogForAI(supabase);
     const allowedSlugsReq = (body.allowed_slugs ?? [])
       .filter((s) => typeof s === "string")
       .map((s) => s.trim())
@@ -368,7 +394,7 @@ export async function POST(req: Request) {
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const userPayload = {
-      dream_observation: observation,               // PRIMARY
+      dream_observation: observation, // PRIMARY
       dream_text_excerpt: dreamText.slice(0, 1800), // sanity only
       history,
       prior_echoes: priorEchoes,

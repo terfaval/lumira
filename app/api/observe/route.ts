@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import {
   compactDreamObservation,
-  emptyDreamObservation,
   parseDreamObservation,
 } from "@/src/lib/dream/observation";
 
@@ -23,8 +22,8 @@ type RequestBody = {
 
   // v2
   mode?: "initial" | "refresh";
-  history?: HistoryItem[];       // refreshnél az utolsó 3 Q/A-t érdemes küldeni
-  raw_delta?: string;            // ha a kliens/BE tudja: csak az új rész
+  history?: HistoryItem[]; // refreshnél az utolsó 3 Q/A-t érdemes küldeni
+  raw_delta?: string; // ha a kliens/BE tudja: csak az új rész
 };
 
 function sanitizeText(input: string): string {
@@ -49,6 +48,24 @@ function clampHistory(history: unknown, max = 3): HistoryItem[] {
       (typeof (item as any)?.answer === "string" || (item as any)?.answer === null)
   ) as HistoryItem[];
   return items.slice(-max);
+}
+
+/** ✅ Always schema-complete empty observation (safe fallback) */
+function emptyObs() {
+  return {
+    entities: {
+      characters: [],
+      places: [],
+      objects: [],
+      other: [],
+    },
+    beats: [],
+    motifs: [],
+    tone: [],
+    structure: [],
+    body: [],
+    safety: { flag: "none", evidence: [] as string[] },
+  } as const;
 }
 
 function buildSystemPrompt(): string {
@@ -95,7 +112,7 @@ function buildSystemPrompt(): string {
   ].join("\n");
 }
 
-async function parseModelJSON(rawContent: string): Promise<unknown> {
+function parseModelJSON(rawContent: string): unknown {
   try {
     return JSON.parse(rawContent);
   } catch {
@@ -154,9 +171,9 @@ export async function POST(req: Request) {
       dreamText = fromDb;
     }
 
-    // Short dream → store empty and return
+    // ✅ Short dream → store schema-complete empty and return
     if (dreamText.length < MIN_DREAM_LEN) {
-      const empty = emptyDreamObservation(); // NOTE: update this to include beats: []
+      const empty = emptyObs();
       const { error: upsertError } = await supabase
         .from("dream_observation")
         .upsert({ session_id: sessionId, user_id: userId, obs: empty }, { onConflict: "session_id" });
@@ -178,7 +195,7 @@ export async function POST(req: Request) {
     const userPayload = {
       mode,
       dream_text: primaryText,
-      // we keep full dream for safety sanity (but instruct model to use primaryText evidence)
+      // keep a shorter full dream sanity excerpt (model is instructed to source evidence from primaryText/raw_delta)
       full_dream_text_sanity: dreamText.slice(0, 2500),
       existing_observation: existingObs ?? null,
       history,
@@ -209,7 +226,7 @@ export async function POST(req: Request) {
       );
 
       const raw = completion.choices?.[0]?.message?.content ?? "";
-      observationRaw = await parseModelJSON(raw);
+      observationRaw = parseModelJSON(raw);
     } catch (error) {
       console.warn("observe: model call failed", error);
       return NextResponse.json({ error: "Model call failed" }, { status: 500 });
