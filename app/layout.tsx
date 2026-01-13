@@ -30,8 +30,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="hu">
       <body className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased`}>
         <NapszakInitializer />
-        <div className="cosmic-bg" aria-hidden="true" />
-        <main style={{ position: "relative", zIndex: 1 }}>{children}</main>
+        <div
+  aria-hidden="true"
+  style={{
+    position: "fixed",
+    inset: 0,
+    background: "hotpink",
+    zIndex: 0,
+    pointerEvents: "none",
+  }}
+/>
+
+<main style={{ position: "relative", zIndex: 1 }}>{children}</main>
+
       </body>
     </html>
   );

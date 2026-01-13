@@ -75,12 +75,33 @@ export async function POST(req: Request) {
     // Kick tasks. Best-effort: even if one fails, others can succeed.
     // Observe and index can run in parallel. Synthesize depends on observe ideally,
     // but we still run it in parallel (it will fetch observation from DB).
-    const [observe, index, synth, frame] = await Promise.all([
-      safePost(req, "/api/observe", { session_id: sessionId, dream_text: dreamText, force }),
-      safePost(req, "/api/index-session", { session_id: sessionId, dream_text: dreamText, force }),
-      safePost(req, "/api/synthesize", { session_id: sessionId, dream_text: dreamText, force }),
-      safePost(req, "/api/frame", { sessionId }), // frame already reads DB; no need to pass text
-    ]);
+    // 1) Observe MUST happen first (primary truth for synth/frame)
+const observe = await safePost(req, "/api/observe", {
+  session_id: sessionId,
+  dream_text: dreamText,
+  force,
+});
+
+// 2) Index can run in parallel (non-blocking for initial framing)
+const indexPromise = safePost(req, "/api/index-session", {
+  session_id: sessionId,
+  dream_text: dreamText,
+  force,
+});
+
+// 3) Synthesize should happen after observe (uses observation as primary truth)
+const synth = await safePost(req, "/api/synthesize", {
+  session_id: sessionId,
+  dream_text: dreamText,
+  force,
+});
+
+// 4) Frame should happen after synth (and observe already done)
+const frame = await safePost(req, "/api/frame", { sessionId });
+
+// 5) Await index last (best-effort); do not block frame
+const index = await indexPromise;
+
 
     return NextResponse.json({
       ok: true,
