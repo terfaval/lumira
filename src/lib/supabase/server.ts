@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
 export async function supabaseServer() {
-  const cookieStore = await cookies(); // ✅
+  const cookieStore = await cookies(); // ✅ IMPORTANT
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -17,11 +17,11 @@ export async function supabaseServer() {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
-        // Server Components cannot reliably set cookies.
-        // This is fine ONLY if middleware handles refresh.
+        // Server Components cannot reliably set cookies; middleware handles refresh.
+        // TS/Runtime varies across Next versions, so keep it guarded.
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
+            (cookieStore as any).set?.(name, value, options);
           });
         } catch {
           // no-op
