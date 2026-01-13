@@ -1025,85 +1025,98 @@ main { min-height: 100dvh; }
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/* COSMIC BACKGROUND (cheap, CSS-only, looped)                     */
+/* COSMIC VEIL BACKGROUND (cheap, mystical, token-based)          */
 /* ────────────────────────────────────────────────────────────── */
 
 :root {
-  /* finom kozmikus színek — a te palette-edből származtatva */
-  --cosmic-aura-1: #80B9B91A; /* accent ~10% */
-  --cosmic-aura-2: #497C9214; /* accent-2 ~8% */
-  --cosmic-aura-3: #AA8CFF14; /* lilás misztikum (nagyon finoman) */
+  /* finomhangolható „mágia” paraméterek */
+  --cosmic-opacity: 1;          /* master gate */
+  --cosmic-auras: 0.55;         /* aura erő */
+  --cosmic-noise: 0.06;         /* noise erő (0.04–0.08) */
+  --cosmic-blur: 38px;          /* aura blur */
 }
 
-.cosmic-bg {
+/* wrapper: fixen a body mögé */
+.cosmic-veils {
   position: fixed;
   inset: 0;
-  z-index: 0; /* a <main> zIndex:1 fölé kerül, tehát háttér marad */
+  z-index: 0;            /* a main zIndex:1 alatt marad */
   pointer-events: none;
-  overflow: hidden;
+  opacity: var(--cosmic-opacity);
 }
 
-/* 1) BASE: mély tér — a te --bg-root + glow logikádhoz illeszkedik */
+/* 1) Deep base (statikus, tokenes) */
 .cosmic-base {
   position: absolute;
   inset: 0;
 
+  /* marad a te sötét rendszered: bg-root + két glow */
   background:
-    radial-gradient(circle at 18% 14%, var(--glow-1), transparent 42%),
+    radial-gradient(circle at 18% 22%, var(--glow-1), transparent 44%),
     radial-gradient(circle at 82% 10%, var(--glow-2), transparent 46%),
-    radial-gradient(circle at 50% 120%, #00000066, transparent 60%),
     var(--bg-root);
 }
 
-/* 2) AURAS: lassú, alig észrevehető színes derengés */
+/* 2) Auras (lassan vándorló „kozmikus derengés”) */
 .cosmic-auras {
   position: absolute;
   inset: -12%;
+  filter: blur(var(--cosmic-blur));
+  opacity: calc(var(--cosmic-auras) * 0.18); /* nagyon finom */
 
   background:
-    radial-gradient(120% 120% at 20% 25%, var(--cosmic-aura-3), transparent 58%),
-    radial-gradient(110% 110% at 78% 70%, var(--cosmic-aura-1), transparent 62%),
-    radial-gradient(120% 120% at 55% 40%, var(--cosmic-aura-2), transparent 66%);
+    radial-gradient(
+      120% 120% at 22% 28%,
+      color-mix(in srgb, var(--accent) 35%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      120% 120% at 78% 74%,
+      color-mix(in srgb, var(--accent-2) 45%, transparent),
+      transparent 66%
+    ),
+    radial-gradient(
+      140% 140% at 55% 40%,
+      rgba(170, 140, 255, 0.10), /* enyhe „misztikus lila” */
+      transparent 68%
+    );
 
-  filter: blur(10px);
-  opacity: 0.9;
-  mix-blend-mode: screen;
-
-  animation: cosmicDrift 140s ease-in-out infinite;
+  animation: cosmicAuraDrift 120s ease-in-out infinite;
   will-change: transform;
-
-  outline: 2px solid red;
 }
 
-@keyframes cosmicDrift {
-  0%   { transform: translate3d(0,0,0) scale(1.02); }
-  50%  { transform: translate3d(-2.5%, -1.5%, 0) scale(1.04); }
-  100% { transform: translate3d(0,0,0) scale(1.02); }
+@keyframes cosmicAuraDrift {
+  0%   { transform: translate3d(0, 0, 0) scale(1.02); }
+  50%  { transform: translate3d(-2.8%, -1.4%, 0) scale(1.06); }
+  100% { transform: translate3d(0, 0, 0) scale(1.02); }
 }
 
-/* 3) NOISE: köd / fátyol — ettől lesz “mágikus”, nem steril */
+/* 3) Noise veil (fátyol) — kell hozzá egy apró texture */
 .cosmic-noise {
   position: absolute;
-  inset: -20%;
+  inset: -16%;
+  opacity: var(--cosmic-noise);
 
-  /* tegyél be egy finom zaj textúrát a /public alá */
-  background-image: url("/noise-soft.png");
+  /* Rakj be egy nagyon finom zajképet (lásd lent) */
+  background-image: url("/textures/noise-soft.png");
   background-repeat: repeat;
   background-size: 320px 320px;
 
-  opacity: 0.05;
-  mix-blend-mode: overlay;
+  mix-blend-mode: screen;
 
-  animation: cosmicVeil 220s linear infinite;
+  animation: cosmicVeilFloat 180s linear infinite;
   will-change: transform;
 }
 
-@keyframes cosmicVeil {
-  from { transform: translate3d(0,0,0) scale(1.0); }
+@keyframes cosmicVeilFloat {
+  from { transform: translate3d(0, 0, 0) scale(1); }
   to   { transform: translate3d(-6%, -4%, 0) scale(1.03); }
 }
 
-/* Reduced motion: maradjon statikus (nagyon fontos) */
+/* Reduced motion: álljon meg, maradjon statikus */
 @media (prefers-reduced-motion: reduce) {
-  .cosmic-auras, .cosmic-noise { animation: none; }
+  .cosmic-auras,
+  .cosmic-noise {
+    animation: none !important;
+  }
 }

@@ -13,10 +13,9 @@ export default function CosmicLayerGate() {
       const space = body.getAttribute("data-space");
       const napszak = body.getAttribute("data-napszak");
 
-      // ugyanaz a logika, mint nálad
+      // ugyanaz a gating logika, mint a fraktálnál
       const okSpace = !space || ["dream", "evening", "flow"].includes(space);
-      const okNapszak =
-        !napszak || ["morning", "day", "evening", "night", "default"].includes(napszak);
+      const okNapszak = !napszak || ["morning", "day", "evening", "night", "default"].includes(napszak);
 
       setEnabled(okSpace && okNapszak);
     };
@@ -36,7 +35,7 @@ export default function CosmicLayerGate() {
   if (!enabled) return null;
 
   return (
-    <div className="cosmic-bg" aria-hidden="true">
+    <div className="cosmic-veils" aria-hidden="true">
       <div className="cosmic-base" />
       <div className="cosmic-auras" />
       <div className="cosmic-noise" />
