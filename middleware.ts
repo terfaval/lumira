@@ -7,7 +7,6 @@ export async function middleware(req: NextRequest) {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
   if (!url || !key) return res;
 
   const supabase = createServerClient(url, key, {
@@ -17,25 +16,18 @@ export async function middleware(req: NextRequest) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          // ✅ Middleware can set cookies on the response
           res.cookies.set(name, value, options);
         });
       },
     },
   });
 
-  // ✅ This triggers refresh if needed and syncs cookies into res
+  // refresh cookie if needed
   await supabase.auth.getUser();
 
   return res;
 }
 
 export const config = {
-  matcher: [
-    /*
-      Run middleware on all routes that render pages,
-      exclude Next internals + static.
-    */
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
