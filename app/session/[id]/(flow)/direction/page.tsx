@@ -10,6 +10,7 @@ import { Pill } from "@/components/Pill";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import styles from "./direction.module.css";
 import { huTagDir } from "@/src/lib/tags/dirTagsHu";
+import { registerListener } from "@/src/lib/perfDebug";
 
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
 type RecommendedDirection = { slug: string; reason?: string };
@@ -150,8 +151,12 @@ export default function DirectionPage() {
         close();
       }
     }
+    const release = registerListener("document.keydown:DirectionModal");
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      release();
+    };
   }, [close]);
 
   const orderedAll = useMemo(() => {

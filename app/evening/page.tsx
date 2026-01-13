@@ -8,6 +8,7 @@ import { requireUserId } from "@/src/lib/db";
 import type { EveningCardCatalogItem } from "@/src/lib/types";
 import { EveningCardTile } from "@/components/EveningCardTile";
 import { EveningCardFlip } from "@/components/EveningCardFlip";
+import { registerListener } from "@/src/lib/perfDebug";
 
 type PhaseKey = "prep" | "in_bed" | "rescue";
 const PHASE_LABEL: Record<PhaseKey, string> = {
@@ -242,8 +243,12 @@ export default function EveningLanding() {
       }
     }
 
+    const release = registerListener("document.keydown:EveningOverlay");
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      release();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openSlug]);
 

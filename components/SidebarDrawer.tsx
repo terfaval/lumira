@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useCallback, useRef, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { registerListener } from "@/src/lib/perfDebug";
 
 type Space = "dream" | "evening";
 
@@ -63,8 +64,12 @@ export function SidebarDrawer({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
+    const release = registerListener("window.keydown:SidebarDrawer");
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      release();
+    };
   }, [open, onClose]);
 
   // when the drawer opens, check whether to show the glossary link

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import FractalBackground from "@/components/FractalBackground";
+import { registerObserver } from "@/src/lib/perfDebug";
 
 export default function FractalLayerGate() {
   const [enabled, setEnabled] = useState(false);
@@ -21,10 +22,14 @@ export default function FractalLayerGate() {
 
     compute();
 
+    const release = registerObserver("MutationObserver:FractalLayerGate", 1);
     const obs = new MutationObserver(compute);
     obs.observe(body, { attributes: true, attributeFilter: ["data-space", "data-napszak"] });
 
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      release();
+    };
   }, []);
 
   return (

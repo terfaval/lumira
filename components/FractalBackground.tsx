@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { registerListener, registerRaf } from "@/src/lib/perfDebug";
 
 function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" &&
@@ -177,10 +178,54 @@ export default function FractalBackground({
   vars,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const reduced = useMemo(() => prefersReducedMotion(), []);
+  const glRef = useRef<{
+    gl: WebGL2RenderingContext;
+    canvas: HTMLCanvasElement;
+    prog: WebGLProgram;
+    vao: WebGLVertexArrayObject;
+    buf: WebGLBuffer;
+    uniforms: {
+      uResolution: WebGLUniformLocation | null;
+      uTime: WebGLUniformLocation | null;
+      uOpacity: WebGLUniformLocation | null;
+      uCenter: WebGLUniformLocation | null;
+      uZoom: WebGLUniformLocation | null;
+      uIter: WebGLUniformLocation | null;
+      uBg: WebGLUniformLocation | null;
+      uAccent: WebGLUniformLocation | null;
+      uAccent2: WebGLUniformLocation | null;
+      uGlow1: WebGLUniformLocation | null;
+      uGlow2: WebGLUniformLocation | null;
+    };
+    readTokenColors: () => void;
+    resize: () => void;
+  } | null>(null);
+  const rafRef = useRef(0);
+  const rafActiveRef = useRef(false);
+  const releaseRafRef = useRef<(() => void) | null>(null);
+  const lastTokenReadRef = useRef(0);
+  const startRef = useRef(0);
+  const paramsRef = useRef({
+    opacity,
+    baseZoom,
+    zoomSpeed,
+    timeWrapSeconds,
+    zoomLoopSeconds,
+    zoomAmplitude,
+    zoomMode,
+    iterations,
+  });
+  const varsRef = useRef(vars);
+  const dprCapRef = useRef(maxDevicePixelRatio);
+  const lowQualityUntilRef = useRef(0);
+  const lowQualityRef = useRef(false);
+  const reducedRef = useRef(false);
+  const handleVisibilityRef = useRef<(() => void) | null>(null);
+  const baseFilter = "blur(0.7px) contrast(0.98) saturate(0.95)";
 
   useEffect(() => {
     if (!enabled) return;
+    if (glRef.current) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -248,16 +293,18 @@ export default function FractalBackground({
     const centerY =  0.13182590420533;
 
     let raf = 0;
+    let rafActive = false;
+    let releaseRaf: (() => void) | null = null;
     let start = performance.now();
 
     const readTokenColors = () => {
       const cs = getComputedStyle(document.body);
 
-      const bgVar = vars?.bg ?? "--bg-root";
-      const accentVar = vars?.accent ?? "--accent";
-      const accent2Var = vars?.accent2 ?? "--accent-2";
-      const glow1Var = vars?.glow1 ?? "--glow-1";
-      const glow2Var = vars?.glow2 ?? "--glow-2";
+      const bgVar = varsRef.current?.bg ?? "--bg-root";
+      const accentVar = varsRef.current?.accent ?? "--accent";
+      const accent2Var = varsRef.current?.accent2 ?? "--accent-2";
+      const glow1Var = varsRef.current?.glow1 ?? "--glow-1";
+      const glow2Var = varsRef.current?.glow2 ?? "--glow-2";
 
       const bg = hexToRgb01(cs.getPropertyValue(bgVar));
       const a1 = hexToRgb01(cs.getPropertyValue(accentVar));
@@ -273,7 +320,8 @@ export default function FractalBackground({
     };
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, maxDevicePixelRatio);
+      const baseDpr = Math.min(window.devicePixelRatio || 1, dprCapRef.current);
+      const dpr = lowQualityRef.current ? baseDpr * 0.6 : baseDpr;
       const w = Math.floor(canvas.clientWidth * dpr);
       const h = Math.floor(canvas.clientHeight * dpr);
       if (canvas.width !== w || canvas.height !== h) {
@@ -285,30 +333,62 @@ export default function FractalBackground({
     };
 
     const onResize = () => resize();
+    const releaseResize = registerListener("window.resize:fractal");
     window.addEventListener("resize", onResize);
 
-    // if your app changes data-napszak dynamically, re-read tokens periodically (cheap)
-    let lastTokenReadRaw = 0;
+    glRef.current = {
+      gl,
+      canvas,
+      prog,
+      vao,
+      buf,
+      uniforms: {
+        uResolution,
+        uTime,
+        uOpacity,
+        uCenter,
+        uZoom,
+        uIter,
+        uBg,
+        uAccent,
+        uAccent2,
+        uGlow1,
+        uGlow2,
+      },
+      readTokenColors,
+      resize,
+    };
 
+    startRef.current = performance.now();
+    lastTokenReadRef.current = 0;
     resize();
     readTokenColors();
-
-    gl.uniform1f(uOpacity, clamp(opacity, 0, 1));
+    gl.uniform1f(uOpacity, clamp(paramsRef.current.opacity, 0, 1));
     gl.uniform2f(uCenter, centerX, centerY);
-    gl.uniform1i(uIter, Math.max(40, Math.min(320, iterations)));
+    gl.uniform1i(uIter, Math.max(40, Math.min(320, paramsRef.current.iterations)));
 
-    const loop = (now: number) => {
-      const tRaw = (now - start) / 1000;
-      const t = reduced ? 0.0 : (tRaw % timeWrapSeconds);
+    const drawFrame = (now: number) => {
+      const tRaw = (now - startRef.current) / 1000;
+      const { baseZoom, zoomSpeed, zoomMode, zoomLoopSeconds, zoomAmplitude, timeWrapSeconds } =
+        paramsRef.current;
+      const reducedMotion = reducedRef.current;
+      const t = reducedMotion ? 0.0 : (tRaw % timeWrapSeconds);
 
       // re-read colors ~1x/sec to follow theme flips (day/night)
-      if (!reduced && (tRaw - lastTokenReadRaw) > 1.0) {
-        readTokenColors();
-        lastTokenReadRaw = tRaw;
+      if (!reducedMotion && (tRaw - lastTokenReadRef.current) > 1.0) {
+        glRef.current?.readTokenColors();
+        lastTokenReadRef.current = tRaw;
+      }
+
+      const lowQuality = performance.now() < lowQualityUntilRef.current;
+      if (lowQuality !== lowQualityRef.current) {
+        lowQualityRef.current = lowQuality;
+        canvas.style.filter = lowQuality ? "none" : baseFilter;
+        glRef.current?.resize();
       }
 
       let z = baseZoom;
-      if (!reduced) {
+      if (!reducedMotion) {
         if (zoomMode === "fixed") {
           z = baseZoom;
         } else if (zoomMode === "exp") {
@@ -319,38 +399,107 @@ export default function FractalBackground({
         }
       }
 
-      gl.uniform1f(uTime, reduced ? 0.0 : t);
+      gl.uniform1f(uTime, reducedMotion ? 0.0 : t);
       gl.uniform1f(uZoom, z);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+
+    const loop = (now: number) => {
+      drawFrame(now);
+      if (!rafActive) return;
       raf = requestAnimationFrame(loop);
     };
 
-    raf = requestAnimationFrame(loop);
+    const stopLoop = () => {
+      if (!rafActiveRef.current) return;
+      rafActiveRef.current = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+      releaseRafRef.current?.();
+      releaseRafRef.current = null;
+    };
+
+    const startLoop = () => {
+      if (rafActiveRef.current || reducedRef.current || document.hidden) return;
+      rafActiveRef.current = true;
+      releaseRafRef.current = registerRaf("FractalBackground");
+      rafRef.current = requestAnimationFrame(loop);
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden || reducedRef.current) {
+        stopLoop();
+        drawFrame(performance.now());
+        return;
+      }
+      startLoop();
+    };
+
+    const handleScroll = () => {
+      const jitter = 500 + Math.random() * 1000;
+      lowQualityUntilRef.current = performance.now() + jitter;
+    };
+
+    const releaseVisibility = registerListener("document.visibilitychange:fractal");
+    document.addEventListener("visibilitychange", handleVisibility);
+    const releaseScroll = registerListener("window.scroll:fractal-low-quality");
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    drawFrame(performance.now());
+    startLoop();
+
+    handleVisibilityRef.current = handleVisibility;
 
     return () => {
-      cancelAnimationFrame(raf);
+      stopLoop();
+      document.removeEventListener("visibilitychange", handleVisibility);
+      releaseVisibility();
+      window.removeEventListener("scroll", handleScroll);
+      releaseScroll();
       window.removeEventListener("resize", onResize);
+      releaseResize();
+      glRef.current = null;
       gl.deleteBuffer(buf);
       gl.deleteVertexArray(vao);
       gl.deleteProgram(prog);
       gl.deleteShader(vs);
       gl.deleteShader(fs);
     };
-  }, [
-    enabled,
-    opacity,
-    baseZoom,
-    zoomSpeed,
-    timeWrapSeconds,
-    zoomLoopSeconds,
-    zoomAmplitude,
-    zoomMode,
-    iterations,
-    maxDevicePixelRatio,
-    reduced,
-    vars,
-  ]);
+  }, [enabled]);
+
+  useEffect(() => {
+    paramsRef.current = {
+      opacity,
+      baseZoom,
+      zoomSpeed,
+      timeWrapSeconds,
+      zoomLoopSeconds,
+      zoomAmplitude,
+      zoomMode,
+      iterations,
+    };
+    const glState = glRef.current;
+    if (!glState) return;
+    const { gl, uniforms } = glState;
+    gl.uniform1f(uniforms.uOpacity, clamp(opacity, 0, 1));
+    gl.uniform1i(uniforms.uIter, Math.max(40, Math.min(320, iterations)));
+  }, [opacity, baseZoom, zoomSpeed, timeWrapSeconds, zoomLoopSeconds, zoomAmplitude, zoomMode, iterations]);
+
+  useEffect(() => {
+    varsRef.current = vars;
+    glRef.current?.readTokenColors();
+  }, [vars]);
+
+  useEffect(() => {
+    dprCapRef.current = maxDevicePixelRatio;
+    glRef.current?.resize();
+  }, [maxDevicePixelRatio]);
+
+  useEffect(() => {
+    reducedRef.current = false;
+    handleVisibilityRef.current?.();
+  }, [false]);
 
   if (!enabled) return null;
 
