@@ -1,84 +1,18 @@
-"use client";
+// app/login/page.tsx
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
-import { supabase } from "@/src/lib/supabase/client";
-import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { redirect } from "next/navigation";
+import { supabaseServer } from "@/src/lib/supabase/server";
+import LoginClient from "./LoginClient";
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+export default async function LoginPage() {
+  const supabase = await supabaseServer();
+  const { data } = await supabase.auth.getUser();
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) router.replace("/new");
-    })();
-  }, [router]);
+  // ✅ ha már van user, ne lássa a login oldalt
+  if (data.user) redirect("/new");
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError(error.message);
-    } else {
-      router.replace("/new");
-    }
-
-    setBusy(false);
-  }
-
-  return (
-    <main className="auth-page">
-      <GlassCardSurface className="auth-card" variant="soft" paper="evening">
-        <h1>Belépés</h1>
-        <form onSubmit={handleSubmit} className="auth-form">
-          <label className="auth-label">
-            <span>Email</span>
-            <GlassCardMatte padding="sm" tone="evening">
-              <input
-                className="auth-input matte-input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </GlassCardMatte>
-          </label>
-          <label className="auth-label">
-            <span>Jelszó</span>
-            <GlassCardMatte padding="sm" tone="evening">
-              <input
-                className="auth-input matte-input"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </GlassCardMatte>
-          </label>
-          <div className="auth-actions">
-            <button type="submit" disabled={busy} className="btn btn-primary">
-              {busy ? "Belépés..." : "Belépés"}
-            </button>
-          </div>
-        </form>
-        {error && <p style={{ color: "crimson" }}>{error}</p>}
-        <p style={{ opacity: 0.8 }}>
-          Nincs még fiókod? <Link href="/signup">Regisztráció</Link>
-        </p>
-      </GlassCardSurface>
-    </main>
-  );
+  // ✅ unauth: marad a login UI
+  return <LoginClient />;
 }
