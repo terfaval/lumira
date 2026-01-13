@@ -262,6 +262,7 @@ export default function FramePage() {
   height: 100%;
   border-color: var(--frame-border);
   color: var(--frame-text);
+  transform-origin: 50% 55%;
 
   transition:
     transform 180ms ease,
@@ -293,32 +294,45 @@ export default function FramePage() {
   color: var(--frame-text);
 }
 
-/* HOVER: glow + nagyobb + szöveg ink */
-.direction-card:hover:not(:disabled) {
-  --frame-text: var(--accent-ink);
-  --frame-border: var(--accent-2);
-}
-
+/* HOVER: csak glow, a szöveg színe NEM változik */
 .direction-card:hover:not(:disabled) .direction-card-surface {
-  transform: translateY(-2px) scale(1.045);
-  filter: saturate(1.12) brightness(1.04);
+  /* ne emelkedjen ki, maradjon a helyén */
+  transform: translateY(0) scale(1.01);
+
+  /* kicsi “üveg” élénkítés, de nem színezés */
+  filter: saturate(1.06) brightness(1.02);
 
   /* ✅ accent glow (tokenekkel) */
   box-shadow:
-    0 22px 56px rgba(0, 0, 0, 0.28),
-    0 0 0 1px var(--frame-border),
-    0 0 26px var(--glow-a),
-    0 0 44px var(--glow-b);
+    var(--shadow-soft),
+    0 0 0 1px var(--line-soft),
+    0 0 22px var(--glow-a),
+    0 0 40px var(--glow-b);
 }
 
+/* PRESSED / “befelé nyomás” */
 .direction-card:active:not(:disabled) .direction-card-surface {
-  transform: translateY(-1px) scale(1.02);
+  transform: translateY(1px) scale(0.985);
+  filter: saturate(1.0) brightness(0.98);
+
+  /* külső glow visszább + belső “inset” nyomás */
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.22),
+    0 0 0 1px var(--line-soft),
+    0 0 16px var(--glow-a),
+    inset 0 2px 10px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.direction-card:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+/* fókusz (billentyűzet) – optional, de nagyon jó UX */
+.direction-card:focus-visible .direction-card-surface {
+  outline: none;
+  box-shadow:
+    var(--shadow-soft),
+    0 0 0 3px var(--focus-ring),
+    0 0 22px var(--glow-a);
 }
+
 `}</style>
 
     </div>
