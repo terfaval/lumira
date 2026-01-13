@@ -1,16 +1,21 @@
+// /app/api/synthesize/route.ts
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { supabaseServer } from "@/src/lib/supabase/server";
+import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const MIN_DREAM_LENGTH = 20;
-const MAX_ANCHOR_ITEMS = 6;
+const OPENAI_TIMEOUT_MS = 15000;
+const MODEL = "gpt-4o-mini";
+
 const MAX_CANDIDATES = 5;
 const MIN_CANDIDATES = 3;
-const MAX_PRIOR_ECHOES_USED = 2;
-const MAX_MATCHED_ITEMS = 2;
-const MAX_ANCHOR_SUMMARY_LENGTH = 800;
-const OPENAI_TIMEOUT_MS = 15000;
+const MAX_ANCHOR_ITEMS = 6;
+const MAX_HISTORY_USED = 4;
 
 const ALLOWED_PREFERRED_STYLES = [
   "sequence_probe_single",
@@ -35,10 +40,11 @@ type PriorEcho = { session_id: string; anchor_summary: string; created_at: strin
 
 type SynthesizeInput = {
   session_id?: string;
-  dream_text?: string;
+  dream_text?: string;          // optional (sanity only)
   history?: HistoryItem[];
   prior_echoes?: PriorEcho[];
   allowed_slugs?: string[];
+  force?: boolean;
 };
 
 type Anchors = {
@@ -72,7 +78,7 @@ const emptyAnchors = (): Anchors => ({
 const defaultOutput = (): SynthesizeOutput => ({
   anchors: emptyAnchors(),
   candidate_directions: [],
-  question_seed: { preferred_style: "", target_anchor: "" },
+  question_seed: { preferred_style: "open_question_single", target_anchor: "" },
   prior_echoes_used: [],
   flags: { safety: "none", too_short: false },
 });
@@ -87,9 +93,6 @@ async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: numbe
   }
 }
 
-// ────────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ────────────────────────────────────────────────────────────────────────────────
 function clampArray(values: unknown, max: number): string[] {
   if (!Array.isArray(values)) return [];
   return values
@@ -99,235 +102,6 @@ function clampArray(values: unknown, max: number): string[] {
     .filter(Boolean);
 }
 
-function caseFold(s: string): string {
-  return (s ?? "").normalize("NFKC").toLowerCase().trim();
-}
-
-function dedupeCaseFold(items: string[]): string[] {
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const raw of items ?? []) {
-    const t = (raw ?? "").trim();
-    if (!t) continue;
-    const key = caseFold(t);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(t);
-  }
-  return out;
-}
-
-function capFirst(s: string): string {
-  const t = (s ?? "").trim();
-  if (!t) return "";
-  return t.charAt(0).toUpperCase() + t.slice(1);
-}
-
-// --- helynév formázás (hu) — utótagok kisbetűn, előtag nagy kezdővel ---
-const GENERIC_PLACE_NOUNS = new Set([
-  "utca","út","híd","tér","rakpart","alagút","vár","kilátó","gát","lépcső","park","központ","csarnok","torony"
-]);
-const LOWER_EXCEPTIONS = new Set(["a","az","és","vagy","de","mint","stílusú","/"]);
-
-function titleishHu(s: string): string {
-  return s.split(/(\s+|\/)/).map(part => {
-    if (LOWER_EXCEPTIONS.has(part.toLowerCase())) return part.toLowerCase();
-    if (/^\s+$|^\.$/.test(part)) return part;
-    return part.charAt(0).toUpperCase() + part.slice(1);
-  }).join("");
-}
-
-function smartFormatPlace(raw: string): string {
-  const t = (raw ?? "").replace(/\s+/g, " ").trim();
-  if (!t) return "";
-  const parts = t.split(" ");
-  if (parts.length === 1 && GENERIC_PLACE_NOUNS.has(parts[0].toLowerCase())) {
-    return parts[0].toLowerCase();
-  }
-  const last = parts[parts.length - 1].toLowerCase();
-  if (GENERIC_PLACE_NOUNS.has(last)) {
-    const head = parts.slice(0, -1).join(" ").trim();
-    if (!head) return titleishHu(t);
-    const headFixed = head
-      .split(" ")
-      .map(p => p ? p.charAt(0).toUpperCase() + p.slice(1) : p)
-      .join(" ");
-    return `${headFixed} ${last}`;
-  }
-  return titleishHu(t);
-}
-
-function sanitizeFlags(flags: unknown, dreamTooShort: boolean): Flags {
-  const raw = (flags ?? {}) as Partial<Flags>;
-  const safety: SafetyValue =
-    SAFETY_VALUES.includes(raw.safety as SafetyValue) ? (raw.safety as SafetyValue) : "none";
-  return { safety, too_short: dreamTooShort || Boolean(raw.too_short) };
-}
-
-function sanitizePriorEchoesUsed(values: unknown, allowedSessionIds: Set<string>): PriorEchoUsed[] {
-  if (!Array.isArray(values)) return [];
-  return values
-    .slice(0, MAX_PRIOR_ECHOES_USED)
-    .map((item) => ({
-      session_id: typeof (item as any)?.session_id === "string" ? (item as any).session_id : "",
-      matched_items: clampArray((item as any)?.matched_items, MAX_MATCHED_ITEMS),
-    }))
-    .filter((p) => p.session_id && allowedSessionIds.has(p.session_id));
-}
-
-function ensureLateBeat(rawBeats: string[], rawPlaces: string[], rawCharacters: string[]): string[] {
-  let beats = [...rawBeats];
-  const hasGateInPlaces = rawPlaces.some(p => p.toLowerCase().includes("gát"));
-  const hasNarrInBeats = rawBeats.some(b => b.toLowerCase().includes("narr"));
-  const hasAssistant = rawCharacters.some(c => c.toLowerCase().includes("asszisztens"));
-
-  // ha van gát a helyekben, de nincs a beatek között → tegyünk be egy záró beatet
-  if (hasGateInPlaces && !beats.some(b => b.toLowerCase().includes("gát"))) {
-    if (beats.length < MAX_ANCHOR_ITEMS) beats = [...beats, "gáthoz ér / záró jelenet"];
-  }
-  // ha van asszisztens, de nincs narráció említve → jelöljük meg a lezárást
-  if (hasAssistant && !hasNarrInBeats) {
-    if (beats.length < MAX_ANCHOR_ITEMS) beats = [...beats, "asszisztens narrációja (lezárás)"];
-  }
-  return beats;
-}
-
-function sanitizeAnchors(anchors: unknown): Anchors {
-  const raw = (anchors ?? {}) as Partial<Anchors>;
-  const characters = dedupeCaseFold(clampArray(raw.characters, MAX_ANCHOR_ITEMS)).map(capFirst);
-  const places = dedupeCaseFold(clampArray(raw.places, MAX_ANCHOR_ITEMS).map(smartFormatPlace));
-  const objects = dedupeCaseFold(clampArray(raw.objects, MAX_ANCHOR_ITEMS));
-  let beats = dedupeCaseFold(clampArray(raw.beats, MAX_ANCHOR_ITEMS));
-  const felt_words = dedupeCaseFold(clampArray(raw.felt_words, MAX_ANCHOR_ITEMS).map((w) => w.toLowerCase()));
-
-  // késői jelenet biztosítása
-  beats = ensureLateBeat(beats, clampArray(raw.places, MAX_ANCHOR_ITEMS), clampArray(raw.characters, MAX_ANCHOR_ITEMS));
-
-  return { characters, places, objects, beats, felt_words };
-}
-
-function sanitizeQuestionSeed(seed: unknown): QuestionSeed {
-  const raw = (seed ?? {}) as Partial<QuestionSeed>;
-  const style =
-    typeof raw.preferred_style === "string" &&
-    (ALLOWED_PREFERRED_STYLES as readonly string[]).includes(raw.preferred_style)
-      ? raw.preferred_style
-      : "open_question_single";
-  return {
-    preferred_style: style,
-    target_anchor: typeof raw.target_anchor === "string" ? raw.target_anchor : "",
-  };
-}
-
-// Fisher–Yates shuffle
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function sanitizeCandidates(
-  candidates: unknown,
-  allowed: Set<string>,
-  flags: Flags,
-  allowedSlugs: string[]
-): string[] {
-  if (flags.too_short || flags.safety !== "none") return [];
-  if (!Array.isArray(candidates)) return [];
-
-  const filtered: string[] = [];
-  for (const candidate of candidates) {
-    if (typeof candidate !== "string" || !allowed.has(candidate)) continue;
-    if (filtered.includes(candidate)) continue;
-    filtered.push(candidate);
-    if (filtered.length >= MAX_CANDIDATES) break;
-  }
-
-  const targetLength = Math.min(Math.max(MIN_CANDIDATES, 0), MAX_CANDIDATES, allowedSlugs.length);
-  if (filtered.length >= targetLength || targetLength === 0) return filtered;
-
-  const filteredSet = new Set(filtered);
-  const fallback: string[] = [];
-  const allowedPool = shuffle(allowedSlugs);
-
-  const addByKeywords = (keywords: string[]) => {
-    for (const slug of allowedPool) {
-      if (filteredSet.has(slug) || fallback.includes(slug)) continue;
-      if (keywords.some((kw) => slug.toLowerCase().includes(kw))) {
-        fallback.push(slug);
-      }
-      if (filtered.length + fallback.length >= targetLength) return;
-    }
-  };
-
-  addByKeywords(["narrativ", "perspektiv"]);
-  addByKeywords(["visszalepes"]);
-  addByKeywords(["folytatas"]);
-  addByKeywords(["erzelm"]);
-  addByKeywords(["testi", "lenyomat"]);
-
-  if (filtered.length + fallback.length < targetLength) {
-    for (const slug of allowedPool) {
-      if (filteredSet.has(slug) || fallback.includes(slug)) continue;
-      fallback.push(slug);
-      if (filtered.length + fallback.length >= targetLength) break;
-    }
-  }
-
-  return [...filtered, ...fallback].slice(0, Math.min(targetLength, MAX_CANDIDATES));
-}
-
-function sanitizeOutput(
-  raw: unknown,
-  allowedSlugs: string[],
-  dreamTooShort: boolean,
-  priorEchoSessionIds: Set<string>
-): SynthesizeOutput {
-  const allowedSet = new Set((allowedSlugs ?? []).filter((s) => typeof s === "string"));
-  const fallback = defaultOutput();
-  if (!raw || typeof raw !== "object") return fallback;
-
-  const obj = raw as Record<string, unknown>;
-  const anchors = sanitizeAnchors(obj.anchors);
-  const flags = sanitizeFlags(obj.flags, dreamTooShort);
-  const candidate_directions = sanitizeCandidates(obj.candidate_directions, allowedSet, flags, allowedSlugs);
-
-  return {
-    anchors,
-    candidate_directions,
-    question_seed: sanitizeQuestionSeed(obj.question_seed),
-    prior_echoes_used: sanitizePriorEchoesUsed(obj.prior_echoes_used, priorEchoSessionIds),
-    flags,
-  };
-}
-
-function safeSanitizeOutput(
-  raw: unknown,
-  allowedSlugs: string[],
-  dreamTooShort: boolean,
-  priorEchoSessionIds: Set<string>
-): SynthesizeOutput {
-  try {
-    return sanitizeOutput(raw, allowedSlugs, dreamTooShort, priorEchoSessionIds);
-  } catch (e) {
-    console.warn("sanitizeOutput failed:", (e as Error)?.message);
-    return defaultOutput();
-  }
-}
-
-function detectSafety(dreamText: string): SafetyValue {
-  const lower = dreamText.toLowerCase();
-  const selfHarmKeywords = ["suicide", "kill myself", "end my life", "öngyilk", "megölöm magam", "véget vetek", "nem akarok élni"];
-  const realityConfusionKeywords = ["not real", "can't tell what's real", "hallucinat", "nem valós", "nem tudom mi a valós", "realitás"];
-
-  if (selfHarmKeywords.some((kw) => lower.includes(kw))) return "self_harm";
-  if (realityConfusionKeywords.some((kw) => lower.includes(kw))) return "reality_confusion";
-  return "none";
-}
-
 function clampHistory(history: unknown): HistoryItem[] {
   if (!Array.isArray(history)) return [];
   const items = history.filter(
@@ -335,40 +109,174 @@ function clampHistory(history: unknown): HistoryItem[] {
       typeof (item as any)?.question === "string" &&
       (typeof (item as any)?.answer === "string" || (item as any)?.answer === null)
   );
-  return items.slice(-4);
+  return (items as HistoryItem[]).slice(-MAX_HISTORY_USED);
 }
 
-function clampPriorEchoes(priorEchoes: unknown): PriorEcho[] {
-  if (!Array.isArray(priorEchoes)) return [];
-  return priorEchoes
-    .slice(0, MAX_PRIOR_ECHOES_USED)
-    .map((echo) => ({
-      session_id: typeof (echo as any)?.session_id === "string" ? (echo as any).session_id : "",
-      anchor_summary:
-        typeof (echo as any)?.anchor_summary === "string"
-          ? (echo as any).anchor_summary.slice(0, MAX_ANCHOR_SUMMARY_LENGTH)
-          : "",
-      created_at: typeof (echo as any)?.created_at === "string" ? (echo as any).created_at : "",
-    }))
-    .filter((echo) => echo.session_id && echo.anchor_summary);
+function detectSafetyFallback(dreamText: string): SafetyValue {
+  const lower = (dreamText ?? "").toLowerCase();
+  const selfHarmKeywords = ["öngyilk", "megölöm magam", "véget vetek", "nem akarok élni", "suicide", "kill myself"];
+  const realityConfusionKeywords = ["nem valós", "nem tudom mi a valós", "realitás", "hallucinat", "can't tell what's real"];
+  if (selfHarmKeywords.some((kw) => lower.includes(kw))) return "self_harm";
+  if (realityConfusionKeywords.some((kw) => lower.includes(kw))) return "reality_confusion";
+  return "none";
 }
 
-// append log helper (RPC)
-async function persistLatentAppendLog(req: Request, args: { sessionId?: string; output: SynthesizeOutput; meta: Record<string, unknown> }) {
-  const { sessionId, output, meta } = args;
-  if (!sessionId) return;
+function mapObsSafetyToFlags(obsFlag?: string): SafetyValue {
+  // dream_observation schema: none|distress|reality_confusion|self_harm
+  if (obsFlag === "self_harm") return "self_harm";
+  if (obsFlag === "reality_confusion") return "reality_confusion";
+  if (obsFlag && obsFlag !== "none") return "other";
+  return "none";
+}
 
-  const supabase = await supabaseServerAuthed(req);
-  const { data: authData } = await supabase.auth.getUser();
-  if (!authData?.user) return;
+function systemPrompt(): string {
+  return [
+    "You are an API that emits strict JSON (no prose, no markdown).",
+    "Task: choose dream-work directions + seed the next question focus.",
+    "",
+    "PRIMARY TRUTH:",
+    "- Use dream_observation as primary truth for anchors and direction matching.",
+    "- Do NOT invent anchors that are not present in observation labels/evidence.",
+    "- dream_text is only for sanity check / exact phrasing, not for new content.",
+    "",
+    "Rules:",
+    "- Output JSON only using the specified schema.",
+    "- candidate_directions: ranked list of 3-5 slugs, subset of allowed_slugs.",
+    "- question_seed.target_anchor: MUST be one label from dream_observation (prefer: place/object/character/motif/beat).",
+    "- anchors: derive from observation labels (dedupe, normalize).",
+    "- felt_words: use tone labels (lowercase).",
+    "- preferred_style must be one of the allowed styles (else open_question_single).",
+    "- If safety is triggered (observation safety flag != none), candidate_directions MUST be empty.",
+    "- If dream_text too short, set flags.too_short=true and candidate_directions=[].",
+    "- Never interpret meaning, diagnose, or offer therapy language.",
+    "",
+    "Schema:",
+    JSON.stringify({
+      anchors: { characters: [], places: [], objects: [], beats: [], felt_words: [] },
+      candidate_directions: [],
+      question_seed: { preferred_style: "open_question_single", target_anchor: "" },
+      prior_echoes_used: [],
+      flags: { safety: "none", too_short: false },
+    }),
+  ].join("\n");
+}
 
-  const { error } = await supabase.rpc("append_latent_analysis", {
-    p_session_id: sessionId,
-    p_output: output,
-    p_meta: meta,
-  });
+function parseModelJSON(rawContent: string): any | null {
+  try {
+    return JSON.parse(rawContent);
+  } catch {
+    const firstBrace = rawContent.indexOf("{");
+    const lastBrace = rawContent.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      try {
+        return JSON.parse(rawContent.slice(firstBrace, lastBrace + 1));
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
 
-  if (error) console.warn("append_latent_analysis failed", error.message);
+function sanitizeOutput(raw: any, allowedSlugs: string[], fallback: SynthesizeOutput): SynthesizeOutput {
+  if (!raw || typeof raw !== "object") return fallback;
+  const allowed = new Set((allowedSlugs ?? []).filter(Boolean));
+
+  const anchorsRaw = (raw.anchors ?? {}) as any;
+  const anchors: Anchors = {
+    characters: clampArray(anchorsRaw.characters, MAX_ANCHOR_ITEMS),
+    places: clampArray(anchorsRaw.places, MAX_ANCHOR_ITEMS),
+    objects: clampArray(anchorsRaw.objects, MAX_ANCHOR_ITEMS),
+    beats: clampArray(anchorsRaw.beats, MAX_ANCHOR_ITEMS),
+    felt_words: clampArray(anchorsRaw.felt_words, MAX_ANCHOR_ITEMS).map((w) => w.toLowerCase()),
+  };
+
+  const flagsRaw = (raw.flags ?? {}) as any;
+  const safety: SafetyValue = SAFETY_VALUES.includes(flagsRaw.safety) ? flagsRaw.safety : "none";
+  const too_short = Boolean(flagsRaw.too_short);
+
+  let candidate_directions: string[] = [];
+  if (!too_short && safety === "none" && Array.isArray(raw.candidate_directions)) {
+    for (const s of raw.candidate_directions) {
+      if (typeof s !== "string") continue;
+      const slug = s.trim();
+      if (!slug || !allowed.has(slug) || candidate_directions.includes(slug)) continue;
+      candidate_directions.push(slug);
+      if (candidate_directions.length >= MAX_CANDIDATES) break;
+    }
+    // ensure minimum if possible
+    if (candidate_directions.length < Math.min(MIN_CANDIDATES, allowedSlugs.length)) {
+      for (const slug of allowedSlugs) {
+        if (candidate_directions.length >= MIN_CANDIDATES) break;
+        if (!candidate_directions.includes(slug)) candidate_directions.push(slug);
+      }
+    }
+  }
+
+  const seedRaw = (raw.question_seed ?? {}) as any;
+  const preferred_style_raw = typeof seedRaw.preferred_style === "string" ? seedRaw.preferred_style : "";
+  const preferred_style =
+    (ALLOWED_PREFERRED_STYLES as readonly string[]).includes(preferred_style_raw)
+      ? preferred_style_raw
+      : "open_question_single";
+  const target_anchor = typeof seedRaw.target_anchor === "string" ? seedRaw.target_anchor : "";
+
+  const out: SynthesizeOutput = {
+    anchors,
+    candidate_directions,
+    question_seed: { preferred_style, target_anchor },
+    prior_echoes_used: Array.isArray(raw.prior_echoes_used) ? raw.prior_echoes_used.slice(0, 2) : [],
+    flags: { safety, too_short },
+  };
+
+  if (out.flags.safety !== "none") out.candidate_directions = [];
+  if (out.flags.too_short) out.candidate_directions = [];
+
+  return out;
+}
+
+async function fetchObservation(supabase: any, sessionId: string, userId: string) {
+  const { data } = await supabase
+    .from("dream_observation")
+    .select("obs")
+    .eq("session_id", sessionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const parsed = parseDreamObservation(data?.obs ?? null);
+  return parsed ? compactDreamObservation(parsed) : null;
+}
+
+async function fetchSessionDreamText(supabase: any, sessionId: string, userId: string): Promise<string | null> {
+  const { data: session } = await supabase
+    .from("dream_sessions")
+    .select("raw_dream_text")
+    .eq("id", sessionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const t = typeof (session as any)?.raw_dream_text === "string" ? (session as any).raw_dream_text : "";
+  const clean = (t ?? "").replace(/\s+/g, " ").trim();
+  return clean || null;
+}
+
+async function fetchCatalogForAI() {
+  const sb = await supabaseServer();
+  const { data: rows } = await sb
+    .from("direction_catalog")
+    .select("slug, title, description, content, tags, sort_order, is_active")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function persistLatent(supabase: any, sessionId: string, userId: string, output: SynthesizeOutput) {
+  const { error } = await supabase
+    .from("dream_session_summaries")
+    .upsert({ session_id: sessionId, user_id: userId, latent_analysis: output }, { onConflict: "session_id" });
+
+  if (error) console.warn("synthesize: persist latent failed", error.message);
 }
 
 export async function POST(req: Request) {
@@ -376,107 +284,110 @@ export async function POST(req: Request) {
     const body = (await req.json()) as SynthesizeInput;
 
     const sessionId = typeof body.session_id === "string" ? body.session_id : undefined;
-    const dreamText = (body.dream_text ?? "").trim();
+    const force = Boolean(body.force);
+    if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
 
-    const allowedSlugs = (body.allowed_slugs ?? [])
+    const supabase = await supabaseServerAuthed(req);
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    const userId = authData.user.id;
+
+    // Idempotency: if latent exists and not force -> return it
+    if (!force) {
+      const { data } = await supabase
+        .from("dream_session_summaries")
+        .select("latent_analysis")
+        .eq("session_id", sessionId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const existing = (data as any)?.latent_analysis ?? null;
+      if (existing && typeof existing === "object") return NextResponse.json(existing as SynthesizeOutput);
+      if (typeof existing === "string") {
+        const parsed = parseModelJSON(existing);
+        if (parsed && typeof parsed === "object") return NextResponse.json(parsed as SynthesizeOutput);
+      }
+    }
+
+    // Load observation (primary truth)
+    const observation = await fetchObservation(supabase, sessionId, userId);
+
+    // dream_text sanity: from request or DB (optional)
+    const dreamTextReq = String(body.dream_text ?? "").trim();
+    const dreamTextDb = dreamTextReq ? null : await fetchSessionDreamText(supabase, sessionId, userId);
+    const dreamText = dreamTextReq || dreamTextDb || "";
+
+    const tooShort = dreamText ? dreamText.length < MIN_DREAM_LENGTH : false;
+
+    // If no observation and no dreamText, we can't do meaningful synthesize
+    if (!observation && !dreamText) {
+      return NextResponse.json({ error: "Missing observation and dream_text" }, { status: 400 });
+    }
+
+    // Too short gate (only if we have text)
+    if (dreamText && tooShort) {
+      const out = defaultOutput();
+      out.flags.too_short = true;
+      await persistLatent(supabase, sessionId, userId, out);
+      return NextResponse.json(out);
+    }
+
+    // Safety gate observation-first
+    const obsSafety = mapObsSafetyToFlags((observation as any)?.safety?.flag);
+    if (obsSafety !== "none") {
+      const out = defaultOutput();
+      out.flags.safety = obsSafety;
+      out.candidate_directions = [];
+      await persistLatent(supabase, sessionId, userId, out);
+      return NextResponse.json(out);
+    }
+
+    // Fallback safety if obs missing
+    if (!observation && dreamText) {
+      const fallbackSafety = detectSafetyFallback(dreamText);
+      if (fallbackSafety !== "none") {
+        const out = defaultOutput();
+        out.flags.safety = fallbackSafety;
+        out.candidate_directions = [];
+        await persistLatent(supabase, sessionId, userId, out);
+        return NextResponse.json(out);
+      }
+    }
+
+    const catalog = await fetchCatalogForAI();
+    const allowedSlugsReq = (body.allowed_slugs ?? [])
       .filter((s) => typeof s === "string")
       .map((s) => s.trim())
       .filter(Boolean);
 
-    if (!dreamText) return NextResponse.json({ error: "Missing dream_text" }, { status: 400 });
-
-    const tooShort = dreamText.length < MIN_DREAM_LENGTH;
-    if (tooShort) {
-      const output = defaultOutput();
-      output.flags.too_short = true;
-
-      await persistLatentAppendLog(req, { sessionId, output, meta: { source: "synthesize", note: "too_short" } });
-      return NextResponse.json(output);
-    }
-
-    const detectedSafety = detectSafety(dreamText);
-    if (detectedSafety !== "none") {
-      const output = defaultOutput();
-      output.flags.safety = detectedSafety;
-
-      await persistLatentAppendLog(req, {
-        sessionId,
-        output,
-        meta: { source: "synthesize", note: "safety", safety: detectedSafety },
-      });
-
-      return NextResponse.json(output);
-    }
+    const allowedPool = allowedSlugsReq.length ? allowedSlugsReq : catalog.map((r: any) => r.slug).filter(Boolean);
 
     const history = clampHistory(body.history);
-    const priorEchoes = clampPriorEchoes(body.prior_echoes);
-    const priorEchoSessionIds = new Set(priorEchoes.map((p) => p.session_id));
-
-    // ✅ catalog: DB-ből
-    const sb = await supabaseServer();
-    const { data: rows, error: catErr } = await sb
-      .from("direction_catalog")
-      .select("slug, title, description, content, tags, sort_order, is_active")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true });
-
-    if (catErr) console.warn("direction_catalog fetch failed", catErr.message);
-    const catalogForAI = Array.isArray(rows) ? rows : [];
+    const priorEchoes = Array.isArray(body.prior_echoes) ? body.prior_echoes.slice(0, 2) : [];
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    const systemPrompt = [
-      "You are an API that emits strict JSON (no prose, no markdown).",
-      "Task: latent synthesis for dream direction selection and question seeding.",
-      "Rules:",
-      "- Output JSON only using the specified schema.",
-      "- Read and consider the ENTIRE dream_text; do not prioritize the beginning.",
-      "- Anchors must quote literal or near-literal items from dream_text.",
-      "- beats: cover EARLY + MIDDLE + LATE events in rough CHRONOLOGICAL order (early→late), include at least one clear TURNING POINT / CLIMAX if present.",
-      "- Ensure one LATE beat captures the final distinct location/event mentioned in dream_text (the closing scene).",
-      "- places: include recognizable PROPER NOUNS with correct Hungarian accents if present, and include COMPOUND/DERIVED locations when they appear literally (e.g., lookout / tourist center).",
-      "- Do not include bare generic nouns alone (e.g., standalone 'utca', 'híd'); include full forms when present (e.g., 'Attila utca').",
-      "- characters: include distinct antagonists/allies mentioned explicitly (e.g., 'másik tag', 'asszisztens', 'ismerős') as separate items; do not collapse into one.",
-      "- objects: include any explicitly used tool/device/substance (e.g., lighter/fire, drone, injection/poison, barrier/fence, logs), without inventing.",
-      "- felt_words must be lowercase simple lemmas/stems (e.g., félelem, feszültség, megkönnyebbülés).",
-      "- Normalize obvious casing/spacing; deduplicate items.",
-      "- Aim for rich coverage if present: beats ≥4, places ≥3, objects ≥3, characters ≥2, felt_words ≥2 (subject to max caps).",
-      "- candidate_directions: ranked list of 3-5 slugs, subset of allowed_slugs.",
-      "- Use catalog to match dream features to directions (content.method_spec, focus_model, selection_hints).",
-      "- prior_echoes_used obey dir-06 constraints: literal_or_near_literal_only, max_reference_items=2, differences_first.",
-      "- Flags: safety can be none | self_harm | reality_confusion | other. If safety triggered, candidate_directions must be empty.",
-      "- If dream_text too short, set flags.too_short=true and candidate_directions=[].",
-      "- Never interpret meaning, diagnose, or offer therapy language.",
-      "Schema:",
-      JSON.stringify({
-        anchors: { characters: [], places: [], objects: [], beats: [], felt_words: [] },
-        candidate_directions: [],
-        question_seed: { preferred_style: "", target_anchor: "" },
-        prior_echoes_used: [],
-        flags: { safety: "none", too_short: false },
-      }),
-    ].join("\n");
-
     const userPayload = {
-      dream_text: dreamText,
+      dream_observation: observation,               // PRIMARY
+      dream_text_excerpt: dreamText.slice(0, 1800), // sanity only
       history,
       prior_echoes: priorEchoes,
-      catalog: catalogForAI,
-      allowed_slugs: allowedSlugs,
+      catalog,
+      allowed_slugs: allowedPool,
     };
 
     const completion = await withTimeout(
       (signal) =>
         client.chat.completions.create(
           {
-            model: "gpt-4o-mini",
+            model: MODEL,
             temperature: 0,
             response_format: { type: "json_object" },
             messages: [
-              { role: "system", content: systemPrompt },
+              { role: "system", content: systemPrompt() },
               { role: "user", content: JSON.stringify(userPayload) },
             ],
-            max_tokens: 700,
+            max_tokens: 750,
           },
           { signal }
         ),
@@ -484,37 +395,12 @@ export async function POST(req: Request) {
     );
 
     const rawContent = completion.choices?.[0]?.message?.content ?? "";
+    const parsed = parseModelJSON(rawContent);
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(rawContent);
-    } catch {
-      const firstBrace = rawContent.indexOf("{");
-      const lastBrace = rawContent.lastIndexOf("}");
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        parsed = JSON.parse(rawContent.slice(firstBrace, lastBrace + 1));
-      } else {
-        return NextResponse.json({ error: "Invalid JSON from model" }, { status: 500 });
-      }
-    }
-
-    const output = safeSanitizeOutput(parsed, allowedSlugs, false, priorEchoSessionIds);
-
-    await persistLatentAppendLog(req, {
-      sessionId,
-      output,
-      meta: {
-        source: "synthesize",
-        model: "gpt-4o-mini",
-        has_candidates: output.candidate_directions.length,
-        safety: output.flags.safety,
-        too_short: output.flags.too_short,
-      },
-    });
-
-    return NextResponse.json(output);
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const out = sanitizeOutput(parsed, allowedPool, defaultOutput());
+    await persistLatent(supabase, sessionId, userId, out);
+    return NextResponse.json(out);
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message ?? "Unknown error" }, { status: 500 });
   }
 }
