@@ -801,7 +801,7 @@ body[data-space="evening"] {
 /* ────────────────────────────────────────────────────────────── */
 
 /* Globals.css */
-html, body { height: 100%; }
+html, body { height: 100%; background: var(--bg-root); }
 main { min-height: 100dvh; }
 
 /* a Shell töltse ki a viewportot */
