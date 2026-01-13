@@ -16,7 +16,7 @@ export default function LoginPage() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) router.replace("/");
+      if (data.session) router.replace("/new");
     })();
   }, [router]);
 
@@ -33,7 +33,7 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
-      router.replace("/");
+      router.replace("/new");
     }
 
     setBusy(false);

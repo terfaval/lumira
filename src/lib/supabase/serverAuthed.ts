@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
 export async function supabaseServerAuthed(req?: Request) {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies(); // ✅
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -16,20 +16,14 @@ export async function supabaseServerAuthed(req?: Request) {
   return createServerClient(url, key, {
     global: authHeader ? { headers: { Authorization: authHeader } } : {},
     cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
+      getAll() {
+        return cookieStore.getAll();
       },
-      set(name: string, value: string, options?: any) {
-        // route handlerben ez működik; ha valahol nem, akkor ne borítsuk
+      setAll(cookiesToSet) {
         try {
-          cookieStore.set(name, value, options);
-        } catch {
-          // no-op
-        }
-      },
-      remove(name: string, options?: any) {
-        try {
-          cookieStore.set(name, "", { ...options, maxAge: 0 });
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
         } catch {
           // no-op
         }

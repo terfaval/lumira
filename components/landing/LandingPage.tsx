@@ -93,7 +93,7 @@ export function LandingPage() {
                 rövid hangolásként — a saját tempódban.
               </p>
 
-              <Link href="/new" className={`btn btn-primary ${styles.heroCta}`}>
+              <Link href="/login" className={`btn btn-primary ${styles.heroCta}`}>
                 Kezdj bele
               </Link>
             </div>
@@ -232,7 +232,7 @@ export function LandingPage() {
           <div className={styles.footerLine}>
             Indíts egy új álmot. Rögzíts pár sort, nézd vissza, és állj meg ott, ahol ma jó.
           </div>
-          <Link href="/new" className={`btn btn-primary ${styles.footerCta}`}>
+          <Link href="/login" className={`btn btn-primary ${styles.footerCta}`}>
             Rögzítsd az első álmodat
           </Link>
         </div>

@@ -16,7 +16,7 @@ export default function SignupPage() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) router.replace("/");
+      if (data.session) router.replace("/new");
     })();
   }, [router]);
 
@@ -33,7 +33,7 @@ export default function SignupPage() {
     if (error) {
       setError(error.message);
     } else {
-      router.replace("/");
+      router.replace("/new");
     }
 
     setBusy(false);
