@@ -33,7 +33,8 @@ const QUESTION_LIMIT = 180;
 const CTA_LIMIT = 120;
 const BRIEF_ANSWER_LIMIT = 30;
 
-const SIMILARITY_THRESHOLD = 0.72;
+const SIMILARITY_THRESHOLD = 0.65;
+const MIN_SIM_TOKENS = 5;
 const RECENT_QS_FOR_SIMILARITY = 6;
 
 const MAX_LATENT_LOG_TAIL = 6;
@@ -110,6 +111,31 @@ type RequestBody = {
   prior_echoes?: PriorEcho[];
   allowed_slugs?: unknown;
 };
+
+type AnchorPolicy = "required" | "preferred" | "optional";
+
+type DirectionProfile = {
+  slug?: string;
+  title?: string;
+  micro_description?: string;
+  ai_contract: {
+    role: string;                 // pl. "guide"
+    stance: string[];             // pl. ["non-clinical","descriptive-only"]
+    tone_tags: string[];          // pl. ["gentle","slow","minimal-friction"]
+    pacing: { max_steps: number; max_depth: number };
+  };
+  question_style: string;         // pl. "sequence_probe_single"
+  focus_model: { primary: string[]; secondary: string[] };
+  anchor_policy: AnchorPolicy;    // required|preferred|optional
+  stop_criteria: {
+    max_cards?: number;
+    stop_if_user_brief_streak?: number;
+    stop_if_repetition_detected?: boolean;
+    stop_if_emotional_overload?: boolean; // későbbre (most csak átadjuk)
+  };
+  mini_lexicon: string[];
+};
+
 
 // -----------------------------------------------------------------------------
 // Utils
@@ -393,6 +419,27 @@ function isExactRepeat(newQ: string, prevQs: string[]) {
   if (!n) return false;
   return prevQs.some((p) => normalizeQ(p) === n);
 }
+
+function concatRecentAnswers(history: HistoryItem[], n = 6): string {
+  return history
+    .slice(-n)
+    .map((h) => (h.answer ?? "").trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function coverageScore(question: string, recentAnswersText: string): number {
+  const q = tokenSet(question);
+  if (q.size < MIN_SIM_TOKENS) return 0;
+
+  const a = tokenSet(recentAnswersText);
+  if (a.size === 0) return 0;
+
+  let covered = 0;
+  for (const t of q) if (a.has(t)) covered++;
+  return q.size === 0 ? 0 : covered / q.size;
+}
+
 
 async function parseModelJSON(rawContent: string): Promise<unknown> {
   try {
@@ -689,6 +736,60 @@ function buildDirectionForAI(direction: DirectionNormalized | undefined) {
   return Object.keys(directionForAI).length ? directionForAI : undefined;
 }
 
+function buildDirectionProfile(direction: DirectionNormalized): DirectionProfile {
+  const method = (direction.method_spec ?? {}) as any;
+  const focus = (direction.focus_model ?? {}) as any;
+  const stop = (direction.stop_criteria ?? {}) as any;
+  const hints = (direction.selection_hints ?? {}) as any;
+
+  // ai_contract jöhet a selection_hints / content alól is – ha nincs, default
+  const contract = (hints.ai_contract ?? {}) as any;
+
+  const question_style =
+    typeof method.question_style === "string" && method.question_style.trim()
+      ? method.question_style.trim()
+      : "open_question_single";
+
+  const anchor_policy: AnchorPolicy =
+    contract.anchor_policy === "preferred" || contract.anchor_policy === "optional" || contract.anchor_policy === "required"
+      ? contract.anchor_policy
+      : "required";
+
+  const primary = Array.isArray(focus.primary) ? focus.primary.filter((x: any) => typeof x === "string") : [];
+  const secondary = Array.isArray(focus.secondary) ? focus.secondary.filter((x: any) => typeof x === "string") : [];
+
+  const mini_lexicon =
+    Array.isArray(contract.mini_lexicon)
+      ? contract.mini_lexicon.filter((x: any) => typeof x === "string").slice(0, 10)
+      : [];
+
+  return {
+    slug: direction.slug,
+    title: direction.title,
+    micro_description: direction.micro_description,
+    ai_contract: {
+      role: typeof contract.role === "string" ? contract.role : "guide",
+      stance: Array.isArray(contract.stance) ? contract.stance.filter((x: any) => typeof x === "string").slice(0, 6) : ["non-clinical", "descriptive-only"],
+      tone_tags: Array.isArray(contract.tone_tags) ? contract.tone_tags.filter((x: any) => typeof x === "string").slice(0, 6) : ["gentle", "slow", "minimal-friction"],
+      pacing: {
+        max_steps: typeof contract?.pacing?.max_steps === "number" ? contract.pacing.max_steps : 4,
+        max_depth: typeof contract?.pacing?.max_depth === "number" ? contract.pacing.max_depth : 2,
+      },
+    },
+    question_style,
+    focus_model: { primary: primary.slice(0, 6), secondary: secondary.slice(0, 6) },
+    anchor_policy,
+    stop_criteria: {
+      max_cards: typeof stop.max_cards === "number" ? stop.max_cards : undefined,
+      stop_if_user_brief_streak: typeof stop.stop_if_user_brief_streak === "number" ? stop.stop_if_user_brief_streak : undefined,
+      stop_if_repetition_detected: typeof stop.stop_if_repetition_detected === "boolean" ? stop.stop_if_repetition_detected : undefined,
+      stop_if_emotional_overload: typeof stop.stop_if_emotional_overload === "boolean" ? stop.stop_if_emotional_overload : undefined,
+    },
+    mini_lexicon,
+  };
+}
+
+
 // -----------------------------------------------------------------------------
 // Stop rules
 // -----------------------------------------------------------------------------
@@ -845,65 +946,60 @@ function extractUsedAnchors(prevQs: string[], candidates: AnchorCandidate[]): Se
 // Prompt construction
 // -----------------------------------------------------------------------------
 
-function buildBaseSystemPrompt(availableAnchors: string[]) {
+function buildBaseSystemPrompt(profile: DirectionProfile, availableAnchors: string[]) {
+  const lex = profile.mini_lexicon?.length ? profile.mini_lexicon.join(", ") : "";
+
+  const anchorRules =
+    profile.anchor_policy === "required"
+      ? (availableAnchors.length > 0
+          ? `- KÖTELEZŐ: válassz PONTOSAN 1 új horgonyt a listából, és szerepeljen a question-ben: ${availableAnchors.join(" | ")}`
+          : `- NINCS új horgony: add vissza stop_signal.suggest_stop=true és reason="low_novelty".`)
+      : profile.anchor_policy === "preferred"
+        ? (availableAnchors.length > 0
+            ? `- ELŐNY: használj 1 új horgonyt, ha van: ${availableAnchors.join(" | ")}`
+            : `- Ha nincs új horgony, támaszkodhatsz a last_answer_excerpt-re (konkrét részlet!), de maradj az irány stílusában.`)
+        : `- A horgony opcionális. Elsődleges: az irány stílusa + konkrét jelenet/sorrend/érzékleti fókusz.`;
+
   return [
     "Magyar nyelvű API vagy, kizárólag a megadott JSON sémát adod vissza.",
-    "Szerep: a következő kártyára egy WORK blokkot generálsz: lead_in + question (+ opcionális cta).",
+    "Szerep: WORK blokkot generálsz: lead_in + question.",
     "",
-    "LEAD_IN vs FÓKUSZ-MAG:",
-    "- lead_in = 2–4 mondatnyi térnyitó ráhangolás, amely finoman a direction irányába tereli a figyelmet.",
-    "- lead_in NEM kérdés és NEM tartalmaz '?' jelet.",
+    "DIRECTION PROFILE (kanonikus):",
+    JSON.stringify(profile),
     "",
-    "- question = a kártya egyetlen mondata (UI-kötelező), ami egy fókusz-aktus:",
-    "  - VAGY 1 kérdés (pontosan 1 '?' a végén),",
-    "  - VAGY 1 feladat/utasítás (0 '?').",
-    "  - Mindig 1 mondat: nincs felsorolás, nincs kettőspont, nincs pontosvessző, nincs sortörés.",
+    "LEAD_IN szabály:",
+    "- 2–4 mondat, ráhangolás, NEM kérdés, NEM tartalmaz '?' jelet.",
     "",
-    "KÖTELEZŐ ILLESZKEDÉS AZ IRÁNYHOZ:",
-    "- A direction.method_spec.question_style szerint formáld a question-t.",
-    "- Használd a direction.micro_description + focus_model + selection_hints elemeit.",
+    "QUESTION szabály:",
+    "- Pontosan 1 mondat (nincs felsorolás, nincs kettőspont/pontosvessző, nincs sortörés).",
+    "- VAGY 1 kérdés: pontosan 1 '?' a végén,",
+    "- VAGY 1 feladat: 0 '?'",
     "",
-    "LATENS SZINTÉZIS (ha van):",
-    "- Ha kapsz synth.question_seed.target_anchor-t, akkor a lead_in nyissa meg ezt mint fókuszpontot,",
-    "- és a question irányítsa a figyelmet erre az anchor-ra a direction stílusában.",
+    "NEM-ÉRTELMEZÉS:",
+    "- Csak megfigyelésekre támaszkodj, nincs jelentés, nincs diagnózis, nincs szimbólumszótár.",
     "",
-    "WORK-MEMÓRIA (latent_log_tail):",
-    "- A latent_log_tail a korábbi work lépések KIVONATA.",
-    "- Tilos ismételni vagy újrafogalmazni a korábbi kérdéseket; kerüld az ugyanoda vezető fókuszt is.",
+    "KÖTELEZŐ ILLESZKEDÉS:",
+    `- A question a profile.question_style szerint készüljön: ${profile.question_style}`,
+    profile.micro_description ? `- Micro leírás: ${profile.micro_description}` : "",
+    lex ? `- Mini-szótár (használj belőle finoman): ${lex}` : "",
     "",
-    "PRE MEGFIGYELÉSEK (dream_observation):",
-    "- Csak megfigyelésekre támaszkodj, NINCS értelmezés.",
-    "- Használd a konkrét elemeket horgonyként vagy fókuszpontként.",
+    "FORRÁS-PRIORITÁS:",
+    "- direction_profile + dream_observation + history az elsődleges.",
+    "- Ha nincs új anchor, preferred/optional esetén last_answer_excerpt konkrét részletére támaszkodhatsz.",
     "",
-    "IRÁNY FOLYTONOSSÁG:",
-    "- Tartsd magad a direction.slug-hoz és a recent_work_blocks irányához.",
-    "- Ne válts irányt, ne terelj át más irányba.",
+    "ANTI-ISMÉTLÉS:",
+    "- Tilos megismételni/parafrazálni a korábbi kérdéseket.",
+    "- Ha hasonló lenne: válts más konkrét részletre ugyanabban az irányban.",
     "",
-    availableAnchors.length > 0
-      ? `- Válassz PONTOSAN 1 horgonyt az alábbi listából, amit eddig NEM használtunk: ${availableAnchors.join(
-          " | "
-        )}`
-      : "- Nincs több új horgony ebben az irányban; ha elfogyott, jelezd low_novelty-t.",
-    "",
-    "ANTI-GENERIKUS SZABÁLY:",
-    "- A question tartalmazzon 1 konkrét horgonyt a dream_text-ből VAGY a legutóbbi answer-ből.",
-    "- + legyen benne 1 irány-nyelvi fókusz (a direction szókészletéből).",
-    "",
-    "SZIGORÚ NEM-ISMÉTLÉS:",
-    "- Tilos megismételni vagy parafrazálni bármelyik korábbi kérdést/feladatot.",
-    "- Ha hasonló lenne, válts teljesen más konkrét részletre ugyanabban az irányban.",
-    "",
-    "Biztonság:",
-    "- Ne értelmezd az álmot, ne diagnosztizálj, ne szimbólumszótár.",
-    "",
-    "Formai szabályok:",
-    "- Karakterlimitek: lead_in <= 720, question <= 180, cta <= 120.",
-    "- Mindig legyen stop_signal mező (normál: suggest_stop=false).",
+    anchorRules,
     "",
     "Kimenet kizárólag JSON ebben a sémában:",
     '{"work_block":{"lead_in":"","question":"","cta":""},"stop_signal":{"suggest_stop":false,"reason":null},"flags":{"safety":"none"}}',
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
+
 
 function buildSafetyExtraRules(compactObs: ReturnType<typeof compactDreamObservation> | null): string[] {
   const flag = compactObs?.safety?.flag;
@@ -943,11 +1039,12 @@ export async function POST(req: Request) {
     const answerExcerpt = clampExcerpt(lastAnswer, ANSWER_EXCERPT_LIMIT);
     const answerLen = (lastAnswer ?? "").trim().length;
 
-    const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
-      fetchLatentFromDb({ supabase, sessionId, userId }),
-      fetchDreamObservation({ supabase, sessionId, userId }),
-      fetchRecentWorkBlocks({ supabase, sessionId, directionSlug: direction.slug, limit: 6 }),
-    ]);
+    const shouldFetchRecent = history.length < 2; // ha van folyamat, ne zavarjon promptban
+const [dbLatentPack, observation, recentWorkBlocks] = await Promise.all([
+  fetchLatentFromDb({ supabase, sessionId, userId }),
+  fetchDreamObservation({ supabase, sessionId, userId }),
+  shouldFetchRecent ? fetchRecentWorkBlocks({ supabase, sessionId, directionSlug: direction.slug, limit: 3 }) : Promise.resolve([]),
+]);
 
     const compactObservation = compactDreamObservation(observation);
     const observationAnchors = extractObservationAnchors(observation);
@@ -1004,7 +1101,6 @@ export async function POST(req: Request) {
     }
 
     // Prepare direction spec and allowed slugs.
-    const directionForAI = buildDirectionForAI(direction);
     const allowedSlugs = sanitizeAllowedSlugs(body.allowed_slugs, direction.slug);
 
     const synth = await runLatentSynthesis({
@@ -1028,11 +1124,13 @@ export async function POST(req: Request) {
     const usedAnchors = extractUsedAnchors(prevQsAll, anchorCandidatesDetailed);
     const availableAnchors = anchorCandidates.filter((a) => !usedAnchors.has(a));
 
-    const baseSystemPrompt = buildBaseSystemPrompt(availableAnchors);
+    const profile = buildDirectionProfile(direction);
+    const baseSystemPrompt = buildBaseSystemPrompt(profile, availableAnchors);
+
 
     const userPayload = {
       dream_text: dreamText,
-      direction: directionForAI ?? {},
+      direction_profile: profile,
       history,
       prior_echoes: priorEchoes,
       synth: synth ?? null,
@@ -1041,7 +1139,8 @@ export async function POST(req: Request) {
       last_answer_excerpt: answerExcerpt,
       available_anchors: availableAnchors,
       dream_observation: compactObservation,
-      recent_work_blocks: recentWorkBlocks,
+      // recent_work_blocks: recentWorkBlocks,
+      // latent_analysis_snapshot / latent_log_tail: egyelőre ne
     };
 
     const safetyExtraRules = buildSafetyExtraRules(compactObservation);
