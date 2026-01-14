@@ -17,6 +17,7 @@ export default function FramePage() {
 
   const [session, setSession] = useState<DreamSession | null>(null);
   const [catalog, setCatalog] = useState<DirectionCatalogItem[]>([]);
+  const [summary, setSummary] = useState<DreamSessionSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const { loading } = useRequireAuth();
@@ -28,13 +29,26 @@ export default function FramePage() {
     setErr(null);
     const { data, error } = await supabase
       .from("dream_sessions")
-      .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, latent_analysis, status, created_at, updated_at")
+      .select("id, raw_dream_text, status, created_at, updated_at")
       .eq("id", id)
       .single();
 
     if (error) setErr(error.message);
     else setSession(data as DreamSession);
   }, [id]);
+
+  const loadSummary = useCallback(async () => {
+  setErr(null);
+
+  const { data, error } = await supabase
+    .from("dream_session_summaries")
+    .select("session_id, framing_title, framing_text, latent_analysis, recommended_directions")
+    .eq("session_id", id)
+    .maybeSingle();
+
+  if (error) setErr(error.message);
+  else setSummary((data ?? null) as DreamSessionSummary | null);
+}, [id]);
 
   const loadCatalog = useCallback(async () => {
     const { data, error } = await supabase
@@ -49,7 +63,9 @@ export default function FramePage() {
   }, []);
 
   useEffect(() => void loadSession(), [loadSession]);
+  useEffect(() => void loadSummary(), [loadSummary]);
   useEffect(() => void loadCatalog(), [loadCatalog]);
+
 
   const runFraming = useCallback(async () => {
     setBusy(true);
@@ -57,7 +73,7 @@ export default function FramePage() {
     try {
       const res = await fetchWithAuth("/api/frame", { method: "POST", json: { sessionId: id } });
       if (!res.ok) throw new Error(await res.text());
-      await loadSession();
+      await loadSummary();
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Hiba");
     } finally {
@@ -67,6 +83,14 @@ export default function FramePage() {
 
   type CandidateDirection = { slug: string; reason?: string };
 
+  type DreamSessionSummary = {
+  session_id: string;
+  title?: string | null;     // ha ilyen oszlopod van
+  framing_text?: string | null;      // ha ilyen oszlopod van (vagy ai_framing_text)
+  latent_analysis?: any;             // jsonb
+  recommended_directions?: any;      // jsonb (fallback)
+};
+
 function safeCandidateDirections(x: unknown): CandidateDirection[] {
   if (!Array.isArray(x)) return [];
   const out: CandidateDirection[] = [];
@@ -75,39 +99,59 @@ function safeCandidateDirections(x: unknown): CandidateDirection[] {
     const slug = (item as any).slug;
     const reason = (item as any).reason;
     if (typeof slug === "string" && slug.trim()) {
-      out.push({
-        slug: slug.trim(),
-        reason: typeof reason === "string" ? reason : undefined,
-      });
+      out.push({ slug: slug.trim(), reason: typeof reason === "string" ? reason : undefined });
     }
   }
   return out;
 }
 
-const recommendations = useMemo(() => {
-  const raw = (session as any)?.latent_analysis?.candidate_directions;
-  const cand = safeCandidateDirections(raw).slice(0, 3); // ✅ max 3, de lehet 0–2 is
+function safeRecommendedDirections(x: unknown): CandidateDirection[] {
+  // ugyanaz a schema: {slug, reason?}
+  return safeCandidateDirections(x);
+}
 
+const recommendations = useMemo(() => {
   const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
 
-  return cand
+  const cand =
+    safeCandidateDirections((summary as any)?.latent_analysis?.candidate_directions).slice(0, 3);
+
+  const fallback =
+    cand.length > 0
+      ? cand
+      : safeRecommendedDirections((summary as any)?.recommended_directions).slice(0, 3);
+
+  return fallback
     .map((rec) => {
       const item = catalogBySlug.get(rec.slug);
       if (!item) return null;
       return { ...item, reason: rec.reason ?? "" };
     })
     .filter((x): x is DirectionCatalogItem & { reason: string } => Boolean(x));
-}, [session, catalog]);
+}, [summary, catalog]);
 
 
-  const framingReady = Boolean(session?.ai_framing_text);
+
+  const framingText =
+  (summary?.framing_text ?? (summary as any)?.ai_framing_text ?? "") || "";
+
+  const framingTitle =
+    (summary?.title ?? (summary as any)?.title ?? "") || "";
+
+  const framingReady = Boolean(framingText);
+
 
   useEffect(() => {
-    if (session && !busy && !attemptedRef.current && !framingReady) {
-      attemptedRef.current = true;
-      void runFraming();
-    }
-  }, [session, busy, runFraming, framingReady]);
+  if (!summary && !busy && !attemptedRef.current && !framingReady) {
+    attemptedRef.current = true;
+    void runFraming();
+  }
+  if (summary && !busy && !attemptedRef.current && !framingReady) {
+    attemptedRef.current = true;
+    void runFraming();
+  }
+}, [summary, busy, runFraming, framingReady]);
+
 
   const runBackgroundIndexAndSynthesize = useCallback(async () => {
     if (!session?.raw_dream_text) return;
@@ -130,11 +174,11 @@ const recommendations = useMemo(() => {
   }, [id, session?.raw_dream_text, catalog]);
 
   useEffect(() => {
-    if (!framingReady) return;
-    if (bgAttemptedRef.current) return;
-    bgAttemptedRef.current = true;
-    void runBackgroundIndexAndSynthesize();
-  }, [framingReady, runBackgroundIndexAndSynthesize]);
+  if (!framingReady) return;
+  if (bgAttemptedRef.current) return;
+  bgAttemptedRef.current = true;
+  void runBackgroundIndexAndSynthesize();
+}, [framingReady, runBackgroundIndexAndSynthesize]);
 
   const handleDirectionSelect = useCallback(
     async (slug: string) => {
@@ -168,60 +212,62 @@ const recommendations = useMemo(() => {
     <div className="frame-center">
       <div className="stack">
         {framingReady ? (
-          <>
-            <div style={{ whiteSpace: "pre-wrap" }}>{session.ai_framing_text}</div>
+  <>
+    {framingTitle ? <div className="frame-title">{framingTitle}</div> : null}
+    <div style={{ whiteSpace: "pre-wrap" }}>{framingText}</div>
 
-            <div className="stack-tight">
-              <p className="section-title">Válassz egy irányt, ha tovább dolgoznál az álommal</p>
-            </div>
+    <div className="stack-tight">
+      <p className="section-title">Válassz egy irányt, ha tovább dolgoznál az álommal</p>
+    </div>
 
-            <div className="direction-grid">
-              {recommendations.map((d) => (
-  <button
-    key={d.slug}
-    type="button"
-    disabled={busy}
-    onClick={() => handleDirectionSelect(d.slug)}
-    className="direction-card"
-  >
-    <GlassCardSurface
-      className="direction-card-surface"
-      variant="soft"
-      paper="evening"
-      minHeight="100%"
-      style={{ height: "100%" }}
-    >
-      <div className="direction-card-inner">
-        <div className="direction-card-title">{d.title}</div>
-        <div className="direction-card-body">
-          {(d.content as any)?.micro_description ?? d.description}
-        </div>
-      {/* opcionális: ha akarod, itt megjelenítheted a reason-t is */}
-            {/* {d.reason ? <div className="direction-card-reason">{d.reason}</div> : null} */}
-          </div>
-    </GlassCardSurface>
-  </button>
-))}
+    {recommendations.length > 0 ? (
+      <div className="direction-grid">
+        {recommendations.map((d) => (
+          <button
+            key={d.slug}
+            type="button"
+            disabled={busy}
+            onClick={() => handleDirectionSelect(d.slug)}
+            className="direction-card"
+          >
+            <GlassCardSurface
+              className="direction-card-surface"
+              variant="soft"
+              paper="evening"
+              minHeight="100%"
+              style={{ height: "100%" }}
+            >
+              <div className="direction-card-inner">
+                <div className="direction-card-title">{d.title}</div>
+                <div className="direction-card-body">
+                  {(d.content as any)?.micro_description ?? d.description}
+                </div>
+              </div>
+            </GlassCardSurface>
+          </button>
+        ))}
+      </div>
+    ) : (
+      <p style={{ color: "var(--text-muted)", margin: 0 }}>
+        Most nem jött ki biztos ajánlott irány — de a teljes katalógusból választhatsz.
+      </p>
+    )}
 
-            </div>
-
-            ) : (
-  <p style={{ color: "var(--text-muted)", margin: 0 }}>
-    Most nem tudtam biztos irányt ajánlani — de bármikor választhatsz a teljes katalógusból.
+    <div className="direction-actions">
+      <PrimaryButton variant="secondary" onClick={() => router.push(`/session/${id}/direction`)}>
+        További irányok
+      </PrimaryButton>
+      <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
+        Később folytatom
+      </PrimaryButton>
+    </div>
+  </>
+) : (
+  <p style={{ color: "var(--text-muted)" }}>
+    A keretezés készül, hamarosan megjelennek az ajánlott irányok.
   </p>
+)}
 
-            <div className="direction-actions">
-              <PrimaryButton variant="secondary" onClick={() => router.push(`/session/${id}/direction`)}>
-                További irányok
-              </PrimaryButton>
-              <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
-                Később folytatom
-              </PrimaryButton>
-            </div>
-          </>
-        ) : (
-          <p style={{ color: "var(--text-muted)" }}>A keretezés készül, hamarosan megjelennek az ajánlott irányok.</p>
-        )}
       </div>
 
       {err && <p style={{ marginTop: "var(--space-3)", color: "crimson" }}>{err}</p>}
