@@ -28,7 +28,7 @@ export default function FramePage() {
     setErr(null);
     const { data, error } = await supabase
       .from("dream_sessions")
-      .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, created_at, updated_at")
+      .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, latent_analysis, status, created_at, updated_at")
       .eq("id", id)
       .single();
 
@@ -65,21 +65,42 @@ export default function FramePage() {
     }
   }, [id, loadSession]);
 
-  const recommendations = useMemo(() => {
-    const raw = (session?.ai_framing_audit as any)?.recommended_directions;
-    if (!Array.isArray(raw)) return [];
-    const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
-    return raw
-      .map((rec) => {
-        if (typeof rec?.slug !== "string" || typeof rec?.reason !== "string") return null;
-        const item = catalogBySlug.get(rec.slug);
-        if (!item) return null;
-        return { ...item, reason: rec.reason };
-      })
-      .filter((x): x is DirectionCatalogItem & { reason: string } => Boolean(x));
-  }, [session, catalog]);
+  type CandidateDirection = { slug: string; reason?: string };
 
-  const framingReady = Boolean(session?.ai_framing_text && recommendations.length === 3);
+function safeCandidateDirections(x: unknown): CandidateDirection[] {
+  if (!Array.isArray(x)) return [];
+  const out: CandidateDirection[] = [];
+  for (const item of x) {
+    if (!item || typeof item !== "object") continue;
+    const slug = (item as any).slug;
+    const reason = (item as any).reason;
+    if (typeof slug === "string" && slug.trim()) {
+      out.push({
+        slug: slug.trim(),
+        reason: typeof reason === "string" ? reason : undefined,
+      });
+    }
+  }
+  return out;
+}
+
+const recommendations = useMemo(() => {
+  const raw = (session as any)?.latent_analysis?.candidate_directions;
+  const cand = safeCandidateDirections(raw).slice(0, 3); // ✅ max 3, de lehet 0–2 is
+
+  const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
+
+  return cand
+    .map((rec) => {
+      const item = catalogBySlug.get(rec.slug);
+      if (!item) return null;
+      return { ...item, reason: rec.reason ?? "" };
+    })
+    .filter((x): x is DirectionCatalogItem & { reason: string } => Boolean(x));
+}, [session, catalog]);
+
+
+  const framingReady = Boolean(session?.ai_framing_text);
 
   useEffect(() => {
     if (session && !busy && !attemptedRef.current && !framingReady) {
@@ -172,16 +193,22 @@ export default function FramePage() {
     >
       <div className="direction-card-inner">
         <div className="direction-card-title">{d.title}</div>
-
         <div className="direction-card-body">
           {(d.content as any)?.micro_description ?? d.description}
         </div>
-      </div>
+      {/* opcionális: ha akarod, itt megjelenítheted a reason-t is */}
+            {/* {d.reason ? <div className="direction-card-reason">{d.reason}</div> : null} */}
+          </div>
     </GlassCardSurface>
   </button>
 ))}
 
             </div>
+
+            ) : (
+  <p style={{ color: "var(--text-muted)", margin: 0 }}>
+    Most nem tudtam biztos irányt ajánlani — de bármikor választhatsz a teljes katalógusból.
+  </p>
 
             <div className="direction-actions">
               <PrimaryButton variant="secondary" onClick={() => router.push(`/session/${id}/direction`)}>
