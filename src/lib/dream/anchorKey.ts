@@ -1,12 +1,47 @@
-// src/lib/dream/anchorKey.ts
-
 const HU_STOP = new Set([
-  "a","az","egy","és","vagy","hogy","de","mert","amikor","ahogy","már","még","is","se","sem",
-  "ott","itt","oda","ide","innen","onnan","valami","valaki","nagyon","kicsit",
+  "a",
+  "az",
+  "egy",
+  "és",
+  "vagy",
+  "hogy",
+  "de",
+  "mert",
+  "amikor",
+  "ahogy",
+  "már",
+  "még",
+  "is",
+  "se",
+  "sem",
+  "ott",
+  "itt",
+  "oda",
+  "ide",
+  "innen",
+  "onnan",
+  "valami",
+  "valaki",
+  "nagyon",
+  "kicsit",
 ]);
 
-export function stripDiacritics(s: string) {
-  return (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+/**
+ * Anchor key normalization only. Do not use for user-facing text.
+ */
+export function stripDiacritics(raw: string): string {
+  return (raw ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+export function anchorKeyTokens(raw: string): string[] {
+  const lowered = (raw ?? "").toLowerCase().trim();
+  if (!lowered) return [];
+  return stripDiacritics(lowered)
+    .split(/[^a-z0-9]+/g)
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .filter((token) => token.length > 2)
+    .filter((token) => !HU_STOP.has(token));
 }
 
 /**
@@ -18,25 +53,21 @@ export function stripDiacritics(s: string) {
  * - join with single spaces
  */
 export function anchorKey(raw: string): string {
-  const s = (raw ?? "").toLowerCase().trim();
-  if (!s) return "";
-  const tokens = stripDiacritics(s)
-    .split(/[^a-z0-9]+/g)
-    .map((t) => t.trim())
-    .filter(Boolean)
-    .filter((t) => t.length > 2)
-    .filter((t) => !HU_STOP.has(t));
-  return tokens.join(" ").trim();
+  return anchorKeyTokens(raw).join(" ").trim();
 }
 
-export function uniqStrings(arr: string[]): string[] {
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const s of arr) {
-    const t = (s ?? "").trim();
-    if (!t || seen.has(t)) continue;
-    seen.add(t);
-    out.push(t);
+const SANITY_CASES: Array<{ input: string; expected: string }> = [
+  { input: "Árvíztűrő tükörfúrógép", expected: "arvizturo tukorfurogep" },
+  { input: "Az alma és a körte", expected: "alma korte" },
+  { input: "  Két  lépés  ", expected: "ket lepes" },
+  { input: "a rövid és se", expected: "rovid" },
+];
+
+if (process.env.NODE_ENV === "test") {
+  for (const { input, expected } of SANITY_CASES) {
+    const actual = anchorKey(input);
+    if (actual !== expected) {
+      throw new Error(`anchorKey sanity failed: "${input}" => "${actual}"`);
+    }
   }
-  return out;
 }
