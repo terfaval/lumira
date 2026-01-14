@@ -6,6 +6,7 @@ import {
   compactDreamObservation,
   parseDreamObservation,
 } from "@/src/lib/dream/observation";
+import { anchorKey } from "@/src/lib/dream/anchorKey";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,50 +75,6 @@ function emptyObs() {
 /* ────────────────────────────────────────────────────────────── */
 /*  Event/Anchor helpers (for dream_observation_events logging)    */
 /* ────────────────────────────────────────────────────────────── */
-
-const HU_STOP = new Set([
-  "a",
-  "az",
-  "egy",
-  "és",
-  "vagy",
-  "hogy",
-  "de",
-  "mert",
-  "amikor",
-  "ahogy",
-  "már",
-  "még",
-  "is",
-  "se",
-  "sem",
-  "ott",
-  "itt",
-  "oda",
-  "ide",
-  "innen",
-  "onnan",
-  "valami",
-  "valaki",
-  "nagyon",
-  "kicsit",
-]);
-
-function stripDiacritics(s: string) {
-  // Kulcsképzéshez jó; megjelenítéshez ne használd.
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-
-function anchorKey(raw: string): string {
-  const s = (raw || "").toLowerCase().trim();
-  if (!s) return "";
-  const tokens = stripDiacritics(s)
-    .split(/[^a-zA-Z0-9áéíóöőúüű]+/g)
-    .map((t) => t.trim())
-    .filter((t) => t.length > 2)
-    .filter((t) => !HU_STOP.has(t));
-  return tokens.join(" ");
-}
 
 function uniq(arr: string[]) {
   const out: string[] = [];
