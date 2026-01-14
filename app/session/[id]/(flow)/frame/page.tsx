@@ -213,7 +213,6 @@ const recommendations = useMemo(() => {
       <div className="stack">
         {framingReady ? (
   <>
-    {framingTitle ? <div className="frame-title">{framingTitle}</div> : null}
     <div style={{ whiteSpace: "pre-wrap" }}>{framingText}</div>
 
     <div className="stack-tight">
