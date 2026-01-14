@@ -42,7 +42,7 @@ export default function FramePage() {
 
   const { data, error } = await supabase
     .from("dream_session_summaries")
-    .select("session_id, framing_title, framing_text, latent_analysis, recommended_directions")
+    .select("session_id, title, framing_text, latent_analysis, recommended_directions")
     .eq("session_id", id)
     .maybeSingle();
 
