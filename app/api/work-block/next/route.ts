@@ -1255,7 +1255,7 @@ if (forcedAnchorLabel) {
       // also mark "used" in-memory for this request to reduce weirdness on retry
       for (const kk of keys) usedKeys.add(kk);
 
-      const { id } = await insertLedgerQuestion({
+      await insertLedgerQuestion({
         supabase,
         sessionId: sessionIdSafe, // ✅ fixed
         userId,
@@ -1265,7 +1265,7 @@ if (forcedAnchorLabel) {
         anchorKeys: keys,
       });
 
-      return { anchorLabel, anchorKey: k || null, ledgerId: id };
+      return { anchorLabel, anchorKey: k || null };
     }
 
     // Attempt 1

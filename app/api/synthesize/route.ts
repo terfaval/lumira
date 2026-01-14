@@ -376,7 +376,7 @@ async function fetchCatalogForAI(supabase: any) {
 async function persistLatent(supabase: any, sessionId: string, userId: string, output: SynthesizeOutput) {
   const { error } = await supabase
     .from("dream_session_summaries")
-    .upsert({ session_id: sessionId, user_id: userId, latent_analysis: output }, { onConflict: "session_id" });
+    .upsert({ session_id: sessionId, user_id: userId, latent_analysis: output }, { onConflict: "session_id,user_id" });
 
   if (error) console.warn("synthesize: persist latent failed", error.message);
 }
