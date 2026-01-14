@@ -23,7 +23,7 @@ import {
 import { isDirectionCardContent } from "@/src/lib/types";
 import { pickNextAnchorKey } from "@/src/lib/dream/pickNextAnchorKey";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
-import { fetchUsedAnchorKeysFromLedger, insertLedgerQuestion } from "@/src/lib/dream/workLedger";
+
 
 // -----------------------------------------------------------------------------
 // Constants
@@ -641,6 +641,66 @@ async function appendLatentLogEvent(
   }
 }
 
+// NEW: ledger helpers (anti-reask at anchor level)
+async function fetchUsedAnchorKeysFromLedger(args: {
+  supabase: any;
+  sessionId: string;
+  userId: string;
+  directionSlug?: string;
+  limit?: number;
+}): Promise<Set<string>> {
+  const used = new Set<string>();
+  try {
+    let q = args.supabase
+      .from("work_question_ledger")
+      .select("anchor_keys, created_at")
+      .eq("session_id", args.sessionId)
+      .eq("user_id", args.userId)
+      .order("created_at", { ascending: false })
+      .limit(args.limit ?? 60);
+
+    if (args.directionSlug) q = q.eq("direction_slug", args.directionSlug);
+
+    const { data, error } = await q;
+    if (error) {
+      console.warn("fetch ledger failed", error.message);
+      return used;
+    }
+
+    for (const row of data ?? []) {
+      const keys = (row as any)?.anchor_keys;
+      if (Array.isArray(keys)) for (const k of keys) if (typeof k === "string" && k.trim()) used.add(k.trim());
+    }
+    return used;
+  } catch (e: any) {
+    console.warn("fetch ledger exception", e?.message ?? e);
+    return used;
+  }
+}
+
+async function insertLedgerQuestion(args: {
+  supabase: any;
+  sessionId: string;
+  userId: string;
+  directionSlug?: string;
+  questionText: string;
+  questionIntent?: string | null;
+  anchorKeys: string[];
+}) {
+  try {
+    await args.supabase.from("work_question_ledger").insert({
+      session_id: args.sessionId,
+      user_id: args.userId,
+      direction_slug: args.directionSlug ?? "unknown",
+      question_text: args.questionText,
+      question_intent: args.questionIntent ?? null,
+      anchor_keys: args.anchorKeys,
+    });
+  } catch (e: any) {
+    console.warn("insert ledger exception", e?.message ?? e);
+  }
+}
+
 // -----------------------------------------------------------------------------
 // Synthesize call (server-to-server)
 // -----------------------------------------------------------------------------
@@ -1054,20 +1114,13 @@ export async function POST(req: Request) {
 
     const [dbLatentPack, observation, recentWorkBlocks, ledgerUsedKeys, extractAnchorKeys] = await Promise.all([
   fetchLatentFromDb({ supabase, sessionId: sessionIdSafe, userId }),
-      fetchDreamObservation({ supabase, sessionId: sessionIdSafe, userId }),
-      shouldFetchRecent
-        ? fetchRecentWorkBlocks({ supabase, sessionId: sessionIdSafe, directionSlug: direction.slug, limit: 3 })
-        : Promise.resolve([]),
-      fetchUsedAnchorKeysFromLedger({
-        supabase,
-        sessionId: sessionIdSafe,
-        userId,
-        directionSlug,
-        limit: 80,
-        includeAnswered: true,
-      }),
-      fetchLatestExtractAnchorKeys({ supabase, sessionId: sessionIdSafe, userId }),
-    ]);
+  fetchDreamObservation({ supabase, sessionId: sessionIdSafe, userId }),
+  shouldFetchRecent
+    ? fetchRecentWorkBlocks({ supabase, sessionId: sessionIdSafe, directionSlug: direction.slug, limit: 3 })
+    : Promise.resolve([]),
+  fetchUsedAnchorKeysFromLedger({ supabase, sessionId: sessionIdSafe, userId, directionSlug, limit: 80 }),
+  fetchLatestExtractAnchorKeys({ supabase, sessionId: sessionIdSafe, userId }),
+]);
 
 
     const compactObservation = compactDreamObservation(observation);
