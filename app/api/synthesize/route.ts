@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
+import { anchorsFromObservation } from "@/src/lib/dream/anchorsFromObservation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,6 +83,42 @@ const defaultOutput = (): SynthesizeOutput => ({
   flags: { safety: "none", too_short: false },
 });
 
+function anchorsAreEmpty(a: Anchors | null | undefined): boolean {
+  if (!a) return true;
+  return (
+    (a.characters?.length ?? 0) === 0 &&
+    (a.places?.length ?? 0) === 0 &&
+    (a.objects?.length ?? 0) === 0 &&
+    (a.beats?.length ?? 0) === 0 &&
+    (a.felt_words?.length ?? 0) === 0
+  );
+}
+
+function pickTargetFromAnchors(a: Anchors): string {
+  // prefer concrete first
+  return (
+    a.places?.[0] ||
+    a.objects?.[0] ||
+    a.characters?.[0] ||
+    a.beats?.[0] ||
+    a.felt_words?.[0] ||
+    ""
+  );
+}
+
+function targetAnchorInAnchors(target: string, a: Anchors): boolean {
+  const t = (target ?? "").trim();
+  if (!t) return false;
+  const all = new Set([
+    ...(a.characters ?? []),
+    ...(a.places ?? []),
+    ...(a.objects ?? []),
+    ...(a.beats ?? []),
+    ...(a.felt_words ?? []),
+  ]);
+  return all.has(t);
+}
+
 async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
@@ -114,7 +151,13 @@ function clampHistory(history: unknown): HistoryItem[] {
 function detectSafetyFallback(dreamText: string): SafetyValue {
   const lower = (dreamText ?? "").toLowerCase();
   const selfHarmKeywords = ["öngyilk", "megölöm magam", "véget vetek", "nem akarok élni", "suicide", "kill myself"];
-  const realityConfusionKeywords = ["nem valós", "nem tudom mi a valós", "realitás", "hallucinat", "can't tell what's real"];
+  const realityConfusionKeywords = [
+    "nem valós",
+    "nem tudom mi a valós",
+    "realitás",
+    "hallucinat",
+    "can't tell what's real",
+  ];
   if (selfHarmKeywords.some((kw) => lower.includes(kw))) return "self_harm";
   if (realityConfusionKeywords.some((kw) => lower.includes(kw))) return "reality_confusion";
   return "none";
@@ -319,7 +362,10 @@ async function fetchObservation(supabase: any, sessionId: string, userId: string
     .maybeSingle();
 
   const parsed = parseDreamObservation(data?.obs ?? null);
-  return parsed ? compactDreamObservation(parsed) : null;
+  return {
+    raw: parsed ?? null,
+    compact: parsed ? compactDreamObservation(parsed) : null,
+  };
 }
 
 async function fetchSessionDreamText(supabase: any, sessionId: string, userId: string): Promise<string | null> {
@@ -443,14 +489,22 @@ export async function POST(req: Request) {
     const tooShort = dreamText ? dreamText.length < MIN_DREAM_LENGTH : false;
 
     // Try to load observation; if missing but we have text, generate it now (best-effort) then re-load.
-    let observation = await fetchObservation(supabase, sessionId, userId);
-    if (!observation && dreamText) {
+    let observationRaw: any | null = null;
+    let observationCompact: any | null = null;
+
+    let obsBundle = await fetchObservation(supabase, sessionId, userId);
+    observationRaw = obsBundle.raw;
+    observationCompact = obsBundle.compact;
+
+    if (!observationCompact && dreamText) {
       await ensureObservation({ req, sessionId, dreamText });
-      observation = await fetchObservation(supabase, sessionId, userId);
+      obsBundle = await fetchObservation(supabase, sessionId, userId);
+      observationRaw = obsBundle.raw;
+      observationCompact = obsBundle.compact;
     }
 
     // If no observation and no dreamText, we can't do meaningful synthesize
-    if (!observation && !dreamText) {
+    if (!observationCompact && !dreamText) {
       return NextResponse.json({ error: "Missing observation and dream_text" }, { status: 400 });
     }
 
@@ -464,7 +518,7 @@ export async function POST(req: Request) {
     }
 
     // Safety gate observation-first
-    const obsSafety = mapObsSafetyToFlags((observation as any)?.safety?.flag);
+    const obsSafety = mapObsSafetyToFlags((observationRaw as any)?.safety?.flag ?? (observationCompact as any)?.safety?.flag);
     if (obsSafety !== "none") {
       const out = defaultOutput();
       out.flags.safety = obsSafety;
@@ -475,7 +529,7 @@ export async function POST(req: Request) {
     }
 
     // Fallback safety if obs missing
-    if (!observation && dreamText) {
+    if (!observationCompact && dreamText) {
       const fallbackSafety = detectSafetyFallback(dreamText);
       if (fallbackSafety !== "none") {
         const out = defaultOutput();
@@ -500,13 +554,21 @@ export async function POST(req: Request) {
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+    // Deterministic anchor fallback from observation (your new helper)
+    const obsDerivedAnchors: Anchors =
+      observationRaw ? anchorsFromObservation(observationRaw) : emptyAnchors();
+
     const userPayload = {
-      dream_observation: observation, // PRIMARY
+      dream_observation: observationCompact ?? observationRaw ?? null, // PRIMARY (compact preferred)
       dream_text_excerpt: dreamText.slice(0, 1800), // sanity only
       history,
       prior_echoes: priorEchoes,
       catalog,
       allowed_slugs: allowedPool,
+
+      // extra: provide deterministic anchors to help the model stay on-track
+      // (still consistent with “PRIMARY TRUTH” because it comes from observation)
+      observation_anchors: obsDerivedAnchors,
     };
 
     const completion = await withTimeout(
@@ -530,7 +592,26 @@ export async function POST(req: Request) {
     const rawContent = completion.choices?.[0]?.message?.content ?? "";
     const parsed = parseModelJSON(rawContent);
 
-    const out = sanitizeOutput(parsed, allowedPool, defaultOutput());
+    // 1) sanitize model output
+    let out = sanitizeOutput(parsed, allowedPool, defaultOutput());
+
+    // 2) HARD GUARANTEE: if model returns empty anchors, fill from observation-derived anchors
+    if (anchorsAreEmpty(out.anchors) && !anchorsAreEmpty(obsDerivedAnchors)) {
+      out.anchors = {
+        characters: clampArray(obsDerivedAnchors.characters, MAX_ANCHOR_ITEMS),
+        places: clampArray(obsDerivedAnchors.places, MAX_ANCHOR_ITEMS),
+        objects: clampArray(obsDerivedAnchors.objects, MAX_ANCHOR_ITEMS),
+        beats: clampArray(obsDerivedAnchors.beats, MAX_ANCHOR_ITEMS),
+        felt_words: clampArray(obsDerivedAnchors.felt_words, MAX_ANCHOR_ITEMS).map((w) => w.toLowerCase()),
+      };
+    }
+
+    // 3) HARD GUARANTEE: target_anchor must exist + be one of the observation anchors
+    const t = (out.question_seed?.target_anchor ?? "").trim();
+    if (!t || !targetAnchorInAnchors(t, out.anchors)) {
+      out.question_seed.target_anchor = pickTargetFromAnchors(out.anchors);
+    }
+
     await persistLatent(supabase, sessionId, userId, out);
     await persistSynthesizeEvent(supabase, sessionId, userId, out);
     return NextResponse.json(out);

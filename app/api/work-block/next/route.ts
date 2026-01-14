@@ -21,6 +21,8 @@ import {
   type DreamObservation,
 } from "@/src/lib/dream/observation";
 import { isDirectionCardContent } from "@/src/lib/types";
+import { pickNextAnchorKey } from "@/src/lib/dream/pickNextAnchorKey";
+
 
 // -----------------------------------------------------------------------------
 // Constants
@@ -535,6 +537,30 @@ async function fetchDreamObservation(args: { supabase: any; sessionId: string; u
   } catch (error) {
     console.warn("fetch dream observation exception", error);
     return null;
+  }
+}
+
+async function fetchLatestExtractAnchorKeys(args: { supabase: any; sessionId: string; userId: string }) {
+  try {
+    const { data, error } = await args.supabase
+      .from("dream_observation_events")
+      .select("anchor_keys, created_at")
+      .eq("session_id", args.sessionId)
+      .eq("user_id", args.userId)
+      .eq("kind", "system_extract")
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.warn("fetchLatestExtractAnchorKeys failed", error.message);
+      return [];
+    }
+
+    const row = (data ?? [])[0] as any;
+    return Array.isArray(row?.anchor_keys) ? row.anchor_keys.filter((x: any) => typeof x === "string") : [];
+  } catch (e: any) {
+    console.warn("fetchLatestExtractAnchorKeys exception", e?.message ?? e);
+    return [];
   }
 }
 
@@ -1135,26 +1161,16 @@ export async function POST(req: Request) {
 
     const shouldFetchRecent = history.length < 2; // ha van folyamat, ne zavarjon promptban
 
-    const [dbLatentPack, observation, recentWorkBlocks, ledgerUsedKeys] = await Promise.all([
-      fetchLatentFromDb({ supabase, sessionId: sessionIdSafe, userId }),
-      fetchDreamObservation({ supabase, sessionId: sessionIdSafe, userId }),
-      shouldFetchRecent
-        ? fetchRecentWorkBlocks({
-            supabase,
-            sessionId: sessionIdSafe,
-            directionSlug: direction.slug,
-            limit: 3,
-          })
-        : Promise.resolve([]),
-      // NEW: anchor-level memory (direction scoped!)
-      fetchUsedAnchorKeysFromLedger({
-        supabase,
-        sessionId: sessionIdSafe,
-        userId,
-        directionSlug,
-        limit: 80,
-      }),
-    ]);
+    const [dbLatentPack, observation, recentWorkBlocks, ledgerUsedKeys, extractAnchorKeys] = await Promise.all([
+  fetchLatentFromDb({ supabase, sessionId: sessionIdSafe, userId }),
+  fetchDreamObservation({ supabase, sessionId: sessionIdSafe, userId }),
+  shouldFetchRecent
+    ? fetchRecentWorkBlocks({ supabase, sessionId: sessionIdSafe, directionSlug: direction.slug, limit: 3 })
+    : Promise.resolve([]),
+  fetchUsedAnchorKeysFromLedger({ supabase, sessionId: sessionIdSafe, userId, directionSlug, limit: 80 }),
+  fetchLatestExtractAnchorKeys({ supabase, sessionId: sessionIdSafe, userId }),
+]);
+
 
     const compactObservation = compactDreamObservation(observation);
     const observationAnchors = extractObservationAnchors(observation);
@@ -1250,8 +1266,34 @@ export async function POST(req: Request) {
       return !usedKeys.has(k);
     });
 
+    // --- FORCE NEXT ANCHOR (A3): no anchor_key=null while unused anchor exists ---
+
+function labelForAnchorKey(k: string): string | null {
+  const kk = (k ?? "").trim();
+  if (!kk) return null;
+
+  // find a label whose normalized anchorKey() matches k
+  const match = anchorCandidatesDetailed.find((c) => anchorKey(c.label) === kk);
+  return match?.label ?? null;
+}
+
+const forcedAnchorKey =
+  pickNextAnchorKey({
+    extractAnchorKeys,               // e.g. ["balazs","iroda",...]
+    usedAnchorKeys: Array.from(usedKeys), // these are normalized keys too
+  }) ?? null;
+
+const forcedAnchorLabel = forcedAnchorKey ? labelForAnchorKey(forcedAnchorKey) : null;
+
+// If we have a forced anchor, narrow the available list to ONLY that label
+let availableAnchorsFinal = availableAnchors;
+if (forcedAnchorLabel) {
+  availableAnchorsFinal = [forcedAnchorLabel];
+}
+
+
     const profile = buildDirectionProfile(direction);
-    const baseSystemPrompt = buildBaseSystemPrompt(profile, availableAnchors);
+    const baseSystemPrompt = buildBaseSystemPrompt(profile, availableAnchorsFinal);
 
     const userPayload = {
       dream_text: dreamText,
@@ -1262,7 +1304,7 @@ export async function POST(req: Request) {
       latent_analysis_snapshot: dbLatentPack.latent_analysis ?? null,
       latent_log_tail: dbLatentPack.latent_log_tail ?? [],
       last_answer_excerpt: answerExcerpt,
-      available_anchors: availableAnchors,
+      available_anchors: availableAnchorsFinal,
       dream_observation: compactObservation,
       // recent_work_blocks: recentWorkBlocks,
       // latent_analysis_snapshot / latent_log_tail: egyelőre ne
@@ -1309,8 +1351,8 @@ export async function POST(req: Request) {
 
     // Helper: persist question to ledger (best-effort)
     async function persistAcceptedQuestion(questionText: string) {
-      const anchorLabel = detectAnchorUsed(questionText, anchorCandidatesDetailed);
-      const k = anchorLabel ? anchorKey(anchorLabel) : "";
+      const anchorLabel = forcedAnchorLabel ?? detectAnchorUsed(questionText, anchorCandidatesDetailed);
+      const k = forcedAnchorKey ?? (anchorLabel ? anchorKey(anchorLabel) : "");
       const keys = k ? [k] : [];
       // also mark "used" in-memory for this request to reduce weirdness on retry
       for (const kk of keys) usedKeys.add(kk);
@@ -1337,10 +1379,17 @@ export async function POST(req: Request) {
 
     // NEW: if the question uses an anchor key we already asked (ledger), treat as "too similar" even if wording differs
     const anchorLabelFirst = detectAnchorUsed(first.work_block.question, anchorCandidatesDetailed);
-    const anchorKeyFirst = anchorLabelFirst ? anchorKey(anchorLabelFirst) : "";
-    const ledgerRepeat1 = anchorKeyFirst ? usedKeys.has(anchorKeyFirst) : false;
 
-    if (!tooSimilar1 && !ledgerRepeat1 && !first.stop_signal?.suggest_stop) {
+// forced módban a forcedAnchorKey az igazság, nem a detectAnchorUsed
+const anchorKeyFirstFinal = forcedAnchorKey ?? (anchorLabelFirst ? anchorKey(anchorLabelFirst) : "");
+
+const ledgerRepeat1 = anchorKeyFirstFinal ? usedKeys.has(anchorKeyFirstFinal) : false;
+
+    const violatesForced =
+      forcedAnchorLabel ? !normalizeQ(first.work_block.question).includes(normalizeQ(forcedAnchorLabel)) : false;
+
+
+    if (!tooSimilar1 && !violatesForced && !ledgerRepeat1 && !first.stop_signal?.suggest_stop) {
       const persisted = await persistAcceptedQuestion(first.work_block.question);
 
       await appendLatentLogEvent(req, {
@@ -1359,7 +1408,7 @@ export async function POST(req: Request) {
           answer_len: answerLen,
           answer_excerpt: answerExcerpt,
           similarity_retry: false,
-          ledger_repeat: false,
+          ledger_repeat: ledgerRepeat1,
           anchor_key: persisted.anchorKey,
         },
       });
@@ -1371,20 +1420,23 @@ export async function POST(req: Request) {
     const retry = await callModel([
       ...safetyExtraRules,
       `TILOS: ezekkel megegyező vagy ezek parafrázisa: ${prevQsRecent.join(" | ")}`,
-      availableAnchors.length > 0
-        ? `Válassz egy MÁSik horgonyt a listából (elérhető anchors: ${availableAnchors.join(" | ")}).`
-        : `Nincs új horgony, ezért low_novelty lehet a helyes válasz.`,
-      "KÖTELEZŐ: válts teljesen más konkrét részletre ugyanabban az irányban.",
-      "Ha nem tudsz érdemben új fókuszt, add vissza a sémát úgy, hogy stop_signal.suggest_stop=true és reason='low_novelty'.",
+      forcedAnchorLabel
+  ? `KÖTELEZŐ: a question tartalmazza ezt a horgonyt: "${forcedAnchorLabel}".`
+  : availableAnchorsFinal.length > 0
+    ? `Válassz egy MÁSik horgonyt a listából (elérhető anchors: ${availableAnchorsFinal.join(" | ")}).`
+    : `Nincs új horgony, ezért low_novelty lehet a helyes válasz.`
     ]);
 
     const tooSimilar2 =
       (prevQsRecent.length > 0 && isTooSimilar(retry.work_block.question, prevQsRecent)) ||
       isExactRepeat(retry.work_block.question, prevQsAll);
 
+    const violatesForced2 =
+      forcedAnchorLabel ? !normalizeQ(retry.work_block.question).includes(normalizeQ(forcedAnchorLabel)) : false;
+
     const anchorLabelRetry = detectAnchorUsed(retry.work_block.question, anchorCandidatesDetailed);
-    const anchorKeyRetry = anchorLabelRetry ? anchorKey(anchorLabelRetry) : "";
-    const ledgerRepeat2 = anchorKeyRetry ? usedKeys.has(anchorKeyRetry) : false;
+const anchorKeyRetryFinal = forcedAnchorKey ?? (anchorLabelRetry ? anchorKey(anchorLabelRetry) : "");
+const ledgerRepeat2 = anchorKeyRetryFinal ? usedKeys.has(anchorKeyRetryFinal) : false;
 
     if (retry.stop_signal?.suggest_stop) {
       await appendLatentLogEvent(req, {
@@ -1404,13 +1456,13 @@ export async function POST(req: Request) {
           answer_excerpt: answerExcerpt,
           similarity_retry: true,
           ledger_repeat: ledgerRepeat2,
-          anchor_key: anchorKeyRetry || null,
+          anchor_key: anchorKeyRetryFinal || null,
         },
       });
       return NextResponse.json(retry);
     }
 
-    if (tooSimilar2 || ledgerRepeat2) {
+    if (tooSimilar2 || ledgerRepeat2 || violatesForced2) {
       const out = makeLowNoveltyClosure("none");
       await appendLatentLogEvent(req, {
         sessionId: sessionIdSafe, // ✅ fixed
