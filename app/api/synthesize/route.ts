@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
 import { anchorsFromObservation } from "@/src/lib/dream/anchorsFromObservation";
-import { anchorKey } from "@/src/lib/dream/anchorKey";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -176,6 +175,49 @@ function mapObsSafetyToFlags(obsFlag?: string): SafetyValue {
  * Lightweight “anchor key” normalizer (for event logging / later de-dup).
  * Keep it local for now so synthesize works “in one file”.
  */
+const HU_STOP = new Set([
+  "a",
+  "az",
+  "egy",
+  "és",
+  "vagy",
+  "hogy",
+  "de",
+  "mert",
+  "amikor",
+  "ahogy",
+  "már",
+  "még",
+  "is",
+  "se",
+  "sem",
+  "ott",
+  "itt",
+  "oda",
+  "ide",
+  "innen",
+  "onnan",
+  "valami",
+  "valaki",
+  "nagyon",
+  "kicsit",
+]);
+
+function stripDiacritics(s: string) {
+  return (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function anchorKey(raw: string): string {
+  const s = (raw || "").toLowerCase().trim();
+  if (!s) return "";
+  const tokens = stripDiacritics(s)
+    .split(/[^a-zA-Z0-9áéíóöőúüű]+/g)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 2)
+    .filter((t) => !HU_STOP.has(t));
+  return tokens.join(" ").trim();
+}
+
 function anchorKeysFromStrings(arr: unknown): string[] {
   if (!Array.isArray(arr)) return [];
   const out: string[] = [];
@@ -376,7 +418,7 @@ async function fetchCatalogForAI(supabase: any) {
 async function persistLatent(supabase: any, sessionId: string, userId: string, output: SynthesizeOutput) {
   const { error } = await supabase
     .from("dream_session_summaries")
-    .upsert({ session_id: sessionId, user_id: userId, latent_analysis: output }, { onConflict: "session_id,user_id" });
+    .upsert({ session_id: sessionId, user_id: userId, latent_analysis: output }, { onConflict: "session_id" });
 
   if (error) console.warn("synthesize: persist latent failed", error.message);
 }

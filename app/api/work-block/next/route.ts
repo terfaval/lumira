@@ -22,7 +22,6 @@ import {
 } from "@/src/lib/dream/observation";
 import { isDirectionCardContent } from "@/src/lib/types";
 import { pickNextAnchorKey } from "@/src/lib/dream/pickNextAnchorKey";
-import { anchorKey } from "@/src/lib/dream/anchorKey";
 
 
 // -----------------------------------------------------------------------------
@@ -465,6 +464,56 @@ async function parseModelJSON(rawContent: string): Promise<unknown> {
 // Anchor key normalisation (for ledger)
 // -----------------------------------------------------------------------------
 
+const HU_STOP = new Set([
+  "a",
+  "az",
+  "egy",
+  "és",
+  "vagy",
+  "hogy",
+  "de",
+  "mert",
+  "amikor",
+  "ahogy",
+  "már",
+  "még",
+  "is",
+  "se",
+  "sem",
+  "ott",
+  "itt",
+  "oda",
+  "ide",
+  "innen",
+  "onnan",
+  "valami",
+  "valaki",
+  "nagyon",
+  "kicsit",
+]);
+
+function stripDiacritics(s: string) {
+  return (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Stable-ish anchor key for "did we already ask about this anchor?"
+ * - lower
+ * - strip diacritics
+ * - keep alnum tokens
+ * - drop short/stop words
+ */
+function anchorKey(raw: string): string {
+  const s = (raw || "").toLowerCase().trim();
+  if (!s) return "";
+  const tokens = stripDiacritics(s)
+    .split(/[^a-z0-9]+/g)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .filter((t) => t.length > 2)
+    .filter((t) => !HU_STOP.has(t));
+  return tokens.join(" ");
+}
 
 // -----------------------------------------------------------------------------
 // DB helpers
