@@ -1,6 +1,7 @@
 // /src/lib/archive.ts
 import { supabase } from "./supabase/client";
 import { isDirectionCardContent, type WorkBlock } from "./types";
+import { CatalogService } from "@/src/services/CatalogService";
 
 export type Feldolgozottsag = "vazlat" | "erintett" | "feldolgozott";
 export type RangeOption = "all" | "7" | "30" | "90" | "365";
@@ -98,32 +99,6 @@ function resolveTitle(session: any): string {
 }
 
 /** group név tisztítás */
-function normalizeGroupName(x: unknown): string | null {
-  if (typeof x !== "string") return null;
-  const cleaned = x.trim().replace(/\s+/g, " ");
-  return cleaned ? cleaned : null;
-}
-
-/** direction_catalog slug -> content.group mapping */
-async function fetchDirectionGroupMap(slugs: string[]) {
-  if (slugs.length === 0) return new Map<string, string>();
-
-  const { data, error } = await supabase
-    .from("direction_catalog")
-    .select("slug, content")
-    .in("slug", slugs);
-
-  if (error) throw error;
-
-  const map = new Map<string, string>();
-  for (const row of (data ?? []) as any[]) {
-    const slug = typeof row?.slug === "string" ? row.slug : "";
-    const group = normalizeGroupName(row?.content?.group);
-    if (slug && group) map.set(slug, group);
-  }
-  return map;
-}
-
 export async function fetchArchiveSessions(userId: string, range?: RangeOption) {
   const days = range && range !== "all" ? rangeToDays[range] : undefined;
   const sinceDate = days ? new Date(Date.now() - days * 24 * 60 * 60 * 1000) : null;
@@ -191,7 +166,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
   // ✅ slug -> group mapping a direction_catalog táblából
   const allTouchedSlugs = Array.from(aggregates.values()).flatMap((a) => Array.from(a.touchedSlugs));
   const uniqueTouchedSlugs = Array.from(new Set(allTouchedSlugs));
-  const slugToGroup = await fetchDirectionGroupMap(uniqueTouchedSlugs);
+  const slugToGroup = await CatalogService.getGroupMapForSlugs(supabase, uniqueTouchedSlugs);
 
   const summaries: ArchiveSessionSummary[] = (sessions ?? []).map((session: any) => {
     const aggregate = aggregates.get(session.id) ?? {

@@ -3,17 +3,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
+import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { startDirection } from "@/src/lib/startDirection";
-import type { DirectionCatalogItem } from "@/src/lib/types";
+import { requireUserId } from "@/src/lib/db";
+import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { Pill } from "@/components/Pill";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import styles from "./direction.module.css";
 import { huTagDir } from "@/src/lib/tags/dirTagsHu";
 import { registerListener } from "@/src/lib/perfDebug";
+import { CatalogService } from "@/src/services/CatalogService";
+import { fetchLatentLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
 
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
-type RecommendedDirection = { slug: string; reason?: string };
+type RecommendedDirection = { slug: string; reason?: string; score?: number };
 
 function safeStringArray(x: unknown): string[] {
   if (!Array.isArray(x)) return [];
@@ -23,7 +27,27 @@ function safeStringArray(x: unknown): string[] {
     .filter(Boolean);
 }
 
-function safeRecommendedDirections(x: unknown): RecommendedDirection[] {
+function safeLatentCandidates(x: unknown): RecommendedDirection[] {
+  if (!Array.isArray(x)) return [];
+  const out: RecommendedDirection[] = [];
+  for (const item of x) {
+    if (!item || typeof item !== "object") continue;
+    const slug = (item as any).slug;
+    const score = typeof (item as any).score === "number" ? (item as any).score : 0;
+    const why = (item as any).why ?? (item as any).reason; // tolerate
+    if (typeof slug === "string" && slug.trim()) {
+      out.push({
+        slug: slug.trim(),
+        score,
+        reason: typeof why === "string" ? why : undefined,
+      });
+    }
+  }
+  return out;
+}
+
+function safeSummaryFallback(x: unknown): RecommendedDirection[] {
+  // Deprecated fallback: legacy summary-based recommendations.
   if (!Array.isArray(x)) return [];
   const out: RecommendedDirection[] = [];
   for (const item of x) {
@@ -40,21 +64,17 @@ function safeRecommendedDirections(x: unknown): RecommendedDirection[] {
   return out;
 }
 
-function getSortOrder(d: DirectionCatalogItem): number {
-  const v = (d as any)?.sort_order;
-  return typeof v === "number" ? v : 9999;
+function getSortOrder(d: DirectionCatalogItemDTO): number {
+  return typeof d.sort_order === "number" ? d.sort_order : 9999;
 }
 
-/** A DB-ben lévő magyar group címkéből stabil key */
 function groupKeyFromLabel(raw: unknown): GroupKey {
   const label = String(raw ?? "").trim().toLowerCase();
-
   if (label.includes("álomemlékezet")) return "memory";
   if (label.includes("érzelmi") || label.includes("testi")) return "somatic";
   if (label.includes("mintázat")) return "patterns";
   if (label.includes("jelent")) return "meaning";
   if (label.includes("kreatív")) return "creative";
-
   return "other";
 }
 
@@ -68,7 +88,6 @@ function groupLabel(raw: unknown): string {
 }
 
 function groupOrderKey(k: GroupKey): number {
-  // ✅ fix UX order (és ez adja a “helyes sorrendet” a csoportosításhoz)
   const order: GroupKey[] = ["memory", "somatic", "patterns", "meaning", "creative", "other"];
   const idx = order.indexOf(k);
   return idx === -1 ? 999 : idx;
@@ -79,57 +98,104 @@ export default function DirectionPage() {
   const router = useRouter();
   const { loading } = useRequireAuth();
 
-  const [catalog, setCatalog] = useState<DirectionCatalogItem[]>([]);
+  const [catalog, setCatalog] = useState<DirectionCatalogItemDTO[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [recommendedRaw, setRecommendedRaw] = useState<RecommendedDirection[]>([]);
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const didLoadRef = useRef(false);
 
   const close = useCallback(() => {
     router.back();
   }, [router]);
 
   const load = useCallback(async () => {
+    if (didLoadRef.current) return;
+    didLoadRef.current = true;
+
     setErr(null);
 
-    const { data: cat, error: catErr } = await supabase
-      .from("direction_catalog")
-      .select("slug, title, description, is_active, content, tags, sort_order")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true });
+    const uid = await requireUserId().catch(() => null);
 
-    if (catErr) return setErr(catErr.message);
-    setCatalog((cat ?? []) as DirectionCatalogItem[]);
+    // 1) catalog
+    try {
+      const cat = await CatalogService.getActiveCatalog(supabase);
+      setCatalog(cat);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Hiba");
+      return;
+    }
 
-    const { data: ch, error: chErr } = await supabase
-      .from("morning_direction_choices")
-      .select("direction_slug")
-      .eq("session_id", sessionId);
+    // 2) previously chosen (UX)
+    {
+      const { data: ch, error: chErr } = await supabase
+        .from("morning_direction_choices")
+        .select("direction_slug")
+        .eq("session_id", sessionId);
 
-    if (chErr) return setErr(chErr.message);
+      if (chErr) {
+        setErr(chErr.message);
+        // nem return — ettől még lehet ajánlás
+      } else {
+        const m: Record<string, boolean> = {};
+        (ch ?? []).forEach((row: { direction_slug: string }) => {
+          m[row.direction_slug] = true;
+        });
+        setSelected(m);
+      }
+    }
 
-    const m: Record<string, boolean> = {};
-    (ch ?? []).forEach((row: { direction_slug: string }) => {
-      m[row.direction_slug] = true;
-    });
-    setSelected(m);
+    // 3) v0 ensure + latent_latest -> recommended
+    if (uid) {
+      try {
+        await fetchWithAuth("/api/session/ensure", {
+          method: "POST",
+          json: {
+            session_id: sessionId,
+            run: { observe: true, session_index: true, latent: true, frame: false },
+          },
+        });
+      } catch {
+        // soft fail: ettől még megpróbáljuk latent_latest-et
+      }
 
-    const { data: sum, error: sumErr } = await supabase
-      .from("dream_session_summaries")
-      .select("recommended_directions")
-      .eq("session_id", sessionId)
-      .maybeSingle();
+      try {
+        const latentLatest = await fetchLatentLatestWithPayloadAndId(supabase, uid, sessionId);
+        const latentRaw =
+          latentLatest?.payload?.direction_candidates ?? latentLatest?.payload?.candidate_directions;
 
-    if (sumErr) console.warn("dream_session_summaries load error:", sumErr.message);
+        const latentRecs = safeLatentCandidates(latentRaw)
+          .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+          .slice(0, 3);
 
-    const rec = safeRecommendedDirections((sum as any)?.recommended_directions);
-    setRecommendedRaw(rec);
+        if (latentRecs.length > 0) {
+          setRecommendedRaw(latentRecs);
+          return;
+        }
+      } catch {
+        // ignore and continue to fallback
+      }
+    }
+
+    // 4) Deprecated fallback: summary-based recommendations when v0 is missing.
+    {
+      const { data: sum, error: sumErr } = await supabase
+        .from("dream_session_summaries")
+        .select("recommended_directions")
+        .eq("session_id", sessionId)
+        .maybeSingle();
+
+      if (sumErr) console.warn("dream_session_summaries load error:", sumErr.message);
+
+      const rec = safeSummaryFallback((sum as any)?.recommended_directions);
+      setRecommendedRaw(rec);
+    }
   }, [sessionId]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   // lock scroll while modal is open
@@ -160,7 +226,6 @@ export default function DirectionPage() {
   }, [close]);
 
   const orderedAll = useMemo(() => {
-    // ✅ mindig sort_order, aztán title stabil tie-breakerrel
     return [...catalog].sort((a, b) => {
       const d = getSortOrder(a) - getSortOrder(b);
       if (d !== 0) return d;
@@ -169,12 +234,11 @@ export default function DirectionPage() {
   }, [catalog]);
 
   const recommended = useMemo(() => {
-    // ✅ ajánlott: pontosan a summary sorrendjében (max 3), nem sort_order szerint
     const slugs = recommendedRaw.map((r) => r.slug).filter(Boolean).slice(0, 3);
     if (!slugs.length) return orderedAll.slice(0, 3);
 
     const bySlug = new Map(orderedAll.map((d) => [d.slug, d]));
-    const picked = slugs.map((s) => bySlug.get(s)).filter(Boolean) as DirectionCatalogItem[];
+    const picked = slugs.map((s) => bySlug.get(s)).filter(Boolean) as DirectionCatalogItemDTO[];
     return picked.length ? picked : orderedAll.slice(0, 3);
   }, [orderedAll, recommendedRaw]);
 
@@ -182,19 +246,17 @@ export default function DirectionPage() {
     const recSlugs = new Set(recommended.map((d) => d.slug));
     const rest = orderedAll.filter((d) => !recSlugs.has(d.slug));
 
-    // ✅ group szerint csoportosít, de NEM ír köztes címet; a sorrend:
-    // group order (fix), azon belül sort_order
-    const buckets = new Map<GroupKey, DirectionCatalogItem[]>();
+    const buckets = new Map<GroupKey, DirectionCatalogItemDTO[]>();
     for (const k of ["memory", "somatic", "patterns", "meaning", "creative", "other"] as GroupKey[]) {
       buckets.set(k, []);
     }
 
     for (const d of rest) {
-      const k = groupKeyFromLabel((d as any)?.content?.group);
+      const k = groupKeyFromLabel(d.content.group);
       buckets.get(k)!.push(d);
     }
 
-    const out: DirectionCatalogItem[] = [];
+    const out: DirectionCatalogItemDTO[] = [];
     const keys = Array.from(buckets.keys()).sort((a, b) => groupOrderKey(a) - groupOrderKey(b));
     for (const k of keys) {
       const items = (buckets.get(k) ?? []).sort((a, b) => {
@@ -220,8 +282,7 @@ export default function DirectionPage() {
         setSelected((prev) => ({ ...prev, [slug]: true }));
         router.push(`/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`);
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : "Hiba";
-        setErr(message);
+        setErr(e instanceof Error ? e.message : "Hiba");
       } finally {
         setBusySlug(null);
       }
@@ -229,18 +290,15 @@ export default function DirectionPage() {
     [router, sessionId]
   );
 
-  function renderCard(d: DirectionCatalogItem, opts?: { recommended?: boolean }) {
-    const rawGroup = (d as any)?.content?.group;
+  function renderCard(d: DirectionCatalogItemDTO, opts?: { recommended?: boolean }) {
+    const rawGroup = d.content.group;
     const gKey = groupKeyFromLabel(rawGroup);
     const gLabel = groupLabel(rawGroup);
     const token = groupToken(gKey);
 
     const chosen = !!selected[d.slug];
-    const tags = safeStringArray((d as any)?.tags).slice(0, 2);
-
-    const micro =
-      ((d as any)?.content?.micro_description as string | undefined) ?? (d.description ?? "");
-
+    const tags = safeStringArray(d.tags).slice(0, 2);
+    const micro = d.content.micro_description ?? d.description ?? "";
     const isBusy = busySlug === d.slug;
 
     return (
@@ -257,7 +315,6 @@ export default function DirectionPage() {
           </div>
         ) : null}
 
-        {/* TOP: group + cím + leírás */}
         <div className={styles.cardTop}>
           <div className={styles.groupRow}>
             <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
@@ -266,11 +323,9 @@ export default function DirectionPage() {
           </div>
 
           <div className={styles.title}>{d.title}</div>
-
           {micro ? <div className={styles.desc}>{micro}</div> : null}
         </div>
 
-        {/* ACTIONS: balra pill sáv, jobbra indítás */}
         <div className={styles.actions}>
           <div className={styles.actionPills}>
             {chosen ? <Pill variant="neutral">Korábban kiválasztva</Pill> : null}
@@ -320,9 +375,7 @@ export default function DirectionPage() {
           <div className={styles.stack}>
             {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}
 
-            <div className={styles.grid}>
-              {recommended.map((d) => renderCard(d, { recommended: true }))}
-            </div>
+            <div className={styles.grid}>{recommended.map((d) => renderCard(d, { recommended: true }))}</div>
 
             <div className={styles.grid}>{restGroupedFlattened.map((d) => renderCard(d))}</div>
           </div>

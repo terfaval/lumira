@@ -284,8 +284,8 @@ function clampWorkBlock(block: WorkBlock): WorkBlock {
 function makeClosureResponse(reason: string | null, safety: SafetyValue): WorkBlockResponse {
   return {
     work_block: clampWorkBlock({
-      lead_in: "Köszönöm, hogy megosztottad. Ha szeretnéd, itt most megpihenhetünk.",
-      question: "Szeretnéd itt lezárni most?",
+      lead_in: "Köszönöm, hogy megosztottad. Itt most megpihenhetünk, vagy válthatsz irányt.",
+      question: "Szeretnél irányt váltani, vagy most pihenni és később folytatni?",
       cta: null,
     }),
     stop_signal: { suggest_stop: true, reason },
@@ -297,8 +297,8 @@ function makeLowNoveltyClosure(safety: SafetyValue): WorkBlockResponse {
   return {
     work_block: clampWorkBlock({
       lead_in:
-        "Ebben az irányban most nem látok több olyan érdemi, új fókuszt, ami valóban hozzáadna a feldolgozáshoz, ezért ezt az irányt most lezárjuk.",
-      question: "Hogyan szeretnéd folytatni?",
+        "Ebben az irányban most nem látok új, érdemi fókuszt — válthatunk irányt.",
+      question: "Váltunk irányt, vagy most pihensz meg?",
       cta: null,
     }),
     stop_signal: { suggest_stop: true, reason: "low_novelty" },
@@ -888,8 +888,8 @@ function buildDirectionProfile(direction: DirectionNormalized): DirectionProfile
         ? contract.tone_tags.filter((x: any) => typeof x === "string").slice(0, 6)
         : ["gentle", "slow", "minimal-friction"],
       pacing: {
-        max_steps: typeof contract?.pacing?.max_steps === "number" ? contract.pacing.max_steps : 4,
-        max_depth: typeof contract?.pacing?.max_depth === "number" ? contract.pacing.max_depth : 2,
+        max_steps: 999,
+        max_depth: 99,
       },
     },
     question_style,
@@ -926,9 +926,6 @@ function detectUserBriefStreak(history: HistoryItem[], streak?: number): boolean
 
 function shouldStop(direction: DirectionNormalized | undefined, history: HistoryItem[]) {
   const stopCriteria = direction?.stop_criteria ?? {};
-
-  const maxCards = typeof (stopCriteria as any).max_cards === "number" ? (stopCriteria as any).max_cards : undefined;
-  if (maxCards && history.length >= maxCards) return { suggest_stop: true, reason: "max_cards" as const };
 
   if (detectRepetition(history, !!(stopCriteria as any).stop_if_repetition_detected)) {
     return { suggest_stop: true, reason: "repetition" as const };

@@ -8,7 +8,9 @@ import { Shell } from "@/components/Shell";
 import { Pill } from "@/components/Pill";
 import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { startDirection } from "@/src/lib/startDirection";
-import type { DreamSession, DirectionCatalogItem, DirectionCardContent, WorkBlock } from "@/src/lib/types";
+import type { DreamSession, DirectionCardContent, WorkBlock } from "@/src/lib/types";
+import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
+import { CatalogService } from "@/src/services/CatalogService";
 
 import styles from "./summary.module.css";
 
@@ -100,7 +102,7 @@ export default function SessionSummary() {
   } | null>(null);
 
   const [workBlocks, setWorkBlocks] = useState<WorkBlock[]>([]);
-  const [directionCatalog, setDirectionCatalog] = useState<DirectionCatalogItem[]>([]);
+  const [directionCatalog, setDirectionCatalog] = useState<DirectionCatalogItemDTO[]>([]);
   const [selectedDirs, setSelectedDirs] = useState<Record<string, boolean>>({});
   const [recommendedRaw, setRecommendedRaw] = useState<RecommendedDirection[]>([]);
   const [showRest, setShowRest] = useState(false);
@@ -169,13 +171,9 @@ export default function SessionSummary() {
         });
         setSelectedDirs(sel);
 
-        const { data: cat, error: catErr } = await supabase
-          .from("direction_catalog")
-          .select("slug, title, description, content, tags, sort_order, is_active")
-          .eq("is_active", true);
-        if (catErr) throw new Error(catErr.message);
+        const cat = await CatalogService.getActiveCatalog(supabase);
         if (!isMounted) return;
-        setDirectionCatalog((cat ?? []) as DirectionCatalogItem[]);
+        setDirectionCatalog(cat);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Hiba történt az összkép betöltésekor.";
         if (!isMounted) return;
@@ -228,7 +226,7 @@ export default function SessionSummary() {
 
   // Build a slug→catalog map for quick lookups
   const catalogBySlug = useMemo(() => {
-    const m = new Map<string, DirectionCatalogItem>();
+    const m = new Map<string, DirectionCatalogItemDTO>();
     for (const d of directionCatalog) m.set(d.slug, d);
     return m;
   }, [directionCatalog]);
@@ -299,7 +297,7 @@ export default function SessionSummary() {
     const notSelected = directionCatalog.filter((d) => !selectedDirs[d.slug]);
 
     const orderedAll = [...notSelected].sort((a, b) => {
-      const d = ((a as any)?.sort_order ?? 0) - ((b as any)?.sort_order ?? 0);
+      const d = (a.sort_order ?? 0) - (b.sort_order ?? 0);
       if (d !== 0) return d;
       return String(a.title ?? "").localeCompare(String(b.title ?? ""), "hu");
     });
@@ -308,11 +306,11 @@ export default function SessionSummary() {
     const slugs = suggested.slice(0, 3);
 
     if (slugs.length > 0) {
-      const bySlug = new Map<string, DirectionCatalogItem>();
+      const bySlug = new Map<string, DirectionCatalogItemDTO>();
       orderedAll.forEach((d) => bySlug.set(d.slug, d));
       const picked = slugs
         .map((s) => bySlug.get(s))
-        .filter((d): d is DirectionCatalogItem => !!d)
+        .filter((d): d is DirectionCatalogItemDTO => !!d)
         .slice(0, 3);
       if (picked.length > 0) return picked;
     }
@@ -325,22 +323,22 @@ export default function SessionSummary() {
     const recSet = new Set(recommendedDirs.map((d) => d.slug));
     const candidates = directionCatalog.filter((d) => !selectedDirs[d.slug] && !recSet.has(d.slug));
 
-    const buckets = new Map<GroupKey, DirectionCatalogItem[]>();
+    const buckets = new Map<GroupKey, DirectionCatalogItemDTO[]>();
     for (const k of ["memory", "somatic", "patterns", "meaning", "creative", "other"] as GroupKey[]) {
       buckets.set(k, []);
     }
 
     for (const d of candidates) {
-      const gKey = groupKeyFromLabel((d as any)?.content?.group);
+      const gKey = groupKeyFromLabel(d.content.group);
       buckets.get(gKey)!.push(d);
     }
 
-    const out: DirectionCatalogItem[] = [];
+    const out: DirectionCatalogItemDTO[] = [];
     const keys = Array.from(buckets.keys()).sort((a, b) => groupOrderKey(a) - groupOrderKey(b));
 
     for (const k of keys) {
       const items = (buckets.get(k) ?? []).sort((a, b) => {
-        const d = ((a as any)?.sort_order ?? 0) - ((b as any)?.sort_order ?? 0);
+        const d = (a.sort_order ?? 0) - (b.sort_order ?? 0);
         if (d !== 0) return d;
         return String(a.title ?? "").localeCompare(String(b.title ?? ""), "hu");
       });
@@ -371,13 +369,13 @@ export default function SessionSummary() {
   );
 
   // Render a direction card (recommended/rest) with start button
-  function renderDirCard(d: DirectionCatalogItem) {
-    const gRaw = (d as any)?.content?.group;
+  function renderDirCard(d: DirectionCatalogItemDTO) {
+    const gRaw = d.content.group;
     const gKey = groupKeyFromLabel(gRaw);
     const gLabel = groupLabel(gRaw);
     const token = groupToken(gKey);
-    const tags = safeStringArray((d as any)?.tags).slice(0, 2);
-    const micro = ((d as any)?.content?.micro_description ?? d.description ?? "") as string;
+    const tags = safeStringArray(d.tags).slice(0, 2);
+    const micro = d.content.micro_description ?? d.description ?? "";
     const chosen = !!selectedDirs[d.slug];
 
     return (

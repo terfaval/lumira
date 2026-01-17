@@ -13,6 +13,7 @@ import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { FlowLoadingOverlay } from "@/components/FlowLoadingOverlay";
+import { CatalogService } from "@/src/services/CatalogService";
 
 function InfoIcon() {
   return (
@@ -57,15 +58,7 @@ export default function NewClient() {
   }, [text]);
 
   async function fetchActiveSlugs(): Promise<string[]> {
-    const { data, error } = await supabase
-      .from("direction_catalog")
-      .select("slug")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("slug", { ascending: true });
-
-    if (error) throw error;
-    return (data ?? []).map((r: any) => r.slug).filter(Boolean);
+    return CatalogService.getActiveSlugs(supabase);
   }
 
   async function createSession() {

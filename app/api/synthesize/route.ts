@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
 import { anchorsFromObservation } from "@/src/lib/dream/anchorsFromObservation";
+import { CatalogService } from "@/src/services/CatalogService";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -406,13 +407,7 @@ async function ensureObservation(args: { req: Request; sessionId: string; dreamT
 
 // ✅ use the SAME authed supabase instance (no supabaseServer() here)
 async function fetchCatalogForAI(supabase: any) {
-  const { data: rows } = await supabase
-    .from("direction_catalog")
-    .select("slug, title, description, content, tags, sort_order, is_active")
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true });
-
-  return Array.isArray(rows) ? rows : [];
+  return CatalogService.getActiveCatalog(supabase);
 }
 
 async function persistLatent(supabase: any, sessionId: string, userId: string, output: SynthesizeOutput) {

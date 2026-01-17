@@ -10,6 +10,7 @@ import {
 } from "@/src/db/repositories/latestRepo";
 import { insertLatentVersionIfMissing, upsertLatentLatest } from "@/src/db/repositories/latentRepo";
 import { updateLatentFromMaterial } from "@/src/domain/latent/updateLatentFromMaterial";
+import { normalizeLatentPayload } from "@/src/domain/latent/normalizeLatentPayload";
 
 export async function jobUpdateLatent(args: {
   supabase: SupabaseClient;
@@ -66,20 +67,22 @@ export async function jobUpdateLatent(args: {
     const excerpt = entryRes.error ? "" : (entryRes.data.content ?? "").slice(0, 500);
 
     const { payload, model } = await updateLatentFromMaterial({
-      observation: obs.payload,
-      sessionIndex: idx.payload,
-      allowedSlugs,
-      userPrefs,
-      dreamTextExcerpt: excerpt,
-    });
+  observation: obs.payload,
+  sessionIndex: idx.payload,
+  allowedSlugs,
+  userPrefs,
+  dreamTextExcerpt: excerpt,
+});
 
-    const latent = await insertLatentVersionIfMissing(supabase, {
-      session_id: event.session_id,
-      user_id: event.user_id,
-      input_hash,
-      model,
-      payload,
-    });
+const normalizedPayload = normalizeLatentPayload(payload);
+
+const latent = await insertLatentVersionIfMissing(supabase, {
+  session_id: event.session_id,
+  user_id: event.user_id,
+  input_hash,
+  model,
+  payload: normalizedPayload,
+});
 
     await upsertLatentLatest(supabase, {
       session_id: event.session_id,

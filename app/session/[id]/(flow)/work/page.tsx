@@ -11,10 +11,11 @@ import { requireUserId } from "@/src/lib/db";
 import {
   isDirectionCardContent,
   type DirectionCardContent,
-  type DirectionCatalogItem,
   type WorkBlock,
 } from "@/src/lib/types";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
+import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
+import { CatalogService } from "@/src/services/CatalogService";
 
 type DirectionWorkBlock = WorkBlock & { content: DirectionCardContent };
 type HistoryItem = { question: string; answer: string | null };
@@ -41,7 +42,7 @@ export default function WorkPage() {
   const { loading } = useRequireAuth();
 
   const [blocks, setBlocks] = useState<WorkBlock[]>([]);
-  const [directionConfig, setDirectionConfig] = useState<DirectionCatalogItem | null>(null);
+  const [directionConfig, setDirectionConfig] = useState<DirectionCatalogItemDTO | null>(null);
   const [session, setSession] = useState<{ raw_dream_text: string } | null>(null);
 
   const [err, setErr] = useState<string | null>(null);
@@ -85,7 +86,7 @@ export default function WorkPage() {
       .eq("block_type", "dream_analysis")
       .order("created_at", { ascending: true });
 
-    if (error) setErr("Nem sikerült betölteni a kártyákat.");
+    if (error) setErr("Nem sikerÆ•lt betÆlteni a kÆórtyÆókat.");
     else setBlocks((data ?? []) as WorkBlock[]);
 
     setLoaded(true);
@@ -100,16 +101,15 @@ export default function WorkPage() {
     if (!directionSlug) return;
 
     (async () => {
-      const { data, error } = await supabase
-        .from("direction_catalog")
-        .select("slug, title, description, content")
-        .eq("slug", directionSlug)
-        .single();
-
-      if (cancelled) return;
-
-      if (error) setErr("Nem sikerült betölteni az irányt.");
-      else setDirectionConfig(data as DirectionCatalogItem);
+      try {
+        const data = await CatalogService.getDirectionBySlug(supabase, directionSlug);
+        if (cancelled) return;
+        if (!data) setErr("Nem sikerÆ•lt betÆlteni az irÆónyt.");
+        else setDirectionConfig(data);
+      } catch {
+        if (cancelled) return;
+        setErr("Nem sikerÆ•lt betÆlteni az irÆónyt.");
+      }
     })();
 
     return () => {

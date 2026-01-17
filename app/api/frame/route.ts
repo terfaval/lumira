@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
 import { hasDreamObservation } from "@/src/lib/dream/observationServer";
+import { CatalogService } from "@/src/services/CatalogService";
 
 import { TITLE_MAX } from "@/src/lib/dream/const";
 import {
@@ -24,15 +25,6 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-type DirectionCatalogRow = {
-  slug: string;
-  title: string;
-  description: string | null;
-  content: any;
-  is_active: boolean;
-  sort_order: number | null;
-};
 
 type RecommendedDirection = { slug: string; reason: string };
 
@@ -611,16 +603,7 @@ const [{ data: session }, { data: summary }] = await Promise.all([
       const framing_text =
         "Az álmodban valami gyorsan megvillant, de most még kevés részlet maradt meg. Ha van kedved, írd le 1–3 mondatban: hol voltál, ki volt veled, és mi volt a legerősebb pillanat.";
 
-      const { data: dirs, error: dirErr } = await supabase
-        .from("direction_catalog")
-        .select("slug, is_active, sort_order")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true, nullsFirst: false })
-        .order("slug", { ascending: true });
-
-      if (dirErr) return NextResponse.json({ error: dirErr.message }, { status: 500 });
-
-      const allowedSlugs = (dirs ?? []).filter((d: any) => d.is_active).map((d: any) => d.slug);
+      const allowedSlugs = await CatalogService.getActiveSlugs(supabase);
       const recommended_directions = allowedSlugs.length >= RECOMMENDATION_MIN ? fallbackRecommendationsFromAllowed(allowedSlugs) : [];
 
       await Promise.all([
@@ -648,22 +631,13 @@ const [{ data: session }, { data: summary }] = await Promise.all([
     }
 
     // Load catalog
-    const { data: directions, error: dirErr } = await supabase
-      .from("direction_catalog")
-      .select("slug, title, description, content, is_active, sort_order")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true, nullsFirst: false })
-      .order("slug", { ascending: true });
+    const directions = await CatalogService.getActiveCatalog(supabase);
+    const allowedSet = new Set(directions.map((d) => d.slug));
 
-    if (dirErr) return NextResponse.json({ error: dirErr.message }, { status: 500 });
-
-    const active = (directions ?? []).filter((d: DirectionCatalogRow) => d.is_active);
-    const allowedSet = new Set(active.map((d) => d.slug));
-
-    const allowedCatalog = active.map((d) => ({
+    const allowedCatalog = directions.map((d) => ({
       slug: d.slug,
       title: d.title,
-      micro: sanitizeWhitespace((d.content as any)?.micro_description ?? d.description ?? ""),
+      micro: sanitizeWhitespace(d.content.micro_description ?? d.description ?? ""),
     }));
     const allowedSlugs = allowedCatalog.map((x) => x.slug);
 
