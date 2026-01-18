@@ -90,6 +90,14 @@ export default function NewClient() {
       const sessionId = (data as any)?.id as string | undefined;
       if (!sessionId) throw new Error("Nem jött vissza session id.");
 
+      const { error: entryError } = await supabase.from("dream_entries").insert({
+        session_id: sessionId,
+        user_id: userId,
+        kind: "raw",
+        content: text,
+      });
+      if (entryError) throw entryError;
+
       // 1) INDEX
       setStep("index");
       {

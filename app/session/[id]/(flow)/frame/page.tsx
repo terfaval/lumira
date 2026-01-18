@@ -246,7 +246,7 @@ export default function FramePage() {
       setBusy(true);
       setErr(null);
       try {
-        const result = await startDirection(id, slug);
+        const result = await startDirection(id, slug, "frame");
         if (!result.success) {
           setErr("Hiba történt, próbáld újra.");
           return;

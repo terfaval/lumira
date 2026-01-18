@@ -130,10 +130,12 @@ export default function DirectionPage() {
 
     // 2) previously chosen (UX)
     {
-      const { data: ch, error: chErr } = await supabase
-        .from("morning_direction_choices")
+      let query = supabase
+        .from("session_directions")
         .select("direction_slug")
         .eq("session_id", sessionId);
+      if (uid) query = query.eq("user_id", uid);
+      const { data: ch, error: chErr } = await query;
 
       if (chErr) {
         setErr(chErr.message);
@@ -274,7 +276,7 @@ export default function DirectionPage() {
       setBusySlug(slug);
       setErr(null);
       try {
-        const result = await startDirection(sessionId, slug);
+        const result = await startDirection(sessionId, slug, "direction_modal");
         if (!result.success) {
           setErr("Hiba történt, próbáld újra.");
           return;

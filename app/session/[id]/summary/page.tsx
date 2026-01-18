@@ -158,7 +158,7 @@ export default function SessionSummary() {
         setWorkBlocks((blocks ?? []) as WorkBlock[]);
 
         const { data: choices, error: choiceErr } = await supabase
-          .from("morning_direction_choices")
+          .from("session_directions")
           .select("direction_slug")
           .eq("session_id", id);
         if (choiceErr) throw new Error(choiceErr.message);

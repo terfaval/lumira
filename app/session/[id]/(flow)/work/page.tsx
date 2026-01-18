@@ -16,9 +16,11 @@ import {
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
 import { CatalogService } from "@/src/services/CatalogService";
+import { sha256 } from "@/src/orchestration/idempotency/materialHash";
 
 type DirectionWorkBlock = WorkBlock & { content: DirectionCardContent };
 type HistoryItem = { question: string; answer: string | null };
+type WorkAnswerRow = { work_id: string | null; content: string; created_at: string };
 
 type NextPayload = {
   session_id: string;
@@ -42,6 +44,7 @@ export default function WorkPage() {
   const { loading } = useRequireAuth();
 
   const [blocks, setBlocks] = useState<WorkBlock[]>([]);
+  const [latestWorkVersionId, setLatestWorkVersionId] = useState<string | null>(null);
   const [directionConfig, setDirectionConfig] = useState<DirectionCatalogItemDTO | null>(null);
   const [session, setSession] = useState<{ raw_dream_text: string } | null>(null);
 
@@ -71,23 +74,57 @@ export default function WorkPage() {
 
   const currentBlock = useMemo(() => {
     if (directionBlocks.length === 0) return null;
+    if (latestWorkVersionId) {
+      const latest = directionBlocks.find((b) => b.id === latestWorkVersionId);
+      if (latest) return latest;
+    }
     const sorted = [...directionBlocks].sort((a, b) => (a.content.sequence ?? 0) - (b.content.sequence ?? 0));
     return sorted[sorted.length - 1];
-  }, [directionBlocks]);
+  }, [directionBlocks, latestWorkVersionId]);
 
   const load = useCallback(async () => {
     setErr(null);
     setLoaded(false);
 
-    const { data, error } = await supabase
-      .from("work_blocks")
-      .select("id, session_id, user_id, block_type, content, created_at, updated_at")
-      .eq("session_id", sessionId)
-      .eq("block_type", "dream_analysis")
-      .order("created_at", { ascending: true });
+    const userId = await requireUserId().catch(() => null);
 
-    if (error) setErr("Nem sikerÆ•lt betÆlteni a kÆórtyÆókat.");
-    else setBlocks((data ?? []) as WorkBlock[]);
+    let versionsQuery = supabase
+      .from("work_versions")
+      .select("id, session_id, user_id, payload, created_at")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true });
+    if (userId) versionsQuery = versionsQuery.eq("user_id", userId);
+
+    const { data: versions, error } = await versionsQuery;
+
+    if (error) {
+      setErr("Nem sikerult betolteni a kartyakat.");
+    } else {
+      let answersQuery = supabase
+        .from("dream_answers")
+        .select("work_id, content, created_at")
+        .eq("session_id", sessionId);
+      if (userId) answersQuery = answersQuery.eq("user_id", userId);
+
+      const { data: answers } = await answersQuery;
+      const answersByWorkId = buildAnswersByWorkId((answers ?? []) as WorkAnswerRow[]);
+
+      const mapped = (versions ?? [])
+        .map((row: any) => toWorkBlock(row, answersByWorkId))
+        .filter((b): b is WorkBlock => Boolean(b));
+
+      setBlocks(mapped);
+    }
+
+    let latestQuery = supabase
+      .from("work_latest")
+      .select("work_version_id")
+      .eq("session_id", sessionId)
+      .maybeSingle();
+    if (userId) latestQuery = latestQuery.eq("user_id", userId);
+
+    const { data: latestRow } = await latestQuery;
+    setLatestWorkVersionId((latestRow as any)?.work_version_id ?? null);
 
     setLoaded(true);
   }, [sessionId]);
@@ -183,15 +220,48 @@ export default function WorkPage() {
         user: { answer: null, answered_at: null },
       };
 
+      const { data: lastVersionRow } = await supabase
+        .from("work_versions")
+        .select("version")
+        .eq("session_id", sessionId)
+        .order("version", { ascending: false })
+        .limit(1);
+
+      const nextVersion = (lastVersionRow as any)?.[0]?.version ?? 0;
+      const input_hash = sha256(
+        `work:${sessionId}:${directionSlug}:${Date.now()}:${content.ai?.question ?? ""}`
+      );
+
       const { data: inserted, error: insertErr } = await supabase
-        .from("work_blocks")
-        .insert({ session_id: sessionId, user_id: userId, block_type: "dream_analysis", content })
-        .select("id, session_id, user_id, block_type, content, created_at, updated_at")
+        .from("work_versions")
+        .insert({
+          session_id: sessionId,
+          user_id: userId,
+          version: nextVersion + 1,
+          input_hash,
+          model: null,
+          payload: content,
+        })
+        .select("id, session_id, user_id, payload, created_at")
         .single();
 
       if (insertErr) throw insertErr;
 
-      setBlocks((prev) => [...prev, inserted as WorkBlock]);
+      const { error: latestErr } = await supabase
+        .from("work_latest")
+        .upsert(
+          {
+            session_id: sessionId,
+            user_id: userId,
+            work_version_id: (inserted as any)?.id,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "session_id" }
+        );
+      if (latestErr) throw latestErr;
+
+      setLatestWorkVersionId((inserted as any)?.id ?? null);
+      setBlocks((prev) => [...prev, toWorkBlock(inserted, new Map())].filter(Boolean) as WorkBlock[]);
       setClosureBlock(null);
       setPendingNextPayload(null);
       setNextErr(null);
@@ -261,15 +331,24 @@ export default function WorkPage() {
       setNextErr(null);
 
       try {
+        const userId = await requireUserId();
         const existingContent = normalizeContent(block.content);
+        const answeredAt = trimmed ? new Date().toISOString() : null;
         const updatedContent: DirectionCardContent = {
           ...existingContent,
           state: trimmed ? "answered" : "open",
-          user: { ...(existingContent.user ?? {}), answer: trimmed, answered_at: trimmed ? new Date().toISOString() : null },
+          user: { ...(existingContent.user ?? {}), answer: trimmed, answered_at: answeredAt },
         };
 
-        const { error } = await supabase.from("work_blocks").update({ content: updatedContent }).eq("id", block.id);
-        if (error) throw error;
+        if (trimmed) {
+          const { error } = await supabase.from("dream_answers").insert({
+            session_id: sessionId,
+            user_id: userId,
+            work_id: block.id,
+            content: trimmed,
+          });
+          if (error) throw error;
+        }
 
         setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content: updatedContent } : b)));
 
@@ -457,6 +536,60 @@ function ClosureCard({ block, sessionId }: { block: NextResponse["work_block"]; 
       </div>
     </Card>
   );
+}
+
+function buildAnswersByWorkId(rows: WorkAnswerRow[]): Map<string, WorkAnswerRow> {
+  const map = new Map<string, WorkAnswerRow>();
+  for (const row of rows) {
+    if (!row?.work_id) continue;
+    const existing = map.get(row.work_id);
+    if (!existing) {
+      map.set(row.work_id, row);
+      continue;
+    }
+    const existingTs = Date.parse(existing.created_at ?? "");
+    const nextTs = Date.parse(row.created_at ?? "");
+    if (Number.isFinite(nextTs) && (!Number.isFinite(existingTs) || nextTs >= existingTs)) {
+      map.set(row.work_id, row);
+    }
+  }
+  return map;
+}
+
+function toWorkBlock(row: any, answersByWorkId: Map<string, WorkAnswerRow>): WorkBlock | null {
+  if (!row || typeof row !== "object") return null;
+  const rawContent = (row as any).payload ?? null;
+  if (!rawContent || typeof rawContent !== "object") return null;
+
+  let content = rawContent as DirectionCardContent;
+  if (isDirectionCardContent(rawContent)) {
+    const answer = answersByWorkId.get((row as any).id ?? "");
+    content = applyAnswerToContent(rawContent as DirectionCardContent, answer ?? null);
+  }
+
+  return {
+    id: (row as any).id,
+    session_id: (row as any).session_id,
+    user_id: (row as any).user_id,
+    block_type: "dream_analysis",
+    content,
+    created_at: (row as any).created_at,
+    updated_at: (row as any).created_at,
+  } as WorkBlock;
+}
+
+function applyAnswerToContent(content: DirectionCardContent, answer: WorkAnswerRow | null): DirectionCardContent {
+  const normalized = normalizeContent(content);
+  if (!answer?.content) return normalized;
+  return {
+    ...normalized,
+    state: "answered",
+    user: {
+      ...normalized.user,
+      answer: answer.content,
+      answered_at: answer.created_at ?? null,
+    },
+  };
 }
 
 function normalizeContent(content: DirectionCardContent): DirectionCardContent {

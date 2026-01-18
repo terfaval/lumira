@@ -1,4 +1,5 @@
 import { supabase } from "@/src/lib/supabase/client";
+import { requireUserId } from "@/src/lib/db";
 
 export type StartDirectionResult = {
   success: boolean;
@@ -8,32 +9,23 @@ export type StartDirectionResult = {
 
 export async function startDirection(
   sessionId: string,
-  directionSlug: string
+  directionSlug: string,
+  source: "frame" | "direction_modal" | "work" | "import" | "system" = "direction_modal"
 ): Promise<StartDirectionResult> {
-  const { data: existing, error: existingError } = await supabase
-    .from("morning_direction_choices")
-    .select("direction_slug")
-    .eq("session_id", sessionId);
+  const userId = await requireUserId();
 
-  if (existingError) {
-    return { success: false, error: existingError.message };
-  }
-
-  const alreadySelected = (existing ?? []).some(
-    (row) => row.direction_slug === directionSlug
-  );
-  if (alreadySelected) {
-    return { success: true, alreadySelected: true };
-  }
-
-  const { error: insertError } = await supabase
-    .from("morning_direction_choices")
-    .insert({
-      session_id: sessionId,
-      direction_slug: directionSlug,
-    });
+  const { error: insertError } = await supabase.from("session_directions").insert({
+    session_id: sessionId,
+    user_id: userId,
+    direction_slug: directionSlug,
+    source,
+  });
 
   if (insertError) {
+    const code = (insertError as any)?.code;
+    if (code === "23505") {
+      return { success: true, alreadySelected: true };
+    }
     return { success: false, error: insertError.message };
   }
 
