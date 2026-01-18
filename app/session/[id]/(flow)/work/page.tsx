@@ -119,11 +119,11 @@ export default function WorkPage() {
     let latestQuery = supabase
       .from("work_latest")
       .select("work_version_id")
-      .eq("session_id", sessionId)
-      .maybeSingle();
+      .eq("session_id", sessionId);
+
     if (userId) latestQuery = latestQuery.eq("user_id", userId);
 
-    const { data: latestRow } = await latestQuery;
+    const { data: latestRow } = await latestQuery.maybeSingle();
     setLatestWorkVersionId((latestRow as any)?.work_version_id ?? null);
 
     setLoaded(true);
