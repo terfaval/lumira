@@ -76,15 +76,19 @@ export default function NewClient() {
     try {
       const userId = await requireUserId();
 
-      const { data, error } = await supabase
-        .from("dream_sessions")
-        .insert({
-          user_id: userId,
-          raw_dream_text: text,
-          status: "draft",
-        })
-        .select("id")
-        .single();
+      const sessionInsert = {
+        user_id: userId,
+        status: "draft",
+      };
+      if (
+        process.env.NODE_ENV !== "production" &&
+        Object.prototype.hasOwnProperty.call(sessionInsert, "raw_dream_text")
+      ) {
+        // Guard against accidental legacy writes in v0.
+        throw new Error("Unexpected raw_dream_text in dream_sessions insert payload.");
+      }
+
+      const { data, error } = await supabase.from("dream_sessions").insert(sessionInsert).select("id").single();
 
       if (error) throw error;
       const sessionId = (data as any)?.id as string | undefined;

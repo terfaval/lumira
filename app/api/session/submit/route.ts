@@ -41,11 +41,15 @@ export async function POST(req: Request) {
   const runIndex = body.run?.index !== false;
 
   // 1) Create session (status=submitted)
-  const sessRes = await supabase
-    .from("dream_sessions")
-    .insert({ user_id, status: "submitted", title })
-    .select("id")
-    .single();
+  const sessionInsert = { user_id, status: "submitted", title };
+  if (
+    process.env.NODE_ENV !== "production" &&
+    Object.prototype.hasOwnProperty.call(sessionInsert, "raw_dream_text")
+  ) {
+    throw new Error("Unexpected raw_dream_text in dream_sessions insert payload.");
+  }
+
+  const sessRes = await supabase.from("dream_sessions").insert(sessionInsert).select("id").single();
 
   if (sessRes.error) return NextResponse.json({ error: sessRes.error.message }, { status: 500 });
   const session_id = sessRes.data.id as string;
