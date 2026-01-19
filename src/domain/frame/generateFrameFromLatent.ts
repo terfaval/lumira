@@ -19,6 +19,11 @@ export type FramePayloadV0 = {
     source_observation_version_id: string;
     source_latent_version_id: string;
     source_session_index_version_id: string;
+
+    // canonical provenance
+    writer?: "jobGenerateFrame:v0-canonical" | string;
+    schema?: "frame_v0" | string;
+    build?: string | null;
   };
 };
 

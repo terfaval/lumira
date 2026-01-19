@@ -117,11 +117,14 @@ export async function jobGenerateFrame(args: {
     });
 
     payload.meta = {
-      ...(payload.meta ?? {}),
-      writer: "jobGenerateFrame:v0-canonical",
-      schema: "frame_v0",
-      build: process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
-    };
+  source_observation_version_id: obs.observation_version_id,
+  source_latent_version_id: latent_version_id,
+  source_session_index_version_id: idx.session_index_version_id,
+  ...(payload.meta ?? {}),
+  writer: "jobGenerateFrame:v0-canonical",
+  schema: "frame_v0",
+  build: process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
+};
 
     if (
       payload &&
