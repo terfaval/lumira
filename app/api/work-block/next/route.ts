@@ -1,39 +1,26 @@
-// /app/api/work-block/next/route.ts
-// Work-block generator with:
-// - PRE observations (dream_observation) as non-interpretive anchors
-// - direction continuity + recent work blocks context
-// - similarity avoidance + “low_novelty” graceful stop
-// - latent log tail enforcement + RPC logging (append_latent_log_event)
-// - single, clean callModel() implementation + hard fallbacks
+// /app/api/work-block/next/route.ts (v0)
+// Minimal, non-legacy work block generator.
+// - NO dream_session_summaries
+// - NO dream_observation / events
+// - NO work_blocks
+// - NO latent RPC logging
+// - Optional anchor forcing via extract_anchor_keys + pickNextAnchorKey
 //
-// UPDATED:
-// - Uses work_question_ledger to avoid re-asking the same anchors (keyed, not string-matching only)
-// - Writes each accepted question into work_question_ledger with anchor_keys
-// - Keeps the existing similarity / repetition guards (belt + suspenders)
+// Input is authoritative: dream_text + direction + history (+ optional anchors).
+// Output: { work_block, stop_signal, flags }
 
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
-import type { SynthesizeOutput } from "@/app/api/synthesize/route";
-import {
-  compactDreamObservation,
-  parseDreamObservation,
-  type DreamObservation,
-} from "@/src/lib/dream/observation";
-import { isDirectionCardContent } from "@/src/lib/types";
 import { pickNextAnchorKey } from "@/src/lib/dream/pickNextAnchorKey";
-
 
 // -----------------------------------------------------------------------------
 // Constants
 // -----------------------------------------------------------------------------
 
-// NOTE: Align with DreamObservation safety flags (none|distress|reality_confusion|self_harm)
-// + keep "other" for legacy / future-proof.
 const SAFETY_VALUES = ["none", "distress", "self_harm", "reality_confusion", "other"] as const;
 
 const MAX_HISTORY = 8;
-const MAX_PRIOR_ECHOES = 2;
 
 const LEAD_IN_LIMIT = 720;
 const QUESTION_LIMIT = 180;
@@ -44,10 +31,7 @@ const SIMILARITY_THRESHOLD = 0.65;
 const MIN_SIM_TOKENS = 5;
 const RECENT_QS_FOR_SIMILARITY = 6;
 
-const MAX_LATENT_LOG_TAIL = 6;
-const ANSWER_EXCERPT_LIMIT = 120;
 const OPENAI_TIMEOUT_MS = 15000;
-
 const MODEL = "gpt-4o-mini";
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -59,7 +43,6 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 type SafetyValue = (typeof SAFETY_VALUES)[number];
 
 type HistoryItem = { question: string; answer: string | null };
-type PriorEcho = { session_id: string; anchor_summary: string; created_at: string };
 
 type DirectionInput = {
   slug?: string;
@@ -102,23 +85,19 @@ type WorkBlockResponse = {
   flags: { safety: SafetyValue };
 };
 
-type RecentWorkBlock = {
-  direction_slug: string;
-  question: string;
-  answer: string | null;
-  created_at: string;
-};
-
 type RequestBody = {
   session_id?: string;
   dream_text?: string;
   direction?: DirectionInput;
   history?: HistoryItem[];
   synth?: SynthInput;
-  prior_echoes?: PriorEcho[];
   allowed_slugs?: unknown;
+  // v0 extras:
+  anchors?: unknown; // optional string[]
+  extract_anchor_keys?: unknown; // optional string[]
 };
 
+// AnchorPolicy is kept but simplified: we only enforce "required" if we have anchors.
 type AnchorPolicy = "required" | "preferred" | "optional";
 
 type DirectionProfile = {
@@ -126,19 +105,19 @@ type DirectionProfile = {
   title?: string;
   micro_description?: string;
   ai_contract: {
-    role: string; // pl. "guide"
-    stance: string[]; // pl. ["non-clinical","descriptive-only"]
-    tone_tags: string[]; // pl. ["gentle","slow","minimal-friction"]
+    role: string;
+    stance: string[];
+    tone_tags: string[];
     pacing: { max_steps: number; max_depth: number };
   };
-  question_style: string; // pl. "sequence_probe_single"
+  question_style: string;
   focus_model: { primary: string[]; secondary: string[] };
-  anchor_policy: AnchorPolicy; // required|preferred|optional
+  anchor_policy: AnchorPolicy;
   stop_criteria: {
     max_cards?: number;
     stop_if_user_brief_streak?: number;
     stop_if_repetition_detected?: boolean;
-    stop_if_emotional_overload?: boolean; // későbbre (most csak átadjuk)
+    stop_if_emotional_overload?: boolean;
   };
   mini_lexicon: string[];
 };
@@ -201,53 +180,6 @@ function sanitizeHistory(history: HistoryItem[] | undefined): HistoryItem[] {
     .filter((h) => h.question);
 }
 
-function sanitizePriorEchoes(echoes: PriorEcho[] | undefined): PriorEcho[] {
-  if (!Array.isArray(echoes)) return [];
-  return echoes
-    .slice(0, MAX_PRIOR_ECHOES)
-    .map((p) => ({
-      session_id: typeof p?.session_id === "string" ? p.session_id : "",
-      anchor_summary: typeof p?.anchor_summary === "string" ? p.anchor_summary : "",
-      created_at: typeof p?.created_at === "string" ? p.created_at : "",
-    }))
-    .filter((p) => p.session_id && p.anchor_summary && p.created_at);
-}
-
-type AnchorKind = "characters" | "objects" | "beats" | "places" | "felt_words" | "other";
-type AnchorCandidate = { label: string; kind: AnchorKind; priority: number };
-
-const ANCHOR_PRIORITY: Record<AnchorKind, number> = {
-  characters: 5,
-  objects: 4,
-  beats: 3,
-  places: 2,
-  felt_words: 1,
-  other: 0,
-};
-
-function extractObservationAnchors(observation: DreamObservation | null): AnchorCandidate[] {
-  if (!observation) return [];
-  const list: AnchorCandidate[] = [];
-  const add = (kind: AnchorKind, items: { label: string }[]) => {
-    for (const item of items) {
-      if (typeof item?.label === "string" && item.label.trim()) {
-        list.push({ label: item.label, kind, priority: ANCHOR_PRIORITY[kind] });
-      }
-    }
-  };
-
-  add("characters", observation.entities.characters);
-  add("places", observation.entities.places);
-  add("objects", observation.entities.objects);
-  add("other", observation.entities.other);
-  add("other", observation.motifs);
-  add("other", observation.tone);
-  add("other", observation.structure);
-  add("other", observation.body);
-
-  return list;
-}
-
 function sanitizeAllowedSlugs(allowed: unknown, fallbackSlug?: string): string[] {
   if (Array.isArray(allowed)) {
     return allowed
@@ -260,17 +192,19 @@ function sanitizeAllowedSlugs(allowed: unknown, fallbackSlug?: string): string[]
   return [];
 }
 
+function sanitizeStringArray(x: unknown, limit = 30): string[] {
+  if (!Array.isArray(x)) return [];
+  return x
+    .filter((s): s is string => typeof s === "string")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, limit);
+}
+
 function clampText(text: string, limit: number): string {
   if (!text) return "";
   const trimmed = text.trim();
   return trimmed.length > limit ? trimmed.slice(0, limit) : trimmed;
-}
-
-function clampExcerpt(text: string, limit: number): string {
-  const t = (text ?? "").replace(/\s+/g, " ").trim();
-  if (!t) return "";
-  if (limit <= 1) return t.slice(0, Math.max(0, limit));
-  return t.length > limit ? t.slice(0, limit - 1).trimEnd() + "…" : t;
 }
 
 function clampWorkBlock(block: WorkBlock): WorkBlock {
@@ -296,8 +230,7 @@ function makeClosureResponse(reason: string | null, safety: SafetyValue): WorkBl
 function makeLowNoveltyClosure(safety: SafetyValue): WorkBlockResponse {
   return {
     work_block: clampWorkBlock({
-      lead_in:
-        "Ebben az irányban most nem látok új, érdemi fókuszt — válthatunk irányt.",
+      lead_in: "Ebben az irányban most nem látok új, érdemi fókuszt — válthatunk irányt.",
       question: "Váltunk irányt, vagy most pihensz meg?",
       cta: null,
     }),
@@ -309,11 +242,8 @@ function makeLowNoveltyClosure(safety: SafetyValue): WorkBlockResponse {
 function cleanLeadIn(leadIn: string): string {
   const t = (leadIn ?? "").trim();
   if (!t) return "";
-  const q = t.indexOf("?");
-  if (q !== -1) {
-    const before = t.slice(0, q).trim();
-    return before.length >= 12 ? before : "";
-  }
+  // lead_in should not contain '?'
+  if (t.includes("?")) return t.replace(/\?/g, "").trim();
   return t;
 }
 
@@ -414,7 +344,7 @@ function jaccard(a: Set<string>, b: Set<string>) {
   return union === 0 ? 0 : inter / union;
 }
 
-function isTooSimilar(newQ: string, prevQs: string[], threshold = SIMILARITY_THRESHOLD) {
+function isTooSimilar(newQ: string, prevQs: string[], threshold = 0.65) {
   const a = tokenSet(newQ);
   if (a.size === 0) return false;
   return prevQs.some((prev) => jaccard(a, tokenSet(prev)) >= threshold);
@@ -424,26 +354,6 @@ function isExactRepeat(newQ: string, prevQs: string[]) {
   const n = normalizeQ(newQ);
   if (!n) return false;
   return prevQs.some((p) => normalizeQ(p) === n);
-}
-
-function concatRecentAnswers(history: HistoryItem[], n = 6): string {
-  return history
-    .slice(-n)
-    .map((h) => (h.answer ?? "").trim())
-    .filter(Boolean)
-    .join(" ");
-}
-
-function coverageScore(question: string, recentAnswersText: string): number {
-  const q = tokenSet(question);
-  if (q.size < MIN_SIM_TOKENS) return 0;
-
-  const a = tokenSet(recentAnswersText);
-  if (a.size === 0) return 0;
-
-  let covered = 0;
-  for (const t of q) if (a.has(t)) covered++;
-  return q.size === 0 ? 0 : covered / q.size;
 }
 
 async function parseModelJSON(rawContent: string): Promise<unknown> {
@@ -461,48 +371,17 @@ async function parseModelJSON(rawContent: string): Promise<unknown> {
 }
 
 // -----------------------------------------------------------------------------
-// Anchor key normalisation (for ledger)
+// Anchor key normalisation (ledger)
 // -----------------------------------------------------------------------------
 
 const HU_STOP = new Set([
-  "a",
-  "az",
-  "egy",
-  "és",
-  "vagy",
-  "hogy",
-  "de",
-  "mert",
-  "amikor",
-  "ahogy",
-  "már",
-  "még",
-  "is",
-  "se",
-  "sem",
-  "ott",
-  "itt",
-  "oda",
-  "ide",
-  "innen",
-  "onnan",
-  "valami",
-  "valaki",
-  "nagyon",
-  "kicsit",
+  "a","az","egy","és","vagy","hogy","de","mert","amikor","ahogy","már","még","is","se","sem","ott","itt","oda","ide","innen","onnan","valami","valaki","nagyon","kicsit",
 ]);
 
 function stripDiacritics(s: string) {
   return (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-/**
- * Stable-ish anchor key for "did we already ask about this anchor?"
- * - lower
- * - strip diacritics
- * - keep alnum tokens
- * - drop short/stop words
- */
 function anchorKey(raw: string): string {
   const s = (raw || "").toLowerCase().trim();
   if (!s) return "";
@@ -516,181 +395,9 @@ function anchorKey(raw: string): string {
 }
 
 // -----------------------------------------------------------------------------
-// DB helpers
+// Ledger helpers (v0 table)
 // -----------------------------------------------------------------------------
 
-async function fetchDreamObservation(args: { supabase: any; sessionId: string; userId: string }) {
-  try {
-    const { data, error } = await args.supabase
-      .from("dream_observation")
-      .select("obs")
-      .eq("session_id", args.sessionId)
-      .eq("user_id", args.userId)
-      .maybeSingle();
-
-    if (error) {
-      console.warn("fetch dream observation failed", error.message);
-      return null;
-    }
-
-    return parseDreamObservation(data?.obs ?? null);
-  } catch (error) {
-    console.warn("fetch dream observation exception", error);
-    return null;
-  }
-}
-
-async function fetchLatestExtractAnchorKeys(args: { supabase: any; sessionId: string; userId: string }) {
-  try {
-    const { data, error } = await args.supabase
-      .from("dream_observation_events")
-      .select("anchor_keys, created_at")
-      .eq("session_id", args.sessionId)
-      .eq("user_id", args.userId)
-      .eq("kind", "system_extract")
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    if (error) {
-      console.warn("fetchLatestExtractAnchorKeys failed", error.message);
-      return [];
-    }
-
-    const row = (data ?? [])[0] as any;
-    return Array.isArray(row?.anchor_keys) ? row.anchor_keys.filter((x: any) => typeof x === "string") : [];
-  } catch (e: any) {
-    console.warn("fetchLatestExtractAnchorKeys exception", e?.message ?? e);
-    return [];
-  }
-}
-
-async function fetchRecentWorkBlocks(args: {
-  supabase: any;
-  sessionId: string;
-  directionSlug?: string;
-  limit?: number;
-}): Promise<RecentWorkBlock[]> {
-  try {
-    let query = args.supabase
-      .from("work_blocks")
-      .select("content, created_at")
-      .eq("session_id", args.sessionId)
-      .eq("block_type", "dream_analysis")
-      .order("created_at", { ascending: false })
-      .limit(args.limit ?? 6);
-
-    if (args.directionSlug) {
-      query = query.eq("content->>direction_slug", args.directionSlug);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      console.warn("fetch recent work blocks failed", error.message);
-      return [];
-    }
-
-    const mapped: Array<RecentWorkBlock | null> = (data ?? []).map(
-      (row: any): RecentWorkBlock | null => {
-        const content = row?.content;
-        if (!isDirectionCardContent(content)) return null;
-
-        const question = typeof content.ai?.question === "string" ? content.ai.question : "";
-        if (!question) return null;
-
-        return {
-          direction_slug: content.direction_slug,
-          question,
-          answer: typeof content.user?.answer === "string" ? content.user.answer : null,
-          created_at: typeof row.created_at === "string" ? row.created_at : "",
-        };
-      }
-    );
-
-    return mapped.filter((row: RecentWorkBlock | null): row is RecentWorkBlock => !!row && Boolean(row.created_at));
-  } catch (error) {
-    console.warn("fetch recent work blocks exception", error);
-    return [];
-  }
-}
-
-// Latent log helpers
-function safeArray(x: any): any[] {
-  return Array.isArray(x) ? x : [];
-}
-
-function buildLatentLogTail(log: any, limit = MAX_LATENT_LOG_TAIL) {
-  const arr = safeArray(log)
-    .map((e) => (e && typeof e === "object" ? e : null))
-    .filter(Boolean) as any[];
-
-  const tail = arr.slice(-limit);
-
-  return tail.map((e) => {
-    const meta = e?.meta && typeof e.meta === "object" ? e.meta : {};
-    const ev = e?.event && typeof e.event === "object" ? e.event : {};
-    return {
-      ts: typeof e?.ts === "string" ? e.ts : null,
-      source: typeof meta?.source === "string" ? meta.source : null,
-      event: typeof ev?.type === "string" ? ev.type : null,
-      direction_slug: typeof ev?.direction_slug === "string" ? ev.direction_slug : null,
-      question: typeof ev?.question === "string" ? ev.question : null,
-      anchor_used: typeof ev?.anchor_used === "string" ? ev.anchor_used : null,
-      answer_len: typeof meta?.answer_len === "number" ? meta.answer_len : null,
-      stop_reason: typeof ev?.reason === "string" ? ev.reason : null,
-    };
-  });
-}
-
-async function fetchLatentFromDb(args: { supabase: any; sessionId: string; userId: string }) {
-  try {
-    const { data, error } = await args.supabase
-      .from("dream_session_summaries")
-      .select("latent_analysis, latent_analysis_log")
-      .eq("session_id", args.sessionId)
-      .eq("user_id", args.userId)
-      .maybeSingle();
-
-    if (error) {
-      console.warn("fetch latent db failed", error.message);
-      return { latent_analysis: null as any, latent_log_tail: [] as any[] };
-    }
-
-    const latent_analysis = (data as any)?.latent_analysis ?? null;
-    const latent_log_tail = buildLatentLogTail((data as any)?.latent_analysis_log ?? null);
-
-    return { latent_analysis, latent_log_tail };
-  } catch (e: any) {
-    console.warn("fetch latent db exception", e?.message ?? e);
-    return { latent_analysis: null as any, latent_log_tail: [] as any[] };
-  }
-}
-
-async function appendLatentLogEvent(
-  req: Request,
-  args: {
-    sessionId: string;
-    event: Record<string, unknown>;
-    meta: Record<string, unknown>;
-  }
-) {
-  try {
-    const supabase = await supabaseServerAuthed(req);
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) return;
-
-    const { error } = await supabase.rpc("append_latent_log_event", {
-      p_session_id: args.sessionId,
-      p_event: args.event,
-      p_meta: args.meta,
-    });
-
-    if (error) console.warn("append_latent_log_event failed", error.message);
-  } catch (e: any) {
-    console.warn("appendLatentLogEvent exception", e?.message ?? e);
-  }
-}
-
-// NEW: ledger helpers (anti-reask at anchor level)
 async function fetchUsedAnchorKeysFromLedger(args: {
   supabase: any;
   sessionId: string;
@@ -706,23 +413,19 @@ async function fetchUsedAnchorKeysFromLedger(args: {
       .eq("session_id", args.sessionId)
       .eq("user_id", args.userId)
       .order("created_at", { ascending: false })
-      .limit(args.limit ?? 60);
+      .limit(args.limit ?? 80);
 
     if (args.directionSlug) q = q.eq("direction_slug", args.directionSlug);
 
     const { data, error } = await q;
-    if (error) {
-      console.warn("fetch ledger failed", error.message);
-      return used;
-    }
+    if (error) return used;
 
     for (const row of data ?? []) {
       const keys = (row as any)?.anchor_keys;
       if (Array.isArray(keys)) for (const k of keys) if (typeof k === "string" && k.trim()) used.add(k.trim());
     }
     return used;
-  } catch (e: any) {
-    console.warn("fetch ledger exception", e?.message ?? e);
+  } catch {
     return used;
   }
 }
@@ -745,56 +448,8 @@ async function insertLedgerQuestion(args: {
       question_intent: args.questionIntent ?? null,
       anchor_keys: args.anchorKeys,
     });
-  } catch (e: any) {
-    console.warn("insert ledger exception", e?.message ?? e);
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Synthesize call (server-to-server)
-// -----------------------------------------------------------------------------
-
-async function runLatentSynthesis(args: {
-  req: Request;
-  sessionId: string;
-  dreamText: string;
-  history: HistoryItem[];
-  priorEchoes: PriorEcho[];
-  allowedSlugs: string[];
-}): Promise<SynthesizeOutput | null> {
-  const url = new URL("/api/synthesize", args.req.url).toString();
-  const cookieHeader = args.req.headers.get("cookie") ?? "";
-  const authHeader = args.req.headers.get("authorization") ?? "";
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        "content-type": "application/json",
-        ...(cookieHeader ? { cookie: cookieHeader } : {}),
-        ...(authHeader ? { authorization: authHeader } : {}),
-      },
-      body: JSON.stringify({
-        session_id: args.sessionId,
-        dream_text: args.dreamText,
-        history: args.history,
-        prior_echoes: args.priorEchoes,
-        allowed_slugs: args.allowedSlugs,
-      }),
-    });
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      console.warn("synthesize non-OK", res.status, text.slice(0, 400));
-      return null;
-    }
-
-    const json = (await res.json().catch(() => null)) as SynthesizeOutput | null;
-    return json ?? null;
-  } catch (err) {
-    console.warn("synthesize failed", err);
-    return null;
+  } catch {
+    // best-effort
   }
 }
 
@@ -854,7 +509,6 @@ function buildDirectionProfile(direction: DirectionNormalized): DirectionProfile
   const stop = (direction.stop_criteria ?? {}) as any;
   const hints = (direction.selection_hints ?? {}) as any;
 
-  // ai_contract jöhet a selection_hints / content alól is – ha nincs, default
   const contract = (hints.ai_contract ?? {}) as any;
 
   const question_style =
@@ -887,10 +541,7 @@ function buildDirectionProfile(direction: DirectionNormalized): DirectionProfile
       tone_tags: Array.isArray(contract.tone_tags)
         ? contract.tone_tags.filter((x: any) => typeof x === "string").slice(0, 6)
         : ["gentle", "slow", "minimal-friction"],
-      pacing: {
-        max_steps: 999,
-        max_depth: 99,
-      },
+      pacing: { max_steps: 999, max_depth: 99 },
     },
     question_style,
     focus_model: { primary: primary.slice(0, 6), secondary: secondary.slice(0, 6) },
@@ -926,153 +577,34 @@ function detectUserBriefStreak(history: HistoryItem[], streak?: number): boolean
 
 function shouldStop(direction: DirectionNormalized | undefined, history: HistoryItem[]) {
   const stopCriteria = direction?.stop_criteria ?? {};
-
   if (detectRepetition(history, !!(stopCriteria as any).stop_if_repetition_detected)) {
     return { suggest_stop: true, reason: "repetition" as const };
   }
-
   if (detectUserBriefStreak(history, (stopCriteria as any).stop_if_user_brief_streak)) {
     return { suggest_stop: true, reason: "user_brief_streak" as const };
   }
-
   return { suggest_stop: false, reason: null as string | null };
 }
 
 // -----------------------------------------------------------------------------
-// Anchors
+// Prompt construction (v0)
 // -----------------------------------------------------------------------------
 
-function addAnchorCandidates(list: AnchorCandidate[], kind: AnchorKind, values: unknown) {
-  if (!Array.isArray(values)) return;
-  for (const value of values) {
-    if (typeof value === "string" && value.trim()) {
-      list.push({ label: value, kind, priority: ANCHOR_PRIORITY[kind] });
-    }
-  }
-}
-
-function getAnchorCandidates(latent: any, synth: any): AnchorCandidate[] {
-  const list: AnchorCandidate[] = [];
-
-  if (latent && typeof latent === "object" && latent.anchors) {
-    addAnchorCandidates(list, "characters", latent.anchors.characters);
-    addAnchorCandidates(list, "places", latent.anchors.places);
-    addAnchorCandidates(list, "objects", latent.anchors.objects);
-    addAnchorCandidates(list, "beats", latent.anchors.beats);
-    addAnchorCandidates(list, "felt_words", latent.anchors.felt_words);
-  }
-
-  if (synth && typeof synth === "object" && synth.anchors) {
-    addAnchorCandidates(list, "characters", synth.anchors.characters);
-    addAnchorCandidates(list, "places", synth.anchors.places);
-    addAnchorCandidates(list, "objects", synth.anchors.objects);
-    addAnchorCandidates(list, "beats", synth.anchors.beats);
-    addAnchorCandidates(list, "felt_words", synth.anchors.felt_words);
-  }
-
-  return mergeAnchorCandidatesDetailed(list, []);
-}
-
-function mergeAnchorCandidatesDetailed(base: AnchorCandidate[], extra: AnchorCandidate[]): AnchorCandidate[] {
-  const out: AnchorCandidate[] = [];
-  const indexByKey = new Map<string, number>();
-
-  for (const item of [...base, ...extra]) {
-    const key = item.label.toLowerCase().trim();
-    if (!key) continue;
-    const existingIndex = indexByKey.get(key);
-    if (existingIndex === undefined) {
-      indexByKey.set(key, out.length);
-      out.push(item);
-      continue;
-    }
-    const existing = out[existingIndex];
-    if (item.priority > existing.priority) out[existingIndex] = item;
-  }
-
-  return out;
-}
-
-function flattenAnchorCandidates(candidates: AnchorCandidate[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const item of candidates) {
-    const key = item.label.toLowerCase().trim();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    out.push(item.label);
-  }
-  return out;
-}
-
-function detectAnchorUsed(question: string, anchors: AnchorCandidate[]): string | null {
-  const qTokens = tokenSet(question);
-  let best: { anchor: AnchorCandidate; wordCount: number; length: number } | null = null;
-
-  for (const anchor of anchors) {
-    const aTokens = tokenSet(anchor.label);
-    if (aTokens.size === 0) continue;
-    let hasAllTokens = true;
-    for (const token of aTokens) {
-      if (!qTokens.has(token)) {
-        hasAllTokens = false;
-        break;
-      }
-    }
-    if (!hasAllTokens) continue;
-    const candidate = { anchor, wordCount: aTokens.size, length: anchor.label.length };
-    if (!best) {
-      best = candidate;
-      continue;
-    }
-    if (candidate.anchor.priority > best.anchor.priority) {
-      best = candidate;
-      continue;
-    }
-    if (candidate.anchor.priority === best.anchor.priority && candidate.wordCount > best.wordCount) {
-      best = candidate;
-      continue;
-    }
-    if (
-      candidate.anchor.priority === best.anchor.priority &&
-      candidate.wordCount === best.wordCount &&
-      candidate.length > best.length
-    ) {
-      best = candidate;
-    }
-  }
-
-  return best?.anchor.label ?? null;
-}
-
-function extractUsedAnchors(prevQs: string[], candidates: AnchorCandidate[]): Set<string> {
-  const used = new Set<string>();
-  for (const q of prevQs) {
-    const a = detectAnchorUsed(q, candidates);
-    if (a) used.add(a);
-  }
-  return used;
-}
-
-// -----------------------------------------------------------------------------
-// Prompt construction
-// -----------------------------------------------------------------------------
-
-function buildBaseSystemPrompt(profile: DirectionProfile, availableAnchors: string[]) {
+function buildBaseSystemPrompt(profile: DirectionProfile, availableAnchors: string[], forcedAnchorLabel?: string | null) {
   const lex = profile.mini_lexicon?.length ? profile.mini_lexicon.join(", ") : "";
 
   const anchorRules =
-    profile.anchor_policy === "required"
-      ? availableAnchors.length > 0
-        ? `- KÖTELEZŐ: válassz PONTOSAN 1 új horgonyt a listából, és szerepeljen a question-ben: ${availableAnchors.join(
-            " | "
-          )}`
-        : `- NINCS új horgony: add vissza stop_signal.suggest_stop=true és reason="low_novelty".`
-      : profile.anchor_policy === "preferred"
+    forcedAnchorLabel
+      ? `- KÖTELEZŐ: a question tartalmazza ezt a horgonyt: "${forcedAnchorLabel}".`
+      : profile.anchor_policy === "required"
         ? availableAnchors.length > 0
-          ? `- ELŐNY: használj 1 új horgonyt, ha van: ${availableAnchors.join(" | ")}`
-          : `- Ha nincs új horgony, támaszkodhatsz a last_answer_excerpt-re (konkrét részlet!), de maradj az irány stílusában.`
-        : `- A horgony opcionális. Elsődleges: az irány stílusa + konkrét jelenet/sorrend/érzékleti fókusz.`;
+          ? `- KÖTELEZŐ: válassz PONTOSAN 1 új horgonyt a listából, és szerepeljen a question-ben: ${availableAnchors.join(" | ")}`
+          : `- NINCS új horgony: add vissza stop_signal.suggest_stop=true és reason="low_novelty".`
+        : profile.anchor_policy === "preferred"
+          ? availableAnchors.length > 0
+            ? `- ELŐNY: használj 1 új horgonyt, ha van: ${availableAnchors.join(" | ")}`
+            : `- Ha nincs új horgony, támaszkodhatsz a legutóbbi válasz konkrét részletére, de ne ismételj kérdést.`
+          : `- A horgony opcionális.`;
 
   return [
     "Magyar nyelvű API vagy, kizárólag a megadott JSON sémát adod vissza.",
@@ -1090,16 +622,13 @@ function buildBaseSystemPrompt(profile: DirectionProfile, availableAnchors: stri
     "- VAGY 1 feladat: 0 '?'",
     "",
     "NEM-ÉRTELMEZÉS:",
-    "- Csak megfigyelésekre támaszkodj, nincs jelentés, nincs diagnózis, nincs szimbólumszótár.",
+    "- Nincs szimbólum-értelmezés, nincs diagnózis, nincs terápiás állítás.",
+    "- Csak a megadott szöveg + a user válaszai alapján kérdezz rá konkrét részletre.",
     "",
     "KÖTELEZŐ ILLESZKEDÉS:",
     `- A question a profile.question_style szerint készüljön: ${profile.question_style}`,
     profile.micro_description ? `- Micro leírás: ${profile.micro_description}` : "",
     lex ? `- Mini-szótár (használj belőle finoman): ${lex}` : "",
-    "",
-    "FORRÁS-PRIORITÁS:",
-    "- direction_profile + dream_observation + history az elsődleges.",
-    "- Ha nincs új anchor, preferred/optional esetén last_answer_excerpt konkrét részletére támaszkodhatsz.",
     "",
     "ANTI-ISMÉTLÉS:",
     "- Tilos megismételni/parafrazálni a korábbi kérdéseket.",
@@ -1114,14 +643,41 @@ function buildBaseSystemPrompt(profile: DirectionProfile, availableAnchors: stri
     .join("\n");
 }
 
-function buildSafetyExtraRules(compactObs: ReturnType<typeof compactDreamObservation> | null): string[] {
-  const flag = compactObs?.safety?.flag;
-  if (!flag || flag === "none") return [];
-  return [
-    "SAFETY: finomíts, lassíts, ne mélyíts; kérdés legyen rövid és nem nyomulós.",
-    "SAFETY: adj opt-out hangnemet (pl. 'ha most jólesik').",
-    "SAFETY: ne menj bele intenzív érzelmi nyomásba, ne kényszeríts döntésre.",
-  ];
+async function callModel(args: {
+  systemPrompt: string;
+  userPayload: any;
+}): Promise<WorkBlockResponse> {
+  try {
+    const completion = await withTimeout(
+      (signal) =>
+        client.chat.completions.create(
+          {
+            model: MODEL,
+            temperature: 0.25,
+            presence_penalty: 0.25,
+            frequency_penalty: 0.25,
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: args.systemPrompt },
+              { role: "user", content: JSON.stringify(args.userPayload) },
+            ],
+            max_tokens: 650,
+          },
+          { signal }
+        ),
+      OPENAI_TIMEOUT_MS
+    );
+
+    const rawContent = completion.choices?.[0]?.message?.content ?? "";
+    const parsed = await parseModelJSON(rawContent);
+    const sanitized = validateModelOutput(parsed);
+
+    if (!sanitized) return makeLowNoveltyClosure("none");
+    return sanitized;
+  } catch (err) {
+    console.warn("work-block: model call failed", err);
+    return makeLowNoveltyClosure("none");
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -1141,371 +697,133 @@ export async function POST(req: Request) {
     const dreamText = (body.dream_text ?? "").trim();
     const direction = unwrapDirection(body.direction as DirectionInput);
     const history = sanitizeHistory(body.history);
-    const priorEchoes = sanitizePriorEchoes(body.prior_echoes);
     const safetyFlag = sanitizeSafety(body.synth?.flags);
 
-    if (!dreamText) return NextResponse.json({ error: "Missing dream_text" }, { status: 400 });
-    if (!direction) return NextResponse.json({ error: "Missing direction" }, { status: 400 });
     if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
+    if (!direction) return NextResponse.json({ error: "Missing direction" }, { status: 400 });
+    if (!dreamText) return NextResponse.json({ error: "Missing dream_text" }, { status: 400 });
 
-    // ✅ after this point, always use sessionIdSafe (string)
-    const sessionIdSafe: string = sessionId;
+    const sessionIdSafe = sessionId;
     const directionSlug = direction.slug ?? "unknown";
 
-    const lastAnswer = history.length ? (history[history.length - 1]?.answer ?? "") : "";
-    const answerExcerpt = clampExcerpt(lastAnswer, ANSWER_EXCERPT_LIMIT);
-    const answerLen = (lastAnswer ?? "").trim().length;
-
-    const shouldFetchRecent = history.length < 2; // ha van folyamat, ne zavarjon promptban
-
-    const [dbLatentPack, observation, recentWorkBlocks, ledgerUsedKeys, extractAnchorKeys] = await Promise.all([
-  fetchLatentFromDb({ supabase, sessionId: sessionIdSafe, userId }),
-  fetchDreamObservation({ supabase, sessionId: sessionIdSafe, userId }),
-  shouldFetchRecent
-    ? fetchRecentWorkBlocks({ supabase, sessionId: sessionIdSafe, directionSlug: direction.slug, limit: 3 })
-    : Promise.resolve([]),
-  fetchUsedAnchorKeysFromLedger({ supabase, sessionId: sessionIdSafe, userId, directionSlug, limit: 80 }),
-  fetchLatestExtractAnchorKeys({ supabase, sessionId: sessionIdSafe, userId }),
-]);
-
-
-    const compactObservation = compactDreamObservation(observation);
-    const observationAnchors = extractObservationAnchors(observation);
-
-    // Safety gates (hard stop)
-    if (safetyFlag !== "none") {
-      const out = makeClosureResponse("safety", safetyFlag);
-      await appendLatentLogEvent(req, {
-        sessionId: sessionIdSafe,
-        event: { type: "stop_pre", reason: "safety", direction_slug: direction.slug ?? null },
-        meta: {
-          source: "work-block/next",
-          safety: safetyFlag,
-          history_count: history.length,
-          answer_len: answerLen,
-          answer_excerpt: answerExcerpt,
-        },
-      });
-      return NextResponse.json(out);
-    }
-
+    // Safety gates
+    if (safetyFlag !== "none") return NextResponse.json(makeClosureResponse("safety", safetyFlag));
     const detectedSafety = detectSafety(dreamText);
-    if (detectedSafety !== "none") {
-      const out = makeClosureResponse("safety", detectedSafety);
-      await appendLatentLogEvent(req, {
-        sessionId: sessionIdSafe,
-        event: { type: "stop_pre", reason: "safety", direction_slug: direction.slug ?? null },
-        meta: {
-          source: "work-block/next",
-          safety: detectedSafety,
-          history_count: history.length,
-          answer_len: answerLen,
-          answer_excerpt: answerExcerpt,
-        },
-      });
-      return NextResponse.json(out);
-    }
+    if (detectedSafety !== "none") return NextResponse.json(makeClosureResponse("safety", detectedSafety));
 
+    // Stop criteria
     const stopSignal = shouldStop(direction, history);
-    if (stopSignal.suggest_stop) {
-      const out = makeClosureResponse(stopSignal.reason, "none");
-      await appendLatentLogEvent(req, {
-        sessionId: sessionIdSafe,
-        event: { type: "stop_pre", reason: stopSignal.reason, direction_slug: direction.slug ?? null },
-        meta: {
-          source: "work-block/next",
-          safety: "none",
-          history_count: history.length,
-          answer_len: answerLen,
-          answer_excerpt: answerExcerpt,
-        },
-      });
-      return NextResponse.json(out);
+    if (stopSignal.suggest_stop) return NextResponse.json(makeClosureResponse(stopSignal.reason, "none"));
+
+    // Anchors: from payload only (v0)
+    const anchors = sanitizeStringArray(body.anchors, 40);
+    const extractAnchorKeys = sanitizeStringArray(body.extract_anchor_keys, 60);
+
+    // Ledger used keys
+    const ledgerUsedKeys = await fetchUsedAnchorKeysFromLedger({
+      supabase,
+      sessionId: sessionIdSafe,
+      userId,
+      directionSlug,
+      limit: 120,
+    });
+
+    // Available anchors exclude ledger-used keys
+    const availableAnchors = anchors.filter((label) => {
+      const k = anchorKey(label);
+      return k && !ledgerUsedKeys.has(k);
+    });
+
+    // Forced anchor key -> label
+    function labelForAnchorKey(k: string): string | null {
+      const kk = (k ?? "").trim();
+      if (!kk) return null;
+      const match = anchors.find((a) => anchorKey(a) === kk);
+      return match ?? null;
     }
 
-    // Prepare direction spec and allowed slugs.
-    const allowedSlugs = sanitizeAllowedSlugs(body.allowed_slugs, direction.slug);
+    const forcedAnchorKey =
+      pickNextAnchorKey({
+        extractAnchorKeys,
+        usedAnchorKeys: Array.from(ledgerUsedKeys),
+      }) ?? null;
 
-    const synth = await runLatentSynthesis({
-      req,
-      sessionId: sessionIdSafe, // ✅ fixed
-      dreamText,
-      history,
-      priorEchoes,
-      allowedSlugs,
-    });
+    const forcedAnchorLabel = forcedAnchorKey ? labelForAnchorKey(forcedAnchorKey) : null;
+
+    const profile = buildDirectionProfile(direction);
+    const allowedSlugs = sanitizeAllowedSlugs(body.allowed_slugs, direction.slug);
 
     const prevQsAll = history.map((h) => h.question).filter(Boolean);
     const prevQsRecent = prevQsAll.slice(-RECENT_QS_FOR_SIMILARITY);
 
-    const anchorCandidatesDetailed = mergeAnchorCandidatesDetailed(
-      getAnchorCandidates(dbLatentPack.latent_analysis, synth),
-      observationAnchors
-    );
-    const anchorCandidates = flattenAnchorCandidates(anchorCandidatesDetailed);
-
-    // OLD (text-level used anchors from prev questions)
-    const usedAnchorsByText = extractUsedAnchors(prevQsAll, anchorCandidatesDetailed);
-
-    // NEW: unify used keys:
-    // - keys from ledger (direction-scoped)
-    // - keys inferred from history (best-effort)
-    const usedKeys = new Set<string>(ledgerUsedKeys);
-    for (const label of usedAnchorsByText) {
-      const k = anchorKey(label);
-      if (k) usedKeys.add(k);
-    }
-
-    // Available anchors: exclude if its key is used
-    const availableAnchors = anchorCandidates.filter((label) => {
-      const k = anchorKey(label);
-      if (!k) return false;
-      return !usedKeys.has(k);
-    });
-
-    // --- FORCE NEXT ANCHOR (A3): no anchor_key=null while unused anchor exists ---
-
-function labelForAnchorKey(k: string): string | null {
-  const kk = (k ?? "").trim();
-  if (!kk) return null;
-
-  // find a label whose normalized anchorKey() matches k
-  const match = anchorCandidatesDetailed.find((c) => anchorKey(c.label) === kk);
-  return match?.label ?? null;
-}
-
-const forcedAnchorKey =
-  pickNextAnchorKey({
-    extractAnchorKeys,               // e.g. ["balazs","iroda",...]
-    usedAnchorKeys: Array.from(usedKeys), // these are normalized keys too
-  }) ?? null;
-
-const forcedAnchorLabel = forcedAnchorKey ? labelForAnchorKey(forcedAnchorKey) : null;
-
-// If we have a forced anchor, narrow the available list to ONLY that label
-let availableAnchorsFinal = availableAnchors;
-if (forcedAnchorLabel) {
-  availableAnchorsFinal = [forcedAnchorLabel];
-}
-
-
-    const profile = buildDirectionProfile(direction);
-    const baseSystemPrompt = buildBaseSystemPrompt(profile, availableAnchorsFinal);
+    const systemPrompt = buildBaseSystemPrompt(profile, availableAnchors, forcedAnchorLabel);
 
     const userPayload = {
+      session_id: sessionIdSafe,
+      direction_slug: directionSlug,
+      allowed_slugs: allowedSlugs,
       dream_text: dreamText,
-      direction_profile: profile,
       history,
-      prior_echoes: priorEchoes,
-      synth: synth ?? null,
-      latent_analysis_snapshot: dbLatentPack.latent_analysis ?? null,
-      latent_log_tail: dbLatentPack.latent_log_tail ?? [],
-      last_answer_excerpt: answerExcerpt,
-      available_anchors: availableAnchorsFinal,
-      dream_observation: compactObservation,
-      // recent_work_blocks: recentWorkBlocks,
-      // latent_analysis_snapshot / latent_log_tail: egyelőre ne
+      available_anchors: forcedAnchorLabel ? [forcedAnchorLabel] : availableAnchors,
     };
 
-    const safetyExtraRules = buildSafetyExtraRules(compactObservation);
+    // Attempt 1
+    const first = await callModel({ systemPrompt, userPayload });
 
-    // Single, clean model call (with hard fallback)
-    async function callModel(extraRules: string[] = []): Promise<WorkBlockResponse> {
-      const systemPrompt = [baseSystemPrompt, ...extraRules].join("\n");
+    const tooSimilar1 =
+      (prevQsRecent.length > 0 && isTooSimilar(first.work_block.question, prevQsRecent, SIMILARITY_THRESHOLD)) ||
+      isExactRepeat(first.work_block.question, prevQsAll);
 
-      try {
-        const completion = await withTimeout(
-          (signal) =>
-            client.chat.completions.create(
-              {
-                model: MODEL,
-                temperature: 0.25,
-                presence_penalty: 0.25,
-                frequency_penalty: 0.25,
-                response_format: { type: "json_object" },
-                messages: [
-                  { role: "system", content: systemPrompt },
-                  { role: "user", content: JSON.stringify(userPayload) },
-                ],
-                max_tokens: 650,
-              },
-              { signal }
-            ),
-          OPENAI_TIMEOUT_MS
-        );
+    const violatesForced1 =
+      forcedAnchorLabel
+        ? !normalizeQ(first.work_block.question).includes(normalizeQ(forcedAnchorLabel))
+        : false;
 
-        const rawContent = completion.choices?.[0]?.message?.content ?? "";
-        const parsed = await parseModelJSON(rawContent);
-        const sanitized = validateModelOutput(parsed);
-
-        if (!sanitized) return makeLowNoveltyClosure("none");
-        return sanitized;
-      } catch (err) {
-        console.warn("work-block: model call failed", err);
-        return makeLowNoveltyClosure("none");
-      }
-    }
-
-    // Helper: persist question to ledger (best-effort)
-    async function persistAcceptedQuestion(questionText: string) {
-      const anchorLabel = forcedAnchorLabel ?? detectAnchorUsed(questionText, anchorCandidatesDetailed);
-      const k = forcedAnchorKey ?? (anchorLabel ? anchorKey(anchorLabel) : "");
+    if (!first.stop_signal?.suggest_stop && !tooSimilar1 && !violatesForced1) {
+      const k = forcedAnchorKey ?? (forcedAnchorLabel ? anchorKey(forcedAnchorLabel) : "");
       const keys = k ? [k] : [];
-      // also mark "used" in-memory for this request to reduce weirdness on retry
-      for (const kk of keys) usedKeys.add(kk);
-
       await insertLedgerQuestion({
         supabase,
-        sessionId: sessionIdSafe, // ✅ fixed
+        sessionId: sessionIdSafe,
         userId,
         directionSlug,
-        questionText,
+        questionText: first.work_block.question,
         questionIntent: profile.question_style ?? null,
         anchorKeys: keys,
       });
-
-      return { anchorLabel, anchorKey: k || null };
-    }
-
-    // Attempt 1
-    const first = await callModel(safetyExtraRules);
-
-    const tooSimilar1 =
-      (prevQsRecent.length > 0 && isTooSimilar(first.work_block.question, prevQsRecent)) ||
-      isExactRepeat(first.work_block.question, prevQsAll);
-
-    // NEW: if the question uses an anchor key we already asked (ledger), treat as "too similar" even if wording differs
-    const anchorLabelFirst = detectAnchorUsed(first.work_block.question, anchorCandidatesDetailed);
-
-// forced módban a forcedAnchorKey az igazság, nem a detectAnchorUsed
-const anchorKeyFirstFinal = forcedAnchorKey ?? (anchorLabelFirst ? anchorKey(anchorLabelFirst) : "");
-
-const ledgerRepeat1 = anchorKeyFirstFinal ? usedKeys.has(anchorKeyFirstFinal) : false;
-
-    const violatesForced =
-      forcedAnchorLabel ? !normalizeQ(first.work_block.question).includes(normalizeQ(forcedAnchorLabel)) : false;
-
-
-    if (!tooSimilar1 && !violatesForced && !ledgerRepeat1 && !first.stop_signal?.suggest_stop) {
-      const persisted = await persistAcceptedQuestion(first.work_block.question);
-
-      await appendLatentLogEvent(req, {
-        sessionId: sessionIdSafe, // ✅ fixed
-        event: {
-          type: "work_step_generated",
-          direction_slug: direction.slug ?? null,
-          question: first.work_block.question,
-          reason: first.stop_signal?.suggest_stop ? first.stop_signal.reason : null,
-          anchor_used: persisted.anchorLabel ?? null,
-        },
-        meta: {
-          source: "work-block/next",
-          model: MODEL,
-          history_count: history.length,
-          answer_len: answerLen,
-          answer_excerpt: answerExcerpt,
-          similarity_retry: false,
-          ledger_repeat: ledgerRepeat1,
-          anchor_key: persisted.anchorKey,
-        },
-      });
-
       return NextResponse.json(first);
     }
 
-    // Attempt 2 (retry)
-    const retry = await callModel([
-      ...safetyExtraRules,
-      `TILOS: ezekkel megegyező vagy ezek parafrázisa: ${prevQsRecent.join(" | ")}`,
-      forcedAnchorLabel
-  ? `KÖTELEZŐ: a question tartalmazza ezt a horgonyt: "${forcedAnchorLabel}".`
-  : availableAnchorsFinal.length > 0
-    ? `Válassz egy MÁSik horgonyt a listából (elérhető anchors: ${availableAnchorsFinal.join(" | ")}).`
-    : `Nincs új horgony, ezért low_novelty lehet a helyes válasz.`
-    ]);
+    // Attempt 2 (harder anti-repeat)
+    const retry = await callModel({
+      systemPrompt:
+        systemPrompt +
+        `\nTILOS: ezekkel megegyező vagy ezek parafrázisa: ${prevQsRecent.join(" | ")}`,
+      userPayload,
+    });
 
     const tooSimilar2 =
-      (prevQsRecent.length > 0 && isTooSimilar(retry.work_block.question, prevQsRecent)) ||
+      (prevQsRecent.length > 0 && isTooSimilar(retry.work_block.question, prevQsRecent, SIMILARITY_THRESHOLD)) ||
       isExactRepeat(retry.work_block.question, prevQsAll);
 
     const violatesForced2 =
-      forcedAnchorLabel ? !normalizeQ(retry.work_block.question).includes(normalizeQ(forcedAnchorLabel)) : false;
+      forcedAnchorLabel
+        ? !normalizeQ(retry.work_block.question).includes(normalizeQ(forcedAnchorLabel))
+        : false;
 
-    const anchorLabelRetry = detectAnchorUsed(retry.work_block.question, anchorCandidatesDetailed);
-const anchorKeyRetryFinal = forcedAnchorKey ?? (anchorLabelRetry ? anchorKey(anchorLabelRetry) : "");
-const ledgerRepeat2 = anchorKeyRetryFinal ? usedKeys.has(anchorKeyRetryFinal) : false;
+    if (retry.stop_signal?.suggest_stop) return NextResponse.json(retry);
+    if (tooSimilar2 || violatesForced2) return NextResponse.json(makeLowNoveltyClosure("none"));
 
-    if (retry.stop_signal?.suggest_stop) {
-      await appendLatentLogEvent(req, {
-        sessionId: sessionIdSafe, // ✅ fixed
-        event: {
-          type: "stop_post",
-          reason: retry.stop_signal.reason ?? "low_novelty",
-          direction_slug: direction.slug ?? null,
-          question: retry.work_block.question,
-          anchor_used: anchorLabelRetry ?? null,
-        },
-        meta: {
-          source: "work-block/next",
-          model: MODEL,
-          history_count: history.length,
-          answer_len: answerLen,
-          answer_excerpt: answerExcerpt,
-          similarity_retry: true,
-          ledger_repeat: ledgerRepeat2,
-          anchor_key: anchorKeyRetryFinal || null,
-        },
-      });
-      return NextResponse.json(retry);
-    }
-
-    if (tooSimilar2 || ledgerRepeat2 || violatesForced2) {
-      const out = makeLowNoveltyClosure("none");
-      await appendLatentLogEvent(req, {
-        sessionId: sessionIdSafe, // ✅ fixed
-        event: {
-          type: "stop_post",
-          reason: "low_novelty",
-          direction_slug: direction.slug ?? null,
-          question: null,
-          anchor_used: null,
-        },
-        meta: {
-          source: "work-block/next",
-          model: MODEL,
-          history_count: history.length,
-          answer_len: answerLen,
-          answer_excerpt: answerExcerpt,
-          similarity_retry: true,
-          ledger_repeat: Boolean(ledgerRepeat2),
-          note: tooSimilar2 ? "second_try_still_similar" : "second_try_reused_anchor_key",
-        },
-      });
-      return NextResponse.json(out);
-    }
-
-    // Accept retry -> persist
-    const persistedRetry = await persistAcceptedQuestion(retry.work_block.question);
-
-    await appendLatentLogEvent(req, {
-      sessionId: sessionIdSafe, // ✅ fixed
-      event: {
-        type: "work_step_generated",
-        direction_slug: direction.slug ?? null,
-        question: retry.work_block.question,
-        reason: retry.stop_signal?.suggest_stop ? retry.stop_signal.reason : null,
-        anchor_used: persistedRetry.anchorLabel ?? null,
-      },
-      meta: {
-        source: "work-block/next",
-        model: MODEL,
-        history_count: history.length,
-        answer_len: answerLen,
-        answer_excerpt: answerExcerpt,
-        similarity_retry: true,
-        ledger_repeat: false,
-        anchor_key: persistedRetry.anchorKey,
-      },
+    const k2 = forcedAnchorKey ?? (forcedAnchorLabel ? anchorKey(forcedAnchorLabel) : "");
+    const keys2 = k2 ? [k2] : [];
+    await insertLedgerQuestion({
+      supabase,
+      sessionId: sessionIdSafe,
+      userId,
+      directionSlug,
+      questionText: retry.work_block.question,
+      questionIntent: profile.question_style ?? null,
+      anchorKeys: keys2,
     });
 
     return NextResponse.json(retry);
