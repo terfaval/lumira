@@ -116,6 +116,26 @@ export async function jobGenerateFrame(args: {
       };
     });
 
+    payload.meta = {
+      ...(payload.meta ?? {}),
+      writer: "jobGenerateFrame:v0-canonical",
+      schema: "frame_v0",
+      build: process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
+    };
+
+    if (
+      payload &&
+      typeof payload === "object" &&
+      ("framing" in payload || "recommended_directions" in payload)
+    ) {
+      const msg = "Legacy frame payload detected in canonical writer";
+      if (process.env.NODE_ENV !== "production") {
+        throw new Error(msg);
+      } else {
+        console.error(msg, payload);
+      }
+    }
+
     const frame = await insertFrameVersionIfMissing(supabase, {
       session_id: event.session_id,
       user_id: event.user_id,

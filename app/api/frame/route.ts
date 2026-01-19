@@ -452,6 +452,24 @@ export async function POST(req: Request) {
     if (!authData?.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     const userId = authData.user.id;
 
+    const forwardHeaders = new Headers();
+    const authHeader = req.headers.get("authorization");
+    if (authHeader) forwardHeaders.set("authorization", authHeader);
+    const cookieHeader = req.headers.get("cookie");
+    if (cookieHeader) forwardHeaders.set("cookie", cookieHeader);
+    forwardHeaders.set("content-type", "application/json");
+
+    const ensureRes = await fetch(new URL("/api/frame/ensure", req.url), {
+      method: "POST",
+      headers: forwardHeaders,
+      body: JSON.stringify({ session_id: sessionId }),
+    });
+    const ensureText = await ensureRes.text();
+    return new NextResponse(ensureText, {
+      status: ensureRes.status,
+      headers: { "content-type": ensureRes.headers.get("content-type") ?? "application/json" },
+    });
+
     const { data: rawEntry, error: rawError } = await supabase
       .from("dream_entries")
       .select("content, kind, created_at")
