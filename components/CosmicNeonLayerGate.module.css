@@ -14,7 +14,7 @@
   background-repeat: no-repeat;
 
   /* Finom sötétítés / kontraszt */
-  opacity: var(--bg-intensity, 0.85);
+  opacity: var(--bg-intensity, 0.55);
   filter: saturate(1.05) contrast(1.05) brightness(0.9);
 
   /* iOS / mobil scroll jitter ellen */
