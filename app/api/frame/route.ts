@@ -1,3 +1,4 @@
+// /app/api/frame/route.ts
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
@@ -24,17 +25,20 @@ type RecommendedDirection = { slug: string; reason: string };
 
 type OutputPayload = {
   sessionId: string;
+  // Optional: helps callers standardize to snake_case later without breaking old UI
+  session_id?: string;
+
   title: string;
   framing_text: string;
   recommended_directions: RecommendedDirection[];
 };
 
-const DEFAULT_REASON = "Javasolt feldolgozÆósi irÆóny a kÆvetkez‘' lÆcpÆcshez.";
+const DEFAULT_REASON = "Javasolt feldolgozási irány a következő lépéshez.";
 const RECOMMENDATION_MIN = 1;
 const RECOMMENDATION_MAX = 3;
 
 const FALLBACK_FRAMING_2P =
-  "Az Æólmodban egy s‘+r‘+n ÆsszekapcsolÆˆdÆˆ jelenetsorban mozogtÆól, ahol nÆchÆóny kÆcp Æcs tÆórgy kÆ•lÆnÆsen er‘'sen megmaradt. Volt benne legalÆóbb egy pillanat, amikor megijedtÆcl vagy szÆcgyent ÆcreztÆcl, Æcs kÆzben azt is figyelted, hogyan reagÆólnak rÆód a tÆbbiek. Ha van kedved, vÆólassz egyetlen fÆˆkuszt a folytatÆóshoz: (A) a legfurcsÆóbb tÆórgy, (B) a legfeszÆ•ltebb pillanat, vagy (C) a legmelegebb talÆólkozÆós.";
+  "Az álmodban sűrűn összekapcsolódó jelenetek között mozogtál, ahol néhány kulcskép különösen erősen megmaradt. Volt benne legalább egy pillanat, amikor megijedtél vagy feszültté váltál, és közben azt is figyelted, hogyan hat rád a helyzet. Egy másik ponton mintha elcsendesedett volna a tempó, és jobban észrevetted a részleteket. Ha jólesik, válassz egyetlen fókuszt a folytatáshoz: (A) a legfurcsább tárgy, (B) a legfeszültebb pillanat, vagy (C) a legmelegebb találkozás.";
 
 const MIN_RAW_LEN = 20;
 
@@ -54,6 +58,7 @@ function fallbackRecommendationsFromAllowed(allowedSlugs: string[]): Recommended
 
 function normalizeRecommendedSlugs(slugs: unknown, allowed: Set<string>): string[] | null {
   if (!Array.isArray(slugs) || slugs.length < RECOMMENDATION_MIN || slugs.length > RECOMMENDATION_MAX) return null;
+
   const seen = new Set<string>();
   const out: string[] = [];
 
@@ -62,7 +67,7 @@ function normalizeRecommendedSlugs(slugs: unknown, allowed: Set<string>): string
       typeof s === "string"
         ? s.trim()
         : typeof (s as any)?.slug === "string"
-          ? (s as any).slug.trim()
+          ? String((s as any).slug).trim()
           : "";
 
     if (!slug) return null;
@@ -70,6 +75,7 @@ function normalizeRecommendedSlugs(slugs: unknown, allowed: Set<string>): string
     seen.add(slug);
     out.push(slug);
   }
+
   return out.length >= RECOMMENDATION_MIN && out.length <= RECOMMENDATION_MAX ? out : null;
 }
 
@@ -88,13 +94,15 @@ function countSentencesHu(s: string): number {
 
 function hasFirstPersonMarkers(text: string): boolean {
   const t = (text || "").toLowerCase();
-  const hints = [" Æcn ", " megÆ•tÆm", " felmÆószok", " menekÆ•lÆk", " futok", " talÆólom", " pihenek"];
+  // nagyon minimál, csak azért, hogy ne csússzon át 1. személybe
+  const hints = ["én ", "velem", "megölöm", "felmászom", "menekülök", "futok", "találom", "pihenek"];
   return hints.some((h) => t.includes(h));
 }
 
 function isSecondPersonStyle(text: string): boolean {
   const t = (text || "").toLowerCase();
-  const hints = ["tÆól", "tÆcl", "tad", "ted", "tÆótok", "tÆctek"];
+  // laza heurisztika: legyen legalább egy 2. személyre utaló toldalék / névmás
+  const hints = ["te ", "veled", "téged", "tőled", "neked", "rajtad", "veletek", "számodra", "érzed", "látod"];
   const hitCount = hints.reduce((acc, h) => acc + (t.includes(h) ? 1 : 0), 0);
   return !hasFirstPersonMarkers(t) && hitCount >= 1;
 }
@@ -143,32 +151,32 @@ function buildModelPayload(params: {
 
 function systemPrompt(): string {
   return [
-    "Adj vissza EGY darab JSON objektumot egy Æólomhoz.",
+    "Adj vissza EGY darab JSON objektumot egy álomhoz.",
     'Kulcsok: {"title": string, "framing_text": string, "recommended_slugs": string[1..3]}',
     "",
     "Bemenetek:",
-    "- dream_text: a nyers ÆólomleÆðrÆós.",
-    "- catalog: irÆónylista (slug, title, micro).",
+    "- dream_text: a nyers álomleírás.",
+    "- catalog: iránylista (slug, title, micro).",
     "",
-    "KÆtelez‘' stÆðlus:",
+    "Kötelező stílus:",
     "- Magyar nyelv.",
-    "- MÆ?SODIK SZEMÆ%LY, MÆçLT ID‘?.",
-    "- NyitÆós javasolt formula: ƒ?§Az Æólmodban ƒ?|ƒ?œ.",
-    "- Megfigyel‘' hang: nincs diagnÆˆzis, nincs biztos jelentÆcs-ÆóllÆðtÆós.",
+    "- MÁSODIK SZEMÉLY, MÚLT IDŐ.",
+    "- Javasolt nyitás: „Az álmodban ...”.",
+    "- Megfigyelő hang: nincs diagnózis, nincs biztos jelentés-állítás.",
     "",
-    "Framing_text (rÆvid, irodalmiasan feszes, nem tÆcnylista):",
-    "- 4ƒ?"7 mondatban rajzolj tÆcr-id‘'-Æcrzelmi Æðvet (2ƒ?"3 csomÆˆpont).",
-    "- Legyen 1ƒ?"2 Æcrzelem/reakciÆˆ (pl. fÆclelem, szÆcgyen).",
-    "- A vÆcgÆcn legyen 1 nagyon rÆvid invitÆólÆós (1 mondat), vÆólasztÆósi lehet‘'sÆcggel.",
+    "Framing_text:",
+    "- 4–7 mondatban rajzolj tér-idő-érzelmi ívet (2–3 csomópont).",
+    "- Legyen 1–2 érzelem/reakció (pl. feszültség, ijedtség, kíváncsiság, szégyen).",
+    "- A végén legyen 1 nagyon rövid, gyengéd invitálás (1 mondat), választási lehetőséggel.",
     "",
-    "Æ"vatos megfigyelÆcs (opcionÆólis, max 1 mondat):",
-    "- Csak Æðgy kezd‘'dhet: ƒ?§Lehet, hogy (csak Æˆvatos megfigyelÆcs) ƒ?|ƒ?œ.",
-    "- TILOS: ƒ?§ez azt jelentiƒ?œ, ƒ?§arra utalƒ?œ, ƒ?§valÆˆszÆðn‘+legƒ?œ, ƒ?§tÆ•krÆzte a szorongÆósaidatƒ?œ, diagnÆˆzis, biztos pszichologizÆólÆós.",
+    "Óvatos megfigyelés (opcionális, max 1 mondat):",
+    "- Csak így kezdődhet: „Lehet, hogy ...”.",
+    "- TILOS: „ez azt jelenti”, „arra utal”, diagnózis, biztos pszichologizálás.",
     "",
-    "AjÆónlott irÆónyok:",
-    "- Pontosan 1-3 kÆ•lÆnbÆz‘' slug a katalÆˆgusbÆˆl.",
+    "Ajánlott irányok:",
+    "- Pontosan 1–3 különböző slug a katalógusból.",
     "",
-    "FormÆótum:",
+    "Formátum:",
     '{"title":"...","framing_text":"...","recommended_slugs":["slug-1","slug-2"]}',
   ].join("\n");
 }
@@ -237,13 +245,13 @@ async function repairBundleQuick(params: {
   const dream_text = params.raw.slice(0, 6500);
 
   const sys = [
-    "JavÆðtÆós: adj vissza Æ%RVÆ%NYES JSON-t a szabÆólyok szerint. Ne adj magyarÆózatot.",
-    "title: 2ƒ?"6 szÆˆ.",
-    "framing_text: 4ƒ?"7 mondat, 2. szemÆcly mÆ­lt id‘', Æðv + 1 rÆvid invitÆólÆós a vÆcgÆcn.",
-    "Æ"vatos megfigyelÆcs: opcionÆólis, max 1 mondat, csak Æðgy: ƒ?§Lehet, hogy (csak Æˆvatos megfigyelÆcs) ƒ?|ƒ?œ.",
-    "Æ"vatos megfigyelÆcs: tilos biztos jelentÆcs/diagnÆˆzis.",
-    "recommended_slugs: 1ƒ?"3, kÆ•lÆnbÆz‘', allowed_slugs-bÆˆl.",
-    'FormÆótum: {"title":"...","framing_text":"...","recommended_slugs":["...","..."]}',
+    "Javítás: adj vissza ÉRVÉNYES JSON-t a szabályok szerint. Ne adj magyarázatot.",
+    "title: 2–6 szó.",
+    "framing_text: 4–7 mondat, 2. személy múlt idő, ív + 1 rövid invitálás a végén.",
+    "Óvatos megfigyelés: opcionális, max 1 mondat, csak így: „Lehet, hogy ...”.",
+    "Tilos biztos jelentés/diagnózis.",
+    "recommended_slugs: 1–3, különböző, allowed_slugs-ból.",
+    'Formátum: {"title":"...","framing_text":"...","recommended_slugs":["...","..."]}',
   ].join("\n");
 
   const user = {
@@ -285,6 +293,65 @@ async function repairBundleQuick(params: {
   };
 }
 
+/**
+ * v0 idempotency:
+ * Prefer material_snapshots.hash if present (session/ensure writes it),
+ * otherwise fallback to "raw-only" hash.
+ * Include a catalog fingerprint so catalog changes generate a new frame version.
+ */
+async function computeFrameInputHash(args: {
+  supabase: Awaited<ReturnType<typeof supabaseServerAuthed>>;
+  sessionId: string;
+  userId: string;
+  raw: string;
+  allowedCatalog: { slug: string; title: string; micro: string }[];
+  targetSentences: { target: number; min: number; max: number };
+}) {
+  // 1) material snapshot hash (best)
+  let materialHash: string | null = null;
+  try {
+    const { data } = await args.supabase
+      .from("material_snapshots")
+      .select("hash, created_at")
+      .eq("session_id", args.sessionId)
+      .eq("user_id", args.userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data?.hash && typeof data.hash === "string") materialHash = data.hash;
+  } catch {
+    // ignore
+  }
+
+  // 2) catalog fingerprint (stable-ish)
+  // keep it small & deterministic
+  const catalogFingerprint = sha256(
+    JSON.stringify(
+      args.allowedCatalog.map((d) => ({
+        slug: d.slug,
+        // title/micro changes should trigger new version
+        title: d.title,
+        micro: d.micro,
+      }))
+    )
+  );
+
+  // 3) constraints fingerprint
+  const constraintsFingerprint = sha256(
+    JSON.stringify({
+      title_max: TITLE_MAX,
+      sentence_target: args.targetSentences.target,
+      sentence_min: args.targetSentences.min,
+      sentence_max: args.targetSentences.max,
+    })
+  );
+
+  const base = materialHash ? `material:${materialHash}` : `raw:${sha256(args.raw)}`;
+
+  return sha256(`frame:v0:${args.sessionId}:${base}:${catalogFingerprint}:${constraintsFingerprint}`);
+}
+
 async function persistFrame(params: {
   supabase: Awaited<ReturnType<typeof supabaseServerAuthed>>;
   sessionId: string;
@@ -297,8 +364,8 @@ async function persistFrame(params: {
   frame_mode: string;
   targetSentences: { target: number; min: number; max: number };
   raw_entry_created_at?: string | null;
+  input_hash: string;
 }) {
-  const input_hash = sha256(`frame:v0:${params.sessionId}:${params.raw}`);
   const payload = {
     title: params.title,
     framing_text: params.framing_text,
@@ -318,7 +385,7 @@ async function persistFrame(params: {
   const frame = await insertFrameVersionIfMissing(params.supabase, {
     session_id: params.sessionId,
     user_id: params.userId,
-    input_hash,
+    input_hash: params.input_hash,
     model: params.model,
     payload,
   });
@@ -332,8 +399,11 @@ async function persistFrame(params: {
 
 export async function POST(req: Request) {
   try {
-    const { sessionId } = (await req.json()) as { sessionId?: string };
-    if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+    const body = (await req.json().catch(() => ({}))) as { sessionId?: string; session_id?: string };
+
+    // accept both
+    const sessionId = typeof body.session_id === "string" ? body.session_id : body.sessionId;
+    if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
 
     const supabase = await supabaseServerAuthed(req);
     const { data: authData } = await supabase.auth.getUser();
@@ -360,15 +430,24 @@ export async function POST(req: Request) {
     const allowedSet = new Set(directions.map((d) => d.slug));
     const allowedCatalog = directions.map((d) => ({
       slug: d.slug,
-      title: d.title,
-      micro: sanitizeWhitespace(d.content.micro_description ?? d.description ?? ""),
+      title: sanitizeWhitespace(d.title ?? ""),
+      micro: sanitizeWhitespace((d.content as any)?.micro_description ?? d.description ?? ""),
     }));
     const allowedSlugs = allowedCatalog.map((x) => x.slug);
 
+    const input_hash = await computeFrameInputHash({
+      supabase,
+      sessionId,
+      userId,
+      raw,
+      allowedCatalog,
+      targetSentences,
+    });
+
     if (raw.length < MIN_RAW_LEN) {
-      const title = "RÆvid Æólomjegyzet";
+      const title = "Rövid álomjegyzet";
       const framing_text =
-        "Az Æólmodban valami gyorsan megvillant, de most mÆcg kevÆcs rÆcszlet maradt meg. Ha van kedved, Æðrd le 1ƒ?"3 mondatban: hol voltÆól, ki volt veled, Æcs mi volt a leger‘'sebb pillanat.";
+        "Az álmodból most csak kevés részlet maradt meg, de ez teljesen rendben van. Ha jólesik, írd le 1–3 mondatban: hol voltál, ki volt veled, és mi volt a legerősebb pillanat. Ez már elég a folytatáshoz.";
       const recommended_directions =
         allowedSlugs.length >= RECOMMENDATION_MIN ? fallbackRecommendationsFromAllowed(allowedSlugs) : [];
 
@@ -384,9 +463,17 @@ export async function POST(req: Request) {
         frame_mode: "fallback_short",
         targetSentences,
         raw_entry_created_at: rawEntry.created_at ?? null,
+        input_hash,
       });
 
-      return NextResponse.json({ sessionId, title, framing_text, recommended_directions } satisfies OutputPayload);
+      const out: OutputPayload = {
+        sessionId,
+        session_id: sessionId,
+        title,
+        framing_text,
+        recommended_directions,
+      };
+      return NextResponse.json(out);
     }
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -397,7 +484,6 @@ export async function POST(req: Request) {
 
     let usedAI = false;
     let needRepair = false;
-    let lastModelRaw: string | null = null;
     let lastModelName: string | null = null;
     let lastError: string | null = null;
 
@@ -410,8 +496,6 @@ export async function POST(req: Request) {
         targetSentences,
       });
       usedAI = true;
-
-      lastModelRaw = gen.raw_text ?? null;
       lastModelName = gen.model ?? null;
 
       title = gen.parsed.title;
@@ -429,8 +513,6 @@ export async function POST(req: Request) {
           bad: { title, framing_text, recommended_slugs },
         });
 
-        lastModelRaw = repaired.raw_text ?? lastModelRaw;
-
         if (isGoodTitle(repaired.title)) title = repaired.title;
         if (isGoodFraming(repaired.framing_text, targetSentences)) framing_text = repaired.framing_text;
         if (repaired.recommended_slugs) recommended_slugs = repaired.recommended_slugs;
@@ -443,8 +525,7 @@ export async function POST(req: Request) {
         !recommended_slugs ||
         (() => {
           const n = countSentencesHu(framing_text);
-          if (n < targetSentences.min || n > targetSentences.max) return true;
-          return false;
+          return n < targetSentences.min || n > targetSentences.max;
         })();
     } catch (e: any) {
       lastError = e?.message ? String(e.message) : "openai generation failed";
@@ -453,6 +534,7 @@ export async function POST(req: Request) {
 
     if (!isAcceptableTitle(title)) title = stableFallbackTitle(raw);
     if (!isNonTrivialFraming(framing_text) || !isSecondPersonStyle(framing_text)) framing_text = FALLBACK_FRAMING_2P;
+
     if (!recommended_slugs) {
       recommended_slugs =
         allowedSlugs.length >= RECOMMENDATION_MIN
@@ -474,15 +556,20 @@ export async function POST(req: Request) {
       frame_mode: usedAI ? (needRepair ? "ai_repair" : "ai_onecall") : "fallback",
       targetSentences,
       raw_entry_created_at: rawEntry.created_at ?? null,
+      input_hash,
     });
 
-    const out: OutputPayload = { sessionId, title, framing_text, recommended_directions };
     if (lastError) {
-      console.warn("frame: fallback used after error", lastError, {
-        model: lastModelName,
-        raw_excerpt: lastModelRaw ? String(lastModelRaw).slice(0, 400) : null,
-      });
+      console.warn("frame: fallback used after error", lastError, { model: lastModelName });
     }
+
+    const out: OutputPayload = {
+      sessionId,
+      session_id: sessionId,
+      title,
+      framing_text,
+      recommended_directions,
+    };
 
     return NextResponse.json(out);
   } catch (e: unknown) {

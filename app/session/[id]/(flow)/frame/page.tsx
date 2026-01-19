@@ -1,4 +1,3 @@
-// /app/(...)/session/[id]/frame/page.tsx
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -9,62 +8,14 @@ import { supabase } from "@/src/lib/supabase/client";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { startDirection } from "@/src/lib/startDirection";
 import { requireUserId } from "@/src/lib/db";
-import type { DreamSession } from "@/src/lib/types";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { CatalogService } from "@/src/services/CatalogService";
-import {
-  fetchFrameLatestWithPayloadAndId,
-  fetchLatentLatestWithPayloadAndId,
-} from "@/src/db/repositories/latestRepo";
+import { fetchFrameLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
 
-type DreamSessionSummary = {
-  session_id: string;
-  title?: string | null;
-  framing_text?: string | null;
-  latent_analysis?: any;
-  recommended_directions?: any;
-};
-
-type CandidateDirection = { slug: string; reason?: string; score?: number };
+type CandidateDirection = { slug: string; reason?: string };
 
 function safeFrameRecommendations(x: unknown): CandidateDirection[] {
-  // expected: [{slug, title?, why}]
-  if (!Array.isArray(x)) return [];
-  const out: CandidateDirection[] = [];
-  for (const item of x) {
-    if (!item || typeof item !== "object") continue;
-    const slug = (item as any).slug;
-    const why = (item as any).why;
-    if (typeof slug === "string" && slug.trim()) {
-      out.push({ slug: slug.trim(), reason: typeof why === "string" ? why : undefined });
-    }
-  }
-  return out;
-}
-
-function safeLatentCandidates(x: unknown): CandidateDirection[] {
-  // expected: [{slug, score?, why?}]  (but be tolerant)
-  if (!Array.isArray(x)) return [];
-  const out: CandidateDirection[] = [];
-  for (const item of x) {
-    if (!item || typeof item !== "object") continue;
-    const slug = (item as any).slug;
-    const score = typeof (item as any).score === "number" ? (item as any).score : 0;
-    const why = (item as any).why ?? (item as any).reason; // tolerate
-    if (typeof slug === "string" && slug.trim()) {
-      out.push({
-        slug: slug.trim(),
-        score,
-        reason: typeof why === "string" ? why : undefined,
-      });
-    }
-  }
-  return out;
-}
-
-function safeSummaryFallback(x: unknown): CandidateDirection[] {
-  // legacy: [{slug, reason?}]
   if (!Array.isArray(x)) return [];
   const out: CandidateDirection[] = [];
   for (const item of x) {
@@ -82,19 +33,10 @@ export default function FramePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
-  const [session, setSession] = useState<DreamSession | null>(null);
   const [catalog, setCatalog] = useState<DirectionCatalogItemDTO[]>([]);
-  const [summaryFallback, setSummaryFallback] = useState<DreamSessionSummary | null>(null);
-
-
   const [frameLatest, setFrameLatest] = useState<{ frame_version_id: string; payload: any } | null>(
     null
   );
-  const [latentLatest, setLatentLatest] = useState<{
-    latent_version_id: string;
-    payload: any;
-  } | null>(null);
-
   const [userId, setUserId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -103,18 +45,6 @@ export default function FramePage() {
 
   const attemptedEnsureRef = useRef(false);
   const latestLoadedRef = useRef(false);
-
-  const loadSession = useCallback(async () => {
-    setErr(null);
-    const { data, error } = await supabase
-      .from("dream_sessions")
-      .select("id, raw_dream_text, status, created_at, updated_at")
-      .eq("id", id)
-      .single();
-
-    if (error) setErr(error.message);
-    else setSession(data as DreamSession);
-  }, [id]);
 
   const loadCatalog = useCallback(async () => {
     try {
@@ -127,34 +57,13 @@ export default function FramePage() {
 
   const loadLatest = useCallback(
     async (uid: string) => {
-      const [frameRes, latentRes] = await Promise.all([
-        fetchFrameLatestWithPayloadAndId(supabase, uid, id),
-        fetchLatentLatestWithPayloadAndId(supabase, uid, id),
-      ]);
+      const frameRes = await fetchFrameLatestWithPayloadAndId(supabase, uid, id);
       setFrameLatest(frameRes);
-      setLatentLatest(latentRes);
       latestLoadedRef.current = true;
     },
     [id]
   );
 
-  const loadSummaryFallback = useCallback(async () => {
-    // Deprecated fallback: only if v0 latest is missing AFTER we tried to load it.
-    const { data, error } = await supabase
-      .from("dream_session_summaries")
-      .select("session_id, title, framing_text, recommended_directions")
-      .eq("session_id", id)
-      .maybeSingle();
-
-    if (error) {
-      // ne írjuk felül a fő hibát
-      console.warn("summary fallback load error:", error.message);
-      return;
-    }
-    setSummaryFallback((data ?? null) as DreamSessionSummary | null);
-  }, [id]);
-
-  useEffect(() => void loadSession(), [loadSession]);
   useEffect(() => void loadCatalog(), [loadCatalog]);
 
   useEffect(() => {
@@ -168,19 +77,16 @@ export default function FramePage() {
     void loadLatest(userId);
   }, [loadLatest, userId]);
 
-  const hasFramePayload = Boolean(frameLatest?.payload?.framing || frameLatest?.payload?.title);
+  const hasFramePayload = Boolean(frameLatest?.payload?.framing_text || frameLatest?.payload?.title);
 
   const runEnsure = useCallback(async () => {
     if (!userId) return;
     setBusy(true);
     setErr(null);
     try {
-      const res = await fetchWithAuth("/api/session/ensure", {
+      const res = await fetchWithAuth("/api/frame", {
         method: "POST",
-        json: {
-          session_id: id,
-          run: { observe: true, session_index: true, latent: true, frame: true },
-        },
+        json: { sessionId: id },
       });
       if (!res.ok) throw new Error(await res.text());
       await loadLatest(userId);
@@ -191,8 +97,6 @@ export default function FramePage() {
     }
   }, [id, loadLatest, userId]);
 
-  // ✅ Ensure: akkor próbáljuk, ha van userId, és NINCS frame payload még.
-  // (Ne a framingReady-re kössük, mert a fallback “elaltathatja” az ensure-t.)
   useEffect(() => {
     if (!userId) return;
     if (busy) return;
@@ -203,42 +107,24 @@ export default function FramePage() {
     void runEnsure();
   }, [busy, hasFramePayload, runEnsure, userId]);
 
-  // ✅ Fallback: csak akkor, ha már megpróbáltuk betölteni a latesteket,
-  // és még mindig nincs frame/latent.
-  useEffect(() => {
-    if (!latestLoadedRef.current) return;
-    if (frameLatest || latentLatest) return;
-    void loadSummaryFallback();
-  }, [frameLatest, latentLatest, loadSummaryFallback]);
-
   const recommendations = useMemo(() => {
     const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
+    const frameRecs = safeFrameRecommendations(frameLatest?.payload?.recommended_directions).slice(
+      0,
+      3
+    );
 
-    const frameRecs = safeFrameRecommendations(frameLatest?.payload?.recommended_directions);
-
-    // tolerate both keys:
-    const latentRaw =
-      latentLatest?.payload?.direction_candidates ?? latentLatest?.payload?.candidate_directions;
-
-    const latentRecs = safeLatentCandidates(latentRaw)
-      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-      .slice(0, 3);
-
-    const fallback = safeSummaryFallback(summaryFallback?.recommended_directions).slice(0, 3);
-
-    const primary = latentRecs.length > 0 ? latentRecs : frameRecs.length > 0 ? frameRecs : fallback;
-
-    return primary
+    return frameRecs
       .map((rec) => {
         const item = catalogBySlug.get(rec.slug);
         if (!item) return null;
         return { ...item, reason: rec.reason ?? "" };
       })
       .filter((x): x is DirectionCatalogItemDTO & { reason: string } => Boolean(x));
-  }, [catalog, frameLatest, latentLatest, summaryFallback]);
+  }, [catalog, frameLatest]);
 
-  const framingText = (frameLatest?.payload?.framing ?? summaryFallback?.framing_text ?? "") || "";
-  const framingTitle = (frameLatest?.payload?.title ?? summaryFallback?.title ?? "") || "";
+  const framingText = frameLatest?.payload?.framing_text ?? "";
+  const framingTitle = frameLatest?.payload?.title ?? "";
   const framingReady = Boolean(framingText);
 
   const handleDirectionSelect = useCallback(
@@ -248,7 +134,7 @@ export default function FramePage() {
       try {
         const result = await startDirection(id, slug, "frame");
         if (!result.success) {
-          setErr("Hiba történt, próbáld újra.");
+          setErr("Hiba tÆrtÆcnt, prÆˆbÆóld Æ­jra.");
           return;
         }
         router.push(`/session/${id}/work?direction=${encodeURIComponent(slug)}`);
@@ -261,10 +147,10 @@ export default function FramePage() {
     [id, router]
   );
 
-  if (loading || !session) {
+  if (loading || !latestLoadedRef.current) {
     return (
       <div className="stack">
-        <p style={{ color: "var(--text-muted)" }}>Betöltés…</p>
+        <p style={{ color: "var(--text-muted)" }}>BetÆltÆcsƒ?|</p>
       </div>
     );
   }
@@ -279,7 +165,7 @@ export default function FramePage() {
             <div style={{ whiteSpace: "pre-wrap" }}>{framingText}</div>
 
             <div className="stack-tight">
-              <p className="section-title">Válassz egy irányt, ha tovább dolgoznál az álommal</p>
+              <p className="section-title">VÆólassz egy irÆónyt, ha tovÆóbb dolgoznÆól az Æólommal</p>
             </div>
 
             {recommendations.length > 0 ? (
@@ -311,22 +197,25 @@ export default function FramePage() {
               </div>
             ) : (
               <p style={{ color: "var(--text-muted)", margin: 0 }}>
-                Most nem jött ki biztos ajánlott irány — de a teljes katalógusból választhatsz.
+                Most nem jÆtt ki biztos ajÆónlott irÆóny ƒ?" de a teljes katalÆˆgusbÆˆl vÆólaszthatsz.
               </p>
             )}
 
             <div className="direction-actions">
-              <PrimaryButton variant="secondary" onClick={() => router.push(`/session/${id}/direction`)}>
-                További irányok
+              <PrimaryButton
+                variant="secondary"
+                onClick={() => router.push(`/session/${id}/direction`)}
+              >
+                TovÆóbbi irÆónyok
               </PrimaryButton>
               <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
-                Később folytatom
+                KÆcs‘'bb folytatom
               </PrimaryButton>
             </div>
           </>
         ) : (
           <p style={{ color: "var(--text-muted)" }}>
-            A keretezés készül, hamarosan megjelennek az ajánlott irányok.
+            A keretezÆcs kÆcszÆ•l, hamarosan megjelennek az ajÆónlott irÆónyok.
           </p>
         )}
       </div>
