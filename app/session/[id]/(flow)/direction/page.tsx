@@ -14,10 +14,10 @@ import styles from "./direction.module.css";
 import { huTagDir } from "@/src/lib/tags/dirTagsHu";
 import { registerListener } from "@/src/lib/perfDebug";
 import { CatalogService } from "@/src/services/CatalogService";
-import { fetchLatentLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
+import { fetchFrameLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
 
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
-type RecommendedDirection = { slug: string; reason?: string; score?: number };
+type RecommendedDirection = { slug: string; reason?: string };
 
 function safeStringArray(x: unknown): string[] {
   if (!Array.isArray(x)) return [];
@@ -27,27 +27,7 @@ function safeStringArray(x: unknown): string[] {
     .filter(Boolean);
 }
 
-function safeLatentCandidates(x: unknown): RecommendedDirection[] {
-  if (!Array.isArray(x)) return [];
-  const out: RecommendedDirection[] = [];
-  for (const item of x) {
-    if (!item || typeof item !== "object") continue;
-    const slug = (item as any).slug;
-    const score = typeof (item as any).score === "number" ? (item as any).score : 0;
-    const why = (item as any).why ?? (item as any).reason; // tolerate
-    if (typeof slug === "string" && slug.trim()) {
-      out.push({
-        slug: slug.trim(),
-        score,
-        reason: typeof why === "string" ? why : undefined,
-      });
-    }
-  }
-  return out;
-}
-
-function safeSummaryFallback(x: unknown): RecommendedDirection[] {
-  // Deprecated fallback: legacy summary-based recommendations.
+function safeFrameRecommendations(x: unknown): RecommendedDirection[] {
   if (!Array.isArray(x)) return [];
   const out: RecommendedDirection[] = [];
   for (const item of x) {
@@ -55,10 +35,7 @@ function safeSummaryFallback(x: unknown): RecommendedDirection[] {
     const slug = (item as any).slug;
     const reason = (item as any).reason;
     if (typeof slug === "string" && slug.trim()) {
-      out.push({
-        slug: slug.trim(),
-        reason: typeof reason === "string" ? reason : undefined,
-      });
+      out.push({ slug: slug.trim(), reason: typeof reason === "string" ? reason : undefined });
     }
   }
   return out;
@@ -119,7 +96,7 @@ export default function DirectionPage() {
 
     const uid = await requireUserId().catch(() => null);
 
-    // 1) catalog
+    // 1) catalog (allowed legacy)
     try {
       const cat = await CatalogService.getActiveCatalog(supabase);
       setCatalog(cat);
@@ -139,7 +116,6 @@ export default function DirectionPage() {
 
       if (chErr) {
         setErr(chErr.message);
-        // nem return — ettől még lehet ajánlás
       } else {
         const m: Record<string, boolean> = {};
         (ch ?? []).forEach((row: { direction_slug: string }) => {
@@ -149,51 +125,33 @@ export default function DirectionPage() {
       }
     }
 
-    // 3) v0 ensure + latent_latest -> recommended
+    // 3) v0 source of truth: frame_latest -> frame_versions.payload.recommended_directions
     if (uid) {
+      // soft ensure: ask server to compute frame if missing
       try {
         await fetchWithAuth("/api/session/ensure", {
           method: "POST",
           json: {
             session_id: sessionId,
-            run: { observe: true, session_index: true, latent: true, frame: false },
+            run: { frame: true },
           },
         });
       } catch {
-        // soft fail: ettől még megpróbáljuk latent_latest-et
+        // soft fail: we still try to read frame_latest
       }
 
       try {
-        const latentLatest = await fetchLatentLatestWithPayloadAndId(supabase, uid, sessionId);
-        const latentRaw =
-          latentLatest?.payload?.direction_candidates ?? latentLatest?.payload?.candidate_directions;
-
-        const latentRecs = safeLatentCandidates(latentRaw)
-          .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-          .slice(0, 3);
-
-        if (latentRecs.length > 0) {
-          setRecommendedRaw(latentRecs);
-          return;
-        }
+        const frameLatest = await fetchFrameLatestWithPayloadAndId(supabase, uid, sessionId);
+        const frameRecs = safeFrameRecommendations(frameLatest?.payload?.recommended_directions).slice(0, 3);
+        setRecommendedRaw(frameRecs);
+        return;
       } catch {
-        // ignore and continue to fallback
+        // ignore, fallback below
       }
     }
 
-    // 4) Deprecated fallback: summary-based recommendations when v0 is missing.
-    {
-      const { data: sum, error: sumErr } = await supabase
-        .from("dream_session_summaries")
-        .select("recommended_directions")
-        .eq("session_id", sessionId)
-        .maybeSingle();
-
-      if (sumErr) console.warn("dream_session_summaries load error:", sumErr.message);
-
-      const rec = safeSummaryFallback((sum as any)?.recommended_directions);
-      setRecommendedRaw(rec);
-    }
+    // 4) v0 fallback: no frame recs -> show top catalog items (deterministic)
+    setRecommendedRaw([]);
   }, [sessionId]);
 
   useEffect(() => {
@@ -303,6 +261,12 @@ export default function DirectionPage() {
     const micro = d.content.micro_description ?? d.description ?? "";
     const isBusy = busySlug === d.slug;
 
+    // attach reason if we have it (from frame payload)
+    const reason =
+      (opts?.recommended
+        ? recommendedRaw.find((r) => r.slug === d.slug)?.reason
+        : undefined) ?? "";
+
     return (
       <GlassCardSurface
         key={d.slug}
@@ -326,6 +290,7 @@ export default function DirectionPage() {
 
           <div className={styles.title}>{d.title}</div>
           {micro ? <div className={styles.desc}>{micro}</div> : null}
+          {opts?.recommended && reason ? <div className={styles.desc}>{reason}</div> : null}
         </div>
 
         <div className={styles.actions}>
@@ -377,7 +342,9 @@ export default function DirectionPage() {
           <div className={styles.stack}>
             {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}
 
-            <div className={styles.grid}>{recommended.map((d) => renderCard(d, { recommended: true }))}</div>
+            <div className={styles.grid}>
+              {recommended.map((d) => renderCard(d, { recommended: true }))}
+            </div>
 
             <div className={styles.grid}>{restGroupedFlattened.map((d) => renderCard(d))}</div>
           </div>
