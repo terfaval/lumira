@@ -175,8 +175,7 @@ export default function FramePage() {
   return (
     <div className="frame-center">
       <div className="stack">
-        {framingTitle ? <h2 style={{ margin: 0 }}>{framingTitle}</h2> : null}
-
+        
         {framingReady ? (
           <>
             <div style={{ whiteSpace: "pre-wrap" }}>{framingText}</div>

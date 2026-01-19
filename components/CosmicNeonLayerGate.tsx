@@ -2,13 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { registerObserver } from "@/src/lib/perfDebug";
+import styles from "./CosmicNeonLayerGate.module.css"; // <-- állítsd a helyes path-ra
 
 type Props = {
-  /** statikus háttérkép URL-je (pl. /images/lumira/cosmic-neural.webp) */
   imageUrl: string;
-  /** mennyire legyen erős az egész háttér (0..1) */
   intensity?: number;
-  /** ha igaz, mindig bekapcsol (debug) */
   forceEnabled?: boolean;
 };
 
@@ -67,7 +65,6 @@ export default function CosmicNeonLayerGate({
   const on = forceEnabled ? true : enabled;
 
   const styleVars = useMemo(() => {
-    // Az intensity-t rugalmasan szétosztjuk a rétegekre:
     const base = Math.max(0, Math.min(1, intensity));
     return {
       ["--bg-intensity" as any]: String(base),
@@ -84,14 +81,8 @@ export default function CosmicNeonLayerGate({
   return (
     <div
       aria-hidden
-      className={[
-        "lumira-cosmic-bg",
-        reducedMotion ? "lumira-cosmic-bg--still" : "",
-      ].join(" ")}
-      style={{
-        ["--bg-image" as any]: `url("${imageUrl}")`,
-        ["--bg-intensity" as any]: String(intensity),
-      }}
+      className={`${styles.bg} ${reducedMotion ? styles.still : ""}`}
+      style={styleVars}
     />
   );
 }
