@@ -13,7 +13,6 @@ import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { FlowLoadingOverlay } from "@/components/FlowLoadingOverlay";
-import { CatalogService } from "@/src/services/CatalogService";
 
 function InfoIcon() {
   return (
@@ -47,7 +46,7 @@ export default function NewClient() {
   const [blockingFlow, setBlockingFlow] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
 
-  const [step, setStep] = useState<"index" | "synth" | "frame" | "idle">("idle");
+  const [step, setStep] = useState<"ensure" | "idle">("idle");
 
   const stats = useMemo(() => {
     const trimmed = text.trim();
@@ -56,10 +55,6 @@ export default function NewClient() {
     const empty = !trimmed;
     return { chars, words, empty };
   }, [text]);
-
-  async function fetchActiveSlugs(): Promise<string[]> {
-    return CatalogService.getActiveSlugs(supabase);
-  }
 
   async function createSession() {
     setErr(null);
@@ -103,44 +98,11 @@ export default function NewClient() {
       if (entryError) throw entryError;
 
       // 1) INDEX
-      setStep("index");
+      setStep("ensure");
       {
-        const res = await fetchWithAuth("/api/index-session", {
+        const res = await fetchWithAuth("/api/session/ensure", {
           method: "POST",
-          json: { session_id: sessionId, dream_text: text, force: true },
-        });
-        if (!res.ok) {
-          const t = await res.text().catch(() => "");
-          throw new Error(t || "Indexelés nem sikerült.");
-        }
-      }
-
-      // 2) SYNTHESIZE
-      setStep("synth");
-      const activeSlugs = await fetchActiveSlugs().catch(() => []);
-      {
-        const res = await fetchWithAuth("/api/synthesize", {
-          method: "POST",
-          json: {
-            session_id: sessionId,
-            dream_text: text,
-            history: [],
-            prior_echoes: [],
-            allowed_slugs: activeSlugs,
-          },
-        });
-        if (!res.ok) {
-          const t = await res.text().catch(() => "");
-          throw new Error(t || "Latens szintézis nem sikerült.");
-        }
-      }
-
-      // 3) FRAME
-      setStep("frame");
-      {
-        const res = await fetchWithAuth("/api/frame", {
-          method: "POST",
-          json: { sessionId },
+          json: { session_id: sessionId, force: true },
         });
         if (!res.ok) {
           const t = await res.text().catch(() => "");
@@ -158,21 +120,10 @@ export default function NewClient() {
     }
   }
 
-  const overlayTitle =
-    step === "index"
-      ? "Indexelés készül…"
-      : step === "synth"
-      ? "Latens szintézis készül…"
-      : step === "frame"
-      ? "Keretezés készül…"
-      : "Előkészítés…";
+  const overlayTitle = step === "ensure" ? "Keretezés készül…" : "Előkészítés…";
 
   const overlaySubtitle =
-    step === "index"
-      ? "Horgony-összefoglaló és beágyazás."
-      : step === "synth"
-      ? "Fókuszpontok és irányjelöltek előkészítése."
-      : step === "frame"
+    step === "ensure"
       ? "Cím + keretezés + 3 ajánlott irány."
       : "Álom feldolgozásának előkészítése.";
 

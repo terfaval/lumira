@@ -240,7 +240,9 @@ export default function DirectionPage() {
           return;
         }
         setSelected((prev) => ({ ...prev, [slug]: true }));
-        router.push(`/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`);
+        const nextUrl =
+          result.nextUrl ?? `/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`;
+        router.push(nextUrl);
       } catch (e: unknown) {
         setErr(e instanceof Error ? e.message : "Hiba");
       } finally {

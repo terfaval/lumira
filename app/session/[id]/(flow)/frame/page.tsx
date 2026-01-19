@@ -91,9 +91,9 @@ export default function FramePage() {
     setBusy(true);
     setErr(null);
     try {
-      const res = await fetchWithAuth("/api/frame", {
+      const res = await fetchWithAuth("/api/frame/ensure", {
         method: "POST",
-        json: { sessionId: id },
+        json: { session_id: id },
       });
 
       if (!res.ok) {
@@ -154,7 +154,8 @@ export default function FramePage() {
           setErr("Hiba történt, próbáld újra.");
           return;
         }
-        router.push(`/session/${id}/work?direction=${encodeURIComponent(slug)}`);
+        const nextUrl = result.nextUrl ?? `/session/${id}/work?direction=${encodeURIComponent(slug)}`;
+        router.push(nextUrl);
       } catch (e: unknown) {
         setErr(e instanceof Error ? e.message : "Hiba");
       } finally {

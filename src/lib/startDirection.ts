@@ -1,9 +1,9 @@
-import { supabase } from "@/src/lib/supabase/client";
-import { requireUserId } from "@/src/lib/db";
+import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 
 export type StartDirectionResult = {
   success: boolean;
   alreadySelected?: boolean;
+  nextUrl?: string;
   error?: string;
 };
 
@@ -12,22 +12,27 @@ export async function startDirection(
   directionSlug: string,
   source: "frame" | "direction_modal" | "work" | "import" | "system" = "direction_modal"
 ): Promise<StartDirectionResult> {
-  const userId = await requireUserId();
-
-  const { error: insertError } = await supabase.from("session_directions").insert({
-    session_id: sessionId,
-    user_id: userId,
-    direction_slug: directionSlug,
-    source,
+  const res = await fetchWithAuth("/api/direction/select", {
+    method: "POST",
+    json: {
+      session_id: sessionId,
+      slug: directionSlug,
+      source,
+    },
   });
 
-  if (insertError) {
-    const code = (insertError as any)?.code;
-    if (code === "23505") {
-      return { success: true, alreadySelected: true };
-    }
-    return { success: false, error: insertError.message };
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    return { success: false, error: text || "Request failed" };
   }
 
-  return { success: true };
+  const data = (await res.json().catch(() => null)) as
+    | { next_url?: string; already_selected?: boolean }
+    | null;
+
+  return {
+    success: true,
+    alreadySelected: data?.already_selected ?? false,
+    nextUrl: data?.next_url ?? undefined,
+  };
 }

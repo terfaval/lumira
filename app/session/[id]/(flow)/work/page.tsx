@@ -12,7 +12,6 @@ import { isDirectionCardContent, type DirectionCardContent, type WorkBlock } fro
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
 import { CatalogService } from "@/src/services/CatalogService";
-import { sha256 } from "@/src/orchestration/idempotency/materialHash";
 
 type DirectionWorkBlock = WorkBlock & { content: DirectionCardContent };
 type HistoryItem = { question: string; answer: string | null };
@@ -48,6 +47,16 @@ async function fetchLatestRawDreamText(sessionId: string): Promise<string> {
 
   if (error) throw error;
   return data?.content ? String(data.content) : "";
+}
+
+function buildClientRequestId(
+  sessionId: string,
+  directionSlug: string,
+  sequence: number,
+  question: string
+) {
+  const compactQuestion = question.trim().replace(/\s+/g, " ").slice(0, 120);
+  return `work:${sessionId}:${directionSlug}:${sequence}:${compactQuestion}`;
 }
 
 export default function WorkPage() {
@@ -243,7 +252,6 @@ export default function WorkPage() {
         return true;
       }
 
-      const userId = await requireUserId();
       const maxSeq = directionBlocks.reduce((max, block) => Math.max(max, block.content.sequence ?? 0), 0);
 
       const content: DirectionCardContent = {
@@ -255,45 +263,36 @@ export default function WorkPage() {
         user: { answer: null, answered_at: null },
       };
 
-      const { data: lastVersionRow } = await supabase
-        .from("work_versions")
-        .select("version")
-        .eq("session_id", sessionId)
-        .order("version", { ascending: false })
-        .limit(1);
+      const clientRequestId = buildClientRequestId(
+        sessionId,
+        directionSlug,
+        maxSeq + 1,
+        content.ai?.question ?? ""
+      );
 
-      const nextVersion = (lastVersionRow as any)?.[0]?.version ?? 0;
-      const input_hash = sha256(`work:${sessionId}:${directionSlug}:${Date.now()}:${content.ai?.question ?? ""}`);
-
-      const { data: inserted, error: insertErr } = await supabase
-        .from("work_versions")
-        .insert({
+      const persistRes = await fetchWithAuth("/api/work/persist", {
+        method: "POST",
+        json: {
           session_id: sessionId,
-          user_id: userId,
-          version: nextVersion + 1,
-          input_hash,
-          model: null,
           payload: content,
-        })
-        .select("id, session_id, user_id, payload, created_at")
-        .single();
+          client_request_id: clientRequestId,
+        },
+      });
 
-      if (insertErr) throw insertErr;
+      if (!persistRes.ok) {
+        setNextErr("Nem sikerult menteni a kovetkezo kerdest.");
+        return false;
+      }
 
-      const { error: latestErr } = await supabase
-        .from("work_latest")
-        .upsert(
-          {
-            session_id: sessionId,
-            user_id: userId,
-            work_version_id: (inserted as any)?.id,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "session_id" }
-        );
-      if (latestErr) throw latestErr;
+      const persisted = (await persistRes.json().catch(() => null)) as { work_version?: any } | null;
+      const inserted = persisted?.work_version;
 
-      setLatestWorkVersionId((inserted as any)?.id ?? null);
+      if (!inserted?.id) {
+        setNextErr("Nem sikerult menteni a kovetkezo kerdest.");
+        return false;
+      }
+
+      setLatestWorkVersionId(inserted?.id ?? null);
       setBlocks((prev) => [...prev, toWorkBlock(inserted, new Map())].filter(Boolean) as WorkBlock[]);
       setClosureBlock(null);
       setPendingNextPayload(null);
@@ -372,7 +371,6 @@ export default function WorkPage() {
       setNextErr(null);
 
       try {
-        const userId = await requireUserId();
         const existingContent = normalizeContent(block.content);
         const answeredAt = trimmed ? new Date().toISOString() : null;
         const updatedContent: DirectionCardContent = {
@@ -382,13 +380,16 @@ export default function WorkPage() {
         };
 
         if (trimmed) {
-          const { error } = await supabase.from("dream_answers").insert({
-            session_id: sessionId,
-            user_id: userId,
-            work_id: block.id,
-            content: trimmed,
+          const res = await fetchWithAuth("/api/work/answer", {
+            method: "POST",
+            json: {
+              session_id: sessionId,
+              direction_slug: directionSlug,
+              work_block_id: block.id,
+              answer_text: trimmed,
+            },
           });
-          if (error) throw error;
+          if (!res.ok) throw new Error("answer_failed");
         }
 
         setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content: updatedContent } : b)));

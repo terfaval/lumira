@@ -359,7 +359,8 @@ export default function SessionSummary() {
           return;
         }
         setSelectedDirs((prev) => ({ ...prev, [slug]: true }));
-        router.push(`/session/${id}/work?direction=${encodeURIComponent(slug)}`);
+        const nextUrl = result.nextUrl ?? `/session/${id}/work?direction=${encodeURIComponent(slug)}`;
+        router.push(nextUrl);
       } catch (e) {
         const message = e instanceof Error ? e.message : "Hiba történt az irány indítása során.";
         setErr(message);
