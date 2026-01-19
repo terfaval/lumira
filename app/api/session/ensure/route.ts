@@ -144,16 +144,32 @@ export async function POST(req: Request) {
   } else {
     const latest = await fetchFrameLatestWithPayloadAndId(supabase, user_id, session_id);
     frame_version_id = latest?.frame_version_id ?? null;
-    recommended_directions = Array.isArray(latest?.payload?.recommended_directions)
-      ? latest?.payload?.recommended_directions
-      : [];
+    if (Array.isArray(latest?.payload?.recommended_directions)) {
+      recommended_directions = latest?.payload?.recommended_directions;
+    } else if (Array.isArray(latest?.payload?.recommended_slugs)) {
+      recommended_directions = latest?.payload?.recommended_slugs.map((slug: string) => ({
+        slug,
+        title: slug,
+        why: "",
+      }));
+    } else {
+      recommended_directions = [];
+    }
   }
 
   if (!frame_version_id) {
     const latest = await fetchFrameLatestWithPayloadAndId(supabase, user_id, session_id);
     frame_version_id = latest?.frame_version_id ?? null;
-    if (recommended_directions.length === 0 && Array.isArray(latest?.payload?.recommended_directions)) {
-      recommended_directions = latest?.payload?.recommended_directions;
+    if (recommended_directions.length === 0) {
+      if (Array.isArray(latest?.payload?.recommended_directions)) {
+        recommended_directions = latest?.payload?.recommended_directions;
+      } else if (Array.isArray(latest?.payload?.recommended_slugs)) {
+        recommended_directions = latest?.payload?.recommended_slugs.map((slug: string) => ({
+          slug,
+          title: slug,
+          why: "",
+        }));
+      }
     }
   }
 

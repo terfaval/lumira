@@ -23,6 +23,7 @@ export async function jobGenerateFrame(args: {
   skipped: boolean;
   ok: boolean;
   recommended_directions: Array<{ slug: string; title: string; why: string }>;
+  recommended_slugs?: string[];
 }> {
   const { supabase, event, material_hash } = args;
 
@@ -57,11 +58,13 @@ export async function jobGenerateFrame(args: {
 
   if (started.kind === "skipped") {
     const recs = started.job.output_ref?.recommended_directions ?? [];
+    const recSlugs = started.job.output_ref?.recommended_slugs ?? [];
     return {
       frame_version_id: started.job.output_ref?.frame_version_id ?? null,
       skipped: true,
       ok: started.job.status === "success",
       recommended_directions: Array.isArray(recs) ? recs : [],
+      recommended_slugs: Array.isArray(recSlugs) ? recSlugs : undefined,
     };
   }
 
@@ -72,11 +75,30 @@ export async function jobGenerateFrame(args: {
       catalog,
     });
 
+    const allowedSlugs = catalog.map((row) => row.slug);
+    const recommendedSlugsFallback = recommended.map((r) => r.slug).filter(Boolean);
+
+    const dreamTextRes = await supabase
+      .from("dream_entries")
+      .select("content, created_at")
+      .eq("session_id", event.session_id)
+      .eq("user_id", event.user_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (dreamTextRes.error) throw dreamTextRes.error;
+
+    const dreamText = String(dreamTextRes.data?.content ?? "");
+
     const { payload, model } = await generateFrameFromLatent({
+      dreamText,
       observation: obs.payload,
       sessionIndex: idx.payload,
       latent: latentLatest?.payload ?? null,
-      recommended,
+      catalog,
+      allowedSlugs,
+      recommendedSlugsFallback,
       sourceIds: {
         observation_version_id: obs.observation_version_id,
         latent_version_id,
@@ -84,10 +106,15 @@ export async function jobGenerateFrame(args: {
       },
     });
 
-    // Hard stability rule:
-    // recommended list is deterministic "source of truth" (slugs/titles)
-    // LLM may only provide why/framing/title; we overwrite list to prevent UI break.
-    payload.recommended_directions = recommended;
+    const recommended_directions = payload.recommended_slugs.map((slug) => {
+      const fromRec = recommended.find((r) => r.slug === slug);
+      const fromCatalog = catalog.find((row) => row.slug === slug);
+      return {
+        slug,
+        title: fromRec?.title ?? fromCatalog?.title ?? slug,
+        why: fromRec?.why ?? "Javasolt feldolgozási irány a következő lépéshez.",
+      };
+    });
 
     const frame = await insertFrameVersionIfMissing(supabase, {
       session_id: event.session_id,
@@ -108,7 +135,8 @@ export async function jobGenerateFrame(args: {
       status: "success",
       output_ref: {
         frame_version_id: frame.id,
-        recommended_directions: payload.recommended_directions,
+        recommended_slugs: payload.recommended_slugs,
+        recommended_directions,
         observation_version_id: obs.observation_version_id,
         session_index_version_id: idx.session_index_version_id,
         latent_version_id: latentLatest?.latent_version_id ?? null,
@@ -120,7 +148,8 @@ export async function jobGenerateFrame(args: {
       frame_version_id: frame.id,
       skipped: false,
       ok: true,
-      recommended_directions: payload.recommended_directions,
+      recommended_directions,
+      recommended_slugs: payload.recommended_slugs,
     };
   } catch (err: any) {
     await finishJobRun(supabase, {

@@ -31,6 +31,11 @@ function safeFrameRecommendations(x: unknown): RecommendedDirection[] {
   if (!Array.isArray(x)) return [];
   const out: RecommendedDirection[] = [];
   for (const item of x) {
+    if (typeof item === "string") {
+      const slug = item.trim();
+      if (slug) out.push({ slug });
+      continue;
+    }
     if (!item || typeof item !== "object") continue;
     const slug = (item as any).slug;
     const reason = (item as any).reason;
@@ -142,7 +147,9 @@ export default function DirectionPage() {
 
       try {
         const frameLatest = await fetchFrameLatestWithPayloadAndId(supabase, uid, sessionId);
-        const frameRecs = safeFrameRecommendations(frameLatest?.payload?.recommended_directions).slice(0, 3);
+        const recSource =
+          frameLatest?.payload?.recommended_slugs ?? frameLatest?.payload?.recommended_directions;
+        const frameRecs = safeFrameRecommendations(recSource).slice(0, 3);
         setRecommendedRaw(frameRecs);
         return;
       } catch {

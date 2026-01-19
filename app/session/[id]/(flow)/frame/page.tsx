@@ -19,6 +19,11 @@ function safeFrameRecommendations(x: unknown): CandidateDirection[] {
   if (!Array.isArray(x)) return [];
   const out: CandidateDirection[] = [];
   for (const item of x) {
+    if (typeof item === "string") {
+      const slug = item.trim();
+      if (slug) out.push({ slug });
+      continue;
+    }
     if (!item || typeof item !== "object") continue;
     const slug = (item as any).slug;
     const reason = (item as any).reason;
@@ -84,7 +89,9 @@ export default function FramePage() {
   }, [loadLatest, userId]);
 
   // v0: consider frame "ready" only if both title + framing_text exist
-  const hasFramePayload = Boolean(frameLatest?.payload?.title && frameLatest?.payload?.framing_text);
+  const hasFramePayload = Boolean(
+    frameLatest?.payload?.title && (frameLatest?.payload?.framing_text ?? frameLatest?.payload?.framing)
+  );
 
   const runEnsure = useCallback(async () => {
     if (!userId) return;
@@ -126,10 +133,9 @@ export default function FramePage() {
 
   const recommendations = useMemo(() => {
     const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
-    const frameRecs = safeFrameRecommendations(frameLatest?.payload?.recommended_directions).slice(
-      0,
-      3
-    );
+    const recSource =
+      frameLatest?.payload?.recommended_slugs ?? frameLatest?.payload?.recommended_directions;
+    const frameRecs = safeFrameRecommendations(recSource).slice(0, 3);
 
     return frameRecs
       .map((rec) => {
@@ -140,7 +146,7 @@ export default function FramePage() {
       .filter((x): x is DirectionCatalogItemDTO & { reason: string } => Boolean(x));
   }, [catalog, frameLatest]);
 
-  const framingText = String(frameLatest?.payload?.framing_text ?? "");
+  const framingText = String(frameLatest?.payload?.framing_text ?? frameLatest?.payload?.framing ?? "");
   const framingTitle = String(frameLatest?.payload?.title ?? "");
   const framingReady = hasFramePayload;
 
