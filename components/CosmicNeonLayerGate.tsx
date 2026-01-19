@@ -88,7 +88,10 @@ export default function CosmicNeonLayerGate({
         "lumira-cosmic-bg",
         reducedMotion ? "lumira-cosmic-bg--still" : "",
       ].join(" ")}
-      style={styleVars}
+      style={{
+        ["--bg-image" as any]: `url("${imageUrl}")`,
+        ["--bg-intensity" as any]: String(intensity),
+      }}
     />
   );
 }

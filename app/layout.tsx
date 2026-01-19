@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased`}>
         <NapszakInitializer />
         <CosmicNeonLayerGate 
-          imageUrl="/public/background/background2.png"
+          imageUrl="/background/background2.png"
           intensity={0.9}/>
         <main style={{ position: "relative", zIndex: 1 }}>{children}</main>
 
