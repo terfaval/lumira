@@ -551,7 +551,7 @@ export default function FractalBackground({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: -1, // ✅ always behind UI
+        zIndex: 0, // ✅ always behind UI
         pointerEvents: "none",
       }}
     >

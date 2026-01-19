@@ -14,7 +14,8 @@ export default function FractalLayerGate() {
       const space = body.getAttribute("data-space");
       const napszak = body.getAttribute("data-napszak");
 
-      const okSpace = !space || ["dream", "evening", "flow"].includes(space);
+      const blocked = ["auth", "pricing"]; // példák
+      const okSpace = !space || !blocked.includes(space);
       const okNapszak = !napszak || ["morning", "day", "evening", "night", "default"].includes(napszak);
 
       setEnabled(okSpace && okNapszak);
@@ -36,9 +37,9 @@ export default function FractalLayerGate() {
     <FractalBackground
       enabled={enabled}
       opacity={0.085}
-      baseZoom={2.6}
-      zoomSpeed={0}
-      zoomMode="loop"
+      baseZoom={1.4}
+      zoomSpeed={-0.0022}
+      zoomMode="exp"
       timeWrapSeconds={600}
       zoomLoopSeconds={240}
       zoomAmplitude={0.45}
