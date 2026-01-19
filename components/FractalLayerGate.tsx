@@ -42,8 +42,9 @@ export default function FractalLayerGate() {
       timeWrapSeconds={600}
       zoomLoopSeconds={240}
       zoomAmplitude={0.45}
-      iterations={220}
-      maxDevicePixelRatio={1.5}
+      iterations={140}
+      maxDevicePixelRatio={1.25}
+      targetFps={24}
     />
   );
 }

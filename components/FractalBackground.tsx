@@ -1,13 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { registerListener, registerRaf } from "@/src/lib/perfDebug";
-
-function prefersReducedMotion(): boolean {
-  return typeof window !== "undefined" &&
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
 
 function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
@@ -58,11 +52,8 @@ uniform int u_iter;
 
 /* soft palette driven by your tokens */
 vec3 palette(float t) {
-  // t: 0..1
-  // mix between accent / accent2, and glaze with glows
   vec3 base = mix(u_accent2, u_accent, smoothstep(0.1, 0.9, t));
   vec3 glaze = mix(u_glow1, u_glow2, 0.5 + 0.5 * sin((t + u_time * 0.02) * 6.28318));
-  // keep it subdued: blend into bg
   vec3 col = mix(u_bg, base, 0.55);
   col = mix(col, glaze, 0.22);
   return col;
@@ -108,7 +99,7 @@ void main() {
   // inner area
   float inside = step(float(u_iter - 1), it);
 
-  // Clarke-like slow color cycling (very subtle)
+  // very subtle color cycling
   float phase = u_time * 0.012;
   vec3 col = palette(fract(t + phase));
 
@@ -154,13 +145,16 @@ type Props = {
   /** DPR clamp for perf */
   maxDevicePixelRatio?: number;
 
+  /** cap FPS for perf (background doesn't need 60fps) */
+  targetFps?: number;
+
   /** css vars to read (defaults match your globals) */
   vars?: Partial<{
-    bg: string;        // --bg-root
-    accent: string;    // --accent
-    accent2: string;   // --accent-2
-    glow1: string;     // --glow-1
-    glow2: string;     // --glow-2
+    bg: string; // --bg-root
+    accent: string; // --accent
+    accent2: string; // --accent-2
+    glow1: string; // --glow-1
+    glow2: string; // --glow-2
   }>;
 };
 
@@ -175,9 +169,11 @@ export default function FractalBackground({
   zoomMode = "loop",
   iterations = 150,
   maxDevicePixelRatio = 1.5,
+  targetFps = 24,
   vars,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
   const glRef = useRef<{
     gl: WebGL2RenderingContext;
     canvas: HTMLCanvasElement;
@@ -200,11 +196,19 @@ export default function FractalBackground({
     readTokenColors: () => void;
     resize: () => void;
   } | null>(null);
+
   const rafRef = useRef(0);
   const rafActiveRef = useRef(false);
   const releaseRafRef = useRef<(() => void) | null>(null);
+  const handleVisibilityRef = useRef<(() => void) | null>(null);
+
   const lastTokenReadRef = useRef(0);
   const startRef = useRef(0);
+
+  // FPS throttling
+  const lastFrameMsRef = useRef(0);
+  const targetFpsRef = useRef(targetFps);
+
   const paramsRef = useRef({
     opacity,
     baseZoom,
@@ -215,12 +219,13 @@ export default function FractalBackground({
     zoomMode,
     iterations,
   });
+
   const varsRef = useRef(vars);
   const dprCapRef = useRef(maxDevicePixelRatio);
   const lowQualityUntilRef = useRef(0);
   const lowQualityRef = useRef(false);
   const reducedRef = useRef(false);
-  const handleVisibilityRef = useRef<(() => void) | null>(null);
+
   const baseFilter = "blur(0.7px) contrast(0.98) saturate(0.95)";
 
   useEffect(() => {
@@ -267,7 +272,7 @@ export default function FractalBackground({
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      new Float32Array([-1, -1,  1, -1, -1,  1,  -1, 1,  1, -1,  1, 1]),
+      new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
       gl.STATIC_DRAW
     );
 
@@ -290,12 +295,7 @@ export default function FractalBackground({
 
     // Clarke-ish famous point
     const centerX = -0.743643887037151;
-    const centerY =  0.13182590420533;
-
-    let raf = 0;
-    let rafActive = false;
-    let releaseRaf: (() => void) | null = null;
-    let start = performance.now();
+    const centerY = 0.13182590420533;
 
     const readTokenColors = () => {
       const cs = getComputedStyle(document.body);
@@ -321,7 +321,10 @@ export default function FractalBackground({
 
     const resize = () => {
       const baseDpr = Math.min(window.devicePixelRatio || 1, dprCapRef.current);
-      const dpr = lowQualityRef.current ? baseDpr * 0.6 : baseDpr;
+
+      // low-quality: clamp to <= 1.0 (don't go super blurry)
+      const dpr = lowQualityRef.current ? Math.min(1.0, baseDpr) : baseDpr;
+
       const w = Math.floor(canvas.clientWidth * dpr);
       const h = Math.floor(canvas.clientHeight * dpr);
       if (canvas.width !== w || canvas.height !== h) {
@@ -361,21 +364,29 @@ export default function FractalBackground({
 
     startRef.current = performance.now();
     lastTokenReadRef.current = 0;
+    lastFrameMsRef.current = 0;
+
     resize();
     readTokenColors();
+
     gl.uniform1f(uOpacity, clamp(paramsRef.current.opacity, 0, 1));
     gl.uniform2f(uCenter, centerX, centerY);
     gl.uniform1i(uIter, Math.max(40, Math.min(320, paramsRef.current.iterations)));
 
+    // Set initial filter once; loop can override during low-quality windows.
+    canvas.style.filter = baseFilter;
+
     const drawFrame = (now: number) => {
       const tRaw = (now - startRef.current) / 1000;
+
       const { baseZoom, zoomSpeed, zoomMode, zoomLoopSeconds, zoomAmplitude, timeWrapSeconds } =
         paramsRef.current;
+
       const reducedMotion = reducedRef.current;
-      const t = reducedMotion ? 0.0 : (tRaw % timeWrapSeconds);
+      const t = reducedMotion ? 0.0 : tRaw % timeWrapSeconds;
 
       // re-read colors ~1x/sec to follow theme flips (day/night)
-      if (!reducedMotion && (tRaw - lastTokenReadRef.current) > 1.0) {
+      if (!reducedMotion && tRaw - lastTokenReadRef.current > 1.0) {
         glRef.current?.readTokenColors();
         lastTokenReadRef.current = tRaw;
       }
@@ -406,16 +417,26 @@ export default function FractalBackground({
     };
 
     const loop = (now: number) => {
-      drawFrame(now);
-      if (!rafActive) return;
-      raf = requestAnimationFrame(loop);
+      // FPS throttle: background doesn't need 60fps
+      const fps = Math.max(8, Math.min(60, targetFpsRef.current || 24));
+      const minDt = 1000 / fps;
+
+      if (now - lastFrameMsRef.current >= minDt) {
+        lastFrameMsRef.current = now;
+        drawFrame(now);
+      }
+
+      if (!rafActiveRef.current) return;
+      rafRef.current = requestAnimationFrame(loop);
     };
 
     const stopLoop = () => {
       if (!rafActiveRef.current) return;
       rafActiveRef.current = false;
+
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
+
       releaseRafRef.current?.();
       releaseRafRef.current = null;
     };
@@ -443,9 +464,11 @@ export default function FractalBackground({
 
     const releaseVisibility = registerListener("document.visibilitychange:fractal");
     document.addEventListener("visibilitychange", handleVisibility);
+
     const releaseScroll = registerListener("window.scroll:fractal-low-quality");
     window.addEventListener("scroll", handleScroll, { passive: true });
 
+    // first frame + start
     drawFrame(performance.now());
     startLoop();
 
@@ -455,10 +478,13 @@ export default function FractalBackground({
       stopLoop();
       document.removeEventListener("visibilitychange", handleVisibility);
       releaseVisibility();
+
       window.removeEventListener("scroll", handleScroll);
       releaseScroll();
+
       window.removeEventListener("resize", onResize);
       releaseResize();
+
       glRef.current = null;
       gl.deleteBuffer(buf);
       gl.deleteVertexArray(vao);
@@ -479,12 +505,23 @@ export default function FractalBackground({
       zoomMode,
       iterations,
     };
+
     const glState = glRef.current;
     if (!glState) return;
+
     const { gl, uniforms } = glState;
     gl.uniform1f(uniforms.uOpacity, clamp(opacity, 0, 1));
     gl.uniform1i(uniforms.uIter, Math.max(40, Math.min(320, iterations)));
-  }, [opacity, baseZoom, zoomSpeed, timeWrapSeconds, zoomLoopSeconds, zoomAmplitude, zoomMode, iterations]);
+  }, [
+    opacity,
+    baseZoom,
+    zoomSpeed,
+    timeWrapSeconds,
+    zoomLoopSeconds,
+    zoomAmplitude,
+    zoomMode,
+    iterations,
+  ]);
 
   useEffect(() => {
     varsRef.current = vars;
@@ -496,6 +533,11 @@ export default function FractalBackground({
     glRef.current?.resize();
   }, [maxDevicePixelRatio]);
 
+  useEffect(() => {
+    targetFpsRef.current = targetFps;
+  }, [targetFps]);
+
+  // keep your existing reduced-motion wiring intact (currently always false in your code)
   useEffect(() => {
     reducedRef.current = false;
     handleVisibilityRef.current?.();
@@ -509,7 +551,7 @@ export default function FractalBackground({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 0, // fontos: a content fölé kell rakni? nem, inkább alá
+        zIndex: -1, // ✅ always behind UI
         pointerEvents: "none",
       }}
     >
@@ -519,8 +561,8 @@ export default function FractalBackground({
           width: "100%",
           height: "100%",
           display: "block",
-          // háttér jelleg + harmonizál a glow-kkal
-          filter: "blur(0.7px) contrast(0.98) saturate(0.95)",
+          // ✅ do not hardcode filter here; loop toggles it for low-quality mode
+          filter: "none",
           opacity: 1,
         }}
       />

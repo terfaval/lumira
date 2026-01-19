@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { NapszakInitializer } from "@/components/NapszakInitializer";
-// import FractalLayerGate from "@/components/FractalLayerGate";
 import BackgroundLayerGate from "@/components/BackgroundLayerGate";
 import CosmicNeonLayerGate from "@/components/CosmicNeonLayerGate";
+import FractalLayerGate from "@/components/FractalLayerGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="hu">
       <body className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased`}>
         <NapszakInitializer />
-        <CosmicNeonLayerGate 
-          imageUrl="/background/background2.png"
-          intensity={0.9}/>
+        <FractalLayerGate/>
         <main style={{ position: "relative", zIndex: 1 }}>{children}</main>
 
       </body>
