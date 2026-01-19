@@ -41,6 +41,48 @@ const FALLBACK_FRAMING_2P =
   "Az álmodban sűrűn összekapcsolódó jelenetek között mozogtál, ahol néhány kulcskép különösen erősen megmaradt. Volt benne legalább egy pillanat, amikor megijedtél vagy feszültté váltál, és közben azt is figyelted, hogyan hat rád a helyzet. Egy másik ponton mintha elcsendesedett volna a tempó, és jobban észrevetted a részleteket. Ha jólesik, válassz egyetlen fókuszt a folytatáshoz: (A) a legfurcsább tárgy, (B) a legfeszültebb pillanat, vagy (C) a legmelegebb találkozás.";
 
 const MIN_RAW_LEN = 20;
+const MICRO_MAX_CHARS = 280;
+
+function clampText(s: string, max: number): string {
+  const t = sanitizeWhitespace(s || "");
+  if (t.length <= max) return t;
+  return t.slice(0, max).trimEnd();
+}
+
+async function fetchExistingFrameByHash(args: {
+  supabase: Awaited<ReturnType<typeof supabaseServerAuthed>>;
+  sessionId: string;
+  userId: string;
+  input_hash: string;
+}): Promise<{ id: string; payload: any } | null> {
+  // 1) latest pointer
+  const { data: latest, error: latestErr } = await args.supabase
+    .from("frame_latest")
+    .select("frame_version_id")
+    .eq("session_id", args.sessionId)
+    .eq("user_id", args.userId)
+    .maybeSingle();
+
+  if (latestErr) throw latestErr;
+  if (!latest?.frame_version_id) return null;
+
+  // 2) compare input_hash on the referenced version
+  const { data: ver, error: verErr } = await args.supabase
+    .from("frame_versions")
+    .select("id, input_hash, payload")
+    .eq("id", latest.frame_version_id)
+    .eq("session_id", args.sessionId)
+    .eq("user_id", args.userId)
+    .maybeSingle();
+
+  if (verErr) throw verErr;
+  if (!ver?.id) return null;
+  if (typeof (ver as any).input_hash !== "string") return null;
+  if ((ver as any).input_hash !== args.input_hash) return null;
+
+  return { id: ver.id, payload: (ver as any).payload };
+}
+
 
 function recommendationTargetCount(allowedCount: number): number {
   if (allowedCount <= 0) return 0;
@@ -431,7 +473,7 @@ export async function POST(req: Request) {
     const allowedCatalog = directions.map((d) => ({
       slug: d.slug,
       title: sanitizeWhitespace(d.title ?? ""),
-      micro: sanitizeWhitespace((d.content as any)?.micro_description ?? d.description ?? ""),
+      micro: clampText((d.content as any)?.micro_description ?? d.description ?? "", MICRO_MAX_CHARS),
     }));
     const allowedSlugs = allowedCatalog.map((x) => x.slug);
 
@@ -443,6 +485,28 @@ export async function POST(req: Request) {
       allowedCatalog,
       targetSentences,
     });
+
+    // v0 behavioral rule:
+// If latest already matches current input_hash, return it immediately (no OpenAI call, no write).
+const existing = await fetchExistingFrameByHash({ supabase, sessionId, userId, input_hash });
+if (existing?.payload) {
+  const p = existing.payload as any;
+
+  const title = typeof p?.title === "string" ? p.title : stableFallbackTitle(raw);
+  const framing_text = typeof p?.framing_text === "string" ? p.framing_text : FALLBACK_FRAMING_2P;
+  const recommended_directions = Array.isArray(p?.recommended_directions) ? p.recommended_directions : [];
+
+  const out: OutputPayload = {
+    sessionId,
+    session_id: sessionId,
+    title: sanitizeWhitespace(title),
+    framing_text: sanitizeWhitespace(framing_text),
+    recommended_directions,
+  };
+
+  return NextResponse.json(out);
+}
+
 
     if (raw.length < MIN_RAW_LEN) {
       const title = "Rövid álomjegyzet";

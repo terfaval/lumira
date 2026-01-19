@@ -40,11 +40,12 @@ export default function FramePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [latestLoaded, setLatestLoaded] = useState(false);
 
   const { loading } = useRequireAuth();
 
+  // Ensure should run at most once per mount, and only after we know latest is missing.
   const attemptedEnsureRef = useRef(false);
-  const latestLoadedRef = useRef(false);
 
   const loadCatalog = useCallback(async () => {
     try {
@@ -57,9 +58,14 @@ export default function FramePage() {
 
   const loadLatest = useCallback(
     async (uid: string) => {
-      const frameRes = await fetchFrameLatestWithPayloadAndId(supabase, uid, id);
-      setFrameLatest(frameRes);
-      latestLoadedRef.current = true;
+      try {
+        const frameRes = await fetchFrameLatestWithPayloadAndId(supabase, uid, id);
+        setFrameLatest(frameRes);
+      } catch (e: unknown) {
+        setErr(e instanceof Error ? e.message : "Hiba");
+      } finally {
+        setLatestLoaded(true);
+      }
     },
     [id]
   );
@@ -77,7 +83,8 @@ export default function FramePage() {
     void loadLatest(userId);
   }, [loadLatest, userId]);
 
-  const hasFramePayload = Boolean(frameLatest?.payload?.framing_text || frameLatest?.payload?.title);
+  // v0: consider frame "ready" only if both title + framing_text exist
+  const hasFramePayload = Boolean(frameLatest?.payload?.title && frameLatest?.payload?.framing_text);
 
   const runEnsure = useCallback(async () => {
     if (!userId) return;
@@ -88,7 +95,15 @@ export default function FramePage() {
         method: "POST",
         json: { sessionId: id },
       });
-      if (!res.ok) throw new Error(await res.text());
+
+      if (!res.ok) {
+        const text = await res.text();
+        if (res.status === 404) {
+          throw new Error("Nem található nyers álomjegyzet ehhez a sessionhöz.");
+        }
+        throw new Error(text || "Hiba");
+      }
+
       await loadLatest(userId);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Hiba");
@@ -97,15 +112,17 @@ export default function FramePage() {
     }
   }, [id, loadLatest, userId]);
 
+  // v0 behavior: only run /api/frame once if latest has no payload (after latest is loaded)
   useEffect(() => {
     if (!userId) return;
+    if (!latestLoaded) return;
     if (busy) return;
     if (attemptedEnsureRef.current) return;
     if (hasFramePayload) return;
 
     attemptedEnsureRef.current = true;
     void runEnsure();
-  }, [busy, hasFramePayload, runEnsure, userId]);
+  }, [busy, hasFramePayload, latestLoaded, runEnsure, userId]);
 
   const recommendations = useMemo(() => {
     const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
@@ -123,9 +140,9 @@ export default function FramePage() {
       .filter((x): x is DirectionCatalogItemDTO & { reason: string } => Boolean(x));
   }, [catalog, frameLatest]);
 
-  const framingText = frameLatest?.payload?.framing_text ?? "";
-  const framingTitle = frameLatest?.payload?.title ?? "";
-  const framingReady = Boolean(framingText);
+  const framingText = String(frameLatest?.payload?.framing_text ?? "");
+  const framingTitle = String(frameLatest?.payload?.title ?? "");
+  const framingReady = hasFramePayload;
 
   const handleDirectionSelect = useCallback(
     async (slug: string) => {
@@ -134,7 +151,7 @@ export default function FramePage() {
       try {
         const result = await startDirection(id, slug, "frame");
         if (!result.success) {
-          setErr("Hiba tÆrtÆcnt, prÆˆbÆóld Æ­jra.");
+          setErr("Hiba történt, próbáld újra.");
           return;
         }
         router.push(`/session/${id}/work?direction=${encodeURIComponent(slug)}`);
@@ -147,10 +164,10 @@ export default function FramePage() {
     [id, router]
   );
 
-  if (loading || !latestLoadedRef.current) {
+  if (loading || !latestLoaded) {
     return (
       <div className="stack">
-        <p style={{ color: "var(--text-muted)" }}>BetÆltÆcsƒ?|</p>
+        <p style={{ color: "var(--text-muted)" }}>Betöltés…</p>
       </div>
     );
   }
@@ -165,7 +182,7 @@ export default function FramePage() {
             <div style={{ whiteSpace: "pre-wrap" }}>{framingText}</div>
 
             <div className="stack-tight">
-              <p className="section-title">VÆólassz egy irÆónyt, ha tovÆóbb dolgoznÆól az Æólommal</p>
+              <p className="section-title">Válassz egy irányt, ha tovább dolgoznál az álommal</p>
             </div>
 
             {recommendations.length > 0 ? (
@@ -188,7 +205,7 @@ export default function FramePage() {
                       <div className="direction-card-inner">
                         <div className="direction-card-title">{d.title}</div>
                         <div className="direction-card-body">
-                          {d.content.micro_description ?? d.description}
+                          {d.content?.micro_description ?? d.description}
                         </div>
                       </div>
                     </GlassCardSurface>
@@ -197,7 +214,7 @@ export default function FramePage() {
               </div>
             ) : (
               <p style={{ color: "var(--text-muted)", margin: 0 }}>
-                Most nem jÆtt ki biztos ajÆónlott irÆóny ƒ?" de a teljes katalÆˆgusbÆˆl vÆólaszthatsz.
+                Most nem jött ki biztos ajánlott irány, de a teljes katalógusból választhatsz.
               </p>
             )}
 
@@ -206,16 +223,16 @@ export default function FramePage() {
                 variant="secondary"
                 onClick={() => router.push(`/session/${id}/direction`)}
               >
-                TovÆóbbi irÆónyok
+                További irányok
               </PrimaryButton>
               <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
-                KÆcs‘'bb folytatom
+                Később folytatom
               </PrimaryButton>
             </div>
           </>
         ) : (
           <p style={{ color: "var(--text-muted)" }}>
-            A keretezÆcs kÆcszÆ•l, hamarosan megjelennek az ajÆónlott irÆónyok.
+            A keretezés készül, hamarosan megjelennek az ajánlott irányok.
           </p>
         )}
       </div>
