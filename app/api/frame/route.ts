@@ -1,27 +1,21 @@
-// /app/api/frame/route.ts (patched v5 – short 4–7 sentences, raw+latent_note, style-safe fallback, better auditing)
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
-import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
-import { hasDreamObservation } from "@/src/lib/dream/observationServer";
 import { CatalogService } from "@/src/services/CatalogService";
-
 import { TITLE_MAX } from "@/src/lib/dream/const";
 import {
   sanitizeWhitespace,
   titleCaseHungarian,
   isAcceptableTitle,
   isNonTrivialFraming,
-  isFramingAnchoredFuzzy,
-  titleHasAnchorFuzzy,
   stableFallbackTitle,
   shuffleInPlace,
   safeJsonParse,
   withTimeout,
-  pickTopAnchors,
-  fuzzyIncludes,
   estimateTargetSentences,
 } from "@/src/lib/dream/text";
+import { insertFrameVersionIfMissing, upsertFrameLatest } from "@/src/db/repositories/frameRepo";
+import { sha256 } from "@/src/orchestration/idempotency/materialHash";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,55 +29,20 @@ type OutputPayload = {
   recommended_directions: RecommendedDirection[];
 };
 
-const DEFAULT_REASON = "Javasolt feldolgozási irány a következő lépéshez.";
-const RECOMMENDATION_MIN = 2;
-const RECOMMENDATION_MAX = 4;
+const DEFAULT_REASON = "Javasolt feldolgozÆósi irÆóny a kÆvetkez‘' lÆcpÆcshez.";
+const RECOMMENDATION_MIN = 1;
+const RECOMMENDATION_MAX = 3;
 
-// ✅ Style-safe fallback: 2. személy, múlt idő + 1 rövid invite
 const FALLBACK_FRAMING_2P =
-  "Az álmodban egy sűrűn összekapcsolódó jelenetsorban mozogtál, ahol néhány kép és tárgy különösen erősen megmaradt. Volt benne legalább egy pillanat, amikor megijedtél vagy szégyent éreztél, és közben azt is figyelted, hogyan reagálnak rád a többiek. Ha van kedved, válassz egyetlen fókuszt a folytatáshoz: (A) a legfurcsább tárgy, (B) a legfeszültebb pillanat, vagy (C) a legmelegebb találkozás.";
+  "Az Æólmodban egy s‘+r‘+n ÆsszekapcsolÆˆdÆˆ jelenetsorban mozogtÆól, ahol nÆchÆóny kÆcp Æcs tÆórgy kÆ•lÆnÆsen er‘'sen megmaradt. Volt benne legalÆóbb egy pillanat, amikor megijedtÆcl vagy szÆcgyent ÆcreztÆcl, Æcs kÆzben azt is figyelted, hogyan reagÆólnak rÆód a tÆbbiek. Ha van kedved, vÆólassz egyetlen fÆˆkuszt a folytatÆóshoz: (A) a legfurcsÆóbb tÆórgy, (B) a legfeszÆ•ltebb pillanat, vagy (C) a legmelegebb talÆólkozÆós.";
 
 const MIN_RAW_LEN = 20;
 
-// ────────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ────────────────────────────────────────────────────────────────────────────────
 function recommendationTargetCount(allowedCount: number): number {
   if (allowedCount <= 0) return 0;
-  const baseline = Math.min(allowedCount, 3);
-  return Math.max(RECOMMENDATION_MIN, Math.min(RECOMMENDATION_MAX, baseline));
+  const baseline = Math.min(allowedCount, RECOMMENDATION_MAX);
+  return Math.max(RECOMMENDATION_MIN, baseline);
 }
-
-function pickTopAnchorsFromObservation(
-  obs: ReturnType<typeof compactDreamObservation> | null,
-  max = 8
-): string[] {
-  if (!obs) return [];
-  const seen = new Set<string>();
-  const out: string[] = [];
-
-  const push = (label?: string) => {
-    const s = (label ?? "").trim();
-    const key = s.toLowerCase();
-    if (!s || seen.has(key)) return;
-    seen.add(key);
-    out.push(s);
-  };
-
-  const labelOf = (it: unknown): string | undefined => {
-    if (typeof it === "string") return it;
-    const l = (it as any)?.label;
-    return typeof l === "string" ? l : undefined;
-  };
-
-  for (const it of (obs.entities?.places ?? [])) push(labelOf(it));
-  for (const it of (obs.entities?.objects ?? [])) push(labelOf(it));
-  for (const it of (obs.entities?.characters ?? [])) push(labelOf(it));
-  for (const it of (obs.motifs ?? [])) push(labelOf(it));
-
-  return out.slice(0, max);
-}
-
 
 function fallbackRecommendationsFromAllowed(allowedSlugs: string[]): RecommendedDirection[] {
   const pool = [...allowedSlugs];
@@ -118,72 +77,6 @@ function asRecommendedDirections(slugs: string[]): RecommendedDirection[] {
   return slugs.map((slug) => ({ slug, reason: DEFAULT_REASON }));
 }
 
-function parseMaybeJson<T = any>(x: unknown): T | null {
-  if (x == null) return null;
-  if (typeof x === "string") return safeJsonParse<T>(x);
-  if (typeof x === "object") return x as T;
-  return null;
-}
-
-function repairRecommendedWithFallback(raw: unknown, allowedSlugs: string[]): string[] | null {
-  const maybe = parseMaybeJson<any>(raw);
-  const slugs = maybe ?? raw;
-
-  if (!Array.isArray(slugs) || slugs.length < RECOMMENDATION_MIN || slugs.length > RECOMMENDATION_MAX) return null;
-
-  const allowed = new Set(allowedSlugs);
-  const result: string[] = [];
-
-  for (const s of slugs) {
-    const slug =
-      typeof s === "string"
-        ? s.trim()
-        : typeof (s as any)?.slug === "string"
-          ? (s as any).slug.trim()
-          : "";
-    if (slug && allowed.has(slug) && !result.includes(slug)) result.push(slug);
-  }
-
-  if (result.length >= RECOMMENDATION_MIN && result.length <= RECOMMENDATION_MAX) return result;
-
-  const pool = shuffleInPlace([...allowedSlugs]);
-  for (const slug of pool) {
-    if (result.length >= RECOMMENDATION_MAX) break;
-    if (!result.includes(slug)) result.push(slug);
-  }
-  return result.length >= RECOMMENDATION_MIN && result.length <= RECOMMENDATION_MAX ? result : null;
-}
-
-// ── Perspektíva/nézőpont ellenőrzők ────────────────────────────────────────────
-function hasFirstPersonMarkers(text: string): boolean {
-  const t = (text || "").toLowerCase();
-  const hints = [" én ", " megütöm", " felmászok", " menekülök", " futok", " találom", " pihenek"];
-  return hints.some((h) => t.includes(h));
-}
-
-function isSecondPersonStyle(text: string): boolean {
-  const t = (text || "").toLowerCase();
-  const hints = ["tál", "tél", "tad", "ted", "tátok", "tétek"];
-  const hitCount = hints.reduce((acc, h) => acc + (t.includes(h) ? 1 : 0), 0);
-  return !hasFirstPersonMarkers(t) && hitCount >= 1;
-}
-
-function textMentionsAtLeastFuzzy(text: string, anchors: string[], n: number): boolean {
-  if (!text || !anchors?.length) return n <= 0;
-  let hits = 0;
-  const seen = new Set<string>();
-  for (const a of anchors) {
-    const key = (a || "").trim();
-    if (!key || seen.has(key)) continue;
-    if (fuzzyIncludes(text, key)) {
-      seen.add(key);
-      hits++;
-      if (hits >= n) return true;
-    }
-  }
-  return false;
-}
-
 function countSentencesHu(s: string): number {
   const t = (s || "").trim();
   if (!t) return 0;
@@ -193,7 +86,19 @@ function countSentencesHu(s: string): number {
     .filter(Boolean).length;
 }
 
-// ✅ hard clamp: 4–7 mondat (te kérted 5–7-et, “lehet kevesebb is” → 4)
+function hasFirstPersonMarkers(text: string): boolean {
+  const t = (text || "").toLowerCase();
+  const hints = [" Æcn ", " megÆ•tÆm", " felmÆószok", " menekÆ•lÆk", " futok", " talÆólom", " pihenek"];
+  return hints.some((h) => t.includes(h));
+}
+
+function isSecondPersonStyle(text: string): boolean {
+  const t = (text || "").toLowerCase();
+  const hints = ["tÆól", "tÆcl", "tad", "ted", "tÆótok", "tÆctek"];
+  const hitCount = hints.reduce((acc, h) => acc + (t.includes(h) ? 1 : 0), 0);
+  return !hasFirstPersonMarkers(t) && hitCount >= 1;
+}
+
 function clampTargetSentences(raw: string): { target: number; min: number; max: number } {
   const est = estimateTargetSentences(raw);
   const clamp = (x: number) => Math.max(4, Math.min(7, x));
@@ -203,148 +108,34 @@ function clampTargetSentences(raw: string): { target: number; min: number; max: 
   return { target, min, max };
 }
 
-function isGoodTitle(title: string, anchors: string[]): boolean {
-  return isAcceptableTitle(title) && (anchors.length ? textMentionsAtLeastFuzzy(title, anchors, 1) : true);
+function isGoodTitle(title: string): boolean {
+  return isAcceptableTitle(title);
 }
 
-function isGoodFraming(
-  framing: string,
-  anchors: string[],
-  targetSentences: { min: number; max: number },
-  minAnchors = 2
-): boolean {
+function isGoodFraming(framing: string, targetSentences: { min: number; max: number }): boolean {
   const n = countSentencesHu(framing);
   if (n < targetSentences.min || n > targetSentences.max) return false;
-
-  return (
-    isNonTrivialFraming(framing) &&
-    isSecondPersonStyle(framing) &&
-    (anchors.length ? textMentionsAtLeastFuzzy(framing, anchors, minAnchors) : true)
-  );
+  return isNonTrivialFraming(framing) && isSecondPersonStyle(framing);
 }
 
-async function repairTitleOnly(client: OpenAI, raw: string, topAnchors: string[], latentNote?: any | null): Promise<string> {
-  const sys = [
-    "Adj vissza EGY rövid magyar címet ÁLOMHOZ.",
-    "Követelmények:",
-    "- 2–6 szó.",
-    "- Tartalmazzon legalább 1 TOP ANCHOR-t (hely/szereplő/tárgy).",
-    "- Legyen cselekvő, képszerű.",
-    "- Nincs írásjel a végén, nincs magyarázat.",
-    'Formátum: {"title":"..."}',
-  ].join("\n");
-
-  const user = { dream_excerpt: raw.slice(0, 1800), top_anchors: topAnchors.slice(0, 6), latent_note: latentNote ?? null };
-
-  const resp = await withTimeout(
-    (signal) =>
-      client.chat.completions.create(
-        {
-          model: "gpt-4o-mini",
-          temperature: 0.55,
-          max_tokens: 80,
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: sys },
-            { role: "user", content: JSON.stringify(user) },
-          ],
-        },
-        { signal }
-      ),
-    7000
-  );
-
-  const content = resp.choices?.[0]?.message?.content ?? "";
-  const parsed = safeJsonParse<any>(content);
-  const t = typeof parsed?.title === "string" ? parsed.title : "";
-  return titleCaseHungarian(t);
-}
-
-// ────────────────────────────────────────────────────────────────────────────────
-// Latent synthesis fallback (only if DB latent is missing)
-// ────────────────────────────────────────────────────────────────────────────────
-async function runLatentSynthesis(args: {
-  req: Request;
-  sessionId: string;
-  dreamText: string;
-  allowedSlugs: string[];
-}) {
-  const url = new URL("/api/synthesize", args.req.url).toString();
-  const cookieHeader = args.req.headers.get("cookie") ?? "";
-  const authHeader = args.req.headers.get("authorization") ?? "";
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        "content-type": "application/json",
-        ...(cookieHeader ? { cookie: cookieHeader } : {}),
-        ...(authHeader ? { authorization: authHeader } : {}),
-      },
-      body: JSON.stringify({
-        session_id: args.sessionId,
-        dream_text: args.dreamText,
-        history: [],
-        prior_echoes: [],
-        allowed_slugs: args.allowedSlugs,
-      }),
-    });
-
-    if (!res.ok) return null;
-    const json = (await res.json().catch(() => null)) as any;
-    return json ?? null;
-  } catch (err) {
-    console.warn("frame.synthesize failed", err);
-    return null;
-  }
-}
-
-function compactLatentNote(latent: any | null) {
-  if (!latent) return null;
-  return {
-    flags: latent.flags ?? null,
-    anchors: latent.anchors ?? null,
-    question_seed: latent.question_seed ?? null,
-    candidate_directions: latent.candidate_directions ?? null,
-  };
-}
-
-// ────────────────────────────────────────────────────────────────────────────────
-// Model prompting
-// ────────────────────────────────────────────────────────────────────────────────
 function buildModelPayload(params: {
   raw: string;
-  latent: any | null;
-  observation: ReturnType<typeof compactDreamObservation> | null;
   catalog: { slug: string; title: string; micro: string }[];
-  topAnchors: string[];
   targetSentences: { target: number; min: number; max: number };
 }) {
   const rawExcerpt = params.raw.slice(0, 7000);
   return {
     dream_text: rawExcerpt,
-    latent_note: compactLatentNote(params.latent),
-    dream_observation: params.observation,
     catalog: params.catalog,
-    top_anchors: params.topAnchors,
     constraints: {
       title_words_allowed: "2-6",
-      title_must_include_anchor: true,
       title_max_chars: TITLE_MAX,
-
       framing_sentence_target: params.targetSentences.target,
       framing_sentence_min: params.targetSentences.min,
       framing_sentence_max: params.targetSentences.max,
-
-      framing_should_cover_multiple_anchors: true,
       must_read_entire_dream_text: true,
-
       must_include_emotional_arc: true,
       must_include_one_gentle_invite: true,
-
-      // 1 óvatos hipotézis engedett, de erős tiltásokkal
-      may_include_one_cautious_observation: true,
       forbid_strong_interpretation: true,
     },
   };
@@ -352,38 +143,32 @@ function buildModelPayload(params: {
 
 function systemPrompt(): string {
   return [
-    "Adj vissza EGY darab JSON objektumot egy álomhoz.",
-    'Kulcsok: {"title": string, "framing_text": string, "recommended_slugs": string[2..4]}',
+    "Adj vissza EGY darab JSON objektumot egy Æólomhoz.",
+    'Kulcsok: {"title": string, "framing_text": string, "recommended_slugs": string[1..3]}',
     "",
     "Bemenetek:",
-    "- dream_text: a nyers álomleírás.",
-    "- latent_note: jegyzet (anchorok/érzelmi szavak/fordulók) – NEM tényforrás, csak fókusz.",
-    "- dream_observation: megfigyelések (nem értelmezések), használd a konkrét elemekhez és ajánlott irányokhoz.",
+    "- dream_text: a nyers ÆólomleÆðrÆós.",
+    "- catalog: irÆónylista (slug, title, micro).",
     "",
-    "Kötelező stílus:",
+    "KÆtelez‘' stÆðlus:",
     "- Magyar nyelv.",
-    "- MÁSODIK SZEMÉLY, MÚLT IDŐ.",
-    "- Nyitás javasolt formula: „Az álmodban …”.",
-    "- Megfigyelő hang: nincs diagnózis, nincs biztos jelentés-állítás.",
+    "- MÆ?SODIK SZEMÆ%LY, MÆçLT ID‘?.",
+    "- NyitÆós javasolt formula: ƒ?§Az Æólmodban ƒ?|ƒ?œ.",
+    "- Megfigyel‘' hang: nincs diagnÆˆzis, nincs biztos jelentÆcs-ÆóllÆðtÆós.",
     "",
-    "Framing_text (rövid, irodalmiasan feszes, nem ténylista):",
-    "- 4–7 mondatban rajzolj tér-idő-érzelmi ívet (2–3 csomópont).",
-    "- Legyen 1–2 érzelem/reakció (pl. félelem, szégyen).",
-    "- A végén legyen 1 nagyon rövid invitálás (1 mondat), választási lehetőséggel.",
+    "Framing_text (rÆvid, irodalmiasan feszes, nem tÆcnylista):",
+    "- 4ƒ?"7 mondatban rajzolj tÆcr-id‘'-Æcrzelmi Æðvet (2ƒ?"3 csomÆˆpont).",
+    "- Legyen 1ƒ?"2 Æcrzelem/reakciÆˆ (pl. fÆclelem, szÆcgyen).",
+    "- A vÆcgÆcn legyen 1 nagyon rÆvid invitÆólÆós (1 mondat), vÆólasztÆósi lehet‘'sÆcggel.",
     "",
-    "Óvatos megfigyelés (opcionális, max 1 mondat):",
-    "- Csak így kezdődhet: „Lehet, hogy (csak óvatos megfigyelés) …”",
-    "- TILOS: „ez azt jelenti”, „arra utal”, „valószínűleg”, „tükrözte a szorongásaidat”, diagnózis, biztos pszichologizálás.",
-    "- Ha dream_observation.safety.flag nem 'none': lassíts, ne mélyíts, ne erőltesd.",
+    "Æ"vatos megfigyelÆcs (opcionÆólis, max 1 mondat):",
+    "- Csak Æðgy kezd‘'dhet: ƒ?§Lehet, hogy (csak Æˆvatos megfigyelÆcs) ƒ?|ƒ?œ.",
+    "- TILOS: ƒ?§ez azt jelentiƒ?œ, ƒ?§arra utalƒ?œ, ƒ?§valÆˆszÆðn‘+legƒ?œ, ƒ?§tÆ•krÆzte a szorongÆósaidatƒ?œ, diagnÆˆzis, biztos pszichologizÆólÆós.",
     "",
-    "Anchor szabályok:",
-    "- A title tartalmazzon legalább 1 TOP ANCHOR-t.",
-    "- A framing_text tartalmazzon legalább 2–4 TOP ANCHOR-t.",
+    "AjÆónlott irÆónyok:",
+    "- Pontosan 1-3 kÆ•lÆnbÆz‘' slug a katalÆˆgusbÆˆl.",
     "",
-    "Ajánlott irányok:",
-    "- Pontosan 2-4 különböző slug a katalógusból.",
-    "",
-    "Formátum:",
+    "FormÆótum:",
     '{"title":"...","framing_text":"...","recommended_slugs":["slug-1","slug-2"]}',
   ].join("\n");
 }
@@ -391,20 +176,14 @@ function systemPrompt(): string {
 async function generateBundleOneCall(params: {
   client: OpenAI;
   raw: string;
-  latent: any | null;
-  observation: ReturnType<typeof compactDreamObservation> | null;
   allowed: { slug: string; title: string; micro: string }[];
   allowedSet: Set<string>;
-  topAnchors: string[];
   targetSentences: { target: number; min: number; max: number };
   overrides?: { temperature?: number; max_tokens?: number };
 }) {
   const payload = buildModelPayload({
     raw: params.raw,
-    latent: params.latent,
-    observation: params.observation,
     catalog: params.allowed,
-    topAnchors: params.topAnchors,
     targetSentences: params.targetSentences,
   });
 
@@ -451,33 +230,25 @@ async function generateBundleOneCall(params: {
 async function repairBundleQuick(params: {
   client: OpenAI;
   raw: string;
-  latent: any | null;
-  observation: ReturnType<typeof compactDreamObservation> | null;
   allowedSlugs: string[];
   allowedSet: Set<string>;
   bad: { title?: string; framing_text?: string; recommended_slugs?: any };
-  topAnchors: string[];
-  targetSentences: { target: number; min: number; max: number };
 }) {
   const dream_text = params.raw.slice(0, 6500);
 
   const sys = [
-    "Javítás: adj vissza ÉRVÉNYES JSON-t a szabályok szerint. Ne adj magyarázatot.",
-    "title: 2–6 szó, tartalmazzon 1 top anchort.",
-    "framing_text: 4–7 mondat, 2. személy múlt idő, ív + 1 rövid invitálás a végén.",
-    "framing_text: 2–4 top anchor említés.",
-    "Óvatos megfigyelés: opcionális, max 1 mondat, csak így: „Lehet, hogy (csak óvatos megfigyelés) …”.",
-    "Óvatos megfigyelés: tilos biztos jelentés/diagnózis.",
-    "recommended_slugs: 2–4, különböző, allowed_slugs-ból.",
-    'Formátum: {"title":"...","framing_text":"...","recommended_slugs":["...","..."]}',
+    "JavÆðtÆós: adj vissza Æ%RVÆ%NYES JSON-t a szabÆólyok szerint. Ne adj magyarÆózatot.",
+    "title: 2ƒ?"6 szÆˆ.",
+    "framing_text: 4ƒ?"7 mondat, 2. szemÆcly mÆ­lt id‘', Æðv + 1 rÆvid invitÆólÆós a vÆcgÆcn.",
+    "Æ"vatos megfigyelÆcs: opcionÆólis, max 1 mondat, csak Æðgy: ƒ?§Lehet, hogy (csak Æˆvatos megfigyelÆcs) ƒ?|ƒ?œ.",
+    "Æ"vatos megfigyelÆcs: tilos biztos jelentÆcs/diagnÆˆzis.",
+    "recommended_slugs: 1ƒ?"3, kÆ•lÆnbÆz‘', allowed_slugs-bÆˆl.",
+    'FormÆótum: {"title":"...","framing_text":"...","recommended_slugs":["...","..."]}',
   ].join("\n");
 
   const user = {
     dream_text,
-    latent_note: compactLatentNote(params.latent),
-    dream_observation: params.observation,
     allowed_slugs: params.allowedSlugs,
-    top_anchors: params.topAnchors,
     previous: params.bad,
   };
 
@@ -514,44 +285,51 @@ async function repairBundleQuick(params: {
   };
 }
 
-async function ensureObservation(params: {
-  req: Request;
+async function persistFrame(params: {
   supabase: Awaited<ReturnType<typeof supabaseServerAuthed>>;
   sessionId: string;
   userId: string;
-  dreamText: string;
+  raw: string;
+  title: string;
+  framing_text: string;
+  recommended_directions: RecommendedDirection[];
+  model: string | null;
+  frame_mode: string;
+  targetSentences: { target: number; min: number; max: number };
+  raw_entry_created_at?: string | null;
 }) {
-  const { req, supabase, sessionId, userId, dreamText } = params;
-  const hasObs = await hasDreamObservation({ supabase, sessionId, userId });
-  if (hasObs) return;
+  const input_hash = sha256(`frame:v0:${params.sessionId}:${params.raw}`);
+  const payload = {
+    title: params.title,
+    framing_text: params.framing_text,
+    recommended_directions: params.recommended_directions,
+    frame_mode: params.frame_mode,
+    frame_constraints: {
+      title_max: TITLE_MAX,
+      sentence_target: params.targetSentences.target,
+      sentence_min: params.targetSentences.min,
+      sentence_max: params.targetSentences.max,
+    },
+    source: {
+      raw_entry_created_at: params.raw_entry_created_at ?? null,
+    },
+  };
 
-  try {
-    const response = await fetch(new URL("/api/observe", req.url), {
-      method: "POST",
-      headers: (() => {
-        const cookieHeader = req.headers.get("cookie") ?? "";
-        const authHeader = req.headers.get("authorization") ?? "";
-        return {
-          "content-type": "application/json",
-          ...(cookieHeader ? { cookie: cookieHeader } : {}),
-          ...(authHeader ? { authorization: authHeader } : {}),
-          "x-observe-source": "frame",
-        };
-      })(),
-      body: JSON.stringify({ session_id: sessionId, dream_text: dreamText }),
-    });
+  const frame = await insertFrameVersionIfMissing(params.supabase, {
+    session_id: params.sessionId,
+    user_id: params.userId,
+    input_hash,
+    model: params.model,
+    payload,
+  });
 
-    if (!response.ok) {
-      console.warn("frame: observe call failed", response.status, response.statusText);
-    }
-  } catch (error) {
-    console.warn("frame: observe call failed", error);
-  }
+  await upsertFrameLatest(params.supabase, {
+    session_id: params.sessionId,
+    user_id: params.userId,
+    frame_version_id: frame.id,
+  });
 }
 
-// ────────────────────────────────────────────────────────────────────────────────
-// Route
-// ────────────────────────────────────────────────────────────────────────────────
 export async function POST(req: Request) {
   try {
     const { sessionId } = (await req.json()) as { sessionId?: string };
@@ -562,78 +340,24 @@ export async function POST(req: Request) {
     if (!authData?.user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     const userId = authData.user.id;
 
-    // 1) session + summary párhuzamosan
-const [{ data: session }, { data: summary }] = await Promise.all([
-      supabase
-        .from("dream_sessions")
-        .select("id, raw_dream_text, ai_framing_text, ai_framing_audit, status, user_id")
-        .eq("id", sessionId)
-        .eq("user_id", userId)
-        .single(),
-      supabase
-        .from("dream_session_summaries")
-        .select("title, framing_text, recommended_directions, latent_analysis")
-        .eq("session_id", sessionId)
-        .eq("user_id", userId)
-        .maybeSingle(),
-    ]);
+    const { data: rawEntry, error: rawError } = await supabase
+      .from("dream_entries")
+      .select("content, kind, created_at")
+      .eq("session_id", sessionId)
+      .eq("user_id", userId)
+      .eq("kind", "raw")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (!session) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    if (rawError) throw rawError;
+    if (!rawEntry?.content) return NextResponse.json({ error: "Raw dream entry not found" }, { status: 404 });
 
-    const raw = sanitizeWhitespace(session.raw_dream_text ?? "");
-
-    // 2) observation első olvasás
-    let observationRow =
-      (
-        await supabase
-          .from("dream_observation")
-          .select("obs")
-          .eq("session_id", sessionId)
-          .eq("user_id", userId)
-          .maybeSingle()
-      ).data ?? null;
-
-    const observation = parseDreamObservation(observationRow?.obs ?? null);
-    const compactObservation = compactDreamObservation(observation);
+    const raw = sanitizeWhitespace(rawEntry.content ?? "");
     const targetSentences = clampTargetSentences(raw);
 
-// short guard
-    if (raw.length < MIN_RAW_LEN) {
-      const title = "Rövid álomjegyzet";
-      const framing_text =
-        "Az álmodban valami gyorsan megvillant, de most még kevés részlet maradt meg. Ha van kedved, írd le 1–3 mondatban: hol voltál, ki volt veled, és mi volt a legerősebb pillanat.";
-
-      const allowedSlugs = await CatalogService.getActiveSlugs(supabase);
-      const recommended_directions = allowedSlugs.length >= RECOMMENDATION_MIN ? fallbackRecommendationsFromAllowed(allowedSlugs) : [];
-
-      await Promise.all([
-        supabase
-          .from("dream_sessions")
-          .update({
-            ai_framing_text: framing_text,
-            ai_framing_audit: {
-              model: "fallback_short",
-              title,
-              recommended_directions,
-              frame_mode: "fallback_short",
-              frame_constraints: { title_max: TITLE_MAX, sentence_min: 1, sentence_max: 3 },
-            },
-            status: "framed",
-          })
-          .eq("id", sessionId)
-          .eq("user_id", userId),
-        supabase
-          .from("dream_session_summaries")
-          .upsert({ session_id: sessionId, user_id: userId, title, framing_text, recommended_directions }, { onConflict: "session_id" }),
-      ]);
-
-      return NextResponse.json({ sessionId, title, framing_text, recommended_directions } satisfies OutputPayload);
-    }
-
-    // Load catalog
     const directions = await CatalogService.getActiveCatalog(supabase);
     const allowedSet = new Set(directions.map((d) => d.slug));
-
     const allowedCatalog = directions.map((d) => ({
       slug: d.slug,
       title: d.title,
@@ -641,139 +365,38 @@ const [{ data: session }, { data: summary }] = await Promise.all([
     }));
     const allowedSlugs = allowedCatalog.map((x) => x.slug);
 
-    // Prefer DB latent only (frame does not synthesize)
-const dbLatent = parseMaybeJson<any>(summary?.latent_analysis);
-const latent = dbLatent ?? null;
+    if (raw.length < MIN_RAW_LEN) {
+      const title = "RÆvid Æólomjegyzet";
+      const framing_text =
+        "Az Æólmodban valami gyorsan megvillant, de most mÆcg kevÆcs rÆcszlet maradt meg. Ha van kedved, Æðrd le 1ƒ?"3 mondatban: hol voltÆól, ki volt veled, Æcs mi volt a leger‘'sebb pillanat.";
+      const recommended_directions =
+        allowedSlugs.length >= RECOMMENDATION_MIN ? fallbackRecommendationsFromAllowed(allowedSlugs) : [];
 
-// anchors: latent -> observation -> (empty)
-const latentAnchors = pickTopAnchors(latent?.anchors ?? {}, 8);
-const topAnchors = latentAnchors.length ? latentAnchors : pickTopAnchorsFromObservation(compactObservation, 8);
-
-
-    const hasObs = !!observationRow?.obs;
-const hasLatent = !!latent;
-const hasAnchors = topAnchors.length > 0;
-
-// Ha nincs meg az a minimum, amiből jó minőségű keret készül,
-// ne erőltesd az AI-t — menj style-safe fallbackra.
-if (!hasAnchors && !hasObs && !hasLatent) {
-  const title = stableFallbackTitle(raw);
-  const framing_text = FALLBACK_FRAMING_2P;
-  const recommended_directions =
-    allowedSlugs.length >= RECOMMENDATION_MIN ? fallbackRecommendationsFromAllowed(allowedSlugs) : [];
-
-  const auditOut = {
-    model: "fallback_missing_inputs",
-    title,
-    framing_text,
-    recommended_directions,
-    frame_mode: "fallback_missing_inputs",
-    frame_constraints: {
-      title_max: TITLE_MAX,
-      sentence_target: targetSentences.target,
-      sentence_min: targetSentences.min,
-      sentence_max: targetSentences.max,
-      anchors_used: 0,
-      latent_source: "none",
-      has_observation: false,
-    },
-  };
-
-  await Promise.all([
-    supabase
-      .from("dream_sessions")
-      .update({ ai_framing_text: framing_text, ai_framing_audit: auditOut, status: "framed" })
-      .eq("id", sessionId)
-      .eq("user_id", userId),
-    supabase
-      .from("dream_session_summaries")
-      .upsert({ session_id: sessionId, user_id: userId, title, framing_text, recommended_directions }, { onConflict: "session_id" }),
-  ]);
-
-  return NextResponse.json({ sessionId, title, framing_text, recommended_directions } satisfies OutputPayload);
-}
-
-
-    // Reuse summaries if REALLY good (and within sentence window)
-    const fromSummariesRaw = summary
-      ? { title: summary.title, framing_text: summary.framing_text, recommended_directions: summary.recommended_directions }
-      : null;
-
-    const fromSummaries = fromSummariesRaw
-      ? (() => {
-          const rec = repairRecommendedWithFallback(fromSummariesRaw.recommended_directions as any, allowedSlugs);
-          if (!rec) return null;
-
-          const t = fromSummariesRaw.title || "";
-          const f = fromSummariesRaw.framing_text || "";
-
-          const okTitle = isAcceptableTitle(t) && (topAnchors.length ? titleHasAnchorFuzzy(t, topAnchors) : true);
-          const n = countSentencesHu(f);
-          const okFraming =
-            isNonTrivialFraming(f) &&
-            isSecondPersonStyle(f) &&
-            n >= targetSentences.min &&
-            n <= targetSentences.max &&
-            (topAnchors.length ? isFramingAnchoredFuzzy(f, topAnchors, 2) : true);
-
-          if (!okTitle || !okFraming) return null;
-          return { title: titleCaseHungarian(t), framing_text: sanitizeWhitespace(f), recommended_slugs: rec };
-        })()
-      : null;
-
-    if (fromSummaries) {
-      const out: OutputPayload = {
+      await persistFrame({
+        supabase,
         sessionId,
-        title: fromSummaries.title,
-        framing_text: fromSummaries.framing_text,
-        recommended_directions: asRecommendedDirections(fromSummaries.recommended_slugs),
-      };
+        userId,
+        raw,
+        title,
+        framing_text,
+        recommended_directions,
+        model: "fallback_short",
+        frame_mode: "fallback_short",
+        targetSentences,
+        raw_entry_created_at: rawEntry.created_at ?? null,
+      });
 
-      const auditOut = {
-        model: "reuse_summaries",
-        title: out.title,
-        framing_text: out.framing_text,
-        recommended_directions: out.recommended_directions,
-        frame_mode: "reuse",
-        frame_constraints: {
-          title_max: TITLE_MAX,
-          sentence_target: targetSentences.target,
-          sentence_min: targetSentences.min,
-          sentence_max: targetSentences.max,
-          anchors_used: topAnchors.length,
-          latent_source: dbLatent ? "db" : latent ? "synth" : "none",
-        },
-      };
-
-      await Promise.all([
-        supabase
-          .from("dream_sessions")
-          .update({ ai_framing_text: out.framing_text, ai_framing_audit: auditOut, status: "framed" })
-          .eq("id", sessionId)
-          .eq("user_id", userId),
-        supabase
-          .from("dream_session_summaries")
-          .upsert(
-            { session_id: sessionId, user_id: userId, title: out.title, framing_text: out.framing_text, recommended_directions: out.recommended_directions },
-            { onConflict: "session_id" }
-          ),
-      ]);
-
-      return NextResponse.json(out);
+      return NextResponse.json({ sessionId, title, framing_text, recommended_directions } satisfies OutputPayload);
     }
 
-    // AI generation
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     let title = "";
     let framing_text = "";
     let recommended_slugs: string[] | null = null;
 
-    const prevAudit = (session.ai_framing_audit as any) ?? {};
-    let auditOut: any = { ...prevAudit };
     let usedAI = false;
     let needRepair = false;
-
     let lastModelRaw: string | null = null;
     let lastModelName: string | null = null;
     let lastError: string | null = null;
@@ -782,12 +405,9 @@ if (!hasAnchors && !hasObs && !hasLatent) {
       const gen = await generateBundleOneCall({
         client,
         raw,
-        latent,
         allowed: allowedCatalog,
         allowedSet,
-        topAnchors,
         targetSentences,
-        observation: compactObservation,
       });
       usedAI = true;
 
@@ -798,28 +418,21 @@ if (!hasAnchors && !hasObs && !hasLatent) {
       framing_text = gen.parsed.framing_text;
       recommended_slugs = gen.parsed.recommended_slugs;
 
-      const anchoredOk =
-        !topAnchors.length || (isGoodTitle(title, topAnchors) && isGoodFraming(framing_text, topAnchors, targetSentences, 2));
-
-      const firstOk = !!recommended_slugs && anchoredOk;
+      const firstOk = !!recommended_slugs && isGoodTitle(title) && isGoodFraming(framing_text, targetSentences);
 
       if (!firstOk) {
         const repaired = await repairBundleQuick({
           client,
           raw,
-          latent,
           allowedSlugs,
           allowedSet,
           bad: { title, framing_text, recommended_slugs },
-          topAnchors,
-          targetSentences,
-          observation: compactObservation,
         });
 
         lastModelRaw = repaired.raw_text ?? lastModelRaw;
 
-        if (isGoodTitle(repaired.title, topAnchors)) title = repaired.title;
-        if (isGoodFraming(repaired.framing_text, topAnchors, targetSentences, 2)) framing_text = repaired.framing_text;
+        if (isGoodTitle(repaired.title)) title = repaired.title;
+        if (isGoodFraming(repaired.framing_text, targetSentences)) framing_text = repaired.framing_text;
         if (repaired.recommended_slugs) recommended_slugs = repaired.recommended_slugs;
       }
 
@@ -831,23 +444,13 @@ if (!hasAnchors && !hasObs && !hasLatent) {
         (() => {
           const n = countSentencesHu(framing_text);
           if (n < targetSentences.min || n > targetSentences.max) return true;
-          if (topAnchors.length) {
-            if (!titleHasAnchorFuzzy(title, topAnchors)) return true;
-            if (!isFramingAnchoredFuzzy(framing_text, topAnchors, 2)) return true;
-          }
           return false;
         })();
-
-      if (topAnchors.length && !isGoodTitle(title, topAnchors)) {
-        const rt = await repairTitleOnly(client, raw, topAnchors, compactLatentNote(latent));
-        if (isGoodTitle(rt, topAnchors)) title = rt;
-      }
     } catch (e: any) {
       lastError = e?.message ? String(e.message) : "openai generation failed";
       console.warn("frame: openai generation failed:", e);
     }
 
-    // Final guards (style-safe)
     if (!isAcceptableTitle(title)) title = stableFallbackTitle(raw);
     if (!isNonTrivialFraming(framing_text) || !isSecondPersonStyle(framing_text)) framing_text = FALLBACK_FRAMING_2P;
     if (!recommended_slugs) {
@@ -859,42 +462,28 @@ if (!hasAnchors && !hasObs && !hasLatent) {
 
     const recommended_directions = asRecommendedDirections(recommended_slugs);
 
-    auditOut = {
-      ...auditOut,
-      model: lastModelName ?? (usedAI ? "gpt-4o-mini" : "fallback"),
+    await persistFrame({
+      supabase,
+      sessionId,
+      userId,
+      raw,
       title,
       framing_text,
       recommended_directions,
+      model: lastModelName ?? (usedAI ? "gpt-4o-mini" : "fallback"),
       frame_mode: usedAI ? (needRepair ? "ai_repair" : "ai_onecall") : "fallback",
-      frame_constraints: {
-        title_max: TITLE_MAX,
-        sentence_target: targetSentences.target,
-        sentence_min: targetSentences.min,
-        sentence_max: targetSentences.max,
-        anchors_used: topAnchors.length,
-        latent_source: dbLatent ? "db" : latent ? "synth" : "none",
-      },
-      // ✅ debug hooks (remove later if you want)
-      debug: {
-        last_error: lastError,
-        raw_model_response_excerpt: lastModelRaw ? String(lastModelRaw).slice(0, 1200) : null,
-      },
-    };
-
-    await Promise.all([
-      supabase
-        .from("dream_sessions")
-        .update({ ai_framing_text: framing_text, ai_framing_audit: auditOut, status: "framed" })
-        .eq("id", sessionId)
-        .eq("user_id", userId),
-      supabase
-        .from("dream_session_summaries")
-        .upsert({ session_id: sessionId, user_id: userId, title, framing_text, recommended_directions }, { onConflict: "session_id" }),
-    ]);
-
-    await ensureObservation({ req, supabase, sessionId, userId, dreamText: raw });
+      targetSentences,
+      raw_entry_created_at: rawEntry.created_at ?? null,
+    });
 
     const out: OutputPayload = { sessionId, title, framing_text, recommended_directions };
+    if (lastError) {
+      console.warn("frame: fallback used after error", lastError, {
+        model: lastModelName,
+        raw_excerpt: lastModelRaw ? String(lastModelRaw).slice(0, 400) : null,
+      });
+    }
+
     return NextResponse.json(out);
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error";
