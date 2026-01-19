@@ -2,65 +2,80 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
-import type { DreamSession } from "@/src/lib/types";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { requireUserId } from "@/src/lib/db";
 
-type DreamRaw = Pick<DreamSession, "id" | "raw_dream_text" | "created_at">;
+type DreamRawEntry = {
+  session_id: string;
+  content: string;
+  created_at: string;
+};
 
 export function DreamRawPanel({
   sessionId,
-  session,
+  entry,
   variant = "default",
   className = "",
 }: {
   sessionId: string;
-  session?: DreamRaw | null;
+  entry?: DreamRawEntry | null;
   /** default: a régi viselkedés, bare: semmi extra “doboz” styling */
   variant?: "default" | "bare";
   className?: string;
 }) {
-  const [fetchedSession, setFetchedSession] = useState<DreamRaw | null>(null);
+  const [fetchedEntry, setFetchedEntry] = useState<DreamRawEntry | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const displaySession = useMemo(() => {
-    return session?.raw_dream_text ? session : fetchedSession;
-  }, [session, fetchedSession]);
+  const displayEntry = useMemo(() => {
+    return entry?.content ? entry : fetchedEntry;
+  }, [entry, fetchedEntry]);
 
   useEffect(() => {
     let cancelled = false;
-    if (session && session.raw_dream_text) return;
+    if (entry && entry.content) return;
 
     const load = async () => {
       setLoading(true);
       setError(null);
 
-      const { data: sessionData, error: fetchError } = await supabase
-        .from("dream_sessions")
-        .select("id, raw_dream_text, created_at")
-        .eq("id", sessionId)
-        .single();
+      try {
+        const uid = await requireUserId();
 
-      if (cancelled) return;
+        const { data, error: fetchError } = await supabase
+          .from("dream_entries")
+          .select("session_id, content, created_at")
+          .eq("session_id", sessionId)
+          .eq("user_id", uid)
+          .eq("kind", "raw")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (fetchError) setError(fetchError.message);
-      else setFetchedSession(sessionData as DreamRaw);
+        if (cancelled) return;
 
-      setLoading(false);
+        if (fetchError) setError(fetchError.message);
+        else setFetchedEntry((data as DreamRawEntry) ?? null);
+      } catch (e: unknown) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : "Nem sikerült betölteni az álmot.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
 
     void load();
     return () => {
       cancelled = true;
     };
-  }, [session, sessionId]);
+  }, [entry, sessionId]);
 
   const text =
-    loading && !displaySession
+    loading && !displayEntry
       ? "Betöltés…"
       : error
         ? null
-        : displaySession?.raw_dream_text ?? "Nincs megjeleníthető álomszöveg.";
+        : displayEntry?.content ?? "Nincs megjeleníthető álomszöveg.";
 
   const rootClass =
     variant === "bare"
