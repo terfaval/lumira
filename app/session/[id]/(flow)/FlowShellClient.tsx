@@ -1,15 +1,15 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { supabase } from "@/src/lib/supabase/client";
-// Import the modified layout CSS which contains the original layout styles
-// and additional classes to support title editing. See layout_modified.module.css.
 import styles from "./layout.module.css";
 import FlowLeftPanel from "./FlowLeftPanel";
+import { fetchFrameLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
+import { requireUserId } from "@/src/lib/db";
 
 /**
  * Inline info icon as before. It is used to toggle the info panel.
@@ -28,35 +28,8 @@ function InfoIcon() {
   );
 }
 
-/**
- * Pencil icon used to trigger editing of the session title.
- */
-function PencilIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path
-        d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-/**
- * Collapse and normalize whitespace in a string. Used when saving titles.
- */
 function compact(t: string | null | undefined) {
   return (t ?? "").trim().replace(/\s+/g, " ");
-}
-
-function titleFromPath(pathname: string) {
-  if (pathname.endsWith("/frame")) return "Keretezés";
-  if (pathname.includes("/work")) return "Kártyás feldolgozás";
-  if (pathname.endsWith("/direction")) return "Irányválasztás";
-  return "Session";
 }
 
 function infoFromPath(pathname: string) {
@@ -83,7 +56,8 @@ function infoFromPath(pathname: string) {
       body: (
         <div className="stack-tight">
           <p style={{ color: "var(--text-muted)" }}>
-            Itt az egyes kártyák mentén jobban kibonthatod, elmélyülhetsz az álomban. Nem kell mindent megválaszolni — elég, ha azt viszed tovább, ami most él.
+            Itt az egyes kártyák mentén jobban kibonthatod, elmélyülhetsz az álomban. Nem kell mindent megválaszolni
+            — elég, ha azt viszed tovább, ami most él.
           </p>
         </div>
       ),
@@ -113,115 +87,148 @@ function infoFromPath(pathname: string) {
 }
 
 /**
- * FlowShellClient wraps session-specific pages in a shell layout. It is responsible
- * for loading and editing the session title (Álom) and passing it to the Shell
- * component. On the frame and work pages the raw dream panel hides its own
- * title row; the title is instead displayed in the shell header with a pencil
- * icon for editing.
+ * FlowShellClient wraps session-specific pages in a shell layout.
+ *
+ * v0 rule:
+ * - Do NOT read/write dream_session_summaries (legacy).
+ * - Header title comes from:
+ *   1) dream_sessions.title (user override), else
+ *   2) frame_latest → frame_versions.payload.title (generated framing title), else
+ *   3) "Álom"
+ *
+ * Editing:
+ * - Save user override into dream_sessions.title (v0 table).
  */
-export default function FlowShellClient({ children, modal }: { children: ReactNode; modal?: ReactNode }) {
+export default function FlowShellClient({
+  children,
+  modal,
+}: {
+  children: ReactNode;
+  modal?: ReactNode;
+}) {
   const { id } = useParams<{ id: string }>();
   const pathname = usePathname();
 
-  // State for the dream title and its loading/editing status. When editing,
-  // a draft copy of the title is held separately in `draftTitle`. A
-  // `savingTitle` flag is used to provide feedback while persisting the
-  // updated title to Supabase (mirroring the summary page behaviour).
-  const [dreamTitle, setDreamTitle] = useState<string>("Álom");
   const [titleLoading, setTitleLoading] = useState(true);
+
+  // v0: user override title (dream_sessions.title)
+  const [overrideTitle, setOverrideTitle] = useState<string>("");
+
+  // v0: generated title from frame_latest payload
+  const [frameTitle, setFrameTitle] = useState<string>("");
+
   const [editingTitle, setEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
 
-  // Compute a safe title (collapse whitespace, fall back to Álom).
-  const safeTitle = useMemo(() => {
-    const t = compact(dreamTitle);
-    return t || "Álom";
-  }, [dreamTitle]);
-
-  // Determine whether to hide the left-panel title based on the current route.
   const hideLeftPanelTitle = pathname.endsWith("/frame") || pathname.includes("/work");
 
-  // Load the session title from Supabase when the session ID changes.
+  const safeHeaderTitle = useMemo(() => {
+    const t = compact(overrideTitle) || compact(frameTitle);
+    return t || "Álom";
+  }, [overrideTitle, frameTitle]);
+
+  const loadTitles = useCallback(async (sessionId: string) => {
+    setTitleLoading(true);
+
+    try {
+      const uid = await requireUserId();
+
+      // 1) user override title (dream_sessions.title)
+      const { data: sessionRow, error: sessionErr } = await supabase
+        .from("dream_sessions")
+        .select("title")
+        .eq("id", sessionId)
+        .eq("user_id", uid)
+        .maybeSingle();
+
+      if (!sessionErr) {
+        setOverrideTitle(compact((sessionRow as any)?.title) || "");
+      }
+
+      // 2) framing title from frame_latest payload
+      const frameRes = await fetchFrameLatestWithPayloadAndId(supabase, uid, sessionId);
+      const ft = compact(frameRes?.payload?.title);
+      setFrameTitle(ft || "");
+    } finally {
+      setTitleLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     if (!id) return;
+
     (async () => {
-      setTitleLoading(true);
-      const { data, error } = await supabase
-        .from("dream_session_summaries")
-        .select("title")
-        .eq("session_id", id)
-        .single();
-      if (cancelled) return;
-      if (!error) {
-        setDreamTitle(compact((data as any)?.title) || "Álom");
+      try {
+        await loadTitles(id);
+      } catch (e) {
+        // do not block shell render; just keep fallback title
+        console.warn("FlowShellClient: loadTitles failed", e);
       }
-      setTitleLoading(false);
+      if (cancelled) return;
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, loadTitles]);
 
-  // Save an updated title back to Supabase and update local state.
-  async function saveTitle(next: string) {
+  async function saveOverrideTitle(next: string) {
     const cleaned = compact(next);
-    const finalTitle = cleaned || "Álom";
-    setDreamTitle(finalTitle);
+    const finalTitle = cleaned || "";
+
+    setOverrideTitle(finalTitle);
     setEditingTitle(false);
+
     if (!id) return;
+    const uid = await requireUserId();
+
     const { error } = await supabase
-      .from("dream_session_summaries")
-      .upsert({ session_id: id, title: finalTitle }, { onConflict: "session_id" });
+      .from("dream_sessions")
+      .update({ title: finalTitle || null })
+      .eq("id", id)
+      .eq("user_id", uid);
+
     if (error) console.warn("title save failed", error.message);
   }
 
-  // When the user confirms the edit via the overlay, persist the draft.
   async function handleTitleSave() {
     const next = (draftTitle ?? "").trim();
-    // If nothing was entered, reset the draft and exit editing without saving.
-    if (!next) {
-      setDraftTitle(safeTitle);
-      setEditingTitle(false);
-      return;
-    }
+
+    // If empty: clear override (fall back to frame title)
     setSavingTitle(true);
     try {
-      await saveTitle(next);
+      await saveOverrideTitle(next);
     } finally {
       setSavingTitle(false);
     }
   }
 
-  // Info panel state (toggled via the info button).
   const [infoOpen, setInfoOpen] = useState(false);
   const info = useMemo(() => infoFromPath(pathname), [pathname]);
 
   return (
     <Shell
-      // Display the session title in the shell header. When loading, show an ellipsis.
-      title={titleLoading ? "…" : safeTitle}
+      title={titleLoading ? "…" : safeHeaderTitle}
       space="dream"
       surface="ghost"
       headerActions={
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-          {/* Title edit button comes first, matching the summary page UI. */}
           <button
             type="button"
             className={styles.editButton}
             aria-label="Cím szerkesztése"
             onClick={() => {
-              setDraftTitle(safeTitle);
+              setDraftTitle(safeHeaderTitle);
               setEditingTitle(true);
             }}
             disabled={titleLoading || savingTitle}
             title="Cím szerkesztése"
           >
-            {/* Use a unicode pencil character like the summary page */}
             ✎
           </button>
-          {/* Info button */}
+
           <button
             type="button"
             className="icon-btn"
@@ -250,13 +257,14 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
         >
           {id ? <FlowLeftPanel sessionId={id} hideTitle={hideLeftPanelTitle} /> : null}
         </div>
+
         <div className={styles.rightPlain}>
           <div style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>{children}</div>
         </div>
       </div>
-      {/* Render the modal slot if provided */}
+
       {modal ?? null}
-      {/* Overlay for editing the title, mimicking the summary page UI */}
+
       {editingTitle ? (
         <div className={styles.titleEditOverlay} role="dialog" aria-label="Cím szerkesztése">
           <GlassCardSurface className={styles.titleEditCard} variant="soft" paper="evening">
@@ -274,7 +282,7 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
                   }
                   if (e.key === "Escape") {
                     e.preventDefault();
-                    setDraftTitle(safeTitle);
+                    setDraftTitle(safeHeaderTitle);
                     setEditingTitle(false);
                   }
                 }}
@@ -285,7 +293,7 @@ export default function FlowShellClient({ children, modal }: { children: ReactNo
                 type="button"
                 className={styles.titleEditBtn}
                 onClick={() => {
-                  setDraftTitle(safeTitle);
+                  setDraftTitle(safeHeaderTitle);
                   setEditingTitle(false);
                 }}
                 disabled={savingTitle}
