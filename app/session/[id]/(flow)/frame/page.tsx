@@ -7,11 +7,9 @@ import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface
 import { supabase } from "@/src/lib/supabase/client";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { startDirection } from "@/src/lib/startDirection";
-import { requireUserId } from "@/src/lib/db";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { CatalogService } from "@/src/services/CatalogService";
-import { fetchFrameLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
 
 type CandidateDirection = { slug: string; reason?: string };
 
@@ -26,7 +24,7 @@ function safeFrameRecommendations(x: unknown): CandidateDirection[] {
     }
     if (!item || typeof item !== "object") continue;
     const slug = (item as any).slug;
-    const reason = (item as any).reason;
+    const reason = (item as any).reason ?? (item as any).why;
     if (typeof slug === "string" && slug.trim()) {
       out.push({ slug: slug.trim(), reason: typeof reason === "string" ? reason : undefined });
     }
@@ -34,23 +32,34 @@ function safeFrameRecommendations(x: unknown): CandidateDirection[] {
   return out;
 }
 
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 export default function FramePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
   const [catalog, setCatalog] = useState<DirectionCatalogItemDTO[]>([]);
-  const [frameLatest, setFrameLatest] = useState<{ frame_version_id: string; payload: any } | null>(
-    null
-  );
-  const [userId, setUserId] = useState<string | null>(null);
+  const [frameLatest, setFrameLatest] = useState<{ frame_version_id: string; payload: any } | null>(null);
+
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [latestLoaded, setLatestLoaded] = useState(false);
 
+  const [latestLoaded, setLatestLoaded] = useState(false);
   const { loading } = useRequireAuth();
 
-  // Ensure should run at most once per mount, and only after we know latest is missing.
-  const attemptedEnsureRef = useRef(false);
+  // polling control
+  const mountedRef = useRef(true);
+  const pollAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      pollAbortRef.current?.abort();
+    };
+  }, []);
 
   const loadCatalog = useCallback(async () => {
     try {
@@ -61,80 +70,51 @@ export default function FramePage() {
     }
   }, []);
 
-  const loadLatest = useCallback(
-    async (uid: string) => {
-      try {
-        const frameRes = await fetchFrameLatestWithPayloadAndId(supabase, uid, id);
-        setFrameLatest(frameRes);
-      } catch (e: unknown) {
-        setErr(e instanceof Error ? e.message : "Hiba");
-      } finally {
-        setLatestLoaded(true);
-      }
-    },
-    [id]
-  );
-
-  useEffect(() => void loadCatalog(), [loadCatalog]);
-
-  useEffect(() => {
-    requireUserId()
-      .then((uid) => setUserId(uid))
-      .catch((e: unknown) => setErr(e instanceof Error ? e.message : "Hiba"));
-  }, []);
-
-  useEffect(() => {
-    if (!userId) return;
-    void loadLatest(userId);
-  }, [loadLatest, userId]);
-
-  // v0: consider frame "ready" only if both title + framing_text exist
-  const hasFramePayload = Boolean(
-    frameLatest?.payload?.title && (frameLatest?.payload?.framing_text ?? frameLatest?.payload?.framing)
-  );
-
-  const runEnsure = useCallback(async () => {
-    if (!userId) return;
-    setBusy(true);
-    setErr(null);
+  const loadLatest = useCallback(async () => {
     try {
-      const res = await fetchWithAuth("/api/frame/ensure", {
-        method: "POST",
-        json: { session_id: id },
-      });
+      setErr(null);
 
-      if (!res.ok) {
-        const text = await res.text();
-        if (res.status === 404) {
-          throw new Error("Nem található nyers álomjegyzet ehhez a sessionhöz.");
-        }
-        throw new Error(text || "Hiba");
+      // frame_latest -> frame_versions(payload)
+      const { data, error } = await supabase
+        .from("frame_latest")
+        .select("frame_version_id, frame_versions(payload)")
+        .eq("session_id", id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      const fvId = (data as any)?.frame_version_id as string | undefined;
+      const payload = (data as any)?.frame_versions?.payload ?? null;
+
+      if (fvId && payload) {
+        setFrameLatest({ frame_version_id: fvId, payload });
+      } else {
+        setFrameLatest(null);
       }
-
-      await loadLatest(userId);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Hiba");
     } finally {
-      setBusy(false);
+      setLatestLoaded(true);
     }
-  }, [id, loadLatest, userId]);
+  }, [id]);
 
-  // v0 behavior: only run /api/frame once if latest has no payload (after latest is loaded)
+  useEffect(() => void loadCatalog(), [loadCatalog]);
   useEffect(() => {
-    if (!userId) return;
-    if (!latestLoaded) return;
-    if (busy) return;
-    if (attemptedEnsureRef.current) return;
-    if (hasFramePayload) return;
+    if (loading) return;
+    void loadLatest();
+  }, [loadLatest, loading]);
 
-    attemptedEnsureRef.current = true;
-    void runEnsure();
-  }, [busy, hasFramePayload, latestLoaded, runEnsure, userId]);
+  const hasFramePayload = Boolean(
+    frameLatest?.payload?.title &&
+      (frameLatest?.payload?.framing_text ?? frameLatest?.payload?.framing)
+  );
+
+  const framingText = String(frameLatest?.payload?.framing_text ?? frameLatest?.payload?.framing ?? "");
+  const framingTitle = String(frameLatest?.payload?.title ?? "");
 
   const recommendations = useMemo(() => {
     const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
-    const recSource =
-      frameLatest?.payload?.recommended_slugs ?? frameLatest?.payload?.recommended_directions;
+    const recSource = frameLatest?.payload?.recommended_slugs ?? frameLatest?.payload?.recommended_directions;
     const frameRecs = safeFrameRecommendations(recSource).slice(0, 3);
 
     return frameRecs
@@ -146,9 +126,87 @@ export default function FramePage() {
       .filter((x): x is DirectionCatalogItemDTO & { reason: string } => Boolean(x));
   }, [catalog, frameLatest]);
 
-  const framingText = String(frameLatest?.payload?.framing_text ?? frameLatest?.payload?.framing ?? "");
-  const framingTitle = String(frameLatest?.payload?.title ?? "");
-  const framingReady = hasFramePayload;
+  const ensureAndPoll = useCallback(async () => {
+    pollAbortRef.current?.abort();
+    const controller = new AbortController();
+    pollAbortRef.current = controller;
+
+    setBusy(true);
+    setErr(null);
+
+    try {
+      // 1) kick ensure
+      const res = await fetchWithAuth("/api/frame/ensure", {
+        method: "POST",
+        json: { session_id: id },
+        signal: controller.signal as any,
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `frame.ensure hiba (${res.status})`);
+      }
+
+      // 2) poll latest until it appears (or timeout)
+      // backoff: ~1s -> ~1.2 -> ~1.5 ... max ~2.5s, total ~12-15s
+      let delay = 900;
+      const deadline = Date.now() + 15000;
+
+      while (mountedRef.current && Date.now() < deadline) {
+        if (controller.signal.aborted) return;
+
+        await loadLatest();
+        const readyNow = Boolean(
+          (frameLatest?.payload?.title && (frameLatest?.payload?.framing_text ?? frameLatest?.payload?.framing)) // old state
+        );
+
+        // NOTE: frameLatest state is async; check via direct read after loadLatest by re-querying quickly:
+        const { data } = await supabase
+          .from("frame_latest")
+          .select("frame_version_id, frame_versions(payload)")
+          .eq("session_id", id)
+          .maybeSingle();
+
+        const payload = (data as any)?.frame_versions?.payload ?? null;
+        const ready =
+          Boolean(payload?.title && (payload?.framing_text ?? payload?.framing));
+
+        if (ready) {
+          setFrameLatest({
+            frame_version_id: (data as any).frame_version_id,
+            payload,
+          });
+          return;
+        }
+
+        await sleep(delay);
+        delay = Math.min(2500, Math.round(delay * 1.25));
+      }
+
+      // timeout: not fatal, user can retry
+      if (mountedRef.current) {
+        setErr("A keretezés még készül (lassabb a szokásosnál). Próbáld újra pár másodperc múlva.");
+      }
+    } catch (e: unknown) {
+      if (!mountedRef.current) return;
+      setErr(e instanceof Error ? e.message : "Hiba");
+    } finally {
+      if (mountedRef.current) setBusy(false);
+    }
+  }, [id, loadLatest, frameLatest?.payload, supabase]);
+
+  // auto-run ensure once if missing
+  const attemptedEnsureRef = useRef(false);
+  useEffect(() => {
+    if (loading) return;
+    if (!latestLoaded) return;
+    if (busy) return;
+    if (hasFramePayload) return;
+    if (attemptedEnsureRef.current) return;
+
+    attemptedEnsureRef.current = true;
+    void ensureAndPoll();
+  }, [busy, ensureAndPoll, hasFramePayload, latestLoaded, loading]);
 
   const handleDirectionSelect = useCallback(
     async (slug: string) => {
@@ -182,9 +240,9 @@ export default function FramePage() {
   return (
     <div className="frame-center">
       <div className="stack">
-        
-        {framingReady ? (
+        {hasFramePayload ? (
           <>
+            {framingTitle ? <div className="section-title">{framingTitle}</div> : null}
             <div style={{ whiteSpace: "pre-wrap" }}>{framingText}</div>
 
             <div className="stack-tight">
@@ -225,10 +283,7 @@ export default function FramePage() {
             )}
 
             <div className="direction-actions">
-              <PrimaryButton
-                variant="secondary"
-                onClick={() => router.push(`/session/${id}/direction`)}
-              >
+              <PrimaryButton variant="secondary" onClick={() => router.push(`/session/${id}/direction`)}>
                 További irányok
               </PrimaryButton>
               <PrimaryButton variant="secondary" onClick={() => router.push(`/archive`)}>
@@ -237,9 +292,17 @@ export default function FramePage() {
             </div>
           </>
         ) : (
-          <p style={{ color: "var(--text-muted)" }}>
-            A keretezés készül, hamarosan megjelennek az ajánlott irányok.
-          </p>
+          <div className="stack-tight">
+            <p style={{ color: "var(--text-muted)" }}>
+              A keretezés készül, hamarosan megjelennek az ajánlott irányok.
+            </p>
+
+            <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
+              <PrimaryButton variant="secondary" disabled={busy} onClick={() => ensureAndPoll()}>
+                {busy ? "Dolgozom…" : "Újrapróbálom"}
+              </PrimaryButton>
+            </div>
+          </div>
         )}
       </div>
 
