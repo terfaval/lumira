@@ -34,9 +34,10 @@ export async function updateLatentFromMaterial(args: {
 
   // Salvage-aligned constraints: observation is primary truth, no meaning as fact. :contentReference[oaicite:4]{index=4}
   const system = [
-    "You are an API that emits strict JSON (no prose, no markdown).",
-    "Task: produce a latent exploration scaffold (NOT interpretation).",
-    "Primary truth: observation + session_index. Do not invent elements not supported by them.",
+    "You are an API that emits strict json (no prose, no markdown).",
+  "Language: Hungarian. All strings must be Hungarian (names can remain as-is).",
+  "Task: produce a latent exploration scaffold (NOT interpretation).",
+  "Primary truth: observation + session_index. Do not invent elements not supported by them.",
     "Hard constraints:",
     "- No 'this means', no diagnosis, no therapy language, no asserting meaning as fact.",
     "- hypothesis_slots are invitations, not claims.",
@@ -81,7 +82,7 @@ export async function updateLatentFromMaterial(args: {
 
   const resp = await openai.chat.completions.create({
     model,
-    temperature: 0.2,
+    temperature: 0.15,
     messages: [
       { role: "system", content: system },
       { role: "user", content: JSON.stringify(user) },
