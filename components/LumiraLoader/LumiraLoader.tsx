@@ -4,12 +4,6 @@ import React from "react";
 
 export function LumiraLoader({
   size = 42,
-  /**
-   * Backwards compatible prop:
-   * Previously controlled 360° spin duration.
-   * Now acts as the BASE cycle duration for the main "sigil float" motion.
-   * (If you don’t pass it, defaults are tuned for calm loading.)
-   */
   spinSeconds = 3.6,
   tone = "light",
   className = "",
@@ -25,44 +19,39 @@ export function LumiraLoader({
       style={{ width: size, height: size } as React.CSSProperties}
       aria-hidden="true"
     >
-      {/* Animate the whole sigil together */}
-      <div
-        className="sigil"
-        style={{ animationDuration: `${spinSeconds}s` } as React.CSSProperties}
-      >
-        <img
-          src="/loading/lumira_loading_aura.svg"
-          alt=""
-          className="layer aura"
-          draggable={false}
-        />
+      <div className="sigil" style={{ animationDuration: `${spinSeconds}s` } as React.CSSProperties}>
+        {/* Layer slots (stable z-index) */}
+        <div className="slot auraSlot">
+          <img src="/loading/lumira_loading_aura.svg" alt="" className="img aura" draggable={false} />
+        </div>
 
-        <img
-          src="/loading/lumira_loading_triangle.svg"
-          alt=""
-          className="layer triangle"
-          draggable={false}
-        />
+        <div className="slot triSlot">
+          <img
+            src="/loading/lumira_loading_triangle.svg"
+            alt=""
+            className="img triangle"
+            draggable={false}
+          />
+        </div>
 
-        {/* Eye: wrapper separates reading motion from blink and focus */}
-        <div className="eyeWrap">
-  <div className="eyeBlink">
-    {/* outline/back layer */}
-    <img
-      src="/loading/lumira_loading_eye.svg"
-      alt=""
-      className="layer eye eyeBack"
-      draggable={false}
-    />
-    {/* front layer */}
-    <img
-      src="/loading/lumira_loading_eye.svg"
-      alt=""
-      className="layer eye eyeFront"
-      draggable={false}
-    />
-  </div>
-</div>
+        <div className="slot eyeSlot">
+          <div className="eyeWrap">
+            <div className="eyeBlink">
+              <img
+                src="/loading/lumira_loading_eye.svg"
+                alt=""
+                className="img eye eyeBack"
+                draggable={false}
+              />
+              <img
+                src="/loading/lumira_loading_eye.svg"
+                alt=""
+                className="img eye eyeFront"
+                draggable={false}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <style jsx>{`
@@ -73,21 +62,7 @@ export function LumiraLoader({
           user-select: none;
         }
 
-        /* Default: világos megjelenés sötét háttérhez */
-        .tone-light .triangle,
-        .tone-light .eye {
-          filter: invert(1);
-          opacity: 0.95;
-        }
-
-        /* Aura already has a complex filter; we include invert in its chain */
-        .tone-light .aura {
-          /* keep aura glow/blend consistent in light tone */
-          filter: invert(1) blur(1.1px) drop-shadow(0 0 10px rgba(255, 255, 255, 0.18))
-            drop-shadow(0 0 22px rgba(255, 255, 255, 0.1));
-        }
-
-
+        /* Make sigil a stacking context so z-index works predictably */
         .sigil {
           position: absolute;
           inset: 0;
@@ -98,57 +73,50 @@ export function LumiraLoader({
           animation-name: sigilFloat;
           animation-timing-function: ease-in-out;
           animation-iteration-count: infinite;
+          isolation: isolate; /* key: stable stacking */
         }
 
-        .layer {
+        /* Layer slots control stacking (not the img nodes) */
+        .slot {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+        }
+
+        .auraSlot {
+          z-index: 0;
+        }
+        .triSlot {
+          z-index: 1;
+        }
+        .eyeSlot {
+          z-index: 2;
+        }
+
+        .img {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
           display: block;
-          pointer-events: none;
         }
-
-        /* Explicit stacking so the eye always stays readable */
-        .aura {
-          z-index: 0;
-        }
-        .triangle {
-          z-index: 1;
-        }
-        .eyeWrap,
-        .eyeBlink,
-        .eye {
-          z-index: 2;
-        }
-
-        /* Front/back split for contrast */
-.eyeBack {
-  opacity: 0.75;
-  transform: scale(1.01); /* tiny expansion so outline peeks out */
-  filter: blur(0.6px) drop-shadow(0 0 8px rgba(0, 0, 0, 0.75))
-    drop-shadow(0 0 18px rgba(0, 0, 0, 0.45));
-}
-
-.eyeFront {
-  opacity: 0.98;
-}
-
-/* In light tone, invert both, but keep the outline shadow dark */
-.tone-light .eyeBack {
-  filter: invert(1) blur(0.6px) drop-shadow(0 0 8px rgba(0, 0, 0, 0.75))
-    drop-shadow(0 0 18px rgba(0, 0, 0, 0.45));
-}
-
-.tone-light .eyeFront {
-  filter: invert(1);
-}
 
         /* ───────────────────────────────────────────── */
-        /* Aura: glow + blur + pulse                      */
-        /* (slightly toned down so it won't wash the eye) */
+        /* Tone handling — DO NOT apply generic filters to ".eye" */
+        /* because it overrides eyeBack/eyeFront filters.        */
         /* ───────────────────────────────────────────── */
 
+        .tone-light {
+          opacity: 0.95;
+        }
+
+        .tone-light .triangle {
+          filter: invert(1);
+        }
+
+        /* Aura: include invert in its chain */
         .aura {
           opacity: 0.28;
           transform-origin: 50% 50%;
@@ -156,6 +124,80 @@ export function LumiraLoader({
           filter: blur(1.1px) drop-shadow(0 0 10px rgba(255, 255, 255, 0.18))
             drop-shadow(0 0 22px rgba(255, 255, 255, 0.1));
           animation: auraPulse 3.6s ease-in-out infinite;
+        }
+
+        .tone-light .aura {
+          filter: invert(1) blur(1.1px) drop-shadow(0 0 10px rgba(255, 255, 255, 0.18))
+            drop-shadow(0 0 22px rgba(255, 255, 255, 0.1));
+        }
+
+        /* Triangle: micro-sway */
+        .triangle {
+          transform-origin: 50% 60%;
+          will-change: transform;
+          animation: triangleSway 2.8s ease-in-out infinite;
+        }
+
+        /* Eye: reading motion lives on wrapper */
+        .eyeWrap {
+          position: absolute;
+          inset: 0;
+          transform-origin: 50% 50%;
+          will-change: transform;
+          animation: eyeRead 2.236s ease-in-out infinite;
+        }
+
+        .eyeBlink {
+          position: absolute;
+          inset: 0;
+          transform-origin: 50% 50%;
+          will-change: transform, opacity;
+          animation: eyeBlink 7.5s infinite;
+        }
+
+        /* Eye focus pulse (applies to both back+front, OK) */
+        .eye {
+          transform-origin: 50% 50%;
+          will-change: transform, opacity;
+          animation: eyeFocus 1.618s ease-in-out infinite;
+        }
+
+        /* Back/front contrast trick */
+        .eyeBack {
+          opacity: 0.75;
+          transform: scale(1.01);
+          filter: blur(0.6px) drop-shadow(0 0 8px rgba(0, 0, 0, 0.75))
+            drop-shadow(0 0 18px rgba(0, 0, 0, 0.45));
+        }
+
+        .eyeFront {
+          opacity: 0.98;
+        }
+
+        /* Light tone: invert eye but keep dark shadows */
+        .tone-light .eyeBack {
+          filter: invert(1) blur(0.6px) drop-shadow(0 0 8px rgba(0, 0, 0, 0.75))
+            drop-shadow(0 0 18px rgba(0, 0, 0, 0.45));
+        }
+
+        .tone-light .eyeFront {
+          filter: invert(1);
+        }
+
+        /* ───────────────────────────────────────────── */
+        /* Animations                                     */
+        /* ───────────────────────────────────────────── */
+
+        @keyframes sigilFloat {
+          0% {
+            transform: translateX(-2px) translateY(0px) rotate(-0.7deg);
+          }
+          50% {
+            transform: translateX(2px) translateY(-2px) rotate(0.7deg);
+          }
+          100% {
+            transform: translateX(-2px) translateY(0px) rotate(-0.7deg);
+          }
         }
 
         @keyframes auraPulse {
@@ -173,33 +215,6 @@ export function LumiraLoader({
           }
         }
 
-        /* ───────────────────────────────────────────── */
-        /* Whole-sigil drift (“Sigil Float”)              */
-        /* ───────────────────────────────────────────── */
-
-        @keyframes sigilFloat {
-          0% {
-            transform: translateX(-2px) translateY(0px) rotate(-0.7deg);
-          }
-          50% {
-            transform: translateX(2px) translateY(-2px) rotate(0.7deg);
-          }
-          100% {
-            transform: translateX(-2px) translateY(0px) rotate(-0.7deg);
-          }
-        }
-
-        /* ───────────────────────────────────────────── */
-        /* Triangle: micro-sway                           */
-        /* (slightly smaller so the "reading" stands out) */
-        /* ───────────────────────────────────────────── */
-
-        .triangle {
-          transform-origin: 50% 60%;
-          will-change: transform;
-          animation: triangleSway 2.8s ease-in-out infinite;
-        }
-
         @keyframes triangleSway {
           0% {
             transform: rotate(-5deg);
@@ -210,20 +225,6 @@ export function LumiraLoader({
           100% {
             transform: rotate(-5deg);
           }
-        }
-
-        /* ───────────────────────────────────────────── */
-        /* Eye: "reading" inner play                      */
-        /* - eyeWrap: saccades + occasional line return   */
-        /* - eyeBlink: rare blink                         */
-        /* - eye: subtle focus pulse                       */
-        /* Fibonacci-ish cycle lengths so it doesn't loop */
-        /* ───────────────────────────────────────────── */
-
-        .eyeWrap {
-          transform-origin: 50% 50%;
-          will-change: transform;
-          animation: eyeRead 2.236s ease-in-out infinite;
         }
 
         @keyframes eyeRead {
@@ -248,21 +249,12 @@ export function LumiraLoader({
           72% {
             transform: translate(1.3px, 0px);
           }
-          /* “line return” */
           78% {
             transform: translate(-1.6px, 0.7px);
           }
           100% {
             transform: translate(0px, 0px);
           }
-        }
-
-        .eyeBlink {
-          position: absolute;
-          inset: 0;
-          transform-origin: 50% 50%;
-          will-change: transform, opacity;
-          animation: eyeBlink 7.5s infinite;
         }
 
         @keyframes eyeBlink {
@@ -282,18 +274,6 @@ export function LumiraLoader({
           }
         }
 
-        .eye {
-          transform-origin: 50% 50%;
-          will-change: transform, opacity;
-          animation: eyeFocus 1.618s ease-in-out infinite;
-        }
-
-        .tone-light .eye {
-          /* invert first, THEN shadow -> shadow stays dark and gives contrast */
-          filter: invert(1) drop-shadow(0 0 8px rgba(0, 0, 0, 0.55))
-            drop-shadow(0 0 18px rgba(0, 0, 0, 0.35));
-        }
-
         @keyframes eyeFocus {
           0%,
           100% {
@@ -306,7 +286,6 @@ export function LumiraLoader({
           }
         }
 
-        /* Reduce motion */
         @media (prefers-reduced-motion: reduce) {
           .sigil,
           .aura,
