@@ -7,6 +7,7 @@ import {
   parseDreamObservation,
 } from "@/src/lib/dream/observation";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
+import { shouldKeepAnchorLabel } from "@/src/lib/dream/huAnchorHygiene";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -102,21 +103,24 @@ function buildAnchorKeysFromObservation(observation: any): string[] {
   const obs = observation || {};
   const entities = obs.entities || {};
 
-  const rawLabels: string[] = [
-    ...labelsFromList(entities.characters),
-    ...labelsFromList(entities.places),
-    ...labelsFromList(entities.objects),
-    ...labelsFromList(entities.other),
-    ...labelsFromList(obs.beats),
-    ...labelsFromList(obs.motifs),
-    ...labelsFromList(obs.tone),
-    ...labelsFromList(obs.structure),
-    ...labelsFromList(obs.body),
-  ];
+  // Pre-filter labels for minimal HU hygiene before anchorKey():
+  // - Drop ordinal-only tokens (e.g. "negyedik", "4.", "negadik")
+  // - For places: require place-context nouns ("emelet", "szint", "haz", "utca", ...)
+  const rawLabels: string[] = [];
 
-  const keys = rawLabels
-    .map((s) => anchorKey(s))
-    .filter(Boolean);
+  rawLabels.push(
+    ...labelsFromList(entities.characters).filter((s) => shouldKeepAnchorLabel(s)),
+    ...labelsFromList(entities.places).filter((s) => shouldKeepAnchorLabel(s, { category: "place" })),
+    ...labelsFromList(entities.objects).filter((s) => shouldKeepAnchorLabel(s)),
+    ...labelsFromList(entities.other).filter((s) => shouldKeepAnchorLabel(s)),
+    ...labelsFromList(obs.beats).filter((s) => shouldKeepAnchorLabel(s)),
+    ...labelsFromList(obs.motifs).filter((s) => shouldKeepAnchorLabel(s)),
+    ...labelsFromList(obs.tone).filter((s) => shouldKeepAnchorLabel(s)),
+    ...labelsFromList(obs.structure).filter((s) => shouldKeepAnchorLabel(s)),
+    ...labelsFromList(obs.body).filter((s) => shouldKeepAnchorLabel(s))
+  );
+
+  const keys = rawLabels.map((s) => anchorKey(s)).filter(Boolean);
 
   return uniq(keys);
 }

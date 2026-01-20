@@ -1,5 +1,7 @@
 // src/lib/dream/anchorsFromObservation.ts
 
+import { filterAnchorLabels } from "@/src/lib/dream/huAnchorHygiene";
+
 export type SynthAnchors = {
   characters: string[];
   places: string[];
@@ -39,17 +41,18 @@ export function anchorsFromObservation(observation: any | null | undefined): Syn
   const arrLabels = (arr: any): string[] =>
     Array.isArray(arr) ? arr.map((x) => (x?.label ?? "")).filter((s) => typeof s === "string") : [];
 
-  const characters = arrLabels(ent.characters);
-  const places = arrLabels(ent.places);
+  const characters = filterAnchorLabels(arrLabels(ent.characters));
+  // Place labels must include a place-context noun (emelet/szint/haz/szoba/utca/etc)
+  const places = filterAnchorLabels(arrLabels(ent.places), { category: "place" });
 
   // Objects: keep "objects" + "other" together (e.g. tetoválások is "other" in your extract)
-  const objects = [...arrLabels(ent.objects), ...arrLabels(ent.other)];
+  const objects = filterAnchorLabels([...arrLabels(ent.objects), ...arrLabels(ent.other)]);
 
   // Beats: body labels + optional structure labels
-  const beats = [...arrLabels(obs.body), ...arrLabels(obs.structure)];
+  const beats = filterAnchorLabels([...arrLabels(obs.body), ...arrLabels(obs.structure)]);
 
   // Felt words: tone labels
-  const felt_words = arrLabels(obs.tone);
+  const felt_words = filterAnchorLabels(arrLabels(obs.tone));
 
   return {
     characters: uniqStrings(characters),
