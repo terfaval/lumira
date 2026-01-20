@@ -42,40 +42,41 @@ export async function generateFrameFromLatent(args: {
   const model = OPENAI_MODELS.OBSERVE;
 
   const system = [
-    "Adj vissza EGY darab JSON objektumot egy álomhoz.",
-    'Kulcsok: {"title": string, "framing_text": string, "recommended_slugs": string[2..4]}',
-    "",
-    "Bemenetek:",
-    "- dream_text: a nyers álomleírás.",
-    "- latent_note: jegyzet (anchorok/érzelmi szavak/fordulók) – NEM tényforrás, csak fókusz.",
-    "- dream_observation: megfigyelések (nem értelmezések), használd a konkrét elemekhez és ajánlott irányokhoz.",
-    "",
-    "Kötelező stílus:",
-    "- Magyar nyelv.",
-    "- MÁSODIK SZEMÉLY, MÚLT IDŐ.",
-    "- Nyitás javasolt formula: „Az álmodban ...”.",
-    "- Megfigyelő hang: nincs diagnózis, nincs biztos jelentés-állítás.",
-    "",
-    "Framing_text (rövid, irodalmiasan feszes, nem ténylista):",
-    "- 4–7 mondatban rajzolj tér-idő-érzelmi ívet (2–3 csomópont).",
-    "- Legyen 1–2 érzelem/reakció (pl. félelem, szégyen).",
-    "- A végén legyen 1 nagyon rövid invitálós (1 mondat), választási lehetőséggel.",
-    "",
-    "Óvatos megfigyelés (opcionális, max 1 mondat):",
-    "- Csak így kezdődhet: „Lehet, hogy (csak óvatos megfigyelés) ...”.",
-    "- TILOS: „ez azt jelenti”, „arra utal”, „valószínűleg”, „tükrözte a szorongásaidat”, diagnózis, biztos pszichologizálás.",
-    "- Ha dream_observation.safety.flag nem 'none': lassíts, ne mélyíts, ne erőltesd.",
-    "",
-    "Anchor szabályok:",
-    "- A title tartalmazzon legalább 1 TOP ANCHOR-t.",
-    "- A framing_text tartalmazzon legalább 2–4 TOP ANCHOR-t.",
-    "",
-    "Ajánlott irányok:",
-    "- Pontosan 2-4 különböző slug a katalógusból.",
-    "",
-    "Formátum:",
-    '{"title":"...","framing_text":"...","recommended_slugs":["slug-1","slug-2"]}',
-  ].join("\n");
+  "Adj vissza EGY darab JSON objektumot (json) egy álomhoz.",
+  'Kulcsok: {"title": string, "framing_text": string, "recommended_slugs": string[2..4]}',
+  "",
+  "Bemenetek:",
+  "- dream_text: a nyers álomleírás.",
+  "- latent_note: jegyzet (anchorok/érzelmi szavak/fordulók) – NEM tényforrás, csak fókusz.",
+  "- dream_observation: megfigyelések (nem értelmezések), használd a konkrét elemekhez és ajánlott irányokhoz.",
+  "",
+  "Kötelező stílus:",
+  "- Magyar nyelv.",
+  "- MÁSODIK SZEMÉLY, MÚLT IDŐ.",
+  "- Nyitás javasolt formula: „Az álmodban ...”.",
+  "- Megfigyelő hang: nincs diagnózis, nincs biztos jelentés-állítás.",
+  "",
+  "Framing_text (rövid, irodalmiasan feszes, nem ténylista):",
+  "- 4–7 mondatban rajzolj tér-idő-érzelmi ívet (2–3 csomópont).",
+  "- Legyen 1–2 érzelem/reakció (pl. félelem, szégyen).",
+  "- A végén legyen 1 nagyon rövid invitálós (1 mondat), választási lehetőséggel.",
+  "",
+  "Óvatos megfigyelés (opcionális, max 1 mondat):",
+  "- Csak így kezdődhet: „Lehet, hogy (csak óvatos megfigyelés) ...”.",
+  "- TILOS: „ez azt jelenti”, „arra utal”, „valószínűleg”, „tükrözte a szorongásaidat”, diagnózis, biztos pszichologizálás.",
+  "- Ha dream_observation.safety.flag nem 'none': lassíts, ne mélyíts, ne erőltesd.",
+  "",
+  "Anchor szabályok:",
+  "- A title tartalmazzon legalább 1 TOP ANCHOR-t.",
+  "- A framing_text tartalmazzon legalább 2–4 TOP ANCHOR-t.",
+  "",
+  "Ajánlott irányok:",
+  "- Pontosan 2-4 különböző slug a katalógusból.",
+  "",
+  "Formátum:",
+  '{"title":"...","framing_text":"...","recommended_slugs":["slug-1","slug-2"]}',
+].join("\n");
+
 
   const allowedSet = new Set(args.allowedSlugs ?? []);
   const catalog = (args.catalog ?? []).map((row) => ({
@@ -286,7 +287,7 @@ async function repairFrameBundle(args: {
   previous: { title?: string; framing_text?: string; recommended_slugs?: any };
 }) {
   const system = [
-    "Javítás: adj vissza ÉRVÉNYES JSON-t a szabályok szerint. Ne adj magyarázatot.",
+    "Javítás: adj vissza érvényes JSON-t (json) a szabályok szerint. Ne adj magyarázatot.",
     "title: 2–6 szó, tartalmazzon 1 top anchort.",
     "framing_text: 4–7 mondat, 2. személy múlt idő, ív + 1 rövid invitálás a végén.",
     "framing_text: 2–4 top anchor említés.",
@@ -327,14 +328,16 @@ async function repairTitle(args: {
   latentNote: any;
 }): Promise<string | null> {
   const system = [
-    "Adj vissza EGY rövid magyar címet ÁLOMHOZ.",
+   "Adj vissza EGY rövid magyar címet egy álomhoz, és csak érvényes JSON-t adj vissza (json).",
+    "A válaszod egyetlen JSON objektum legyen, semmi más.",
     "Követelmények:",
     "- 2–6 szó.",
     "- Tartalmazzon legalább 1 TOP ANCHOR-t (hely/szereplő/tárgy).",
     "- Legyen cselekvő, képszerű.",
     "- Nincs írásjel a végén, nincs magyarázat.",
-    'Formátum: {"title":"..."}',
+    'Formátum (JSON): {"title":"..."}',
   ].join("\n");
+
 
   const user = {
     dream_excerpt: String(args.dreamText ?? "").slice(0, 2500),
