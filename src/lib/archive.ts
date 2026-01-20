@@ -1,5 +1,5 @@
 // /src/lib/archive.ts
-import { supabase } from "./supabase/client";
+import { supabase } from "@/src/lib/supabase/client";
 import { isDirectionCardContent, type WorkBlock } from "./types";
 import { CatalogService } from "@/src/services/CatalogService";
 
@@ -89,7 +89,12 @@ function extractAuditTitle(audit: unknown): string | null {
  * 3) "Álom"
  */
 function resolveTitle(session: any): string {
-  const summaryTitle = sanitizeTitle(session?.dream_session_summaries?.title ?? "");
+    const summaryRow = Array.isArray(session?.dream_session_summaries)
+    ? session.dream_session_summaries[0]
+    : session?.dream_session_summaries;
+
+  const summaryTitle = sanitizeTitle(summaryRow?.title ?? "");
+
   if (summaryTitle && !isGenericTitle(summaryTitle)) return summaryTitle;
 
   const auditTitle = extractAuditTitle(session?.ai_framing_audit);
@@ -112,7 +117,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
         created_at,
         raw_dream_text,
         ai_framing_audit,
-        dream_session_summaries: dream_session_summaries (
+        dream_session_summaries (
           title
         )
       `
