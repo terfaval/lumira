@@ -1,3 +1,4 @@
+// app/session/[id]/frame/page.tsx
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -7,9 +8,11 @@ import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface
 import { supabase } from "@/src/lib/supabase/client";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { startDirection } from "@/src/lib/startDirection";
+import { requireUserId } from "@/src/lib/db";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { CatalogService } from "@/src/services/CatalogService";
+import { fetchFrameLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
 
 type CandidateDirection = { slug: string; reason?: string };
 
@@ -32,9 +35,15 @@ function safeFrameRecommendations(x: unknown): CandidateDirection[] {
   return out;
 }
 
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
+function isCanonicalFrameReady(payload: any): boolean {
+  if (!payload || typeof payload !== "object") return false;
+  const titleOk = typeof payload.title === "string" && payload.title.trim().length > 0;
+  const framingOk = typeof payload.framing_text === "string" && payload.framing_text.trim().length > 0;
+  const recOk = Array.isArray(payload.recommended_slugs) && payload.recommended_slugs.length >= 2;
+  return titleOk && framingOk && recOk;
 }
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export default function FramePage() {
   const { id } = useParams<{ id: string }>();
@@ -42,24 +51,20 @@ export default function FramePage() {
 
   const [catalog, setCatalog] = useState<DirectionCatalogItemDTO[]>([]);
   const [frameLatest, setFrameLatest] = useState<{ frame_version_id: string; payload: any } | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-
   const [latestLoaded, setLatestLoaded] = useState(false);
+
   const { loading } = useRequireAuth();
 
-  // polling control
-  const mountedRef = useRef(true);
-  const pollAbortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      pollAbortRef.current?.abort();
-    };
-  }, []);
+  // Poll state (prevents parallel loops)
+  const pollRef = useRef<{ running: boolean; tries: number; lastAttemptAt: number }>({
+    running: false,
+    tries: 0,
+    lastAttemptAt: 0,
+  });
 
   const loadCatalog = useCallback(async () => {
     try {
@@ -70,50 +75,105 @@ export default function FramePage() {
     }
   }, []);
 
-  const loadLatest = useCallback(async () => {
-    try {
-      setErr(null);
-
-      // frame_latest -> frame_versions(payload)
-      const { data, error } = await supabase
-        .from("frame_latest")
-        .select("frame_version_id, frame_versions(payload)")
-        .eq("session_id", id)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      const fvId = (data as any)?.frame_version_id as string | undefined;
-      const payload = (data as any)?.frame_versions?.payload ?? null;
-
-      if (fvId && payload) {
-        setFrameLatest({ frame_version_id: fvId, payload });
-      } else {
-        setFrameLatest(null);
+  const loadLatest = useCallback(
+    async (uid: string) => {
+      try {
+        const frameRes = await fetchFrameLatestWithPayloadAndId(supabase, uid, id);
+        setFrameLatest(frameRes);
+      } catch (e: unknown) {
+        setErr(e instanceof Error ? e.message : "Hiba");
+      } finally {
+        setLatestLoaded(true);
       }
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Hiba");
-    } finally {
-      setLatestLoaded(true);
-    }
-  }, [id]);
-
-  useEffect(() => void loadCatalog(), [loadCatalog]);
-  useEffect(() => {
-    if (loading) return;
-    void loadLatest();
-  }, [loadLatest, loading]);
-
-  const hasFramePayload = Boolean(
-    frameLatest?.payload?.title &&
-      (frameLatest?.payload?.framing_text ?? frameLatest?.payload?.framing)
+    },
+    [id]
   );
 
-  const framingText = String(frameLatest?.payload?.framing_text ?? frameLatest?.payload?.framing ?? "");
+  useEffect(() => void loadCatalog(), [loadCatalog]);
+
+  useEffect(() => {
+    requireUserId()
+      .then((uid) => setUserId(uid))
+      .catch((e: unknown) => setErr(e instanceof Error ? e.message : "Hiba"));
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    void loadLatest(userId);
+  }, [loadLatest, userId]);
+
+  const framingReady = isCanonicalFrameReady(frameLatest?.payload);
   const framingTitle = String(frameLatest?.payload?.title ?? "");
+  const framingText = String(frameLatest?.payload?.framing_text ?? "");
+
+  const runEnsureAndPoll = useCallback(
+    async (opts?: { force?: boolean }) => {
+      if (!userId) return;
+      if (pollRef.current.running) return;
+
+      pollRef.current.running = true;
+      pollRef.current.tries = 0;
+      pollRef.current.lastAttemptAt = Date.now();
+      setErr(null);
+
+      try {
+        // expo backoff ~45s total
+        const delays = [700, 1200, 2000, 3200, 5000, 8000, 12000, 12000];
+
+        while (pollRef.current.tries < delays.length) {
+          pollRef.current.tries += 1;
+          setBusy(true);
+
+          const res = await fetchWithAuth("/api/frame/ensure", {
+            method: "POST",
+            json: { session_id: id, ...(opts?.force ? { force: true } : {}) },
+          });
+
+          // Always refresh latest after ensure
+          await loadLatest(userId);
+
+          // Check canonical readiness after refresh
+          const latest = await fetchFrameLatestWithPayloadAndId(supabase, userId, id);
+          setFrameLatest(latest);
+
+          if (isCanonicalFrameReady(latest?.payload)) return;
+
+          // If hard-fail (auth/not found/server), stop early and show error
+          if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            if (res.status === 401) throw new Error("Nincs bejelentkezve.");
+            if (res.status === 404) throw new Error("A session nem található.");
+            throw new Error(text || "Frame ensure hiba");
+          }
+
+          await sleep(delays[pollRef.current.tries - 1] ?? 12000);
+        }
+      } catch (e: unknown) {
+        setErr(e instanceof Error ? e.message : "Hiba");
+      } finally {
+        pollRef.current.running = false;
+        setBusy(false);
+      }
+    },
+    [id, loadLatest, userId]
+  );
+
+  // Auto-run: if not ready after first latest load, start polling.
+  useEffect(() => {
+    if (!userId) return;
+    if (!latestLoaded) return;
+    if (framingReady) return;
+
+    // Avoid immediately restarting if user just hit retry
+    if (pollRef.current.running) return;
+
+    void runEnsureAndPoll();
+  }, [framingReady, latestLoaded, runEnsureAndPoll, userId]);
 
   const recommendations = useMemo(() => {
     const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
+
+    // Canonical: recommended_slugs (string[])
     const recSource = frameLatest?.payload?.recommended_slugs ?? frameLatest?.payload?.recommended_directions;
     const frameRecs = safeFrameRecommendations(recSource).slice(0, 3);
 
@@ -125,88 +185,6 @@ export default function FramePage() {
       })
       .filter((x): x is DirectionCatalogItemDTO & { reason: string } => Boolean(x));
   }, [catalog, frameLatest]);
-
-  const ensureAndPoll = useCallback(async () => {
-    pollAbortRef.current?.abort();
-    const controller = new AbortController();
-    pollAbortRef.current = controller;
-
-    setBusy(true);
-    setErr(null);
-
-    try {
-      // 1) kick ensure
-      const res = await fetchWithAuth("/api/frame/ensure", {
-        method: "POST",
-        json: { session_id: id },
-        signal: controller.signal as any,
-      });
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || `frame.ensure hiba (${res.status})`);
-      }
-
-      // 2) poll latest until it appears (or timeout)
-      // backoff: ~1s -> ~1.2 -> ~1.5 ... max ~2.5s, total ~12-15s
-      let delay = 900;
-      const deadline = Date.now() + 15000;
-
-      while (mountedRef.current && Date.now() < deadline) {
-        if (controller.signal.aborted) return;
-
-        await loadLatest();
-        const readyNow = Boolean(
-          (frameLatest?.payload?.title && (frameLatest?.payload?.framing_text ?? frameLatest?.payload?.framing)) // old state
-        );
-
-        // NOTE: frameLatest state is async; check via direct read after loadLatest by re-querying quickly:
-        const { data } = await supabase
-          .from("frame_latest")
-          .select("frame_version_id, frame_versions(payload)")
-          .eq("session_id", id)
-          .maybeSingle();
-
-        const payload = (data as any)?.frame_versions?.payload ?? null;
-        const ready =
-          Boolean(payload?.title && (payload?.framing_text ?? payload?.framing));
-
-        if (ready) {
-          setFrameLatest({
-            frame_version_id: (data as any).frame_version_id,
-            payload,
-          });
-          return;
-        }
-
-        await sleep(delay);
-        delay = Math.min(2500, Math.round(delay * 1.25));
-      }
-
-      // timeout: not fatal, user can retry
-      if (mountedRef.current) {
-        setErr("A keretezés még készül (lassabb a szokásosnál). Próbáld újra pár másodperc múlva.");
-      }
-    } catch (e: unknown) {
-      if (!mountedRef.current) return;
-      setErr(e instanceof Error ? e.message : "Hiba");
-    } finally {
-      if (mountedRef.current) setBusy(false);
-    }
-  }, [id, loadLatest, frameLatest?.payload, supabase]);
-
-  // auto-run ensure once if missing
-  const attemptedEnsureRef = useRef(false);
-  useEffect(() => {
-    if (loading) return;
-    if (!latestLoaded) return;
-    if (busy) return;
-    if (hasFramePayload) return;
-    if (attemptedEnsureRef.current) return;
-
-    attemptedEnsureRef.current = true;
-    void ensureAndPoll();
-  }, [busy, ensureAndPoll, hasFramePayload, latestLoaded, loading]);
 
   const handleDirectionSelect = useCallback(
     async (slug: string) => {
@@ -240,9 +218,9 @@ export default function FramePage() {
   return (
     <div className="frame-center">
       <div className="stack">
-        {hasFramePayload ? (
+        {framingReady ? (
           <>
-            {framingTitle ? <div className="section-title">{framingTitle}</div> : null}
+            {framingTitle ? <h1 className="frame-title">{framingTitle}</h1> : null}
             <div style={{ whiteSpace: "pre-wrap" }}>{framingText}</div>
 
             <div className="stack-tight">
@@ -268,9 +246,7 @@ export default function FramePage() {
                     >
                       <div className="direction-card-inner">
                         <div className="direction-card-title">{d.title}</div>
-                        <div className="direction-card-body">
-                          {d.content?.micro_description ?? d.description}
-                        </div>
+                        <div className="direction-card-body">{d.content?.micro_description ?? d.description}</div>
                       </div>
                     </GlassCardSurface>
                   </button>
@@ -292,21 +268,24 @@ export default function FramePage() {
             </div>
           </>
         ) : (
-          <div className="stack-tight">
-            <p style={{ color: "var(--text-muted)" }}>
-              A keretezés készül, hamarosan megjelennek az ajánlott irányok.
+          <>
+            <p style={{ color: "var(--text-muted)", margin: 0 }}>
+              A keretezés készül… (ez pár másodpercig is eltarthat)
             </p>
 
-            <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
-              <PrimaryButton variant="secondary" disabled={busy} onClick={() => ensureAndPoll()}>
-                {busy ? "Dolgozom…" : "Újrapróbálom"}
+            <div className="direction-actions" style={{ marginTop: "var(--space-2)" }}>
+              <PrimaryButton variant="secondary" disabled={busy} onClick={() => runEnsureAndPoll({ force: true })}>
+                Újrapróbálom
+              </PrimaryButton>
+              <PrimaryButton variant="secondary" disabled={busy} onClick={() => router.push(`/archive`)}>
+                Később
               </PrimaryButton>
             </div>
-          </div>
+          </>
         )}
-      </div>
 
-      {err && <p style={{ marginTop: "var(--space-3)", color: "crimson" }}>{err}</p>}
+        {err ? <p style={{ marginTop: "var(--space-3)", color: "crimson" }}>{err}</p> : null}
+      </div>
 
       <style jsx>{`
         .frame-center {
@@ -315,6 +294,13 @@ export default function FramePage() {
           flex-direction: column;
           justify-content: center;
           padding-block: var(--space-2);
+        }
+
+        .frame-title {
+          margin: 0 0 var(--space-2) 0;
+          font-size: 1.35rem;
+          font-weight: 800;
+          letter-spacing: -0.01em;
         }
 
         .direction-grid {
@@ -368,8 +354,8 @@ export default function FramePage() {
           color: var(--frame-text);
           transform-origin: 50% 55%;
 
-          transition: transform 180ms ease, box-shadow 220ms ease, border-color 220ms ease,
-            filter 220ms ease, color 180ms ease;
+          transition: transform 180ms ease, box-shadow 220ms ease, border-color 220ms ease, filter 220ms ease,
+            color 180ms ease;
 
           will-change: transform, box-shadow, filter;
         }
@@ -396,16 +382,14 @@ export default function FramePage() {
         .direction-card:hover:not(:disabled) .direction-card-surface {
           transform: translateY(0) scale(1.01);
           filter: saturate(1.06) brightness(1.02);
-          box-shadow: var(--shadow-soft), 0 0 0 1px var(--line-soft), 0 0 22px var(--glow-a),
-            0 0 40px var(--glow-b);
+          box-shadow: var(--shadow-soft), 0 0 0 1px var(--line-soft), 0 0 22px var(--glow-a), 0 0 40px var(--glow-b);
         }
 
         .direction-card:active:not(:disabled) .direction-card-surface {
           transform: translateY(1px) scale(0.985);
           filter: saturate(1) brightness(0.98);
-          box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--line-soft),
-            0 0 16px var(--glow-a), inset 0 2px 10px rgba(0, 0, 0, 0.35),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+          box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--line-soft), 0 0 16px var(--glow-a),
+            inset 0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
         }
 
         .direction-card:focus-visible .direction-card-surface {

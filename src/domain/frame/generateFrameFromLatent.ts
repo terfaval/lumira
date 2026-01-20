@@ -250,9 +250,17 @@ function isValidTitle(title: string, topAnchors: string[]): boolean {
   const cleaned = titleCaseHungarian(title);
   const wc = countWords(cleaned);
   if (wc < 2 || wc > 6) return false;
-  if (!topAnchors.length) return true;
-  return titleHasAnchorFuzzy(cleaned, topAnchors);
+
+  // If we have good anchors, require one of them.
+  const goodAnchors = cleanAnchors(topAnchors);
+  if (goodAnchors.length >= 2) {
+    return titleHasAnchorFuzzy(cleaned, goodAnchors);
+  }
+
+  // Otherwise just accept format (avoid overfitting when anchor quality is low)
+  return true;
 }
+
 
 function isValidFraming(
   framing: string,
@@ -275,6 +283,60 @@ function normalizeFramePayload(content: string, allowedSet: Set<string>) {
   const recommended_slugs = normalizeRecommendedSlugs(parsed?.recommended_slugs, allowedSet);
   return { title, framing_text, recommended_slugs };
 }
+
+function normalizeHuToken(s: string): string {
+  return String(s ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]+/gu, "")
+    .replace(/\s+/g, " ");
+}
+
+function isFloorOrdinalHu(t: string): boolean {
+  const x = normalizeHuToken(t);
+  // common Hungarian ordinals + plain digits
+  const ords = [
+    "első","második","harmadik","negyedik","ötödik","hatodik","hetedik","nyolcadik",
+    "kilencedik","tizedik","tizenegyedik","tizenkettedik"
+  ];
+  if (ords.includes(x)) return true;
+  if (/^\d{1,2}(\.|-?dik)?$/.test(x)) return true;
+  return false;
+}
+
+function isTooGenericAnchorHu(t: string): boolean {
+  const x = normalizeHuToken(t);
+  if (!x) return true;
+  if (x.length <= 2) return true;
+
+  // generic filler-ish words (keep this short; add over time)
+  const bad = new Set([
+    "valaki","valami","hely","dolog","cucc","cuccok", // note: you might WANT cuccok sometimes; optional
+    "ember","fickó","barát","ismeretlen","szereplő",
+    "hazafelé","világosodik","késő","korán"
+  ]);
+  return bad.has(x);
+}
+
+function cleanAnchors(rawAnchors: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+
+  for (const a of rawAnchors ?? []) {
+    const trimmed = String(a ?? "").trim();
+    if (!trimmed) continue;
+    if (isFloorOrdinalHu(trimmed)) continue;
+    if (isTooGenericAnchorHu(trimmed)) continue;
+
+    const key = normalizeHuToken(trimmed);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(trimmed);
+  }
+
+  return out;
+}
+
 
 async function repairFrameBundle(args: {
   openai: ReturnType<typeof openaiServer>;
