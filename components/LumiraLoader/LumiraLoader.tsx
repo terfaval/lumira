@@ -46,15 +46,23 @@ export function LumiraLoader({
 
         {/* Eye: wrapper separates reading motion from blink and focus */}
         <div className="eyeWrap">
-          <div className="eyeBlink">
-            <img
-              src="/loading/lumira_loading_eye.svg"
-              alt=""
-              className="layer eye"
-              draggable={false}
-            />
-          </div>
-        </div>
+  <div className="eyeBlink">
+    {/* outline/back layer */}
+    <img
+      src="/loading/lumira_loading_eye.svg"
+      alt=""
+      className="layer eye eyeBack"
+      draggable={false}
+    />
+    {/* front layer */}
+    <img
+      src="/loading/lumira_loading_eye.svg"
+      alt=""
+      className="layer eye eyeFront"
+      draggable={false}
+    />
+  </div>
+</div>
       </div>
 
       <style jsx>{`
@@ -113,6 +121,28 @@ export function LumiraLoader({
         .eye {
           z-index: 2;
         }
+
+        /* Front/back split for contrast */
+.eyeBack {
+  opacity: 0.75;
+  transform: scale(1.01); /* tiny expansion so outline peeks out */
+  filter: blur(0.6px) drop-shadow(0 0 8px rgba(0, 0, 0, 0.75))
+    drop-shadow(0 0 18px rgba(0, 0, 0, 0.45));
+}
+
+.eyeFront {
+  opacity: 0.98;
+}
+
+/* In light tone, invert both, but keep the outline shadow dark */
+.tone-light .eyeBack {
+  filter: invert(1) blur(0.6px) drop-shadow(0 0 8px rgba(0, 0, 0, 0.75))
+    drop-shadow(0 0 18px rgba(0, 0, 0, 0.45));
+}
+
+.tone-light .eyeFront {
+  filter: invert(1);
+}
 
         /* ───────────────────────────────────────────── */
         /* Aura: glow + blur + pulse                      */
