@@ -30,14 +30,17 @@ void main() {
 }
 `;
 
+// Key change vs your previous FRAG:
+// - NO time-wrap-dependent drift inside shader (prevents the "wrap glitch").
+// - Palette cycling uses u_phase (0..1), which is periodic and continuous at wrap.
+// - u_center is updated per-frame from JS (also periodic), so it can loop forever.
 const FRAG = `#version 300 es
 precision highp float;
 
 in vec2 v_uv;
 out vec4 outColor;
 
-uniform vec2 u_resolution;
-uniform float u_time;
+uniform vec2  u_resolution;
 uniform float u_opacity;
 
 uniform vec3 u_bg;
@@ -46,14 +49,21 @@ uniform vec3 u_accent2;
 uniform vec3 u_glow1;
 uniform vec3 u_glow2;
 
-uniform vec2 u_center;
+uniform vec2  u_center;
 uniform float u_zoom;
-uniform int u_iter;
+uniform int   u_iter;
+
+// 0..1 cyclic phase (safe to wrap)
+uniform float u_phase;
 
 /* soft palette driven by your tokens */
 vec3 palette(float t) {
-  vec3 base = mix(u_accent2, u_accent, smoothstep(0.1, 0.9, t));
-  vec3 glaze = mix(u_glow1, u_glow2, 0.5 + 0.5 * sin((t + u_time * 0.02) * 6.28318));
+  // t: 0..1
+  vec3 base  = mix(u_accent2, u_accent, smoothstep(0.1, 0.9, t));
+  // glaze: subtle periodic shimmer (u_phase wraps 0..1 => continuous)
+  float s = 0.5 + 0.5 * sin((t + u_phase) * 6.28318);
+  vec3 glaze = mix(u_glow1, u_glow2, s);
+
   vec3 col = mix(u_bg, base, 0.55);
   col = mix(col, glaze, 0.22);
   return col;
@@ -63,14 +73,7 @@ void main() {
   vec2 uv = (v_uv - 0.5);
   uv.x *= u_resolution.x / u_resolution.y;
 
-  // ultra slow drift
-  float drift = 0.00055;
-  vec2 c0 = u_center + vec2(
-    drift * cos(u_time * 0.06),
-    drift * sin(u_time * 0.047)
-  );
-
-  // zoom
+  vec2 c0 = u_center;
   vec2 z0 = uv / u_zoom;
 
   // Mandelbrot
@@ -99,9 +102,8 @@ void main() {
   // inner area
   float inside = step(float(u_iter - 1), it);
 
-  // very subtle color cycling
-  float phase = u_time * 0.012;
-  vec3 col = palette(fract(t + phase));
+  // subtle cyc: use u_phase rather than raw time (safe looping)
+  vec3 col = palette(fract(t + u_phase));
 
   // inside is darker (blend into bg)
   col = mix(col, u_bg * 0.9, inside);
@@ -115,7 +117,6 @@ void main() {
 `;
 
 type Props = {
-  /** show only when this returns true */
   enabled?: boolean;
 
   /** 0..1; typical 0.05–0.10 */
@@ -124,11 +125,8 @@ type Props = {
   /** start zoom (bigger = further away) */
   baseZoom?: number;
 
-  /** smaller = slower zoom-in */
+  /** smaller = slower zoom-in (only used in zoomMode="exp") */
   zoomSpeed?: number;
-
-  /** wrap time to avoid float precision drift */
-  timeWrapSeconds?: number;
 
   /** loop duration for log-zoom */
   zoomLoopSeconds?: number;
@@ -148,6 +146,9 @@ type Props = {
   /** cap FPS for perf (background doesn't need 60fps) */
   targetFps?: number;
 
+  /** palette phase speed multiplier (cycles per second) */
+  phaseSpeed?: number;
+
   /** css vars to read (defaults match your globals) */
   vars?: Partial<{
     bg: string; // --bg-root
@@ -161,15 +162,15 @@ type Props = {
 export default function FractalBackground({
   enabled = true,
   opacity = 0.085,
-  baseZoom = 1.6,
-  zoomSpeed = 0.010,
-  timeWrapSeconds = 600,
+  baseZoom = 2.6,
+  zoomSpeed = 0.0,
   zoomLoopSeconds = 240,
   zoomAmplitude = 0.45,
   zoomMode = "loop",
-  iterations = 150,
-  maxDevicePixelRatio = 1.5,
+  iterations = 140,
+  maxDevicePixelRatio = 1.25,
   targetFps = 24,
+  phaseSpeed = 0.012,
   vars,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -182,7 +183,6 @@ export default function FractalBackground({
     buf: WebGLBuffer;
     uniforms: {
       uResolution: WebGLUniformLocation | null;
-      uTime: WebGLUniformLocation | null;
       uOpacity: WebGLUniformLocation | null;
       uCenter: WebGLUniformLocation | null;
       uZoom: WebGLUniformLocation | null;
@@ -192,6 +192,7 @@ export default function FractalBackground({
       uAccent2: WebGLUniformLocation | null;
       uGlow1: WebGLUniformLocation | null;
       uGlow2: WebGLUniformLocation | null;
+      uPhase: WebGLUniformLocation | null;
     };
     readTokenColors: () => void;
     resize: () => void;
@@ -202,10 +203,10 @@ export default function FractalBackground({
   const releaseRafRef = useRef<(() => void) | null>(null);
   const handleVisibilityRef = useRef<(() => void) | null>(null);
 
-  const lastTokenReadRef = useRef(0);
   const startRef = useRef(0);
+  const lastTokenReadSecRef = useRef(0);
 
-  // FPS throttling
+  // FPS throttle
   const lastFrameMsRef = useRef(0);
   const targetFpsRef = useRef(targetFps);
 
@@ -213,15 +214,16 @@ export default function FractalBackground({
     opacity,
     baseZoom,
     zoomSpeed,
-    timeWrapSeconds,
     zoomLoopSeconds,
     zoomAmplitude,
     zoomMode,
     iterations,
+    phaseSpeed,
   });
 
   const varsRef = useRef(vars);
   const dprCapRef = useRef(maxDevicePixelRatio);
+
   const lowQualityUntilRef = useRef(0);
   const lowQualityRef = useRef(false);
   const reducedRef = useRef(false);
@@ -281,11 +283,11 @@ export default function FractalBackground({
 
     // uniforms
     const uResolution = gl.getUniformLocation(prog, "u_resolution");
-    const uTime = gl.getUniformLocation(prog, "u_time");
     const uOpacity = gl.getUniformLocation(prog, "u_opacity");
     const uCenter = gl.getUniformLocation(prog, "u_center");
     const uZoom = gl.getUniformLocation(prog, "u_zoom");
     const uIter = gl.getUniformLocation(prog, "u_iter");
+    const uPhase = gl.getUniformLocation(prog, "u_phase");
 
     const uBg = gl.getUniformLocation(prog, "u_bg");
     const uAccent = gl.getUniformLocation(prog, "u_accent");
@@ -321,8 +323,6 @@ export default function FractalBackground({
 
     const resize = () => {
       const baseDpr = Math.min(window.devicePixelRatio || 1, dprCapRef.current);
-
-      // low-quality: clamp to <= 1.0 (don't go super blurry)
       const dpr = lowQualityRef.current ? Math.min(1.0, baseDpr) : baseDpr;
 
       const w = Math.floor(canvas.clientWidth * dpr);
@@ -347,7 +347,6 @@ export default function FractalBackground({
       buf,
       uniforms: {
         uResolution,
-        uTime,
         uOpacity,
         uCenter,
         uZoom,
@@ -357,40 +356,35 @@ export default function FractalBackground({
         uAccent2,
         uGlow1,
         uGlow2,
+        uPhase,
       },
       readTokenColors,
       resize,
     };
 
     startRef.current = performance.now();
-    lastTokenReadRef.current = 0;
+    lastTokenReadSecRef.current = 0;
     lastFrameMsRef.current = 0;
 
     resize();
     readTokenColors();
 
     gl.uniform1f(uOpacity, clamp(paramsRef.current.opacity, 0, 1));
-    gl.uniform2f(uCenter, centerX, centerY);
     gl.uniform1i(uIter, Math.max(40, Math.min(320, paramsRef.current.iterations)));
 
-    // Set initial filter once; loop can override during low-quality windows.
+    // Initial filter once; loop toggles it during low-quality windows.
     canvas.style.filter = baseFilter;
 
     const drawFrame = (now: number) => {
-      const tRaw = (now - startRef.current) / 1000;
+      const tSec = (now - startRef.current) / 1000;
 
-      const { baseZoom, zoomSpeed, zoomMode, zoomLoopSeconds, zoomAmplitude, timeWrapSeconds } =
-        paramsRef.current;
-
-      const reducedMotion = reducedRef.current;
-      const t = reducedMotion ? 0.0 : tRaw % timeWrapSeconds;
-
-      // re-read colors ~1x/sec to follow theme flips (day/night)
-      if (!reducedMotion && tRaw - lastTokenReadRef.current > 1.0) {
+      // Follow theme changes ~1x/sec
+      if (!reducedRef.current && tSec - lastTokenReadSecRef.current > 1.0) {
         glRef.current?.readTokenColors();
-        lastTokenReadRef.current = tRaw;
+        lastTokenReadSecRef.current = tSec;
       }
 
+      // Low-quality windows (scroll/gesture)
       const lowQuality = performance.now() < lowQualityUntilRef.current;
       if (lowQuality !== lowQualityRef.current) {
         lowQualityRef.current = lowQuality;
@@ -398,26 +392,42 @@ export default function FractalBackground({
         glRef.current?.resize();
       }
 
+      // Continuous, infinite, periodic drift via JS phases (NO wrap discontinuity)
+      const TAU = Math.PI * 2.0;
+      const drift = 0.00055;
+      const phx = (tSec * 0.06) % TAU;
+      const phy = (tSec * 0.047) % TAU;
+
+      const cX = centerX + drift * Math.cos(phx);
+      const cY = centerY + drift * Math.sin(phy);
+      gl.uniform2f(uCenter, cX, cY);
+
+      // Zoom (looped by modulo on phase => no jumps)
+      const { baseZoom, zoomMode, zoomSpeed, zoomLoopSeconds, zoomAmplitude } = paramsRef.current;
+
       let z = baseZoom;
-      if (!reducedMotion) {
+      if (!reducedRef.current) {
         if (zoomMode === "fixed") {
           z = baseZoom;
         } else if (zoomMode === "exp") {
-          z = baseZoom * Math.exp(zoomSpeed * tRaw);
+          // NOTE: exp can run into extreme zoom over long time.
+          // Prefer "loop" for true "forever" behavior.
+          z = baseZoom * Math.exp(zoomSpeed * tSec);
         } else {
-          const phase = (t / zoomLoopSeconds) * Math.PI * 2.0;
-          z = baseZoom * Math.exp(zoomAmplitude * Math.sin(phase));
+          const tLoop = ((tSec % zoomLoopSeconds) / zoomLoopSeconds) * TAU; // 0..TAU
+          z = baseZoom * Math.exp(zoomAmplitude * Math.sin(tLoop));
         }
       }
 
-      gl.uniform1f(uTime, reducedMotion ? 0.0 : t);
-      gl.uniform1f(uZoom, z);
+      // Palette phase: 0..1 loop, safe + continuous at wrap for sin/cos usage
+      const phase = ((tSec * paramsRef.current.phaseSpeed) % 1 + 1) % 1;
+      gl.uniform1f(uPhase, phase);
 
+      gl.uniform1f(uZoom, z);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
 
     const loop = (now: number) => {
-      // FPS throttle: background doesn't need 60fps
       const fps = Math.max(8, Math.min(60, targetFpsRef.current || 24));
       const minDt = 1000 / fps;
 
@@ -433,10 +443,8 @@ export default function FractalBackground({
     const stopLoop = () => {
       if (!rafActiveRef.current) return;
       rafActiveRef.current = false;
-
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
-
       releaseRafRef.current?.();
       releaseRafRef.current = null;
     };
@@ -468,7 +476,7 @@ export default function FractalBackground({
     const releaseScroll = registerListener("window.scroll:fractal-low-quality");
     window.addEventListener("scroll", handleScroll, { passive: true });
 
-    // first frame + start
+    // First frame + start
     drawFrame(performance.now());
     startLoop();
 
@@ -499,11 +507,11 @@ export default function FractalBackground({
       opacity,
       baseZoom,
       zoomSpeed,
-      timeWrapSeconds,
       zoomLoopSeconds,
       zoomAmplitude,
       zoomMode,
       iterations,
+      phaseSpeed,
     };
 
     const glState = glRef.current;
@@ -512,16 +520,7 @@ export default function FractalBackground({
     const { gl, uniforms } = glState;
     gl.uniform1f(uniforms.uOpacity, clamp(opacity, 0, 1));
     gl.uniform1i(uniforms.uIter, Math.max(40, Math.min(320, iterations)));
-  }, [
-    opacity,
-    baseZoom,
-    zoomSpeed,
-    timeWrapSeconds,
-    zoomLoopSeconds,
-    zoomAmplitude,
-    zoomMode,
-    iterations,
-  ]);
+  }, [opacity, baseZoom, zoomSpeed, zoomLoopSeconds, zoomAmplitude, zoomMode, iterations, phaseSpeed]);
 
   useEffect(() => {
     varsRef.current = vars;
@@ -537,11 +536,11 @@ export default function FractalBackground({
     targetFpsRef.current = targetFps;
   }, [targetFps]);
 
-  // keep your existing reduced-motion wiring intact (currently always false in your code)
+  // keep your reduced-motion wiring; you can set this to true if you want to hard-disable animation
   useEffect(() => {
     reducedRef.current = false;
     handleVisibilityRef.current?.();
-  }, [false]);
+  }, []);
 
   if (!enabled) return null;
 
@@ -551,7 +550,7 @@ export default function FractalBackground({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 0, // ✅ always behind UI
+        zIndex: 0, // ✅ stable: background layer; keep main content at zIndex: 1
         pointerEvents: "none",
       }}
     >
@@ -561,7 +560,7 @@ export default function FractalBackground({
           width: "100%",
           height: "100%",
           display: "block",
-          // ✅ do not hardcode filter here; loop toggles it for low-quality mode
+          // loop toggles filter for low-quality windows
           filter: "none",
           opacity: 1,
         }}
