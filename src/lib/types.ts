@@ -110,7 +110,7 @@ export type DreamSession = {
     model?: string;
     usage?: Json;
     title?: string;
-    recommended_directions?: { slug: string; reason: string }[];
+    recommended_directions?: { slug: string; why?: string; reason?: string }[];
   } | null;
   status: string;
   created_at: string;

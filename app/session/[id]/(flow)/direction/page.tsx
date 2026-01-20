@@ -18,7 +18,7 @@ import { CatalogService } from "@/src/services/CatalogService";
 import { fetchFrameLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
 
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
-type RecommendedDirection = { slug: string; reason?: string };
+type RecommendedDirection = { slug: string; why?: string; reason?: string };
 
 function safeStringArray(x: unknown): string[] {
   if (!Array.isArray(x)) return [];
@@ -39,9 +39,12 @@ function safeFrameRecommendations(x: unknown): RecommendedDirection[] {
     }
     if (!item || typeof item !== "object") continue;
     const slug = (item as any).slug;
-    const reason = (item as any).reason;
-    if (typeof slug === "string" && slug.trim()) {
-      out.push({ slug: slug.trim(), reason: typeof reason === "string" ? reason : undefined });
+    const why = (item as any).why ?? (item as any).reason;
+     if (typeof slug === "string" && slug.trim()) {
+      out.push({
+        slug: slug.trim(),
+        why: typeof why === "string" ? why : undefined,
+      });
     }
   }
   return out;
@@ -148,8 +151,10 @@ export default function DirectionPage() {
 
       try {
         const frameLatest = await fetchFrameLatestWithPayloadAndId(supabase, uid, sessionId);
+        // Canonical first: recommended_directions (object[] with why).
+        // Fallback: recommended_slugs (string[] without why).
         const recSource =
-          frameLatest?.payload?.recommended_slugs ?? frameLatest?.payload?.recommended_directions;
+          frameLatest?.payload?.recommended_directions ?? frameLatest?.payload?.recommended_slugs;
         const frameRecs = safeFrameRecommendations(recSource).slice(0, 3);
         setRecommendedRaw(frameRecs);
         return;
@@ -272,9 +277,10 @@ export default function DirectionPage() {
     const isBusy = busySlug === d.slug;
 
     // attach reason if we have it (from frame payload)
-    const reason =
+    const why =
       (opts?.recommended
-        ? recommendedRaw.find((r) => r.slug === d.slug)?.reason
+        ? (recommendedRaw.find((r) => r.slug === d.slug)?.why ??
+            recommendedRaw.find((r) => r.slug === d.slug)?.reason)
         : undefined) ?? "";
 
     return (
@@ -300,7 +306,7 @@ export default function DirectionPage() {
 
           <div className={styles.title}>{d.title}</div>
           {micro ? <div className={styles.desc}>{micro}</div> : null}
-          {opts?.recommended && reason ? <div className={styles.desc}>{reason}</div> : null}
+          {opts?.recommended && why ? <div className={styles.desc}>{why}</div> : null}
         </div>
 
         <div className={styles.actions}>

@@ -40,7 +40,11 @@ function isCanonicalFrameReady(payload: any): boolean {
   if (!payload || typeof payload !== "object") return false;
   const titleOk = typeof payload.title === "string" && payload.title.trim().length > 0;
   const framingOk = typeof payload.framing_text === "string" && payload.framing_text.trim().length > 0;
-  const recOk = Array.isArray(payload.recommended_slugs) && payload.recommended_slugs.length >= 2;
+  // Ready if we have *either* canonical object recs or legacy slugs.
+  // Do not require a minimum count higher than 1; UI can render 0–3.
+  const recOk =
+    (Array.isArray(payload.recommended_directions) && payload.recommended_directions.length >= 1) ||
+    (Array.isArray(payload.recommended_slugs) && payload.recommended_slugs.length >= 1);
   return titleOk && framingOk && recOk;
 }
 
@@ -174,8 +178,10 @@ export default function FramePage() {
   const recommendations = useMemo(() => {
     const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
 
-    // Canonical: recommended_slugs (string[])
-    const recSource = frameLatest?.payload?.recommended_slugs ?? frameLatest?.payload?.recommended_directions;
+    // Canonical first: recommended_directions (object[] with why).
+    // Fallback: recommended_slugs (string[] without why).
+    const recSource =
+      frameLatest?.payload?.recommended_directions ?? frameLatest?.payload?.recommended_slugs;
     const frameRecs = safeFrameRecommendations(recSource).slice(0, 3);
 
     return frameRecs

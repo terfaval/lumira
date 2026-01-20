@@ -16,7 +16,7 @@ import { CatalogService } from "@/src/services/CatalogService";
 import styles from "./summary.module.css";
 
 // Type for recommended direction records
-type RecommendedDirection = { slug: string; reason?: string };
+type RecommendedDirection = { slug: string; why?: string; reason?: string };
 
 // Keys for grouping directions, matching those on the direction selection page
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
@@ -37,9 +37,12 @@ function safeRecommendedDirections(x: unknown): RecommendedDirection[] {
   for (const item of x) {
     if (!item || typeof item !== "object") continue;
     const slug = (item as any).slug;
-    const reason = (item as any).reason;
+    const why = (item as any).why ?? (item as any).reason;
     if (typeof slug === "string" && slug.trim()) {
-      out.push({ slug: slug.trim(), reason: typeof reason === "string" ? reason : undefined });
+      out.push({
+        slug: slug.trim(),
+        why: typeof why === "string" ? why : undefined,
+      });
     }
   }
   return out;
