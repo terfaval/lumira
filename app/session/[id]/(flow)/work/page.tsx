@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Card } from "@/components/Card";
+import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
@@ -419,7 +420,14 @@ export default function WorkPage() {
     [directionBlocks, directionSlug, processNextPayload, rawDreamText, directionConfig, sessionId]
   );
 
-  if (loading) return <p style={{ color: "var(--text-muted)" }}>Betöltés…</p>;
+  if (loading) {
+    return (
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+        <LumiraLoader size={18} spinSeconds={8} tone="light" />
+        <span style={{ color: "var(--text-muted)" }}>Betöltés…</span>
+      </div>
+    );
+  }
 
   if (!directionSlug) {
     return (
@@ -447,9 +455,12 @@ export default function WorkPage() {
     >
       <div className="stack">
         {!currentBlock ? (
-          <p style={{ color: "var(--text-muted)" }}>
-            {loaded ? "Kártya generálása..." : "Betöltés..."}
-          </p>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+            <LumiraLoader size={18} spinSeconds={8} tone="light" />
+            <span style={{ color: "var(--text-muted)" }}>
+              {loaded ? "Kártya generálása..." : "Betöltés..."}
+            </span>
+          </div>
         ) : (
           <div className="stack">
             <BlockCard

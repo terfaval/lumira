@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Card } from "@/components/Card";
+import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { requireUserId } from "@/src/lib/db";
 import { supabase } from "@/src/lib/supabase/client";
@@ -80,30 +81,7 @@ export default function EveningRun() {
     }
   }
 
-  const Spinner = (
-    <>
-      <div
-        aria-label="Betöltés"
-        className="spinner"
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: "999px",
-          border: "2px solid var(--border)",
-          borderTopColor: "var(--text-muted)",
-          animation: "spin 0.9s linear infinite",
-          marginTop: 8,
-        }}
-      />
-      <style jsx>{`
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
-    </>
-  );
+  const Spinner = <LumiraLoader size={18} spinSeconds={8} tone="light" />;
 
   if (completed) {
     return (
@@ -121,13 +99,13 @@ export default function EveningRun() {
   return (
     <Shell title={card?.title ?? "Esti kártya"} space="evening">
       {loading ? (
-        Spinner
+        <div style={{ marginTop: 8 }}>{Spinner}</div>
       ) : (
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
 
           {!card ? (
-            Spinner
+            <div style={{ marginTop: 8 }}>{Spinner}</div>
           ) : steps.length === 0 ? (
             <Card className="stack-tight">
               {card.content?.goal_md && <p style={{ whiteSpace: "pre-wrap" }}>{card.content.goal_md}</p>}

@@ -10,6 +10,7 @@ import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes"
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { Pill } from "@/components/Pill";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import styles from "./direction.module.css";
 import { huTagDir } from "@/src/lib/tags/dirTagsHu";
 import { registerListener } from "@/src/lib/perfDebug";
@@ -346,7 +347,10 @@ export default function DirectionPage() {
         </button>
 
         {loading ? (
-          <div className={styles.loading}>Betöltés...</div>
+          <div className={styles.loading} style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+            <LumiraLoader size={42} spinSeconds={10} tone="light" />
+            <span>Betöltés...</span>
+          </div>
         ) : (
           <div className={styles.stack}>
             {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}

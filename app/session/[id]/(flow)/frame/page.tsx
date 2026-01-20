@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { supabase } from "@/src/lib/supabase/client";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
@@ -210,7 +211,10 @@ export default function FramePage() {
   if (loading || !latestLoaded) {
     return (
       <div className="stack">
-        <p style={{ color: "var(--text-muted)" }}>Betöltés…</p>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+          <LumiraLoader size={18} spinSeconds={8} tone="light" />
+          <span style={{ color: "var(--text-muted)" }}>Betöltés…</span>
+        </div>
       </div>
     );
   }
@@ -221,7 +225,6 @@ export default function FramePage() {
         {framingReady ? (
           <>
             {framingTitle ? <h1 className="frame-title">{framingTitle}</h1> : null}
-            <div style={{ whiteSpace: "pre-wrap" }}>{framingText}</div>
 
             <div className="stack-tight">
               <p className="section-title">Válassz egy irányt, ha tovább dolgoznál az álommal</p>
@@ -246,7 +249,9 @@ export default function FramePage() {
                     >
                       <div className="direction-card-inner">
                         <div className="direction-card-title">{d.title}</div>
-                        <div className="direction-card-body">{d.content?.micro_description ?? d.description}</div>
+                        <div className="direction-card-body">
+                          {d.reason || d.description}
+                        </div>
                       </div>
                     </GlassCardSurface>
                   </button>

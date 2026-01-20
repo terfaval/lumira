@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
+import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
@@ -422,30 +423,8 @@ export default function EveningLanding() {
     );
   }
 
-  const Spinner = (
-    <>
-      <div
-        aria-label="Betöltés"
-        className="spinner"
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: "999px",
-          border: "2px solid var(--border)",
-          borderTopColor: "var(--text-muted)",
-          animation: "spin 0.9s linear infinite",
-          marginTop: 8,
-        }}
-      />
-      <style jsx>{`
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
-    </>
-  );
+  const Spinner = <LumiraLoader size={42} spinSeconds={10} tone="light" />;
+  const InlineLoader = <LumiraLoader size={18} spinSeconds={8} tone="light" />;
 
   return (
     <Shell
@@ -482,7 +461,7 @@ export default function EveningLanding() {
       }
     >
       {loading ? (
-        Spinner
+        <div style={{ marginTop: 8 }}>{InlineLoader}</div>
       ) : (
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}

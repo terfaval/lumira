@@ -38,6 +38,12 @@ export async function jobGenerateFrame(args: {
     return { frame_version_id: null, skipped: false, ok: false, recommended_directions: [] };
   }
 
+  const latentWhyMap = buildWhyMapFromLatentCandidates(latentLatest?.payload?.direction_candidates);
+  const jobWhyMap =
+    latentWhyMap.size === 0
+      ? await fetchLatestWhyMapFromJobs(supabase, event.user_id, event.session_id)
+      : new Map<string, string>();
+
   // NOTE: v0 fallback is OFF, so dummy UUID is safe.
   // TODO(if allowFallbackWithoutLatent becomes true):
   // Do NOT use a constant dummy latent id, or you'll get false idempotency collisions.
@@ -109,22 +115,27 @@ export async function jobGenerateFrame(args: {
     const recommended_directions = payload.recommended_slugs.map((slug) => {
       const fromRec = recommended.find((r) => r.slug === slug);
       const fromCatalog = catalog.find((row) => row.slug === slug);
+      const why =
+        latentWhyMap.get(slug) ??
+        (latentWhyMap.size === 0 ? jobWhyMap.get(slug) : undefined) ??
+        fromRec?.why ??
+        "Javasolt feldolgoz\u00c3\u00b3si ir\u00c3\u00a1ny a k\u00c3\u00b6vetkez\u00c5\u0091 l\u00c3\u00a9pcs\u00c5\u0091h\u00c3\u00b6z.";
       return {
         slug,
         title: fromRec?.title ?? fromCatalog?.title ?? slug,
-        why: fromRec?.why ?? "Javasolt feldolgozási irány a következő lépéshez.",
+        why,
       };
     });
 
     payload.meta = {
-  source_observation_version_id: obs.observation_version_id,
-  source_latent_version_id: latent_version_id,
-  source_session_index_version_id: idx.session_index_version_id,
-  ...(payload.meta ?? {}),
-  writer: "jobGenerateFrame:v0-canonical",
-  schema: "frame_v0",
-  build: process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
-};
+      source_observation_version_id: obs.observation_version_id,
+      source_latent_version_id: latent_version_id,
+      source_session_index_version_id: idx.session_index_version_id,
+      ...(payload.meta ?? {}),
+      writer: "jobGenerateFrame:v0-canonical",
+      schema: "frame_v0",
+      build: process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
+    };
 
     if (
       payload &&
@@ -138,6 +149,11 @@ export async function jobGenerateFrame(args: {
         console.error(msg, payload);
       }
     }
+
+    payload.recommended_directions = recommended_directions.map((r) => ({
+      slug: r.slug,
+      why: r.why,
+    }));
 
     const frame = await insertFrameVersionIfMissing(supabase, {
       session_id: event.session_id,
@@ -187,5 +203,53 @@ export async function jobGenerateFrame(args: {
     });
 
     return { frame_version_id: null, skipped: false, ok: false, recommended_directions: [] };
+  }
+}
+
+function buildWhyMapFromLatentCandidates(candidates: any): Map<string, string> {
+  if (!Array.isArray(candidates)) return new Map();
+  const map = new Map<string, string>();
+  for (const c of candidates) {
+    const slug = typeof c?.slug === "string" ? c.slug.trim() : "";
+    const why = typeof c?.why === "string" ? c.why.trim() : "";
+    if (!slug || !why) continue;
+    map.set(slug, why);
+  }
+  return map;
+}
+
+function buildWhyMapFromRecommendations(recs: any): Map<string, string> {
+  if (!Array.isArray(recs)) return new Map();
+  const map = new Map<string, string>();
+  for (const r of recs) {
+    const slug = typeof r?.slug === "string" ? r.slug.trim() : "";
+    const why = typeof r?.why === "string" ? r.why.trim() : "";
+    if (!slug || !why) continue;
+    map.set(slug, why);
+  }
+  return map;
+}
+
+async function fetchLatestWhyMapFromJobs(
+  supabase: SupabaseClient,
+  user_id: string,
+  session_id: string
+): Promise<Map<string, string>> {
+  try {
+    const res = await supabase
+      .from("domain_jobs")
+      .select("output_ref,finished_at")
+      .eq("user_id", user_id)
+      .eq("session_id", session_id)
+      .eq("job_type", "generate_frame")
+      .eq("status", "success")
+      .order("finished_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (res.error || !res.data) return new Map();
+    return buildWhyMapFromRecommendations(res.data.output_ref?.recommended_directions);
+  } catch {
+    return new Map();
   }
 }

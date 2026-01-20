@@ -1,6 +1,7 @@
 "use client";
 
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 
 export function FlowLoadingOverlay({
   open,
@@ -16,7 +17,8 @@ export function FlowLoadingOverlay({
   return (
     <div className="flow-overlay" role="status" aria-live="polite" aria-label={title}>
       <GlassCardSurface className="flow-overlay-card" variant="soft" paper="evening">
-        <div className="spinner" aria-hidden="true" />
+        <LumiraLoader size={42} spinSeconds={10} tone="light" />
+
         <div className="flow-overlay-text">
           <div className="flow-overlay-title">{title}</div>
           <div className="flow-overlay-subtitle">{subtitle}</div>
@@ -44,16 +46,6 @@ export function FlowLoadingOverlay({
           align-items: center;
         }
 
-        .spinner {
-          width: 22px;
-          height: 22px;
-          border-radius: 999px;
-          border: 2px solid rgba(255, 255, 255, 0.25);
-          border-top-color: var(--accent);
-          animation: spin 0.9s linear infinite;
-          flex: 0 0 auto;
-        }
-
         .flow-overlay-text {
           display: grid;
           gap: var(--space-1);
@@ -69,12 +61,6 @@ export function FlowLoadingOverlay({
           color: var(--text-muted);
           font-size: 13px;
           line-height: 1.5;
-        }
-
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
         }
       `}</style>
     </div>

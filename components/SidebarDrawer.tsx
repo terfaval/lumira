@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useCallback, useRef, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { registerListener } from "@/src/lib/perfDebug";
 
 type Space = "dream" | "evening";
@@ -207,7 +208,10 @@ export function SidebarDrawer({
             </div>
 
             {loading ? (
-              <div className="drawer-muted">Betöltés…</div>
+              <div className="drawer-muted" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+                <LumiraLoader size={18} spinSeconds={8} tone="light" />
+                <span>Betöltés…</span>
+              </div>
             ) : err ? (
               <div className="drawer-error">Nem sikerült betölteni: {err}</div>
             ) : recent.length === 0 ? (

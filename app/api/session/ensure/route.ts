@@ -5,10 +5,12 @@ import { createDomainEvent } from "@/src/db/repositories/eventRepo";
 import { insertMaterialSnapshotIfMissing } from "@/src/db/repositories/materialRepo";
 import { materialHashFromPayload } from "@/src/orchestration/idempotency/materialHash";
 import { jobExtractObservation } from "@/src/orchestration/jobs/jobExtractObservation";
+import { jobExtractAnchors } from "@/src/orchestration/jobs/jobExtractAnchors";
 import { jobBuildSessionIndexFromObservationJob } from "@/src/orchestration/jobs/jobBuildSessionIndexFromObservation";
 import { jobUpdateLatent } from "@/src/orchestration/jobs/jobUpdateLatent";
 import { jobGenerateFrame } from "@/src/orchestration/jobs/jobGenerateFrame";
 import {
+  fetchAnchorLatestWithPayloadAndId,
   fetchFrameLatestWithPayloadAndId,
   fetchLatentLatestWithPayloadAndId,
   fetchObservationLatestWithPayloadAndId,
@@ -19,6 +21,7 @@ type EnsureBody = {
   session_id: string;
   run?: {
     observe?: boolean;
+    anchors?: boolean;
     session_index?: boolean;
     latent?: boolean;
     frame?: boolean;
@@ -46,6 +49,7 @@ export async function POST(req: Request) {
   if (!session_id) return NextResponse.json({ error: "session_id_required" }, { status: 400 });
 
   const runObserve = body.run?.observe !== false;
+  const runAnchors = body.run?.anchors !== false;
   const runSessionIndex = body.run?.session_index !== false;
   const runLatent = body.run?.latent !== false;
   const runFrame = body.run?.frame !== false;
@@ -84,6 +88,7 @@ export async function POST(req: Request) {
   });
 
   let observation_version_id: string | null = null;
+  let anchor_version_id: string | null = null;
   let session_index_version_id: string | null = null;
   let latent_version_id: string | null = null;
   let frame_version_id: string | null = null;
@@ -100,6 +105,19 @@ export async function POST(req: Request) {
   if (!observation_version_id) {
     const latest = await fetchObservationLatestWithPayloadAndId(supabase, user_id, session_id);
     observation_version_id = latest?.observation_version_id ?? null;
+  }
+
+  if (runAnchors) {
+    const anchorRes = await jobExtractAnchors({ supabase, event: { id: event.id, user_id, session_id }, material_hash });
+    anchor_version_id = anchorRes.anchor_version_id;
+  } else {
+    const latest = await fetchAnchorLatestWithPayloadAndId(supabase, user_id, session_id);
+    anchor_version_id = latest?.anchor_version_id ?? null;
+  }
+
+  if (!anchor_version_id) {
+    const latest = await fetchAnchorLatestWithPayloadAndId(supabase, user_id, session_id);
+    anchor_version_id = latest?.anchor_version_id ?? null;
   }
 
   if (runSessionIndex) {
@@ -178,6 +196,7 @@ export async function POST(req: Request) {
     session_id,
     material_hash,
     observation_version_id,
+    anchor_version_id,
     session_index_version_id,
     latent_version_id,
     frame_version_id,

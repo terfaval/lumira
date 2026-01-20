@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
@@ -302,7 +303,10 @@ export default function GlossaryPage() {
             </div>
           )}
           {busy ? (
-            <div>Betöltés…</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+              <LumiraLoader size={18} spinSeconds={8} tone="light" />
+              <span>Betöltés…</span>
+            </div>
           ) : (
             <p style={{ color: "var(--text-muted)" }}>
               Jelenleg {suggestions.length} javasolt elem található. Legalább 10 elem szükséges az álomszótár
@@ -480,7 +484,10 @@ export default function GlossaryPage() {
             </select>
           </div>
           {busy && items.length === 0 ? (
-            <div>Betöltés…</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+              <LumiraLoader size={18} spinSeconds={8} tone="light" />
+              <span>Betöltés…</span>
+            </div>
           ) : filteredItems.length === 0 ? (
             <p style={{ color: "var(--text-muted)" }}>Nincs olyan elem, amely megfelel a szűrésnek.</p>
           ) : (

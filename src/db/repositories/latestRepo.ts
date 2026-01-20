@@ -26,6 +26,31 @@ export async function fetchObservationLatestWithPayloadAndId(
   return { observation_version_id: ver.data.id, payload: ver.data.payload };
 }
 
+export async function fetchAnchorLatestWithPayloadAndId(
+  supabase: SupabaseClient,
+  user_id: string,
+  session_id: string
+): Promise<{ anchor_version_id: string; payload: any } | null> {
+  const latest = await supabase
+    .from("anchor_latest")
+    .select("anchor_version_id")
+    .eq("session_id", session_id)
+    .eq("user_id", user_id)
+    .single();
+
+  if (latest.error) return null;
+
+  const ver = await supabase
+    .from("anchor_versions")
+    .select("id,payload")
+    .eq("id", latest.data.anchor_version_id)
+    .eq("user_id", user_id)
+    .single();
+
+  if (ver.error) throw ver.error;
+  return { anchor_version_id: ver.data.id, payload: ver.data.payload };
+}
+
 export async function fetchSessionIndexLatestWithPayloadAndId(
   supabase: SupabaseClient,
   user_id: string,

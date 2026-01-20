@@ -1,6 +1,7 @@
 // src/orchestration/idempotency/jobKey.ts
 export type JobType =
   | "extract_observation"
+  | "extract_anchors"
   | "build_session_index"
   | "update_latent"
   | "generate_frame";

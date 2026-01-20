@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { requireUserId } from "@/src/lib/db";
 
 type DreamRawEntry = {
@@ -70,8 +71,9 @@ export function DreamRawPanel({
     };
   }, [entry, sessionId]);
 
+  const showLoading = loading && !displayEntry;
   const text =
-    loading && !displayEntry
+    showLoading
       ? "Betöltés…"
       : error
         ? null
@@ -86,7 +88,12 @@ export function DreamRawPanel({
     return (
       <div className={rootClass} aria-live="polite">
         {error ? <span style={{ color: "crimson" }}>Nem sikerült betölteni az álmot.</span> : null}
-        {!error ? text : null}
+        {!error && text ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+            {showLoading ? <LumiraLoader size={18} spinSeconds={8} tone="light" /> : null}
+            <span>{text}</span>
+          </span>
+        ) : null}
       </div>
     );
   }
@@ -94,7 +101,12 @@ export function DreamRawPanel({
   return (
     <GlassCardSurface className={rootClass} aria-live="polite" variant="soft" paper="plain">
       {error ? <span style={{ color: "crimson" }}>Nem sikerült betölteni az álmot.</span> : null}
-      {!error ? text : null}
+      {!error && text ? (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+          {showLoading ? <LumiraLoader size={18} spinSeconds={8} tone="light" /> : null}
+          <span>{text}</span>
+        </span>
+      ) : null}
     </GlassCardSurface>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
+import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { requireUserId } from "@/src/lib/db";
@@ -38,35 +39,12 @@ export default function SessionListPage() {
 
   const activeSessions = sessions.filter((s) => !s.archived_at && s.status !== "archived");
 
-  const Spinner = (
-    <>
-      <div
-        aria-label="Betöltés"
-        className="spinner"
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: "999px",
-          border: "2px solid var(--border)",
-          borderTopColor: "var(--text-muted)",
-          animation: "spin 0.9s linear infinite",
-          marginTop: 8,
-        }}
-      />
-      <style jsx>{`
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
-    </>
-  );
+  const Spinner = <LumiraLoader size={18} spinSeconds={8} tone="light" />;
 
   return (
     <Shell title="Folyamatban">
       {loading ? (
-        Spinner
+        <div style={{ marginTop: 8 }}>{Spinner}</div>
       ) : (
         <div style={{ display: "grid", gap: "var(--space-3)" }}>
           <p style={{ opacity: 0.8 }}>

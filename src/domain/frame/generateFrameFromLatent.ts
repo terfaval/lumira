@@ -15,6 +15,7 @@ export type FramePayloadV0 = {
   title: string;
   framing_text: string;
   recommended_slugs: string[];
+  recommended_directions?: Array<{ slug: string; why: string }>;
   meta?: {
     source_observation_version_id: string;
     source_latent_version_id: string;
