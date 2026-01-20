@@ -299,19 +299,19 @@ export default function GlossaryPage() {
       >
         <FullScreenLoadingOverlay open={showOverlay} />
         <div className="stack" style={{ width: "100%" }}>
-          {err && (
-            <div style={{ color: "crimson" }} role="alert">
-              {err}
-          )}
-          {busy ? null : (
-            </div>
-          ) : (
-            <p style={{ color: "var(--text-muted)" }}>
-              Jelenleg {suggestions.length} javasolt elem található. Legalább 10 elem szükséges az álomszótár
-              megnyitásához.
-            </p>
-          )}
-        </div>
+  {err ? (
+    <div style={{ color: "crimson" }} role="alert">
+      {err}
+    </div>
+  ) : null}
+
+  {!busy ? (
+    <p style={{ color: "var(--text-muted)" }}>
+      Jelenleg {suggestions.length} javasolt elem található. Legalább 10 elem szükséges az álomszótár
+      megnyitásához.
+    </p>
+  ) : null}
+</div>
       </Shell>
     );
   }
