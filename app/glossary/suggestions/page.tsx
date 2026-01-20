@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
-import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
@@ -92,6 +92,8 @@ export default function SuggestionsPage() {
     return true;
   });
 
+  const showOverlay = loading || (busy && items.length === 0);
+
   function beginEdit(item: GlossaryItem) {
     setEditingId(item.id);
     setEditName(item.name);
@@ -171,6 +173,7 @@ export default function SuggestionsPage() {
         </div>
       }
     >
+      <FullScreenLoadingOverlay open={showOverlay} />
       <div className="stack" style={{ width: "100%" }}>
         {err && (
           <div style={{ color: "crimson" }} role="alert">
@@ -211,12 +214,7 @@ export default function SuggestionsPage() {
             ))}
           </select>
         </div>
-        {busy && items.length === 0 ? (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-            <LumiraLoader size={18} spinSeconds={8} tone="light" />
-            <span>Betöltés…</span>
-          </div>
-        ) : filteredItems.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <p style={{ color: "var(--text-muted)" }}>Nincs olyan javaslat, amely megfelel a szűrésnek.</p>
         ) : (
           <ul

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Card } from "@/components/Card";
-import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
@@ -110,6 +110,9 @@ export default function WorkPage() {
     );
     return sorted[sorted.length - 1];
   }, [directionBlocks, latestWorkVersionId]);
+
+  const showBlocker = !currentBlock;
+  const blockerTitle = loaded ? "Kártya generálása..." : "Betöltés...";
 
   const load = useCallback(async () => {
     setErr(null);
@@ -421,12 +424,7 @@ export default function WorkPage() {
   );
 
   if (loading) {
-    return (
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-        <LumiraLoader size={18} spinSeconds={8} tone="light" />
-        <span style={{ color: "var(--text-muted)" }}>Betöltés…</span>
-      </div>
-    );
+    return <FullScreenLoadingOverlay open title="Betöltés…" />;
   }
 
   if (!directionSlug) {
@@ -453,15 +451,9 @@ export default function WorkPage() {
         paddingBlock: 8,
       }}
     >
+      <FullScreenLoadingOverlay open={showBlocker} title={blockerTitle} />
       <div className="stack">
-        {!currentBlock ? (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-            <LumiraLoader size={18} spinSeconds={8} tone="light" />
-            <span style={{ color: "var(--text-muted)" }}>
-              {loaded ? "Kártya generálása..." : "Betöltés..."}
-            </span>
-          </div>
-        ) : (
+        {currentBlock ? (
           <div className="stack">
             <BlockCard
               key={`${currentBlock.id}-${currentBlock.content.user?.answered_at ?? ""}-${currentBlock.content.user?.answer ?? ""}`}
@@ -481,7 +473,7 @@ export default function WorkPage() {
               </Card>
             ) : null}
           </div>
-        )}
+        ) : null}
 
         {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
       </div>

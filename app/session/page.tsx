@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Shell } from "@/components/Shell";
-import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { requireUserId } from "@/src/lib/db";
@@ -39,12 +39,10 @@ export default function SessionListPage() {
 
   const activeSessions = sessions.filter((s) => !s.archived_at && s.status !== "archived");
 
-  const Spinner = <LumiraLoader size={18} spinSeconds={8} tone="light" />;
-
   return (
     <Shell title="Folyamatban">
       {loading ? (
-        <div style={{ marginTop: 8 }}>{Spinner}</div>
+        <FullScreenLoadingOverlay open />
       ) : (
         <div style={{ display: "grid", gap: "var(--space-3)" }}>
           <p style={{ opacity: 0.8 }}>

@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
-import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
@@ -276,6 +276,7 @@ export default function GlossaryPage() {
   // the glossary is hidden until more recurring elements appear.
   const readyForGate = !loading && !busy;
   const allowGlossary = suggestions.length >= 10;
+  const showOverlay = loading || (busy && items.length === 0 && suggestions.length === 0);
 
   if (readyForGate && !allowGlossary) {
     return (
@@ -296,16 +297,13 @@ export default function GlossaryPage() {
           </div>
         }
       >
+        <FullScreenLoadingOverlay open={showOverlay} />
         <div className="stack" style={{ width: "100%" }}>
           {err && (
             <div style={{ color: "crimson" }} role="alert">
               {err}
-            </div>
           )}
-          {busy ? (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-              <LumiraLoader size={18} spinSeconds={8} tone="light" />
-              <span>Betöltés…</span>
+          {busy ? null : (
             </div>
           ) : (
             <p style={{ color: "var(--text-muted)" }}>
@@ -336,6 +334,7 @@ export default function GlossaryPage() {
         </div>
       }
     >
+      <FullScreenLoadingOverlay open={showOverlay} />
       <div className="stack" style={{ width: "100%" }}>
         {err && (
           <div style={{ color: "crimson" }} role="alert">
@@ -483,12 +482,7 @@ export default function GlossaryPage() {
               <option value="name_desc">Név – Z-A</option>
             </select>
           </div>
-          {busy && items.length === 0 ? (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-              <LumiraLoader size={18} spinSeconds={8} tone="light" />
-              <span>Betöltés…</span>
-            </div>
-          ) : filteredItems.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <p style={{ color: "var(--text-muted)" }}>Nincs olyan elem, amely megfelel a szűrésnek.</p>
           ) : (
             <ul

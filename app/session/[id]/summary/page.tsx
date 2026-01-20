@@ -7,7 +7,7 @@ import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { Shell } from "@/components/Shell";
 import { Pill } from "@/components/Pill";
 import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
-import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { startDirection } from "@/src/lib/startDirection";
 import type { DreamSession, DirectionCardContent, WorkBlock } from "@/src/lib/types";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
@@ -482,12 +482,13 @@ export default function SessionSummary() {
         </div>
       ) : null} 
 
+      <FullScreenLoadingOverlay open={loading && !session} title="Betöltés…" />
+
       <div className={styles.summaryWrap}>
         {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}
 
         {!session ? (
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-            {loading ? <LumiraLoader size={18} spinSeconds={8} tone="light" /> : null}
             <span style={{ color: "var(--text-muted)" }}>{loading ? "Betöltés…" : "Nem található session."}</span>
           </div>
         ) : (

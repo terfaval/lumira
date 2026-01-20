@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { Card } from "@/components/Card";
-import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { requireUserId } from "@/src/lib/db";
 import { supabase } from "@/src/lib/supabase/client";
@@ -81,8 +81,6 @@ export default function EveningRun() {
     }
   }
 
-  const Spinner = <LumiraLoader size={18} spinSeconds={8} tone="light" />;
-
   if (completed) {
     return (
       <Shell title={card?.title ?? "Esti kártya"} space="evening">
@@ -99,13 +97,13 @@ export default function EveningRun() {
   return (
     <Shell title={card?.title ?? "Esti kártya"} space="evening">
       {loading ? (
-        <div style={{ marginTop: 8 }}>{Spinner}</div>
+        <FullScreenLoadingOverlay open />
       ) : (
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
 
           {!card ? (
-            <div style={{ marginTop: 8 }}>{Spinner}</div>
+            <FullScreenLoadingOverlay open />
           ) : steps.length === 0 ? (
             <Card className="stack-tight">
               {card.content?.goal_md && <p style={{ whiteSpace: "pre-wrap" }}>{card.content.goal_md}</p>}

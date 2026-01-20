@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { Card } from "@/components/Card";
-import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { isDirectionCardContent, type DreamSession, type WorkBlock } from "@/src/lib/types";
@@ -58,16 +58,14 @@ export default function SessionOverview() {
     })();
   }, [id]);
 
-  const Spinner = <LumiraLoader size={18} spinSeconds={8} tone="light" />;
-
   return (
     <Shell title="Álom összkép" space="dream">
       {loading ? (
-        <div style={{ marginTop: 8 }}>{Spinner}</div>
+        <FullScreenLoadingOverlay open />
       ) : err ? (
         <p style={{ color: "crimson" }}>{err}</p>
       ) : !session ? (
-        <div style={{ marginTop: 8 }}>{Spinner}</div>
+        <FullScreenLoadingOverlay open />
       ) : (
         <div className="stack">
           <div className="meta-block">
