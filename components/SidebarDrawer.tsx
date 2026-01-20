@@ -6,6 +6,7 @@ import { supabase } from "@/src/lib/supabase/client";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { registerListener } from "@/src/lib/perfDebug";
+import { requireUserId } from "@/src/lib/db";
 
 type Space = "dream" | "evening";
 
@@ -93,36 +94,37 @@ export function SidebarDrawer({
     setLoading(true);
     setErr(null);
     try {
+      const userId = await requireUserId();
+      
       const { data, error } = await supabase
-        .from("dream_session_summaries")
+        .from("dream_sessions")
         .select(
           `
-            session_id,
-            title,
-            dream_sessions:session_id (
-              created_at,
-              raw_dream_text
+            id,
+            created_at,
+            raw_dream_text,
+            dream_session_summaries (
+              title
             )
           `
         )
-        // ✅ order a dream_sessions.created_at alapján nem tud mindig közvetlenül, ezért:
-        // 1) nagyobb limit
-        // 2) kliensoldali rendezés
-        .limit(30);
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
 
       if (error) throw error;
 
       const rows: DreamRow[] = (data ?? [])
         .map((r: any) => ({
-          session_id: r.session_id,
-          title: r.title ?? null,
-          created_at: r.dream_sessions?.created_at ?? null,
-          raw_dream_text: r.dream_sessions?.raw_dream_text ?? null,
+          session_id: r.id,
+          title: Array.isArray(r.dream_session_summaries) ? (r.dream_session_summaries[0]?.title ?? null) : null,
+          created_at: r.created_at ?? null,
+          raw_dream_text: r.raw_dream_text ?? null,
         }))
         .filter((r) => typeof r.session_id === "string" && typeof r.created_at === "string");
 
-      rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
+      setRecent(rows);
+      
       setRecent(rows.slice(0, 10));
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Ismeretlen hiba");

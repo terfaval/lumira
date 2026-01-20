@@ -7,7 +7,7 @@ import { Card } from "@/components/Card";
 import { Shell } from "@/components/Shell";
 import { Pill } from "@/components/Pill";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
-import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import {
   fetchArchiveSessions,
   type ArchiveSessionSummary,
@@ -197,8 +197,6 @@ export default function ArchiveClient() {
     return ["vazlat", "erintett", "feldolgozott", "lezart"].filter((k) => set.has(k as any)) as ArchiveStatusFilter[];
   }, [summaries]);
 
-  const Spinner = <LumiraLoader size={18} spinSeconds={8} tone="light" />;
-
   return (
     <Shell
       title="Álomnapló"
@@ -234,6 +232,7 @@ export default function ArchiveClient() {
         </div>
       }
     >
+      <FullScreenLoadingOverlay open={isLoading} />
       <div className="stack">
         {error && <p style={{ color: "crimson" }}>{error}</p>}
 
@@ -248,15 +247,11 @@ export default function ArchiveClient() {
           />
         </div>
 
-        {isLoading ? (
-          <div className="stack" style={{ marginTop: 8 }}>
-            {Spinner}
-          </div>
-        ) : sorted.length === 0 ? (
+        {!isLoading && sorted.length === 0 ? (
           <Card muted>
             <p style={{ color: "var(--text-muted)" }}>Itt most nincs találat.</p>
           </Card>
-        ) : (
+        ) : !isLoading ? (
           <div className="archive-grid">
             {sorted.map((session) => {
               const computedStatus = getComputedStatus(session);
@@ -312,7 +307,7 @@ export default function ArchiveClient() {
               );
             })}
           </div>
-        )}
+        ) : null}
       </div>
 
       <style jsx>{`

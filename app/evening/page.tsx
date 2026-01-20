@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Shell } from "@/components/Shell";
-import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
@@ -423,9 +423,6 @@ export default function EveningLanding() {
     );
   }
 
-  const Spinner = <LumiraLoader size={42} spinSeconds={10} tone="light" />;
-  const InlineLoader = <LumiraLoader size={18} spinSeconds={8} tone="light" />;
-
   return (
     <Shell
       title="Álom előkészítő gyakorlatok"
@@ -461,7 +458,7 @@ export default function EveningLanding() {
       }
     >
       {loading ? (
-        <div style={{ marginTop: 8 }}>{InlineLoader}</div>
+        <FullScreenLoadingOverlay open />
       ) : (
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
@@ -518,7 +515,9 @@ export default function EveningLanding() {
 
           <div className="evening-grid">{orderedCards.map((c) => renderCardTile(c))}</div>
 
-          {openSlug && (
+          <FullScreenLoadingOverlay open={Boolean(openSlug && !openCard)} />
+
+          {openSlug && openCard && (
             <div
               className="flip-overlay"
               role="dialog"
@@ -539,24 +538,20 @@ export default function EveningLanding() {
               </button>
 
               <div className="flip-shell" style={computeGrowStyle(originRect, opening)}>
-                {!openCard ? (
-                  <div className="stack">{Spinner}</div>
-                ) : (
-                  <EveningCardFlip
-                    card={openCard}
-                    phaseLabel={PHASE_LABEL}
-                    intentLabel={INTENT_LABEL}
-                    getPhase={getPhase}
-                    getIntents={getIntents}
-                    intentToken={intentToken}
-                    phaseToken={phaseToken}
-                    huTag={huTag}
-                    onClose={closeOverlay}
-                    onSave={saveUsage}
-                    saving={finishing}
-                    error={err}
-                  />
-                )}
+                <EveningCardFlip
+                  card={openCard}
+                  phaseLabel={PHASE_LABEL}
+                  intentLabel={INTENT_LABEL}
+                  getPhase={getPhase}
+                  getIntents={getIntents}
+                  intentToken={intentToken}
+                  phaseToken={phaseToken}
+                  huTag={huTag}
+                  onClose={closeOverlay}
+                  onSave={saveUsage}
+                  saving={finishing}
+                  error={err}
+                />
               </div>
             </div>
           )}

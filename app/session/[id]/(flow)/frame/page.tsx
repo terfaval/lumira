@@ -230,7 +230,11 @@ export default function FramePage() {
       <div className="stack">
         {framingReady ? (
           <>
-            {framingTitle ? <h1 className="frame-title">{framingTitle}</h1> : null}
+            {framingText?.trim() ? (
+              <GlassCardSurface className="frame-framing" variant="soft" paper="evening">
+                <div className="frame-framing-text">{framingText}</div>
+              </GlassCardSurface>
+            ) : null}
 
             <div className="stack-tight">
               <p className="section-title">Válassz egy irányt, ha tovább dolgoznál az álommal</p>
@@ -312,6 +316,18 @@ export default function FramePage() {
           font-size: 1.35rem;
           font-weight: 800;
           letter-spacing: -0.01em;
+        }
+
+        .frame-framing {
+          margin: 0 0 var(--space-3) 0;
+          padding: var(--space-3);
+        }
+
+        .frame-framing-text {
+          color: var(--text-primary);
+          opacity: 0.92;
+          line-height: 1.55;
+          white-space: pre-wrap;
         }
 
         .direction-grid {

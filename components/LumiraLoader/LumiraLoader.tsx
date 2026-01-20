@@ -44,14 +44,16 @@ export function LumiraLoader({
           draggable={false}
         />
 
-        {/* Wrapper lets us separate eye "breath" from blink */}
+        {/* Eye: wrapper separates reading motion from blink and focus */}
         <div className="eyeWrap">
-          <img
-            src="/loading/lumira_loading_eye.svg"
-            alt=""
-            className="layer eye"
-            draggable={false}
-          />
+          <div className="eyeBlink">
+            <img
+              src="/loading/lumira_loading_eye.svg"
+              alt=""
+              className="layer eye"
+              draggable={false}
+            />
+          </div>
         </div>
       </div>
 
@@ -90,33 +92,45 @@ export function LumiraLoader({
           pointer-events: none;
         }
 
+        /* Explicit stacking so the eye always stays readable */
+        .aura {
+          z-index: 0;
+        }
+        .triangle {
+          z-index: 1;
+        }
+        .eyeWrap,
+        .eyeBlink,
+        .eye {
+          z-index: 2;
+        }
+
         /* ───────────────────────────────────────────── */
         /* Aura: glow + blur + pulse                      */
+        /* (slightly toned down so it won't wash the eye) */
         /* ───────────────────────────────────────────── */
 
         .aura {
-          opacity: 0.35;
+          opacity: 0.28;
           transform-origin: 50% 50%;
           will-change: transform, opacity, filter;
-          filter:
-            blur(1.4px)
-            drop-shadow(0 0 10px rgba(255, 255, 255, 0.22))
-            drop-shadow(0 0 22px rgba(255, 255, 255, 0.14));
+          filter: blur(1.1px) drop-shadow(0 0 10px rgba(255, 255, 255, 0.18))
+            drop-shadow(0 0 22px rgba(255, 255, 255, 0.1));
           animation: auraPulse 3.6s ease-in-out infinite;
         }
 
         @keyframes auraPulse {
           0% {
             transform: scale(0.985);
-            opacity: 0.22;
+            opacity: 0.2;
           }
           50% {
-            transform: scale(1.055);
-            opacity: 0.42;
+            transform: scale(1.06);
+            opacity: 0.4;
           }
           100% {
             transform: scale(0.985);
-            opacity: 0.22;
+            opacity: 0.2;
           }
         }
 
@@ -137,7 +151,8 @@ export function LumiraLoader({
         }
 
         /* ───────────────────────────────────────────── */
-        /* Triangle: micro-sway (NOT a spinner)           */
+        /* Triangle: micro-sway                           */
+        /* (slightly smaller so the "reading" stands out) */
         /* ───────────────────────────────────────────── */
 
         .triangle {
@@ -148,37 +163,64 @@ export function LumiraLoader({
 
         @keyframes triangleSway {
           0% {
-            transform: rotate(-7deg);
+            transform: rotate(-5deg);
           }
           50% {
-            transform: rotate(7deg);
+            transform: rotate(5deg);
           }
           100% {
-            transform: rotate(-7deg);
+            transform: rotate(-5deg);
           }
         }
 
         /* ───────────────────────────────────────────── */
-        /* Eye: subtle breath + rare blink                */
+        /* Eye: "reading" inner play                      */
+        /* - eyeWrap: saccades + occasional line return   */
+        /* - eyeBlink: rare blink                         */
+        /* - eye: subtle focus pulse                       */
+        /* Fibonacci-ish cycle lengths so it doesn't loop */
         /* ───────────────────────────────────────────── */
 
         .eyeWrap {
           transform-origin: 50% 50%;
           will-change: transform;
-          animation: eyeBreath 4.8s ease-in-out infinite;
+          animation: eyeRead 2.236s ease-in-out infinite;
         }
 
-        @keyframes eyeBreath {
-          0%,
+        @keyframes eyeRead {
+          0% {
+            transform: translate(0px, 0px);
+          }
+          10% {
+            transform: translate(1.2px, -0.2px);
+          }
+          20% {
+            transform: translate(0.4px, 0px);
+          }
+          32% {
+            transform: translate(1.8px, 0.1px);
+          }
+          44% {
+            transform: translate(0.9px, -0.1px);
+          }
+          58% {
+            transform: translate(2.2px, 0.2px);
+          }
+          72% {
+            transform: translate(1.3px, 0px);
+          }
+          /* “line return” */
+          78% {
+            transform: translate(-1.6px, 0.7px);
+          }
           100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.03);
+            transform: translate(0px, 0px);
           }
         }
 
-        .eye {
+        .eyeBlink {
+          position: absolute;
+          inset: 0;
           transform-origin: 50% 50%;
           will-change: transform, opacity;
           animation: eyeBlink 7.5s infinite;
@@ -201,12 +243,31 @@ export function LumiraLoader({
           }
         }
 
+        .eye {
+          transform-origin: 50% 50%;
+          will-change: transform, opacity;
+          animation: eyeFocus 1.618s ease-in-out infinite;
+        }
+
+        @keyframes eyeFocus {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.018);
+            opacity: 0.98;
+          }
+        }
+
         /* Reduce motion */
         @media (prefers-reduced-motion: reduce) {
           .sigil,
           .aura,
           .triangle,
           .eyeWrap,
+          .eyeBlink,
           .eye {
             animation: none !important;
           }
