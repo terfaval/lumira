@@ -66,10 +66,19 @@ export function LumiraLoader({
         }
 
         /* Default: világos megjelenés sötét háttérhez */
-        .tone-light {
+        .tone-light .triangle,
+        .tone-light .eye {
           filter: invert(1);
           opacity: 0.95;
         }
+
+        /* Aura already has a complex filter; we include invert in its chain */
+        .tone-light .aura {
+          /* keep aura glow/blend consistent in light tone */
+          filter: invert(1) blur(1.1px) drop-shadow(0 0 10px rgba(255, 255, 255, 0.18))
+            drop-shadow(0 0 22px rgba(255, 255, 255, 0.1));
+        }
+
 
         .sigil {
           position: absolute;
@@ -247,6 +256,12 @@ export function LumiraLoader({
           transform-origin: 50% 50%;
           will-change: transform, opacity;
           animation: eyeFocus 1.618s ease-in-out infinite;
+        }
+
+        .tone-light .eye {
+          /* invert first, THEN shadow -> shadow stays dark and gives contrast */
+          filter: invert(1) drop-shadow(0 0 8px rgba(0, 0, 0, 0.55))
+            drop-shadow(0 0 18px rgba(0, 0, 0, 0.35));
         }
 
         @keyframes eyeFocus {
