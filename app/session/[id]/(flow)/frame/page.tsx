@@ -250,7 +250,7 @@ export default function FramePage() {
                       <div className="direction-card-inner">
                         <div className="direction-card-title">{d.title}</div>
                         <div className="direction-card-body">
-                          {d.reason || d.description}
+                          {d.reason?.trim() ? d.reason : (d.content?.micro_description ?? d.description)}
                         </div>
                       </div>
                     </GlassCardSurface>

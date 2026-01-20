@@ -68,6 +68,9 @@ function normalizeKey(text: string): string {
 function isLikelyOrdinalHu(text: string): boolean {
   const t = normalizeKey(text);
   if (!t) return false;
+  // If it's a phrase ("negyedik emelet"), do NOT treat it as a bare ordinal.
+  // We only want to skip standalone ordinals like "negyedik", "4.", "2dik".
+  if (t.includes(" ")) return false;
   if (/^\d{1,3}(\.|-?(dik|ik))?$/.test(t)) return true;
   if (/(adik|edik|odik|dik)$/.test(t)) return true;
   return false;

@@ -17,11 +17,15 @@ export function FlowLoadingOverlay({
   return (
     <div className="flow-overlay" role="status" aria-live="polite" aria-label={title}>
       <GlassCardSurface className="flow-overlay-card" variant="soft" paper="evening">
-        <LumiraLoader size={42} spinSeconds={10} tone="light" />
+        <div className="flow-overlay-grid">
+          <div className="flow-overlay-icon" aria-hidden="true">
+            <LumiraLoader size={44} tone="light" />
+          </div>
 
-        <div className="flow-overlay-text">
-          <div className="flow-overlay-title">{title}</div>
-          <div className="flow-overlay-subtitle">{subtitle}</div>
+          <div className="flow-overlay-text">
+            <div className="flow-overlay-title">{title}</div>
+            <div className="flow-overlay-subtitle">{subtitle}</div>
+          </div>
         </div>
       </GlassCardSurface>
 
@@ -38,12 +42,25 @@ export function FlowLoadingOverlay({
         }
 
         .flow-overlay-card {
-          width: min(520px, 92vw);
+          width: min(560px, 92vw);
           border-radius: 18px;
-          padding: var(--space-3);
-          display: flex;
+          padding: var(--space-4); /* bigger padding */
+        }
+
+        .flow-overlay-grid {
+          display: grid;
+          grid-template-columns: 72px 1fr;
           gap: var(--space-3);
           align-items: center;
+        }
+
+        .flow-overlay-icon {
+          width: 72px;
+          height: 72px;
+          display: grid;
+          place-items: center;
+          border-radius: 16px;
+          background: rgba(255, 255, 255, 0.04);
         }
 
         .flow-overlay-text {
