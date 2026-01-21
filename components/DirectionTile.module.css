@@ -53,6 +53,18 @@
   line-height: 1.45;
 }
 
+.why {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  opacity: 0.92;
+  font-weight: 750;
+}
+.right {
+  margin-left: auto;
+}
+
+
 .bottom {
   display: flex;
   gap: 10px;

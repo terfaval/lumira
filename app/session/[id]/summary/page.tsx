@@ -5,9 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { Shell } from "@/components/Shell";
-import { Pill } from "@/components/Pill";
 import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
+import { DirectionTile } from "@/components/DirectionTile";
 import { startDirection } from "@/src/lib/startDirection";
 import type { DirectionCardContent } from "@/src/lib/types";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
@@ -465,7 +465,18 @@ export default function SessionSummary() {
 
   const recommendedRaw = useMemo(() => safeRecommendedDirections(framePayload?.recommended_directions), [framePayload]);
 
-  // Compute recommended directions: prefer summary suggestions if available; filter out selected
+  // why map for ★ recommended tiles
+  const whyBySlug = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const r of recommendedRaw) {
+      const slug = String(r.slug ?? "").trim();
+      const why = String(r.why ?? "").trim();
+      if (slug && why) m.set(slug, why);
+    }
+    return m;
+  }, [recommendedRaw]);
+
+  // Compute recommended directions: prefer frame suggestions if available; filter out selected
   const recommendedDirs = useMemo(() => {
     const notSelected = directionCatalog.filter((d) => !selectedDirs[d.slug]);
 
@@ -521,7 +532,7 @@ export default function SessionSummary() {
     return out;
   }, [directionCatalog, recommendedDirs, selectedDirs]);
 
-  // Handle starting a new direction
+  // Handle starting a new direction (tile click)
   const handleStartDirection = useCallback(
     async (slug: string) => {
       setErr(null);
@@ -542,45 +553,28 @@ export default function SessionSummary() {
     [sessionId, router]
   );
 
-  // Render a direction card (recommended/rest) with start button
-  function renderDirCard(d: DirectionCatalogItemDTO) {
+  function renderDirTile(d: DirectionCatalogItemDTO, opts?: { showReco?: boolean }) {
     const gRaw = d.content.group;
     const gKey = groupKeyFromLabel(gRaw);
     const gLabel = groupLabel(gRaw);
     const token = groupToken(gKey);
     const tags = safeStringArray(d.tags).slice(0, 2);
-    const micro = d.content.micro_description ?? d.description ?? "";
-    const chosen = !!selectedDirs[d.slug];
+
+    const showReco = Boolean(opts?.showReco);
+    const why = showReco ? (whyBySlug.get(d.slug) ?? null) : null;
 
     return (
-      <GlassCardSurface key={d.slug} className={`${styles.dirCard} ${styles.gridCard}`} variant="soft" paper="evening" corner={token.bg}>
-        <div className={`${styles.dirCardTop} ${styles.gridCardHeader}`}>
-          <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
-            {gLabel}
-          </Pill>
-          {chosen ? <Pill variant="neutral">Korábban kiválasztva</Pill> : null}
-        </div>
-
-        <div className={`${styles.dirContent} ${styles.gridCardBody}`}>
-          <div className={styles.dirTitle}>{d.title}</div>
-
-          {micro ? <div className={styles.dirDesc}>{micro}</div> : null}
-
-          <div className={styles.dirTags}>
-            {tags.map((t) => (
-              <Pill key={t} variant="neutral">
-                {t}
-              </Pill>
-            ))}
-          </div>
-        </div>
-
-        <div className={`${styles.dirActions} ${styles.gridCardFooter}`}>
-          <button className="btn btn-primary" onClick={() => handleStartDirection(d.slug)} aria-label={`Indítás: ${d.title}`}>
-            Indítás
-          </button>
-        </div>
-      </GlassCardSurface>
+      <DirectionTile
+        key={d.slug}
+        dir={d as any}
+        groupKey={gKey}
+        groupLabel={gLabel}
+        token={token as any}
+        tags={tags}
+        showReco={showReco}
+        why={why}
+        onOpen={(slug) => handleStartDirection(slug)}
+      />
     );
   }
 
@@ -765,7 +759,7 @@ export default function SessionSummary() {
             {/* Recommended directions */}
             <div className={styles.recommendSection}>
               <h2 style={{ margin: 0, fontSize: "20px" }}>Ajánlott irányok</h2>
-              <div className={styles.dirGrid}>{recommendedDirs.map((d) => renderDirCard(d))}</div>
+              <div className={styles.dirGrid}>{recommendedDirs.map((d) => renderDirTile(d, { showReco: true }))}</div>
             </div>
 
             {/* Show rest directions toggle */}
@@ -781,7 +775,7 @@ export default function SessionSummary() {
             {showRest && restDirs.length > 0 ? (
               <div className={styles.recommendSection} style={{ marginTop: "var(--space-3)" }}>
                 <h2 style={{ margin: 0, fontSize: "20px" }}>További irányok</h2>
-                <div className={styles.dirGrid}>{restDirs.map((d) => renderDirCard(d))}</div>
+                <div className={styles.dirGrid}>{restDirs.map((d) => renderDirTile(d))}</div>
               </div>
             ) : null}
           </>

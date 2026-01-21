@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { DirectionTile } from "@/components/DirectionTile";
 import { supabase } from "@/src/lib/supabase/client";
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { startDirection } from "@/src/lib/startDirection";
@@ -14,6 +15,7 @@ import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes"
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { CatalogService } from "@/src/services/CatalogService";
 import { fetchFrameLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
+
 
 type CandidateDirection = { slug: string; reason?: string };
 
@@ -47,6 +49,24 @@ function isCanonicalFrameReady(payload: any): boolean {
     (Array.isArray(payload.recommended_slugs) && payload.recommended_slugs.length >= 1);
   return titleOk && framingOk && recOk;
 }
+
+type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
+
+function safeStringArray(x: unknown): string[] {
+  if (!Array.isArray(x)) return [];
+  return x.filter((s): s is string => typeof s === "string").map((s) => s.trim()).filter(Boolean);
+}
+
+function groupKeyFromLabel(raw: unknown): GroupKey {
+  const label = String(raw ?? "").trim().toLowerCase();
+  if (label.includes("álomemlékezet")) return "memory";
+  if (label.includes("érzelmi") || label.includes("testi")) return "somatic";
+  if (label.includes("mintázat")) return "patterns";
+  if (label.includes("jelent")) return "meaning";
+  if (label.includes("kreatív")) return "creative";
+  return "other";
+}
+
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -234,37 +254,34 @@ export default function FramePage() {
             </div>
 
             {recommendations.length > 0 ? (
-              <div className="direction-grid">
-                {recommendations.map((d) => (
-                  <button
-                    key={d.slug}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => handleDirectionSelect(d.slug)}
-                    className="direction-card"
-                  >
-                    <GlassCardSurface
-                      className="direction-card-surface"
-                      variant="soft"
-                      paper="evening"
-                      minHeight="100%"
-                      style={{ height: "100%" }}
-                    >
-                      <div className="direction-card-inner">
-                        <div className="direction-card-title">{d.title}</div>
-                        <div className="direction-card-body">
-                          {d.reason?.trim() ? d.reason : (d.content?.micro_description ?? d.description)}
-                        </div>
-                      </div>
-                    </GlassCardSurface>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p style={{ color: "var(--text-muted)", margin: 0 }}>
-                Most nem jött ki biztos ajánlott irány, de a teljes katalógusból választhatsz.
-              </p>
-            )}
+  <div className="direction-grid">
+    {recommendations.map((d) => {
+      const gKey = groupKeyFromLabel((d as any)?.content?.group);
+      const gLabel = String((d as any)?.content?.group ?? "").trim() || "Egyéb";
+      const token = { text: `--dirgroup-${gKey}` as const, bg: `--dirgroup-${gKey}-bg` as const };
+      const tags = safeStringArray((d as any).tags).slice(0, 2);
+
+      return (
+        <DirectionTile
+          key={d.slug}
+          dir={d as any}
+          groupKey={gKey}
+          groupLabel={gLabel}
+          token={token}
+          tags={tags}
+          showReco={false} // frame-en nincs csillag/why
+          why={null}
+          onOpen={(slug) => handleDirectionSelect(slug)}
+        />
+      );
+    })}
+  </div>
+) : (
+  <p style={{ color: "var(--text-muted)", margin: 0 }}>
+    Most nem jött ki biztos ajánlott irány, de a teljes katalógusból választhatsz.
+  </p>
+)}
+
 
             <div className="direction-actions">
               <PrimaryButton variant="secondary" onClick={() => router.push(`/session/${id}/direction`)}>
