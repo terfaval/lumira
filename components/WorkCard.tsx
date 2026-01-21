@@ -52,7 +52,7 @@ export function WorkCard({
   const token = useMemo(() => groupToken(gKey), [gKey]);
 
   const context = String(c.ai?.context ?? "").trim();
-  const question = String(c.ai?.question ?? "").trim();
+  const prompt = String(c.ai?.prompt ?? c.ai?.question ?? "").trim();
 
   const initial = String(c.user?.answer ?? "");
   const [draft, setDraft] = useState(initial);
@@ -96,7 +96,7 @@ export function WorkCard({
         <div className="workcard-body">
           {context ? <div className="workcard-context">{context}</div> : null}
 
-          {question ? <div className="workcard-question">{question}</div> : null}
+          {prompt ? <div className="workcard-question">{prompt}</div> : null}
 
           {mode === "edit" ? (
             <textarea

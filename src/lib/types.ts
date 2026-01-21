@@ -134,14 +134,21 @@ export type DirectionCardContent = {
   direction_slug: string;
   sequence?: number;
   state?: "open" | "answered" | "paused";
+  group_tags?: string[];
+  material_id?: string | null;
+  mode?: "normal" | "gentle";
   ai?: {
     context?: string | null;
+    prompt?: string | null;
     question?: string | null;
   };
   user?: {
     answer?: string | null;
     answered_at?: string | null;
   };
+  trace?: Json | null;
+  request_id?: string | null;
+  client_request_id?: string | null;
 } & Record<string, Json>;
 
 export function isDirectionCardContent(content: unknown): content is DirectionCardContent {

@@ -2,8 +2,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { beginJobRun, finishJobRun } from "@/src/db/repositories/jobRepo";
 import { jobIdempotencyKeyV0 } from "@/src/orchestration/idempotency/jobKey";
-import { insertAnchorVersionIfMissing, upsertAnchorLatest } from "@/src/db/repositories/anchorRepo";
-import { buildAnchorsFromObservation } from "@/src/domain/anchors/buildAnchorsFromObservation";
+import { ensureAnchorsRanked } from "@/src/orchestration/ensureAnchorsRanked";
 
 export async function jobExtractAnchors(args: {
   supabase: SupabaseClient;
@@ -57,33 +56,25 @@ export async function jobExtractAnchors(args: {
   }
 
   try {
-    const payload = buildAnchorsFromObservation({ observation: obsVersion.data.payload });
-
-    const anchor = await insertAnchorVersionIfMissing(supabase, {
-      session_id: event.session_id,
+    const ensured = await ensureAnchorsRanked(supabase, {
       user_id: event.user_id,
-      input_hash,
-      model: "deterministic",
-      payload,
-    });
-
-    await upsertAnchorLatest(supabase, {
       session_id: event.session_id,
-      user_id: event.user_id,
-      anchor_version_id: anchor.id,
     });
+    if (!ensured.anchor_version_id) {
+      throw new Error("ensureAnchorsRanked returned no anchor_version_id");
+    }
 
     await finishJobRun(supabase, {
       job_id: started.job.id,
       status: "success",
       output_ref: {
-        anchor_version_id: anchor.id,
+        anchor_version_id: ensured.anchor_version_id,
         observation_version_id: obsVersion.data.id,
       },
       error: null,
     });
 
-    return { anchor_version_id: anchor.id, skipped: false, ok: true };
+    return { anchor_version_id: ensured.anchor_version_id, skipped: false, ok: true };
   } catch (err: any) {
     await finishJobRun(supabase, {
       job_id: started.job.id,

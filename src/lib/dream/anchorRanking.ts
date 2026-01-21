@@ -8,7 +8,7 @@
 //
 // NOTE: tolerant to payload shape drift. No hard schema assumptions.
 
-import { anchorKey } from "@/src/lib/dream/anchorKey";
+import { anchorKey, stripDiacritics } from "@/src/lib/dream/anchorKey";
 
 export type AnchorCategory = "character" | "place" | "object" | "beat" | "felt_word";
 
@@ -153,7 +153,7 @@ function collectFromObservation(
 function collectFromLatent(
   latentRaw: any
 ): Array<{ name: string; category: AnchorCategory; source: string; boost?: number }> {
-  const lat = latentRaw ?? null;
+  const lat = safeParseJSONMaybeString(latentRaw);
   if (!lat || typeof lat !== "object") return [];
 
   const out: Array<{ name: string; category: AnchorCategory; source: string; boost?: number }> = [];
@@ -195,17 +195,37 @@ function collectFromLatent(
   return out;
 }
 
+function tokenizeForCount(raw: string): string[] {
+  if (!raw) return [];
+  return stripDiacritics(raw.toLowerCase())
+    .split(/[^a-z0-9]+/g)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
 function countOccurrences(name: string, dreamText: string): number {
   if (!name || !dreamText) return 0;
-  const needle = normaliseKey(name);
-  if (!needle) return 0;
+  const nameTokens = tokenizeForCount(name);
+  const textTokens = tokenizeForCount(dreamText);
+  if (nameTokens.length === 0 || textTokens.length === 0) return 0;
 
-  const hay = dreamText.toLowerCase();
+  if (nameTokens.length === 1) {
+    const needle = nameTokens[0];
+    let count = 0;
+    for (const t of textTokens) if (t === needle) count++;
+    return count;
+  }
+
   let count = 0;
-  let idx = hay.indexOf(needle);
-  while (idx !== -1) {
-    count++;
-    idx = hay.indexOf(needle, idx + needle.length);
+  for (let i = 0; i <= textTokens.length - nameTokens.length; i++) {
+    let match = true;
+    for (let j = 0; j < nameTokens.length; j++) {
+      if (textTokens[i + j] !== nameTokens[j]) {
+        match = false;
+        break;
+      }
+    }
+    if (match) count++;
   }
   return count;
 }
@@ -252,11 +272,13 @@ export async function rankAnchors(params: {
   latent: any | null;
 
   prevQuestions?: string[];
+  usedAnchorKeys?: string[];
   includeUsed?: boolean;
   maxCount?: number;
 }): Promise<AnchorInfo[]> {
   const { supabase, userId, dreamText, observation, latent } = params;
   const prevQs = Array.isArray(params.prevQuestions) ? params.prevQuestions : [];
+  const usedAnchorKeys = Array.isArray(params.usedAnchorKeys) ? params.usedAnchorKeys : [];
   const includeUsed = params.includeUsed ?? false;
   const maxCount = typeof params.maxCount === "number" ? params.maxCount : undefined;
 
@@ -295,15 +317,15 @@ export async function rankAnchors(params: {
   for (const c of latentCandidates) add(c.name, c.category, c.source, c.boost ?? 0);
 
   // 3) glossary matches (best-effort exact canonical; keying by anchorKey)
-  const names = uniqByKey(Array.from(merged.values()).map((v) => v.name));
+  const candidateKeys = Array.from(merged.keys());
   const glossaryMatches: Record<string, { note: string | null }> = {};
 
-  if (names.length > 0) {
+  if (candidateKeys.length > 0) {
     const { data: terms, error } = await supabase
       .from("glossary_terms")
-      .select("id, canonical")
+      .select("id, canonical_key")
       .eq("user_id", userId)
-      .in("canonical", names);
+      .in("canonical_key", candidateKeys);
 
     if (!error && Array.isArray(terms) && terms.length > 0) {
       const termIds = terms.map((t: any) => t.id).filter(Boolean);
@@ -326,7 +348,8 @@ export async function rankAnchors(params: {
       }
 
       for (const term of terms as any[]) {
-        const k = anchorKey(term.canonical) || normaliseKey(term.canonical);
+        const k = normaliseKey(term.canonical_key);
+        if (!k) continue;
         glossaryMatches[k] = { note: notesByTerm.get(term.id) ?? null };
       }
     }
@@ -341,8 +364,12 @@ export async function rankAnchors(params: {
 
   // 5) build list
   const anchors: AnchorInfo[] = [];
+  const usedKeySet = new Set(
+    usedAnchorKeys.map((k) => normaliseKey(k)).filter(Boolean)
+  );
   for (const [k, v] of merged.entries()) {
-    if (!includeUsed && anchorUsed(v.name, prevQs)) continue;
+    const isUsedByKey = usedKeySet.has(normaliseKey(k));
+    if (!includeUsed && (isUsedByKey || anchorUsed(v.name, prevQs))) continue;
 
     const occurrences = countOccurrences(v.name, dreamText);
     const glossary = glossaryMatches[k];
@@ -358,7 +385,7 @@ export async function rankAnchors(params: {
     anchors.push({
       name: v.name,
       category: v.category,
-      score: base + (v.latentBoost || 0),
+      score: base + (v.latentBoost || 0) + (includeUsed && isUsedByKey ? -2 : 0),
       inGlossary: Boolean(glossary),
       glossaryNotes: glossary ? glossary.note : null,
       occurrences,
@@ -373,4 +400,52 @@ export async function rankAnchors(params: {
   });
 
   return typeof maxCount === "number" && maxCount > 0 ? anchors.slice(0, maxCount) : anchors;
+}
+
+export type AnchorRankingPayload = {
+  anchors: AnchorInfo[];
+  top_keys: string[];
+  meta: {
+    algorithm_version: "v1";
+    input_hash: string;
+    anchor_count: number;
+    top_count: number;
+    used_count: number;
+    has_observation: boolean;
+    has_latent: boolean;
+  };
+};
+
+export function buildAnchorRankingPayload(params: {
+  anchors: AnchorInfo[];
+  input_hash: string;
+  topCount: number;
+  usedAnchorKeys?: string[];
+  hasObservation: boolean;
+  hasLatent: boolean;
+}): AnchorRankingPayload {
+  const usedAnchorKeys = Array.isArray(params.usedAnchorKeys) ? params.usedAnchorKeys : [];
+  const top_keys: string[] = [];
+  const seen = new Set<string>();
+  for (const item of params.anchors) {
+    const k = anchorKey(item.name) || normaliseKey(item.name);
+    if (!k) continue;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    top_keys.push(k);
+    if (top_keys.length >= params.topCount) break;
+  }
+  return {
+    anchors: params.anchors,
+    top_keys,
+    meta: {
+      algorithm_version: "v1",
+      input_hash: params.input_hash,
+      anchor_count: params.anchors.length,
+      top_count: top_keys.length,
+      used_count: usedAnchorKeys.length,
+      has_observation: params.hasObservation,
+      has_latent: params.hasLatent,
+    },
+  };
 }

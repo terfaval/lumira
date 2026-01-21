@@ -10,29 +10,41 @@ import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay"
 import { fetchWithAuth } from "@/src/lib/api/fetchWithAuth";
 import { supabase } from "@/src/lib/supabase/client";
 import { requireUserId } from "@/src/lib/db";
-import { isDirectionCardContent, type DirectionCardContent, type WorkBlock } from "@/src/lib/types";
+import { isDirectionCardContent, type Json, type DirectionCardContent, type WorkBlock } from "@/src/lib/types";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
 import { CatalogService } from "@/src/services/CatalogService";
 
 type DirectionWorkBlock = WorkBlock & { content: DirectionCardContent };
-type HistoryItem = { question: string; answer: string | null };
 type WorkAnswerRow = { work_id: string | null; content: string; created_at: string };
 
 type NextPayload = {
   session_id: string;
-  dream_text: string;
-  direction: unknown;
-  history: HistoryItem[];
-  synth?: { flags?: { safety?: string; too_short?: boolean } };
-  prior_echoes?: unknown;
-  catalog?: unknown;
-  allowed_slugs?: string[];
+  direction_slug?: string | null;
+  seed?: { kind: "frame" | "work"; text: string } | null;
+  prefs?: { blocked_group_tags?: string[] } | null;
+  client_request_id?: string | null;
 };
 
 type NextResponse = {
-  work_block: { lead_in: string; question: string; cta: string | null };
-  stop_signal: { suggest_stop: boolean; reason: string | null };
+  request_id: string;
+  status: "ok" | "stop";
+  work_block?: {
+    id: string;
+    direction_slug: string | null;
+    group_tags: string[];
+    lead_in: string;
+    prompt: string;
+    mode: "normal" | "gentle";
+    trace: unknown;
+  };
+  stop_signal?: {
+    suggest_stop: true;
+    reason_code: "low_novelty" | "prefs_block_all" | "safety_limit" | "model_failure";
+    message: string;
+    suggested_actions: Array<"switch_direction" | "continue_later" | "free_journal">;
+    trace: unknown;
+  };
 };
 
 async function fetchLatestRawDreamText(sessionId: string): Promise<string> {
@@ -51,9 +63,11 @@ async function fetchLatestRawDreamText(sessionId: string): Promise<string> {
   return data?.content ? String(data.content) : "";
 }
 
-function buildClientRequestId(sessionId: string, directionSlug: string, sequence: number, question: string) {
-  const compactQuestion = question.trim().replace(/\s+/g, " ").slice(0, 120);
-  return `work:${sessionId}:${directionSlug}:${sequence}:${compactQuestion}`;
+function buildClientRequestId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `work_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
 export default function WorkPage() {
@@ -74,7 +88,7 @@ export default function WorkPage() {
   const [loaded, setLoaded] = useState(false);
 
   const [ensuredInitial, setEnsuredInitial] = useState(false);
-  const [closureBlock, setClosureBlock] = useState<NextResponse["work_block"] | null>(null);
+  const [closureBlock, setClosureBlock] = useState<NextResponse["stop_signal"] | null>(null);
   const [pendingNextPayload, setPendingNextPayload] = useState<NextPayload | null>(null);
 
   const directionSlug = searchParams?.get("direction") ?? "";
@@ -231,49 +245,52 @@ export default function WorkPage() {
       const next = await fetchNextWorkBlock(payload);
       if (!next) return false;
 
-      if (next.stop_signal.suggest_stop) {
-        setClosureBlock(next.work_block);
+      if (next.status === "stop" && next.stop_signal) {
+        setClosureBlock(next.stop_signal);
         setPendingNextPayload(payload);
         return true;
       }
 
+      if (next.status !== "ok" || !next.work_block) {
+        setNextErr("Nem sikerült lekérni a következő kérdést.");
+        return false;
+      }
+
       const maxSeq = directionBlocks.reduce((max, block) => Math.max(max, block.content.sequence ?? 0), 0);
+
+      const resolvedSlug = next.work_block.direction_slug ?? directionSlug;
+      const trace = (next.work_block.trace ?? {}) as unknown as Json;
+      const traceMaterialId =
+        trace && typeof (trace as any)?.selection?.material_id === "string" ? String((trace as any).selection.material_id) : null;
 
       const content: DirectionCardContent = {
         kind: "direction_card",
-        direction_slug: directionSlug,
+        direction_slug: resolvedSlug,
         sequence: maxSeq + 1,
         state: "open",
-        ai: { context: next.work_block.lead_in, question: next.work_block.question },
+        group_tags: next.work_block.group_tags ?? [],
+        material_id: traceMaterialId,
+        mode: next.work_block.mode,
+        ai: { context: next.work_block.lead_in, prompt: next.work_block.prompt },
         user: { answer: null, answered_at: null },
+        trace,
+        request_id: next.request_id ?? null,
+        client_request_id: payload.client_request_id ?? null,
       };
 
-      const clientRequestId = buildClientRequestId(sessionId, directionSlug, maxSeq + 1, content.ai?.question ?? "");
+      const now = new Date().toISOString();
+      const inserted: WorkBlock = {
+        id: next.work_block.id,
+        session_id: sessionId,
+        user_id: "",
+        block_type: "dream_analysis",
+        content,
+        created_at: now,
+        updated_at: now,
+      };
 
-      const persistRes = await fetchWithAuth("/api/work/persist", {
-        method: "POST",
-        json: {
-          session_id: sessionId,
-          payload: content,
-          client_request_id: clientRequestId,
-        },
-      });
-
-      if (!persistRes.ok) {
-        setNextErr("Nem sikerült menteni a következő kérdést.");
-        return false;
-      }
-
-      const persisted = (await persistRes.json().catch(() => null)) as { work_version?: any } | null;
-      const inserted = persisted?.work_version;
-
-      if (!inserted?.id) {
-        setNextErr("Nem sikerült menteni a következő kérdést.");
-        return false;
-      }
-
-      setLatestWorkVersionId(inserted?.id ?? null);
-      setBlocks((prev) => [...prev, toWorkBlock(inserted, new Map())].filter(Boolean) as WorkBlock[]);
+      setLatestWorkVersionId(next.work_block.id ?? null);
+      setBlocks((prev) => [...prev, inserted]);
       setClosureBlock(null);
       setPendingNextPayload(null);
       setNextErr(null);
@@ -298,25 +315,15 @@ export default function WorkPage() {
     if (!directionSlug) return;
     if (rawLoading) return;
 
-    if (!rawDreamText || rawDreamText.trim().length < 1) {
-      setErr("Nincs nyers álomszöveg (raw) ehhez a sessionhöz.");
-      return;
-    }
-
-    const direction = directionConfig ?? { slug: directionSlug };
-
     const payload: NextPayload = {
       session_id: sessionId,
-      dream_text: rawDreamText,
-      direction,
-      history: [],
-      catalog: directionConfig ? [directionConfig] : [],
-      allowed_slugs: directionSlug ? [directionSlug] : [],
+      direction_slug: directionSlug,
+      client_request_id: buildClientRequestId(),
     };
 
     setPendingNextPayload(payload);
     await processNextPayload(payload);
-  }, [directionConfig, directionSlug, processNextPayload, rawDreamText, rawLoading, sessionId]);
+  }, [directionSlug, processNextPayload, rawLoading, sessionId]);
 
   useEffect(() => {
     if (!directionSlug || loading || busy || ensuredInitial || !loaded) return;
@@ -340,7 +347,7 @@ export default function WorkPage() {
 
   const saveAnswer = useCallback(
     async (block: DirectionWorkBlock, answer: string) => {
-      if (!rawDreamText || !directionSlug) {
+      if (!directionSlug) {
         setErr("Hiányzó adatok: frissítsd az oldalt.");
         return;
       }
@@ -374,16 +381,10 @@ export default function WorkPage() {
 
         setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content: updatedContent } : b)));
 
-        const updatedDirectionBlocks = directionBlocks.map((b) => (b.id === block.id ? { ...b, content: updatedContent } : b));
-        const updatedHistory = buildHistory(updatedDirectionBlocks);
-
         const payload: NextPayload = {
           session_id: sessionId,
-          dream_text: rawDreamText,
-          direction: directionConfig ?? { slug: directionSlug },
-          history: updatedHistory,
-          catalog: directionConfig ? [directionConfig] : [],
-          allowed_slugs: directionSlug ? [directionSlug] : [],
+          direction_slug: directionSlug,
+          client_request_id: buildClientRequestId(),
         };
 
         setPendingNextPayload(payload);
@@ -394,7 +395,7 @@ export default function WorkPage() {
         setBusy(false);
       }
     },
-    [directionBlocks, directionSlug, processNextPayload, rawDreamText, directionConfig, sessionId]
+    [directionSlug, processNextPayload, sessionId]
   );
 
   if (loading) {
@@ -410,7 +411,7 @@ export default function WorkPage() {
   }
 
   if (closureBlock) {
-    return <ClosureCard block={closureBlock} sessionId={sessionId} />;
+    return <ClosureCard signal={closureBlock} sessionId={sessionId} />;
   }
 
   return (
@@ -459,21 +460,26 @@ export default function WorkPage() {
   );
 }
 
-function ClosureCard({ block, sessionId }: { block: NextResponse["work_block"]; sessionId: string }) {
+function ClosureCard({ signal, sessionId }: { signal: NextResponse["stop_signal"]; sessionId: string }) {
+  const suggested = new Set(signal?.suggested_actions ?? []);
   return (
     <Card>
       <div className="stack-tight">
-        <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{block.lead_in}</div>
-        <div style={{ fontWeight: 800 }}>{block.question}</div>
+        <div style={{ whiteSpace: "pre-wrap", color: "var(--text-muted)" }}>{signal?.message ?? ""}</div>
+        <div style={{ fontWeight: 800 }}>Szeretnél irányt váltani, vagy most pihenni?</div>
 
         <div className="closure-actions">
-          <Link href={`/session/${sessionId}/direction`} style={{ textDecoration: "none" }}>
-            <PrimaryButton variant="secondary">További irányok</PrimaryButton>
-          </Link>
+          {suggested.has("switch_direction") ? (
+            <Link href={`/session/${sessionId}/direction`} style={{ textDecoration: "none" }}>
+              <PrimaryButton variant="secondary">További irányok</PrimaryButton>
+            </Link>
+          ) : null}
 
-          <Link href={`/archive`} style={{ textDecoration: "none" }}>
-            <PrimaryButton variant="secondary">Később folytatom</PrimaryButton>
-          </Link>
+          {suggested.has("continue_later") ? (
+            <Link href={`/archive`} style={{ textDecoration: "none" }}>
+              <PrimaryButton variant="secondary">Később folytatom</PrimaryButton>
+            </Link>
+          ) : null}
 
           <style jsx>{`
             .closure-actions {
@@ -560,18 +566,9 @@ function normalizeContent(content: DirectionCardContent): DirectionCardContent {
     ai: {
       ...content.ai,
       context: content.ai?.context ?? null,
+      prompt: content.ai?.prompt ?? null,
       question: content.ai?.question ?? null,
     },
   };
 }
 
-function buildHistory(blocks: DirectionWorkBlock[]): HistoryItem[] {
-  return [...blocks]
-    .sort((a, b) => (a.content.sequence ?? 0) - (b.content.sequence ?? 0))
-    .map((b) => ({
-      question: (b.content.ai?.question ?? "").trim(),
-      answer: b.content.user?.answer ? String(b.content.user.answer) : null,
-    }))
-    .filter((h) => h.question)
-    .slice(-8);
-}

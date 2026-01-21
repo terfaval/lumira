@@ -5,109 +5,19 @@
 // - Fetches observation payload via observation_latest -> observation_versions
 // - Fetches latent payload via latent_latest -> latent_versions
 // - Calls rankAnchors() (observation-first)
-// - Persists results into anchor_versions + anchor_latest (idempotent via input_hash)
+// - Persists results into dream_anchor_versions + dream_anchor_latest (idempotent via input_hash)
 
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
-import { rankAnchors } from "@/src/lib/dream/anchorRanking";
-import { insertAnchorVersionIfMissing, upsertAnchorLatest } from "@/src/db/repositories/anchorRepo";
-import { sha256, materialHashFromPayload } from "@/src/orchestration/idempotency/materialHash";
+import { ensureAnchorsRanked } from "@/src/orchestration/ensureAnchorsRanked";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type RankRequest = {
   session_id?: string;
-  dream_text?: string;
-  history?: { question: string; answer?: string | null }[];
   maxCount?: number;
 };
-
-function sanitizeText(input: string): string {
-  return (input ?? "").replace(/\s+/g, " ").trim();
-}
-
-function clampPrevQuestions(history: unknown, max = 6): string[] {
-  if (!Array.isArray(history)) return [];
-  const qs = history
-    .map((h: any) => (typeof h?.question === "string" ? h.question.trim() : ""))
-    .filter(Boolean);
-  return qs.slice(-max);
-}
-
-async function fetchSessionDreamText(supabase: any, sessionId: string, userId: string): Promise<string | null> {
-  const { data: entry, error } = await supabase
-    .from("dream_entries")
-    .select("content, created_at")
-    .eq("session_id", sessionId)
-    .eq("user_id", userId)
-    .in("kind", ["raw", "raw_entry"])
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !entry) return null;
-  return sanitizeText(entry.content ?? "");
-}
-
-async function fetchObservationPayload(supabase: any, sessionId: string, userId: string): Promise<any | null> {
-  const { data: latest } = await supabase
-    .from("observation_latest")
-    .select("observation_version_id")
-    .eq("session_id", sessionId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (!latest?.observation_version_id) return null;
-
-  const { data: ver } = await supabase
-    .from("observation_versions")
-    .select("payload")
-    .eq("id", latest.observation_version_id)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  return ver?.payload ?? null;
-}
-
-async function fetchLatentPayload(supabase: any, sessionId: string, userId: string): Promise<any | null> {
-  const { data: latest } = await supabase
-    .from("latent_latest")
-    .select("latent_version_id")
-    .eq("session_id", sessionId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (!latest?.latent_version_id) return null;
-
-  const { data: ver } = await supabase
-    .from("latent_versions")
-    .select("payload")
-    .eq("id", latest.latent_version_id)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  return ver?.payload ?? null;
-}
-
-function buildAnchorInputHash(params: {
-  sessionId: string;
-  dreamText: string;
-  observation: any | null;
-  latent: any | null;
-  prevQuestions: string[];
-  maxCount: number;
-}): string {
-  const material = materialHashFromPayload({
-    session_id: params.sessionId,
-    dream_text: params.dreamText,
-    observation: params.observation ?? null,
-    latent: params.latent ?? null,
-    prev_questions: params.prevQuestions,
-    maxCount: params.maxCount,
-  });
-  return sha256(`anchor_rank:${material}`);
-}
 
 export async function POST(req: Request) {
   try {
@@ -121,72 +31,21 @@ export async function POST(req: Request) {
     if (!authData?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const userId = authData.user.id;
 
-    // Dream text: either from body or DB
-    let dreamText = sanitizeText(typeof body.dream_text === "string" ? body.dream_text : "");
-    if (!dreamText) {
-      const fromDb = await fetchSessionDreamText(supabase, sessionId, userId);
-      if (!fromDb) return NextResponse.json({ error: "Session not found" }, { status: 404 });
-      dreamText = fromDb;
+    const ensured = await ensureAnchorsRanked(supabase, { user_id: userId, session_id: sessionId });
+    if (!ensured.anchor_version_id || !ensured.payload) {
+      return NextResponse.json({ error: "Anchor ranking unavailable" }, { status: 404 });
     }
 
-    const prevQuestions = clampPrevQuestions(body.history, 6);
-
-    // Load observation + latent payloads (best-effort)
-    const [observation, latent] = await Promise.all([
-      fetchObservationPayload(supabase, sessionId, userId),
-      fetchLatentPayload(supabase, sessionId, userId),
-    ]);
-
-    const maxCount = typeof body.maxCount === "number" && body.maxCount > 0 ? body.maxCount : 16;
-
-    const anchors = await rankAnchors({
-      supabase,
-      userId,
-      dreamText,
-      observation,
-      latent,
-      prevQuestions,
-      includeUsed: false,
-      maxCount,
-    });
-
-    // Persist anchors to v0 tables (idempotent)
-    const input_hash = buildAnchorInputHash({
-      sessionId,
-      dreamText,
-      observation,
-      latent,
-      prevQuestions,
-      maxCount,
-    });
-
-    const saved = await insertAnchorVersionIfMissing(supabase, {
-      session_id: sessionId,
-      user_id: userId,
-      input_hash,
-      model: "ranking_v0", // string kell, ne null
-      payload: {
-        anchors,
-        meta: {
-          maxCount,
-          prevQuestionsCount: prevQuestions.length,
-          hasObservation: Boolean(observation),
-          hasLatent: Boolean(latent),
-        },
-      },
-    });
-
-    await upsertAnchorLatest(supabase, {
-      session_id: sessionId,
-      user_id: userId,
-      anchor_version_id: saved.id,
-    });
+    const maxCount = typeof body.maxCount === "number" && body.maxCount > 0 ? body.maxCount : undefined;
+    const topKeys = maxCount ? ensured.payload.top_keys.slice(0, maxCount) : ensured.payload.top_keys;
 
     return NextResponse.json({
       ok: true,
       session_id: sessionId,
-      anchors,
-      anchor_version_id: saved.id,
+      anchor_version_id: ensured.anchor_version_id,
+      anchors: ensured.payload.anchors,
+      top_keys: topKeys,
+      meta: ensured.payload.meta,
     });
   } catch (err: any) {
     const message = err instanceof Error ? err.message : "Unknown error";

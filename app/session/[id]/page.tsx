@@ -21,11 +21,11 @@ type SessionDetail = {
   archived_at?: string | null;
 };
 
-type WorkSummary = { id: string; question: string; isAnswered: boolean };
+type WorkSummary = { id: string; prompt: string; isAnswered: boolean };
 
 function renderBlockSummary(block: WorkSummary) {
-  const question = block.question ?? "";
-  return question ? `${question}${block.isAnswered ? " · rögzítve" : ""}` : block.isAnswered ? "Rögzítve" : "Kártya";
+  const prompt = block.prompt ?? "";
+  return prompt ? `${prompt}${block.isAnswered ? " · rögzítve" : ""}` : block.isAnswered ? "Rögzítve" : "Kártya";
 }
 
 export default function SessionOverview() {
@@ -126,9 +126,9 @@ export default function SessionOverview() {
             if (!isDirectionCardContent(payload)) return null;
             const answerRow = answersByWorkId.get(row.id);
             const answer = typeof answerRow?.content === "string" ? answerRow.content : "";
-            const question = payload.ai?.question ?? "";
+            const question = payload.ai?.prompt ?? payload.ai?.question ?? "";
             const isAnswered = Boolean(answer) || (payload.state ?? "open") === "answered";
-            return { id: row.id, question, isAnswered };
+            return { id: row.id, prompt: question, isAnswered };
           })
           .filter((row: WorkSummary | null): row is WorkSummary => Boolean(row));
 

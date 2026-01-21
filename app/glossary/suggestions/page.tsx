@@ -11,6 +11,7 @@ import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface
 import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
+import { anchorKey } from "@/src/lib/dream/anchorKey";
 
 type TermCandidate = {
   id: string;
@@ -86,7 +87,7 @@ export default function SuggestionsPage() {
     try {
       const { data: inserted, error } = await supabase
         .from("glossary_terms")
-        .insert({ canonical: item.term })
+        .insert({ canonical: item.term, canonical_key: anchorKey(item.term) })
         .select("id")
         .single();
       if (error) throw error;

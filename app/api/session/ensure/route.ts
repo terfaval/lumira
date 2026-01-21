@@ -5,7 +5,7 @@ import { createDomainEvent } from "@/src/db/repositories/eventRepo";
 import { insertMaterialSnapshotIfMissing } from "@/src/db/repositories/materialRepo";
 import { materialHashFromPayload } from "@/src/orchestration/idempotency/materialHash";
 import { jobExtractObservation } from "@/src/orchestration/jobs/jobExtractObservation";
-import { jobExtractAnchors } from "@/src/orchestration/jobs/jobExtractAnchors";
+import { ensureAnchorsRanked } from "@/src/orchestration/ensureAnchorsRanked";
 import { jobBuildSessionIndexFromObservationJob } from "@/src/orchestration/jobs/jobBuildSessionIndexFromObservation";
 import { jobUpdateLatent } from "@/src/orchestration/jobs/jobUpdateLatent";
 import { jobGenerateFrame } from "@/src/orchestration/jobs/jobGenerateFrame";
@@ -107,19 +107,6 @@ export async function POST(req: Request) {
     observation_version_id = latest?.observation_version_id ?? null;
   }
 
-  if (runAnchors) {
-    const anchorRes = await jobExtractAnchors({ supabase, event: { id: event.id, user_id, session_id }, material_hash });
-    anchor_version_id = anchorRes.anchor_version_id;
-  } else {
-    const latest = await fetchAnchorLatestWithPayloadAndId(supabase, user_id, session_id);
-    anchor_version_id = latest?.anchor_version_id ?? null;
-  }
-
-  if (!anchor_version_id) {
-    const latest = await fetchAnchorLatestWithPayloadAndId(supabase, user_id, session_id);
-    anchor_version_id = latest?.anchor_version_id ?? null;
-  }
-
   if (runSessionIndex) {
     const idxRes = await jobBuildSessionIndexFromObservationJob({
       supabase,
@@ -148,6 +135,19 @@ export async function POST(req: Request) {
   if (!latent_version_id) {
     const latest = await fetchLatentLatestWithPayloadAndId(supabase, user_id, session_id);
     latent_version_id = latest?.latent_version_id ?? null;
+  }
+
+  if (runAnchors) {
+    const ensured = await ensureAnchorsRanked(supabase, { user_id, session_id });
+    anchor_version_id = ensured.anchor_version_id;
+  } else {
+    const latest = await fetchAnchorLatestWithPayloadAndId(supabase, user_id, session_id);
+    anchor_version_id = latest?.anchor_version_id ?? null;
+  }
+
+  if (!anchor_version_id) {
+    const latest = await fetchAnchorLatestWithPayloadAndId(supabase, user_id, session_id);
+    anchor_version_id = latest?.anchor_version_id ?? null;
   }
 
   if (runFrame) {

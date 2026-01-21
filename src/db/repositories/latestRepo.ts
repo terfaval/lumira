@@ -32,23 +32,17 @@ export async function fetchAnchorLatestWithPayloadAndId(
   session_id: string
 ): Promise<{ anchor_version_id: string; payload: any } | null> {
   const latest = await supabase
-    .from("anchor_latest")
-    .select("anchor_version_id")
+    .from("dream_anchor_latest")
+    .select("version_id,payload")
     .eq("session_id", session_id)
     .eq("user_id", user_id)
     .single();
 
   if (latest.error) return null;
 
-  const ver = await supabase
-    .from("anchor_versions")
-    .select("id,payload")
-    .eq("id", latest.data.anchor_version_id)
-    .eq("user_id", user_id)
-    .single();
-
-  if (ver.error) throw ver.error;
-  return { anchor_version_id: ver.data.id, payload: ver.data.payload };
+  const anchor_version_id = latest.data.version_id as string;
+  const payload = latest.data.payload;
+  return { anchor_version_id, payload };
 }
 
 export async function fetchSessionIndexLatestWithPayloadAndId(

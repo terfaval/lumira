@@ -152,6 +152,8 @@ function normalizeContent(content: DirectionCardContent): DirectionCardContent {
     ai: {
       ...content.ai,
       context: content.ai?.context ?? null,
+      prompt: content.ai?.prompt ?? null,
+      prompt: content.ai?.prompt ?? null,
       question: content.ai?.question ?? null,
     },
   };
@@ -446,7 +448,7 @@ export default function SessionSummary() {
         const c: any = b.content;
         const state = c.state ?? "open";
         const answer = c.user?.answer ?? null;
-        const question = c.ai?.question ?? "";
+        const question = c.ai?.prompt ?? c.ai?.question ?? "";
         const directionSlug = c.direction_slug ?? "";
         const created = new Date(b.created_at).getTime();
         const updated = new Date(b.updated_at ?? b.created_at).getTime();

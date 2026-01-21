@@ -10,6 +10,7 @@ import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/
 import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
+import { anchorKey } from "@/src/lib/dream/anchorKey";
 
 type GlossaryItem = {
   id: string;
@@ -137,7 +138,7 @@ export default function GlossaryPage() {
 
     const { data: inserted, error } = await supabase
       .from("glossary_terms")
-      .insert({ canonical: name })
+      .insert({ canonical: name, canonical_key: anchorKey(name) })
       .select("id")
       .single();
 
@@ -184,7 +185,7 @@ export default function GlossaryPage() {
     setBusy(true);
     const { error } = await supabase
       .from("glossary_terms")
-      .update({ canonical: name })
+      .update({ canonical: name, canonical_key: anchorKey(name) })
       .eq("id", editingId);
 
     if (error) {

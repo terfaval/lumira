@@ -160,7 +160,7 @@
   {
     "slug": "dir-03-alomfolytatas-nyitott",
     "version": "v1",
-    "title": "Álomfolytatás (nyitott)",
+    "title": "Nyitott álomfolytatás",
     "description": "Az álom spontán továbbalakulásának megfigyelése.",
     "content": {
       "type": "direction",
@@ -242,7 +242,7 @@
   {
     "slug": "dir-04-erzelmi-mag-felterkepezese",
     "version": "v1",
-    "title": "Érzelmi mag feltérképezése",
+    "title": "Érzelmi mag",
     "description": "Az álom érzelmi tónusának azonosítása.",
     "content": {
       "type": "direction",
@@ -321,7 +321,7 @@
   {
     "slug": "dir-05-testi-lenyomat-megfigyelese",
     "version": "v1",
-    "title": "Testi lenyomat megfigyelése",
+    "title": "Testi lehorgonyzás",
     "description": "Az álom testi hatásainak tudatosítása.",
     "content": {
       "type": "direction",
@@ -400,7 +400,7 @@
   {
     "slug": "dir-06-visszatero-motivumok-felismerese",
     "version": "v1",
-    "title": "Visszatérő motívumok felismerése",
+    "title": "Visszatérő motívumok",
     "description": "Kapcsolódások felismerése korábbi álmokkal.",
     "content": {
       "type": "direction",
@@ -490,7 +490,7 @@
   {
     "slug": "dir-07-szimbolumok-nyitott-megkozelitese",
     "version": "v1",
-    "title": "Szimbólumok nyitott megközelítése",
+    "title": "Szimbólumok feltárása",
     "description": "Jelentéslehetőségek megnyitása megfejtés nélkül.",
     "content": {
       "type": "direction",
@@ -569,7 +569,7 @@
   {
     "slug": "dir-08-kapcsolodas-az-ebrenleti-elethez",
     "version": "v1",
-    "title": "Kapcsolódás az ébrenléti élethez",
+    "title": "Ébrenléti rezonanciák",
     "description": "Rezonanciák megfigyelése.",
     "content": {
       "type": "direction",
@@ -727,7 +727,7 @@
   {
     "slug": "dir-10-narrativ-vagy-perspektivavaltasos-megfigyeles",
     "version": "v1",
-    "title": "Narratív vagy perspektívaváltásos megfigyelés",
+    "title": "Perspektívaváltás",
     "description": "Kognitív távolság létrehozása.",
     "content": {
       "type": "direction",
@@ -806,7 +806,7 @@
   {
     "slug": "dir-11-alom-mint-kreativ-nyersanyag",
     "version": "v1",
-    "title": "Álom mint kreatív nyersanyag",
+    "title": "Álom mint nyersanyag",
     "description": "Kreatív elemek elkülönítése.",
     "content": {
       "type": "direction",
@@ -885,7 +885,7 @@
   {
     "slug": "dir-12-integracio-vagy-tudatos-elengedes",
     "version": "v1",
-    "title": "Integráció vagy tudatos elengedés",
+    "title": "Integráció és elengedés",
     "description": "Lezárás vagy továbblépés támogatása.",
     "content": {
       "type": "direction",
