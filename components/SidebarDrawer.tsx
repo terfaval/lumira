@@ -336,6 +336,7 @@ export function SidebarDrawer({
 
         /* ICONS (mask → currentColor) */
         .drawer-icon {
+          display: inline-block;
           width: 18px;
           height: 18px;
           flex: 0 0 18px;
@@ -349,6 +350,7 @@ export function SidebarDrawer({
           mask-repeat: no-repeat;
           mask-position: center;
           mask-size: contain;
+          mask-mode: alpha;
         }
 
         .drawer-icon--reflection {
