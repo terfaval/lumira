@@ -102,10 +102,9 @@ function titleOf(session: SessionRow | null, framePayload: FramePayload | null, 
   if (framed) return framed;
 
   const raw = String(rawEntry ?? "").trim().replace(/\s+/g, " ");
-  if (!raw) return "C??m n?clk??li ??lom";
-  return raw.length > 42 ? raw.slice(0, 41) + "??|" : raw;
+  if (!raw) return "Cím nélküli álom";
+  return raw.length > 42 ? raw.slice(0, 41) + "…" : raw;
 }
-
 
 // Check if block content is a direction card
 function isDirectionCard(content: unknown): content is DirectionCardContent {
@@ -140,20 +139,6 @@ function buildAnswersByWorkId(rows: WorkAnswerRow[]): Map<string, WorkAnswerRow>
   return map;
 }
 
-function applyAnswerToContent(content: DirectionCardContent, answer: WorkAnswerRow | null): DirectionCardContent {
-  const normalized = normalizeContent(content);
-  if (!answer?.content) return normalized;
-  return {
-    ...normalized,
-    state: "answered",
-    user: {
-      ...normalized.user,
-      answer: answer.content,
-      answered_at: answer.created_at ?? null,
-    },
-  };
-}
-
 function normalizeContent(content: DirectionCardContent): DirectionCardContent {
   return {
     ...content,
@@ -168,6 +153,20 @@ function normalizeContent(content: DirectionCardContent): DirectionCardContent {
       ...content.ai,
       context: content.ai?.context ?? null,
       question: content.ai?.question ?? null,
+    },
+  };
+}
+
+function applyAnswerToContent(content: DirectionCardContent, answer: WorkAnswerRow | null): DirectionCardContent {
+  const normalized = normalizeContent(content);
+  if (!answer?.content) return normalized;
+  return {
+    ...normalized,
+    state: "answered",
+    user: {
+      ...normalized.user,
+      answer: answer.content,
+      answered_at: answer.created_at ?? null,
     },
   };
 }
@@ -190,11 +189,14 @@ function toWorkBlock(row: any, answersByWorkId: Map<string, WorkAnswerRow>): Dir
   };
 }
 
-
 export default function SessionSummary() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
   const router = useRouter();
   const { loading } = useRequireAuth();
+
+  // Robust session id extraction
+  const rawId = (params as any)?.id;
+  const sessionId = Array.isArray(rawId) ? rawId[0] : rawId;
 
   const [session, setSession] = useState<SessionRow | null>(null);
   const [framePayload, setFramePayload] = useState<FramePayload | null>(null);
@@ -217,7 +219,7 @@ export default function SessionSummary() {
 
   // Load session, frame, work blocks and directions on mount
   useEffect(() => {
-    if (!id) return;
+    if (!sessionId || typeof sessionId !== "string") return;
 
     let isMounted = true;
 
@@ -226,32 +228,66 @@ export default function SessionSummary() {
         setErr(null);
         const userId = await requireUserId();
 
+        // 1) Try dream_sessions (if present/visible)
         const { data: sessionData, error: sessErr } = await supabase
           .from("dream_sessions")
           .select("id, title, status, created_at, updated_at, archived_at")
-          .eq("id", id)
+          .eq("id", sessionId)
           .eq("user_id", userId)
-          .single();
-        if (sessErr) throw new Error(sessErr.message);
-        if (!isMounted) return;
-        setSession(sessionData as SessionRow);
+          .maybeSingle();
 
+        if (sessErr) throw new Error(sessErr.message);
+
+        let effectiveSession: SessionRow | null = (sessionData as SessionRow | null) ?? null;
+
+        // 2) Fallback: consider session existing if there is at least one raw dream entry
+        if (!effectiveSession) {
+          const { data: entryProbe, error: entryProbeErr } = await supabase
+            .from("dream_entries")
+            .select("session_id, created_at")
+            .eq("session_id", sessionId)
+            .eq("user_id", userId)
+            .eq("kind", "raw")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (entryProbeErr) throw new Error(entryProbeErr.message);
+
+          if (entryProbe) {
+            effectiveSession = {
+              id: sessionId,
+              status: "active",
+              created_at: entryProbe.created_at,
+              updated_at: entryProbe.created_at,
+              archived_at: null,
+              title: null,
+            };
+          }
+        }
+
+        if (!isMounted) return;
+        setSession(effectiveSession);
+
+        // Raw entry
         const { data: entryRow } = await supabase
           .from("dream_entries")
           .select("content, created_at")
-          .eq("session_id", id)
+          .eq("session_id", sessionId)
           .eq("user_id", userId)
           .eq("kind", "raw")
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
+
         if (!isMounted) return;
         setRawEntry(typeof entryRow?.content === "string" ? entryRow.content : null);
 
+        // Frame payload
         const { data: latestFrame } = await supabase
           .from("frame_latest")
           .select("frame_version_id")
-          .eq("session_id", id)
+          .eq("session_id", sessionId)
           .eq("user_id", userId)
           .maybeSingle();
 
@@ -270,10 +306,11 @@ export default function SessionSummary() {
           setFramePayload(null);
         }
 
+        // Work blocks
         const { data: versions, error: wbErr } = await supabase
           .from("work_versions")
           .select("id, session_id, user_id, payload, created_at")
-          .eq("session_id", id)
+          .eq("session_id", sessionId)
           .eq("user_id", userId)
           .order("created_at", { ascending: true });
         if (wbErr) throw new Error(wbErr.message);
@@ -281,7 +318,7 @@ export default function SessionSummary() {
         const { data: answers, error: ansErr } = await supabase
           .from("dream_answers")
           .select("work_id, content, created_at")
-          .eq("session_id", id)
+          .eq("session_id", sessionId)
           .eq("user_id", userId);
         if (ansErr) throw new Error(ansErr.message);
 
@@ -292,10 +329,11 @@ export default function SessionSummary() {
         if (!isMounted) return;
         setWorkBlocks(blocks);
 
+        // Selected directions
         const { data: choices, error: choiceErr } = await supabase
           .from("session_directions")
           .select("direction_slug")
-          .eq("session_id", id)
+          .eq("session_id", sessionId)
           .eq("user_id", userId);
         if (choiceErr) throw new Error(choiceErr.message);
         if (!isMounted) return;
@@ -307,11 +345,12 @@ export default function SessionSummary() {
         });
         setSelectedDirs(sel);
 
+        // Catalog
         const cat = await CatalogService.getActiveCatalog(supabase);
         if (!isMounted) return;
         setDirectionCatalog(cat);
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : "Hiba t??rt??nt az ??sszk??p bet??lt??sekor.";
+        const message = e instanceof Error ? e.message : "Hiba történt az összkép betöltésekor.";
         if (!isMounted) return;
         setErr(message);
       }
@@ -320,7 +359,7 @@ export default function SessionSummary() {
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [sessionId]);
 
   const title = useMemo(() => titleOf(session, framePayload, rawEntry), [session, framePayload, rawEntry]);
 
@@ -341,7 +380,7 @@ export default function SessionSummary() {
       const { error } = await supabase
         .from("dream_sessions")
         .update({ title: next || null })
-        .eq("id", id)
+        .eq("id", sessionId)
         .eq("user_id", userId);
 
       if (error) throw new Error(error.message);
@@ -350,11 +389,11 @@ export default function SessionSummary() {
       setEditingTitle(false);
     } catch (e) {
       console.error(e);
-      setErr("Nem siker??lt elmenteni a c??met.");
+      setErr("Nem sikerült elmenteni a címet.");
     } finally {
       setSavingTitle(false);
     }
-  }, [draftTitle, id]);
+  }, [draftTitle, sessionId]);
 
   // Build a slug→catalog map for quick lookups
   const catalogBySlug = useMemo(() => {
@@ -424,10 +463,7 @@ export default function SessionSummary() {
     return [...answered, ...open];
   }, [workBlocks]);
 
-  const recommendedRaw = useMemo(
-    () => safeRecommendedDirections(framePayload?.recommended_directions),
-    [framePayload]
-  );
+  const recommendedRaw = useMemo(() => safeRecommendedDirections(framePayload?.recommended_directions), [framePayload]);
 
   // Compute recommended directions: prefer summary suggestions if available; filter out selected
   const recommendedDirs = useMemo(() => {
@@ -490,20 +526,20 @@ export default function SessionSummary() {
     async (slug: string) => {
       setErr(null);
       try {
-        const result = await startDirection(id, slug);
+        const result = await startDirection(sessionId, slug);
         if (!result.success) {
           setErr(result.error ?? "Hiba történt az irány indítása során.");
           return;
         }
         setSelectedDirs((prev) => ({ ...prev, [slug]: true }));
-        const nextUrl = result.nextUrl ?? `/session/${id}/work?direction=${encodeURIComponent(slug)}`;
+        const nextUrl = result.nextUrl ?? `/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`;
         router.push(nextUrl);
       } catch (e) {
         const message = e instanceof Error ? e.message : "Hiba történt az irány indítása során.";
         setErr(message);
       }
     },
-    [id, router]
+    [sessionId, router]
   );
 
   // Render a direction card (recommended/rest) with start button
@@ -613,7 +649,7 @@ export default function SessionSummary() {
             </div>
           </GlassCardSurface>
         </div>
-      ) : null} 
+      ) : null}
 
       <FullScreenLoadingOverlay open={loading && !session} title="Betöltés…" />
 
@@ -680,7 +716,13 @@ export default function SessionSummary() {
               <div className={styles.sectionHead}>
                 <h2 className={styles.sectionTitle}>Kártyák</h2>
 
-                <button type="button" className={styles.continueBtn} onClick={() => router.push(`/session/${id}/work`)} aria-label="Folytatás" title="Folytatás">
+                <button
+                  type="button"
+                  className={styles.continueBtn}
+                  onClick={() => router.push(`/session/${sessionId}/work`)}
+                  aria-label="Folytatás"
+                  title="Folytatás"
+                >
                   +
                 </button>
               </div>
@@ -711,11 +753,7 @@ export default function SessionSummary() {
                         <div className={`${styles.carouselBody} ${styles.gridCardBody}`}>
                           <div className={styles.carouselQ}>{c.question || "—"}</div>
 
-                          {c.isAnswered ? (
-                            <div className={styles.carouselA}>{c.answer}</div>
-                          ) : (
-                            <div className={styles.carouselAEmpty}>Nincs válasz</div>
-                          )}
+                          {c.isAnswered ? <div className={styles.carouselA}>{c.answer}</div> : <div className={styles.carouselAEmpty}>Nincs válasz</div>}
                         </div>
                       </GlassCardSurface>
                     );

@@ -121,9 +121,7 @@ export function SidebarDrawer({
             .eq("user_id", userId)
             .in("id", frameVersionIds);
 
-          const payloadById = new Map(
-            (frameVersions ?? []).map((row: any) => [row.id, row.payload])
-          );
+          const payloadById = new Map((frameVersions ?? []).map((row: any) => [row.id, row.payload]));
 
           (latestRows ?? []).forEach((row: any) => {
             const payload = payloadById.get(row.frame_version_id);
@@ -195,13 +193,7 @@ export function SidebarDrawer({
       onClick={onBackdropClick}
     >
       <aside className="drawer-sheet" role="document" aria-label="Oldalsáv">
-        <GlassCardSurface
-          className="drawer-surface"
-          variant="flat"
-          paper="evening"
-          gloss={false}
-          grain={false}
-        >
+        <GlassCardSurface className="drawer-surface" variant="flat" paper="evening" gloss={false} grain={false}>
           {/* TOP */}
           <div className="drawer-section drawer-top">
             <Link href="/about" className="drawer-navlink" onClick={onClose}>
@@ -238,13 +230,9 @@ export function SidebarDrawer({
           </div>
 
           {/* ARCHIVE */}
-          <div className="drawer-section">
+          <div className="drawer-section drawer-archive">
             <div className="drawer-section-head">
-              <Link
-                href="/archive"
-                className="drawer-navlink drawer-navlink--title"
-                onClick={onClose}
-              >
+              <Link href="/archive" className="drawer-navlink drawer-navlink--title" onClick={onClose}>
                 <DrawerIcon name="stop" />
                 Álomnapló
               </Link>
@@ -263,16 +251,10 @@ export function SidebarDrawer({
               <ul className="drawer-list">
                 {recent.map((r) => (
                   <li key={r.session_id} className="drawer-list-item">
-                    <Link
-                      href={`/session/${r.session_id}/frame`}
-                      className="drawer-item"
-                      onClick={onClose}
-                    >
+                    <Link href={`/session/${r.session_id}/frame`} className="drawer-item" onClick={onClose}>
                       <div className="drawer-item-title">{titleOf(r)}</div>
                       <div className="drawer-item-snippet">{snippet(r.raw_entry)}</div>
-                      <div className="drawer-item-meta">
-                        {new Date(r.created_at).toLocaleString("hu-HU")}
-                      </div>
+                      <div className="drawer-item-meta">{new Date(r.created_at).toLocaleString("hu-HU")}</div>
                     </Link>
                   </li>
                 ))}
@@ -324,32 +306,28 @@ export function SidebarDrawer({
         }
 
         .drawer-surface {
-  flex: 1 1 auto; 
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+          flex: 1 1 auto;
+          min-height: 0;
+          align-self: stretch;
 
-  /* ✅ a GlassCardSurface "kártya" kinézetének nullázása */
-  border-radius: 0 !important;
-  border: 0 !important;
-  box-shadow: none !important;
+          display: grid;
+          grid-template-rows: auto 1fr auto;
 
-  /* ✅ a GlassCardSurface inline backgroundját felülírjuk */
-  background: transparent !important;
+          border-radius: 0 !important;
+          border: 0 !important;
+          box-shadow: none !important;
+          background: transparent !important;
 
-  /* a belső padding maradhat itt, nem kell a module-ból */
-  padding: var(--space-3) !important;
+          padding: var(--space-3) !important;
 
-  /* biztosan töltse a magasságot */
-  align-self: stretch;
-}
+          position: relative;
+          overflow: hidden;
+        }
 
-/* ✅ a GlassCardSurface gloss/grain overlayek lekapcsolása */
-.drawer-surface::before,
-.drawer-surface::after {
-  opacity: 0 !important;
-}
-
+        .drawer-surface::before,
+        .drawer-surface::after {
+          opacity: 0 !important;
+        }
 
         .drawer-section {
           padding: var(--space-2) var(--space-1) var(--space-3);
@@ -359,20 +337,25 @@ export function SidebarDrawer({
         .drawer-section:last-of-type {
           border-bottom: none;
         }
-        .drawer-section:not(.drawer-top) {
-          overflow: auto;
-        }
 
         .drawer-top {
           display: grid;
           gap: 8px;
-          padding-top: var(--space-1);
+          padding-top: var(--space-2);
+          padding-bottom: var(--space-2);
+        }
+
+        /* ✅ az ARCHIVE szekció legyen rács: head + scrollable list */
+        .drawer-archive {
+          display: grid;
+          grid-template-rows: auto 1fr;
+          min-height: 0;
         }
 
         .drawer-navlink {
           display: inline-flex;
           align-items: center;
-          gap: 10px; /* ← ikon és szöveg távolság */
+          gap: 10px;
           padding: var(--space-2) var(--space-3);
           border-radius: 12px;
           border: 1px solid var(--line-soft);
@@ -440,6 +423,11 @@ export function SidebarDrawer({
           padding: 0;
           display: grid;
           gap: 10px;
+
+          /* ✅ csak a lista scrolloz */
+          min-height: 0;
+          overflow: auto;
+          padding-right: 6px; /* scrollbar gutter */
         }
 
         .drawer-item {
