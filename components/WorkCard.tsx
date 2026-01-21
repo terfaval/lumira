@@ -40,19 +40,16 @@ export function WorkCard({
 
   // edit
   onSave?: (answer: string) => Promise<void>;
-  sessionId?: string;
 
   // read / navigate
   onOpen?: () => void;
+  sessionId?: string;
 }) {
   const c = block.content;
 
   const group = directionMeta?.content?.group;
   const gKey = useMemo(() => groupKeyFromLabel(group), [group]);
   const token = useMemo(() => groupToken(gKey), [gKey]);
-
-  const title = directionMeta?.title ?? c.direction_slug ?? "Irány";
-  const groupLabel = String(group ?? "").trim() || "Egyéb";
 
   const context = String(c.ai?.context ?? "").trim();
   const question = String(c.ai?.question ?? "").trim();
@@ -73,7 +70,7 @@ export function WorkCard({
       className={`workcard-root ${canClick ? "is-clickable" : ""} ${mode === "edit" ? "is-edit" : "is-read"}`}
       role={canClick ? "button" : undefined}
       tabIndex={canClick ? 0 : undefined}
-      aria-label={canClick ? `Megnyitás: ${title}` : undefined}
+      aria-label={canClick ? "Kártya megnyitása" : undefined}
       onClick={canClick ? onOpen : undefined}
       onKeyDown={
         canClick
@@ -96,34 +93,6 @@ export function WorkCard({
           padding: "var(--space-4)",
         }}
       >
-        {/* HEADER */}
-        <div className="workcard-header">
-          <div className="workcard-titleRow">
-            <div className="workcard-title" title={title}>
-              {title}
-            </div>
-
-            <div className="workcard-state">{answered ? "Megválaszolt" : "Megnyitott"}</div>
-          </div>
-
-          <div className="workcard-metaRow">
-            <span
-              className="workcard-badge"
-              style={{
-                borderColor: `var(${token.text})`,
-                background: `var(${token.bg})`,
-                color: `var(${token.text})`,
-              }}
-              title={groupLabel}
-            >
-              {groupLabel}
-            </span>
-          </div>
-        </div>
-
-        <div style={{ height: "var(--space-3)" }} />
-
-        {/* BODY */}
         <div className="workcard-body">
           {context ? <div className="workcard-context">{context}</div> : null}
 
@@ -144,7 +113,6 @@ export function WorkCard({
           )}
         </div>
 
-        {/* ACTIONS (edit only) */}
         {mode === "edit" ? (
           <>
             <div style={{ height: "var(--space-4)" }} />
@@ -165,62 +133,6 @@ export function WorkCard({
       </GlassCardSurface>
 
       <style jsx>{`
-        .workcard-root {
-          outline: none;
-        }
-
-        .workcard-header {
-          display: grid;
-          gap: 8px;
-        }
-
-        .workcard-titleRow {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: var(--space-3);
-          min-width: 0;
-        }
-
-        .workcard-title {
-          font-weight: 880;
-          letter-spacing: -0.01em;
-          line-height: 1.15;
-          color: var(--text-primary);
-          min-width: 0;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .workcard-state {
-          font-size: 12px;
-          color: var(--text-muted);
-          white-space: nowrap;
-          opacity: 0.95;
-          padding-top: 2px;
-        }
-
-        .workcard-metaRow {
-          display: flex;
-          gap: 10px;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-
-        .workcard-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 12px;
-          line-height: 1;
-          padding: 7px 10px;
-          border-radius: 999px;
-          border: 1px solid var(--line-soft);
-          white-space: nowrap;
-          opacity: 0.95;
-        }
-
         .workcard-body {
           display: grid;
           gap: var(--space-3);
@@ -238,6 +150,7 @@ export function WorkCard({
           font-size: 18px;
           letter-spacing: -0.01em;
           line-height: 1.25;
+          color: var(--text-primary);
         }
 
         .workcard-input {
@@ -277,9 +190,9 @@ export function WorkCard({
           align-items: center;
         }
 
-        /* READ interaction – mint a DirectionTile: finom lift + highlight */
+        /* READ interaction (tile-szerű) */
         .workcard-root.is-clickable :global(.workcard-surface) {
-          transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+          transition: transform 160ms ease, box-shadow 160ms ease;
           will-change: transform;
         }
 

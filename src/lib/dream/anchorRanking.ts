@@ -2,12 +2,11 @@
 //
 // v0 Anchor ranking utilities
 // - collects candidates primarily from observation payload (rich, stable)
-// - optionally augments/boosts from latent payload (open_loops, hypothesis_slots, etc.)
+// - optionally augments/boosts from latent payload
 // - cross-references glossary_terms + glossary_notes
 // - counts approximate occurrences in dream text
 //
-// NOTE: This module is deliberately tolerant to payload shape drift.
-// It never assumes a single rigid schema for observation/latent.
+// NOTE: tolerant to payload shape drift. No hard schema assumptions.
 
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 
@@ -24,7 +23,7 @@ export type AnchorInfo = {
   occurrences: number;
   isTarget: boolean;
 
-  // Optional debug/meta hooks (safe to ignore in UI)
+  // optional debug/meta
   sources?: string[];
 };
 
@@ -36,20 +35,21 @@ function uniqByKey(values: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const raw of values) {
-    const k = normaliseKey(raw);
+    const t = typeof raw === "string" ? raw.trim() : "";
+    if (!t) continue;
+    const k = normaliseKey(t);
     if (!k) continue;
     if (seen.has(k)) continue;
     seen.add(k);
-    out.push(raw.trim());
+    out.push(t);
   }
   return out;
 }
 
 function pushIfString(out: string[], x: unknown) {
-  if (typeof x === "string") {
-    const t = x.trim();
-    if (t) out.push(t);
-  }
+  if (typeof x !== "string") return;
+  const t = x.trim();
+  if (t) out.push(t);
 }
 
 function pushArrayStrings(out: string[], x: unknown) {
@@ -58,7 +58,6 @@ function pushArrayStrings(out: string[], x: unknown) {
 }
 
 function safeParseJSONMaybeString(payload: any): any {
-  // observation_versions.payload in your sample is a JSON string.
   if (typeof payload === "string") {
     try {
       return JSON.parse(payload);
@@ -71,12 +70,14 @@ function safeParseJSONMaybeString(payload: any): any {
 
 /**
  * Pull anchor candidates from observation payload.
- * Supports:
- * - observation.entities.{people,places,objects,themes_words}
- * - observation.scenes[].{characters,setting,objects,actions,mood_words,sensations}
- * - observation.raw_facts (as beats)
+ * Supports shapes like your sample:
+ * - obs.entities.{people,places,objects,themes_words}
+ * - obs.scenes[].{characters,setting,objects,actions,mood_words,sensations}
+ * - obs.raw_facts (beats)
  */
-function collectFromObservation(observationRaw: any): Array<{ name: string; category: AnchorCategory; source: string }> {
+function collectFromObservation(
+  observationRaw: any
+): Array<{ name: string; category: AnchorCategory; source: string }> {
   const obs = safeParseJSONMaybeString(observationRaw);
   if (!obs || typeof obs !== "object") return [];
 
@@ -118,7 +119,6 @@ function collectFromObservation(observationRaw: any): Array<{ name: string; cate
       pushArrayStrings(moods, (sc as any).mood_words);
       pushArrayStrings(sens, (sc as any).sensations);
 
-      // setting is a string (sometimes long) — keep it, but it will likely score lower due to occurrences
       const setting = (sc as any).setting;
       if (typeof setting === "string" && setting.trim()) {
         out.push({ name: setting.trim(), category: "place", source: `observation.scenes[${i}].setting` });
@@ -134,7 +134,8 @@ function collectFromObservation(observationRaw: any): Array<{ name: string; cate
 
   const rawFacts = (obs as any).raw_facts;
   if (Array.isArray(rawFacts)) {
-    for (const s of uniqByKey(rawFacts.filter((x: any) => typeof x === "string"))) {
+    const facts = rawFacts.filter((x: any) => typeof x === "string");
+    for (const s of uniqByKey(facts)) {
       out.push({ name: s, category: "beat", source: "observation.raw_facts" });
     }
   }
@@ -147,9 +148,11 @@ function collectFromObservation(observationRaw: any): Array<{ name: string; cate
  * Supports:
  * - open_loops[].slot
  * - hypothesis_slots[].slot
- * - question_candidates[].text (as beat), and maybe target (as felt_word, low weight)
+ * - question_candidates[].text (beat), question_candidates[].target (low weight)
  */
-function collectFromLatent(latentRaw: any): Array<{ name: string; category: AnchorCategory; source: string; boost?: number }> {
+function collectFromLatent(
+  latentRaw: any
+): Array<{ name: string; category: AnchorCategory; source: string; boost?: number }> {
   const lat = latentRaw ?? null;
   if (!lat || typeof lat !== "object") return [];
 
@@ -184,7 +187,6 @@ function collectFromLatent(latentRaw: any): Array<{ name: string; category: Anch
       }
       const target = row?.target;
       if (typeof target === "string" && target.trim()) {
-        // targets like "self_boundary" are not user-facing HU anchors, so keep low-weight.
         out.push({ name: target.trim(), category: "felt_word", source: "latent.question_candidates.target", boost: 0.1 });
       }
     }
@@ -193,33 +195,8 @@ function collectFromLatent(latentRaw: any): Array<{ name: string; category: Anch
   return out;
 }
 
-function scoreAnchor(params: { category: AnchorCategory; occurrences: number; isTarget: boolean; inGlossary: boolean }): number {
-  // Core weights: beats > characters > places > objects > felt_words
-  const baseWeights: Record<AnchorCategory, number> = {
-    beat: 5,
-    character: 4,
-    place: 3,
-    object: 2,
-    felt_word: 1,
-  };
-
-  let score = baseWeights[params.category] ?? 1;
-
-  // occurrences: mild signal
-  score += params.occurrences * 0.5;
-
-  // glossary: small bump (user-pinned memory)
-  if (params.inGlossary) score += 1.5;
-
-  // explicit target: bigger bump (if ever used)
-  if (params.isTarget) score += 3;
-
-  return score;
-}
-
 function countOccurrences(name: string, dreamText: string): number {
   if (!name || !dreamText) return 0;
-
   const needle = normaliseKey(name);
   if (!needle) return 0;
 
@@ -243,13 +220,37 @@ export function anchorUsed(anchor: string, prevQuestions: string[]): boolean {
   });
 }
 
+function scoreAnchor(params: {
+  category: AnchorCategory;
+  occurrences: number;
+  isTarget: boolean;
+  inGlossary: boolean;
+}): number {
+  const baseWeights: Record<AnchorCategory, number> = {
+    beat: 5,
+    character: 4,
+    place: 3,
+    object: 2,
+    felt_word: 1,
+  };
+
+  let score = baseWeights[params.category] ?? 1;
+  score += params.occurrences * 0.5;
+
+  if (params.inGlossary) score += 1.5;
+  if (params.isTarget) score += 3;
+
+  return score;
+}
+
 export async function rankAnchors(params: {
   supabase: any;
   userId: string;
   dreamText: string;
+
   observation: any | null;
   latent: any | null;
-  synth?: any | null; // kept for compatibility, but not required
+
   prevQuestions?: string[];
   includeUsed?: boolean;
   maxCount?: number;
@@ -259,22 +260,14 @@ export async function rankAnchors(params: {
   const includeUsed = params.includeUsed ?? false;
   const maxCount = typeof params.maxCount === "number" ? params.maxCount : undefined;
 
-  // 1) Collect candidates from observation (primary)
+  // 1) candidates
   const obsCandidates = collectFromObservation(observation);
-
-  // 2) Collect from latent (secondary)
   const latentCandidates = collectFromLatent(latent);
 
-  // 3) Merge by canonical “key”
-  // Use anchorKey() so HU diacritics + stopwords normalize well for dedupe.
+  // 2) merge by anchorKey() (HU-safe)
   const merged = new Map<
     string,
-    {
-      name: string;
-      category: AnchorCategory;
-      sources: string[];
-      latentBoost: number;
-    }
+    { name: string; category: AnchorCategory; sources: string[]; latentBoost: number }
   >();
 
   const add = (name: string, category: AnchorCategory, source: string, boost = 0) => {
@@ -287,7 +280,6 @@ export async function rankAnchors(params: {
       return;
     }
 
-    // Prefer “stronger” categories if conflict (beat > character > place > object > felt_word)
     const rank: Record<AnchorCategory, number> = { beat: 5, character: 4, place: 3, object: 2, felt_word: 1 };
     const bestCat = rank[category] > rank[existing.category] ? category : existing.category;
 
@@ -302,11 +294,7 @@ export async function rankAnchors(params: {
   for (const c of obsCandidates) add(c.name, c.category, c.source, 0);
   for (const c of latentCandidates) add(c.name, c.category, c.source, c.boost ?? 0);
 
-  const keys = Array.from(merged.keys());
-
-  // 4) Glossary match (best-effort)
-  // We try exact match on canonical; if you later add canonical_key column,
-  // we can make this robust using anchorKey at DB-level too.
+  // 3) glossary matches (best-effort exact canonical; keying by anchorKey)
   const names = uniqByKey(Array.from(merged.values()).map((v) => v.name));
   const glossaryMatches: Record<string, { note: string | null }> = {};
 
@@ -331,7 +319,7 @@ export async function rankAnchors(params: {
         if (!notesErr && Array.isArray(notes)) {
           for (const row of notes as any[]) {
             if (!row?.term_id) continue;
-            if (notesByTerm.has(row.term_id)) continue; // keep latest
+            if (notesByTerm.has(row.term_id)) continue; // latest first
             notesByTerm.set(row.term_id, (row.content ?? null) as any);
           }
         }
@@ -344,18 +332,16 @@ export async function rankAnchors(params: {
     }
   }
 
-  // 5) Target anchor (optional; not present in your latent sample, but keep hook)
+  // 4) optional target anchor hook
   let targetAnchorK: string | null = null;
   const seed = latent && typeof latent === "object" ? (latent as any).question_seed : null;
   if (seed && typeof seed === "object" && typeof (seed as any).target_anchor === "string") {
     targetAnchorK = anchorKey((seed as any).target_anchor) || normaliseKey((seed as any).target_anchor);
   }
 
-  // 6) Build AnchorInfo list
+  // 5) build list
   const anchors: AnchorInfo[] = [];
-  for (const k of keys) {
-    const v = merged.get(k)!;
-
+  for (const [k, v] of merged.entries()) {
     if (!includeUsed && anchorUsed(v.name, prevQs)) continue;
 
     const occurrences = countOccurrences(v.name, dreamText);
@@ -386,6 +372,5 @@ export async function rankAnchors(params: {
     return a.name.localeCompare(b.name, "hu");
   });
 
-  if (typeof maxCount === "number" && maxCount > 0) return anchors.slice(0, maxCount);
-  return anchors;
+  return typeof maxCount === "number" && maxCount > 0 ? anchors.slice(0, maxCount) : anchors;
 }

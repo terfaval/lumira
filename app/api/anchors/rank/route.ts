@@ -1,14 +1,17 @@
-// /app/api/anchors/rank/route.ts
+// app/api/anchors/rank/route.ts
 //
 // v0 Route: ranks anchors for a session.
 // - Fetches dream text from DB if not provided
 // - Fetches observation payload via observation_latest -> observation_versions
 // - Fetches latent payload via latent_latest -> latent_versions
 // - Calls rankAnchors() (observation-first)
+// - Persists results into anchor_versions + anchor_latest (idempotent via input_hash)
 
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { rankAnchors } from "@/src/lib/dream/anchorRanking";
+import { insertAnchorVersionIfMissing, upsertAnchorLatest } from "@/src/db/repositories/anchorRepo";
+import { sha256, materialHashFromPayload } from "@/src/orchestration/idempotency/materialHash";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,13 +27,21 @@ function sanitizeText(input: string): string {
   return (input ?? "").replace(/\s+/g, " ").trim();
 }
 
+function clampPrevQuestions(history: unknown, max = 6): string[] {
+  if (!Array.isArray(history)) return [];
+  const qs = history
+    .map((h: any) => (typeof h?.question === "string" ? h.question.trim() : ""))
+    .filter(Boolean);
+  return qs.slice(-max);
+}
+
 async function fetchSessionDreamText(supabase: any, sessionId: string, userId: string): Promise<string | null> {
   const { data: entry, error } = await supabase
     .from("dream_entries")
     .select("content, created_at")
     .eq("session_id", sessionId)
     .eq("user_id", userId)
-    .eq("kind", "raw")
+    .in("kind", ["raw", "raw_entry"])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -40,45 +51,62 @@ async function fetchSessionDreamText(supabase: any, sessionId: string, userId: s
 }
 
 async function fetchObservationPayload(supabase: any, sessionId: string, userId: string): Promise<any | null> {
-  const { data: latest, error: latestErr } = await supabase
+  const { data: latest } = await supabase
     .from("observation_latest")
     .select("observation_version_id")
     .eq("session_id", sessionId)
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (latestErr || !latest?.observation_version_id) return null;
+  if (!latest?.observation_version_id) return null;
 
-  const { data: ver, error: verErr } = await supabase
+  const { data: ver } = await supabase
     .from("observation_versions")
     .select("payload")
     .eq("id", latest.observation_version_id)
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (verErr) return null;
   return ver?.payload ?? null;
 }
 
 async function fetchLatentPayload(supabase: any, sessionId: string, userId: string): Promise<any | null> {
-  const { data: latest, error: latestErr } = await supabase
+  const { data: latest } = await supabase
     .from("latent_latest")
     .select("latent_version_id")
     .eq("session_id", sessionId)
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (latestErr || !latest?.latent_version_id) return null;
+  if (!latest?.latent_version_id) return null;
 
-  const { data: ver, error: verErr } = await supabase
+  const { data: ver } = await supabase
     .from("latent_versions")
     .select("payload")
     .eq("id", latest.latent_version_id)
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (verErr) return null;
   return ver?.payload ?? null;
+}
+
+function buildAnchorInputHash(params: {
+  sessionId: string;
+  dreamText: string;
+  observation: any | null;
+  latent: any | null;
+  prevQuestions: string[];
+  maxCount: number;
+}): string {
+  const material = materialHashFromPayload({
+    session_id: params.sessionId,
+    dream_text: params.dreamText,
+    observation: params.observation ?? null,
+    latent: params.latent ?? null,
+    prev_questions: params.prevQuestions,
+    maxCount: params.maxCount,
+  });
+  return sha256(`anchor_rank:${material}`);
 }
 
 export async function POST(req: Request) {
@@ -101,17 +129,15 @@ export async function POST(req: Request) {
       dreamText = fromDb;
     }
 
-    const prevQuestions = Array.isArray(body.history)
-      ? body.history
-          .map((h) => (typeof h?.question === "string" ? h.question.trim() : ""))
-          .filter(Boolean)
-      : [];
+    const prevQuestions = clampPrevQuestions(body.history, 6);
 
     // Load observation + latent payloads (best-effort)
     const [observation, latent] = await Promise.all([
       fetchObservationPayload(supabase, sessionId, userId),
       fetchLatentPayload(supabase, sessionId, userId),
     ]);
+
+    const maxCount = typeof body.maxCount === "number" && body.maxCount > 0 ? body.maxCount : 16;
 
     const anchors = await rankAnchors({
       supabase,
@@ -121,13 +147,46 @@ export async function POST(req: Request) {
       latent,
       prevQuestions,
       includeUsed: false,
-      maxCount: typeof body.maxCount === "number" ? body.maxCount : 16,
+      maxCount,
+    });
+
+    // Persist anchors to v0 tables (idempotent)
+    const input_hash = buildAnchorInputHash({
+      sessionId,
+      dreamText,
+      observation,
+      latent,
+      prevQuestions,
+      maxCount,
+    });
+
+    const saved = await insertAnchorVersionIfMissing(supabase, {
+      session_id: sessionId,
+      user_id: userId,
+      input_hash,
+      model: "ranking_v0", // string kell, ne null
+      payload: {
+        anchors,
+        meta: {
+          maxCount,
+          prevQuestionsCount: prevQuestions.length,
+          hasObservation: Boolean(observation),
+          hasLatent: Boolean(latent),
+        },
+      },
+    });
+
+    await upsertAnchorLatest(supabase, {
+      session_id: sessionId,
+      user_id: userId,
+      anchor_version_id: saved.id,
     });
 
     return NextResponse.json({
       ok: true,
       session_id: sessionId,
       anchors,
+      anchor_version_id: saved.id,
     });
   } catch (err: any) {
     const message = err instanceof Error ? err.message : "Unknown error";
