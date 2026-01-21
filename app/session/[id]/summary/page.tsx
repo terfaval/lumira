@@ -121,12 +121,6 @@ type DirectionWorkBlock = {
   content: DirectionCardContent;
 };
 
-type SalientElement = {
-  key: string;
-  label: string;
-  evidence: Array<{ source: "observation" | "session_index" | "work_ledger"; path: string }>;
-};
-
 function buildAnswersByWorkId(rows: WorkAnswerRow[]): Map<string, WorkAnswerRow> {
   const map = new Map<string, WorkAnswerRow>();
   for (const row of rows) {
@@ -158,7 +152,6 @@ function normalizeContent(content: DirectionCardContent): DirectionCardContent {
     ai: {
       ...content.ai,
       context: content.ai?.context ?? null,
-      prompt: content.ai?.prompt ?? null,
       prompt: content.ai?.prompt ?? null,
       question: content.ai?.question ?? null,
     },
@@ -209,7 +202,6 @@ export default function SessionSummary() {
   const [session, setSession] = useState<SessionRow | null>(null);
   const [framePayload, setFramePayload] = useState<FramePayload | null>(null);
   const [rawEntry, setRawEntry] = useState<string | null>(null);
-  const [salientElements, setSalientElements] = useState<SalientElement[]>([]);
 
   const [workBlocks, setWorkBlocks] = useState<DirectionWorkBlock[]>([]);
   const [directionCatalog, setDirectionCatalog] = useState<DirectionCatalogItemDTO[]>([]);
@@ -292,23 +284,6 @@ export default function SessionSummary() {
 
         if (!isMounted) return;
         setRawEntry(typeof entryRow?.content === "string" ? entryRow.content : null);
-
-        // Salient elements from canonical latent
-        try {
-          const latentRes = await fetch(`/api/latent/latest?session_id=${encodeURIComponent(sessionId)}`, {
-            cache: "no-store",
-          });
-          if (latentRes.ok) {
-            const latentJson = await latentRes.json();
-            const elements = Array.isArray(latentJson?.payload?.salient_elements) ? latentJson.payload.salient_elements : [];
-            if (!isMounted) return;
-            setSalientElements(elements as SalientElement[]);
-          } else if (isMounted) {
-            setSalientElements([]);
-          }
-        } catch {
-          if (isMounted) setSalientElements([]);
-        }
 
         // Frame payload
         const { data: latestFrame } = await supabase
@@ -739,19 +714,6 @@ export default function SessionSummary() {
                 <div className={`${styles.statsValue} ${styles.gridCardBody}`}>{stats.directions}</div>
               </GlassCardSurface>
             </div>
-
-            {salientElements.length > 0 ? (
-              <div className={styles.salientSection}>
-                <div className={styles.salientLabel}>Kiemelt elemek</div>
-                <div className={styles.salientPills}>
-                  {salientElements.map((el) => (
-                    <span key={el.key} className={styles.salientPill}>
-                      {el.label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
 
             {/* Gallery */}
             <div className={styles.gallerySection}>
