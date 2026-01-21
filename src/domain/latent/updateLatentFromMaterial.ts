@@ -1,6 +1,12 @@
 // src/domain/latent/updateLatentFromMaterial.ts
 import { openaiServer, OPENAI_MODELS } from "@/src/lib/openai/server";
 
+export type SalientElement = {
+  key: string;
+  label: string;
+  evidence: Array<{ source: "observation" | "session_index" | "work_ledger"; path: string }>;
+};
+
 export type LatentPayloadV0 = {
   coverage: {
     people: "low" | "med" | "high";
@@ -20,6 +26,7 @@ export type LatentPayloadV0 = {
     evidence: string[];
   }>;
   direction_candidates: Array<{ slug: string; score: number; why: string }>;
+  salient_elements?: SalientElement[];
 };
 
 export async function updateLatentFromMaterial(args: {

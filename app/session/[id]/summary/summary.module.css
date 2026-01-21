@@ -166,6 +166,38 @@
   color: var(--text);
 }
 
+/* Salient elements */
+.salientSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.salientLabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.salientPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.salientPill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
 /* Section head */
 .sectionHead {
   display: flex;

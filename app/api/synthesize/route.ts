@@ -75,6 +75,14 @@ export type SynthesizeOutput = {
   flags: Flags;
 };
 
+const DEFAULT_COVERAGE = {
+  people: "low",
+  places: "low",
+  objects: "low",
+  actions: "low",
+  feelings: "low",
+} as const;
+
 const emptyAnchors = (): Anchors => ({
   characters: [],
   places: [],
@@ -429,12 +437,31 @@ async function persistLatent(
   output: SynthesizeOutput,
   input_hash: string
 ) {
+  const candidate_directions = Array.isArray(output.candidate_directions)
+    ? output.candidate_directions.filter((s) => typeof s === "string" && s.trim())
+    : [];
+  const direction_candidates = candidate_directions.map((slug, idx) => ({
+    slug: slug.trim(),
+    score: Math.max(candidate_directions.length - idx, 1),
+    why: "",
+  }));
+
+  const payload = {
+    ...output,
+    coverage: (output as any).coverage ?? DEFAULT_COVERAGE,
+    open_loops: Array.isArray((output as any).open_loops) ? (output as any).open_loops : [],
+    hypothesis_slots: Array.isArray((output as any).hypothesis_slots) ? (output as any).hypothesis_slots : [],
+    question_candidates: Array.isArray((output as any).question_candidates) ? (output as any).question_candidates : [],
+    direction_candidates,
+    salient_elements: Array.isArray((output as any).salient_elements) ? (output as any).salient_elements : [],
+  };
+
   const latent = await insertLatentVersionIfMissing(supabase, {
     session_id: sessionId,
     user_id: userId,
     input_hash,
     model: MODEL,
-    payload: output,
+    payload,
   });
 
   await upsertLatentLatest(supabase, {
