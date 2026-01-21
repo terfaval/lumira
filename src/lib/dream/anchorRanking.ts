@@ -1,13 +1,15 @@
 // src/lib/dream/anchorRanking.ts
-// Anchor ranking utilities for the álomnapló project.
 //
-// This module centralises the logic for collecting, deduplicating and
-// ranking anchors (kulcspontok) extracted from latent/synth outputs.
-// It can cross-reference anchors against the user's dream glossary
-// and counts approximate occurrences in the dream text.
+// v0 Anchor ranking utilities
+// - collects candidates primarily from observation payload (rich, stable)
+// - optionally augments/boosts from latent payload (open_loops, hypothesis_slots, etc.)
+// - cross-references glossary_terms + glossary_notes
+// - counts approximate occurrences in dream text
 //
-// Each anchor is returned with a score and optional meta-information so
-// that downstream routes (frame, work) can pick the most relevant anchors.
+// NOTE: This module is deliberately tolerant to payload shape drift.
+// It never assumes a single rigid schema for observation/latent.
+
+import { anchorKey } from "@/src/lib/dream/anchorKey";
 
 export type AnchorCategory = "character" | "place" | "object" | "beat" | "felt_word";
 
@@ -19,88 +21,180 @@ export type AnchorInfo = {
   inGlossary: boolean;
   glossaryNotes: string | null;
 
-  /**
-   * Approximate count of how many times this anchor appears in the raw dream text.
-   * Used as an additional signal for relevance.
-   */
   occurrences: number;
-
-  /**
-   * Set to true if the anchor matches latent.question_seed.target_anchor (if present).
-   * This adds extra weight.
-   */
   isTarget: boolean;
+
+  // Optional debug/meta hooks (safe to ignore in UI)
+  sources?: string[];
 };
 
-/**
- * Helper to normalise Hungarian text for deduplication.
- * Converts to lower case and trims whitespace.
- * Does not remove diacritics to preserve user-specific names.
- */
 function normaliseKey(s: string): string {
   return (s || "").toLowerCase().trim();
 }
 
-function uniqStrings(arr: string[]): string[] {
+function uniqByKey(values: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const s of arr) {
-    const k = normaliseKey(s);
+  for (const raw of values) {
+    const k = normaliseKey(raw);
     if (!k) continue;
     if (seen.has(k)) continue;
     seen.add(k);
-    out.push(s);
+    out.push(raw.trim());
   }
   return out;
 }
 
-/**
- * Collect raw anchor candidates from latent analysis and synth outputs.
- * Returns a map keyed by normalised string with first occurrence and category.
- * Duplicate strings (case-insensitive) will keep the first occurrence.
- */
-function collectAnchors(latent: any, synth: any) {
-  const map = new Map<string, { name: string; category: AnchorCategory }>();
+function pushIfString(out: string[], x: unknown) {
+  if (typeof x === "string") {
+    const t = x.trim();
+    if (t) out.push(t);
+  }
+}
 
-  const add = (arr: any, category: AnchorCategory) => {
-    if (!Array.isArray(arr)) return;
-    for (const item of arr) {
-      if (typeof item !== "string") continue;
-      const key = normaliseKey(item);
-      if (!key) continue;
-      if (!map.has(key)) map.set(key, { name: item, category });
+function pushArrayStrings(out: string[], x: unknown) {
+  if (!Array.isArray(x)) return;
+  for (const it of x) pushIfString(out, it);
+}
+
+function safeParseJSONMaybeString(payload: any): any {
+  // observation_versions.payload in your sample is a JSON string.
+  if (typeof payload === "string") {
+    try {
+      return JSON.parse(payload);
+    } catch {
+      return null;
     }
-  };
-
-  // Support both { anchors: { ... } } and direct shapes if needed later.
-  const latAnch = latent && typeof latent === "object" ? latent.anchors : null;
-  const synAnch = synth && typeof synth === "object" ? synth.anchors : null;
-
-  if (latAnch && typeof latAnch === "object") {
-    add(latAnch.characters, "character");
-    add(latAnch.places, "place");
-    add(latAnch.objects, "object");
-    add(latAnch.beats, "beat");
-    add(latAnch.felt_words, "felt_word");
   }
-
-  if (synAnch && typeof synAnch === "object") {
-    add(synAnch.characters, "character");
-    add(synAnch.places, "place");
-    add(synAnch.objects, "object");
-    add(synAnch.beats, "beat");
-    add(synAnch.felt_words, "felt_word");
-  }
-
-  return map;
+  return payload ?? null;
 }
 
 /**
- * Compute a relevance score for a given anchor.
- * Category weights can be tuned based on empirical data:
- * beats > characters > places > objects > felt words.
+ * Pull anchor candidates from observation payload.
+ * Supports:
+ * - observation.entities.{people,places,objects,themes_words}
+ * - observation.scenes[].{characters,setting,objects,actions,mood_words,sensations}
+ * - observation.raw_facts (as beats)
  */
-function scoreAnchor(params: { category: AnchorCategory; occurrences: number; isTarget: boolean }): number {
+function collectFromObservation(observationRaw: any): Array<{ name: string; category: AnchorCategory; source: string }> {
+  const obs = safeParseJSONMaybeString(observationRaw);
+  if (!obs || typeof obs !== "object") return [];
+
+  const out: Array<{ name: string; category: AnchorCategory; source: string }> = [];
+
+  const entities = (obs as any).entities;
+  if (entities && typeof entities === "object") {
+    const people: string[] = [];
+    const places: string[] = [];
+    const objects: string[] = [];
+    const themes: string[] = [];
+
+    pushArrayStrings(people, (entities as any).people);
+    pushArrayStrings(places, (entities as any).places);
+    pushArrayStrings(objects, (entities as any).objects);
+    pushArrayStrings(themes, (entities as any).themes_words);
+
+    for (const s of uniqByKey(people)) out.push({ name: s, category: "character", source: "observation.entities.people" });
+    for (const s of uniqByKey(places)) out.push({ name: s, category: "place", source: "observation.entities.places" });
+    for (const s of uniqByKey(objects)) out.push({ name: s, category: "object", source: "observation.entities.objects" });
+    for (const s of uniqByKey(themes)) out.push({ name: s, category: "felt_word", source: "observation.entities.themes_words" });
+  }
+
+  const scenes = (obs as any).scenes;
+  if (Array.isArray(scenes)) {
+    for (let i = 0; i < scenes.length; i++) {
+      const sc = scenes[i];
+      if (!sc || typeof sc !== "object") continue;
+
+      const chars: string[] = [];
+      const objs: string[] = [];
+      const acts: string[] = [];
+      const moods: string[] = [];
+      const sens: string[] = [];
+
+      pushArrayStrings(chars, (sc as any).characters);
+      pushArrayStrings(objs, (sc as any).objects);
+      pushArrayStrings(acts, (sc as any).actions);
+      pushArrayStrings(moods, (sc as any).mood_words);
+      pushArrayStrings(sens, (sc as any).sensations);
+
+      // setting is a string (sometimes long) — keep it, but it will likely score lower due to occurrences
+      const setting = (sc as any).setting;
+      if (typeof setting === "string" && setting.trim()) {
+        out.push({ name: setting.trim(), category: "place", source: `observation.scenes[${i}].setting` });
+      }
+
+      for (const s of uniqByKey(chars)) out.push({ name: s, category: "character", source: `observation.scenes[${i}].characters` });
+      for (const s of uniqByKey(objs)) out.push({ name: s, category: "object", source: `observation.scenes[${i}].objects` });
+      for (const s of uniqByKey(acts)) out.push({ name: s, category: "beat", source: `observation.scenes[${i}].actions` });
+      for (const s of uniqByKey(moods)) out.push({ name: s, category: "felt_word", source: `observation.scenes[${i}].mood_words` });
+      for (const s of uniqByKey(sens)) out.push({ name: s, category: "felt_word", source: `observation.scenes[${i}].sensations` });
+    }
+  }
+
+  const rawFacts = (obs as any).raw_facts;
+  if (Array.isArray(rawFacts)) {
+    for (const s of uniqByKey(rawFacts.filter((x: any) => typeof x === "string"))) {
+      out.push({ name: s, category: "beat", source: "observation.raw_facts" });
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Pull extra candidates / boosts from latent payload.
+ * Supports:
+ * - open_loops[].slot
+ * - hypothesis_slots[].slot
+ * - question_candidates[].text (as beat), and maybe target (as felt_word, low weight)
+ */
+function collectFromLatent(latentRaw: any): Array<{ name: string; category: AnchorCategory; source: string; boost?: number }> {
+  const lat = latentRaw ?? null;
+  if (!lat || typeof lat !== "object") return [];
+
+  const out: Array<{ name: string; category: AnchorCategory; source: string; boost?: number }> = [];
+
+  const openLoops = (lat as any).open_loops;
+  if (Array.isArray(openLoops)) {
+    for (const row of openLoops) {
+      const slot = row?.slot;
+      if (typeof slot === "string" && slot.trim()) {
+        out.push({ name: slot.trim(), category: "beat", source: "latent.open_loops.slot", boost: 1.0 });
+      }
+    }
+  }
+
+  const hyp = (lat as any).hypothesis_slots;
+  if (Array.isArray(hyp)) {
+    for (const row of hyp) {
+      const slot = row?.slot;
+      if (typeof slot === "string" && slot.trim()) {
+        out.push({ name: slot.trim(), category: "felt_word", source: "latent.hypothesis_slots.slot", boost: 0.6 });
+      }
+    }
+  }
+
+  const qc = (lat as any).question_candidates;
+  if (Array.isArray(qc)) {
+    for (const row of qc) {
+      const text = row?.text;
+      if (typeof text === "string" && text.trim()) {
+        out.push({ name: text.trim(), category: "beat", source: "latent.question_candidates.text", boost: 0.4 });
+      }
+      const target = row?.target;
+      if (typeof target === "string" && target.trim()) {
+        // targets like "self_boundary" are not user-facing HU anchors, so keep low-weight.
+        out.push({ name: target.trim(), category: "felt_word", source: "latent.question_candidates.target", boost: 0.1 });
+      }
+    }
+  }
+
+  return out;
+}
+
+function scoreAnchor(params: { category: AnchorCategory; occurrences: number; isTarget: boolean; inGlossary: boolean }): number {
+  // Core weights: beats > characters > places > objects > felt_words
   const baseWeights: Record<AnchorCategory, number> = {
     beat: 5,
     character: 4,
@@ -110,37 +204,35 @@ function scoreAnchor(params: { category: AnchorCategory; occurrences: number; is
   };
 
   let score = baseWeights[params.category] ?? 1;
+
+  // occurrences: mild signal
   score += params.occurrences * 0.5;
+
+  // glossary: small bump (user-pinned memory)
+  if (params.inGlossary) score += 1.5;
+
+  // explicit target: bigger bump (if ever used)
   if (params.isTarget) score += 3;
+
   return score;
 }
 
-/**
- * Count approximate occurrences of an anchor in the dream text.
- * A simple case-insensitive substring count is used.
- */
 function countOccurrences(name: string, dreamText: string): number {
   if (!name || !dreamText) return 0;
-  const key = normaliseKey(name);
-  if (!key) return 0;
 
-  const text = dreamText.toLowerCase();
+  const needle = normaliseKey(name);
+  if (!needle) return 0;
+
+  const hay = dreamText.toLowerCase();
   let count = 0;
-  let idx = text.indexOf(key);
-
+  let idx = hay.indexOf(needle);
   while (idx !== -1) {
     count++;
-    idx = text.indexOf(key, idx + key.length);
+    idx = hay.indexOf(needle, idx + needle.length);
   }
-
   return count;
 }
 
-/**
- * Determine whether an anchor is considered "used" based on a list of previous questions.
- * All words of the anchor must appear in a question (case-insensitive).
- * This replicates the existing work route logic.
- */
 export function anchorUsed(anchor: string, prevQuestions: string[]): boolean {
   const parts = (anchor || "").toLowerCase().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return false;
@@ -151,42 +243,71 @@ export function anchorUsed(anchor: string, prevQuestions: string[]): boolean {
   });
 }
 
-/**
- * Rank anchors for a given user and dream.
- *
- * Collects anchors from latent/synth, queries the user's glossary for matching entries,
- * counts occurrences in dream text, applies scoring and returns a sorted list.
- */
 export async function rankAnchors(params: {
   supabase: any;
   userId: string;
   dreamText: string;
+  observation: any | null;
   latent: any | null;
-  synth: any | null;
+  synth?: any | null; // kept for compatibility, but not required
   prevQuestions?: string[];
   includeUsed?: boolean;
   maxCount?: number;
 }): Promise<AnchorInfo[]> {
-  const { supabase, userId, dreamText, latent, synth } = params;
+  const { supabase, userId, dreamText, observation, latent } = params;
   const prevQs = Array.isArray(params.prevQuestions) ? params.prevQuestions : [];
   const includeUsed = params.includeUsed ?? false;
   const maxCount = typeof params.maxCount === "number" ? params.maxCount : undefined;
 
-  // Collect anchors and their base categories.
-  const map = collectAnchors(latent, synth);
-  const anchors: AnchorInfo[] = [];
+  // 1) Collect candidates from observation (primary)
+  const obsCandidates = collectFromObservation(observation);
 
-  // Identify target anchor from latent analysis if present.
-  let targetAnchorKey: string | null = null;
-  const seed = latent && typeof latent === "object" ? (latent as any).question_seed : null;
-  if (seed && typeof seed === "object" && typeof (seed as any).target_anchor === "string") {
-    targetAnchorKey = normaliseKey((seed as any).target_anchor);
-  }
+  // 2) Collect from latent (secondary)
+  const latentCandidates = collectFromLatent(latent);
 
-  // Preload glossary items matching any anchor names for this user.
-  // NOTE: This is exact-match on canonical; if you later want fuzzy/normalised,
-  // do it in SQL with a normalised column or in an RPC.
-  const names = uniqStrings(Array.from(map.values()).map((v) => v.name));
+  // 3) Merge by canonical “key”
+  // Use anchorKey() so HU diacritics + stopwords normalize well for dedupe.
+  const merged = new Map<
+    string,
+    {
+      name: string;
+      category: AnchorCategory;
+      sources: string[];
+      latentBoost: number;
+    }
+  >();
+
+  const add = (name: string, category: AnchorCategory, source: string, boost = 0) => {
+    const k = anchorKey(name) || normaliseKey(name);
+    if (!k) return;
+
+    const existing = merged.get(k);
+    if (!existing) {
+      merged.set(k, { name, category, sources: [source], latentBoost: boost });
+      return;
+    }
+
+    // Prefer “stronger” categories if conflict (beat > character > place > object > felt_word)
+    const rank: Record<AnchorCategory, number> = { beat: 5, character: 4, place: 3, object: 2, felt_word: 1 };
+    const bestCat = rank[category] > rank[existing.category] ? category : existing.category;
+
+    merged.set(k, {
+      name: existing.name || name,
+      category: bestCat,
+      sources: existing.sources.includes(source) ? existing.sources : [...existing.sources, source],
+      latentBoost: existing.latentBoost + boost,
+    });
+  };
+
+  for (const c of obsCandidates) add(c.name, c.category, c.source, 0);
+  for (const c of latentCandidates) add(c.name, c.category, c.source, c.boost ?? 0);
+
+  const keys = Array.from(merged.keys());
+
+  // 4) Glossary match (best-effort)
+  // We try exact match on canonical; if you later add canonical_key column,
+  // we can make this robust using anchorKey at DB-level too.
+  const names = uniqByKey(Array.from(merged.values()).map((v) => v.name));
   const glossaryMatches: Record<string, { note: string | null }> = {};
 
   if (names.length > 0) {
@@ -210,43 +331,59 @@ export async function rankAnchors(params: {
         if (!notesErr && Array.isArray(notes)) {
           for (const row of notes as any[]) {
             if (!row?.term_id) continue;
-            if (notesByTerm.has(row.term_id)) continue; // keep latest (ordered desc)
+            if (notesByTerm.has(row.term_id)) continue; // keep latest
             notesByTerm.set(row.term_id, (row.content ?? null) as any);
           }
         }
       }
 
       for (const term of terms as any[]) {
-        const key = normaliseKey(term.canonical);
-        glossaryMatches[key] = { note: notesByTerm.get(term.id) ?? null };
+        const k = anchorKey(term.canonical) || normaliseKey(term.canonical);
+        glossaryMatches[k] = { note: notesByTerm.get(term.id) ?? null };
       }
     }
   }
 
-  // Build AnchorInfo objects with scores.
-  for (const [key, { name, category }] of map.entries()) {
-    if (!includeUsed && anchorUsed(name, prevQs)) continue;
+  // 5) Target anchor (optional; not present in your latent sample, but keep hook)
+  let targetAnchorK: string | null = null;
+  const seed = latent && typeof latent === "object" ? (latent as any).question_seed : null;
+  if (seed && typeof seed === "object" && typeof (seed as any).target_anchor === "string") {
+    targetAnchorK = anchorKey((seed as any).target_anchor) || normaliseKey((seed as any).target_anchor);
+  }
 
-    const occurrences = countOccurrences(name, dreamText);
-    const isTarget = Boolean(targetAnchorKey && key === targetAnchorKey);
-    const baseScore = scoreAnchor({ category, occurrences, isTarget });
+  // 6) Build AnchorInfo list
+  const anchors: AnchorInfo[] = [];
+  for (const k of keys) {
+    const v = merged.get(k)!;
 
-    const glossary = glossaryMatches[key];
+    if (!includeUsed && anchorUsed(v.name, prevQs)) continue;
+
+    const occurrences = countOccurrences(v.name, dreamText);
+    const glossary = glossaryMatches[k];
+    const isTarget = Boolean(targetAnchorK && k === targetAnchorK);
+
+    const base = scoreAnchor({
+      category: v.category,
+      occurrences,
+      isTarget,
+      inGlossary: Boolean(glossary),
+    });
+
     anchors.push({
-      name,
-      category,
-      score: baseScore,
+      name: v.name,
+      category: v.category,
+      score: base + (v.latentBoost || 0),
       inGlossary: Boolean(glossary),
       glossaryNotes: glossary ? glossary.note : null,
       occurrences,
       isTarget,
+      sources: v.sources,
     });
   }
 
-  // Sort anchors descending by score, then alphabetically to stabilise ordering.
   anchors.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
-    return a.name.localeCompare(b.name);
+    return a.name.localeCompare(b.name, "hu");
   });
 
   if (typeof maxCount === "number" && maxCount > 0) return anchors.slice(0, maxCount);

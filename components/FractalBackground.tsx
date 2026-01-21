@@ -372,7 +372,7 @@ export default function FractalBackground({
     gl.uniform1f(uOpacity, clamp(paramsRef.current.opacity, 0, 1));
     gl.uniform1i(uIter, Math.max(40, Math.min(320, paramsRef.current.iterations)));
 
-    // Initial filter once; loop toggles it during low-quality windows.
+    // ✅ Always keep the visual layer stable (no scroll flicker)
     canvas.style.filter = baseFilter;
 
     const drawFrame = (now: number) => {
@@ -384,11 +384,11 @@ export default function FractalBackground({
         lastTokenReadSecRef.current = tSec;
       }
 
-      // Low-quality windows (scroll/gesture)
+      // Low-quality windows (scroll/gesture) — keep visuals stable, only adjust DPR via resize()
       const lowQuality = performance.now() < lowQualityUntilRef.current;
       if (lowQuality !== lowQualityRef.current) {
         lowQualityRef.current = lowQuality;
-        canvas.style.filter = lowQuality ? "none" : baseFilter;
+        canvas.style.filter = baseFilter; // ✅ never toggle to "none"
         glRef.current?.resize();
       }
 
@@ -560,8 +560,8 @@ export default function FractalBackground({
           width: "100%",
           height: "100%",
           display: "block",
-          // loop toggles filter for low-quality windows
-          filter: "none",
+          // ✅ keep stable visual; avoid flicker on scroll
+          filter: baseFilter,
           opacity: 1,
         }}
       />

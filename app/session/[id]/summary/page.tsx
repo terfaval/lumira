@@ -8,6 +8,7 @@ import { Shell } from "@/components/Shell";
 import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { DirectionTile } from "@/components/DirectionTile";
+import { WorkCard } from "@/components/WorkCard";
 import { startDirection } from "@/src/lib/startDirection";
 import type { DirectionCardContent } from "@/src/lib/types";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
@@ -402,6 +403,12 @@ export default function SessionSummary() {
     return m;
   }, [directionCatalog]);
 
+  const workBlockById = useMemo(() => {
+  const m = new Map<string, DirectionWorkBlock>();
+  for (const b of workBlocks) m.set(b.id, b);
+  return m;
+}, [workBlocks]);
+
   const framing = framePayload?.framing_text ?? null;
 
   const dreamLength = useMemo(() => {
@@ -729,30 +736,36 @@ export default function SessionSummary() {
                 <div className={styles.carousel} aria-label="Kártyák galéria">
                   {cardsForGallery.map((c, idx) => {
                     const meta = catalogBySlug.get(c.directionSlug);
-                    const dirTitle = meta?.title ?? c.directionSlug;
+
+                    const full = workBlockById.get(c.id);
+                    if (!full) return null;
 
                     return (
-                      <GlassCardSurface
-                        key={c.id}
-                        className={`${styles.carouselCard} ${styles.gridCard}`}
-                        variant="flat"
-                        paper="evening"
-                        style={{
-                          transform: `translateY(${idx % 2 === 0 ? 0 : 8}px)`,
-                        }}
-                      >
-                        <div className={`${styles.carouselTop} ${styles.gridCardHeader}`}>
-                          <div className={styles.carouselMeta}>{dirTitle}</div>
-                          <div className={styles.carouselState}>{c.isAnswered ? "Megválaszolt" : "Megnyitott"}</div>
-                        </div>
-
-                        <div className={`${styles.carouselBody} ${styles.gridCardBody}`}>
-                          <div className={styles.carouselQ}>{c.question || "—"}</div>
-
-                          {c.isAnswered ? <div className={styles.carouselA}>{c.answer}</div> : <div className={styles.carouselAEmpty}>Nincs válasz</div>}
-                        </div>
-                      </GlassCardSurface>
-                    );
+  <div
+    key={c.id}
+    style={{
+      transform: `translateY(${idx % 2 === 0 ? 0 : 8}px)`,
+    }}
+    
+  >
+    <WorkCard
+      mode="read"
+      busy={false}
+      directionMeta={meta ?? null}
+      block={{
+        id: c.id,
+        // fontos: itt a "teljes" content kell, nem a cardsForGallery-s kivonat
+        content: (workBlocks.find((b) => b.id === c.id)?.content ?? null) as any,
+      }}
+      onOpen={() => {
+        const url = c.directionSlug
+          ? `/session/${sessionId}/work?direction=${encodeURIComponent(c.directionSlug)}`
+          : `/session/${sessionId}/work`;
+        router.push(url);
+      }}
+    />
+  </div>
+);
                   })}
                 </div>
               )}

@@ -1,4 +1,4 @@
-const HU_STOP = new Set([
+const HU_STOP = new Set([ 
   "a",
   "az",
   "egy",
