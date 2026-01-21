@@ -279,17 +279,33 @@ export function SidebarDrawer({
           padding: 0;
         }
 
-        .drawer-surface :global(.surface) {
-          border-radius: 0 !important;
-          border: 0 !important;
-          box-shadow: none !important;
-          padding: var(--space-3) !important;
-          background: transparent !important;
-        }
-        .drawer-surface :global(.surface::before),
-        .drawer-surface :global(.surface::after) {
-          opacity: 0 !important;
-        }
+        .drawer-surface {
+  height: 100%;
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+
+  /* ✅ a GlassCardSurface "kártya" kinézetének nullázása */
+  border-radius: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+
+  /* ✅ a GlassCardSurface inline backgroundját felülírjuk */
+  background: transparent !important;
+
+  /* a belső padding maradhat itt, nem kell a module-ból */
+  padding: var(--space-3) !important;
+
+  /* biztosan töltse a magasságot */
+  align-self: stretch;
+}
+
+/* ✅ a GlassCardSurface gloss/grain overlayek lekapcsolása */
+.drawer-surface::before,
+.drawer-surface::after {
+  opacity: 0 !important;
+}
+
 
         .drawer-section {
           padding: var(--space-2) var(--space-1) var(--space-3);
