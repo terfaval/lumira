@@ -77,10 +77,10 @@ export default function NewClient() {
       };
       if (
         process.env.NODE_ENV !== "production" &&
-        Object.prototype.hasOwnProperty.call(sessionInsert, "raw_dream_text")
+        Object.prototype.hasOwnProperty.call(sessionInsert, "raw_entry")
       ) {
         // Guard against accidental legacy writes in v0.
-        throw new Error("Unexpected raw_dream_text in dream_sessions insert payload.");
+        throw new Error("Unexpected raw_entry in dream_sessions insert payload.");
       }
 
       const { data, error } = await supabase.from("dream_sessions").insert(sessionInsert).select("id").single();

@@ -1,8 +1,8 @@
 // /app/api/work-block/next/route.ts (v0)
 // Minimal, non-legacy work block generator.
-// - NO dream_session_summaries
-// - NO dream_observation / events
-// - NO work_blocks
+// - NO legacy_summaries
+// - NO legacy_observation / events
+// - NO legacy_blocks
 // - NO latent RPC logging
 // - Optional anchor forcing via extract_anchor_keys + pickNextAnchorKey
 //

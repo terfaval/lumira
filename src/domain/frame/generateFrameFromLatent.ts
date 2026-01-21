@@ -49,7 +49,7 @@ export async function generateFrameFromLatent(args: {
   "Bemenetek:",
   "- dream_text: a nyers álomleírás.",
   "- latent_note: jegyzet (anchorok/érzelmi szavak/fordulók) – NEM tényforrás, csak fókusz.",
-  "- dream_observation: megfigyelések (nem értelmezések), használd a konkrét elemekhez és ajánlott irányokhoz.",
+  "- observation: megfigyelések (nem értelmezések), használd a konkrét elemekhez és ajánlott irányokhoz.",
   "",
   "Kötelező stílus:",
   "- Magyar nyelv.",
@@ -65,7 +65,7 @@ export async function generateFrameFromLatent(args: {
   "Óvatos megfigyelés (opcionális, max 1 mondat):",
   "- Csak így kezdődhet: „Lehet, hogy (csak óvatos megfigyelés) ...”.",
   "- TILOS: „ez azt jelenti”, „arra utal”, „valószínűleg”, „tükrözte a szorongásaidat”, diagnózis, biztos pszichologizálás.",
-  "- Ha dream_observation.safety.flag nem 'none': lassíts, ne mélyíts, ne erőltesd.",
+  "- Ha observation.safety.flag nem 'none': lassíts, ne mélyíts, ne erőltesd.",
   "",
   "Anchor szabályok:",
   "- A title tartalmazzon legalább 1 TOP ANCHOR-t.",
@@ -95,7 +95,7 @@ export async function generateFrameFromLatent(args: {
   const user = {
     dream_text: String(args.dreamText ?? ""),
     latent_note: args.latent ?? null,
-    dream_observation: args.observation ?? null,
+    observation: args.observation ?? null,
     catalog,
     top_anchors: topAnchors,
     constraints: {
@@ -363,7 +363,7 @@ async function repairFrameBundle(args: {
   const user = {
     dream_text: args.dreamText,
     latent_note: args.latentNote ?? null,
-    dream_observation: args.dreamObservation ?? null,
+    observation: args.dreamObservation ?? null,
     allowed_slugs: args.allowedSlugs,
     top_anchors: args.topAnchors,
     previous: args.previous ?? {},

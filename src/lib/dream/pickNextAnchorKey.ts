@@ -5,7 +5,7 @@ function normKey(s: string): string {
 }
 
 export function pickNextAnchorKey(params: {
-  extractAnchorKeys: string[];     // pl dream_observation_events.system_extract.anchor_keys
+  extractAnchorKeys: string[];     // pl legacy_observation_events.system_extract.anchor_keys
   usedAnchorKeys: string[];        // ledger anchor_keys lapítva
 }): string | null {
   const all = Array.isArray(params.extractAnchorKeys) ? params.extractAnchorKeys : [];

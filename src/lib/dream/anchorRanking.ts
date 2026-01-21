@@ -9,47 +9,7 @@
 // that downstream routes (frame, work) can pick the most relevant
 // anchors for titles, framings or next questions.
 
-import { supabaseServerAuthed } from '@/src/lib/supabase/serverAuthed';
-
-/**
- * Enumeration of recognised anchor categories.  These correspond to the
- * categories returned by the latent analysis (characters, places, objects,
- * beats, felt_words).
- */
-export type AnchorCategory = 'character' | 'place' | 'object' | 'beat' | 'felt_word';
-
-/**
- * Metadata associated with a single anchor.
- */
-export interface AnchorInfo {
-  /**
-   * The human‑readable name of the anchor (raw string from latent/synth).
-   */
-  name: string;
-  /**
-   * Category of the anchor.
-   */
-  category: AnchorCategory;
-  /**
-   * Calculated score used for sorting anchors.  Higher scores indicate more
-   * relevant anchors.  Scores are not guaranteed to be normalised; they are
-   * relative within one list.
-   */
-  score: number;
-  /**
-   * True if this anchor has a corresponding entry in the user's dream
-   * glossary.
-   */
-  inGlossary: boolean;
-  /**
-   * The user‑supplied notes from the dream glossary, if any.
-   */
-  glossaryNotes: string | null;
-  /**
-   * The user‑supplied categories from the dream glossary, if any.
-   */
-  glossaryCategories: string[] | null;
-  /**
+import { supabaseServerAuthed } from '@/src/lib/supabase/serverAuthed';  /**
    * Approximate count of how many times this anchor appears in the raw
    * dream text.  Used as an additional signal for relevance.
    */
@@ -204,25 +164,41 @@ export async function rankAnchors(params: {
 
   // Preload glossary items matching any anchor names for this user.
   const names = Array.from(map.values()).map((v) => v.name);
-  let glossaryMatches: Record<string, { notes: string | null; categories: string[] | null }> = {};
+  let glossaryMatches: Record<string, { note: string | null }> = {};
   if (names.length > 0) {
-    const { data, error } = await supabase
-      .from('dream_glossary_items')
-      .select('name, notes, categories')
-      .eq('user_id', userId)
-      .in('name', names);
-    if (!error && Array.isArray(data)) {
-      for (const item of data as any[]) {
-        const key = normaliseKey(item.name);
+    const { data: terms, error } = await supabase
+      .from("glossary_terms")
+      .select("id, canonical")
+      .eq("user_id", userId)
+      .in("canonical", names);
+    if (!error && Array.isArray(terms)) {
+      const termIds = terms.map((t: any) => t.id);
+      const notesByTerm = new Map<string, string>();
+      if (termIds.length > 0) {
+        const { data: notes } = await supabase
+          .from("glossary_notes")
+          .select("term_id, content, created_at")
+          .in("term_id", termIds)
+          .order("created_at", { ascending: false });
+        if (Array.isArray(notes)) {
+          for (const row of notes as any[]) {
+            if (!notesByTerm.has(row.term_id)) {
+              notesByTerm.set(row.term_id, row.content ?? null);
+            }
+          }
+        }
+      }
+      for (const term of terms as any[]) {
+        const key = normaliseKey(term.canonical);
         glossaryMatches[key] = {
-          notes: item.notes ?? null,
-          categories: Array.isArray(item.categories) ? item.categories : null,
+          note: notesByTerm.get(term.id) ?? null,
         };
       }
     }
   }
 
   // Build AnchorInfo objects with scores.
+
   for (const [key, { name, category }] of map.entries()) {
     // Skip if already used and we don't include used ones.
     if (!includeUsed && anchorUsed(name, prevQs)) continue;
@@ -235,8 +211,7 @@ export async function rankAnchors(params: {
       category,
       score: baseScore,
       inGlossary: Boolean(glossary),
-      glossaryNotes: glossary ? glossary.notes : null,
-      glossaryCategories: glossary ? glossary.categories : null,
+      glossaryNotes: glossary ? glossary.note : null,
       occurrences,
       isTarget,
     };

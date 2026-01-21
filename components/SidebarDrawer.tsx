@@ -14,7 +14,7 @@ type DreamRow = {
   session_id: string;
   created_at: string;
   title: string | null;
-  raw_dream_text: string | null;
+  raw_entry: string | null;
 };
 
 function DrawerIcon({ name }: { name: "reflection" | "night" | "focus" | "stop" | "work" }) {
@@ -41,10 +41,12 @@ export function SidebarDrawer({
 
   const checkGlossaryAccess = useCallback(async () => {
     try {
+      const userId = await requireUserId();
       const { count, error } = await supabase
-        .from("dream_glossary_items")
+        .from("term_candidates")
         .select("id", { count: "exact", head: true })
-        .eq("is_suggested", true);
+        .eq("user_id", userId)
+        .gt("count", 0);
 
       if (error) throw error;
       setGlossaryAccess((count ?? 0) >= 10);
@@ -88,8 +90,7 @@ export function SidebarDrawer({
           `
           id,
           created_at,
-          raw_dream_text,
-          dream_session_summaries ( title )
+          title
         `
         )
         .eq("user_id", userId)
@@ -98,14 +99,62 @@ export function SidebarDrawer({
 
       if (error) throw error;
 
-      const rows: DreamRow[] = (data ?? [])
-        .map((r: any) => ({
-          session_id: r.id,
-          created_at: r.created_at,
-          title: r.dream_session_summaries?.[0]?.title ?? null,
-          raw_dream_text: r.raw_dream_text ?? null,
-        }))
-        .filter(Boolean);
+      const sessions = (data ?? []) as Array<{ id: string; created_at: string; title: string | null }>;
+      const sessionIds = sessions.map((s) => s.id);
+
+      const frameTitleBySession = new Map<string, string>();
+      if (sessionIds.length > 0) {
+        const { data: latestRows } = await supabase
+          .from("frame_latest")
+          .select("session_id,frame_version_id")
+          .eq("user_id", userId)
+          .in("session_id", sessionIds);
+
+        const frameVersionIds = (latestRows ?? [])
+          .map((row: any) => row.frame_version_id)
+          .filter(Boolean);
+
+        if (frameVersionIds.length > 0) {
+          const { data: frameVersions } = await supabase
+            .from("frame_versions")
+            .select("id,payload")
+            .eq("user_id", userId)
+            .in("id", frameVersionIds);
+
+          const payloadById = new Map(
+            (frameVersions ?? []).map((row: any) => [row.id, row.payload])
+          );
+
+          (latestRows ?? []).forEach((row: any) => {
+            const payload = payloadById.get(row.frame_version_id);
+            const title = typeof payload?.title === "string" ? payload.title.trim() : "";
+            if (title) frameTitleBySession.set(row.session_id, title);
+          });
+        }
+      }
+
+      const rawBySession = new Map<string, string>();
+      if (sessionIds.length > 0) {
+        const { data: entries } = await supabase
+          .from("dream_entries")
+          .select("session_id,content,created_at")
+          .eq("user_id", userId)
+          .eq("kind", "raw")
+          .in("session_id", sessionIds)
+          .order("created_at", { ascending: false });
+
+        (entries ?? []).forEach((row: any) => {
+          if (rawBySession.has(row.session_id)) return;
+          if (typeof row.content === "string") rawBySession.set(row.session_id, row.content);
+        });
+      }
+
+      const rows: DreamRow[] = sessions.map((session) => ({
+        session_id: session.id,
+        created_at: session.created_at,
+        title: session.title ?? frameTitleBySession.get(session.id) ?? null,
+        raw_entry: rawBySession.get(session.id) ?? null,
+      }));
 
       setRecent(rows);
     } catch (e: any) {
@@ -132,7 +181,7 @@ export function SidebarDrawer({
   function titleOf(row: DreamRow): string {
     const t = compact(row.title);
     if (t) return t;
-    const fallback = compact(row.raw_dream_text);
+    const fallback = compact(row.raw_entry);
     if (!fallback) return "Cím nélküli álom";
     return fallback.length > 42 ? fallback.slice(0, 41) + "…" : fallback;
   }
@@ -220,7 +269,7 @@ export function SidebarDrawer({
                       onClick={onClose}
                     >
                       <div className="drawer-item-title">{titleOf(r)}</div>
-                      <div className="drawer-item-snippet">{snippet(r.raw_dream_text)}</div>
+                      <div className="drawer-item-snippet">{snippet(r.raw_entry)}</div>
                       <div className="drawer-item-meta">
                         {new Date(r.created_at).toLocaleString("hu-HU")}
                       </div>
@@ -256,6 +305,8 @@ export function SidebarDrawer({
         }
 
         .drawer-sheet {
+          display: flex;
+          flex-direction: column;
           position: fixed;
           top: 0;
           left: 0;
@@ -273,15 +324,8 @@ export function SidebarDrawer({
         }
 
         .drawer-surface {
-          height: 100%;
-          display: grid;
-          grid-template-rows: auto 1fr auto;
-          padding: 0;
-        }
-
-        .drawer-surface {
-  height: 100%;
-  min-height: 100%;
+  flex: 1 1 auto; 
+  min-height: 0;
   display: grid;
   grid-template-rows: auto 1fr auto;
 

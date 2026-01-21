@@ -8,6 +8,12 @@ import {
 } from "@/src/lib/dream/observation";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { shouldKeepAnchorLabel } from "@/src/lib/dream/huAnchorHygiene";
+import { sha256, materialHashFromPayload } from "@/src/orchestration/idempotency/materialHash";
+import {
+  insertObservationVersionIfMissing,
+  upsertObservationLatest,
+} from "@/src/db/repositories/observationRepo";
+import { fetchObservationLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,6 +36,21 @@ type RequestBody = {
 
 function sanitizeText(input: string): string {
   return (input ?? "").replace(/\s+/g, " ").trim();
+}
+
+function buildObservationInputHash(params: {
+  mode: "initial" | "refresh";
+  dreamText: string;
+  rawDelta: string;
+  history: HistoryItem[];
+}) {
+  const material = materialHashFromPayload({
+    mode: params.mode,
+    dream_text: params.dreamText,
+    raw_delta: params.rawDelta,
+    history: params.history,
+  });
+  return sha256(`observe:${material}`);
 }
 
 async function withTimeout<T>(
@@ -74,7 +95,7 @@ function emptyObs() {
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/*  Event/Anchor helpers (for dream_observation_events logging)    */
+/*  Event/Anchor helpers (for domain_events logging)    */
 /* ────────────────────────────────────────────────────────────── */
 
 function uniq(arr: string[]) {
@@ -129,17 +150,14 @@ async function safeInsertObservationEvent(params: {
   supabase: any;
   sessionId: string;
   userId: string;
-  kind: "system_extract";
   payload: any;
-  anchorKeys: string[];
 }) {
   try {
-    const { error } = await params.supabase.from("dream_observation_events").insert({
+    const { error } = await params.supabase.from("domain_events").insert({
       session_id: params.sessionId,
       user_id: params.userId,
-      kind: params.kind,
+      type: "observation.extracted",
       payload: params.payload ?? {},
-      anchor_keys: params.anchorKeys ?? [],
     });
     if (error) console.warn("observe: event insert failed", error);
   } catch (e) {
@@ -212,26 +230,23 @@ async function fetchSessionDreamText(
   sessionId: string,
   userId: string
 ): Promise<string | null> {
-  const { data: session, error: sessionError } = await supabase
-    .from("dream_sessions")
-    .select("id, raw_dream_text, user_id")
-    .eq("id", sessionId)
+  const { data: entry, error: entryError } = await supabase
+    .from("dream_entries")
+    .select("content, created_at")
+    .eq("session_id", sessionId)
     .eq("user_id", userId)
-    .single();
+    .eq("kind", "raw")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (sessionError || !session) return null;
-  return sanitizeText(session.raw_dream_text ?? "");
+  if (entryError || !entry) return null;
+  return sanitizeText(entry.content ?? "");
 }
 
 async function fetchExistingObservation(supabase: any, sessionId: string, userId: string) {
-  const { data } = await supabase
-    .from("dream_observation")
-    .select("obs")
-    .eq("session_id", sessionId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  const parsed = parseDreamObservation(data?.obs ?? null);
+  const latest = await fetchObservationLatestWithPayloadAndId(supabase, userId, sessionId);
+  const parsed = parseDreamObservation(latest?.payload ?? null);
   return parsed ?? null;
 }
 
@@ -258,29 +273,41 @@ export async function POST(req: Request) {
       dreamText = fromDb;
     }
 
-    // ✅ Short dream → store schema-complete empty and return
+    const history = mode === "refresh" ? clampHistory(body.history, 3) : [];
+    const rawDelta = mode === "refresh" ? sanitizeText(body.raw_delta ?? "") : "";
+    const primaryText = rawDelta || dreamText;
+
+    // ? Short dream -> store schema-complete empty and return
     if (dreamText.length < MIN_DREAM_LEN) {
       const empty = emptyObs();
-      const { error: upsertError } = await supabase
-        .from("dream_observation")
-        .upsert({ session_id: sessionId, user_id: userId, obs: empty }, { onConflict: "session_id" });
+      const input_hash = buildObservationInputHash({ mode, dreamText, rawDelta, history });
+      const obs = await insertObservationVersionIfMissing(supabase, {
+        session_id: sessionId,
+        user_id: userId,
+        input_hash,
+        model: null,
+        payload: empty,
+      });
+      await upsertObservationLatest(supabase, {
+        session_id: sessionId,
+        user_id: userId,
+        observation_version_id: obs.id,
+      });
 
-      if (upsertError)
-        return NextResponse.json({ error: "Observation write failed" }, { status: 500 });
-
-      // Log as system_extract event (non-fatal if it fails)
+      // Log as observation.extracted event (non-fatal if it fails)
+      const anchorKeys = buildAnchorKeysFromObservation(empty);
       await safeInsertObservationEvent({
         supabase,
         sessionId,
         userId,
-        kind: "system_extract",
         payload: {
           mode,
           too_short: true,
           raw_delta_used: false,
           observation: empty,
+          anchor_keys: anchorKeys,
+          observation_version_id: obs.id,
         },
-        anchorKeys: buildAnchorKeysFromObservation(empty),
       });
 
       return NextResponse.json({
@@ -293,11 +320,6 @@ export async function POST(req: Request) {
     }
 
     const existingObs = mode === "refresh" ? await fetchExistingObservation(supabase, sessionId, userId) : null;
-    const history = mode === "refresh" ? clampHistory(body.history, 3) : [];
-
-    // Optional delta optimization: if provided, use it; else use full dreamText.
-    const rawDelta = mode === "refresh" ? sanitizeText(body.raw_delta ?? "") : "";
-    const primaryText = rawDelta || dreamText;
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const systemPrompt = buildSystemPrompt();
@@ -348,20 +370,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid observation schema" }, { status: 500 });
     }
 
-    const { error: upsertError } = await supabase
-      .from("dream_observation")
-      .upsert({ session_id: sessionId, user_id: userId, obs: observation }, { onConflict: "session_id" });
+    const input_hash = buildObservationInputHash({ mode, dreamText, rawDelta, history });
+    const obs = await insertObservationVersionIfMissing(supabase, {
+      session_id: sessionId,
+      user_id: userId,
+      input_hash,
+      model: MODEL,
+      payload: observation,
+    });
 
-    if (upsertError)
-      return NextResponse.json({ error: "Observation write failed" }, { status: 500 });
+    await upsertObservationLatest(supabase, {
+      session_id: sessionId,
+      user_id: userId,
+      observation_version_id: obs.id,
+    });
 
-    // Log as system_extract event (non-fatal if it fails)
+    // Log as observation.extracted event (non-fatal if it fails)
     const obsAnchorKeys = buildAnchorKeysFromObservation(observation);
     await safeInsertObservationEvent({
       supabase,
       sessionId,
       userId,
-      kind: "system_extract",
       payload: {
         mode,
         raw_delta_used: Boolean(rawDelta),
@@ -369,8 +398,9 @@ export async function POST(req: Request) {
         observation,
         // small audit hints (optional)
         history_used: history?.length ?? 0,
+        anchor_keys: obsAnchorKeys,
+        observation_version_id: obs.id,
       },
-      anchorKeys: obsAnchorKeys,
     });
 
     return NextResponse.json({

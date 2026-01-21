@@ -5,6 +5,13 @@ import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
 import { anchorsFromObservation } from "@/src/lib/dream/anchorsFromObservation";
 import { CatalogService } from "@/src/services/CatalogService";
+import {
+  fetchLatentLatestWithPayloadAndId,
+  fetchObservationLatestWithPayloadAndId,
+  fetchLatestRawDreamEntry,
+} from "@/src/db/repositories/latestRepo";
+import { insertLatentVersionIfMissing, upsertLatentLatest } from "@/src/db/repositories/latentRepo";
+import { sha256, materialHashFromPayload } from "@/src/orchestration/idempotency/materialHash";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -165,7 +172,7 @@ function detectSafetyFallback(dreamText: string): SafetyValue {
 }
 
 function mapObsSafetyToFlags(obsFlag?: string): SafetyValue {
-  // dream_observation schema: none|distress|reality_confusion|self_harm
+  // observation schema: none|distress|reality_confusion|self_harm
   if (obsFlag === "self_harm") return "self_harm";
   if (obsFlag === "reality_confusion") return "reality_confusion";
   if (obsFlag && obsFlag !== "none") return "other";
@@ -248,20 +255,37 @@ function anchorKeysFromOutput(out: SynthesizeOutput): string[] {
   return anchorKeysFromStrings(all);
 }
 
+function buildLatentInputHash(params: {
+  dreamText: string;
+  observation: any | null;
+  history: HistoryItem[];
+  allowedSlugs: string[];
+  priorEchoes: PriorEcho[];
+}) {
+  const material = materialHashFromPayload({
+    dream_text: params.dreamText,
+    observation: params.observation,
+    history: params.history,
+    allowed_slugs: params.allowedSlugs,
+    prior_echoes: params.priorEchoes,
+  });
+  return sha256(`latent:${material}`);
+}
+
 function systemPrompt(): string {
   return [
     "You are an API that emits strict JSON (no prose, no markdown).",
     "Task: choose dream-work directions + seed the next question focus.",
     "",
     "PRIMARY TRUTH:",
-    "- Use dream_observation as primary truth for anchors and direction matching.",
+    "- Use observation as primary truth for anchors and direction matching.",
     "- Do NOT invent anchors that are not present in observation labels/evidence.",
     "- dream_text is only for sanity check / exact phrasing, not for new content.",
     "",
     "Rules:",
     "- Output JSON only using the specified schema.",
     "- candidate_directions: ranked list of 3-5 slugs, subset of allowed_slugs.",
-    "- question_seed.target_anchor: MUST be one label from dream_observation (prefer: place/object/character/motif/beat).",
+    "- question_seed.target_anchor: MUST be one label from observation (prefer: place/object/character/motif/beat).",
     "- anchors: derive from observation labels (dedupe, normalize).",
     "- felt_words: use tone labels (lowercase).",
     "- preferred_style must be one of the allowed styles (else open_question_single).",
@@ -355,14 +379,8 @@ function sanitizeOutput(raw: any, allowedSlugs: string[], fallback: SynthesizeOu
 }
 
 async function fetchObservation(supabase: any, sessionId: string, userId: string) {
-  const { data } = await supabase
-    .from("dream_observation")
-    .select("obs")
-    .eq("session_id", sessionId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  const parsed = parseDreamObservation(data?.obs ?? null);
+  const latest = await fetchObservationLatestWithPayloadAndId(supabase, userId, sessionId);
+  const parsed = parseDreamObservation(latest?.payload ?? null);
   return {
     raw: parsed ?? null,
     compact: parsed ? compactDreamObservation(parsed) : null,
@@ -370,14 +388,8 @@ async function fetchObservation(supabase: any, sessionId: string, userId: string
 }
 
 async function fetchSessionDreamText(supabase: any, sessionId: string, userId: string): Promise<string | null> {
-  const { data: session } = await supabase
-    .from("dream_sessions")
-    .select("raw_dream_text")
-    .eq("id", sessionId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  const t = typeof (session as any)?.raw_dream_text === "string" ? (session as any).raw_dream_text : "";
+  const entry = await fetchLatestRawDreamEntry(supabase, userId, sessionId);
+  const t = typeof entry === "string" ? entry : "";
   const clean = (t ?? "").replace(/\s+/g, " ").trim();
   return clean || null;
 }
@@ -410,12 +422,26 @@ async function fetchCatalogForAI(supabase: any) {
   return CatalogService.getActiveCatalog(supabase);
 }
 
-async function persistLatent(supabase: any, sessionId: string, userId: string, output: SynthesizeOutput) {
-  const { error } = await supabase
-    .from("dream_session_summaries")
-    .upsert({ session_id: sessionId, user_id: userId, latent_analysis: output }, { onConflict: "session_id" });
+async function persistLatent(
+  supabase: any,
+  sessionId: string,
+  userId: string,
+  output: SynthesizeOutput,
+  input_hash: string
+) {
+  const latent = await insertLatentVersionIfMissing(supabase, {
+    session_id: sessionId,
+    user_id: userId,
+    input_hash,
+    model: MODEL,
+    payload: output,
+  });
 
-  if (error) console.warn("synthesize: persist latent failed", error.message);
+  await upsertLatentLatest(supabase, {
+    session_id: sessionId,
+    user_id: userId,
+    latent_version_id: latent.id,
+  });
 }
 
 /**
@@ -431,12 +457,14 @@ async function persistSynthesizeEvent(supabase: any, sessionId: string, userId: 
       flags: output.flags,
     };
 
-    const { error } = await supabase.from("dream_observation_events").insert({
+    const { error } = await supabase.from("domain_events").insert({
       session_id: sessionId,
       user_id: userId,
-      kind: "system_synth",
-      payload,
-      anchor_keys: anchorKeysFromOutput(output),
+      type: "latent.synthesized",
+      payload: {
+        ...payload,
+        anchor_keys: anchorKeysFromOutput(output),
+      },
     });
 
     if (error) console.warn("synthesize: persist event failed", error.message);
@@ -461,18 +489,9 @@ export async function POST(req: Request) {
 
     // Idempotency: if latent exists and not force -> return it
     if (!force) {
-      const { data } = await supabase
-        .from("dream_session_summaries")
-        .select("latent_analysis")
-        .eq("session_id", sessionId)
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      const existing = (data as any)?.latent_analysis ?? null;
-      if (existing && typeof existing === "object") return NextResponse.json(existing as SynthesizeOutput);
-      if (typeof existing === "string") {
-        const parsed = parseModelJSON(existing);
-        if (parsed && typeof parsed === "object") return NextResponse.json(parsed as SynthesizeOutput);
+      const existing = await fetchLatentLatestWithPayloadAndId(supabase, userId, sessionId);
+      if (existing?.payload && typeof existing.payload === "object") {
+        return NextResponse.json(existing.payload as SynthesizeOutput);
       }
     }
 
@@ -480,6 +499,13 @@ export async function POST(req: Request) {
     const dreamTextReq = String(body.dream_text ?? "").trim();
     const dreamTextDb = dreamTextReq ? null : await fetchSessionDreamText(supabase, sessionId, userId);
     const dreamText = dreamTextReq || dreamTextDb || "";
+
+    const history = clampHistory(body.history);
+    const priorEchoes = Array.isArray(body.prior_echoes) ? body.prior_echoes.slice(0, 2) : [];
+    const allowedSlugsReq = (body.allowed_slugs ?? [])
+      .filter((s) => typeof s === "string")
+      .map((s) => s.trim())
+      .filter(Boolean);
 
     const tooShort = dreamText ? dreamText.length < MIN_DREAM_LENGTH : false;
 
@@ -507,7 +533,14 @@ export async function POST(req: Request) {
     if (dreamText && tooShort) {
       const out = defaultOutput();
       out.flags.too_short = true;
-      await persistLatent(supabase, sessionId, userId, out);
+      const input_hash = buildLatentInputHash({
+        dreamText,
+        observation: observationCompact ?? observationRaw ?? null,
+        history,
+        allowedSlugs: allowedSlugsReq.length ? allowedSlugsReq : [],
+        priorEchoes,
+      });
+      await persistLatent(supabase, sessionId, userId, out, input_hash);
       await persistSynthesizeEvent(supabase, sessionId, userId, out);
       return NextResponse.json(out);
     }
@@ -518,7 +551,14 @@ export async function POST(req: Request) {
       const out = defaultOutput();
       out.flags.safety = obsSafety;
       out.candidate_directions = [];
-      await persistLatent(supabase, sessionId, userId, out);
+      const input_hash = buildLatentInputHash({
+        dreamText,
+        observation: observationCompact ?? observationRaw ?? null,
+        history,
+        allowedSlugs: allowedSlugsReq.length ? allowedSlugsReq : [],
+        priorEchoes,
+      });
+      await persistLatent(supabase, sessionId, userId, out, input_hash);
       await persistSynthesizeEvent(supabase, sessionId, userId, out);
       return NextResponse.json(out);
     }
@@ -530,22 +570,21 @@ export async function POST(req: Request) {
         const out = defaultOutput();
         out.flags.safety = fallbackSafety;
         out.candidate_directions = [];
-        await persistLatent(supabase, sessionId, userId, out);
+        const input_hash = buildLatentInputHash({
+          dreamText,
+          observation: observationCompact ?? observationRaw ?? null,
+          history,
+          allowedSlugs: allowedSlugsReq.length ? allowedSlugsReq : [],
+          priorEchoes,
+        });
+        await persistLatent(supabase, sessionId, userId, out, input_hash);
         await persistSynthesizeEvent(supabase, sessionId, userId, out);
         return NextResponse.json(out);
       }
     }
 
     const catalog = await fetchCatalogForAI(supabase);
-    const allowedSlugsReq = (body.allowed_slugs ?? [])
-      .filter((s) => typeof s === "string")
-      .map((s) => s.trim())
-      .filter(Boolean);
-
     const allowedPool = allowedSlugsReq.length ? allowedSlugsReq : catalog.map((r: any) => r.slug).filter(Boolean);
-
-    const history = clampHistory(body.history);
-    const priorEchoes = Array.isArray(body.prior_echoes) ? body.prior_echoes.slice(0, 2) : [];
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -554,7 +593,7 @@ export async function POST(req: Request) {
       observationRaw ? anchorsFromObservation(observationRaw) : emptyAnchors();
 
     const userPayload = {
-      dream_observation: observationCompact ?? observationRaw ?? null, // PRIMARY (compact preferred)
+      observation: observationCompact ?? observationRaw ?? null, // PRIMARY (compact preferred)
       dream_text_excerpt: dreamText.slice(0, 1800), // sanity only
       history,
       prior_echoes: priorEchoes,
@@ -562,7 +601,7 @@ export async function POST(req: Request) {
       allowed_slugs: allowedPool,
 
       // extra: provide deterministic anchors to help the model stay on-track
-      // (still consistent with “PRIMARY TRUTH” because it comes from observation)
+      // (still consistent with ?PRIMARY TRUTH? because it comes from observation)
       observation_anchors: obsDerivedAnchors,
     };
 
@@ -607,10 +646,19 @@ export async function POST(req: Request) {
       out.question_seed.target_anchor = pickTargetFromAnchors(out.anchors);
     }
 
-    await persistLatent(supabase, sessionId, userId, out);
+    const input_hash = buildLatentInputHash({
+      dreamText,
+      observation: observationCompact ?? observationRaw ?? null,
+      history,
+      allowedSlugs: allowedPool,
+      priorEchoes,
+    });
+
+    await persistLatent(supabase, sessionId, userId, out, input_hash);
     await persistSynthesizeEvent(supabase, sessionId, userId, out);
     return NextResponse.json(out);
   } catch (e: any) {
     return NextResponse.json({ error: e?.message ?? "Unknown error" }, { status: 500 });
   }
 }
+

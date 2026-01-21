@@ -104,17 +104,11 @@ export function isDirectionContentV2(x: unknown): x is DirectionContentV2 {
 
 export type DreamSession = {
   id: string;
-  raw_dream_text: string;
-  ai_framing_text: string | null;
-  ai_framing_audit?: {
-    model?: string;
-    usage?: Json;
-    title?: string;
-    recommended_directions?: { slug: string; why?: string; reason?: string }[];
-  } | null;
+  title?: string | null;
   status: string;
   created_at: string;
   updated_at: string;
+  archived_at?: string | null;
 };
 
 export type DirectionCatalogItem = {

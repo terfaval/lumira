@@ -130,3 +130,50 @@ export async function fetchFrameLatestWithPayloadAndId(
   if (ver.error) throw ver.error;
   return { frame_version_id: ver.data.id, payload: ver.data.payload };
 }
+
+export async function fetchLatestRawDreamEntry(
+  supabase: SupabaseClient,
+  user_id: string,
+  session_id: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("dream_entries")
+    .select("content,created_at")
+    .eq("session_id", session_id)
+    .eq("user_id", user_id)
+    .eq("kind", "raw")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return null;
+  const content = typeof (data as any)?.content === "string" ? (data as any).content : "";
+  return content || null;
+}
+
+export async function fetchFramePayloadLatest(
+  supabase: SupabaseClient,
+  user_id: string,
+  session_id: string
+): Promise<any | null> {
+  const latest = await fetchFrameLatestWithPayloadAndId(supabase, user_id, session_id);
+  return latest?.payload ?? null;
+}
+
+export async function fetchLatentPayloadLatest(
+  supabase: SupabaseClient,
+  user_id: string,
+  session_id: string
+): Promise<any | null> {
+  const latest = await fetchLatentLatestWithPayloadAndId(supabase, user_id, session_id);
+  return latest?.payload ?? null;
+}
+
+export async function fetchSessionIndexPayloadLatest(
+  supabase: SupabaseClient,
+  user_id: string,
+  session_id: string
+): Promise<any | null> {
+  const latest = await fetchSessionIndexLatestWithPayloadAndId(supabase, user_id, session_id);
+  return latest?.payload ?? null;
+}

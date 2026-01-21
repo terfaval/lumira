@@ -98,7 +98,7 @@ function titleOf(session: ArchiveSessionSummary): string {
   const t = compact(s.title as string | null | undefined);
   if (t) return t;
 
-  const raw = compact(s.raw_dream_text as string | null | undefined);
+  const raw = compact(s.raw_entry as string | null | undefined);
   if (!raw) return "Cím nélküli álom";
 
   return raw.length > 42 ? raw.slice(0, 41) + "…" : raw;
@@ -106,7 +106,7 @@ function titleOf(session: ArchiveSessionSummary): string {
 
 function getSnippet(session: ArchiveSessionSummary): string {
   const s: any = session as any;
-  const raw = compact(s.raw_dream_text as string | undefined | null);
+  const raw = compact(s.raw_entry as string | undefined | null);
   if (!raw) return "";
   const max = 320; // ✅ kétszer hosszabb
   return raw.length > max ? raw.slice(0, max - 1) + "…" : raw;

@@ -10,7 +10,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { rankAnchors } from "@/src/lib/dream/anchorRanking";
-import { safeJsonParse } from "@/src/lib/dream/text";
+import { fetchLatentLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,24 +49,11 @@ export async function POST(req: Request) {
     if (!authData?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const userId = authData.user.id;
 
-    // Fetch latent_analysis from DB (if present).  It is stored as JSON in the
-    // dream_session_summaries table.  If missing or unparsable, latent remains null.
+    // Fetch latent payload from latest (if present). If missing, latent remains null.
     let latent: any | null = null;
     try {
-      const { data, error } = await supabase
-        .from("dream_session_summaries")
-        .select("latent_analysis")
-        .eq("session_id", sessionId)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (!error && data) {
-        const raw = (data as any)?.latent_analysis;
-        if (typeof raw === "string") {
-          latent = safeJsonParse<any>(raw);
-        } else if (raw && typeof raw === "object") {
-          latent = raw;
-        }
-      }
+      const latest = await fetchLatentLatestWithPayloadAndId(supabase, userId, sessionId);
+      if (latest?.payload && typeof latest.payload === "object") latent = latest.payload;
     } catch (e: any) {
       console.warn("rank anchors: DB latent fetch failed", e?.message ?? e);
     }

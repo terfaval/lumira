@@ -7,10 +7,13 @@ import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay"
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { requireUserId } from "@/src/lib/db";
-import type { DreamSession } from "@/src/lib/types";
-
-type SessionListItem = DreamSession & {
+type SessionListItem = {
+  id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
   archived_at?: string | null;
+  raw_entry?: string | null;
 };
 
 export default function SessionListPage() {
@@ -24,12 +27,42 @@ export default function SessionListPage() {
         const userId = await requireUserId();
         const { data, error } = await supabase
           .from("dream_sessions")
-          .select("id, raw_dream_text, status, created_at, updated_at, archived_at")
+          .select("id, status, created_at, updated_at, archived_at")
           .eq("user_id", userId)
           .order("updated_at", { ascending: false });
 
         if (error) throw error;
-        setSessions((data ?? []) as SessionListItem[]);
+        const sessions = (data ?? []) as Array<{
+          id: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+          archived_at?: string | null;
+        }>;
+
+        const sessionIds = sessions.map((s) => s.id);
+        const rawBySession = new Map<string, string>();
+        if (sessionIds.length > 0) {
+          const { data: entries } = await supabase
+            .from("dream_entries")
+            .select("session_id,content,created_at")
+            .eq("user_id", userId)
+            .eq("kind", "raw")
+            .in("session_id", sessionIds)
+            .order("created_at", { ascending: false });
+
+          (entries ?? []).forEach((row: any) => {
+            if (rawBySession.has(row.session_id)) return;
+            if (typeof row.content === "string") rawBySession.set(row.session_id, row.content);
+          });
+        }
+
+        const rows: SessionListItem[] = sessions.map((s) => ({
+          ...s,
+          raw_entry: rawBySession.get(s.id) ?? null,
+        }));
+
+        setSessions(rows);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Nem sikerült betölteni a sessionöket.";
         setErr(message);
@@ -88,8 +121,8 @@ export default function SessionListPage() {
                   </div>
 
                   <div style={{ opacity: 0.7, whiteSpace: "pre-wrap" }}>
-                    {(s.raw_dream_text ?? "").slice(0, 160)}
-                    {(s.raw_dream_text ?? "").length > 160 ? "…" : ""}
+                    {(s.raw_entry ?? "").slice(0, 160)}
+                    {(s.raw_entry ?? "").length > 160 ? "…" : ""}
                   </div>
 
                   <div style={{ fontSize: 12, opacity: 0.65 }}>

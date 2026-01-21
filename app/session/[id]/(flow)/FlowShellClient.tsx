@@ -90,7 +90,7 @@ function infoFromPath(pathname: string) {
  * FlowShellClient wraps session-specific pages in a shell layout.
  *
  * v0 rule:
- * - Do NOT read/write dream_session_summaries (legacy).
+ * - Do NOT read/write legacy_summaries (legacy).
  * - Header title comes from:
  *   1) dream_sessions.title (user override), else
  *   2) frame_latest → frame_versions.payload.title (generated framing title), else

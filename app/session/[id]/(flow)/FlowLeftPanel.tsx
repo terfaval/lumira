@@ -7,7 +7,7 @@ import styles from "./FlowLeftPanel.module.css";
  * FlowLeftPanel shows the raw dream on the left side of the flow pages.
  *
  * v0 rule:
- * - Do NOT touch legacy dream_session_summaries for title.
+ * - Do NOT touch legacy legacy_summaries for title.
  * - The header title is owned by FlowShellClient (Shell header).
  *
  * This panel only renders the raw dream content.

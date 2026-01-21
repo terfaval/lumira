@@ -1,10 +1,9 @@
 // /app/glossary/suggestions/page.tsx
-// Client component to list and process suggested glossary entries.  These entries are automatically generated
-// when an element appears in multiple dreams, but remain in a suggested state until the user writes a note.
+// Client component to list and process suggested glossary entries.
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -13,35 +12,26 @@ import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay"
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 
-type GlossaryItem = {
+type TermCandidate = {
   id: string;
-  user_id: string;
-  name: string;
-  categories: string[] | null;
-  notes: string | null;
-  is_nightmare: boolean;
-  is_suggested?: boolean;
+  term: string;
+  count: number;
   created_at: string;
-  updated_at: string;
 };
 
 export default function SuggestionsPage() {
-  // require authentication – will redirect to login if not logged in
+  // require authentication - will redirect to login if not logged in
   const { loading } = useRequireAuth();
-  const [items, setItems] = useState<GlossaryItem[]>([]);
+  const [items, setItems] = useState<TermCandidate[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   // filter and search state
-  const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   // editing state for individual items
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editCategories, setEditCategories] = useState("");
   const [editNotes, setEditNotes] = useState("");
-  const [editNightmare, setEditNightmare] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -53,12 +43,11 @@ export default function SuggestionsPage() {
     setBusy(true);
     setErr(null);
     const { data, error } = await supabase
-      .from("dream_glossary_items")
-      .select("*")
-      .eq("is_suggested", true)
-      .order("created_at", { ascending: false });
+      .from("term_candidates")
+      .select("id, term, count, created_at")
+      .order("count", { ascending: false });
     if (error) {
-      setErr(error.message || "Nem sikerült betölteni a javasolt elemeket.");
+      setErr(error.message || "Nem sikerult betolteni a javasolt elemeket.");
       setItems([]);
     } else {
       setItems((data as any) ?? []);
@@ -66,90 +55,69 @@ export default function SuggestionsPage() {
     setBusy(false);
   }
 
-  // compute unique categories for filter options
-  const uniqueCategories = Array.from(
-    new Set(
-      items
-        .flatMap((item) => item.categories ?? [])
-        .map((c) => c.trim())
-        .filter((c) => c.length > 0)
-    )
-  );
-
-  // derive filtered list based on search and category filter
-  const filteredItems = items.filter((item) => {
-    if (filterCategory !== "all") {
-      if (!item.categories || !item.categories.includes(filterCategory)) {
-        return false;
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      if (searchTerm.trim().length > 0) {
+        const term = searchTerm.trim().toLowerCase();
+        if (!item.term.toLowerCase().includes(term)) {
+          return false;
+        }
       }
-    }
-    if (searchTerm.trim().length > 0) {
-      const term = searchTerm.trim().toLowerCase();
-      if (!item.name.toLowerCase().includes(term) && !(item.notes ?? '').toLowerCase().includes(term)) {
-        return false;
-      }
-    }
-    return true;
-  });
+      return true;
+    });
+  }, [items, searchTerm]);
 
   const showOverlay = loading || (busy && items.length === 0);
 
-  function beginEdit(item: GlossaryItem) {
+  function beginEdit(item: TermCandidate) {
     setEditingId(item.id);
-    setEditName(item.name);
-    setEditCategories((item.categories ?? []).join(", "));
-    setEditNotes(item.notes ?? "");
-    setEditNightmare(item.is_nightmare);
+    setEditNotes("");
     setErr(null);
   }
 
   function cancelEdit() {
     setEditingId(null);
-    setEditName("");
-    setEditCategories("");
     setEditNotes("");
-    setEditNightmare(false);
     setErr(null);
   }
 
-  async function saveEdit() {
-    if (!editingId) return;
-    const name = editName.trim();
-    if (!name) {
-      setErr("Az elnevezés nem lehet üres.");
-      return;
-    }
+  async function acceptSuggestion(item: TermCandidate) {
     setBusy(true);
-    const cats = editCategories
-      .split(",")
-      .map((c) => c.trim())
-      .filter((c) => c.length > 0);
-    const { error } = await supabase
-      .from("dream_glossary_items")
-      .update({
-        name,
-        categories: cats,
-        notes: editNotes.trim(),
-        is_nightmare: editNightmare,
-        is_suggested: false,
-      })
-      .eq("id", editingId);
-    if (error) {
-      setErr(error.message || "Nem sikerült frissíteni az elemet.");
-    } else {
+    try {
+      const { data: inserted, error } = await supabase
+        .from("glossary_terms")
+        .insert({ canonical: item.term })
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      const note = editNotes.trim();
+      if (note) {
+        const { error: noteErr } = await supabase
+          .from("glossary_notes")
+          .insert({ term_id: inserted.id, content: note });
+        if (noteErr) throw noteErr;
+      }
+
+      const { error: delErr } = await supabase.from("term_candidates").delete().eq("id", item.id);
+      if (delErr) throw delErr;
+
       cancelEdit();
       await loadSuggestions();
+    } catch (e: any) {
+      setErr(e?.message ?? "Nem sikerult frissiteni az elemet.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   async function onDelete(id: string) {
-    const confirmed = window.confirm("Biztosan törlöd ezt a javaslatot?");
+    const confirmed = window.confirm("Biztosan torlod ezt a javaslatot?");
     if (!confirmed) return;
     setBusy(true);
-    const { error } = await supabase.from("dream_glossary_items").delete().eq("id", id);
+    const { error } = await supabase.from("term_candidates").delete().eq("id", id);
     if (error) {
-      setErr(error.message || "Nem sikerült törölni a javaslatot.");
+      setErr(error.message || "Nem sikerult torolni a javaslatot.");
     } else {
       await loadSuggestions();
     }
@@ -167,8 +135,8 @@ export default function SuggestionsPage() {
         <div className="stack-tight">
           <p className="section-title">Javasolt elemek</p>
           <p style={{ color: "var(--text-muted)" }}>
-            Ezek azok a fogalmak, amelyek legalább három álmodban megjelentek, de még nem írtál hozzájuk jegyzetet. Kitöltésükkel
-            véglegesen rögzítheted őket az álomszótáradban, vagy elutasíthatod őket, ha nem relevánsak.
+            Ezek azok a fogalmak, amelyek tobbszor megjelentek, de meg nem irtal
+            hozzajuk jegyzetet. Elfogadassal bekerulnek az alomszotarba.
           </p>
         </div>
       }
@@ -180,7 +148,6 @@ export default function SuggestionsPage() {
             {err}
           </div>
         )}
-        {/* Filter and search controls */}
         <div
           style={{
             marginTop: 12,
@@ -192,30 +159,17 @@ export default function SuggestionsPage() {
         >
           <input
             type="text"
-            placeholder="Keresés név vagy jegyzet alapján…"
+            placeholder="Kereses a nevben..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="input"
             style={{ flex: "1 1 200px", minWidth: 200 }}
             disabled={busy}
           />
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="input"
-            style={{ flex: "0 0 200px" }}
-            disabled={busy}
-          >
-            <option value="all">Minden kategória</option>
-            {uniqueCategories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
         </div>
+
         {filteredItems.length === 0 ? (
-          <p style={{ color: "var(--text-muted)" }}>Nincs olyan javaslat, amely megfelel a szűrésnek.</p>
+          <p style={{ color: "var(--text-muted)" }}>Nincs olyan javaslat, amely megfelel a szuresnek.</p>
         ) : (
           <ul
             style={{
@@ -231,26 +185,7 @@ export default function SuggestionsPage() {
                 <li key={item.id}>
                   <GlassCardSurface className="glossary-grid-card" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
                     <div className="glossary-card-body stack">
-                      <label>
-                        <span>Név</span>
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="input"
-                          disabled={busy}
-                        />
-                      </label>
-                      <label>
-                        <span>Kategóriák (vesszővel elválasztva)</span>
-                        <input
-                          type="text"
-                          value={editCategories}
-                          onChange={(e) => setEditCategories(e.target.value)}
-                          className="input"
-                          disabled={busy}
-                        />
-                      </label>
+                      <div style={{ fontWeight: 700 }}>{item.term}</div>
                       <label>
                         <span>Jegyzet</span>
                         <textarea
@@ -261,15 +196,6 @@ export default function SuggestionsPage() {
                           disabled={busy}
                         />
                       </label>
-                      <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <input
-                          type="checkbox"
-                          checked={editNightmare}
-                          onChange={(e) => setEditNightmare(e.target.checked)}
-                          disabled={busy}
-                        />
-                        <span>Rémálom elem</span>
-                      </label>
                     </div>
                     <div className="glossary-card-footer">
                       <button
@@ -278,13 +204,13 @@ export default function SuggestionsPage() {
                         onClick={cancelEdit}
                         disabled={busy}
                       >
-                        Mégse
+                        Megse
                       </button>
                       <PrimaryButton
-                        onClick={saveEdit}
-                        disabled={busy || editName.trim().length === 0}
+                        onClick={() => acceptSuggestion(item)}
+                        disabled={busy}
                       >
-                        Mentés
+                        Elfogadas
                       </PrimaryButton>
                     </div>
                   </GlassCardSurface>
@@ -293,30 +219,10 @@ export default function SuggestionsPage() {
                 <li key={item.id}>
                   <GlassCardSurface className="glossary-grid-card" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
                     <div className="glossary-card-body stack-tight">
-                      <div
-                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                      >
-                        <div style={{ fontWeight: 700, fontSize: 18 }}>{item.name}</div>
-                        {item.is_nightmare ? (
-                          <span
-                            style={{
-                              background: "var(--status-erintett-bg)",
-                              color: "var(--status-erintett)",
-                              padding: "2px 8px",
-                              borderRadius: 6,
-                              fontSize: 12,
-                            }}
-                          >
-                            Rémálom
-                          </span>
-                        ) : null}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ fontWeight: 700, fontSize: 18 }}>{item.term}</div>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>x{item.count}</div>
                       </div>
-                      {item.categories && item.categories.length > 0 && (
-                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                          Kategóriák: {item.categories.join(", ")}
-                        </div>
-                      )}
-                      <div style={{ fontSize: 12, color: "var(--status-warning)" }}>Jegyzet hiányzik</div>
                     </div>
                     <div className="glossary-card-footer">
                       <button
@@ -325,7 +231,7 @@ export default function SuggestionsPage() {
                         onClick={() => beginEdit(item)}
                         disabled={busy}
                       >
-                        Jegyzet hozzáadása
+                        Jegyzet hozzaadasa
                       </button>
                       <button
                         type="button"
@@ -333,7 +239,7 @@ export default function SuggestionsPage() {
                         onClick={() => onDelete(item.id)}
                         disabled={busy}
                       >
-                        Elutasítás
+                        Elutasitas
                       </button>
                     </div>
                   </GlassCardSurface>
@@ -343,8 +249,8 @@ export default function SuggestionsPage() {
           </ul>
         )}
         <div style={{ marginTop: 24 }}>
-          <Link href="/glossary" legacyBehavior>
-            <a className="btn btn-secondary">Vissza az álomszótárhoz</a>
+          <Link href="/glossary" className="btn btn-secondary">
+            Vissza az alomszotarhoz
           </Link>
         </div>
         <style jsx>{`

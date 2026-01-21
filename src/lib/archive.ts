@@ -1,6 +1,6 @@
 // /src/lib/archive.ts
 import { supabase } from "@/src/lib/supabase/client";
-import { isDirectionCardContent, type WorkBlock } from "./types";
+import { isDirectionCardContent } from "./types";
 import { CatalogService } from "@/src/services/CatalogService";
 
 export type Feldolgozottsag = "vazlat" | "erintett" | "feldolgozott";
@@ -14,10 +14,10 @@ export type ArchiveSessionSummary = {
   status: string;
 
   // snippethez
-  raw_dream_text?: string | null;
+  raw_entry?: string | null;
 
   /**
-   * touched_directions: direction slugok (belső “igazság” a work_blocks alapján)
+   * touched_directions: direction slugok (belső “igazság” a work_versions alapján)
    * touched_groups: direction_catalog.content.group (UI-hoz, emberi csoportnév)
    */
   touched_directions: string[];
@@ -84,23 +84,18 @@ function extractAuditTitle(audit: unknown): string | null {
 
 /**
  * ✅ preferált title forrás:
- * 1) dream_session_summaries.title
- * 2) dream_sessions.ai_framing_audit.title (régi)
+ * 1) dream_sessions.title (user override)
+  * 2) frame_latest -> frame_versions.payload.title
  * 3) "Álom"
  */
-function resolveTitle(session: any): string {
-    const summaryRow = Array.isArray(session?.dream_session_summaries)
-    ? session.dream_session_summaries[0]
-    : session?.dream_session_summaries;
+function resolveTitle(params: { sessionTitle?: string | null; frameTitle?: string | null }): string {
+  const sessionTitle = sanitizeTitle(params.sessionTitle ?? "");
+  if (sessionTitle && !isGenericTitle(sessionTitle)) return sessionTitle;
 
-  const summaryTitle = sanitizeTitle(summaryRow?.title ?? "");
+  const frameTitle = sanitizeTitle(params.frameTitle ?? "");
+  if (frameTitle && !isGenericTitle(frameTitle)) return frameTitle;
 
-  if (summaryTitle && !isGenericTitle(summaryTitle)) return summaryTitle;
-
-  const auditTitle = extractAuditTitle(session?.ai_framing_audit);
-  if (auditTitle && !isGenericTitle(auditTitle)) return auditTitle;
-
-  return "Álom";
+  return "?lom";
 }
 
 /** group név tisztítás */
@@ -115,11 +110,7 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
         id,
         status,
         created_at,
-        raw_dream_text,
-        ai_framing_audit,
-        dream_session_summaries (
-          title
-        )
+        title
       `
     )
     .eq("user_id", userId)
@@ -133,39 +124,110 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
   if (sessionsError) throw sessionsError;
 
   const sessionIds = (sessions ?? []).map((s: any) => s.id);
-  let workBlocks: Pick<WorkBlock, "session_id" | "content">[] = [];
+
+  const frameTitleBySession = new Map<string, string>();
+  if (sessionIds.length > 0) {
+    const { data: latestRows } = await supabase
+      .from("frame_latest")
+      .select("session_id,frame_version_id")
+      .eq("user_id", userId)
+      .in("session_id", sessionIds);
+
+    const frameVersionIds = (latestRows ?? [])
+      .map((row: any) => row.frame_version_id)
+      .filter(Boolean);
+
+    if (frameVersionIds.length > 0) {
+      const { data: frameVersions } = await supabase
+        .from("frame_versions")
+        .select("id,payload")
+        .eq("user_id", userId)
+        .in("id", frameVersionIds);
+
+      const payloadById = new Map((frameVersions ?? []).map((row: any) => [row.id, row.payload]));
+
+      (latestRows ?? []).forEach((row: any) => {
+        const payload = payloadById.get(row.frame_version_id);
+        const title = typeof payload?.title === "string" ? payload.title.trim() : "";
+        if (title) frameTitleBySession.set(row.session_id, title);
+      });
+    }
+  }
+
+  const rawBySession = new Map<string, string>();
+  if (sessionIds.length > 0) {
+    const { data: entries } = await supabase
+      .from("dream_entries")
+      .select("session_id,content,created_at")
+      .eq("user_id", userId)
+      .eq("kind", "raw")
+      .in("session_id", sessionIds)
+      .order("created_at", { ascending: false });
+
+    (entries ?? []).forEach((row: any) => {
+      if (rawBySession.has(row.session_id)) return;
+      if (typeof row.content === "string") rawBySession.set(row.session_id, row.content);
+    });
+  }
+
+  let workVersions: Array<{ id: string; session_id: string; payload: any; created_at: string }> = [];
+  let answersByWorkId = new Map<string, { content: string; created_at: string }>();
 
   if (sessionIds.length > 0) {
-    const { data: blocks, error: wbError } = await supabase
-      .from("work_blocks")
-      .select("session_id, content")
-      .eq("block_type", "dream_analysis")
+    const { data: versions, error: wbError } = await supabase
+      .from("work_versions")
+      .select("id, session_id, payload, created_at")
+      .in("session_id", sessionIds)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+
+    if (wbError) throw wbError;
+    workVersions = (versions ?? []) as Array<{ id: string; session_id: string; payload: any; created_at: string }>;
+
+    const { data: answers } = await supabase
+      .from("dream_answers")
+      .select("work_id, content, created_at")
       .in("session_id", sessionIds)
       .eq("user_id", userId);
 
-    if (wbError) throw wbError;
-    workBlocks = (blocks ?? []) as Pick<WorkBlock, "session_id" | "content">[];
+    const map = new Map<string, { content: string; created_at: string }>();
+    (answers ?? []).forEach((row: any) => {
+      if (!row?.work_id) return;
+      const existing = map.get(row.work_id);
+      if (!existing) {
+        map.set(row.work_id, { content: String(row.content ?? ""), created_at: row.created_at });
+        return;
+      }
+      const existingTs = Date.parse(existing.created_at ?? "");
+      const nextTs = Date.parse(row.created_at ?? "");
+      if (Number.isFinite(nextTs) && (!Number.isFinite(existingTs) || nextTs >= existingTs)) {
+        map.set(row.work_id, { content: String(row.content ?? ""), created_at: row.created_at });
+      }
+    });
+    answersByWorkId = map;
   }
 
   const aggregates = new Map<string, { touchedSlugs: Set<string>; answeredCount: number }>();
 
-  for (const block of workBlocks) {
-    if (!isDirectionCardContent(block.content)) continue;
+  for (const version of workVersions) {
+    const rawContent = (version as any).payload ?? null;
+    if (!isDirectionCardContent(rawContent)) continue;
 
-    const touched = aggregates.get(block.session_id) ?? {
+    const touched = aggregates.get(version.session_id) ?? {
       touchedSlugs: new Set<string>(),
       answeredCount: 0,
     };
 
-    // ✅ work_blocks-ben a “nyers igazság” a slug
-    touched.touchedSlugs.add(block.content.direction_slug);
+    // ✅ work_versions-ben a “nyers igazság” a slug
+    touched.touchedSlugs.add(rawContent.direction_slug);
 
-    const answer = normalizeAnswer(block.content.user?.answer);
+    const answerRow = answersByWorkId.get(version.id);
+    const answer = normalizeAnswer(answerRow?.content ?? "");
     if (answer.length > 0) {
       touched.answeredCount += 1;
     }
 
-    aggregates.set(block.session_id, touched);
+    aggregates.set(version.session_id, touched);
   }
 
   // ✅ slug -> group mapping a direction_catalog táblából
@@ -196,10 +258,13 @@ export async function fetchArchiveSessions(userId: string, range?: RangeOption) 
 
     return {
       id: session.id,
-      title: resolveTitle(session),
+      title: resolveTitle({
+        sessionTitle: session.title ?? null,
+        frameTitle: frameTitleBySession.get(session.id) ?? null,
+      }),
       created_at: session.created_at,
       status: session.status,
-      raw_dream_text: session.raw_dream_text ?? null,
+      raw_entry: rawBySession.get(session.id) ?? null,
 
       touched_directions,
       touched_groups,

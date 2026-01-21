@@ -9,9 +9,10 @@ import { Pill } from "@/components/Pill";
 import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { startDirection } from "@/src/lib/startDirection";
-import type { DreamSession, DirectionCardContent, WorkBlock } from "@/src/lib/types";
+import type { DirectionCardContent } from "@/src/lib/types";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
 import { CatalogService } from "@/src/services/CatalogService";
+import { requireUserId } from "@/src/lib/db";
 
 import styles from "./summary.module.css";
 
@@ -77,15 +78,34 @@ function groupOrderKey(k: GroupKey): number {
   return idx === -1 ? 999 : idx;
 }
 
-// Compute a compact title for a session based on summary or raw text
-function titleOf(session: DreamSession | null, summary: { title?: string | null } | null): string {
-  const t = String(summary?.title ?? "").trim();
-  if (t) return t;
+type SessionRow = {
+  id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  archived_at?: string | null;
+  title?: string | null;
+};
 
-  const raw = String(session?.raw_dream_text ?? "").trim().replace(/\s+/g, " ");
-  if (!raw) return "Cím nélküli álom";
-  return raw.length > 42 ? raw.slice(0, 41) + "…" : raw;
+type FramePayload = {
+  title?: string | null;
+  framing_text?: string | null;
+  recommended_directions?: unknown;
+};
+
+// Compute a compact title for a session based on overrides, frame payload or raw text
+function titleOf(session: SessionRow | null, framePayload: FramePayload | null, rawEntry: string | null): string {
+  const override = String(session?.title ?? "").trim();
+  if (override) return override;
+
+  const framed = String(framePayload?.title ?? "").trim();
+  if (framed) return framed;
+
+  const raw = String(rawEntry ?? "").trim().replace(/\s+/g, " ");
+  if (!raw) return "C??m n?clk??li ??lom";
+  return raw.length > 42 ? raw.slice(0, 41) + "??|" : raw;
 }
+
 
 // Check if block content is a direction card
 function isDirectionCard(content: unknown): content is DirectionCardContent {
@@ -93,22 +113,96 @@ function isDirectionCard(content: unknown): content is DirectionCardContent {
   return (content as any).kind === "direction_card" && typeof (content as any).direction_slug === "string";
 }
 
+type WorkAnswerRow = { work_id: string | null; content: string; created_at: string };
+
+type DirectionWorkBlock = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  content: DirectionCardContent;
+};
+
+function buildAnswersByWorkId(rows: WorkAnswerRow[]): Map<string, WorkAnswerRow> {
+  const map = new Map<string, WorkAnswerRow>();
+  for (const row of rows) {
+    if (!row?.work_id) continue;
+    const existing = map.get(row.work_id);
+    if (!existing) {
+      map.set(row.work_id, row);
+      continue;
+    }
+    const existingTs = Date.parse(existing.created_at ?? "");
+    const nextTs = Date.parse(row.created_at ?? "");
+    if (Number.isFinite(nextTs) && (!Number.isFinite(existingTs) || nextTs >= existingTs)) {
+      map.set(row.work_id, row);
+    }
+  }
+  return map;
+}
+
+function applyAnswerToContent(content: DirectionCardContent, answer: WorkAnswerRow | null): DirectionCardContent {
+  const normalized = normalizeContent(content);
+  if (!answer?.content) return normalized;
+  return {
+    ...normalized,
+    state: "answered",
+    user: {
+      ...normalized.user,
+      answer: answer.content,
+      answered_at: answer.created_at ?? null,
+    },
+  };
+}
+
+function normalizeContent(content: DirectionCardContent): DirectionCardContent {
+  return {
+    ...content,
+    user: {
+      ...content.user,
+      answer: content.user?.answer ?? null,
+      answered_at: content.user?.answered_at ?? null,
+    },
+    sequence: content.sequence ?? 0,
+    state: content.state ?? "open",
+    ai: {
+      ...content.ai,
+      context: content.ai?.context ?? null,
+      question: content.ai?.question ?? null,
+    },
+  };
+}
+
+function toWorkBlock(row: any, answersByWorkId: Map<string, WorkAnswerRow>): DirectionWorkBlock | null {
+  if (!row || typeof row !== "object") return null;
+  const rawContent = (row as any).payload ?? null;
+  if (!rawContent || typeof rawContent !== "object") return null;
+
+  if (!isDirectionCard(rawContent)) return null;
+
+  const answer = answersByWorkId.get((row as any).id ?? "");
+  const content = applyAnswerToContent(rawContent as DirectionCardContent, answer ?? null);
+
+  return {
+    id: (row as any).id,
+    created_at: (row as any).created_at,
+    updated_at: (row as any).created_at,
+    content,
+  };
+}
+
+
 export default function SessionSummary() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { loading } = useRequireAuth();
 
-  const [session, setSession] = useState<DreamSession | null>(null);
-  const [summary, setSummary] = useState<{
-    title?: string | null;
-    framing_text?: string | null;
-    recommended_directions?: any;
-  } | null>(null);
+  const [session, setSession] = useState<SessionRow | null>(null);
+  const [framePayload, setFramePayload] = useState<FramePayload | null>(null);
+  const [rawEntry, setRawEntry] = useState<string | null>(null);
 
-  const [workBlocks, setWorkBlocks] = useState<WorkBlock[]>([]);
+  const [workBlocks, setWorkBlocks] = useState<DirectionWorkBlock[]>([]);
   const [directionCatalog, setDirectionCatalog] = useState<DirectionCatalogItemDTO[]>([]);
   const [selectedDirs, setSelectedDirs] = useState<Record<string, boolean>>({});
-  const [recommendedRaw, setRecommendedRaw] = useState<RecommendedDirection[]>([]);
   const [showRest, setShowRest] = useState(false);
 
   // Default: AI summary
@@ -121,7 +215,7 @@ export default function SessionSummary() {
   const [draftTitle, setDraftTitle] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
 
-  // Load session, summary, work blocks and directions on mount
+  // Load session, frame, work blocks and directions on mount
   useEffect(() => {
     if (!id) return;
 
@@ -130,41 +224,79 @@ export default function SessionSummary() {
     (async () => {
       try {
         setErr(null);
+        const userId = await requireUserId();
 
         const { data: sessionData, error: sessErr } = await supabase
           .from("dream_sessions")
-          .select("id, raw_dream_text, ai_framing_text, status, created_at, updated_at, archived_at")
+          .select("id, title, status, created_at, updated_at, archived_at")
           .eq("id", id)
+          .eq("user_id", userId)
           .single();
         if (sessErr) throw new Error(sessErr.message);
         if (!isMounted) return;
-        setSession(sessionData as DreamSession);
+        setSession(sessionData as SessionRow);
 
-        const { data: summaryData, error: summaryErr } = await supabase
-          .from("dream_session_summaries")
-          .select("title, framing_text, recommended_directions")
+        const { data: entryRow } = await supabase
+          .from("dream_entries")
+          .select("content, created_at")
           .eq("session_id", id)
+          .eq("user_id", userId)
+          .eq("kind", "raw")
+          .order("created_at", { ascending: false })
+          .limit(1)
           .maybeSingle();
-        if (summaryErr) console.warn("Summary fetch error:", summaryErr.message);
         if (!isMounted) return;
+        setRawEntry(typeof entryRow?.content === "string" ? entryRow.content : null);
 
-        setSummary((summaryData ?? null) as any);
-        setRecommendedRaw(safeRecommendedDirections((summaryData as any)?.recommended_directions));
-
-        const { data: blocks, error: wbErr } = await supabase
-          .from("work_blocks")
-          .select("id, session_id, user_id, block_type, content, created_at, updated_at")
+        const { data: latestFrame } = await supabase
+          .from("frame_latest")
+          .select("frame_version_id")
           .eq("session_id", id)
-          .eq("block_type", "dream_analysis")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (latestFrame?.frame_version_id) {
+          const { data: frameVersion, error: frameErr } = await supabase
+            .from("frame_versions")
+            .select("payload")
+            .eq("id", latestFrame.frame_version_id)
+            .eq("user_id", userId)
+            .maybeSingle();
+          if (frameErr) throw new Error(frameErr.message);
+          if (!isMounted) return;
+          setFramePayload((frameVersion?.payload ?? null) as FramePayload | null);
+        } else {
+          if (!isMounted) return;
+          setFramePayload(null);
+        }
+
+        const { data: versions, error: wbErr } = await supabase
+          .from("work_versions")
+          .select("id, session_id, user_id, payload, created_at")
+          .eq("session_id", id)
+          .eq("user_id", userId)
           .order("created_at", { ascending: true });
         if (wbErr) throw new Error(wbErr.message);
+
+        const { data: answers, error: ansErr } = await supabase
+          .from("dream_answers")
+          .select("work_id, content, created_at")
+          .eq("session_id", id)
+          .eq("user_id", userId);
+        if (ansErr) throw new Error(ansErr.message);
+
+        const answersByWorkId = buildAnswersByWorkId((answers ?? []) as WorkAnswerRow[]);
+        const blocks = (versions ?? [])
+          .map((row: any) => toWorkBlock(row, answersByWorkId))
+          .filter((b): b is DirectionWorkBlock => Boolean(b));
         if (!isMounted) return;
-        setWorkBlocks((blocks ?? []) as WorkBlock[]);
+        setWorkBlocks(blocks);
 
         const { data: choices, error: choiceErr } = await supabase
           .from("session_directions")
           .select("direction_slug")
-          .eq("session_id", id);
+          .eq("session_id", id)
+          .eq("user_id", userId);
         if (choiceErr) throw new Error(choiceErr.message);
         if (!isMounted) return;
 
@@ -179,7 +311,7 @@ export default function SessionSummary() {
         if (!isMounted) return;
         setDirectionCatalog(cat);
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : "Hiba történt az összkép betöltésekor.";
+        const message = e instanceof Error ? e.message : "Hiba t??rt??nt az ??sszk??p bet??lt??sekor.";
         if (!isMounted) return;
         setErr(message);
       }
@@ -190,7 +322,7 @@ export default function SessionSummary() {
     };
   }, [id]);
 
-  const title = useMemo(() => titleOf(session, summary), [session, summary]);
+  const title = useMemo(() => titleOf(session, framePayload, rawEntry), [session, framePayload, rawEntry]);
 
   // Keep draft title in sync (unless editing)
   useEffect(() => {
@@ -200,33 +332,29 @@ export default function SessionSummary() {
 
   const saveTitle = useCallback(async () => {
     const next = (draftTitle ?? "").trim();
-    if (!next) {
-      setDraftTitle(title);
-      setEditingTitle(false);
-      return;
-    }
 
     try {
       setSavingTitle(true);
       setErr(null);
 
-      const { data, error } = await supabase
-        .from("dream_session_summaries")
-        .upsert({ session_id: id, title: next }, { onConflict: "session_id" })
-        .select("title, framing_text, recommended_directions")
-        .maybeSingle();
+      const userId = await requireUserId();
+      const { error } = await supabase
+        .from("dream_sessions")
+        .update({ title: next || null })
+        .eq("id", id)
+        .eq("user_id", userId);
 
       if (error) throw new Error(error.message);
 
-      setSummary((prev) => ({ ...(prev ?? {}), ...(data ?? {}), title: next }));
+      setSession((prev) => (prev ? { ...prev, title: next || null } : prev));
       setEditingTitle(false);
     } catch (e) {
       console.error(e);
-      setErr("Nem sikerült elmenteni a címet.");
+      setErr("Nem siker??lt elmenteni a c??met.");
     } finally {
       setSavingTitle(false);
     }
-  }, [draftTitle, id, title]);
+  }, [draftTitle, id]);
 
   // Build a slug→catalog map for quick lookups
   const catalogBySlug = useMemo(() => {
@@ -235,14 +363,14 @@ export default function SessionSummary() {
     return m;
   }, [directionCatalog]);
 
-  const framing = summary?.framing_text ?? session?.ai_framing_text ?? null;
+  const framing = framePayload?.framing_text ?? null;
 
   const dreamLength = useMemo(() => {
-    const raw = String(session?.raw_dream_text ?? "").trim();
+    const raw = String(rawEntry ?? "").trim();
     const chars = raw.length;
     const words = raw ? raw.split(/\s+/).filter(Boolean).length : 0;
     return { chars, words };
-  }, [session?.raw_dream_text]);
+  }, [rawEntry]);
 
   // Stats
   const stats = useMemo(() => {
@@ -295,6 +423,11 @@ export default function SessionSummary() {
 
     return [...answered, ...open];
   }, [workBlocks]);
+
+  const recommendedRaw = useMemo(
+    () => safeRecommendedDirections(framePayload?.recommended_directions),
+    [framePayload]
+  );
 
   // Compute recommended directions: prefer summary suggestions if available; filter out selected
   const recommendedDirs = useMemo(() => {
@@ -516,7 +649,7 @@ export default function SessionSummary() {
             {/* Glass text panel */}
             <div className={styles.glassPanel}>
               <div className={styles.glassInner}>
-                {tab === "raw" ? <div className={styles.textBlock}>{session.raw_dream_text}</div> : <div className={styles.textBlock}>{framing ?? "—"}</div>}
+                {tab === "raw" ? <div className={styles.textBlock}>{rawEntry}</div> : <div className={styles.textBlock}>{framing ?? "—"}</div>}
               </div>
             </div>
 
