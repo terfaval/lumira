@@ -83,7 +83,6 @@ type SessionRow = {
   status: string;
   created_at: string;
   updated_at: string;
-  archived_at?: string | null;
   title?: string | null;
 };
 
@@ -231,12 +230,14 @@ export default function SessionSummary() {
         // 1) Try dream_sessions (if present/visible)
         const { data: sessionData, error: sessErr } = await supabase
           .from("dream_sessions")
-          .select("id, title, status, created_at, updated_at, archived_at")
+          .select("id, title, status, created_at, updated_at")
           .eq("id", sessionId)
           .eq("user_id", userId)
           .maybeSingle();
 
         if (sessErr) throw new Error(sessErr.message);
+        if (!isMounted) return;
+        setSession(sessionData as SessionRow | null);
 
         let effectiveSession: SessionRow | null = (sessionData as SessionRow | null) ?? null;
 
@@ -260,7 +261,6 @@ export default function SessionSummary() {
               status: "active",
               created_at: entryProbe.created_at,
               updated_at: entryProbe.created_at,
-              archived_at: null,
               title: null,
             };
           }

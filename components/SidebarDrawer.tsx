@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useCallback, useRef, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
-import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { registerListener } from "@/src/lib/perfDebug";
 import { requireUserId } from "@/src/lib/db";
@@ -193,7 +192,7 @@ export function SidebarDrawer({
       onClick={onBackdropClick}
     >
       <aside className="drawer-sheet" role="document" aria-label="Oldalsáv">
-        <GlassCardSurface className="drawer-surface" variant="flat" paper="evening" gloss={false} grain={false}>
+        <div className="drawer-surface">
           {/* TOP */}
           <div className="drawer-section drawer-top">
             <Link href="/about" className="drawer-navlink" onClick={onClose}>
@@ -268,7 +267,7 @@ export function SidebarDrawer({
               Kilépés
             </button>
           </div>
-        </GlassCardSurface>
+        </div>
       </aside>
 
       <style jsx>{`
@@ -287,17 +286,17 @@ export function SidebarDrawer({
         }
 
         .drawer-sheet {
-          display: flex;
-          flex-direction: column;
           position: fixed;
           top: 0;
           left: 0;
           bottom: 0;
           width: min(360px, 92vw);
           height: 100dvh;
+
           background: var(--bg-layer-strong);
           border-right: 1px solid var(--line-soft);
           box-shadow: 18px 0 44px #00000073;
+
           transform: translateX(-100%);
           transition: transform 200ms ease;
         }
@@ -305,51 +304,69 @@ export function SidebarDrawer({
           transform: translateX(0);
         }
 
+        /* ✅ EZ A LÉNYEG: fix oszlop-layout, nincs overlap */
         .drawer-surface {
-          flex: 1 1 auto;
-          min-height: 0;
-          align-self: stretch;
-
-          display: grid;
-          grid-template-rows: auto 1fr auto;
-
-          border-radius: 0 !important;
-          border: 0 !important;
-          box-shadow: none !important;
-          background: transparent !important;
-
-          padding: var(--space-3) !important;
-
-          position: relative;
-          overflow: hidden;
-        }
-
-        .drawer-surface::before,
-        .drawer-surface::after {
-          opacity: 0 !important;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          min-height: 0; /* 🔑 */
+          padding: var(--space-3);
         }
 
         .drawer-section {
-          padding: var(--space-2) var(--space-1) var(--space-3);
           border-bottom: 1px solid var(--line-soft);
           min-height: 0;
+          padding: var(--space-2) var(--space-1) var(--space-3);
         }
-        .drawer-section:last-of-type {
-          border-bottom: none;
-        }
-
         .drawer-top {
           display: grid;
           gap: 8px;
           padding-top: var(--space-2);
           padding-bottom: var(--space-2);
+          flex: 0 0 auto;
         }
 
-        /* ✅ az ARCHIVE szekció legyen rács: head + scrollable list */
+        /* ✅ middle rész tölti ki a maradékot */
         .drawer-archive {
+          flex: 1 1 auto;
+          min-height: 0; /* 🔑 */
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-2);
+        }
+
+        .drawer-section-head {
+          flex: 0 0 auto;
+        }
+
+        /* ✅ csak ez scrolloz */
+        .drawer-list {
+          flex: 1 1 auto;
+          min-height: 0; /* 🔑 */
+          overflow: auto;
+
+          list-style: none;
+          margin: 0;
+          padding: 0;
           display: grid;
-          grid-template-rows: auto 1fr;
-          min-height: 0;
+          gap: 10px;
+
+          padding-right: 6px; /* scrollbar gutter */
+        }
+
+        .drawer-list-item {
+          padding-bottom: var(--space-2);
+          border-bottom: 1px solid var(--line-soft);
+        }
+        .drawer-list-item:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+        }
+
+        .drawer-footer {
+          flex: 0 0 auto;
+          padding: var(--space-2) var(--space-1) var(--space-1);
+          border-top: 1px solid var(--line-soft);
         }
 
         .drawer-navlink {
@@ -375,6 +392,38 @@ export function SidebarDrawer({
           padding: var(--space-1) var(--space-2);
           border: none;
           background: transparent;
+        }
+
+        .drawer-item {
+          display: grid;
+          gap: 6px;
+          padding: var(--space-3);
+          border: 1px solid var(--line-soft);
+          border-radius: 14px;
+          background: var(--card-surface);
+          text-decoration: none;
+          color: var(--text-primary);
+        }
+        .drawer-item:hover {
+          background: var(--card-surface-subtle);
+        }
+
+        .drawer-item-title {
+          font-weight: 700;
+        }
+        .drawer-item-snippet,
+        .drawer-item-meta {
+          font-size: 12px;
+          color: var(--text-muted);
+        }
+
+        .drawer-muted {
+          color: var(--text-muted);
+          font-size: 14px;
+        }
+        .drawer-error {
+          color: crimson;
+          font-size: 14px;
         }
 
         /* ICONS (mask → currentColor) */
@@ -415,49 +464,6 @@ export function SidebarDrawer({
         .drawer-icon--work {
           -webkit-mask-image: url("/icons/work.svg");
           mask-image: url("/icons/work.svg");
-        }
-
-        .drawer-list {
-          list-style: none;
-          margin: 0;
-          padding: 0;
-          display: grid;
-          gap: 10px;
-
-          /* ✅ csak a lista scrolloz */
-          min-height: 0;
-          overflow: auto;
-          padding-right: 6px; /* scrollbar gutter */
-        }
-
-        .drawer-item {
-          display: grid;
-          gap: 6px;
-          padding: var(--space-3);
-          border: 1px solid var(--line-soft);
-          border-radius: 14px;
-          background: var(--card-surface);
-          text-decoration: none;
-          color: var(--text-primary);
-        }
-
-        .drawer-item:hover {
-          background: var(--card-surface-subtle);
-        }
-
-        .drawer-item-title {
-          font-weight: 700;
-        }
-
-        .drawer-item-snippet,
-        .drawer-item-meta {
-          font-size: 12px;
-          color: var(--text-muted);
-        }
-
-        .drawer-footer {
-          padding: var(--space-2) var(--space-1) var(--space-1);
-          border-top: 1px solid var(--line-soft);
         }
 
         @media (max-width: 719px) {
