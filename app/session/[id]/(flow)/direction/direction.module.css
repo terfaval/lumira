@@ -10,6 +10,14 @@
   padding: var(--space-3);
 }
 
+.panelNoBg {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+
 .panel {
   width: min(1180px, 100%);
   max-height: min(88vh, 980px);

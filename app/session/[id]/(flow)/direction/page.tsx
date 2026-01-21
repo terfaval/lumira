@@ -345,7 +345,12 @@ export default function DirectionPage() {
         if (e.target === e.currentTarget) close();
       }}
     >
-      <GlassCardSurface className={styles.panel} role="document" variant="soft" paper="evening">
+      <GlassCardSurface className={`${styles.panel} ${styles.panelNoBg}`}
+        role="document"
+        variant="flat"
+        paper="evening"
+        gloss={false}
+        grain={false}>
         <button
           ref={closeBtnRef}
           className={styles.close}
