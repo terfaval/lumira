@@ -356,7 +356,7 @@ export async function POST(req: Request) {
     }
     const recentMaterialIds = recentBlocks
       .map((row: any) => extractMaterialIdFromPayload(row?.payload))
-      .filter((v): v is string => Boolean(v));
+      .filter((v: unknown): v is string => typeof v === "string" && v.length > 0);
     const recentPrompts = recentBlocks
       .map((row: any) => extractPromptFromPayload(row?.payload))
       .filter(Boolean);
