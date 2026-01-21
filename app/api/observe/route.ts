@@ -285,7 +285,6 @@ export async function POST(req: Request) {
         session_id: sessionId,
         user_id: userId,
         input_hash,
-        model: null,
         payload: empty,
       });
       await upsertObservationLatest(supabase, {
