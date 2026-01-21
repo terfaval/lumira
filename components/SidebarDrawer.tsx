@@ -11,11 +11,15 @@ import { requireUserId } from "@/src/lib/db";
 type Space = "dream" | "evening";
 
 type DreamRow = {
-  session_id: string; // ✅ PK a summaries-ben
-  created_at: string; // ✅ dream_sessions.created_at
-  title: string | null; // ✅ summaries.title
-  raw_dream_text: string | null; // ✅ dream_sessions.raw_dream_text
+  session_id: string;
+  created_at: string;
+  title: string | null;
+  raw_dream_text: string | null;
 };
+
+function DrawerIcon({ name }: { name: "reflection" | "night" | "focus" | "stop" | "work" }) {
+  return <span className={`drawer-icon drawer-icon--${name}`} aria-hidden="true" />;
+}
 
 export function SidebarDrawer({
   open,
@@ -31,36 +35,24 @@ export function SidebarDrawer({
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [recent, setRecent] = useState<DreamRow[]>([]);
-
-  // state for enabling the glossary link based on number of suggested glossary items
   const [glossaryAccess, setGlossaryAccess] = useState<boolean>(false);
 
-  /**
-   * Checks if there are at least 10 suggested glossary items (rows in dream_glossary_items
-   * with is_suggested = true). If so, enables the glossary link. Otherwise hides it.
-   */
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
   const checkGlossaryAccess = useCallback(async () => {
     try {
-      // Use Supabase count to get the number of suggested items. The `.select('*', { count: 'exact', head: true })`
-      // signature returns only the count when `head: true`.
       const { count, error } = await supabase
         .from("dream_glossary_items")
         .select("id", { count: "exact", head: true })
         .eq("is_suggested", true);
-      if (error) {
-        console.error("Glossary access check error:", error.message);
-        setGlossaryAccess(false);
-      } else {
-        setGlossaryAccess((count ?? 0) >= 10);
-      }
-    } catch (e: unknown) {
-      console.error(e);
+
+      if (error) throw error;
+      setGlossaryAccess((count ?? 0) >= 10);
+    } catch {
       setGlossaryAccess(false);
     }
   }, []);
-  const rootRef = useRef<HTMLDivElement | null>(null);
 
-  /* ESC zárás */
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -74,14 +66,10 @@ export function SidebarDrawer({
     };
   }, [open, onClose]);
 
-  // when the drawer opens, check whether to show the glossary link
   useEffect(() => {
-    if (open) {
-      void checkGlossaryAccess();
-    }
+    if (open) void checkGlossaryAccess();
   }, [open, checkGlossaryAccess]);
 
-  /* Kívülre katt zárás */
   const onBackdropClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (e.target === e.currentTarget) onClose();
@@ -89,24 +77,20 @@ export function SidebarDrawer({
     [onClose]
   );
 
-  /* Legutóbbi 10 álom (summaries + join dream_sessions) */
   const loadRecent = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
       const userId = await requireUserId();
-      
       const { data, error } = await supabase
         .from("dream_sessions")
         .select(
           `
-            id,
-            created_at,
-            raw_dream_text,
-            dream_session_summaries (
-              title
-            )
-          `
+          id,
+          created_at,
+          raw_dream_text,
+          dream_session_summaries ( title )
+        `
         )
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
@@ -117,17 +101,15 @@ export function SidebarDrawer({
       const rows: DreamRow[] = (data ?? [])
         .map((r: any) => ({
           session_id: r.id,
-          title: Array.isArray(r.dream_session_summaries) ? (r.dream_session_summaries[0]?.title ?? null) : null,
-          created_at: r.created_at ?? null,
+          created_at: r.created_at,
+          title: r.dream_session_summaries?.[0]?.title ?? null,
           raw_dream_text: r.raw_dream_text ?? null,
         }))
-        .filter((r) => typeof r.session_id === "string" && typeof r.created_at === "string");
+        .filter(Boolean);
 
       setRecent(rows);
-      
-      setRecent(rows.slice(0, 10));
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Ismeretlen hiba");
+    } catch (e: any) {
+      setErr(e?.message ?? "Ismeretlen hiba");
     } finally {
       setLoading(false);
     }
@@ -164,19 +146,27 @@ export function SidebarDrawer({
       onClick={onBackdropClick}
     >
       <aside className="drawer-sheet" role="document" aria-label="Oldalsáv">
-        <GlassCardSurface className="drawer-surface" variant="soft" paper="evening">
-          {/* Felső fix opciók */}
+        <GlassCardSurface
+          className="drawer-surface"
+          variant="flat"
+          paper="evening"
+          gloss={false}
+          grain={false}
+        >
+          {/* TOP */}
           <div className="drawer-section drawer-top">
             <Link href="/about" className="drawer-navlink" onClick={onClose}>
+              <DrawerIcon name="reflection" />
               Mi a Lumira?
             </Link>
-            
+
             <Link
               href="/evening"
               className="drawer-navlink"
               onClick={onClose}
               aria-current={space === "evening" ? "page" : undefined}
             >
+              <DrawerIcon name="night" />
               Álom előkészítés
             </Link>
 
@@ -186,18 +176,19 @@ export function SidebarDrawer({
               onClick={onClose}
               aria-current={space === "dream" ? "page" : undefined}
             >
+              <DrawerIcon name="work" />
               Új álom rögzítése
             </Link>
 
-            {/* Álomszótár link csak akkor látható, ha van legalább 10 javasolt bejegyzés */}
             {glossaryAccess && (
               <Link href="/glossary" className="drawer-navlink" onClick={onClose}>
+                <DrawerIcon name="focus" />
                 Álomszótár
               </Link>
             )}
           </div>
 
-          {/* Álomnapló */}
+          {/* ARCHIVE */}
           <div className="drawer-section">
             <div className="drawer-section-head">
               <Link
@@ -205,17 +196,18 @@ export function SidebarDrawer({
                 className="drawer-navlink drawer-navlink--title"
                 onClick={onClose}
               >
+                <DrawerIcon name="stop" />
                 Álomnapló
               </Link>
             </div>
 
             {loading ? (
-              <div className="drawer-muted" style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
+              <div className="drawer-muted" style={{ display: "inline-flex", gap: 10 }}>
                 <LumiraLoader size={18} spinSeconds={8} tone="light" />
                 <span>Betöltés…</span>
               </div>
             ) : err ? (
-              <div className="drawer-error">Nem sikerült betölteni: {err}</div>
+              <div className="drawer-error">{err}</div>
             ) : recent.length === 0 ? (
               <div className="drawer-muted">Még nincs rögzített álom.</div>
             ) : (
@@ -239,9 +231,9 @@ export function SidebarDrawer({
             )}
           </div>
 
-          {/* Kilépés */}
+          {/* FOOTER */}
           <div className="drawer-footer">
-            <button className="btn btn-secondary drawer-logout" onClick={onLogout}>
+            <button className="btn btn-secondary" onClick={onLogout}>
               Kilépés
             </button>
           </div>
@@ -264,11 +256,15 @@ export function SidebarDrawer({
         }
 
         .drawer-sheet {
-          position: absolute;
+          position: fixed;
           top: 0;
           left: 0;
+          bottom: 0;
           width: min(360px, 92vw);
           height: 100dvh;
+          background: var(--bg-layer-strong);
+          border-right: 1px solid var(--line-soft);
+          box-shadow: 18px 0 44px #00000073;
           transform: translateX(-100%);
           transition: transform 200ms ease;
         }
@@ -280,15 +276,31 @@ export function SidebarDrawer({
           height: 100%;
           display: grid;
           grid-template-rows: auto 1fr auto;
-          padding: var(--space-3);
+          padding: 0;
+        }
+
+        .drawer-surface :global(.surface) {
+          border-radius: 0 !important;
+          border: 0 !important;
+          box-shadow: none !important;
+          padding: var(--space-3) !important;
+          background: transparent !important;
+        }
+        .drawer-surface :global(.surface::before),
+        .drawer-surface :global(.surface::after) {
+          opacity: 0 !important;
         }
 
         .drawer-section {
           padding: var(--space-2) var(--space-1) var(--space-3);
           border-bottom: 1px solid var(--line-soft);
+          min-height: 0;
         }
         .drawer-section:last-of-type {
           border-bottom: none;
+        }
+        .drawer-section:not(.drawer-top) {
+          overflow: auto;
         }
 
         .drawer-top {
@@ -297,14 +309,10 @@ export function SidebarDrawer({
           padding-top: var(--space-1);
         }
 
-        .drawer-section-head {
-          margin-bottom: var(--space-2);
-        }
-
-        /* egységes tipó */
         .drawer-navlink {
           display: inline-flex;
           align-items: center;
+          gap: 10px; /* ← ikon és szöveg távolság */
           padding: var(--space-2) var(--space-3);
           border-radius: 12px;
           border: 1px solid var(--line-soft);
@@ -312,13 +320,11 @@ export function SidebarDrawer({
           text-decoration: none;
           color: var(--text-primary);
           font-weight: 700;
-          letter-spacing: -0.01em;
         }
         .drawer-navlink:hover {
           background: var(--card-surface-subtle);
         }
-        .drawer-navlink[aria-current='page'] {
-          border-color: var(--line-strong, var(--line-soft));
+        .drawer-navlink[aria-current="page"] {
           box-shadow: var(--shadow-soft);
         }
 
@@ -327,17 +333,43 @@ export function SidebarDrawer({
           border: none;
           background: transparent;
         }
-        .drawer-navlink--title:hover {
-          background: var(--card-surface-subtle);
+
+        /* ICONS (mask → currentColor) */
+        .drawer-icon {
+          width: 18px;
+          height: 18px;
+          flex: 0 0 18px;
+          opacity: 0.92;
+          background: currentColor;
+
+          -webkit-mask-repeat: no-repeat;
+          -webkit-mask-position: center;
+          -webkit-mask-size: contain;
+
+          mask-repeat: no-repeat;
+          mask-position: center;
+          mask-size: contain;
         }
 
-        .drawer-muted {
-          color: var(--text-muted);
-          font-size: 14px;
+        .drawer-icon--reflection {
+          -webkit-mask-image: url("/icons/reflection.svg");
+          mask-image: url("/icons/reflection.svg");
         }
-        .drawer-error {
-          color: crimson;
-          font-size: 14px;
+        .drawer-icon--night {
+          -webkit-mask-image: url("/icons/night.svg");
+          mask-image: url("/icons/night.svg");
+        }
+        .drawer-icon--focus {
+          -webkit-mask-image: url("/icons/focus.svg");
+          mask-image: url("/icons/focus.svg");
+        }
+        .drawer-icon--stop {
+          -webkit-mask-image: url("/icons/stop.svg");
+          mask-image: url("/icons/stop.svg");
+        }
+        .drawer-icon--work {
+          -webkit-mask-image: url("/icons/work.svg");
+          mask-image: url("/icons/work.svg");
         }
 
         .drawer-list {
@@ -346,17 +378,6 @@ export function SidebarDrawer({
           padding: 0;
           display: grid;
           gap: 10px;
-          max-height: calc(100dvh - 280px);
-          overflow: auto;
-        }
-
-        .drawer-list-item {
-          padding-bottom: var(--space-2);
-          border-bottom: 1px solid var(--line-soft);
-        }
-        .drawer-list-item:last-child {
-          border-bottom: none;
-          padding-bottom: 0;
         }
 
         .drawer-item {
@@ -366,24 +387,19 @@ export function SidebarDrawer({
           border: 1px solid var(--line-soft);
           border-radius: 14px;
           background: var(--card-surface);
-          color: var(--text-primary);
           text-decoration: none;
+          color: var(--text-primary);
         }
+
         .drawer-item:hover {
           background: var(--card-surface-subtle);
         }
 
         .drawer-item-title {
           font-weight: 700;
-          line-height: 1.15;
         }
 
-        .drawer-item-snippet {
-          font-size: 13px;
-          line-height: 1.35;
-          color: var(--text-muted);
-        }
-
+        .drawer-item-snippet,
         .drawer-item-meta {
           font-size: 12px;
           color: var(--text-muted);
@@ -399,7 +415,7 @@ export function SidebarDrawer({
             width: 100%;
             border-right: none;
             border-top: 1px solid var(--line-soft);
-            border-bottom: 1px solid var(--line-soft);
+            box-shadow: 0 18px 44px #00000073;
           }
         }
       `}</style>
