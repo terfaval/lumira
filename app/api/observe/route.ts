@@ -235,7 +235,7 @@ async function fetchSessionDreamText(
     .select("content, created_at")
     .eq("session_id", sessionId)
     .eq("user_id", userId)
-    .eq("kind", "raw")
+    .in("kind", ["raw", "raw_entry"])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();

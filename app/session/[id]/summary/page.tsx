@@ -247,7 +247,7 @@ export default function SessionSummary() {
             .select("session_id, created_at")
             .eq("session_id", sessionId)
             .eq("user_id", userId)
-            .eq("kind", "raw")
+            .in("kind", ["raw", "raw_entry"])
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -275,7 +275,7 @@ export default function SessionSummary() {
           .select("content, created_at")
           .eq("session_id", sessionId)
           .eq("user_id", userId)
-          .eq("kind", "raw")
+          .in("kind", ["raw", "raw_entry"])
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
