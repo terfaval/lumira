@@ -353,12 +353,13 @@ export default function DirectionPage() {
         grain={false}>
         <button
           ref={closeBtnRef}
-          className={styles.close}
+          className={styles.back}
           onClick={close}
-          aria-label="Bezárás"
+          aria-label="Vissza"
           type="button"
         >
-          ×
+          <span className={styles.backIcon} aria-hidden="true">←</span>
+          <span>Vissza</span>
         </button>
 
         <div className={styles.stack}>
