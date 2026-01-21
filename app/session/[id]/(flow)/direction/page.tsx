@@ -318,15 +318,6 @@ export default function DirectionPage() {
               </Pill>
             ))}
           </div>
-
-          <button
-            className="btn btn-primary"
-            onClick={() => handleStart(d.slug)}
-            disabled={isBusy}
-            aria-label={`Indítás: ${d.title}`}
-          >
-            {isBusy ? "Indítás..." : "Indítás"}
-          </button>
         </div>
       </GlassCardSurface>
     );
