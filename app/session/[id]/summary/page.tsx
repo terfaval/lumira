@@ -1,3 +1,5 @@
+// app/session/[id]/summary/page.tsx  (vagy ahol a summary van)
+// (A te fájlod neve alapján: ./summary.tsx vagy ./page.tsx – a tartalom ugyanaz)
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -16,13 +18,10 @@ import { requireUserId } from "@/src/lib/db";
 
 import styles from "./summary.module.css";
 
-// Type for recommended direction records
 type RecommendedDirection = { slug: string; why?: string; reason?: string };
 
-// Keys for grouping directions, matching those on the direction selection page
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
 
-// Helper: safely convert unknown arrays into string arrays
 function safeStringArray(x: unknown): string[] {
   if (!Array.isArray(x)) return [];
   return x
@@ -31,7 +30,6 @@ function safeStringArray(x: unknown): string[] {
     .filter(Boolean);
 }
 
-// Parse recommended directions from JSON
 function safeRecommendedDirections(x: unknown): RecommendedDirection[] {
   if (!Array.isArray(x)) return [];
   const out: RecommendedDirection[] = [];
@@ -49,7 +47,6 @@ function safeRecommendedDirections(x: unknown): RecommendedDirection[] {
   return out;
 }
 
-// Convert Hungarian group labels into stable keys
 function groupKeyFromLabel(raw: unknown): GroupKey {
   const label = String(raw ?? "").trim().toLowerCase();
   if (label.includes("álomemlékezet")) return "memory";
@@ -60,18 +57,15 @@ function groupKeyFromLabel(raw: unknown): GroupKey {
   return "other";
 }
 
-// Provide CSS variable tokens for a given group key
 function groupToken(k: GroupKey) {
   return { text: `--dirgroup-${k}` as const, bg: `--dirgroup-${k}-bg` as const };
 }
 
-// Normalize group label: fall back to “Egyéb” if empty
 function groupLabel(raw: unknown): string {
   const s = String(raw ?? "").trim();
   return s || "Egyéb";
 }
 
-// Determine ordering of groups in UI
 function groupOrderKey(k: GroupKey): number {
   const order: GroupKey[] = ["memory", "somatic", "patterns", "meaning", "creative", "other"];
   const idx = order.indexOf(k);
@@ -92,7 +86,6 @@ type FramePayload = {
   recommended_directions?: unknown;
 };
 
-// Compute a compact title for a session based on overrides, frame payload or raw text
 function titleOf(session: SessionRow | null, framePayload: FramePayload | null, rawEntry: string | null): string {
   const override = String(session?.title ?? "").trim();
   if (override) return override;
@@ -105,7 +98,6 @@ function titleOf(session: SessionRow | null, framePayload: FramePayload | null, 
   return raw.length > 42 ? raw.slice(0, 41) + "…" : raw;
 }
 
-// Check if block content is a direction card
 function isDirectionCard(content: unknown): content is DirectionCardContent {
   if (!content || typeof content !== "object") return false;
   return (content as any).kind === "direction_card" && typeof (content as any).direction_slug === "string";
@@ -193,7 +185,6 @@ export default function SessionSummary() {
   const router = useRouter();
   const { loading } = useRequireAuth();
 
-  // Robust session id extraction
   const rawId = (params as any)?.id;
   const sessionId = Array.isArray(rawId) ? rawId[0] : rawId;
 
@@ -206,17 +197,13 @@ export default function SessionSummary() {
   const [selectedDirs, setSelectedDirs] = useState<Record<string, boolean>>({});
   const [showRest, setShowRest] = useState(false);
 
-  // Default: AI summary
   const [tab, setTab] = useState<"raw" | "summary">("summary");
-
   const [err, setErr] = useState<string | null>(null);
 
-  // Title edit
   const [editingTitle, setEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
 
-  // Load session, frame, work blocks and directions on mount
   useEffect(() => {
     if (!sessionId || typeof sessionId !== "string") return;
 
@@ -227,7 +214,6 @@ export default function SessionSummary() {
         setErr(null);
         const userId = await requireUserId();
 
-        // 1) Try dream_sessions (if present/visible)
         const { data: sessionData, error: sessErr } = await supabase
           .from("dream_sessions")
           .select("id, title, status, created_at, updated_at")
@@ -241,7 +227,6 @@ export default function SessionSummary() {
 
         let effectiveSession: SessionRow | null = (sessionData as SessionRow | null) ?? null;
 
-        // 2) Fallback: consider session existing if there is at least one raw dream entry
         if (!effectiveSession) {
           const { data: entryProbe, error: entryProbeErr } = await supabase
             .from("dream_entries")
@@ -269,7 +254,6 @@ export default function SessionSummary() {
         if (!isMounted) return;
         setSession(effectiveSession);
 
-        // Raw entry
         const { data: entryRow } = await supabase
           .from("dream_entries")
           .select("content, created_at")
@@ -283,7 +267,6 @@ export default function SessionSummary() {
         if (!isMounted) return;
         setRawEntry(typeof entryRow?.content === "string" ? entryRow.content : null);
 
-        // Frame payload
         const { data: latestFrame } = await supabase
           .from("frame_latest")
           .select("frame_version_id")
@@ -306,7 +289,6 @@ export default function SessionSummary() {
           setFramePayload(null);
         }
 
-        // Work blocks
         const { data: versions, error: wbErr } = await supabase
           .from("work_versions")
           .select("id, session_id, user_id, payload, created_at")
@@ -329,7 +311,6 @@ export default function SessionSummary() {
         if (!isMounted) return;
         setWorkBlocks(blocks);
 
-        // Selected directions
         const { data: choices, error: choiceErr } = await supabase
           .from("session_directions")
           .select("direction_slug")
@@ -345,7 +326,6 @@ export default function SessionSummary() {
         });
         setSelectedDirs(sel);
 
-        // Catalog
         const cat = await CatalogService.getActiveCatalog(supabase);
         if (!isMounted) return;
         setDirectionCatalog(cat);
@@ -363,7 +343,6 @@ export default function SessionSummary() {
 
   const title = useMemo(() => titleOf(session, framePayload, rawEntry), [session, framePayload, rawEntry]);
 
-  // Keep draft title in sync (unless editing)
   useEffect(() => {
     if (editingTitle) return;
     setDraftTitle(title);
@@ -377,11 +356,7 @@ export default function SessionSummary() {
       setErr(null);
 
       const userId = await requireUserId();
-      const { error } = await supabase
-        .from("dream_sessions")
-        .update({ title: next || null })
-        .eq("id", sessionId)
-        .eq("user_id", userId);
+      const { error } = await supabase.from("dream_sessions").update({ title: next || null }).eq("id", sessionId).eq("user_id", userId);
 
       if (error) throw new Error(error.message);
 
@@ -395,7 +370,6 @@ export default function SessionSummary() {
     }
   }, [draftTitle, sessionId]);
 
-  // Build a slug→catalog map for quick lookups
   const catalogBySlug = useMemo(() => {
     const m = new Map<string, DirectionCatalogItemDTO>();
     for (const d of directionCatalog) m.set(d.slug, d);
@@ -411,7 +385,6 @@ export default function SessionSummary() {
     return { chars, words };
   }, [rawEntry]);
 
-  // Stats
   const stats = useMemo(() => {
     const total = workBlocks.length;
     let answered = 0;
@@ -431,31 +404,28 @@ export default function SessionSummary() {
     return { total, answered, directions: directions.size };
   }, [workBlocks]);
 
-  // Gallery cards: answered (newest first), then open (newest first)
   const cardsForGallery = useMemo(() => {
-    const cards = workBlocks
-      .filter((b) => isDirectionCard(b.content))
-      .map((b) => {
-        const c: any = b.content;
-        const state = c.state ?? "open";
-        const answer = c.user?.answer ?? null;
-        const question = c.ai?.question ?? "";
-        const directionSlug = c.direction_slug ?? "";
-        const created = new Date(b.created_at).getTime();
-        const updated = new Date(b.updated_at ?? b.created_at).getTime();
-        const isAnswered = state === "answered" || !!answer;
+    const cards = workBlocks.filter((b) => isDirectionCard(b.content)).map((b) => {
+      const c: any = b.content;
+      const state = c.state ?? "open";
+      const answer = c.user?.answer ?? null;
+      const question = c.ai?.question ?? "";
+      const directionSlug = c.direction_slug ?? "";
+      const created = new Date(b.created_at).getTime();
+      const updated = new Date(b.updated_at ?? b.created_at).getTime();
+      const isAnswered = state === "answered" || !!answer;
 
-        return {
-          id: b.id,
-          created,
-          updated,
-          state,
-          isAnswered,
-          answer,
-          question,
-          directionSlug,
-        };
-      });
+      return {
+        id: b.id,
+        created,
+        updated,
+        state,
+        isAnswered,
+        answer,
+        question,
+        directionSlug,
+      };
+    });
 
     const answered = cards.filter((x) => x.isAnswered).sort((a, b) => b.updated - a.updated);
     const open = cards.filter((x) => !x.isAnswered).sort((a, b) => b.created - a.created);
@@ -465,7 +435,6 @@ export default function SessionSummary() {
 
   const recommendedRaw = useMemo(() => safeRecommendedDirections(framePayload?.recommended_directions), [framePayload]);
 
-  // why map for ★ recommended tiles
   const whyBySlug = useMemo(() => {
     const m = new Map<string, string>();
     for (const r of recommendedRaw) {
@@ -476,7 +445,6 @@ export default function SessionSummary() {
     return m;
   }, [recommendedRaw]);
 
-  // Compute recommended directions: prefer frame suggestions if available; filter out selected
   const recommendedDirs = useMemo(() => {
     const notSelected = directionCatalog.filter((d) => !selectedDirs[d.slug]);
 
@@ -492,17 +460,13 @@ export default function SessionSummary() {
     if (slugs.length > 0) {
       const bySlug = new Map<string, DirectionCatalogItemDTO>();
       orderedAll.forEach((d) => bySlug.set(d.slug, d));
-      const picked = slugs
-        .map((s) => bySlug.get(s))
-        .filter((d): d is DirectionCatalogItemDTO => !!d)
-        .slice(0, 3);
+      const picked = slugs.map((s) => bySlug.get(s)).filter((d): d is DirectionCatalogItemDTO => !!d).slice(0, 3);
       if (picked.length > 0) return picked;
     }
 
     return orderedAll.slice(0, 3);
   }, [directionCatalog, recommendedRaw, selectedDirs]);
 
-  // Compute rest directions (not selected and not in recommended) grouped and flattened
   const restDirs = useMemo(() => {
     const recSet = new Set(recommendedDirs.map((d) => d.slug));
     const candidates = directionCatalog.filter((d) => !selectedDirs[d.slug] && !recSet.has(d.slug));
@@ -532,7 +496,6 @@ export default function SessionSummary() {
     return out;
   }, [directionCatalog, recommendedDirs, selectedDirs]);
 
-  // Handle starting a new direction (tile click)
   const handleStartDirection = useCallback(
     async (slug: string) => {
       setErr(null);
@@ -598,12 +561,10 @@ export default function SessionSummary() {
       }
       surface="none"
     >
-      {/* Fix back button */}
       <button type="button" className={styles.backBtn} aria-label="Vissza az álomnaplóhoz" onClick={() => router.push("/archive")}>
         ←
       </button>
 
-      {/* Title edit overlay */}
       {editingTitle ? (
         <div className={styles.titleEditOverlay} role="dialog" aria-label="Cím szerkesztése">
           <GlassCardSurface className={styles.titleEditCard} variant="soft" paper="evening">
@@ -656,7 +617,6 @@ export default function SessionSummary() {
           </div>
         ) : (
           <>
-            {/* Tabs */}
             <div className={styles.tabs} role="tablist">
               <button
                 className={`${styles.tabButton} ${tab === "raw" ? styles.tabActive : ""}`}
@@ -676,14 +636,12 @@ export default function SessionSummary() {
               </button>
             </div>
 
-            {/* Glass text panel */}
             <div className={styles.glassPanel}>
               <div className={styles.glassInner}>
                 {tab === "raw" ? <div className={styles.textBlock}>{rawEntry}</div> : <div className={styles.textBlock}>{framing ?? "—"}</div>}
               </div>
             </div>
 
-            {/* Stats */}
             <div className={styles.stats}>
               <GlassCardSurface className={`${styles.statsItem} ${styles.gridCard}`} variant="flat" paper="evening">
                 <div className={`${styles.statsLabel} ${styles.gridCardHeader}`}>Álom hossza</div>
@@ -705,7 +663,6 @@ export default function SessionSummary() {
               </GlassCardSurface>
             </div>
 
-            {/* Gallery */}
             <div className={styles.gallerySection}>
               <div className={styles.sectionHead}>
                 <h2 className={styles.sectionTitle}>Kártyák</h2>
@@ -735,9 +692,7 @@ export default function SessionSummary() {
                         className={`${styles.carouselCard} ${styles.gridCard}`}
                         variant="flat"
                         paper="evening"
-                        style={{
-                          transform: `translateY(${idx % 2 === 0 ? 0 : 8}px)`,
-                        }}
+                        style={{ transform: `translateY(${idx % 2 === 0 ? 0 : 8}px)` }}
                       >
                         <div className={`${styles.carouselTop} ${styles.gridCardHeader}`}>
                           <div className={styles.carouselMeta}>{dirTitle}</div>
@@ -746,8 +701,11 @@ export default function SessionSummary() {
 
                         <div className={`${styles.carouselBody} ${styles.gridCardBody}`}>
                           <div className={styles.carouselQ}>{c.question || "—"}</div>
-
-                          {c.isAnswered ? <div className={styles.carouselA}>{c.answer}</div> : <div className={styles.carouselAEmpty}>Nincs válasz</div>}
+                          {c.isAnswered ? (
+                            <div className={styles.carouselA}>{c.answer}</div>
+                          ) : (
+                            <div className={styles.carouselAEmpty}>Nincs válasz</div>
+                          )}
                         </div>
                       </GlassCardSurface>
                     );
@@ -756,13 +714,11 @@ export default function SessionSummary() {
               )}
             </div>
 
-            {/* Recommended directions */}
             <div className={styles.recommendSection}>
               <h2 style={{ margin: 0, fontSize: "20px" }}>Ajánlott irányok</h2>
               <div className={styles.dirGrid}>{recommendedDirs.map((d) => renderDirTile(d, { showReco: true }))}</div>
             </div>
 
-            {/* Show rest directions toggle */}
             {restDirs.length > 0 && !showRest ? (
               <div style={{ textAlign: "center" }}>
                 <button className={styles.moreButton} onClick={() => setShowRest(true)}>
@@ -771,7 +727,6 @@ export default function SessionSummary() {
               </div>
             ) : null}
 
-            {/* Rest directions list */}
             {showRest && restDirs.length > 0 ? (
               <div className={styles.recommendSection} style={{ marginTop: "var(--space-3)" }}>
                 <h2 style={{ margin: 0, fontSize: "20px" }}>További irányok</h2>
