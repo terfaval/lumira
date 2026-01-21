@@ -571,6 +571,8 @@ export default function SessionSummary() {
         groupLabel={gLabel}
         token={token as any}
         tags={tags}
+        showHint={false}
+        showTags={false}
         showReco={showReco}
         why={why}
         onOpen={(slug) => handleStartDirection(slug)}

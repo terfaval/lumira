@@ -16,7 +16,6 @@ import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { CatalogService } from "@/src/services/CatalogService";
 import { fetchFrameLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
 
-
 type CandidateDirection = { slug: string; reason?: string };
 
 function safeFrameRecommendations(x: unknown): CandidateDirection[] {
@@ -42,8 +41,6 @@ function isCanonicalFrameReady(payload: any): boolean {
   if (!payload || typeof payload !== "object") return false;
   const titleOk = typeof payload.title === "string" && payload.title.trim().length > 0;
   const framingOk = typeof payload.framing_text === "string" && payload.framing_text.trim().length > 0;
-  // Ready if we have *either* canonical object recs or legacy slugs.
-  // Do not require a minimum count higher than 1; UI can render 0–3.
   const recOk =
     (Array.isArray(payload.recommended_directions) && payload.recommended_directions.length >= 1) ||
     (Array.isArray(payload.recommended_slugs) && payload.recommended_slugs.length >= 1);
@@ -51,11 +48,6 @@ function isCanonicalFrameReady(payload: any): boolean {
 }
 
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
-
-function safeStringArray(x: unknown): string[] {
-  if (!Array.isArray(x)) return [];
-  return x.filter((s): s is string => typeof s === "string").map((s) => s.trim()).filter(Boolean);
-}
 
 function groupKeyFromLabel(raw: unknown): GroupKey {
   const label = String(raw ?? "").trim().toLowerCase();
@@ -67,6 +59,14 @@ function groupKeyFromLabel(raw: unknown): GroupKey {
   return "other";
 }
 
+function groupToken(k: GroupKey) {
+  return { text: `--dirgroup-${k}` as const, bg: `--dirgroup-${k}-bg` as const };
+}
+
+function groupLabel(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  return s || "Egyéb";
+}
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -84,7 +84,6 @@ export default function FramePage() {
 
   const { loading } = useRequireAuth();
 
-  // Poll state (prevents parallel loops)
   const pollRef = useRef<{ running: boolean; tries: number; lastAttemptAt: number }>({
     running: false,
     tries: 0,
@@ -128,7 +127,6 @@ export default function FramePage() {
   }, [loadLatest, userId]);
 
   const framingReady = isCanonicalFrameReady(frameLatest?.payload);
-  const framingTitle = String(frameLatest?.payload?.title ?? "");
   const framingText = String(frameLatest?.payload?.framing_text ?? "");
 
   const runEnsureAndPoll = useCallback(
@@ -142,7 +140,6 @@ export default function FramePage() {
       setErr(null);
 
       try {
-        // expo backoff ~45s total
         const delays = [700, 1200, 2000, 3200, 5000, 8000, 12000, 12000];
 
         while (pollRef.current.tries < delays.length) {
@@ -154,16 +151,13 @@ export default function FramePage() {
             json: { session_id: id, ...(opts?.force ? { force: true } : {}) },
           });
 
-          // Always refresh latest after ensure
           await loadLatest(userId);
 
-          // Check canonical readiness after refresh
           const latest = await fetchFrameLatestWithPayloadAndId(supabase, userId, id);
           setFrameLatest(latest);
 
           if (isCanonicalFrameReady(latest?.payload)) return;
 
-          // If hard-fail (auth/not found/server), stop early and show error
           if (!res.ok) {
             const text = await res.text().catch(() => "");
             if (res.status === 401) throw new Error("Nincs bejelentkezve.");
@@ -183,13 +177,10 @@ export default function FramePage() {
     [id, loadLatest, userId]
   );
 
-  // Auto-run: if not ready after first latest load, start polling.
   useEffect(() => {
     if (!userId) return;
     if (!latestLoaded) return;
     if (framingReady) return;
-
-    // Avoid immediately restarting if user just hit retry
     if (pollRef.current.running) return;
 
     void runEnsureAndPoll();
@@ -197,20 +188,16 @@ export default function FramePage() {
 
   const recommendations = useMemo(() => {
     const catalogBySlug = new Map(catalog.map((c) => [c.slug, c]));
-
-    // Canonical first: recommended_directions (object[] with why).
-    // Fallback: recommended_slugs (string[] without why).
-    const recSource =
-      frameLatest?.payload?.recommended_directions ?? frameLatest?.payload?.recommended_slugs;
+    const recSource = frameLatest?.payload?.recommended_directions ?? frameLatest?.payload?.recommended_slugs;
     const frameRecs = safeFrameRecommendations(recSource).slice(0, 3);
 
     return frameRecs
       .map((rec) => {
         const item = catalogBySlug.get(rec.slug);
         if (!item) return null;
-        return { ...item, reason: rec.reason ?? "" };
+        return { item, reason: rec.reason ?? "" };
       })
-      .filter((x): x is DirectionCatalogItemDTO & { reason: string } => Boolean(x));
+      .filter((x): x is { item: DirectionCatalogItemDTO; reason: string } => Boolean(x));
   }, [catalog, frameLatest]);
 
   const handleDirectionSelect = useCallback(
@@ -253,49 +240,41 @@ export default function FramePage() {
               <p className="section-title">Válassz egy irányt, ha tovább dolgoznál az álommal</p>
             </div>
 
-            {/* FRAME – Recommended cards (no pills/tags, click navigates) */}
-{recommendations.length > 0 ? (
-  <div className="direction-grid">
-    {recommendations.map((d) => (
-      <div
-        key={d.slug}
-        role="button"
-        tabIndex={0}
-        aria-label={`Irány megnyitása: ${d.title}`}
-        className={`direction-card ${busy ? "is-disabled" : ""}`}
-        onClick={() => !busy && handleDirectionSelect(d.slug)}
-        onKeyDown={(e) => {
-          if (busy) return;
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleDirectionSelect(d.slug);
-          }
-        }}
-      >
-        <GlassCardSurface
-          className="direction-card-surface"
-          variant="soft"
-          paper="evening"
-          minHeight="100%"
-          style={{ height: "100%" }}
-        >
-          <div className="direction-card-inner">
-            <div className="direction-card-title">{d.title}</div>
-            <div className="direction-card-body">
-              {(d.reason?.trim() ? d.reason : (d.content?.micro_description ?? d.description)) ?? ""}
-            </div>
-          </div>
-        </GlassCardSurface>
-      </div>
-    ))}
-  </div>
-) : (
-  <p style={{ color: "var(--text-muted)", margin: 0 }}>
-    Most nem jött ki biztos ajánlott irány, de a teljes katalógusból választhatsz.
-  </p>
-)}
+            {/* Frame recommended: keep group color (corner), but minimal content, no pills/tags/hint */}
+            {recommendations.length > 0 ? (
+              <div className="direction-grid">
+                {recommendations.map(({ item, reason }) => {
+                  const gKey = groupKeyFromLabel(item.content.group);
+                  const token = groupToken(gKey);
+                  const gLabel = groupLabel(item.content.group);
 
-
+                  return (
+                    <DirectionTile
+                      key={item.slug}
+                      dir={item as any}
+                      groupKey={gKey}
+                      groupLabel={gLabel}
+                      token={token as any}
+                      tags={[]}
+                      variant="minimal"
+                      // reason goes as "why" so minimal uses it as body
+                      why={reason || null}
+                      // no hint/pills/tags on frame
+                      showHint={false}
+                      showTags={false}
+                      showGroupPill={false}
+                      onOpen={(slug) => {
+                        if (!busy) handleDirectionSelect(slug);
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ color: "var(--text-muted)", margin: 0 }}>
+                Most nem jött ki biztos ajánlott irány, de a teljes katalógusból választhatsz.
+              </p>
+            )}
 
             <div className="direction-actions">
               <PrimaryButton variant="secondary" onClick={() => router.push(`/session/${id}/direction`)}>
@@ -308,9 +287,7 @@ export default function FramePage() {
           </>
         ) : (
           <>
-            <p style={{ color: "var(--text-muted)", margin: 0 }}>
-              A keretezés készül… (ez pár másodpercig is eltarthat)
-            </p>
+            <p style={{ color: "var(--text-muted)", margin: 0 }}>A keretezés készül… (ez pár másodpercig is eltarthat)</p>
 
             <div className="direction-actions" style={{ marginTop: "var(--space-2)" }}>
               <PrimaryButton variant="secondary" disabled={busy} onClick={() => runEnsureAndPoll({ force: true })}>
@@ -333,13 +310,6 @@ export default function FramePage() {
           flex-direction: column;
           justify-content: center;
           padding-block: var(--space-2);
-        }
-
-        .frame-title {
-          margin: 0 0 var(--space-2) 0;
-          font-size: 1.35rem;
-          font-weight: 800;
-          letter-spacing: -0.01em;
         }
 
         .frame-framing {
@@ -378,74 +348,6 @@ export default function FramePage() {
           gap: var(--space-3);
           flex-wrap: wrap;
           align-items: center;
-        }
-
-        .direction-card {
-          text-align: left;
-          cursor: pointer;
-          background: none;
-          border: none;
-          padding: 0;
-          width: 100%;
-          height: 100%;
-          display: flex;
-        }
-
-        .direction-card {
-          --frame-text: var(--text-primary);
-          --frame-border: var(--line-soft);
-          --glow-a: var(--accent);
-          --glow-b: var(--accent-2);
-        }
-
-        .direction-card-surface {
-          width: 100%;
-          height: 100%;
-          border-color: var(--frame-border);
-          color: var(--frame-text);
-          transform-origin: 50% 55%;
-
-          transition: transform 180ms ease, box-shadow 220ms ease, border-color 220ms ease, filter 220ms ease,
-            color 180ms ease;
-
-          will-change: transform, box-shadow, filter;
-        }
-
-        .direction-card-inner {
-          height: 100%;
-          min-height: 0;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          gap: var(--space-2);
-        }
-
-        .direction-card-title {
-          font-weight: 800;
-          color: var(--frame-text);
-        }
-
-        .direction-card-body {
-          opacity: 0.9;
-          color: var(--frame-text);
-        }
-
-        .direction-card:hover:not(:disabled) .direction-card-surface {
-          transform: translateY(0) scale(1.01);
-          filter: saturate(1.06) brightness(1.02);
-          box-shadow: var(--shadow-soft), 0 0 0 1px var(--line-soft), 0 0 22px var(--glow-a), 0 0 40px var(--glow-b);
-        }
-
-        .direction-card:active:not(:disabled) .direction-card-surface {
-          transform: translateY(1px) scale(0.985);
-          filter: saturate(1) brightness(0.98);
-          box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--line-soft), 0 0 16px var(--glow-a),
-            inset 0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        }
-
-        .direction-card:focus-visible .direction-card-surface {
-          outline: none;
-          box-shadow: var(--shadow-soft), 0 0 0 3px var(--focus-ring), 0 0 22px var(--glow-a);
         }
       `}</style>
     </div>

@@ -15,23 +15,81 @@ type Props = {
 
   tags: string[];
 
-  /** Only show star + why when you explicitly ask for it */
+  /** Default: full tile. Minimal: no pills/tags/hint. */
+  variant?: "default" | "minimal";
+
+  /** Show star pill (only if you want) */
   showReco?: boolean;
+
+  /**
+   * Why / reason text. In "default" it's shown under title when showReco=true.
+   * In "minimal" it's used as the main body if present.
+   */
   why?: string | null;
+
+  /** Fine-grain toggles (default true in "default" variant) */
+  showGroupPill?: boolean;
+  showTags?: boolean;
+  showHint?: boolean;
 
   onOpen: (slug: string, originRect?: DOMRect) => void;
 };
 
-export function DirectionTile({ dir, groupLabel, token, tags, showReco = false, why = null, onOpen }: Props) {
+export function DirectionTile({
+  dir,
+  groupLabel,
+  token,
+  tags,
+  variant = "default",
+  showReco = false,
+  why = null,
+  showGroupPill,
+  showTags,
+  showHint,
+  onOpen,
+}: Props) {
   const micro = ((dir as any)?.content?.micro_description ?? dir.description ?? "") as string;
+  const whyText = String(why ?? "").trim();
+
+  // Defaults by variant
+  const _showGroupPill = showGroupPill ?? (variant === "default");
+  const _showTags = showTags ?? (variant === "default");
+  const _showHint = showHint ?? (variant === "default");
 
   function openFrom(el: HTMLElement | null) {
     const rect = el?.getBoundingClientRect();
     onOpen(dir.slug, rect);
   }
 
-  const whyText = String(why ?? "").trim();
+  // Minimal: keep color (corner), but remove pills/tags/hint entirely.
+  if (variant === "minimal") {
+    const body = (whyText || micro || "").trim();
 
+    return (
+      <GlassCardSurface
+        className={`${styles.wrap} ${styles.card}`}
+        role="button"
+        tabIndex={0}
+        variant="soft"
+        paper="evening"
+        corner={token?.bg ?? null}
+        onClick={(e) => openFrom(e.currentTarget as HTMLElement)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openFrom(e.currentTarget as HTMLElement);
+          }
+        }}
+      >
+        <div className={styles.mid}>
+          <div className={styles.title}>{dir.title}</div>
+          {body ? <div className={styles.body}>{body}</div> : null}
+        </div>
+      </GlassCardSurface>
+    );
+  }
+
+  // Default (full tile)
   return (
     <GlassCardSurface
       className={`${styles.wrap} ${styles.card}`}
@@ -49,19 +107,23 @@ export function DirectionTile({ dir, groupLabel, token, tags, showReco = false, 
       }}
     >
       {/* TOP */}
-      <div className={styles.top}>
-        <div className={styles.left}>
-          <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
-            {groupLabel}
-          </Pill>
-        </div>
-
-        {showReco ? (
-          <div className={styles.right}>
-            <Pill variant="neutral">★ Ajánlott</Pill>
+      {_showGroupPill || showReco ? (
+        <div className={styles.top}>
+          <div className={styles.left}>
+            {_showGroupPill ? (
+              <Pill variant="neutral" colorVar={token.text} bgVar={token.bg}>
+                {groupLabel}
+              </Pill>
+            ) : null}
           </div>
-        ) : null}
-      </div>
+
+          {showReco ? (
+            <div className={styles.right}>
+              <Pill variant="neutral">★ Ajánlott</Pill>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* MID */}
       <div className={styles.mid}>
@@ -73,19 +135,23 @@ export function DirectionTile({ dir, groupLabel, token, tags, showReco = false, 
       </div>
 
       {/* BOTTOM */}
-      <div className={styles.bottom}>
-        {tags.length
-          ? tags.map((t) => (
-              <Pill key={t} variant="neutral">
-                {t}
-              </Pill>
-            ))
-          : null}
+      {_showTags || _showHint ? (
+        <div className={styles.bottom}>
+          {_showTags && tags.length
+            ? tags.map((t) => (
+                <Pill key={t} variant="neutral">
+                  {t}
+                </Pill>
+              ))
+            : null}
 
-        <span className={styles.hint}>
-          Megnyitás <span aria-hidden="true">→</span>
-        </span>
-      </div>
+          {_showHint ? (
+            <span className={styles.hint}>
+              Megnyitás <span aria-hidden="true">→</span>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
     </GlassCardSurface>
   );
 }
