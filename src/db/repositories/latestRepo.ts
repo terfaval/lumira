@@ -1,6 +1,19 @@
 // src/db/repositories/latestRepo.ts
 import { SupabaseClient } from "@supabase/supabase-js";
 
+function coerceJsonPayload(raw: any): any {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      // If it's a plain string (not JSON), keep it as-is.
+      return raw;
+    }
+  }
+  return raw;
+}
+
 export async function fetchObservationLatestWithPayloadAndId(
   supabase: SupabaseClient,
   user_id: string,
@@ -96,8 +109,8 @@ export async function fetchLatentLatestWithPayloadAndId(
     .eq("user_id", user_id)
     .single();
 
-  if (ver.error) throw ver.error;
-  return { latent_version_id: ver.data.id, payload: ver.data.payload };
+    if (ver.error) throw ver.error;
+  return { latent_version_id: ver.data.id, payload: coerceJsonPayload(ver.data.payload) };
 }
 
 export async function fetchFrameLatestWithPayloadAndId(

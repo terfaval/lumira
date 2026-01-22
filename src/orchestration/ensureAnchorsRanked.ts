@@ -2,7 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { rankAnchors, buildAnchorRankingPayload } from "@/src/lib/dream/anchorRanking";
 import { insertAnchorVersionIfMissing, upsertAnchorLatest } from "@/src/db/repositories/anchorRepo";
 import { fetchObservationLatestWithPayloadAndId, fetchLatentLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
-import { fetchUsedAnchorKeysFromLedger } from "@/src/lib/dream/workLedger";
+import { listRecentAnchorKeys } from "@/src/db/repositories/workQuestionLedgerRepo";
 import { materialHashFromPayload, sha256 } from "@/src/orchestration/idempotency/materialHash";
 
 const ALGORITHM_VERSION = "v1";
@@ -67,20 +67,17 @@ export async function ensureAnchorsRanked(
   const dreamText = await fetchDreamText(supabase, params.session_id, params.user_id);
   if (!dreamText) return { anchor_version_id: null, payload: null, input_hash: null };
 
-  const [observationLatest, latentLatest, summaryLatent, usedAnchorKeysSet] = await Promise.all([
+  const [observationLatest, latentLatest, summaryLatent, recentAnchorKeys] = await Promise.all([
     fetchObservationLatestWithPayloadAndId(supabase, params.user_id, params.session_id),
     fetchLatentLatestWithPayloadAndId(supabase, params.user_id, params.session_id),
     fetchSummaryLatent(supabase, params.session_id, params.user_id),
-    fetchUsedAnchorKeysFromLedger({ supabase, sessionId: params.session_id, userId: params.user_id, limit: 120 }),
+    listRecentAnchorKeys(supabase, { session_id: params.session_id, user_id: params.user_id, limit: 120 }),
   ]);
 
   const observationPayload = observationLatest?.payload ?? null;
   const latentPayload = latentLatest?.payload ?? summaryLatent ?? null;
 
-  const usedAnchorKeys = Array.from(usedAnchorKeysSet ?? new Set<string>())
-    .map((k) => k.trim())
-    .filter(Boolean)
-    .sort();
+  const usedAnchorKeys = Array.from(new Set((recentAnchorKeys ?? []).map((k) => k.trim()).filter(Boolean))).sort();
 
   const input_hash = buildAnchorInputHash({
     dreamTextHash: sha256(dreamText),

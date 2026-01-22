@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
+import { insertLedgerEntry } from "@/src/db/repositories/workQuestionLedgerRepo";
+import { sha256 } from "@/src/orchestration/idempotency/materialHash";
+import { anchorKey } from "@/src/lib/dream/anchorKey";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +14,29 @@ type AnswerBody = {
   answer_text?: string;
   metadata?: unknown;
 };
+
+function normalizeQuestionHash(prompt: string): string {
+  const normalized = prompt.toLowerCase().replace(/\s+/g, " ").trim();
+  return sha256(normalized);
+}
+
+function extractPromptFromPayload(payload: any): string {
+  const prompt = payload?.ai?.prompt ?? payload?.ai?.question ?? "";
+  return typeof prompt === "string" ? prompt.trim() : "";
+}
+
+function extractAnchorKeysFromPayload(payload: any): string[] {
+  const raw = payload?.trace?.selection?.anchor_keys;
+  const keys = Array.isArray(raw) ? raw : [];
+  const cleaned = keys
+    .map((k) => (typeof k === "string" ? k.trim() : ""))
+    .filter(Boolean);
+  if (cleaned.length > 0) return cleaned;
+
+  const prompt = extractPromptFromPayload(payload);
+  const fallback = anchorKey(prompt);
+  return fallback ? [fallback] : [];
+}
 
 export async function POST(req: Request) {
   const supabase = await supabaseServerAuthed(req);
@@ -43,7 +69,7 @@ export async function POST(req: Request) {
 
   const workBlock = await supabase
     .from("work_versions")
-    .select("id")
+    .select("id,payload")
     .eq("id", work_block_id)
     .eq("session_id", session_id)
     .eq("user_id", user_id)
@@ -76,6 +102,19 @@ export async function POST(req: Request) {
     .single();
 
   if (inserted.error) return NextResponse.json({ error: inserted.error.message }, { status: 500 });
+
+  const payload = (workBlock.data as any)?.payload ?? null;
+  const prompt = extractPromptFromPayload(payload);
+  const anchor_keys = extractAnchorKeysFromPayload(payload);
+  if (prompt && anchor_keys.length > 0) {
+    await insertLedgerEntry(supabase, {
+      user_id,
+      session_id,
+      work_block_id,
+      anchor_keys,
+      question_hash: normalizeQuestionHash(prompt),
+    });
+  }
 
   return NextResponse.json({ ok: true, answer_id: inserted.data.id });
 }

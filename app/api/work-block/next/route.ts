@@ -15,10 +15,10 @@ import { composeCard } from "@/src/domain/work/composer/CardComposer";
 import { evaluateSafety } from "@/src/domain/work/safety/SafetyGate";
 import { buildStopSignal } from "@/src/domain/work/stop/StopEngine";
 import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
-import { fetchUsedAnchorKeysFromLedger } from "@/src/lib/dream/workLedger";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { isDirectionCardContent } from "@/src/lib/types";
 import { sha256 } from "@/src/orchestration/idempotency/materialHash";
+import { listRecentAnchorKeys } from "@/src/db/repositories/workQuestionLedgerRepo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -155,11 +155,6 @@ async function fetchSessionSummary(supabase: any, sessionId: string, userId: str
   }
 }
 
-function normalizeQuestionHash(prompt: string): string {
-  const normalized = prompt.toLowerCase().replace(/\s+/g, " ").trim();
-  return sha256(normalized);
-}
-
 function buildRequestTrace(args: {
   request_id: string;
   client_request_id?: string | null;
@@ -235,42 +230,6 @@ function extractMaterialIdFromPayload(payload: any): string | null {
   return typeof materialId === "string" && materialId ? materialId : null;
 }
 
-async function insertLedgerEntry(args: {
-  supabase: any;
-  sessionId: string;
-  userId: string;
-  directionSlug: string | null;
-  prompt: string;
-  groupTags: string[];
-  materialId: string | null;
-  anchorKeys: string[];
-}) {
-  const base = {
-    session_id: args.sessionId,
-    user_id: args.userId,
-    direction_slug: args.directionSlug ?? "unknown",
-    question_text: args.prompt,
-    question_intent: null,
-    anchor_keys: args.anchorKeys ?? [],
-  };
-
-  const extended = {
-    ...base,
-    question_hash: normalizeQuestionHash(args.prompt),
-    group_tags: args.groupTags ?? [],
-    material_id: args.materialId ?? null,
-  };
-
-  try {
-    const { error } = await args.supabase.from("work_question_ledger").insert(extended);
-    if (!error) return;
-  } catch {}
-
-  try {
-    await args.supabase.from("work_question_ledger").insert(base);
-  } catch {}
-}
-
 export async function POST(req: Request) {
   try {
     const supabase = await supabaseServerAuthed(req);
@@ -293,7 +252,7 @@ export async function POST(req: Request) {
     const request_id = crypto.randomUUID();
     const client_request_id = typeof body.client_request_id === "string" ? body.client_request_id.trim() : null;
 
-    const [catalog, rawDreamText, observationLatest, latentLatest, summaryLatent, anchorLatest, recentBlocks, usedAnchorKeys] =
+    const [catalog, rawDreamText, observationLatest, latentLatest, summaryLatent, anchorLatest, recentBlocks, recentAnchorKeys] =
       await Promise.all([
         fetchDirectionCatalog(supabase),
         fetchLatestRawDreamEntry(supabase, userId, sessionId),
@@ -302,7 +261,7 @@ export async function POST(req: Request) {
         fetchSessionSummary(supabase, sessionId, userId),
         fetchAnchorLatestWithPayloadAndId(supabase, userId, sessionId),
         fetchRecentBlocks(supabase, sessionId, userId),
-        fetchUsedAnchorKeysFromLedger({ supabase, sessionId, userId, limit: 120 }),
+        listRecentAnchorKeys(supabase, { session_id: sessionId, user_id: userId, limit: 120 }),
       ]);
 
     let anchorPayload = anchorLatest?.payload ?? null;
@@ -360,6 +319,8 @@ export async function POST(req: Request) {
     const recentPrompts = recentBlocks
       .map((row: any) => extractPromptFromPayload(row?.payload))
       .filter(Boolean);
+
+    const usedAnchorKeys = new Set((recentAnchorKeys ?? []).map((k) => k.trim()).filter(Boolean));
 
     const selectorResult = selectCardMaterial({
       sessionState: {
@@ -513,17 +474,6 @@ export async function POST(req: Request) {
     if (inserted.error) return NextResponse.json({ error: inserted.error.message }, { status: 500 });
 
     await upsertWorkLatest(supabase, sessionId, userId, inserted.data.id);
-
-    await insertLedgerEntry({
-      supabase,
-      sessionId,
-      userId,
-      directionSlug: payload.direction_slug,
-      prompt: composed.prompt,
-      groupTags: payload.group_tags ?? [],
-      materialId: payload.material_id ?? null,
-      anchorKeys: selectorResult.selected.material.anchor_keys ?? [],
-    });
 
     return NextResponse.json({
       request_id,

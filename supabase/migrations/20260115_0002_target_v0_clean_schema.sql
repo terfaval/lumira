@@ -583,4 +583,33 @@ drop policy if exists "delete_own_answers" on public.dream_answers;
 create policy "delete_own_answers" on public.dream_answers
 for delete using (user_id = auth.uid());
 
+create table if not exists public.work_question_ledger (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  session_id uuid not null,
+  work_block_id uuid null,
+  anchor_keys text[] not null default '{}',
+  question_hash text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_wql_user_session_created
+  on public.work_question_ledger(user_id, session_id, created_at desc);
+
+create index if not exists idx_wql_user_question_hash
+  on public.work_question_ledger(user_id, question_hash);
+
+alter table public.work_question_ledger enable row level security;
+
+-- RLS: user can read/write own rows
+create policy "wql_select_own"
+  on public.work_question_ledger
+  for select
+  using (auth.uid() = user_id);
+
+create policy "wql_insert_own"
+  on public.work_question_ledger
+  for insert
+  with check (auth.uid() = user_id);
+  
 commit;

@@ -189,7 +189,9 @@ export function selectCardMaterial(args: {
   const allBlocked = profile.group_tags.length > 0 && profile.group_tags.every((tag) => blocked.has(String(tag)));
 
   const ruled_out: Array<{ why: string; candidate: string }> = [];
+  const ledger_ruled_out: Array<{ why: string; candidate: string }> = [];
   const candidates: ScoredCandidate[] = [];
+  const ledgerRepeats: ScoredCandidate[] = [];
 
   const seedCandidate: MaterialCandidate | null =
     args.seed && args.seed.text.trim()
@@ -213,11 +215,6 @@ export function selectCardMaterial(args: {
     const snippet = candidate.text_snippet ?? "";
     const simMax = snippet ? similarityMax(snippet, recentPrompts) : 0;
 
-    if (candidate.anchor_keys?.some((k) => sessionState.ledger_used_anchor_keys.has(k))) {
-      ruled_out.push({ why: "ledger_repeat", candidate: snippet });
-      continue;
-    }
-
     if (sessionState.recent_material_ids.includes(id)) {
       ruled_out.push({ why: "recent_material_repeat", candidate: snippet });
       continue;
@@ -228,7 +225,19 @@ export function selectCardMaterial(args: {
       continue;
     }
 
+    if (candidate.anchor_keys?.some((k) => sessionState.ledger_used_anchor_keys.has(k))) {
+      ledger_ruled_out.push({ why: "ledger_repeat", candidate: snippet });
+      ledgerRepeats.push({ ...candidate, id, similarity_max: simMax });
+      continue;
+    }
+
     candidates.push({ ...candidate, id, similarity_max: simMax });
+  }
+
+  if (candidates.length === 0 && ledgerRepeats.length > 0) {
+    candidates.push(...ledgerRepeats);
+  } else if (ledger_ruled_out.length > 0) {
+    ruled_out.push(...ledger_ruled_out);
   }
 
   // Base trace candidate:
