@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client"; // <-- FIX PATH
 
 export function GuestStartButton({
-  redirectTo = "/session/new",
+  redirectTo = "/new",
   className = "",
   label = "Kipróbálom",
 }: {

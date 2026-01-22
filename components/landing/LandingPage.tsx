@@ -102,7 +102,7 @@ export function LandingPage() {
 
                 <GuestStartButton
                   className={`btn btn-secondary ${styles.heroCtaSecondary}`}
-                  redirectTo="/session/new"
+                  redirectTo="/new"
                   label="Kipróbálom"
                 />
 
