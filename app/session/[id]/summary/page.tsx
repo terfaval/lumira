@@ -12,7 +12,6 @@ import { WorkCard } from "@/components/WorkCard";
 import { startDirection } from "@/src/lib/startDirection";
 import type { DirectionCardContent } from "@/src/lib/types";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
-import { CatalogService } from "@/src/services/CatalogService";
 import { requireUserId } from "@/src/lib/db";
 
 import styles from "./summary.module.css";
@@ -91,6 +90,27 @@ type FramePayload = {
   title?: string | null;
   framing_text?: string | null;
   recommended_directions?: unknown;
+};
+
+type LatentPayload = {
+  salient_elements?: unknown;
+};
+
+type SessionSummaryDTO = {
+  session: {
+    id: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    title_override: string | null;
+  } | null;
+  raw_entry: string | null;
+  frame: FramePayload | null;
+  latent: LatentPayload | null;
+  work_versions: Array<{ id: string; created_at: string; payload: any }>;
+  dream_answers: WorkAnswerRow[];
+  selected_directions: string[];
+  catalog: DirectionCatalogItemDTO[];
 };
 
 // Compute a compact title for a session based on overrides, frame payload or raw text
@@ -201,6 +221,7 @@ export default function SessionSummary() {
 
   const [session, setSession] = useState<SessionRow | null>(null);
   const [framePayload, setFramePayload] = useState<FramePayload | null>(null);
+  const [latentPayload, setLatentPayload] = useState<LatentPayload | null>(null);
   const [rawEntry, setRawEntry] = useState<string | null>(null);
 
   const [workBlocks, setWorkBlocks] = useState<DirectionWorkBlock[]>([]);
@@ -227,130 +248,52 @@ export default function SessionSummary() {
     (async () => {
       try {
         setErr(null);
-        const userId = await requireUserId();
+        const res = await fetch(`/api/session-summary?session_id=${encodeURIComponent(sessionId)}`, {
+          credentials: "include",
+        });
 
-        // 1) Try dream_sessions (if present/visible)
-        const { data: sessionData, error: sessErr } = await supabase
-          .from("dream_sessions")
-          .select("id, title, status, created_at, updated_at")
-          .eq("id", sessionId)
-          .eq("user_id", userId)
-          .maybeSingle();
-
-        if (sessErr) throw new Error(sessErr.message);
-        if (!isMounted) return;
-        setSession(sessionData as SessionRow | null);
-
-        let effectiveSession: SessionRow | null = (sessionData as SessionRow | null) ?? null;
-
-        // 2) Fallback: consider session existing if there is at least one raw dream entry
-        if (!effectiveSession) {
-          const { data: entryProbe, error: entryProbeErr } = await supabase
-            .from("dream_entries")
-            .select("session_id, created_at")
-            .eq("session_id", sessionId)
-            .eq("user_id", userId)
-            .in("kind", ["raw", "raw_entry"])
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (entryProbeErr) throw new Error(entryProbeErr.message);
-
-          if (entryProbe) {
-            effectiveSession = {
-              id: sessionId,
-              status: "active",
-              created_at: entryProbe.created_at,
-              updated_at: entryProbe.created_at,
-              title: null,
-            };
+        if (!res.ok) {
+          let detail = "Hiba történt az összkép betöltésekor.";
+          try {
+            const data = (await res.json()) as any;
+            detail = data?.message || data?.error || detail;
+          } catch {
+            // ignore JSON parse errors
           }
+          throw new Error(detail);
         }
 
+        const dto = (await res.json()) as SessionSummaryDTO;
         if (!isMounted) return;
-        setSession(effectiveSession);
 
-        // Raw entry
-        const { data: entryRow } = await supabase
-          .from("dream_entries")
-          .select("content, created_at")
-          .eq("session_id", sessionId)
-          .eq("user_id", userId)
-          .in("kind", ["raw", "raw_entry"])
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const nextSession = dto.session
+          ? {
+              id: dto.session.id,
+              status: dto.session.status,
+              created_at: dto.session.created_at,
+              updated_at: dto.session.updated_at,
+              title: dto.session.title_override ?? null,
+            }
+          : null;
 
-        if (!isMounted) return;
-        setRawEntry(typeof entryRow?.content === "string" ? entryRow.content : null);
+        setSession(nextSession);
+        setRawEntry(dto.raw_entry ?? null);
+        setFramePayload(dto.frame ?? null);
+        setLatentPayload(dto.latent ?? null);
 
-        // Frame payload
-        const { data: latestFrame } = await supabase
-          .from("frame_latest")
-          .select("frame_version_id")
-          .eq("session_id", sessionId)
-          .eq("user_id", userId)
-          .maybeSingle();
-
-        if (latestFrame?.frame_version_id) {
-          const { data: frameVersion, error: frameErr } = await supabase
-            .from("frame_versions")
-            .select("payload")
-            .eq("id", latestFrame.frame_version_id)
-            .eq("user_id", userId)
-            .maybeSingle();
-          if (frameErr) throw new Error(frameErr.message);
-          if (!isMounted) return;
-          setFramePayload((frameVersion?.payload ?? null) as FramePayload | null);
-        } else {
-          if (!isMounted) return;
-          setFramePayload(null);
-        }
-
-        // Work blocks
-        const { data: versions, error: wbErr } = await supabase
-          .from("work_versions")
-          .select("id, session_id, user_id, payload, created_at")
-          .eq("session_id", sessionId)
-          .eq("user_id", userId)
-          .order("created_at", { ascending: true });
-        if (wbErr) throw new Error(wbErr.message);
-
-        const { data: answers, error: ansErr } = await supabase
-          .from("dream_answers")
-          .select("work_id, content, created_at")
-          .eq("session_id", sessionId)
-          .eq("user_id", userId);
-        if (ansErr) throw new Error(ansErr.message);
-
-        const answersByWorkId = buildAnswersByWorkId((answers ?? []) as WorkAnswerRow[]);
-        const blocks = (versions ?? [])
+        const answersByWorkId = buildAnswersByWorkId((dto.dream_answers ?? []) as WorkAnswerRow[]);
+        const blocks = (dto.work_versions ?? [])
           .map((row: any) => toWorkBlock(row, answersByWorkId))
           .filter((b): b is DirectionWorkBlock => Boolean(b));
-        if (!isMounted) return;
         setWorkBlocks(blocks);
 
-        // Selected directions
-        const { data: choices, error: choiceErr } = await supabase
-          .from("session_directions")
-          .select("direction_slug")
-          .eq("session_id", sessionId)
-          .eq("user_id", userId);
-        if (choiceErr) throw new Error(choiceErr.message);
-        if (!isMounted) return;
-
         const sel: Record<string, boolean> = {};
-        (choices ?? []).forEach((row: any) => {
-          const s = row.direction_slug;
-          if (typeof s === "string") sel[s] = true;
+        (dto.selected_directions ?? []).forEach((slug) => {
+          if (typeof slug === "string") sel[slug] = true;
         });
         setSelectedDirs(sel);
 
-        // Catalog
-        const cat = await CatalogService.getActiveCatalog(supabase);
-        if (!isMounted) return;
-        setDirectionCatalog(cat);
+        setDirectionCatalog(dto.catalog ?? []);
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Hiba történt az összkép betöltésekor.";
         if (!isMounted) return;
@@ -405,12 +348,28 @@ export default function SessionSummary() {
   }, [directionCatalog]);
 
   const workBlockById = useMemo(() => {
-  const m = new Map<string, DirectionWorkBlock>();
-  for (const b of workBlocks) m.set(b.id, b);
-  return m;
-}, [workBlocks]);
+    const m = new Map<string, DirectionWorkBlock>();
+    for (const b of workBlocks) m.set(b.id, b);
+    return m;
+  }, [workBlocks]);
 
   const framing = framePayload?.framing_text ?? null;
+
+  const salientElements = useMemo(() => {
+    const raw = latentPayload?.salient_elements;
+    if (!Array.isArray(raw)) return [];
+    const out: Array<{ key: string; label: string }> = [];
+    for (const item of raw) {
+      if (!item || typeof item !== "object") continue;
+      const key = typeof (item as any).key === "string" ? (item as any).key.trim() : "";
+      const label = typeof (item as any).label === "string" ? (item as any).label.trim() : "";
+      const text = label || key;
+      if (!text) continue;
+      out.push({ key: key || text, label: text });
+      if (out.length >= 5) break;
+    }
+    return out;
+  }, [latentPayload]);
 
   const dreamLength = useMemo(() => {
     const raw = String(rawEntry ?? "").trim();
@@ -715,6 +674,19 @@ export default function SessionSummary() {
               </GlassCardSurface>
             </div>
 
+            {salientElements.length > 0 ? (
+              <div className={styles.salientSection}>
+                <div className={styles.salientLabel}>Kiemelt elemek</div>
+                <div className={styles.salientPills}>
+                  {salientElements.map((item) => (
+                    <span key={item.key} className={styles.salientPill}>
+                      {item.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             {/* Gallery */}
             <div className={styles.gallerySection}>
               <div className={styles.sectionHead}>
@@ -744,6 +716,7 @@ export default function SessionSummary() {
                     return (
   <div
     key={c.id}
+    className={styles.cardItem}
     style={{
       transform: `translateY(${idx % 2 === 0 ? 0 : 8}px)`,
     }}
@@ -754,15 +727,14 @@ export default function SessionSummary() {
       busy={false}
       directionMeta={meta ?? null}
       block={{
-        id: c.id,
-        // fontos: itt a "teljes" content kell, nem a cardsForGallery-s kivonat
-        content: (workBlocks.find((b) => b.id === c.id)?.content ?? null) as any,
-      }}
-      onOpen={() => {
-        const url = c.directionSlug
-          ? `/session/${sessionId}/work?direction=${encodeURIComponent(c.directionSlug)}`
-          : `/session/${sessionId}/work`;
-        router.push(url);
+      id: c.id,
+      content: (workBlockById.get(c.id)?.content ?? null) as any,
+    }}
+    onOpen={() => {
+      const url = c.directionSlug
+        ? `/session/${sessionId}/work?direction=${encodeURIComponent(c.directionSlug)}`
+        : `/session/${sessionId}/work`;
+      router.push(url);
       }}
     />
   </div>

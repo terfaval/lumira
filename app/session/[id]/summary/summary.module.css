@@ -134,6 +134,32 @@
   flex: 0 0 auto;
 }
 
+.cardItem {
+  /* Egységes szélesség (mobilon nagyobb, desktopon stabil) */
+  flex: 0 0 clamp(280px, 72vw, 360px);
+  max-width: 360px;
+
+  /* Egységes “kártya-tile” magasságérzet (finomhangolható) */
+  min-height: 220px;
+
+  /* Ha a belső WorkCard tud nyúlni, szépen kitölti */
+  display: flex;
+}
+
+.cardItem > * {
+  /* WorkCard töltse ki a tile-t */
+  width: 100%;
+}
+
+.carousel {
+  scroll-snap-type: x mandatory;
+}
+
+.cardItem {
+  scroll-snap-align: start;
+}
+
+
 /* Stats */
 .stats {
   display: grid;
