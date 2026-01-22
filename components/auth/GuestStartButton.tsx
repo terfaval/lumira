@@ -36,12 +36,18 @@ export function GuestStartButton({
 
       router.push(redirectTo);
       router.refresh();
-    } catch (e) {
-      console.error(e);
-      alert("Nem sikerült elindítani a vendég módot. Próbáld újra.");
-    } finally {
-      setBusy(false);
-    }
+    } catch (e: any) {
+  console.error("Guest start failed:", e);
+  const msg =
+    typeof e?.message === "string"
+      ? e.message
+      : typeof e === "string"
+      ? e
+      : JSON.stringify(e);
+  alert("Nem sikerült elindítani a vendég módot: " + msg);
+} finally {
+  setBusy(false);
+}
   }
 
   return (
