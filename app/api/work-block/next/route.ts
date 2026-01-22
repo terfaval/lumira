@@ -14,6 +14,7 @@ import { selectCardMaterial } from "@/src/domain/work/selector/CardMaterialSelec
 import { COMPOSE_MAX_ATTEMPTS, composeCard } from "@/src/domain/work/composer/CardComposer";
 import { evaluateSafety } from "@/src/domain/work/safety/SafetyGate";
 import { buildStopSignal } from "@/src/domain/work/stop/StopEngine";
+import { buildLatentIntentCandidates } from "@/src/domain/work/materials/latentIntent";
 import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { isDirectionCardContent } from "@/src/lib/types";
@@ -141,6 +142,59 @@ function extractAnchorsFromRanking(payload: any) {
   return anchors;
 }
 
+function normalizeIntentHint(input: unknown, limit = 80): string | null {
+  if (typeof input !== "string") return null;
+  const cleaned = input.replace(/\s+/g, " ").replace(/[?]+/g, "").trim();
+  if (!cleaned) return null;
+  return cleaned.length > limit ? cleaned.slice(0, limit) : cleaned;
+}
+
+function extractIntentHint(latentPayload: any): string | null {
+  if (!latentPayload || typeof latentPayload !== "object") return null;
+
+  const openLoops = Array.isArray(latentPayload.open_loops) ? latentPayload.open_loops : [];
+  for (const loop of openLoops) {
+    const slot = normalizeIntentHint(loop?.slot);
+    if (slot) return slot;
+  }
+
+  const hypotheses = Array.isArray(latentPayload.hypothesis_slots) ? latentPayload.hypothesis_slots : [];
+  if (hypotheses.length > 0) {
+    const confRank: Record<string, number> = { low: 1, med: 2, high: 3 };
+    let best: any = null;
+    let bestScore = -1;
+    for (const hyp of hypotheses) {
+      const score = confRank[hyp?.confidence] ?? 0;
+      if (score > bestScore) {
+        bestScore = score;
+        best = hyp;
+      }
+    }
+    const slot = normalizeIntentHint(best?.slot) ?? normalizeIntentHint(best?.framing);
+    if (slot) return slot;
+  }
+
+  const candidates = Array.isArray(latentPayload.direction_candidates) ? latentPayload.direction_candidates : [];
+  if (candidates.length > 0) {
+    let best: any = candidates[0];
+    let bestScore = typeof best?.score === "number" ? best.score : -1;
+    for (const cand of candidates) {
+      const score = typeof cand?.score === "number" ? cand.score : -1;
+      if (score > bestScore) {
+        bestScore = score;
+        best = cand;
+      }
+    }
+    const why = normalizeIntentHint(best?.why);
+    if (why) return why;
+    const slug = typeof best?.slug === "string" ? best.slug.replace(/[_-]+/g, " ").trim() : "";
+    const slugHint = normalizeIntentHint(slug);
+    if (slugHint) return slugHint;
+  }
+
+  return null;
+}
+
 async function fetchSessionSummary(supabase: any, sessionId: string, userId: string): Promise<any | null> {
   try {
     const { data } = await supabase
@@ -215,6 +269,8 @@ function buildFallbackCompose(args: { selected: ReturnType<typeof selectCardMate
     prompt = `Mi a legelobb jelentese szamodra ennek ${safeSnippet}?`;
   } else if (selected?.material?.type === "event") {
     prompt = `Mi a legfontosabb mozzanat szamodra ebben ${safeSnippet}?`;
+  } else if (selected?.material?.type === "intent") {
+    prompt = `Melyik reszet szeretned most jobban megnezni ebbol?`;
   }
 
   return {
@@ -353,10 +409,17 @@ export async function POST(req: Request) {
     }
 
     const latentPayload = latentLatest?.payload ?? summaryLatent ?? null;
+    const intentHint = extractIntentHint(latentPayload);
+    if (intentHint) traceBase.inputs.intent_hint = intentHint;
     const directionCandidates = recommendDirectionsFromLatent({
       latent: latentPayload,
       catalog,
     }).map((rec) => rec.slug);
+    const intentCandidates = buildLatentIntentCandidates({
+      latent: latentPayload,
+      anchorKeyFn: anchorKey,
+      max: 8,
+    });
 
     const materials = extractMaterialsFromObservation(observationPayload);
     const rankedAnchors = extractAnchorsFromRanking(anchorPayload);
@@ -375,6 +438,7 @@ export async function POST(req: Request) {
     const selectorResult = selectCardMaterial({
       sessionState: {
         session_id: sessionId,
+        intents: intentCandidates,
         anchors: materials.anchors,
         events: materials.events,
         recent_material_ids: recentMaterialIds,
@@ -408,7 +472,7 @@ export async function POST(req: Request) {
       } satisfies NextResponsePayload);
     }
 
-    let composed = await composeCard({ selected: selectorResult.selected });
+    let composed = await composeCard({ selected: selectorResult.selected, intent_hint: intentHint });
     if (!composed) {
       const firstQuestion = await isFirstQuestion(supabase, sessionId, userId);
       if (firstQuestion) {

@@ -5,10 +5,13 @@ import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
 export type SeedInput = { kind: "frame" | "work"; text: string };
 
 export type MaterialCandidate = {
-  type: "anchor" | "event" | "seed";
+  type: "anchor" | "event" | "seed" | "intent";
   text_snippet: string;
   anchor_keys?: string[];
   seed_kind?: "frame" | "work";
+  intent_kind?: "open_loop" | "hypothesis";
+  intent_key?: string;
+  intent_label?: string;
 };
 
 export type DirectionProfile = {
@@ -20,10 +23,13 @@ export type DirectionProfile = {
 
 export type Selected = {
   material: {
-    type: "anchor" | "event" | "seed";
+    type: "anchor" | "event" | "seed" | "intent";
     id: string;
     text_snippet: string;
     anchor_keys?: string[];
+    intent_kind?: "open_loop" | "hypothesis";
+    intent_key?: string;
+    intent_label?: string;
   };
   direction: DirectionProfile;
   mode: "normal" | "gentle";
@@ -38,6 +44,7 @@ export type SelectorResult = {
 
 export type SessionState = {
   session_id: string;
+  intents: MaterialCandidate[];
   anchors: MaterialCandidate[];
   events: MaterialCandidate[];
   recent_material_ids: string[];
@@ -100,6 +107,9 @@ function materialId(candidate: MaterialCandidate): string {
     text_snippet: candidate.text_snippet,
     anchor_keys: candidate.anchor_keys ?? [],
     seed_kind: candidate.seed_kind ?? null,
+    intent_key: candidate.intent_key ?? null,
+    intent_kind: candidate.intent_kind ?? null,
+    intent_label: candidate.intent_label ?? null,
   });
 }
 
@@ -147,6 +157,9 @@ function asBaseScored(selectionBase: MaterialCandidate | ScoredCandidate | null 
   id: string;
   text_snippet: string;
   anchor_keys?: string[];
+  intent_kind?: "open_loop" | "hypothesis";
+  intent_key?: string;
+  intent_label?: string;
   similarity_max: number;
 } {
   if (!selectionBase) {
@@ -159,6 +172,9 @@ function asBaseScored(selectionBase: MaterialCandidate | ScoredCandidate | null 
       id: selectionBase.id,
       text_snippet: safeSnippet(selectionBase.text_snippet),
       anchor_keys: selectionBase.anchor_keys,
+      intent_kind: selectionBase.intent_kind,
+      intent_key: selectionBase.intent_key,
+      intent_label: selectionBase.intent_label,
       similarity_max: selectionBase.similarity_max,
     };
   }
@@ -169,6 +185,9 @@ function asBaseScored(selectionBase: MaterialCandidate | ScoredCandidate | null 
     id: materialId(selectionBase),
     text_snippet: snippet,
     anchor_keys: selectionBase.anchor_keys,
+    intent_kind: selectionBase.intent_kind,
+    intent_key: selectionBase.intent_key,
+    intent_label: selectionBase.intent_label,
     similarity_max: snippet ? similarityMax(snippet, recentPrompts) : 0,
   };
 }
@@ -204,6 +223,7 @@ export function selectCardMaterial(args: {
 
   const allCandidates: MaterialCandidate[] = [
     ...(seedCandidate ? [seedCandidate] : []),
+    ...(sessionState.intents ?? []),
     ...(sessionState.anchors ?? []),
     ...(sessionState.events ?? []),
   ];
@@ -251,6 +271,9 @@ export function selectCardMaterial(args: {
     material_type: base.type,
     material_id: base.id,
     anchor_keys: base.anchor_keys,
+    intent_key: base.intent_key,
+    intent_kind: base.intent_kind,
+    intent_label: base.intent_label,
     direction_slug: profile.slug ?? null,
     group_tags: profile.group_tags ?? [],
     scores: {
@@ -269,7 +292,7 @@ export function selectCardMaterial(args: {
   }
 
   const sorted = candidates.slice().sort((a, b) => {
-    const rank = (t: string) => (t === "seed" ? 0 : t === "anchor" ? 1 : 2);
+    const rank = (t: string) => (t === "seed" ? 0 : t === "intent" ? 1 : t === "anchor" ? 2 : 3);
     const d = rank(a.type) - rank(b.type);
     if (d !== 0) return d;
     return a.similarity_max - b.similarity_max;
@@ -282,6 +305,9 @@ export function selectCardMaterial(args: {
     material_type: chosen.type,
     material_id: chosen.id,
     anchor_keys: chosen.anchor_keys,
+    intent_key: chosen.intent_key,
+    intent_kind: chosen.intent_kind,
+    intent_label: chosen.intent_label,
     scores: {
       similarity_max: chosen.similarity_max,
       novelty: 1 - chosen.similarity_max,
@@ -295,6 +321,9 @@ export function selectCardMaterial(args: {
         id: chosen.id,
         text_snippet: chosen.text_snippet,
         anchor_keys: chosen.anchor_keys,
+        intent_key: chosen.intent_key,
+        intent_kind: chosen.intent_kind,
+        intent_label: chosen.intent_label,
       },
       direction: profile,
       mode: sessionState.mode,

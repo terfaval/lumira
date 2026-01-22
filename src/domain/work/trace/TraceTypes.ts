@@ -9,11 +9,15 @@ export type TracePayload = {
     direction_slug?: string | null;
     seed_kind?: "frame" | "work" | null;
     prefs_blocked_group_tags?: string[];
+    intent_hint?: string | null;
   };
   selection: {
-    material_type: "anchor" | "event" | "seed";
+    material_type: "anchor" | "event" | "seed" | "intent";
     material_id: string;
     anchor_keys?: string[];
+    intent_key?: string;
+    intent_kind?: "open_loop" | "hypothesis";
+    intent_label?: string;
     direction_slug: string | null;
     group_tags: string[];
     scores?: {

@@ -60,6 +60,8 @@ function buildSystemPrompt(args: { mode: "normal" | "gentle"; strict?: boolean }
     "- lead_in: 1-3 sentences, no question marks.",
     "- prompt: exactly one sentence, either a single question (one '?') or a short task (no '?').",
     "- No lists, no bullet points, no colons/semicolons.",
+    "- If material.type is intent, use material.intent_label only as a topic focus, not as a quote or direct question.",
+    "- If intent_hint is provided, use it only to nudge framing. Do not quote it or turn it into a direct question source.",
     "- No interpretation, no diagnosis, no meaning claims.",
     "",
     ...(args.strict
@@ -98,13 +100,16 @@ function parseModelJSON(raw: string): any | null {
   }
 }
 
-export async function composeCard(args: { selected: Selected }): Promise<ComposeResult | null> {
+export async function composeCard(args: { selected: Selected; intent_hint?: string | null }): Promise<ComposeResult | null> {
   const openai = openaiServer();
   const user = {
     material: {
       type: args.selected.material.type,
       text_snippet: args.selected.material.text_snippet,
       anchor_keys: args.selected.material.anchor_keys ?? [],
+      intent_kind: args.selected.material.intent_kind ?? null,
+      intent_key: args.selected.material.intent_key ?? null,
+      intent_label: args.selected.material.intent_label ?? null,
     },
     direction: {
       slug: args.selected.direction.slug,
@@ -112,6 +117,7 @@ export async function composeCard(args: { selected: Selected }): Promise<Compose
       style_hints: args.selected.direction.style_hints ?? null,
       question_archetypes: args.selected.direction.question_archetypes ?? [],
     },
+    intent_hint: args.intent_hint ?? null,
   };
 
   for (let attempt = 1; attempt <= COMPOSE_MAX_ATTEMPTS; attempt++) {
