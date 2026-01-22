@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
 import { anchorsFromObservation } from "@/src/lib/dream/anchorsFromObservation";
+import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { CatalogService } from "@/src/services/CatalogService";
 import {
   fetchLatentLatestWithPayloadAndId,
@@ -185,53 +186,6 @@ function mapObsSafetyToFlags(obsFlag?: string): SafetyValue {
   if (obsFlag === "reality_confusion") return "reality_confusion";
   if (obsFlag && obsFlag !== "none") return "other";
   return "none";
-}
-
-/**
- * Lightweight “anchor key” normalizer (for event logging / later de-dup).
- * Keep it local for now so synthesize works “in one file”.
- */
-const HU_STOP = new Set([
-  "a",
-  "az",
-  "egy",
-  "és",
-  "vagy",
-  "hogy",
-  "de",
-  "mert",
-  "amikor",
-  "ahogy",
-  "már",
-  "még",
-  "is",
-  "se",
-  "sem",
-  "ott",
-  "itt",
-  "oda",
-  "ide",
-  "innen",
-  "onnan",
-  "valami",
-  "valaki",
-  "nagyon",
-  "kicsit",
-]);
-
-function stripDiacritics(s: string) {
-  return (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-
-function anchorKey(raw: string): string {
-  const s = (raw || "").toLowerCase().trim();
-  if (!s) return "";
-  const tokens = stripDiacritics(s)
-    .split(/[^a-zA-Z0-9áéíóöőúüű]+/g)
-    .map((t) => t.trim())
-    .filter((t) => t.length > 2)
-    .filter((t) => !HU_STOP.has(t));
-  return tokens.join(" ").trim();
 }
 
 function anchorKeysFromStrings(arr: unknown): string[] {
