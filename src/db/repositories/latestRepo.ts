@@ -35,7 +35,7 @@ export async function fetchObservationLatestWithPayloadAndId(
     .single();
 
   if (ver.error) throw ver.error;
-  return { observation_version_id: ver.data.id, payload: ver.data.payload };
+  return { observation_version_id: ver.data.id, payload: coerceJsonPayload(ver.data.payload) };
 }
 
 /**
@@ -65,7 +65,7 @@ export async function fetchAnchorLatestWithPayloadAndId(
 
   if (ver.error) throw ver.error;
 
-  return { anchor_version_id: ver.data.id, payload: ver.data.payload };
+  return { anchor_version_id: ver.data.id, payload: coerceJsonPayload(ver.data.payload) };
 }
 
 export async function fetchSessionIndexLatestWithPayloadAndId(
@@ -93,7 +93,7 @@ export async function fetchSessionIndexLatestWithPayloadAndId(
 
   return {
     session_index_version_id: ver.data.id,
-    payload: ver.data.payload,
+    payload: coerceJsonPayload(ver.data.payload),
     embedding: ver.data.embedding ?? null,
   };
 }
@@ -145,7 +145,7 @@ export async function fetchFrameLatestWithPayloadAndId(
     .single();
 
   if (ver.error) throw ver.error;
-  return { frame_version_id: ver.data.id, payload: ver.data.payload };
+  return { frame_version_id: ver.data.id, payload: coerceJsonPayload(ver.data.payload) };
 }
 
 export async function fetchLatestRawDreamEntry(

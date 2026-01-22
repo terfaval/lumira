@@ -12,6 +12,18 @@ export type ObservationVersion = {
   created_at: string;
 };
 
+function coerceJsonPayload(raw: any): any {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return raw;
+    }
+  }
+  return raw;
+}
+
 export async function getNextObservationVersionNumber(
   supabase: SupabaseClient,
   session_id: string
@@ -117,5 +129,5 @@ export async function fetchObservationLatestWithPayload(
     .single();
 
   if (ver.error) throw ver.error;
-  return { latest_id: ver.data.id, payload: ver.data.payload };
+  return { latest_id: ver.data.id, payload: coerceJsonPayload(ver.data.payload) };
 }
