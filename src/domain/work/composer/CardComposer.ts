@@ -1,10 +1,12 @@
 import { openaiServer } from "@/src/lib/openai/server";
+import { stripDiacritics } from "@/src/lib/dream/anchorKey";
 import type { Selected } from "@/src/domain/work/selector/CardMaterialSelector";
 import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
 
 const MODEL = process.env.OPENAI_WORK_MODEL ?? "gpt-4o-mini";
 const OPENAI_TIMEOUT_MS = 15000;
 export const COMPOSE_MAX_ATTEMPTS = 3;
+const BANNED_PROMPT_TOKENS = ["szoveg", "irodalom", "narrativ"];
 
 type ComposeResult = {
   lead_in: string;
@@ -40,6 +42,20 @@ function isSingleSentencePrompt(s: string): boolean {
   return true;
 }
 
+function normalizeForCheck(input: string): string {
+  return stripDiacritics((input ?? "").toLowerCase());
+}
+
+function containsBannedDiscourse(prompt: string): boolean {
+  const t = normalizeForCheck(prompt);
+  return BANNED_PROMPT_TOKENS.some((token) => new RegExp(`\\b${token}\\w*\\b`).test(t));
+}
+
+function mentionsDreamContext(prompt: string): boolean {
+  const t = normalizeForCheck(prompt);
+  return /\balom\w*\b/.test(t);
+}
+
 async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
@@ -63,6 +79,9 @@ function buildSystemPrompt(args: { mode: "normal" | "gentle"; strict?: boolean }
     "- If material.type is intent, use material.intent_label only as a topic focus, not as a quote or direct question.",
     "- If intent_hint is provided, use it only to nudge framing. Do not quote it or turn it into a direct question source.",
     "- No interpretation, no diagnosis, no meaning claims.",
+    "- Avoid non-dream discourse (szoveg, kulonbozo szovegek, irodalom, narrativa).",
+    "- Ground the prompt in this dream / this session. Refer to the dream context explicitly.",
+    "- If you mention recurring motifs, compare within this dream (scenes/moments) unless multi-session context is given.",
     "",
     ...(args.strict
       ? [
@@ -154,6 +173,10 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
       const prompt = promptRaw.trim();
 
       if (!prompt || !isSingleSentencePrompt(prompt)) {
+        if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
+        return null;
+      }
+      if (containsBannedDiscourse(prompt) || !mentionsDreamContext(prompt)) {
         if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
         return null;
       }

@@ -211,6 +211,7 @@ export function selectCardMaterial(args: {
   const ledger_ruled_out: Array<{ why: string; candidate: string }> = [];
   const candidates: ScoredCandidate[] = [];
   const ledgerRepeats: ScoredCandidate[] = [];
+  let intentRuledOutCount = 0;
 
   const seedCandidate: MaterialCandidate | null =
     args.seed && args.seed.text.trim()
@@ -237,17 +238,20 @@ export function selectCardMaterial(args: {
 
     if (sessionState.recent_material_ids.includes(id)) {
       ruled_out.push({ why: "recent_material_repeat", candidate: snippet });
+      if (candidate.type === "intent") intentRuledOutCount++;
       continue;
     }
 
     if (simMax >= SIMILARITY_THRESHOLD) {
       ruled_out.push({ why: "low_novelty", candidate: snippet });
+      if (candidate.type === "intent") intentRuledOutCount++;
       continue;
     }
 
     if (candidate.anchor_keys?.some((k) => sessionState.ledger_used_anchor_keys.has(k))) {
       ledger_ruled_out.push({ why: "ledger_repeat", candidate: snippet });
       ledgerRepeats.push({ ...candidate, id, similarity_max: simMax });
+      if (candidate.type === "intent") intentRuledOutCount++;
       continue;
     }
 
@@ -258,6 +262,18 @@ export function selectCardMaterial(args: {
     candidates.push(...ledgerRepeats);
   } else if (ledger_ruled_out.length > 0) {
     ruled_out.push(...ledger_ruled_out);
+  }
+
+  const intentCandidatesCount = sessionState.intents?.length ?? 0;
+  const anchorCandidatesCount = sessionState.anchors?.length ?? 0;
+  const eventCandidatesCount = sessionState.events?.length ?? 0;
+  const seedCandidatesCount = seedCandidate ? 1 : 0;
+
+  const hasIntentCandidate = candidates.some((candidate) => candidate.type === "intent");
+  if (hasIntentCandidate) {
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      if (candidates[i].type === "anchor") candidates.splice(i, 1);
+    }
   }
 
   // Base trace candidate:
@@ -276,6 +292,11 @@ export function selectCardMaterial(args: {
     intent_label: base.intent_label,
     direction_slug: profile.slug ?? null,
     group_tags: profile.group_tags ?? [],
+    intent_candidates_count: intentCandidatesCount,
+    anchor_candidates_count: anchorCandidatesCount,
+    event_candidates_count: eventCandidatesCount,
+    seed_candidates_count: seedCandidatesCount,
+    intent_ruled_out_count: intentRuledOutCount,
     scores: {
       similarity_max: base.similarity_max,
       novelty: base.text_snippet ? 1 - base.similarity_max : 0,
@@ -308,6 +329,11 @@ export function selectCardMaterial(args: {
     intent_key: chosen.intent_key,
     intent_kind: chosen.intent_kind,
     intent_label: chosen.intent_label,
+    intent_candidates_count: intentCandidatesCount,
+    anchor_candidates_count: anchorCandidatesCount,
+    event_candidates_count: eventCandidatesCount,
+    seed_candidates_count: seedCandidatesCount,
+    intent_ruled_out_count: intentRuledOutCount,
     scores: {
       similarity_max: chosen.similarity_max,
       novelty: 1 - chosen.similarity_max,

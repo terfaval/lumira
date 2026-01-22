@@ -17,6 +17,7 @@ import { buildStopSignal } from "@/src/domain/work/stop/StopEngine";
 import { buildLatentIntentCandidates } from "@/src/domain/work/materials/latentIntent";
 import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
+import { shouldKeepAnchorKey, shouldKeepAnchorLabel } from "@/src/lib/dream/huAnchorHygiene";
 import { isDirectionCardContent } from "@/src/lib/types";
 import { sha256 } from "@/src/orchestration/idempotency/materialHash";
 import { listRecentAnchorKeys } from "@/src/db/repositories/workQuestionLedgerRepo";
@@ -98,7 +99,9 @@ function extractMaterialsFromObservation(payload: any) {
 
   for (const item of lists) {
     const label = typeof item.label === "string" ? item.label : "";
+    if (!shouldKeepAnchorLabel(label)) continue;
     const key = anchorKey(label);
+    if (!shouldKeepAnchorKey(key)) continue;
     if (!key) continue;
     anchors.push({
       type: "anchor",
@@ -135,7 +138,9 @@ function extractAnchorsFromRanking(payload: any) {
 
   for (const key of topKeys) {
     if (typeof key !== "string" || !key.trim()) continue;
+    if (!shouldKeepAnchorKey(key)) continue;
     const name = byKey.get(key) ?? key;
+    if (!shouldKeepAnchorLabel(name)) continue;
     anchors.push({ type: "anchor", text_snippet: name, anchor_keys: [key] });
   }
 

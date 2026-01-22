@@ -20,6 +20,11 @@ export type TracePayload = {
     intent_label?: string;
     direction_slug: string | null;
     group_tags: string[];
+    intent_candidates_count?: number;
+    anchor_candidates_count?: number;
+    event_candidates_count?: number;
+    seed_candidates_count?: number;
+    intent_ruled_out_count?: number;
     scores?: {
       novelty?: number;
       similarity_max?: number;

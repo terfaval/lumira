@@ -3,6 +3,8 @@
 // Goal: drop malformed/ordinal-only anchors and require place-context nouns.
 // NOTE: We do NOT correct text (e.g. "negadik" -> "negyedik"). We only drop bad anchors.
 
+import { stripDiacritics } from "@/src/lib/dream/anchorKey";
+
 const PLACE_CONTEXT = [
   "emelet",
   "szint",
@@ -31,8 +33,82 @@ const PLACE_CONTEXT = [
   "korhaz",
 ] as const;
 
+const FUNCTIONAL_TOKENS = new Set([
+  "a",
+  "az",
+  "egy",
+  "es",
+  "vagy",
+  "hogy",
+  "de",
+  "mert",
+  "amikor",
+  "ahogy",
+  "mar",
+  "meg",
+  "is",
+  "se",
+  "sem",
+  "ott",
+  "itt",
+  "oda",
+  "ide",
+  "innen",
+  "onnan",
+  "valami",
+  "valaki",
+  "nagyon",
+  "kicsit",
+]);
+
+const PRONOUN_TOKENS = new Set([
+  "en",
+  "te",
+  "o",
+  "mi",
+  "ti",
+  "ok",
+  "engem",
+  "teged",
+  "ot",
+  "minket",
+  "titeket",
+  "oket",
+  "nekem",
+  "neked",
+  "neki",
+  "nekunk",
+  "nektek",
+  "nekik",
+  "nalam",
+  "nalad",
+  "nala",
+  "nalunk",
+  "nalatok",
+  "naluk",
+  "velem",
+  "veled",
+  "vele",
+  "velunk",
+  "veletek",
+  "veluk",
+  "magam",
+  "magad",
+  "maga",
+  "magunk",
+  "magatok",
+  "maguk",
+]);
+
 function normalize(s: string): string {
   return s.trim().toLowerCase();
+}
+
+function normalizeTokens(label: string): string[] {
+  return stripDiacritics(label.toLowerCase())
+    .split(/[^a-z0-9]+/g)
+    .map((t) => t.trim())
+    .filter(Boolean);
 }
 
 function hasPlaceContext(label: string): boolean {
@@ -55,9 +131,16 @@ function isLikelyOrdinalOnlyHu(label: string): boolean {
   return false;
 }
 
+function isLowInfoOnly(label: string): boolean {
+  const tokens = normalizeTokens(label);
+  if (tokens.length === 0) return true;
+  return tokens.every((t) => t.length <= 2 || PRONOUN_TOKENS.has(t) || FUNCTIONAL_TOKENS.has(t));
+}
+
 // Main rule:
 // - Drop empty
 // - Drop ordinal-only token
+// - Drop pronoun/functional-only tokens
 // - If category is "place": require place-context noun in the label
 export function shouldKeepAnchorLabel(label: unknown, opts?: { category?: "place" | "other" }): boolean {
   if (typeof label !== "string") return false;
@@ -65,12 +148,20 @@ export function shouldKeepAnchorLabel(label: unknown, opts?: { category?: "place
   if (!s) return false;
 
   if (isLikelyOrdinalOnlyHu(s)) return false;
+  if (isLowInfoOnly(s)) return false;
 
   if (opts?.category === "place") {
     if (!hasPlaceContext(s)) return false;
   }
 
   return true;
+}
+
+export function shouldKeepAnchorKey(anchorKey: unknown): boolean {
+  if (typeof anchorKey !== "string") return false;
+  const s = anchorKey.trim();
+  if (!s) return false;
+  return !isLowInfoOnly(s);
 }
 
 export function filterAnchorLabels(
