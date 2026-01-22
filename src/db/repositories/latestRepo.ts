@@ -7,7 +7,6 @@ function coerceJsonPayload(raw: any): any {
     try {
       return JSON.parse(raw);
     } catch {
-      // If it's a plain string (not JSON), keep it as-is.
       return raw;
     }
   }
@@ -39,6 +38,10 @@ export async function fetchObservationLatestWithPayloadAndId(
   return { observation_version_id: ver.data.id, payload: ver.data.payload };
 }
 
+/**
+ * v0 clean: anchor_latest only points to anchor_versions.
+ * We fetch the pointer then join payload from anchor_versions.
+ */
 export async function fetchAnchorLatestWithPayloadAndId(
   supabase: SupabaseClient,
   user_id: string,
@@ -46,16 +49,23 @@ export async function fetchAnchorLatestWithPayloadAndId(
 ): Promise<{ anchor_version_id: string; payload: any } | null> {
   const latest = await supabase
     .from("dream_anchor_latest")
-    .select("version_id,payload")
+    .select("version_id")
     .eq("session_id", session_id)
     .eq("user_id", user_id)
     .single();
 
   if (latest.error) return null;
 
-  const anchor_version_id = latest.data.version_id as string;
-  const payload = latest.data.payload;
-  return { anchor_version_id, payload };
+  const ver = await supabase
+    .from("dream_anchor_versions")
+    .select("id,payload")
+    .eq("id", latest.data.version_id)
+    .eq("user_id", user_id)
+    .single();
+
+  if (ver.error) throw ver.error;
+
+  return { anchor_version_id: ver.data.id, payload: ver.data.payload };
 }
 
 export async function fetchSessionIndexLatestWithPayloadAndId(
@@ -109,7 +119,7 @@ export async function fetchLatentLatestWithPayloadAndId(
     .eq("user_id", user_id)
     .single();
 
-    if (ver.error) throw ver.error;
+  if (ver.error) throw ver.error;
   return { latent_version_id: ver.data.id, payload: coerceJsonPayload(ver.data.payload) };
 }
 

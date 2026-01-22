@@ -31,6 +31,89 @@ function hasAnyTag(row: DirectionCatalogRow, tags: string[]) {
   return tags.some((t) => set.has(t));
 }
 
+function looksLikeEnglishLeak(s: string): boolean {
+  const t = (s || "").toLowerCase();
+  // very cheap heuristic; this is UI microcopy so we want to avoid obvious EN bleed
+  const bad = ["meaning", "this suggests", "likely", "probably", "diagnosis", "symbol", "trauma", "anxiety"];
+  if (bad.some((w) => t.includes(w))) return true;
+
+  // lots of common EN function words -> likely EN
+  const enStops = [" the ", " and ", " or ", " to ", " of ", " in ", " with ", " on ", " for "];
+  const hit = enStops.reduce((acc, w) => acc + (t.includes(w) ? 1 : 0), 0);
+  return hit >= 2;
+}
+
+function clampWhyOneSentence(s: string): string {
+  // keep first sentence only (UI), avoid multi-sentence rambling
+  const t = (s || "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+
+  // Split on sentence enders; keep the first “real” sentence
+  const parts = t.split(/[.!?]+/g).map((x) => x.trim()).filter(Boolean);
+  const one = parts[0] ?? t;
+
+  // remove trailing punctuation-like leftovers
+  return one.replace(/[—–-]\s*$/g, "").trim();
+}
+
+/**
+ * Normalize/guard `why` strings to stay:
+ * - Hungarian
+ * - non-interpretive (no "meaning", no diagnosis, no symbol dictionary)
+ * - short and UI-friendly
+ */
+function normalizeWhy(raw: unknown, fallback: string): string {
+  const text = String(raw ?? "").trim();
+  if (!text) return fallback;
+
+  // one-sentence UI rule
+  const one = clampWhyOneSentence(text);
+  if (!one) return fallback;
+
+  const lowered = one.toLowerCase();
+
+  // stronger guardrails against interpretive leakage / therapy-ish phrasing
+  const bannedHints = [
+    "jelent",
+    "jelentés",
+    "arra utal",
+    "utalhat",
+    "valószínű",
+    "biztosan",
+    "diagnó",
+    "diagnózis",
+    "szimbólum",
+    "szimbol",
+    "tükröz",
+    "trauma",
+    "szorongásod",
+    "szorongásaid",
+    "elnyom",
+    "feldolgoz",
+    "teráp",
+    "pszicho",
+    "patoló",
+  ];
+
+  // if it *sounds* interpretive, fall back
+  if (bannedHints.some((h) => lowered.includes(h))) return fallback;
+
+  // avoid obvious English bleed
+  if (looksLikeEnglishLeak(one)) return fallback;
+
+  // keep it short-ish for UI
+  const compact = one.replace(/\s+/g, " ");
+  if (compact.length > 160) return compact.slice(0, 157).trimEnd() + "…";
+
+  return compact;
+}
+
+// Short, consistent, diacritics-on fallbacks
+const WHY_FROM_LATENT_FALLBACK = "Óvatosan kapcsolódó irány a megfigyelések nyomán.";
+const WHY_DEFAULT_SLUG_FALLBACK = "Biztonságos, egyszerű kiindulópont a következő lépéshez.";
+const WHY_TAG_POOL_FALLBACK = "Alap, nyugodt irány — jól bírja a lassú haladást is.";
+const WHY_CATALOG_FALLBACK = "Alapértelmezett irány — innen könnyű tovább lépni.";
+
 export function recommendDirectionsFromLatent(args: {
   latent: LatentPayloadV0 | null;
   catalog: DirectionCatalogRow[]; // already filtered is_active=true and sorted by sort_order,slug
@@ -58,7 +141,7 @@ export function recommendDirectionsFromLatent(args: {
     picked.push({
       slug: row.slug,
       title: row.title,
-      why: (c.why || "").trim() || "Kapcsolódó, óvatosan javasolt irány a megfigyelések alapján.",
+      why: normalizeWhy((c as any)?.why, WHY_FROM_LATENT_FALLBACK),
     });
   }
 
@@ -73,7 +156,7 @@ export function recommendDirectionsFromLatent(args: {
     picked.push({
       slug: row.slug,
       title: row.title,
-      why: "Biztonságos alapirány a megfigyelésekből kiinduló feldolgozáshoz.",
+      why: WHY_DEFAULT_SLUG_FALLBACK,
     });
   }
 
@@ -88,7 +171,7 @@ export function recommendDirectionsFromLatent(args: {
       picked.push({
         slug: row.slug,
         title: row.title,
-        why: "Alap, óvatos irány — jó kiindulópont ehhez a megfigyeléshez.",
+        why: WHY_TAG_POOL_FALLBACK,
       });
     }
   }
@@ -102,7 +185,7 @@ export function recommendDirectionsFromLatent(args: {
     picked.push({
       slug: row.slug,
       title: row.title,
-      why: "Alapértelmezett irány (katalógus) — a továbblépéshez.",
+      why: WHY_CATALOG_FALLBACK,
     });
   }
 

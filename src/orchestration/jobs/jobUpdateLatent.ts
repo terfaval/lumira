@@ -59,13 +59,14 @@ export async function jobUpdateLatent(args: {
     const userPrefs = prefsRes.error ? null : prefsRes.data;
 
     const entryRes = await supabase
-      .from("dream_entries")
-      .select("content,created_at")
-      .eq("session_id", event.session_id)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .single();
-    const excerpt = entryRes.error ? "" : (entryRes.data.content ?? "").slice(0, 500);
+  .from("dream_entries")
+  .select("content,created_at,kind")
+  .eq("session_id", event.session_id)
+  .in("kind", ["raw", "dictation", "edit"])
+  .order("created_at", { ascending: true })
+  .limit(1)
+  .maybeSingle();
+    const excerpt = entryRes.error || !entryRes.data ? "" : String(entryRes.data.content ?? "").slice(0, 500);
 
     const { payload, model } = await updateLatentFromMaterial({
       observation: obs.payload,
@@ -112,7 +113,7 @@ export async function jobUpdateLatent(args: {
         observation_version_id: obs.observation_version_id,
         session_index_version_id: idx.session_index_version_id,
       },
-      error: err?.message ?? "jobUpdateLatent failed",
+      error: err?.message ?? "latent_job_failed",
     });
 
     return { latent_version_id: null, skipped: false, ok: false };

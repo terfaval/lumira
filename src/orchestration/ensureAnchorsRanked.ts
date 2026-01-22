@@ -18,7 +18,9 @@ async function fetchDreamText(supabase: SupabaseClient, sessionId: string, userI
     .select("content, created_at")
     .eq("session_id", sessionId)
     .eq("user_id", userId)
-    .in("kind", ["raw", "raw_entry"])
+    // v0 clean schema: kind in ('raw','dictation','edit','note')
+    // anchor ranking should prefer the latest "raw" (or fallback to latest entry if you want).
+    .in("kind", ["raw"])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -26,20 +28,6 @@ async function fetchDreamText(supabase: SupabaseClient, sessionId: string, userI
   if (error || !data) return null;
   const text = typeof data.content === "string" ? data.content : "";
   return sanitizeText(text);
-}
-
-async function fetchSummaryLatent(supabase: SupabaseClient, sessionId: string, userId: string): Promise<any | null> {
-  try {
-    const { data } = await supabase
-      .from("dream_session_summaries")
-      .select("latent_analysis")
-      .eq("session_id", sessionId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    return data?.latent_analysis ?? null;
-  } catch {
-    return null;
-  }
 }
 
 function buildAnchorInputHash(params: {
@@ -67,15 +55,17 @@ export async function ensureAnchorsRanked(
   const dreamText = await fetchDreamText(supabase, params.session_id, params.user_id);
   if (!dreamText) return { anchor_version_id: null, payload: null, input_hash: null };
 
-  const [observationLatest, latentLatest, summaryLatent, recentAnchorKeys] = await Promise.all([
+  const [observationLatest, latentLatest, recentAnchorKeys] = await Promise.all([
     fetchObservationLatestWithPayloadAndId(supabase, params.user_id, params.session_id),
     fetchLatentLatestWithPayloadAndId(supabase, params.user_id, params.session_id),
-    fetchSummaryLatent(supabase, params.session_id, params.user_id),
     listRecentAnchorKeys(supabase, { session_id: params.session_id, user_id: params.user_id, limit: 120 }),
   ]);
 
   const observationPayload = observationLatest?.payload ?? null;
-  const latentPayload = latentLatest?.payload ?? summaryLatent ?? null;
+
+  // v0 clean schema: latent lives in latent_versions + latent_latest only
+  // (no dream_session_summaries fallback)
+  const latentPayload = latentLatest?.payload ?? null;
 
   const usedAnchorKeys = Array.from(new Set((recentAnchorKeys ?? []).map((k) => k.trim()).filter(Boolean))).sort();
 
@@ -112,11 +102,11 @@ export async function ensureAnchorsRanked(
     payload,
   });
 
+  // v0 clean schema: anchor_latest stores only anchor_version_id (pointer)
   await upsertAnchorLatest(supabase, {
     session_id: params.session_id,
     user_id: params.user_id,
     anchor_version_id: saved.id,
-    payload,
   });
 
   return { anchor_version_id: saved.id, payload, input_hash };

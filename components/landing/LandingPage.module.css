@@ -347,3 +347,43 @@
   padding: 14px 22px;
   border-radius: 14px;
 }
+
+/* -------------------------------- */
+/* GUEST MODE                        */
+/* -------------------------------- */
+
+
+.heroCtas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.heroCtaSecondary {
+  /* ha a btn-secondary globális, elég lehet üresen is */
+}
+
+.heroCtaNote {
+  font-size: 13px;
+  opacity: 0.8;
+  text-align: center;
+  max-width: 360px;
+}
+
+.footerCtas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.footerCtaSecondary {
+}
+
+.footerCtaNote {
+  font-size: 13px;
+  opacity: 0.8;
+  text-align: center;
+  max-width: 420px;
+}

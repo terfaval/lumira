@@ -20,18 +20,36 @@ function toStringArray(x: any): string[] {
 function containsLikelyEnglishToken(s: string): boolean {
   const t = (s || "").toLowerCase();
   const bad = [
-    "stairs",
-    "building",
-    "dreamer",
-    "setting",
-    "actions",
-    "summary",
-    "objects",
-    "people",
-    "places",
-    "packages",
-    "belongings",
-  ];
+  "stairs",
+  "staircase",
+  "building",
+  "floor",
+  "hall",
+  "hallway",
+  "room",
+  "door",
+  "street",
+  "road",
+  "bridge",
+  "car",
+  "bus",
+  "train",
+  "police",
+  "school",
+  "hospital",
+  "office",
+  "elevator",
+  "lift",
+  "dreamer",
+  "setting",
+  "actions",
+  "summary",
+  "objects",
+  "people",
+  "places",
+  "packages",
+  "belongings",
+];
   return bad.some((w) => t.includes(w));
 }
 
@@ -65,32 +83,34 @@ export async function buildSessionIndexFromObservation(args: {
 
   // Strongly Hungarian + strict json (needed for response_format json_object)
   const sys = [
-    "You are an API that returns strict json only (no prose, no markdown).",
-    "Feladat: rövid, NEM-interpretív session index készítése observation json alapján.",
-    "TILOS: jelentés, értelmezés, diagnózis, tanácsadás, szimbólum-magyarázat.",
-    "",
-    "NYELV: magyar. Minden mező magyarul legyen (tulajdonnevek maradhatnak úgy, ahogy vannak).",
-    "Ne használj angol szavakat a keyphrases / places / objects / anchor_summary mezőkben.",
-    "",
-    "Adj vissza CSAK egy json objektumot, pontosan a sémával (nincs extra kulcs).",
-    "",
-    "Schema:",
-    JSON.stringify(
-      {
-        anchor_summary:
-          "4-8 rövid, kötőjeles sor (bullet-ish), megfigyelésekből: helyek/szereplők/tárgyak/cselekvések/érzetek. Nincs 'ez azt jelenti'.",
-        keyphrases:
-          "8-12 rövid kulcskifejezés (2-5 szó), konkrét (pl. 'lift és lépcső', 'magasságtól való félelem', 'csomagok cipelése').",
-        entities: {
-          people: ["... max 12"],
-          places: ["... max 12"],
-          objects: ["... max 12"],
-        },
+  "Magyar nyelvű API vagy.",
+  "Kizárólag SZIGORÚ JSON-t adsz vissza (nincs próza, nincs markdown, nincs magyarázat).",
+  "Feladat: rövid, NEM-interpretív session index készítése observation JSON alapján.",
+  "TILOS: jelentés, értelmezés, diagnózis, tanácsadás, szimbólum-magyarázat, ok-okozati következtetés.",
+  "",
+  "NYELV: magyar. Minden mező magyarul legyen (tulajdonnevek maradhatnak úgy, ahogy vannak).",
+  "Ne használj angol szavakat a keyphrases / places / objects / anchor_summary mezőkben.",
+  "",
+  "Adj vissza CSAK egy JSON objektumot, pontosan a sémával (nincs extra kulcs).",
+  "",
+  "Schema:",
+  JSON.stringify(
+    {
+      anchor_summary:
+        "4-8 rövid, kötőjeles sor (bullet-ish), megfigyelésekből: helyek/szereplők/tárgyak/cselekvések/érzetek. Nincs 'ez azt jelenti'.",
+      keyphrases:
+        "8-12 rövid kulcskifejezés (2-5 szó), konkrét (pl. 'lift és lépcső', 'magasságtól való félelem', 'csomagok cipelése').",
+      entities: {
+        people: ["... max 12"],
+        places: ["... max 12"],
+        objects: ["... max 12"],
       },
-      null,
-      2
-    ),
-  ].join("\n");
+    },
+    null,
+    2
+  ),
+].join("\n");
+
 
   // Give the model only what it needs, but keep it grounded
   const obs = args.observation ?? ({} as any);
@@ -120,7 +140,18 @@ export async function buildSessionIndexFromObservation(args: {
     temperature: 0.15,
     messages: [
       { role: "system", content: sys },
-      { role: "user", content: JSON.stringify({ observation: compactObservation }) },
+      { role: "user", content: JSON.stringify({
+    observation: compactObservation,
+    language_hint: {
+      note: "A bemeneti kulcsok lehetnek angolok (pl. setting/actions), de a kimeneti mezők szövege legyen magyar.",
+      examples_hu: {
+        people: ["anya", "ismeretlen férfi", "osztálytárs"],
+        places: ["lépcsőház", "konyha", "utcai sarok"],
+        objects: ["kulcs", "telefon", "csomag"],
+        keyphrases: ["lépcsőház és lift", "csomagok cipelése", "feszültség a végén"],
+      },
+    },
+  }) },
     ],
     response_format: { type: "json_object" },
   });
@@ -133,16 +164,17 @@ export async function buildSessionIndexFromObservation(args: {
   // Repair if it slipped into English (best-effort)
   if (!looksHungarian(payload)) {
     const repairSys = [
-      "You are an API. Return strict json only.",
-      "JAVÍTÁS: az előző json angol szavakat tartalmaz. Írd újra ugyanazzal a sémával, minden mező magyarul legyen.",
-      "TILOS értelmezés/diagnózis.",
-      "Nincs extra kulcs.",
-    ].join("\n");
+  "Magyar nyelvű API vagy. Kizárólag szigorú JSON-t adsz vissza.",
+  "JAVÍTÁS: az előző JSON angol szavakat tartalmaz. Írd újra ugyanazzal a sémával, minden mező magyarul legyen.",
+  "TILOS értelmezés/diagnózis.",
+  "Nincs extra kulcs.",
+].join("\n");
+
 
     const repairUser = JSON.stringify({
       observation: compactObservation,
       previous_json: payload,
-      instruction: "Rewrite all non-name strings into Hungarian; keep names as-is.",
+      instruction: "Minden nem-tulajdonnév szöveget írj át magyarra; a neveket hagyd változatlanul.",
     });
 
     const repairResp = await openai.chat.completions.create({

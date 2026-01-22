@@ -290,7 +290,7 @@ function buildFallbackSelectionTrace(args: {
 
 function sanitizeFallbackSnippet(input: string): string {
   return (input ?? "")
-    .replace(/[?.!;:,"\"]/g, "")
+    .replace(/[?.!;:,"']/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -304,19 +304,20 @@ function buildFallbackCompose(args: { selected: ReturnType<typeof selectCardMate
 } {
   const selected = args.selected;
   const snippet = sanitizeFallbackSnippet(selected?.material?.text_snippet ?? "");
-  const safeSnippet = snippet || "ez";
+  const safeSnippet = snippet || "ez a részlet";
 
-  let prompt = "Mi az egyetlen kerdes amivel most tovabb tudnal menni ebbol?";
+  // Alap, non-interpretív, egy mondatos kérdések (1 db '?', nincs "jelentés")
+  let prompt = "Mi az az egyetlen konkrét részlet, amire most rá tudsz nézni ebből?";
   if (selected?.material?.type === "anchor") {
-    prompt = `Mi a legelobb jelentese szamodra ennek ${safeSnippet}?`;
+    prompt = `Mi az első, ami feltűnik neked ebben: ${safeSnippet}?`;
   } else if (selected?.material?.type === "event") {
-    prompt = `Mi a legfontosabb mozzanat szamodra ebben ${safeSnippet}?`;
+    prompt = `Mi a legkonkrétabb mozzanat ebben a részben: ${safeSnippet}?`;
   } else if (selected?.material?.type === "intent") {
-    prompt = `Melyik reszet szeretned most jobban megnezni ebbol?`;
+    prompt = `Melyik részét szeretnéd most közelebbről megnézni ebből?`;
   }
 
   return {
-    lead_in: "Roviden megallunk ennel a resznel.",
+    lead_in: "Röviden megállunk ennél a résznél. Csak megfigyelünk egy apró részletet.",
     prompt,
     direction_slug: selected?.direction?.slug ?? null,
     group_tags: selected?.direction?.group_tags ?? [],
@@ -382,12 +383,12 @@ export async function POST(req: Request) {
   try {
     const supabase = await supabaseServerAuthed(req);
     const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!authData?.user) return NextResponse.json({ error: "Nincs jogosultság." }, { status: 401 });
     const userId = authData.user.id;
 
     const body = (await req.json()) as NextRequest;
     const sessionId = typeof body.session_id === "string" ? body.session_id : "";
-    if (!sessionId) return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
+    if (!sessionId) return NextResponse.json({ error: "Hiányzó session_id." }, { status: 400 });
 
     const sess = await supabase
       .from("dream_sessions")
@@ -395,7 +396,7 @@ export async function POST(req: Request) {
       .eq("id", sessionId)
       .eq("user_id", userId)
       .maybeSingle();
-    if (sess.error || !sess.data) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    if (sess.error || !sess.data) return NextResponse.json({ error: "A munkamenet nem található." }, { status: 404 });
 
     const request_id = crypto.randomUUID();
     const client_request_id = typeof body.client_request_id === "string" ? body.client_request_id.trim() : null;

@@ -169,27 +169,27 @@ async function safeInsertObservationEvent(params: {
 
 function buildSystemPrompt(): string {
   return [
-    "You extract non-interpretive observations from dream text and optional Q/A context.",
-    "Return ONLY valid JSON that follows the schema exactly. No markdown.",
+    "Feladat: nem-értelmező megfigyeléseket nyersz ki a megadott álomszövegből (és opcionális Q/A kontextusból).",
+    "Kizárólag ÉRVÉNYES JSON-t adj vissza, pontosan a sémában. Nincs markdown, nincs magyarázat.",
     "",
-    "Forbidden outputs:",
-    "- interpretation, meaning, or diagnosis",
-    "- advice, instructions, or therapy language",
-    "- authoritative claims about the user",
-    "- symbolism dictionaries or psychoanalysis",
+    "TILOS:",
+    "- értelmezés, jelentés, diagnózis",
+    "- tanácsadás, instrukciók, terápiás nyelv",
+    "- tekintélyelvű állítások a felhasználóról (\"te biztos...\", \"ez azt jelenti...\")",
+    "- szimbólumszótár, pszichoanalízis, ok-okozati következtetés",
     "",
-    "If history is provided, you may use it ONLY to:",
-    "- clarify labels (rename to more literal phrasing) when the user explicitly states it",
-    "- add missing observable items the user explicitly mentioned",
-    "- remove items that the user explicitly denies",
-    "Never add meaning; stay descriptive.",
+    "Ha a history meg van adva, csak arra használhatod, hogy:",
+    "- pontosítsd a megnevezéseket, ha a felhasználó ezt kifejezetten mondja",
+    "- hozzáadj hiányzó, KIFEJEZETTEN említett megfigyelhető elemeket",
+    "- eltávolíts elemeket, amit a felhasználó kifejezetten cáfol",
+    "Soha ne adj \"miért\"-et vagy jelentést; maradj leíró.",
     "",
-    "Beats rules:",
-    "- Provide 4–6 beats if present, in rough chronological order (early→late).",
-    "- Include one clear turning point/climax if present.",
-    "- Ensure one LATE beat captures the final distinct location/event (closing scene).",
+    "Beats szabályok:",
+    "- Ha van, adj 4–6 beat-et, nagyjából időrendben (eleje→vége).",
+    "- Legyen benne egy egyértelmű fordulópont/csúcspont, ha jelen van.",
+    "- Legyen egy KÉSŐI beat, ami a záró jelenet utolsó külön helyszínét/eseményét rögzíti.",
     "",
-    "Schema (all keys required):",
+    "Séma (MINDEN kulcs kötelező):",
     "{",
     '  "entities": {',
     '    "characters": [{"label": "...", "evidence": ["..."]}],',
@@ -205,9 +205,10 @@ function buildSystemPrompt(): string {
     '  "safety": { "flag": "none|distress|reality_confusion|self_harm", "evidence": ["..."] }',
     "}",
     "",
-    "Evidence must be short quotes or tight paraphrases from the INPUT dream text or raw_delta.",
-    "If safety flag is not none, include evidence. If none, evidence can be empty.",
-    "Do not add extra keys.",
+    "Evidence: rövid idézet vagy szoros parafrázis a BEMENETI álomszövegből (dream_text / raw_delta).",
+    "Ha a safety.flag nem 'none', adj meg evidence-et. Ha 'none', az evidence lehet üres.",
+    "Ne adj hozzá extra kulcsokat.",
+    "A label-ek legyenek rövidek, konkrétak, lehetőleg magyarul (ha a bemenet magyar).",
   ].join("\n");
 }
 
@@ -235,7 +236,7 @@ async function fetchSessionDreamText(
     .select("content, created_at")
     .eq("session_id", sessionId)
     .eq("user_id", userId)
-    .in("kind", ["raw", "raw_entry"])
+    .in("kind", ["raw", "dictation", "edit"])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -254,13 +255,15 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as RequestBody;
     const sessionId = body.session_id;
-    if (!sessionId)
-      return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
+    if (!sessionId) {
+  return NextResponse.json({ error: "missing_session_id", message: "Hiányzó session_id." }, { status: 400 });
+}
 
     const supabase = await supabaseServerAuthed(req);
     const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user)
-      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    if (!authData?.user) {
+  return NextResponse.json({ error: "unauthorized", message: "Nincs jogosultság." }, { status: 401 });
+}
     const userId = authData.user.id;
 
     const mode: "initial" | "refresh" = body.mode === "refresh" ? "refresh" : "initial";
@@ -269,7 +272,9 @@ export async function POST(req: Request) {
     let dreamText = sanitizeText(body.dream_text ?? "");
     if (!dreamText) {
       const fromDb = await fetchSessionDreamText(supabase, sessionId, userId);
-      if (!fromDb) return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      if (!fromDb) {
+  return NextResponse.json({ error: "not_found", message: "A munkamenet nem található." }, { status: 404 });
+}
       dreamText = fromDb;
     }
 
@@ -331,9 +336,9 @@ export async function POST(req: Request) {
       existing_observation: existingObs ?? null,
       history,
       guidance:
-        mode === "refresh"
-          ? "Update and correct the existing observation using new text and Q/A. Stay purely descriptive."
-          : "List observable elements only. No interpretation.",
+  mode === "refresh"
+    ? "Frissítsd és pontosítsd a meglévő megfigyeléseket az új szöveg és a Q/A alapján. Maradj tisztán leíró."
+    : "Csak megfigyelhető elemeket sorolj. Nincs értelmezés.",
     };
 
     let observationRaw: unknown;
@@ -360,13 +365,13 @@ export async function POST(req: Request) {
       observationRaw = parseModelJSON(raw);
     } catch (error) {
       console.warn("observe: model call failed", error);
-      return NextResponse.json({ error: "Model call failed" }, { status: 500 });
+      return NextResponse.json({ error: "model_failure", message: "Nem sikerült a modellhívás." }, { status: 500 });
     }
 
     const observation = parseDreamObservation(observationRaw);
     if (!observation) {
       console.warn("observe: invalid observation payload", observationRaw);
-      return NextResponse.json({ error: "Invalid observation schema" }, { status: 500 });
+      return NextResponse.json({ error: "invalid_observation_schema", message: "Érvénytelen megfigyelés séma." }, { status: 500 });
     }
 
     const input_hash = buildObservationInputHash({ mode, dreamText, rawDelta, history });
@@ -411,6 +416,6 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.warn("observe: handler exception", error);
-    return NextResponse.json({ error: "Unexpected error" }, { status: 500 });
+    return NextResponse.json({ error: "unexpected_error", message: "Váratlan hiba." }, { status: 500 });
   }
 }

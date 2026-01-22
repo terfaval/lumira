@@ -1,5 +1,7 @@
 // src/domain/anchors/buildAnchorsFromObservation.ts
 import type { ObservationPayloadV0 } from "@/src/domain/observe/extractObservationFromEntries";
+import { anchorKey } from "@/src/lib/dream/anchorKey";
+import { shouldKeepAnchorKey, shouldKeepAnchorLabel } from "@/src/lib/dream/huAnchorHygiene";
 
 export type AnchorKind = "person" | "place" | "object" | "theme" | "feeling" | "action" | "other";
 
@@ -10,11 +12,12 @@ export type AnchorsPayloadV0 = {
 type AnchorSource = {
   kind: AnchorKind;
   weight: number;
-  evidence: string;
+  evidence: string; // provenance path, not raw evidence quote
 };
 
 type AnchorBucket = {
-  text: string;
+  key: string; // canonical anchor key (anchorKey.ts)
+  text: string; // best display label
   kind: AnchorKind;
   score: number;
   evidence: Set<string>;
@@ -30,81 +33,57 @@ const KIND_PRIORITY: Record<AnchorKind, number> = {
   other: 0,
 };
 
-const GENERIC_TOKENS = new Set([
-  "valami",
-  "valaki",
-  "valakik",
-  "valamik",
-  "dolog",
-  "dolgok",
-  "hely",
-  "helyek",
-  "ember",
-  "emberek",
-  "szemely",
-  "szemelyek",
-  "targy",
-  "targyak",
-  "ismeretlen",
-]);
-
 function toStringArray(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
   return input.map((x) => String(x ?? "").trim()).filter(Boolean);
 }
 
 function collapseWhitespace(text: string): string {
-  return text.replace(/\s+/g, " ").trim();
+  return String(text ?? "").replace(/\s+/g, " ").trim();
 }
 
-function asciiFold(text: string): string {
-  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+/**
+ * Pick the better display label when merging duplicates by anchorKey:
+ * - prefer longer/more specific (but not too long)
+ * - keep stable if similar
+ */
+function pickBetterLabel(current: string, next: string): string {
+  const a = collapseWhitespace(current);
+  const b = collapseWhitespace(next);
+  if (!a) return b;
+  if (!b) return a;
+
+  // avoid very long labels (UI noise)
+  const aLen = a.length;
+  const bLen = b.length;
+  const aOk = aLen <= 48;
+  const bOk = bLen <= 48;
+
+  if (aOk && !bOk) return a;
+  if (!aOk && bOk) return b;
+
+  // prefer the more specific-ish (often slightly longer)
+  if (bLen > aLen + 3) return b;
+  return a;
 }
 
-function normalizeKey(text: string): string {
-  return asciiFold(collapseWhitespace(String(text ?? "").toLowerCase()));
-}
-
-function isLikelyOrdinalHu(text: string): boolean {
-  const t = normalizeKey(text);
-  if (!t) return false;
-  // If it's a phrase ("negyedik emelet"), do NOT treat it as a bare ordinal.
-  // We only want to skip standalone ordinals like "negyedik", "4.", "2dik".
-  if (t.includes(" ")) return false;
-  if (/^\d{1,3}(\.|-?(dik|ik))?$/.test(t)) return true;
-  if (/(adik|edik|odik|dik)$/.test(t)) return true;
-  return false;
-}
-
-function isGenericToken(text: string): boolean {
-  const t = normalizeKey(text);
-  if (!t) return true;
-  if (t.length <= 2) return true;
-  if (/^\d+$/.test(t)) return true;
-  return GENERIC_TOKENS.has(t);
-}
-
-function shouldSkipToken(text: string): boolean {
-  if (!text || !text.trim()) return true;
-  if (isLikelyOrdinalHu(text)) return true;
-  if (isGenericToken(text)) return true;
-  return false;
-}
-
-function addCandidates(
-  bucket: Map<string, AnchorBucket>,
-  values: string[],
-  source: AnchorSource
-) {
+function addCandidates(bucket: Map<string, AnchorBucket>, values: string[], source: AnchorSource) {
   for (const raw of values) {
-    const text = collapseWhitespace(String(raw ?? ""));
-    if (shouldSkipToken(text)) continue;
-    const key = normalizeKey(text);
+    const text = collapseWhitespace(raw);
+    if (!text) continue;
+
+    // label hygiene (HU)
+    // For places we can optionally be stricter; here we keep default and let shouldKeepAnchorKey filter the rest.
+    if (!shouldKeepAnchorLabel(text, source.kind === "place" ? { category: "place" } : undefined as any)) continue;
+
+    const key = anchorKey(text);
     if (!key) continue;
+    if (!shouldKeepAnchorKey(key)) continue;
 
     const existing = bucket.get(key);
     if (!existing) {
       bucket.set(key, {
+        key,
         text,
         kind: source.kind,
         score: source.weight,
@@ -113,9 +92,13 @@ function addCandidates(
       continue;
     }
 
+    // keep best label + best kind (by priority), accumulate score
+    existing.text = pickBetterLabel(existing.text, text);
+
     if (KIND_PRIORITY[source.kind] > KIND_PRIORITY[existing.kind]) {
       existing.kind = source.kind;
     }
+
     existing.score += source.weight;
     existing.evidence.add(source.evidence);
   }
@@ -131,42 +114,72 @@ export function buildAnchorsFromObservation(args: {
 
   const bucket = new Map<string, AnchorBucket>();
 
+  // Observation entities (primary)
   addCandidates(bucket, toStringArray(entities.people), {
     kind: "person",
-    weight: 3,
-    evidence: "entities.people",
+    weight: 3.0,
+    evidence: "observation.entities.people",
   });
   addCandidates(bucket, toStringArray(entities.places), {
     kind: "place",
     weight: 2.5,
-    evidence: "entities.places",
+    evidence: "observation.entities.places",
   });
   addCandidates(bucket, toStringArray(entities.objects), {
     kind: "object",
-    weight: 2,
-    evidence: "entities.objects",
+    weight: 2.0,
+    evidence: "observation.entities.objects",
   });
   addCandidates(bucket, toStringArray(entities.themes_words), {
     kind: "theme",
     weight: 1.5,
-    evidence: "entities.themes_words",
+    evidence: "observation.entities.themes_words",
   });
 
+  // Scenes (secondary)
   for (const scene of scenes) {
     addCandidates(bucket, toStringArray(scene?.mood_words), {
       kind: "feeling",
       weight: 1.4,
-      evidence: "scenes.mood_words",
+      evidence: "observation.scenes.mood_words",
     });
     addCandidates(bucket, toStringArray(scene?.sensations), {
       kind: "feeling",
       weight: 1.4,
-      evidence: "scenes.sensations",
+      evidence: "observation.scenes.sensations",
     });
     addCandidates(bucket, toStringArray(scene?.actions), {
       kind: "action",
       weight: 1.3,
-      evidence: "scenes.actions",
+      evidence: "observation.scenes.actions",
+    });
+  }
+
+  // Optional session index: light boost only (never override observation truth)
+  // This helps stabilize “top anchors” when observation is sparse or noisy.
+  const idx = args.sessionIndex && typeof args.sessionIndex === "object" ? args.sessionIndex : null;
+  if (idx) {
+    addCandidates(bucket, toStringArray(idx?.entities?.people), {
+      kind: "person",
+      weight: 0.9,
+      evidence: "session_index.entities.people",
+    });
+    addCandidates(bucket, toStringArray(idx?.entities?.places), {
+      kind: "place",
+      weight: 0.8,
+      evidence: "session_index.entities.places",
+    });
+    addCandidates(bucket, toStringArray(idx?.entities?.objects), {
+      kind: "object",
+      weight: 0.7,
+      evidence: "session_index.entities.objects",
+    });
+
+    // keyphrases can contain good anchor-ish tokens; treat as "theme" with low weight
+    addCandidates(bucket, toStringArray(idx?.keyphrases), {
+      kind: "theme",
+      weight: 0.45,
+      evidence: "session_index.keyphrases",
     });
   }
 
@@ -177,15 +190,16 @@ export function buildAnchorsFromObservation(args: {
     evidence: Array.from(row.evidence),
   }));
 
-  const sorted = anchors.sort((a, b) => {
+  // Deterministic sort: score desc, then key asc (stable)
+  anchors.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
-    const aKey = normalizeKey(a.text);
-    const bKey = normalizeKey(b.text);
-    return aKey.localeCompare(bKey);
+    const aKey = anchorKey(a.text) || a.text.toLowerCase();
+    const bKey = anchorKey(b.text) || b.text.toLowerCase();
+    return aKey.localeCompare(bKey, "hu");
   });
 
-  const total = sorted.length;
+  const total = anchors.length;
   const limit = total < 8 ? total : Math.min(12, total);
 
-  return { anchors: sorted.slice(0, limit) };
+  return { anchors: anchors.slice(0, limit) };
 }

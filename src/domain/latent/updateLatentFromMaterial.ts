@@ -39,18 +39,42 @@ export async function updateLatentFromMaterial(args: {
   const openai = openaiServer();
   const model = OPENAI_MODELS.OBSERVE;
 
-  // Salvage-aligned constraints: observation is primary truth, no meaning as fact. :contentReference[oaicite:4]{index=4}
+  // Hungarian-only + non-interpretive latent scaffold
   const system = [
-    "You are an API that emits strict json (no prose, no markdown).",
-  "Language: Hungarian. All strings must be Hungarian (names can remain as-is).",
-  "Task: produce a latent exploration scaffold (NOT interpretation).",
-  "Primary truth: observation + session_index. Do not invent elements not supported by them.",
-    "Hard constraints:",
-    "- No 'this means', no diagnosis, no therapy language, no asserting meaning as fact.",
-    "- hypothesis_slots are invitations, not claims.",
-    "- evidence items are short phrases grounded in observation/session_index (not raw dream chunks).",
+    "Magyar nyelvű API vagy.",
+    "Kizárólag SZIGORÚ JSON-t adsz vissza (nincs próza, nincs markdown, nincs magyarázat).",
     "",
-    "Return ONLY JSON matching this schema exactly (no extra keys):",
+    "Feladat: latent exploration scaffold készítése (NEM értelmezés).",
+    "Elsődleges igazságforrás: observation + session_index. Ne találj ki olyan elemet, ami nincs ezekben megtámasztva.",
+    "",
+    "TILOS:",
+    "- \"ez azt jelenti\", diagnózis, terápianyelv, szimbólumszótár, pszichoanalízis",
+    "- biztos állítás a felhasználóról vagy a \"valódi\" jelentésről",
+    "- tanácsadás vagy utasítás, hogy mit kellene tennie",
+    "",
+    "Stílus a szöveges mezőkben (slot, why_open, framing, why, text):",
+    "- rövid, tiszta, óvatos; megfigyelő hang",
+    "- kerüld a túl absztrakt szavakat (pl. \"transzformáció\", \"integráció\", \"archetípus\")",
+    "- a 'why' legyen 1 mondat, maximum ~16 szó (UI-barát).",
+    "- a 'slot' legyen 2–6 szó, konkrét (pl. \"a lépcsőház hangulata\").",
+    "- a 'framing' legyen invitálás: \"Lehet, hogy érdemes megnézni...\" jelleggel, de nem kötelező ezzel kezdeni.",
+    "",
+    "Evidence szabály:",
+    "- evidence: 1–3 rövid, konkrét kifejezés (nem hosszú idézet).",
+    "- observation/session_index elemeit nevezd meg (hely/szereplő/tárgy/beat/tone).",
+    "- TILOS nyers álomszöveg hosszú darabjait bemásolni.",
+    "Példa evidence: [\"lépcsőház\", \"csomag cipelése\", \"feszültség a végén\"].",
+    "",
+    "direction_candidates:",
+    "- slug kizárólag az allowed_slugs listából jöhet.",
+    "- score: 0..1 közötti szám (pl. 0.72).",
+    "- why: 1 rövid mondat, megfigyelésekhez kötve, nem értelmező.",
+    "",
+    "question_candidates:",
+    "- text: magyar; mode='question' esetén 1 darab '?' a végén, mode='prompt' esetén 0 '?'",
+    "- why: 1 rövid mondat, miért hasznos ez a fókusz (nem jelentés!).",
+    "",
+    "Csak az alábbi sémát add vissza, extra kulcs nélkül:",
     JSON.stringify(
       {
         coverage: {
@@ -103,7 +127,13 @@ export async function updateLatentFromMaterial(args: {
   const parsed = JSON.parse(content);
 
   // Minimal v0 validation
-  if (!parsed?.coverage || !Array.isArray(parsed?.direction_candidates) || !Array.isArray(parsed?.question_candidates)) {
+  if (
+    !parsed?.coverage ||
+    !Array.isArray(parsed?.direction_candidates) ||
+    !Array.isArray(parsed?.question_candidates) ||
+    !Array.isArray(parsed?.open_loops) ||
+    !Array.isArray(parsed?.hypothesis_slots)
+  ) {
     throw new Error("Latent: schema mismatch");
   }
 

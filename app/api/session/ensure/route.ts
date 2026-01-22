@@ -32,9 +32,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const supabase = await supabaseServerAuthed();
+  const supabase = await supabaseServerAuthed(req);
   const { data: auth, error: authErr } = await supabase.auth.getUser();
-  if (authErr || !auth?.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (authErr || !auth?.user) {
+  return NextResponse.json({ error: "unauthorized", message: "Nincs jogosultság." }, { status: 401 });
+}
+
 
   const user_id = auth.user.id;
 
@@ -42,11 +45,13 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as EnsureBody;
   } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    return NextResponse.json({ error: "invalid_json", message: "Érvénytelen JSON." }, { status: 400 });
   }
 
   const session_id = body.session_id;
-  if (!session_id) return NextResponse.json({ error: "session_id_required" }, { status: 400 });
+  if (!session_id) { 
+    return NextResponse.json({ error: "session_id_required", message: "Hiányzó session_id." }, { status: 400 });
+  }
 
   const runObserve = body.run?.observe !== false;
   const runAnchors = body.run?.anchors !== false;
@@ -55,7 +60,9 @@ export async function POST(req: Request) {
   const runFrame = body.run?.frame !== false;
 
   const sess = await supabase.from("dream_sessions").select("id").eq("id", session_id).eq("user_id", user_id).single();
-  if (sess.error) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  if (sess.error) {
+  return NextResponse.json({ error: "not_found", message: "A munkamenet nem található." }, { status: 404 });
+}
 
   const [entriesIdsRes, answersIdsRes, prefsRes] = await Promise.all([
     supabase.from("dream_entries").select("id,created_at").eq("session_id", session_id).order("created_at", { ascending: true }),
@@ -63,8 +70,18 @@ export async function POST(req: Request) {
     supabase.from("user_prefs").select("updated_at").eq("user_id", user_id).single(),
   ]);
 
-  if (entriesIdsRes.error) return NextResponse.json({ error: entriesIdsRes.error.message }, { status: 500 });
-  if (answersIdsRes.error) return NextResponse.json({ error: answersIdsRes.error.message }, { status: 500 });
+  if (entriesIdsRes.error) {
+  return NextResponse.json(
+    { error: "db_error", message: "Adatbázis hiba (dream_entries).", detail: entriesIdsRes.error.message },
+    { status: 500 }
+  );
+}
+if (answersIdsRes.error) {
+  return NextResponse.json(
+    { error: "db_error", message: "Adatbázis hiba (dream_answers).", detail: answersIdsRes.error.message },
+    { status: 500 }
+  );
+}
 
   const entry_ids = (entriesIdsRes.data ?? []).map((r) => r.id);
   const answer_ids = (answersIdsRes.data ?? []).map((r) => r.id);

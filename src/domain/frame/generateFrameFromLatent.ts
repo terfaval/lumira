@@ -1,5 +1,6 @@
 // src/domain/frame/generateFrameFromLatent.ts
 import { openaiServer, OPENAI_MODELS } from "@/src/lib/openai/server";
+import type { DirectionCatalogRow } from "@/src/db/repositories/catalogRepo";
 import {
   countWords,
   isFramingAnchoredFuzzy,
@@ -7,9 +8,8 @@ import {
   sanitizeWhitespace,
   titleCaseHungarian,
   titleHasAnchorFuzzy,
+  pickTopAnchors,
 } from "@/src/lib/dream/text";
-import { pickTopAnchors } from "@/src/lib/dream/text";
-import type { DirectionCatalogRow } from "@/src/db/repositories/catalogRepo";
 
 export type FramePayloadV0 = {
   title: string;
@@ -36,48 +36,57 @@ export async function generateFrameFromLatent(args: {
   catalog: DirectionCatalogRow[];
   allowedSlugs: string[];
   recommendedSlugsFallback: string[];
-  sourceIds: { observation_version_id: string; latent_version_id: string; session_index_version_id: string };
+  sourceIds: {
+    observation_version_id: string;
+    latent_version_id: string;
+    session_index_version_id: string;
+  };
   topAnchors?: string[];
 }): Promise<{ payload: FramePayloadV0; model: string }> {
   const openai = openaiServer();
   const model = OPENAI_MODELS.OBSERVE;
 
   const system = [
-  "Adj vissza EGY darab JSON objektumot (json) egy álomhoz.",
-  'Kulcsok: {"title": string, "framing_text": string, "recommended_slugs": string[2..4]}',
-  "",
-  "Bemenetek:",
-  "- dream_text: a nyers álomleírás.",
-  "- latent_note: jegyzet (anchorok/érzelmi szavak/fordulók) – NEM tényforrás, csak fókusz.",
-  "- observation: megfigyelések (nem értelmezések), használd a konkrét elemekhez és ajánlott irányokhoz.",
-  "",
-  "Kötelező stílus:",
-  "- Magyar nyelv.",
-  "- MÁSODIK SZEMÉLY, MÚLT IDŐ.",
-  "- Nyitás javasolt formula: „Az álmodban ...”.",
-  "- Megfigyelő hang: nincs diagnózis, nincs biztos jelentés-állítás.",
-  "",
-  "Framing_text (rövid, irodalmiasan feszes, nem ténylista):",
-  "- 4–7 mondatban rajzolj tér-idő-érzelmi ívet (2–3 csomópont).",
-  "- Legyen 1–2 érzelem/reakció (pl. félelem, szégyen).",
-  "- A végén legyen 1 nagyon rövid invitálós (1 mondat), választási lehetőséggel.",
-  "",
-  "Óvatos megfigyelés (opcionális, max 1 mondat):",
-  "- Csak így kezdődhet: „Lehet, hogy (csak óvatos megfigyelés) ...”.",
-  "- TILOS: „ez azt jelenti”, „arra utal”, „valószínűleg”, „tükrözte a szorongásaidat”, diagnózis, biztos pszichologizálás.",
-  "- Ha observation.safety.flag nem 'none': lassíts, ne mélyíts, ne erőltesd.",
-  "",
-  "Anchor szabályok:",
-  "- A title tartalmazzon legalább 1 TOP ANCHOR-t.",
-  "- A framing_text tartalmazzon legalább 2–4 TOP ANCHOR-t.",
-  "",
-  "Ajánlott irányok:",
-  "- Pontosan 2-4 különböző slug a katalógusból.",
-  "",
-  "Formátum:",
-  '{"title":"...","framing_text":"...","recommended_slugs":["slug-1","slug-2"]}',
-].join("\n");
-
+    "Adj vissza EGY darab JSON objektumot (json) egy álomhoz.",
+    'Kulcsok: {"title": string, "framing_text": string, "recommended_slugs": string[2..4]}',
+    "",
+    "Fontos: CSAK magyarul írj. Ne használj angol kifejezéseket (kivéve tulajdonnévként, ha a bemenetben szerepel).",
+    "A válasz kizárólag egyetlen JSON objektum legyen, semmi más (nincs magyarázat, nincs extra szöveg).",
+    "",
+    "Bemenetek:",
+    "- dream_text: a nyers álomleírás.",
+    "- latent_payload: a latent_versions.payload kivonata – NEM tényforrás, csak fókusz/irányjelzés.",
+    "- observation_payload: megfigyelések (nem értelmezések). A konkrét elemek (szereplők/helyek/tárgyak/történések) forrása ez.",
+    "- allowed_slugs: az engedélyezett katalógus slugok listája (EZ AZ AUTORITÁS).",
+    "",
+    "Kötelező stílus:",
+    "- Magyar nyelv.",
+    "- MÁSODIK SZEMÉLY, MÚLT IDŐ.",
+    "- Nyitás javasolt formula: „Az álmodban ...”.",
+    "- Megfigyelő hang: nincs diagnózis, nincs biztos jelentés-állítás.",
+    "",
+    "Framing_text (rövid, feszes, nem ténylista):",
+    "- 4–7 mondatban rajzolj tér-idő-ívet (2–3 csomópont).",
+    "- Érzelem/reakció csak akkor, ha a megfigyelésekben (observation_payload) explicit szerepel; ne találj ki újat.",
+    "- A végén legyen 1 nagyon rövid invitálás (1 mondat), választási lehetőséggel.",
+    "",
+    "Óvatos megfigyelés (opcionális, max 1 mondat):",
+    "- Csak így kezdődhet: „Lehet, hogy ...”.",
+    "- TILOS: „ez azt jelenti”, „arra utal”, „valószínűleg”, diagnózis, biztos pszichologizálás, autoritatív következtetés.",
+    "- Ha observation.safety.flag nem 'none': lassíts, ne mélyíts, ne erőltesd; legyen kímélő, stabilizáló hang.",
+    "",
+    "Anchor szabályok:",
+    "- A title tartalmazzon legalább 1 TOP ANCHOR-t.",
+    "- A framing_text tartalmazzon legalább 2–4 TOP ANCHOR-t.",
+    "",
+    "Ajánlott irányok (recommended_slugs):",
+    "- Pontosan 2–4 különböző slug.",
+    "- Mindegyik slug MUST benne legyen az allowed_slugs listában.",
+    "- Ne ismételj, ne adj duplikátumot.",
+    "",
+    "Formátum (példa):",
+    '{"title":"...","framing_text":"...","recommended_slugs":["slug-1","slug-2"]}',
+  ].join("\n");
 
   const allowedSet = new Set(args.allowedSlugs ?? []);
   const catalog = (args.catalog ?? []).map((row) => ({
@@ -89,15 +98,17 @@ export async function generateFrameFromLatent(args: {
         : row.description ?? "",
   }));
 
-  const topAnchors = (args.topAnchors ?? extractTopAnchors(args.observation)).slice(0, 8);
+  const rawTopAnchors = (args.topAnchors ?? extractTopAnchors(args.observation)).slice(0, 8);
+  const topAnchors = cleanAnchors(rawTopAnchors).slice(0, 8);
   const targetSentences = { min: 4, max: 7 };
 
   const user = {
     dream_text: String(args.dreamText ?? ""),
-    latent_note: args.latent ?? null,
-    observation: args.observation ?? null,
+    latent_payload: args.latent ?? null,
+    observation_payload: args.observation ?? null,
     catalog,
     top_anchors: topAnchors,
+    allowed_slugs: args.allowedSlugs ?? [],
     constraints: {
       title_words_allowed: "2-6",
       framing_sentence_min: targetSentences.min,
@@ -131,7 +142,7 @@ export async function generateFrameFromLatent(args: {
     const repaired = await repairFrameBundle({
       openai,
       dreamText: String(args.dreamText ?? ""),
-      latentNote: args.latent ?? null,
+      latentPayload: args.latent ?? null,
       dreamObservation: args.observation ?? null,
       allowedSlugs: args.allowedSlugs ?? [],
       allowedSet,
@@ -157,7 +168,7 @@ export async function generateFrameFromLatent(args: {
       openai,
       dreamText: String(args.dreamText ?? ""),
       topAnchors,
-      latentNote: args.latent ?? null,
+      latentPayload: args.latent ?? null,
     });
     if (repairedTitle) title = repairedTitle;
   }
@@ -262,7 +273,6 @@ function isValidTitle(title: string, topAnchors: string[]): boolean {
   return true;
 }
 
-
 function isValidFraming(
   framing: string,
   topAnchors: string[],
@@ -297,8 +307,18 @@ function isFloorOrdinalHu(t: string): boolean {
   const x = normalizeHuToken(t);
   // common Hungarian ordinals + plain digits
   const ords = [
-    "első","második","harmadik","negyedik","ötödik","hatodik","hetedik","nyolcadik",
-    "kilencedik","tizedik","tizenegyedik","tizenkettedik"
+    "első",
+    "második",
+    "harmadik",
+    "negyedik",
+    "ötödik",
+    "hatodik",
+    "hetedik",
+    "nyolcadik",
+    "kilencedik",
+    "tizedik",
+    "tizenegyedik",
+    "tizenkettedik",
   ];
   if (ords.includes(x)) return true;
   if (/^\d{1,2}(\.|-?dik)?$/.test(x)) return true;
@@ -312,9 +332,21 @@ function isTooGenericAnchorHu(t: string): boolean {
 
   // generic filler-ish words (keep this short; add over time)
   const bad = new Set([
-    "valaki","valami","hely","dolog","cucc","cuccok", // note: you might WANT cuccok sometimes; optional
-    "ember","fickó","barát","ismeretlen","szereplő",
-    "hazafelé","világosodik","késő","korán"
+    "valaki",
+    "valami",
+    "hely",
+    "dolog",
+    "cucc",
+    "cuccok", // note: you might WANT cuccok sometimes; optional
+    "ember",
+    "fickó",
+    "barát",
+    "ismeretlen",
+    "szereplő",
+    "hazafelé",
+    "világosodik",
+    "késő",
+    "korán",
   ]);
   return bad.has(x);
 }
@@ -338,11 +370,10 @@ function cleanAnchors(rawAnchors: string[]): string[] {
   return out;
 }
 
-
 async function repairFrameBundle(args: {
   openai: ReturnType<typeof openaiServer>;
   dreamText: string;
-  latentNote: any;
+  latentPayload: any;
   dreamObservation: any;
   allowedSlugs: string[];
   allowedSet: Set<string>;
@@ -351,19 +382,21 @@ async function repairFrameBundle(args: {
 }) {
   const system = [
     "Javítás: adj vissza érvényes JSON-t (json) a szabályok szerint. Ne adj magyarázatot.",
+    "CSAK magyarul írj; ne használj angolt (kivéve tulajdonnévként, ha a bemenetben szerepel).",
     "title: 2–6 szó, tartalmazzon 1 top anchort.",
     "framing_text: 4–7 mondat, 2. személy múlt idő, ív + 1 rövid invitálás a végén.",
     "framing_text: 2–4 top anchor említés.",
-    "Óvatos megfigyelés: opcionális, max 1 mondat, csak így: „Lehet, hogy (csak óvatos megfigyelés) ...”.",
-    "Óvatos megfigyelés: tilos biztos jelentés/diagnózis.",
-    "recommended_slugs: 2–4, különböző, allowed_slugs-ból.",
+    "Érzelem/reakció csak akkor, ha observation_payload alapján explicit; ne találj ki újat.",
+    "Óvatos megfigyelés: opcionális, max 1 mondat, csak így: „Lehet, hogy ...”.",
+    "Óvatos megfigyelés: tilos biztos jelentés/diagnózis/pszichologizálás.",
+    "recommended_slugs: 2–4, különböző, allowed_slugs-ból (allowed_slugs az autoritás).",
     'Formátum: {"title":"...","framing_text":"...","recommended_slugs":["...","..."]}',
   ].join("\n");
 
   const user = {
     dream_text: args.dreamText,
-    latent_note: args.latentNote ?? null,
-    observation: args.dreamObservation ?? null,
+    latent_payload: args.latentPayload ?? null,
+    observation_payload: args.dreamObservation ?? null,
     allowed_slugs: args.allowedSlugs,
     top_anchors: args.topAnchors,
     previous: args.previous ?? {},
@@ -388,10 +421,11 @@ async function repairTitle(args: {
   openai: ReturnType<typeof openaiServer>;
   dreamText: string;
   topAnchors: string[];
-  latentNote: any;
+  latentPayload: any;
 }): Promise<string | null> {
   const system = [
-   "Adj vissza EGY rövid magyar címet egy álomhoz, és csak érvényes JSON-t adj vissza (json).",
+    "Adj vissza EGY rövid magyar címet egy álomhoz, és csak érvényes JSON-t adj vissza (json).",
+    "CSAK magyarul írj; ne használj angolt (kivéve tulajdonnévként, ha a bemenetben szerepel).",
     "A válaszod egyetlen JSON objektum legyen, semmi más.",
     "Követelmények:",
     "- 2–6 szó.",
@@ -401,11 +435,10 @@ async function repairTitle(args: {
     'Formátum (JSON): {"title":"..."}',
   ].join("\n");
 
-
   const user = {
     dream_excerpt: String(args.dreamText ?? "").slice(0, 2500),
     top_anchors: args.topAnchors ?? [],
-    latent_note: args.latentNote ?? null,
+    latent_payload: args.latentPayload ?? null,
   };
 
   const resp = await args.openai.chat.completions.create({

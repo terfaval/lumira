@@ -30,19 +30,19 @@ export async function POST(req: Request) {
   const supabase = await supabaseServerAuthed(req);
   const { data: auth, error: authErr } = await supabase.auth.getUser();
   if (authErr || !auth?.user) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Nincs jogosultság." }, { status: 401 });
   }
 
   let body: EnsureBody;
   try {
     body = (await req.json()) as EnsureBody;
   } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    return NextResponse.json({ error: "Érvénytelen JSON." }, { status: 400 });
   }
 
   const session_id = body.session_id;
   if (!session_id) {
-    return NextResponse.json({ error: "session_id_required" }, { status: 400 });
+    return NextResponse.json({ error: "Hiányzó session_id." }, { status: 400 });
   }
 
   // ---- delegate EVERYTHING to session.ensure

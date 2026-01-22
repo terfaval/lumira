@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LumiraMark } from "@/components/brand/LumiraMark";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { GuestStartButton } from "@/components/auth/GuestStartButton";
 import styles from "./LandingPage.module.css";
 
 const howStepsTop = [
@@ -83,19 +84,32 @@ export function LandingPage() {
           <div className={styles.heroRight}>
             <div className={styles.heroRightInner}>
               <p className={styles.toolIntro}>
-                Egy egyszerű eszköz álmaid rögzítéséhez és visszanézéséhez. 
+                Egy egyszerű eszköz álmaid rögzítéséhez és visszanézéséhez.
                 <br />
                 Nem fejt meg helyetted semmit: inkább segít észrevenni, mi maradt meg,
-                és ad egy kíméletes keretet, ha szeretnél továbbmenni. 
+                és ad egy kíméletes keretet, ha szeretnél továbbmenni.
                 <br />
                 Használhatod reggel pár mondatra, vagy este
                 <br />
                 rövid hangolásként — a saját tempódban.
               </p>
 
-              <Link href="/login" className={`btn btn-primary ${styles.heroCta}`}>
-                Kezdj bele
-              </Link>
+              {/* CTA STACK */}
+              <div className={styles.heroCtas}>
+                <Link href="/login" className={`btn btn-primary ${styles.heroCta}`}>
+                  Kezdj bele
+                </Link>
+
+                <GuestStartButton
+                  className={`btn btn-secondary ${styles.heroCtaSecondary}`}
+                  redirectTo="/session/new"
+                  label="Kipróbálom"
+                />
+
+                <div className={styles.heroCtaNote}>
+                  Anonim próba. Kilépéskor minden törlődik.
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -107,7 +121,12 @@ export function LandingPage() {
 
         <div className={styles.howTop}>
           {howStepsTop.map((s) => (
-            <GlassCardSurface key={s.title} className={`${styles.glassCard} ${styles.gridCard}`} variant="soft" paper="evening">
+            <GlassCardSurface
+              key={s.title}
+              className={`${styles.glassCard} ${styles.gridCard}`}
+              variant="soft"
+              paper="evening"
+            >
               <div className={`${styles.howStepHead} ${styles.gridCardHeader}`}>
                 <img
                   src={s.icon}
@@ -125,7 +144,11 @@ export function LandingPage() {
         </div>
 
         <div className={styles.howStopRow}>
-          <GlassCardSurface className={`${styles.glassCard} ${styles.stopCard}`} variant="soft" paper="evening">
+          <GlassCardSurface
+            className={`${styles.glassCard} ${styles.stopCard}`}
+            variant="soft"
+            paper="evening"
+          >
             <div className={styles.stopInner}>
               <img
                 src={howStop.icon}
@@ -150,7 +173,12 @@ export function LandingPage() {
 
         <div className={styles.adaptPrimaryRow}>
           {adaptPrimary.map((x) => (
-            <GlassCardSurface key={x.key} className={`${styles.glassCard} ${styles.adaptPrimaryCard} ${styles.gridCard}`} variant="soft" paper="evening">
+            <GlassCardSurface
+              key={x.key}
+              className={`${styles.glassCard} ${styles.adaptPrimaryCard} ${styles.gridCard}`}
+              variant="soft"
+              paper="evening"
+            >
               <div className={`${styles.adaptPrimaryInner} ${styles.gridCardBody}`}>
                 <div className={styles.adaptPrimaryIconCol}>
                   <img
@@ -232,6 +260,7 @@ export function LandingPage() {
           <div className={styles.footerLine}>
             Indíts egy új álmot. Rögzíts pár sort, nézd vissza, és állj meg ott, ahol ma jó.
           </div>
+
           <Link href="/login" className={`btn btn-primary ${styles.footerCta}`}>
             Rögzítsd az első álmodat
           </Link>

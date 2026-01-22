@@ -9,6 +9,34 @@ function isEvidenceSource(x: unknown): x is EvidenceSource {
   return x === "observation" || x === "session_index" || x === "work_ledger";
 }
 
+function clamp01(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  if (n < 0) return 0;
+  if (n > 1) return 1;
+  return n;
+}
+
+function sanitizeWhy(input: unknown, maxLen = 140): string | undefined {
+  if (typeof input !== "string") return undefined;
+  const cleaned = input
+    .replace(/\s+/g, " ")
+    .replace(/\u00A0/g, " ")
+    .trim();
+
+  if (!cleaned) return undefined;
+
+  // UI-barát: ne legyen túl hosszú, és ne legyen “nyújtott” mondatfüzér
+  const sliced = cleaned.length > maxLen ? cleaned.slice(0, maxLen).trim() : cleaned;
+
+  // Finom: ha levágtuk, ne maradjon fél szó végén
+  const safe = sliced.replace(/\s+\S*$/, (tail) => (sliced.length >= maxLen ? "" : tail)).trim() || sliced;
+
+  // Ne legyen “lebegő” zárójelezés / felesleges lezárás
+  const final = safe.replace(/[—–-]\s*$/g, "").trim();
+
+  return final || undefined;
+}
+
 /* ────────────────────────────────────────────────────────────── */
 /* Salient elements                                               */
 /* ────────────────────────────────────────────────────────────── */
@@ -43,28 +71,16 @@ function normalizeSalientElements(raw: unknown): SalientElement[] {
 
   const cleaned: SalientElement[] = [];
 
-  arr.forEach((item: unknown, index: number) => {
+  arr.forEach((item: unknown) => {
     if (!item || typeof item !== "object") return;
 
-    const key =
-      typeof (item as any).key === "string"
-        ? (item as any).key.trim()
-        : "";
-
-    const label =
-      typeof (item as any).label === "string"
-        ? (item as any).label.trim()
-        : "";
+    const key = typeof (item as any).key === "string" ? (item as any).key.trim() : "";
+    const label = typeof (item as any).label === "string" ? (item as any).label.trim() : "";
 
     if (!key || !label) return;
 
-    const evidenceRaw: unknown[] = Array.isArray((item as any).evidence)
-      ? (item as any).evidence
-      : [];
-
-    const evidence: CleanEvidence[] = evidenceRaw
-      .map(toRawEvidence)
-      .filter(isCleanEvidence);
+    const evidenceRaw: unknown[] = Array.isArray((item as any).evidence) ? (item as any).evidence : [];
+    const evidence: CleanEvidence[] = evidenceRaw.map(toRawEvidence).filter(isCleanEvidence);
 
     if (evidence.length === 0) return;
 
@@ -77,7 +93,7 @@ function normalizeSalientElements(raw: unknown): SalientElement[] {
   indexed.sort((a, b) => {
     const aPath = a.item.evidence[0]?.path ?? "";
     const bPath = b.item.evidence[0]?.path ?? "";
-    if (aPath !== bPath) return aPath.localeCompare(bPath, "en");
+    if (aPath !== bPath) return aPath.localeCompare(bPath, "hu");
 
     const aLabel = a.item.label ?? "";
     const bLabel = b.item.label ?? "";
@@ -85,7 +101,7 @@ function normalizeSalientElements(raw: unknown): SalientElement[] {
 
     const aKey = a.item.key ?? "";
     const bKey = b.item.key ?? "";
-    if (aKey !== bKey) return aKey.localeCompare(bKey, "en");
+    if (aKey !== bKey) return aKey.localeCompare(bKey, "hu");
 
     return a.index - b.index;
   });
@@ -100,7 +116,7 @@ function normalizeSalientElements(raw: unknown): SalientElement[] {
 function isDirectionCandidate(x: unknown): x is DirectionCandidate {
   if (!x || typeof x !== "object") return false;
   const o = x as any;
-  return typeof o.slug === "string" && typeof o.score === "number";
+  return typeof o.slug === "string" && typeof o.score === "number" && Number.isFinite(o.score);
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -117,43 +133,43 @@ export function normalizeLatentPayload(raw: unknown): any {
     (obj as any).candidates ??
     [];
 
-  const direction_candidates: DirectionCandidate[] = Array.isArray(candidatesRaw)
+  const parsedCandidates: DirectionCandidate[] = Array.isArray(candidatesRaw)
     ? (candidatesRaw as unknown[])
         .map((it: unknown): DirectionCandidate | null => {
           if (!it || typeof it !== "object") return null;
 
-          const slug =
-            typeof (it as any).slug === "string"
-              ? (it as any).slug.trim()
-              : "";
-
+          const slug = typeof (it as any).slug === "string" ? (it as any).slug.trim() : "";
           if (!slug) return null;
 
-          const score =
+          const scoreRaw =
             typeof (it as any).score === "number"
               ? (it as any).score
               : typeof (it as any).weight === "number"
               ? (it as any).weight
               : 0;
 
-          const why =
-            typeof (it as any).why === "string"
-              ? (it as any).why
-              : typeof (it as any).reason === "string"
-              ? (it as any).reason
-              : undefined;
+          const score = clamp01(scoreRaw);
+
+          const why = sanitizeWhy((it as any).why ?? (it as any).reason, 140);
 
           return { slug, score, why };
         })
         .filter((x): x is DirectionCandidate => x !== null && isDirectionCandidate(x))
     : [];
 
+  // Dedupe by slug: keep best score (stable)
+  const bestBySlug = new Map<string, DirectionCandidate>();
+  for (const c of parsedCandidates) {
+    const prev = bestBySlug.get(c.slug);
+    if (!prev || c.score > prev.score) bestBySlug.set(c.slug, c);
+  }
+
+  const direction_candidates = Array.from(bestBySlug.values());
   direction_candidates.sort((a, b) => b.score - a.score);
+
   const trimmed = direction_candidates.slice(0, 10);
 
-  const salient_elements = normalizeSalientElements(
-    (obj as any).salient_elements
-  );
+  const salient_elements = normalizeSalientElements((obj as any).salient_elements);
 
   return {
     ...obj,
