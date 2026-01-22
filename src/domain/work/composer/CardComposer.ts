@@ -6,7 +6,7 @@ import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
 const MODEL = process.env.OPENAI_WORK_MODEL ?? "gpt-4o-mini";
 const OPENAI_TIMEOUT_MS = 15000;
 export const COMPOSE_MAX_ATTEMPTS = 3;
-const BANNED_PROMPT_TOKENS = ["szoveg", "irodalom", "narrativ"];
+const BANNED_PROMPT_TOKENS = ["szoveg", "irodalom", "narrativ", "szimbolum", "metafora", "elbeszeles", "narracio"];
 
 type ComposeResult = {
   lead_in: string;
@@ -46,6 +46,10 @@ function normalizeForCheck(input: string): string {
   return stripDiacritics((input ?? "").toLowerCase());
 }
 
+function normalizeForMatch(input: string): string {
+  return normalizeForCheck(input).replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function containsBannedDiscourse(prompt: string): boolean {
   const t = normalizeForCheck(prompt);
   return BANNED_PROMPT_TOKENS.some((token) => new RegExp(`\\b${token}\\w*\\b`).test(t));
@@ -54,6 +58,13 @@ function containsBannedDiscourse(prompt: string): boolean {
 function mentionsDreamContext(prompt: string): boolean {
   const t = normalizeForCheck(prompt);
   return /\balom\w*\b/.test(t);
+}
+
+function containsExactPhrase(prompt: string, phrase: string): boolean {
+  const normPrompt = normalizeForMatch(prompt);
+  const normPhrase = normalizeForMatch(phrase);
+  if (!normPrompt || !normPhrase) return false;
+  return (` ${normPrompt} `).includes(` ${normPhrase} `);
 }
 
 async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
@@ -77,7 +88,9 @@ function buildSystemPrompt(args: { mode: "normal" | "gentle"; strict?: boolean }
     "- prompt: exactly one sentence, either a single question (one '?') or a short task (no '?').",
     "- No lists, no bullet points, no colons/semicolons.",
     "- If material.type is intent, use material.intent_label only as a topic focus, not as a quote or direct question.",
+    "- Never reuse material.intent_label verbatim in the prompt.",
     "- If intent_hint is provided, use it only to nudge framing. Do not quote it or turn it into a direct question source.",
+    "- Never reuse intent_hint verbatim in the prompt.",
     "- No interpretation, no diagnosis, no meaning claims.",
     "- Avoid non-dream discourse (szoveg, kulonbozo szovegek, irodalom, narrativa).",
     "- Ground the prompt in this dream / this session. Refer to the dream context explicitly.",
@@ -176,7 +189,15 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
         if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
         return null;
       }
-      if (containsBannedDiscourse(prompt) || !mentionsDreamContext(prompt)) {
+      const intentLabel = args.selected.material.intent_label ?? "";
+      if (containsBannedDiscourse(prompt) || containsBannedDiscourse(leadIn) || !mentionsDreamContext(prompt)) {
+        if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
+        return null;
+      }
+      if (
+        (intentLabel && containsExactPhrase(prompt, intentLabel)) ||
+        (args.intent_hint && containsExactPhrase(prompt, args.intent_hint))
+      ) {
         if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
         return null;
       }

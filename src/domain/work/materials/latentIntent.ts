@@ -30,8 +30,8 @@ function buildIntentCandidate(args: {
 
   const anchor = args.anchorKeyFn(slot);
   const intentKey = `${args.keyPrefix}:${anchor || stableHash(slot)}`;
-  const label = slot;
-  const textSnippet = clampText(`${args.labelPrefix}: ${slot}`, 200);
+  const label = clampText(slot, 120);
+  const textSnippet = clampText(`${args.labelPrefix}: ${label}`, 200);
 
   return {
     type: "intent",

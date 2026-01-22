@@ -103,9 +103,11 @@ function extractMaterialsFromObservation(payload: any) {
     const key = anchorKey(label);
     if (!shouldKeepAnchorKey(key)) continue;
     if (!key) continue;
+    const snippet = toSnippet(item);
+    const text_snippet = shouldKeepAnchorLabel(snippet) ? snippet : label;
     anchors.push({
       type: "anchor",
-      text_snippet: toSnippet(item) || label,
+      text_snippet,
       anchor_keys: [key],
     });
   }
