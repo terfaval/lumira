@@ -106,15 +106,21 @@ export async function POST(req: Request) {
   const payload = (workBlock.data as any)?.payload ?? null;
   const prompt = extractPromptFromPayload(payload);
   const anchor_keys = extractAnchorKeysFromPayload(payload);
+  let ledger_error = false;
   if (prompt && anchor_keys.length > 0) {
-    await insertLedgerEntry(supabase, {
-      user_id,
-      session_id,
-      work_block_id,
-      anchor_keys,
-      question_hash: normalizeQuestionHash(prompt),
-    });
+    try {
+      await insertLedgerEntry(supabase, {
+        user_id,
+        session_id,
+        work_block_id,
+        anchor_keys,
+        question_hash: normalizeQuestionHash(prompt),
+      });
+    } catch (e: any) {
+      ledger_error = true;
+      console.warn("ledger insert failed", e?.message ?? e);
+    }
   }
 
-  return NextResponse.json({ ok: true, answer_id: inserted.data.id });
+  return NextResponse.json({ ok: true, answer_id: inserted.data.id, ledger_error });
 }

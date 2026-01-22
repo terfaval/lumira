@@ -11,7 +11,7 @@ import {
 import { ensureAnchorsRanked } from "@/src/orchestration/ensureAnchorsRanked";
 import { recommendDirectionsFromLatent } from "@/src/domain/directions/recommendDirectionsFromLatent";
 import { selectCardMaterial } from "@/src/domain/work/selector/CardMaterialSelector";
-import { composeCard } from "@/src/domain/work/composer/CardComposer";
+import { COMPOSE_MAX_ATTEMPTS, composeCard } from "@/src/domain/work/composer/CardComposer";
 import { evaluateSafety } from "@/src/domain/work/safety/SafetyGate";
 import { buildStopSignal } from "@/src/domain/work/stop/StopEngine";
 import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
@@ -192,6 +192,56 @@ function buildFallbackSelectionTrace(args: {
   };
 }
 
+function sanitizeFallbackSnippet(input: string): string {
+  return (input ?? "")
+    .replace(/[?.!;:,"\"]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildFallbackCompose(args: { selected: ReturnType<typeof selectCardMaterial>["selected"] }): {
+  lead_in: string;
+  prompt: string;
+  direction_slug: string | null;
+  group_tags: string[];
+  compose_trace: Partial<TracePayload["model"]>;
+} {
+  const selected = args.selected;
+  const snippet = sanitizeFallbackSnippet(selected?.material?.text_snippet ?? "");
+  const safeSnippet = snippet || "ez";
+
+  let prompt = "Mi az egyetlen kerdes amivel most tovabb tudnal menni ebbol?";
+  if (selected?.material?.type === "anchor") {
+    prompt = `Mi a legelobb jelentese szamodra ennek ${safeSnippet}?`;
+  } else if (selected?.material?.type === "event") {
+    prompt = `Mi a legfontosabb mozzanat szamodra ebben ${safeSnippet}?`;
+  }
+
+  return {
+    lead_in: "Roviden megallunk ennel a resznel.",
+    prompt,
+    direction_slug: selected?.direction?.slug ?? null,
+    group_tags: selected?.direction?.group_tags ?? [],
+    compose_trace: {
+      name: "composer_fallback",
+      temperature: 0,
+      retries: COMPOSE_MAX_ATTEMPTS - 1,
+      parse_fail: true,
+    },
+  };
+}
+
+async function isFirstQuestion(supabase: any, sessionId: string, userId: string): Promise<boolean> {
+  const { count, error } = await supabase
+    .from("work_versions")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", sessionId)
+    .eq("user_id", userId);
+
+  if (error) return false;
+  return (count ?? 0) === 0;
+}
+
 async function upsertWorkLatest(supabase: any, session_id: string, user_id: string, work_version_id: string) {
   const { error } = await supabase
     .from("work_latest")
@@ -358,21 +408,26 @@ export async function POST(req: Request) {
       } satisfies NextResponsePayload);
     }
 
-    const composed = await composeCard({ selected: selectorResult.selected });
+    let composed = await composeCard({ selected: selectorResult.selected });
     if (!composed) {
-      const trace: TracePayload = {
-        ...traceBase,
-        selection: selectorResult.selection_trace ?? selectorResult.selected.selection_trace,
-        model: { name: "composer", parse_fail: true },
-        stop: { reason_code: "model_failure", triggered_by: "composer" },
-      };
+      const firstQuestion = await isFirstQuestion(supabase, sessionId, userId);
+      if (firstQuestion) {
+        composed = buildFallbackCompose({ selected: selectorResult.selected });
+      } else {
+        const trace: TracePayload = {
+          ...traceBase,
+          selection: selectorResult.selection_trace ?? selectorResult.selected.selection_trace,
+          model: { name: "composer", parse_fail: true },
+          stop: { reason_code: "model_failure", triggered_by: "composer" },
+        };
 
-      const stop = buildStopSignal("model_failure");
-      return NextResponse.json({
-        request_id,
-        status: "stop",
-        stop_signal: { ...stop, trace },
-      } satisfies NextResponsePayload);
+        const stop = buildStopSignal("model_failure");
+        return NextResponse.json({
+          request_id,
+          status: "stop",
+          stop_signal: { ...stop, trace },
+        } satisfies NextResponsePayload);
+      }
     }
 
     const selectionTrace = selectorResult.selection_trace ?? selectorResult.selected.selection_trace;

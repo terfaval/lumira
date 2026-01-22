@@ -4,6 +4,7 @@ import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
 
 const MODEL = process.env.OPENAI_WORK_MODEL ?? "gpt-4o-mini";
 const OPENAI_TIMEOUT_MS = 15000;
+export const COMPOSE_MAX_ATTEMPTS = 3;
 
 type ComposeResult = {
   lead_in: string;
@@ -49,7 +50,7 @@ async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: numbe
   }
 }
 
-function buildSystemPrompt(args: { mode: "normal" | "gentle" }) {
+function buildSystemPrompt(args: { mode: "normal" | "gentle"; strict?: boolean }) {
   return [
     "You are an API that outputs strict JSON only.",
     "Output language: Hungarian.",
@@ -60,6 +61,15 @@ function buildSystemPrompt(args: { mode: "normal" | "gentle" }) {
     "- prompt: exactly one sentence, either a single question (one '?') or a short task (no '?').",
     "- No lists, no bullet points, no colons/semicolons.",
     "- No interpretation, no diagnosis, no meaning claims.",
+    "",
+    ...(args.strict
+      ? [
+          "Return valid JSON only.",
+          "prompt must be a single Hungarian sentence.",
+          "No punctuation besides one optional ? at the end.",
+          "No colons, semicolons, newlines, or list markers.",
+        ]
+      : []),
     "",
     "Tone:",
     args.mode === "gentle"
@@ -90,7 +100,6 @@ function parseModelJSON(raw: string): any | null {
 
 export async function composeCard(args: { selected: Selected }): Promise<ComposeResult | null> {
   const openai = openaiServer();
-  const system = buildSystemPrompt({ mode: args.selected.mode });
   const user = {
     material: {
       type: args.selected.material.type,
@@ -105,44 +114,55 @@ export async function composeCard(args: { selected: Selected }): Promise<Compose
     },
   };
 
-  try {
-    const completion = await withTimeout(
-      (signal) =>
-        openai.chat.completions.create(
-          {
-            model: MODEL,
-            temperature: 0.25,
-            response_format: { type: "json_object" },
-            messages: [
-              { role: "system", content: system },
-              { role: "user", content: JSON.stringify(user) },
-            ],
-            max_tokens: 400,
-          },
-          { signal }
-        ),
-      OPENAI_TIMEOUT_MS
-    );
+  for (let attempt = 1; attempt <= COMPOSE_MAX_ATTEMPTS; attempt++) {
+    const system = buildSystemPrompt({ mode: args.selected.mode, strict: attempt > 1 });
+    try {
+      const completion = await withTimeout(
+        (signal) =>
+          openai.chat.completions.create(
+            {
+              model: MODEL,
+              temperature: 0.25,
+              response_format: { type: "json_object" },
+              messages: [
+                { role: "system", content: system },
+                { role: "user", content: JSON.stringify(user) },
+              ],
+              max_tokens: 400,
+            },
+            { signal }
+          ),
+        OPENAI_TIMEOUT_MS
+      );
 
-    const raw = completion.choices?.[0]?.message?.content ?? "";
-    const parsed = parseModelJSON(raw);
-    if (!parsed) return null;
+      const raw = completion.choices?.[0]?.message?.content ?? "";
+      const parsed = parseModelJSON(raw);
+      if (!parsed) {
+        if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
+        return null;
+      }
 
-    const leadInRaw = typeof parsed.lead_in === "string" ? parsed.lead_in : "";
-    const promptRaw = typeof parsed.prompt === "string" ? parsed.prompt : "";
-    const leadIn = cleanLeadIn(leadInRaw);
-    const prompt = promptRaw.trim();
+      const leadInRaw = typeof parsed.lead_in === "string" ? parsed.lead_in : "";
+      const promptRaw = typeof parsed.prompt === "string" ? parsed.prompt : "";
+      const leadIn = cleanLeadIn(leadInRaw);
+      const prompt = promptRaw.trim();
 
-    if (!prompt || !isSingleSentencePrompt(prompt)) return null;
+      if (!prompt || !isSingleSentencePrompt(prompt)) {
+        if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
+        return null;
+      }
 
-    return {
-      lead_in: clampText(leadIn, 720),
-      prompt: clampText(prompt, 180),
-      direction_slug: args.selected.direction.slug ?? null,
-      group_tags: args.selected.direction.group_tags ?? [],
-      compose_trace: { name: MODEL, temperature: 0.25 },
-    };
-  } catch {
-    return null;
+      return {
+        lead_in: clampText(leadIn, 720),
+        prompt: clampText(prompt, 180),
+        direction_slug: args.selected.direction.slug ?? null,
+        group_tags: args.selected.direction.group_tags ?? [],
+        compose_trace: { name: MODEL, temperature: 0.25, retries: attempt - 1 },
+      };
+    } catch {
+      return null;
+    }
   }
+
+  return null;
 }
