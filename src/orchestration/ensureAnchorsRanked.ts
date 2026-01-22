@@ -63,8 +63,6 @@ export async function ensureAnchorsRanked(
 
   const observationPayload = observationLatest?.payload ?? null;
 
-  // v0 clean schema: latent lives in latent_versions + latent_latest only
-  // (no dream_session_summaries fallback)
   const latentPayload = latentLatest?.payload ?? null;
 
   const usedAnchorKeys = Array.from(new Set((recentAnchorKeys ?? []).map((k) => k.trim()).filter(Boolean))).sort();
@@ -102,7 +100,7 @@ export async function ensureAnchorsRanked(
     payload,
   });
 
-  // v0 clean schema: anchor_latest stores only anchor_version_id (pointer)
+  // v0 clean schema: dream_anchor_latest stores only version_id (pointer)
   await upsertAnchorLatest(supabase, {
     session_id: params.session_id,
     user_id: params.user_id,

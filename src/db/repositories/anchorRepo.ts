@@ -16,7 +16,7 @@ export async function insertAnchorVersionIfMissing(
 ): Promise<AnchorVersion> {
   // IMPORTANT: under RLS, always scope reads by user_id as well.
   const existing = await supabase
-    .from("anchor_versions")
+    .from("dream_anchor_versions")
     .select("*")
     .eq("session_id", params.session_id)
     .eq("user_id", params.user_id)
@@ -35,7 +35,7 @@ export async function insertAnchorVersionIfMissing(
   }
 
   const ins = await supabase
-    .from("anchor_versions")
+    .from("dream_anchor_versions")
     .insert({
       session_id: params.session_id,
       user_id: params.user_id,
@@ -52,7 +52,7 @@ export async function insertAnchorVersionIfMissing(
   if (code !== "23505") throw ins.error;
 
   const again = await supabase
-    .from("anchor_versions")
+    .from("dream_anchor_versions")
     .select("*")
     .eq("session_id", params.session_id)
     .eq("user_id", params.user_id)
@@ -60,13 +60,13 @@ export async function insertAnchorVersionIfMissing(
     .maybeSingle();
 
   if (again.error) throw again.error;
-  if (!again.data) throw new Error("anchor_versions upsert race: row still missing after 23505");
+  if (!again.data) throw new Error("dream_anchor_versions upsert race: row still missing after 23505");
   return again.data as AnchorVersion;
 }
 
 /**
- * v0 clean: latest table is POINTER-ONLY.
- * Payload MUST live in anchor_versions.payload, never in anchor_latest.
+ * v0 clean: dream_anchor_latest is POINTER-ONLY.
+ * Payload MUST live in dream_anchor_versions.payload, never in dream_anchor_latest.
  */
 export async function upsertAnchorLatest(
   supabase: SupabaseClient,

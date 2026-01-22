@@ -202,53 +202,10 @@ function extractIntentHint(latentPayload: any): string | null {
   return null;
 }
 
-function coerceLatentPayload(args: {
-  latentLatest: any;
-  summaryLatent: any;
-}): { payload: any | null; source: "latent_latest" | "summary" | "none"; payload_type: "object" | "string" | "null" } {
-  const rawLatest = args.latentLatest?.payload ?? null;
-  if (rawLatest !== null && rawLatest !== undefined) {
-    return { payload: parseLatentPayload(rawLatest), source: "latent_latest", payload_type: latentPayloadType(rawLatest) };
-  }
-
-  if (args.summaryLatent !== null && args.summaryLatent !== undefined) {
-    return { payload: parseLatentPayload(args.summaryLatent), source: "summary", payload_type: latentPayloadType(args.summaryLatent) };
-  }
-
-  return { payload: null, source: "none", payload_type: "null" };
-}
-
 function latentPayloadType(raw: unknown): "object" | "string" | "null" {
   if (typeof raw === "string") return "string";
   if (raw && typeof raw === "object") return "object";
   return "null";
-}
-
-function parseLatentPayload(raw: unknown): any | null {
-  if (typeof raw === "string") {
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" ? parsed : null;
-    } catch {
-      return null;
-    }
-  }
-  if (raw && typeof raw === "object") return raw;
-  return null;
-}
-
-async function fetchSessionSummary(supabase: any, sessionId: string, userId: string): Promise<any | null> {
-  try {
-    const { data } = await supabase
-      .from("dream_session_summaries")
-      .select("latent_analysis")
-      .eq("session_id", sessionId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    return data?.latent_analysis ?? null;
-  } catch {
-    return null;
-  }
 }
 
 function buildRequestTrace(args: {
@@ -401,17 +358,15 @@ export async function POST(req: Request) {
     const request_id = crypto.randomUUID();
     const client_request_id = typeof body.client_request_id === "string" ? body.client_request_id.trim() : null;
 
-    const [catalog, rawDreamText, observationLatest, latentLatest, summaryLatent, anchorLatest, recentBlocks, recentAnchorKeys] =
-      await Promise.all([
-        fetchDirectionCatalog(supabase),
-        fetchLatestRawDreamEntry(supabase, userId, sessionId),
-        fetchObservationLatestWithPayloadAndId(supabase, userId, sessionId),
-        fetchLatentPayloadLatest(supabase, userId, sessionId),
-        fetchSessionSummary(supabase, sessionId, userId),
-        fetchAnchorLatestWithPayloadAndId(supabase, userId, sessionId),
-        fetchRecentBlocks(supabase, sessionId, userId),
-        listRecentAnchorKeys(supabase, { session_id: sessionId, user_id: userId, limit: 120 }),
-      ]);
+    const [catalog, rawDreamText, observationLatest, latentLatest, anchorLatest, recentBlocks, recentAnchorKeys] = await Promise.all([
+      fetchDirectionCatalog(supabase),
+      fetchLatestRawDreamEntry(supabase, userId, sessionId),
+      fetchObservationLatestWithPayloadAndId(supabase, userId, sessionId),
+      fetchLatentPayloadLatest(supabase, userId, sessionId),
+      fetchAnchorLatestWithPayloadAndId(supabase, userId, sessionId),
+      fetchRecentBlocks(supabase, sessionId, userId),
+      listRecentAnchorKeys(supabase, { session_id: sessionId, user_id: userId, limit: 120 }),
+    ]);
 
     let anchorPayload = anchorLatest?.payload ?? null;
     if (!anchorPayload) {
@@ -451,10 +406,9 @@ export async function POST(req: Request) {
       } satisfies NextResponsePayload);
     }
 
-    const latentCoerce = coerceLatentPayload({ latentLatest, summaryLatent });
-    const latentPayload = latentCoerce.payload;
-    traceBase.inputs.latent_source = latentCoerce.source;
-    traceBase.inputs.latent_payload_type = latentCoerce.payload_type;
+    const latentPayload = latentLatest ?? null;
+    traceBase.inputs.latent_source = latentPayload ? "latent_latest" : "none";
+    traceBase.inputs.latent_payload_type = latentPayloadType(latentPayload);
     const intentHint = extractIntentHint(latentPayload);
     if (intentHint) traceBase.inputs.intent_hint = intentHint;
     const directionCandidates = recommendDirectionsFromLatent({

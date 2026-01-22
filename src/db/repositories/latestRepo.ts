@@ -39,8 +39,8 @@ export async function fetchObservationLatestWithPayloadAndId(
 }
 
 /**
- * v0 clean: anchor_latest only points to anchor_versions.
- * We fetch the pointer then join payload from anchor_versions.
+ * v0 clean: dream_anchor_latest only points to dream_anchor_versions.
+ * We fetch the pointer then join payload from dream_anchor_versions.
  */
 export async function fetchAnchorLatestWithPayloadAndId(
   supabase: SupabaseClient,
