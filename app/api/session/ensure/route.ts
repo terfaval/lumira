@@ -80,11 +80,12 @@ export async function POST(req: Request) {
     // -------------------------------------------------------------------------
     // Run flags (guest: minimal pipeline)
     // -------------------------------------------------------------------------
-    const runObserve = !isGuest && body.run?.observe !== false;
-    const runAnchors = !isGuest && body.run?.anchors !== false;
-    const runSessionIndex = !isGuest && body.run?.session_index !== false;
-    const runLatent = !isGuest && body.run?.latent !== false;
-    const runFrame = body.run?.frame !== false; // guestben is true
+    const runObserve = body.run?.observe !== false;
+const runAnchors = body.run?.anchors !== false;
+const runSessionIndex = body.run?.session_index !== false;
+const runLatent = body.run?.latent !== false;
+const runFrame = body.run?.frame !== false;
+
 
     // -------------------------------------------------------------------------
     // Validate session ownership
