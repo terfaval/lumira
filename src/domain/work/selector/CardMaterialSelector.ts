@@ -51,6 +51,12 @@ export type SessionState = {
 const SIMILARITY_THRESHOLD = 0.85;
 const RULED_OUT_LIMIT = 8;
 
+type ScoredCandidate = MaterialCandidate & { id: string; similarity_max: number };
+
+function isScoredCandidate(x: unknown): x is ScoredCandidate {
+  return !!x && typeof x === "object" && typeof (x as any).id === "string" && typeof (x as any).similarity_max === "number";
+}
+
 function normalizeText(s: string): string {
   return (s ?? "")
     .toLowerCase()
@@ -103,11 +109,10 @@ function buildDirectionProfile(row: DirectionCatalogRow | null, mode: "normal" |
   }
   const toneTags = Array.isArray(row.content?.ai_contract?.tone_tags) ? row.content.ai_contract.tone_tags : [];
   const tone = toneTags.includes("gentle") || mode === "gentle" ? "gentle" : "neutral";
-  const questionStyle =
-    typeof row.content?.method_spec?.question_style === "string" ? row.content.method_spec.question_style : "";
+  const questionStyle = typeof row.content?.method_spec?.question_style === "string" ? row.content.method_spec.question_style : "";
   return {
     slug: row.slug,
-    group_tags: Array.isArray(row.tags) ? row.tags.filter((t) => typeof t === "string") : [],
+    group_tags: Array.isArray((row as any).tags) ? (row as any).tags.filter((t: unknown) => typeof t === "string") : [],
     style_hints: { tone },
     question_archetypes: questionStyle ? [questionStyle] : [],
   };
@@ -133,6 +138,41 @@ function resolveDirectionSlug(
   return catalog[0] ?? null;
 }
 
+function safeSnippet(x: unknown): string {
+  return typeof x === "string" ? x : "";
+}
+
+function asBaseScored(selectionBase: MaterialCandidate | ScoredCandidate | null | undefined, recentPrompts: string[]): {
+  type: MaterialCandidate["type"];
+  id: string;
+  text_snippet: string;
+  anchor_keys?: string[];
+  similarity_max: number;
+} {
+  if (!selectionBase) {
+    return { type: "seed", id: "none", text_snippet: "", similarity_max: 0 };
+  }
+
+  if (isScoredCandidate(selectionBase)) {
+    return {
+      type: selectionBase.type,
+      id: selectionBase.id,
+      text_snippet: safeSnippet(selectionBase.text_snippet),
+      anchor_keys: selectionBase.anchor_keys,
+      similarity_max: selectionBase.similarity_max,
+    };
+  }
+
+  const snippet = safeSnippet(selectionBase.text_snippet);
+  return {
+    type: selectionBase.type,
+    id: materialId(selectionBase),
+    text_snippet: snippet,
+    anchor_keys: selectionBase.anchor_keys,
+    similarity_max: snippet ? similarityMax(snippet, recentPrompts) : 0,
+  };
+}
+
 export function selectCardMaterial(args: {
   sessionState: SessionState;
   directionSlug?: string | null;
@@ -146,67 +186,67 @@ export function selectCardMaterial(args: {
   const profile = buildDirectionProfile(directionRow, sessionState.mode);
 
   const blocked = new Set((args.prefs?.blocked_group_tags ?? []).map((t) => String(t)));
-  const allBlocked =
-    profile.group_tags.length > 0 && profile.group_tags.every((tag) => blocked.has(String(tag)));
+  const allBlocked = profile.group_tags.length > 0 && profile.group_tags.every((tag) => blocked.has(String(tag)));
 
   const ruled_out: Array<{ why: string; candidate: string }> = [];
-  const candidates: Array<MaterialCandidate & { id: string; similarity_max: number }> = [];
+  const candidates: ScoredCandidate[] = [];
 
-  const seedCandidate =
+  const seedCandidate: MaterialCandidate | null =
     args.seed && args.seed.text.trim()
-      ? ({
+      ? {
           type: "seed",
           text_snippet: args.seed.text.trim().slice(0, 320),
           seed_kind: args.seed.kind,
-        } as MaterialCandidate)
+        }
       : null;
 
-  const allCandidates = [
+  const allCandidates: MaterialCandidate[] = [
     ...(seedCandidate ? [seedCandidate] : []),
     ...(sessionState.anchors ?? []),
     ...(sessionState.events ?? []),
   ];
 
+  const recentPrompts = sessionState.recent_prompts ?? [];
+
   for (const candidate of allCandidates) {
     const id = materialId(candidate);
-    const simMax = similarityMax(candidate.text_snippet, sessionState.recent_prompts ?? []);
+    const snippet = candidate.text_snippet ?? "";
+    const simMax = snippet ? similarityMax(snippet, recentPrompts) : 0;
 
     if (candidate.anchor_keys?.some((k) => sessionState.ledger_used_anchor_keys.has(k))) {
-      ruled_out.push({ why: "ledger_repeat", candidate: candidate.text_snippet });
+      ruled_out.push({ why: "ledger_repeat", candidate: snippet });
       continue;
     }
 
     if (sessionState.recent_material_ids.includes(id)) {
-      ruled_out.push({ why: "recent_material_repeat", candidate: candidate.text_snippet });
+      ruled_out.push({ why: "recent_material_repeat", candidate: snippet });
       continue;
     }
 
     if (simMax >= SIMILARITY_THRESHOLD) {
-      ruled_out.push({ why: "low_novelty", candidate: candidate.text_snippet });
+      ruled_out.push({ why: "low_novelty", candidate: snippet });
       continue;
     }
 
     candidates.push({ ...candidate, id, similarity_max: simMax });
   }
 
-  const selectionBase = candidates[0] ?? allCandidates[0];
+  // Base trace candidate:
+  // - ha van valid "non-ruled-out" jelölt, vegyük azt,
+  // - különben a legelső allCandidate (seed/anchor/event), vagy null.
+  const selectionBase = (candidates[0] as ScoredCandidate | undefined) ?? (allCandidates[0] as MaterialCandidate | undefined) ?? null;
 
-  const baseSimilarity =
-    selectionBase && "similarity_max" in selectionBase
-      ? selectionBase.similarity_max
-      : selectionBase
-        ? similarityMax(selectionBase.text_snippet, sessionState.recent_prompts ?? [])
-        : 0;
+  const base = asBaseScored(selectionBase, recentPrompts);
 
   const selectionTrace: TracePayload["selection"] = {
-    material_type: selectionBase?.type ?? "seed",
-    material_id: selectionBase ? materialId(selectionBase) : "none",
-    anchor_keys: selectionBase?.anchor_keys,
+    material_type: base.type,
+    material_id: base.id,
+    anchor_keys: base.anchor_keys,
     direction_slug: profile.slug ?? null,
     group_tags: profile.group_tags ?? [],
     scores: {
-      similarity_max: baseSimilarity,
-      novelty: selectionBase ? 1 - baseSimilarity : 0,
+      similarity_max: base.similarity_max,
+      novelty: base.text_snippet ? 1 - base.similarity_max : 0,
     },
     ruled_out: ruled_out.slice(0, RULED_OUT_LIMIT),
   };
@@ -228,6 +268,17 @@ export function selectCardMaterial(args: {
 
   const chosen = sorted[0];
 
+  const chosenTrace: TracePayload["selection"] = {
+    ...selectionTrace,
+    material_type: chosen.type,
+    material_id: chosen.id,
+    anchor_keys: chosen.anchor_keys,
+    scores: {
+      similarity_max: chosen.similarity_max,
+      novelty: 1 - chosen.similarity_max,
+    },
+  };
+
   return {
     selected: {
       material: {
@@ -238,26 +289,8 @@ export function selectCardMaterial(args: {
       },
       direction: profile,
       mode: sessionState.mode,
-      selection_trace: {
-        ...selectionTrace,
-        material_type: chosen.type,
-        material_id: chosen.id,
-        anchor_keys: chosen.anchor_keys,
-        scores: {
-          similarity_max: chosen.similarity_max,
-          novelty: 1 - chosen.similarity_max,
-        },
-      },
+      selection_trace: chosenTrace,
     },
-    selection_trace: {
-      ...selectionTrace,
-      material_type: chosen.type,
-      material_id: chosen.id,
-      anchor_keys: chosen.anchor_keys,
-      scores: {
-        similarity_max: chosen.similarity_max,
-        novelty: 1 - chosen.similarity_max,
-      },
-    },
+    selection_trace: chosenTrace,
   };
 }
