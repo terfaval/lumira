@@ -10,6 +10,8 @@ export type TracePayload = {
     seed_kind?: "frame" | "work" | null;
     prefs_blocked_group_tags?: string[];
     intent_hint?: string | null;
+    latent_source?: "latent_latest" | "summary" | "none";
+    latent_payload_type?: "object" | "string" | "null";
   };
   selection: {
     material_type: "anchor" | "event" | "seed" | "intent";

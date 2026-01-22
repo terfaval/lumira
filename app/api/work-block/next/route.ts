@@ -202,6 +202,41 @@ function extractIntentHint(latentPayload: any): string | null {
   return null;
 }
 
+function coerceLatentPayload(args: {
+  latentLatest: any;
+  summaryLatent: any;
+}): { payload: any | null; source: "latent_latest" | "summary" | "none"; payload_type: "object" | "string" | "null" } {
+  const rawLatest = args.latentLatest?.payload ?? null;
+  if (rawLatest !== null && rawLatest !== undefined) {
+    return { payload: parseLatentPayload(rawLatest), source: "latent_latest", payload_type: latentPayloadType(rawLatest) };
+  }
+
+  if (args.summaryLatent !== null && args.summaryLatent !== undefined) {
+    return { payload: parseLatentPayload(args.summaryLatent), source: "summary", payload_type: latentPayloadType(args.summaryLatent) };
+  }
+
+  return { payload: null, source: "none", payload_type: "null" };
+}
+
+function latentPayloadType(raw: unknown): "object" | "string" | "null" {
+  if (typeof raw === "string") return "string";
+  if (raw && typeof raw === "object") return "object";
+  return "null";
+}
+
+function parseLatentPayload(raw: unknown): any | null {
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  if (raw && typeof raw === "object") return raw;
+  return null;
+}
+
 async function fetchSessionSummary(supabase: any, sessionId: string, userId: string): Promise<any | null> {
   try {
     const { data } = await supabase
@@ -415,7 +450,10 @@ export async function POST(req: Request) {
       } satisfies NextResponsePayload);
     }
 
-    const latentPayload = latentLatest?.payload ?? summaryLatent ?? null;
+    const latentCoerce = coerceLatentPayload({ latentLatest, summaryLatent });
+    const latentPayload = latentCoerce.payload;
+    traceBase.inputs.latent_source = latentCoerce.source;
+    traceBase.inputs.latent_payload_type = latentCoerce.payload_type;
     const intentHint = extractIntentHint(latentPayload);
     if (intentHint) traceBase.inputs.intent_hint = intentHint;
     const directionCandidates = recommendDirectionsFromLatent({
