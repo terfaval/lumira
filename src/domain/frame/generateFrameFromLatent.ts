@@ -65,6 +65,11 @@ export async function generateFrameFromLatent(args: {
     "- Nyitás javasolt formula: „Az álmodban ...”.",
     "- Megfigyelő hang: nincs diagnózis, nincs biztos jelentés-állítás.",
     "",
+    "TILOS sablonmondatok (ne használd őket sem szó szerint, sem nagyon hasonlóan):",
+    "- „Volt benne egy pillanat, amikor ...”",
+    "- „Közben észrevetted, hogyan ...”",
+    "- „Ha szeretnéd, választhatsz egy fókuszt ...”",
+    "",
     "Framing_text (rövid, feszes, nem ténylista):",
     "- 4–7 mondatban rajzolj tér-idő-ívet (2–3 csomópont).",
     "- Érzelem/reakció csak akkor, ha a megfigyelésekben (observation_payload) explicit szerepel; ne találj ki újat.",
@@ -483,15 +488,17 @@ function fallbackTitleFromAnchors(topAnchors: string[], dreamText: string): stri
 }
 
 function fallbackFraming(topAnchors: string[], dreamText: string): string {
+  // Keep it concrete + anchored; avoid generic AI filler.
   const a1 = topAnchors[0] ?? "egy hely";
-  const a2 = topAnchors[1] ?? "egy tárgy";
-  const a3 = topAnchors[2] ?? "egy szereplő";
-  const base = [
-    `Az álmodban ${a1} és ${a2} körül mozogtál, miközben ${a3} is feltűnt.`,
-    "Volt benne egy pillanat, amikor egyszerre lett erősebb a feszültség és a figyelmed is megélesedett.",
-    "Közben észrevetted, hogyan változott a hangulatod és a tested reakciója a jelenetek között.",
-    "Ha szeretnéd, választhatsz egy fókuszt a folytatáshoz: a legerősebb kép, a legfurcsább tárgy vagy a legintenzívebb pillanat.",
-  ];
-  const text = base.join(" ");
+  const a2 = topAnchors[1] ?? "egy szereplő";
+  const a3 = topAnchors[2] ?? "egy tárgy";
+  const a4 = topAnchors[3] ?? "";
+
+  const s1 = `Az álmodban ${a1} körül indultál, és ${a2} is végig jelen volt.`;
+  const s2 = `Közben ${a3} többször is előkerült, és ez képként megmaradt.`;
+  const s3 = a4 ? `Egy ponton ${a4} különösen élesen kiemelkedett.` : `A jelenetek gyorsan váltottak, mégis volt egy kapaszkodó részlet.`;
+  const s4 = `A végén dönthetsz: inkább ${a1} felől indulsz újra, vagy ${a3} felől nézed meg közelebbről?`;
+
+  const text = [s1, s2, s3, s4].join(" ");
   return sanitizeWhitespace(text);
 }

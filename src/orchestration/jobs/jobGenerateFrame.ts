@@ -13,6 +13,23 @@ import { recommendDirectionsFromLatent } from "@/src/domain/directions/recommend
 import { generateFrameFromLatent } from "@/src/domain/frame/generateFrameFromLatent";
 import { insertFrameVersionIfMissing, upsertFrameLatest } from "@/src/db/repositories/frameRepo";
 
+function looksMojibake(s: string): boolean {
+  // typical UTF-8 decoded as latin1 artifacts
+  return /Ã|Å|Å±|â€™|â€œ|â€|Â/.test(String(s ?? ""));
+}
+
+function oneSentence(s: string, max = 180): string {
+  const t = String(s ?? "").trim().replace(/\s+/g, " ");
+  if (!t) return "";
+  const first = t.split(/(?<=[.!?])\s+/)[0] || t;
+  return first.slice(0, max);
+}
+
+function fallbackWhy(slug: string, fromCatalog?: { title?: string } | null): string {
+  const label = String(fromCatalog?.title ?? "").trim() || slug;
+  return `Kapcsolódó irány: ${label}.`;
+}
+
 export async function jobGenerateFrame(args: {
   supabase: SupabaseClient;
   event: { id: string; user_id: string; session_id: string };
@@ -39,10 +56,9 @@ export async function jobGenerateFrame(args: {
   }
 
   const latentWhyMap = buildWhyMapFromLatentCandidates(latentLatest?.payload?.direction_candidates);
-  const jobWhyMap =
-    latentWhyMap.size === 0
-      ? await fetchLatestWhyMapFromJobs(supabase, event.user_id, event.session_id)
-      : new Map<string, string>();
+  // Always load jobWhyMap as a cheap, useful fallback (latent can be partial).
+  const jobWhyMap = await fetchLatestWhyMapFromJobs(supabase, event.user_id, event.session_id);
+ 
 
   // NOTE: v0 fallback is OFF, so dummy UUID is safe.
   // TODO(if allowFallbackWithoutLatent becomes true):
@@ -89,6 +105,7 @@ export async function jobGenerateFrame(args: {
       .select("content, created_at")
       .eq("session_id", event.session_id)
       .eq("user_id", event.user_id)
+      .in("kind", ["raw", "raw_entry"])
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -115,11 +132,14 @@ export async function jobGenerateFrame(args: {
     const recommended_directions = payload.recommended_slugs.map((slug) => {
       const fromRec = recommended.find((r) => r.slug === slug);
       const fromCatalog = catalog.find((row) => row.slug === slug);
-      const why =
+      let why =
         latentWhyMap.get(slug) ??
-        (latentWhyMap.size === 0 ? jobWhyMap.get(slug) : undefined) ??
+        jobWhyMap.get(slug) ??
         fromRec?.why ??
-        "Javasolt feldolgoz\u00c3\u00b3si ir\u00c3\u00a1ny a k\u00c3\u00b6vetkez\u00c5\u0091 l\u00c3\u00a9pcs\u00c5\u0091h\u00c3\u00b6z.";
+        fallbackWhy(slug, fromCatalog);
+
+      if (!why || looksMojibake(why)) why = fallbackWhy(slug, fromCatalog);
+      why = oneSentence(why, 180);
       return {
         slug,
         title: fromRec?.title ?? fromCatalog?.title ?? slug,

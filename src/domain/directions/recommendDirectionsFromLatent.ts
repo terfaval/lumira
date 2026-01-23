@@ -31,16 +31,9 @@ function hasAnyTag(row: DirectionCatalogRow, tags: string[]) {
   return tags.some((t) => set.has(t));
 }
 
-function looksLikeEnglishLeak(s: string): boolean {
-  const t = (s || "").toLowerCase();
-  // very cheap heuristic; this is UI microcopy so we want to avoid obvious EN bleed
-  const bad = ["meaning", "this suggests", "likely", "probably", "diagnosis", "symbol", "trauma", "anxiety"];
-  if (bad.some((w) => t.includes(w))) return true;
-
-  // lots of common EN function words -> likely EN
-  const enStops = [" the ", " and ", " or ", " to ", " of ", " in ", " with ", " on ", " for "];
-  const hit = enStops.reduce((acc, w) => acc + (t.includes(w) ? 1 : 0), 0);
-  return hit >= 2;
+function looksMojibake(s: string): boolean {
+  // typical UTF-8 decoded as latin1 artifacts
+  return /Ã|Å|Å±|â€™|â€œ|â€|Â/.test(String(s ?? ""));
 }
 
 function clampWhyOneSentence(s: string): string {
@@ -56,6 +49,18 @@ function clampWhyOneSentence(s: string): string {
   return one.replace(/[—–-]\s*$/g, "").trim();
 }
 
+function looksLikeEnglishLeak(s: string): boolean {
+  const t = (s || "").toLowerCase();
+  // very cheap heuristic; this is UI microcopy so we want to avoid obvious EN bleed
+  const bad = ["meaning", "this suggests", "likely", "probably", "diagnosis", "symbol", "trauma", "anxiety"];
+  if (bad.some((w) => t.includes(w))) return true;
+
+  // lots of common EN function words -> likely EN
+  const enStops = [" the ", " and ", " or ", " to ", " of ", " in ", " with ", " on ", " for "];
+  const hit = enStops.reduce((acc, w) => acc + (t.includes(w) ? 1 : 0), 0);
+  return hit >= 2;
+}
+
 /**
  * Normalize/guard `why` strings to stay:
  * - Hungarian
@@ -69,6 +74,7 @@ function normalizeWhy(raw: unknown, fallback: string): string {
   // one-sentence UI rule
   const one = clampWhyOneSentence(text);
   if (!one) return fallback;
+  if (looksMojibake(one)) return fallback;
 
   const lowered = one.toLowerCase();
 
@@ -84,12 +90,10 @@ function normalizeWhy(raw: unknown, fallback: string): string {
     "diagnózis",
     "szimbólum",
     "szimbol",
-    "tükröz",
     "trauma",
     "szorongásod",
     "szorongásaid",
     "elnyom",
-    "feldolgoz",
     "teráp",
     "pszicho",
     "patoló",
@@ -109,10 +113,27 @@ function normalizeWhy(raw: unknown, fallback: string): string {
 }
 
 // Short, consistent, diacritics-on fallbacks
-const WHY_FROM_LATENT_FALLBACK = "Óvatosan kapcsolódó irány a megfigyelések nyomán.";
+const WHY_FROM_LATENT_FALLBACK = "Kapcsolódó irány a nyitott szálak mentén.";
 const WHY_DEFAULT_SLUG_FALLBACK = "Biztonságos, egyszerű kiindulópont a következő lépéshez.";
-const WHY_TAG_POOL_FALLBACK = "Alap, nyugodt irány — jól bírja a lassú haladást is.";
+const WHY_TAG_POOL_FALLBACK = "Nyugodt alapirány — stabil, lassú haladáshoz is jó.";
 const WHY_CATALOG_FALLBACK = "Alapértelmezett irány — innen könnyű tovább lépni.";
+
+function catalogMicro(row: DirectionCatalogRow): string {
+  const micro =
+    typeof (row as any)?.content?.micro_description === "string"
+      ? String((row as any).content.micro_description).trim()
+      : "";
+  if (micro) return micro;
+  const desc = typeof row?.description === "string" ? row.description.trim() : "";
+  return desc;
+}
+
+function whyFromCatalog(row: DirectionCatalogRow, hardFallback: string): string {
+  const micro = catalogMicro(row);
+  if (!micro) return hardFallback;
+  // Normalize with the same guardrails; if it trips, use hard fallback
+  return normalizeWhy(micro, hardFallback);
+}
 
 export function recommendDirectionsFromLatent(args: {
   latent: LatentPayloadV0 | null;
@@ -141,7 +162,10 @@ export function recommendDirectionsFromLatent(args: {
     picked.push({
       slug: row.slug,
       title: row.title,
-      why: normalizeWhy((c as any)?.why, WHY_FROM_LATENT_FALLBACK),
+      // Prefer candidate why; fallback to catalog micro/desc (still normalized), then hard fallback.
+      why:
+        normalizeWhy((c as any)?.why, whyFromCatalog(row, WHY_FROM_LATENT_FALLBACK)) ??
+        whyFromCatalog(row, WHY_FROM_LATENT_FALLBACK),
     });
   }
 
@@ -156,7 +180,7 @@ export function recommendDirectionsFromLatent(args: {
     picked.push({
       slug: row.slug,
       title: row.title,
-      why: WHY_DEFAULT_SLUG_FALLBACK,
+      why: whyFromCatalog(row, WHY_DEFAULT_SLUG_FALLBACK),
     });
   }
 
@@ -171,7 +195,7 @@ export function recommendDirectionsFromLatent(args: {
       picked.push({
         slug: row.slug,
         title: row.title,
-        why: WHY_TAG_POOL_FALLBACK,
+        why: whyFromCatalog(row, WHY_TAG_POOL_FALLBACK),
       });
     }
   }
@@ -185,7 +209,7 @@ export function recommendDirectionsFromLatent(args: {
     picked.push({
       slug: row.slug,
       title: row.title,
-      why: WHY_CATALOG_FALLBACK,
+      why: whyFromCatalog(row, WHY_CATALOG_FALLBACK),
     });
   }
 
