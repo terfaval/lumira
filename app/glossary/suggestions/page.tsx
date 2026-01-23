@@ -5,6 +5,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
@@ -12,6 +13,7 @@ import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay"
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
+import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
 
 type TermCandidate = {
   id: string;
@@ -21,8 +23,13 @@ type TermCandidate = {
 };
 
 export default function SuggestionsPage() {
+  const router = useRouter();
   // require authentication - will redirect to login if not logged in
   const { loading } = useRequireAuth();
+
+  const [userId, setUserId] = useState<string | null>(null);
+  const [adminChecked, setAdminChecked] = useState(false);
+
   const [items, setItems] = useState<TermCandidate[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -34,11 +41,39 @@ export default function SuggestionsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState("");
 
+  // admin-only gate
   useEffect(() => {
-    if (!loading) {
+    if (loading) return;
+
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (cancelled) return;
+
+      const uid = data?.user?.id ?? null;
+      if (error || !uid) {
+        router.replace("/404");
+        return;
+      }
+      if (!isGlossaryAdmin(uid)) {
+        router.replace("/404");
+        return;
+      }
+
+      setUserId(uid);
+      setAdminChecked(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, router]);
+
+  useEffect(() => {
+    if (!loading && adminChecked) {
       void loadSuggestions();
     }
-  }, [loading]);
+  }, [loading, adminChecked]);
 
   async function loadSuggestions() {
     setBusy(true);
@@ -48,7 +83,7 @@ export default function SuggestionsPage() {
       .select("id, term, count, created_at")
       .order("count", { ascending: false });
     if (error) {
-      setErr(error.message || "Nem sikerult betolteni a javasolt elemeket.");
+      setErr(error.message || "Nem sikerült betölteni a javasolt elemeket.");
       setItems([]);
     } else {
       setItems((data as any) ?? []);
@@ -83,11 +118,16 @@ export default function SuggestionsPage() {
   }
 
   async function acceptSuggestion(item: TermCandidate) {
+    if (!userId) {
+      setErr("Nincs bejelentkezett felhasználó.");
+      return;
+    }
+
     setBusy(true);
     try {
       const { data: inserted, error } = await supabase
         .from("glossary_terms")
-        .insert({ canonical: item.term, canonical_key: anchorKey(item.term) })
+        .insert({ canonical: item.term, canonical_key: anchorKey(item.term), user_id: userId })
         .select("id")
         .single();
       if (error) throw error;
@@ -96,7 +136,7 @@ export default function SuggestionsPage() {
       if (note) {
         const { error: noteErr } = await supabase
           .from("glossary_notes")
-          .insert({ term_id: inserted.id, content: note });
+          .insert({ term_id: inserted.id, content: note, user_id: userId });
         if (noteErr) throw noteErr;
       }
 
@@ -106,23 +146,28 @@ export default function SuggestionsPage() {
       cancelEdit();
       await loadSuggestions();
     } catch (e: any) {
-      setErr(e?.message ?? "Nem sikerult frissiteni az elemet.");
+      setErr(e?.message ?? "Nem sikerült frissíteni az elemet.");
     } finally {
       setBusy(false);
     }
   }
 
   async function onDelete(id: string) {
-    const confirmed = window.confirm("Biztosan torlod ezt a javaslatot?");
+    const confirmed = window.confirm("Biztosan törlöd ezt a javaslatot?");
     if (!confirmed) return;
     setBusy(true);
     const { error } = await supabase.from("term_candidates").delete().eq("id", id);
     if (error) {
-      setErr(error.message || "Nem sikerult torolni a javaslatot.");
+      setErr(error.message || "Nem sikerült törölni a javaslatot.");
     } else {
       await loadSuggestions();
     }
     setBusy(false);
+  }
+
+  // while gate resolves, prevent flicker
+  if (!loading && !adminChecked) {
+    return <FullScreenLoadingOverlay open />;
   }
 
   return (
@@ -136,8 +181,8 @@ export default function SuggestionsPage() {
         <div className="stack-tight">
           <p className="section-title">Javasolt elemek</p>
           <p style={{ color: "var(--text-muted)" }}>
-            Ezek azok a fogalmak, amelyek tobbszor megjelentek, de meg nem irtal
-            hozzajuk jegyzetet. Elfogadassal bekerulnek az alomszotarba.
+            Ezek azok a fogalmak, amelyek többször megjelentek, de még nem írtál hozzájuk jegyzetet.
+            Elfogadással bekerülnek az álomszótárba.
           </p>
         </div>
       }
@@ -160,7 +205,7 @@ export default function SuggestionsPage() {
         >
           <input
             type="text"
-            placeholder="Kereses a nevben..."
+            placeholder="Keresés a névben..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="input"
@@ -170,7 +215,7 @@ export default function SuggestionsPage() {
         </div>
 
         {filteredItems.length === 0 ? (
-          <p style={{ color: "var(--text-muted)" }}>Nincs olyan javaslat, amely megfelel a szuresnek.</p>
+          <p style={{ color: "var(--text-muted)" }}>Nincs olyan javaslat, amely megfelel a szűrésnek.</p>
         ) : (
           <ul
             style={{
@@ -199,19 +244,11 @@ export default function SuggestionsPage() {
                       </label>
                     </div>
                     <div className="glossary-card-footer">
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={cancelEdit}
-                        disabled={busy}
-                      >
-                        Megse
+                      <button type="button" className="btn btn-secondary" onClick={cancelEdit} disabled={busy}>
+                        Mégse
                       </button>
-                      <PrimaryButton
-                        onClick={() => acceptSuggestion(item)}
-                        disabled={busy}
-                      >
-                        Elfogadas
+                      <PrimaryButton onClick={() => acceptSuggestion(item)} disabled={busy}>
+                        Elfogadás
                       </PrimaryButton>
                     </div>
                   </GlassCardSurface>
@@ -226,21 +263,11 @@ export default function SuggestionsPage() {
                       </div>
                     </div>
                     <div className="glossary-card-footer">
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => beginEdit(item)}
-                        disabled={busy}
-                      >
-                        Jegyzet hozzaadasa
+                      <button type="button" className="btn btn-secondary" onClick={() => beginEdit(item)} disabled={busy}>
+                        Jegyzet hozzáadása
                       </button>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => onDelete(item.id)}
-                        disabled={busy}
-                      >
-                        Elutasitas
+                      <button type="button" className="btn btn-secondary" onClick={() => onDelete(item.id)} disabled={busy}>
+                        Elutasítás
                       </button>
                     </div>
                   </GlassCardSurface>
@@ -251,7 +278,7 @@ export default function SuggestionsPage() {
         )}
         <div style={{ marginTop: 24 }}>
           <Link href="/glossary" className="btn btn-secondary">
-            Vissza az alomszotarhoz
+            Vissza az álomszótárhoz
           </Link>
         </div>
         <style jsx>{`

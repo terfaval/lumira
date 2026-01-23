@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
@@ -11,6 +12,7 @@ import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay"
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
+import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
 
 type GlossaryItem = {
   id: string;
@@ -27,8 +29,12 @@ type TermCandidate = {
 };
 
 export default function GlossaryPage() {
+  const router = useRouter();
   // ensure the user is authenticated; will redirect to login otherwise
   const { loading } = useRequireAuth();
+
+  const [userId, setUserId] = useState<string | null>(null);
+  const [adminChecked, setAdminChecked] = useState(false);
 
   const [items, setItems] = useState<GlossaryItem[]>([]);
   const [suggestions, setSuggestions] = useState<TermCandidate[]>([]);
@@ -51,6 +57,35 @@ export default function GlossaryPage() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [sortOption, setSortOption] = useState<string>("created_desc");
 
+  // admin-only: resolve user id and gate to /404
+  useEffect(() => {
+    if (loading) return;
+
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (cancelled) return;
+
+      const uid = data?.user?.id ?? null;
+      if (error || !uid) {
+        router.replace("/404");
+        return;
+      }
+
+      if (!isGlossaryAdmin(uid)) {
+        router.replace("/404");
+        return;
+      }
+
+      setUserId(uid);
+      setAdminChecked(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, router]);
+
   async function loadItems() {
     setBusy(true);
     setErr(null);
@@ -61,7 +96,7 @@ export default function GlossaryPage() {
       .order("created_at", { ascending: false });
 
     if (termErr) {
-      setErr(termErr.message || "Could not load glossary terms.");
+      setErr(termErr.message || "Nem sikerült betölteni az álomszótár elemeit.");
       setItems([]);
       setBusy(false);
       return;
@@ -79,7 +114,7 @@ export default function GlossaryPage() {
         .order("created_at", { ascending: false });
 
       if (noteErr) {
-        setErr(noteErr.message || "Could not load glossary notes.");
+        setErr(noteErr.message || "Nem sikerült betölteni a jegyzeteket.");
       } else {
         (notes ?? []).forEach((row: any) => {
           if (!notesByTerm.has(row.term_id)) {
@@ -116,11 +151,12 @@ export default function GlossaryPage() {
   }
 
   useEffect(() => {
-    if (!loading) {
+    // only load after admin gate resolved
+    if (!loading && adminChecked) {
       void loadItems();
       void loadSuggestions();
     }
-  }, [loading]);
+  }, [loading, adminChecked]);
 
   function resetForm() {
     setNewName("");
@@ -134,23 +170,28 @@ export default function GlossaryPage() {
       setErr("Adj nevet az elemnek.");
       return;
     }
+    if (!userId) {
+      setErr("Nincs bejelentkezett felhasználó.");
+      return;
+    }
+
     setBusy(true);
 
     const { data: inserted, error } = await supabase
       .from("glossary_terms")
-      .insert({ canonical: name, canonical_key: anchorKey(name) })
+      .insert({ canonical: name, canonical_key: anchorKey(name), user_id: userId })
       .select("id")
       .single();
 
     if (error) {
-      setErr(error.message || "Nem sikerult hozzaadni az elemet.");
+      setErr(error.message || "Nem sikerült hozzáadni az elemet.");
     } else {
       const note = newNotes.trim();
       if (note) {
         const { error: noteErr } = await supabase
           .from("glossary_notes")
-          .insert({ term_id: inserted.id, content: note });
-        if (noteErr) setErr(noteErr.message || "Nem sikerult elmenteni a jegyzetet.");
+          .insert({ term_id: inserted.id, content: note, user_id: userId });
+        if (noteErr) setErr(noteErr.message || "Nem sikerült elmenteni a jegyzetet.");
       }
 
       await supabase.from("term_candidates").delete().eq("term", name);
@@ -179,9 +220,14 @@ export default function GlossaryPage() {
     if (!editingId) return;
     const name = editName.trim();
     if (!name) {
-      setErr("Az elnevezes nem lehet ures.");
+      setErr("Az elnevezés nem lehet üres.");
       return;
     }
+    if (!userId) {
+      setErr("Nincs bejelentkezett felhasználó.");
+      return;
+    }
+
     setBusy(true);
     const { error } = await supabase
       .from("glossary_terms")
@@ -189,7 +235,7 @@ export default function GlossaryPage() {
       .eq("id", editingId);
 
     if (error) {
-      setErr(error.message || "Nem sikerult frissiteni az elemet.");
+      setErr(error.message || "Nem sikerült frissíteni az elemet.");
       setBusy(false);
       return;
     }
@@ -198,8 +244,8 @@ export default function GlossaryPage() {
     if (note) {
       const { error: noteErr } = await supabase
         .from("glossary_notes")
-        .insert({ term_id: editingId, content: note });
-      if (noteErr) setErr(noteErr.message || "Nem sikerult elmenteni a jegyzetet.");
+        .insert({ term_id: editingId, content: note, user_id: userId });
+      if (noteErr) setErr(noteErr.message || "Nem sikerült elmenteni a jegyzetet.");
     }
 
     cancelEdit();
@@ -209,12 +255,12 @@ export default function GlossaryPage() {
   }
 
   async function onDelete(id: string) {
-    const confirmed = window.confirm("Biztosan torlod ezt az elemet?");
+    const confirmed = window.confirm("Biztosan törlöd ezt az elemet?");
     if (!confirmed) return;
     setBusy(true);
     const { error } = await supabase.from("glossary_terms").delete().eq("id", id);
     if (error) {
-      setErr(error.message || "Nem sikerult torolni az elemet.");
+      setErr(error.message || "Nem sikerült törölni az elemet.");
     } else {
       await loadItems();
     }
@@ -258,20 +304,25 @@ export default function GlossaryPage() {
     return sorted;
   }, [filteredItems, sortOption]);
 
+  // while admin gate is being resolved, render nothing (prevents flicker)
+  if (!loading && !adminChecked) {
+    return <FullScreenLoadingOverlay open />;
+  }
+
   if (readyForGate && !allowGlossary) {
     return (
       <Shell
-        title="Alomszotar"
+        title="Álomszótár"
         space="dream"
         headerActions={null}
         infoOpen={false}
         onToggleInfo={() => {}}
         infoPanel={
           <div className="stack-tight">
-            <p className="section-title">Alomszotar</p>
+            <p className="section-title">Álomszótár</p>
             <p style={{ color: "var(--text-muted)" }}>
-              Az alomszotar akkor valik elerhetove, ha legalabb tiz olyan elem ism?tlodott
-              az almaidban, amelyhez jegyzeteket irhatsz.
+              Az álomszótár akkor válik elérhetővé, ha legalább tíz olyan elem ismétlődött az álmaidban,
+              amelyhez jegyzeteket írhatsz.
             </p>
           </div>
         }
@@ -286,8 +337,8 @@ export default function GlossaryPage() {
 
           {!busy ? (
             <p style={{ color: "var(--text-muted)" }}>
-              Jelenleg {suggestions.length} javasolt elem talalhato. Legalabb 10 elem szukseges az alomszotar
-              megnyitasahoz.
+              Jelenleg {suggestions.length} javasolt elem található. Legalább 10 elem szükséges az álomszótár
+              megnyitásához.
             </p>
           ) : null}
         </div>
@@ -297,21 +348,21 @@ export default function GlossaryPage() {
 
   return (
     <Shell
-      title="Alomszotar"
+      title="Álomszótár"
       space="dream"
       headerActions={
         <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-          Uj elem
+          Új elem
         </button>
       }
       infoOpen={false}
       onToggleInfo={() => {}}
       infoPanel={
         <div className="stack-tight">
-          <p className="section-title">Alomszotar</p>
+          <p className="section-title">Álomszótár</p>
           <p style={{ color: "var(--text-muted)" }}>
-            Itt tarolhatod az ismetlodo szereploket, helyszineket vagy mot?vumokat, es jegyzeteket
-            irhatsz hozz?juk.
+            Itt tárolhatod az ismétlődő szereplőket, helyszíneket vagy motívumokat, és jegyzeteket
+            írhatsz hozzájuk.
           </p>
         </div>
       }
@@ -335,7 +386,7 @@ export default function GlossaryPage() {
         >
           <input
             type="text"
-            placeholder="Kereses nev vagy jegyzet alapjan..."
+            placeholder="Keresés név vagy jegyzet alapján..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="input"
@@ -349,15 +400,15 @@ export default function GlossaryPage() {
             style={{ flex: "0 0 200px" }}
             disabled={busy}
           >
-            <option value="created_desc">Ujak elol</option>
-            <option value="created_asc">Regiek elol</option>
-            <option value="name_asc">Nev (A-Z)</option>
-            <option value="name_desc">Nev (Z-A)</option>
+            <option value="created_desc">Újak elöl</option>
+            <option value="created_asc">Régiek elöl</option>
+            <option value="name_asc">Név (A–Z)</option>
+            <option value="name_desc">Név (Z–A)</option>
           </select>
         </div>
 
         {sortedItems.length === 0 ? (
-          <p style={{ color: "var(--text-muted)" }}>Nincs elem, amely megfelel a szuresnek.</p>
+          <p style={{ color: "var(--text-muted)" }}>Nincs elem, amely megfelel a szűrésnek.</p>
         ) : (
           <ul
             style={{
@@ -371,10 +422,15 @@ export default function GlossaryPage() {
             {sortedItems.map((item) =>
               editingId === item.id ? (
                 <li key={item.id}>
-                  <GlassCardSurface className="glossary-grid-card" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
+                  <GlassCardSurface
+                    className="glossary-grid-card"
+                    style={{ padding: "var(--space-3)" }}
+                    variant="flat"
+                    paper="evening"
+                  >
                     <div className="glossary-card-body stack">
                       <label>
-                        <span>Nev</span>
+                        <span>Név</span>
                         <input
                           type="text"
                           value={editName}
@@ -395,26 +451,23 @@ export default function GlossaryPage() {
                       </label>
                     </div>
                     <div className="glossary-card-footer">
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={cancelEdit}
-                        disabled={busy}
-                      >
-                        Megse
+                      <button type="button" className="btn btn-secondary" onClick={cancelEdit} disabled={busy}>
+                        Mégse
                       </button>
-                      <PrimaryButton
-                        onClick={saveEdit}
-                        disabled={busy || editName.trim().length === 0}
-                      >
-                        Mentes
+                      <PrimaryButton onClick={saveEdit} disabled={busy || editName.trim().length === 0}>
+                        Mentés
                       </PrimaryButton>
                     </div>
                   </GlassCardSurface>
                 </li>
               ) : (
                 <li key={item.id}>
-                  <GlassCardSurface className="glossary-grid-card" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
+                  <GlassCardSurface
+                    className="glossary-grid-card"
+                    style={{ padding: "var(--space-3)" }}
+                    variant="flat"
+                    paper="evening"
+                  >
                     <div className="glossary-card-body stack-tight">
                       <div style={{ fontWeight: 700, fontSize: 18 }}>{item.term}</div>
                       {item.note ? (
@@ -424,21 +477,11 @@ export default function GlossaryPage() {
                       )}
                     </div>
                     <div className="glossary-card-footer">
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => beginEdit(item)}
-                        disabled={busy}
-                      >
-                        Szerkesztes
+                      <button type="button" className="btn btn-secondary" onClick={() => beginEdit(item)} disabled={busy}>
+                        Szerkesztés
                       </button>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => onDelete(item.id)}
-                        disabled={busy}
-                      >
-                        Torles
+                      <button type="button" className="btn btn-secondary" onClick={() => onDelete(item.id)} disabled={busy}>
+                        Törlés
                       </button>
                     </div>
                   </GlassCardSurface>
@@ -459,11 +502,11 @@ export default function GlossaryPage() {
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <GlassCardSurface variant="soft" paper="evening" className="stack">
-              <div style={{ fontWeight: 700 }}>Uj elem</div>
+              <div style={{ fontWeight: 700 }}>Új elem</div>
               <GlassCardMatte padding="sm" tone="evening">
                 <input
                   className="input"
-                  placeholder="Nev"
+                  placeholder="Név"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   disabled={busy}
@@ -472,7 +515,7 @@ export default function GlossaryPage() {
               <GlassCardMatte padding="sm" tone="evening">
                 <textarea
                   className="textarea"
-                  placeholder="Jegyzet (opcionalis)"
+                  placeholder="Jegyzet (opcionális)"
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
                   rows={4}
@@ -480,16 +523,11 @@ export default function GlossaryPage() {
                 />
               </GlassCardMatte>
               <div className="glossary-card-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowAddModal(false)}
-                  disabled={busy}
-                >
-                  Megse
+                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)} disabled={busy}>
+                  Mégse
                 </button>
                 <PrimaryButton onClick={onAddItem} disabled={busy || newName.trim().length === 0}>
-                  Hozzaadas
+                  Hozzáadás
                 </PrimaryButton>
               </div>
             </GlassCardSurface>

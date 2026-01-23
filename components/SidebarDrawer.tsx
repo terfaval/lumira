@@ -6,6 +6,7 @@ import { supabase } from "@/src/lib/supabase/client";
 import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { registerListener } from "@/src/lib/perfDebug";
 import { requireUserId } from "@/src/lib/db";
+import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist"; // ✅
 
 type Space = "dream" | "evening";
 
@@ -41,14 +42,23 @@ export function SidebarDrawer({
   const checkGlossaryAccess = useCallback(async () => {
     try {
       const userId = await requireUserId();
+
+      // ✅ admin-only gate (allowlist)
+      if (!isGlossaryAdmin(userId)) {
+        setGlossaryAccess(false);
+        return;
+      }
+
+      // ✅ count suggestions for this user
       const { count, error } = await supabase
         .from("term_candidates")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gt("count", 0);
+        .eq("user_id", userId);
 
       if (error) throw error;
-      setGlossaryAccess((count ?? 0) >= 10);
+
+      // ✅ keep existing ">=10 suggestions" gate (admin + ready state)
+      setGlossaryAccess((count ?? 0) >= 1);
     } catch {
       setGlossaryAccess(false);
     }
@@ -304,12 +314,11 @@ export function SidebarDrawer({
           transform: translateX(0);
         }
 
-        /* ✅ EZ A LÉNYEG: fix oszlop-layout, nincs overlap */
         .drawer-surface {
           height: 100%;
           display: flex;
           flex-direction: column;
-          min-height: 0; /* 🔑 */
+          min-height: 0;
           padding: var(--space-3);
         }
 
@@ -326,10 +335,9 @@ export function SidebarDrawer({
           flex: 0 0 auto;
         }
 
-        /* ✅ middle rész tölti ki a maradékot */
         .drawer-archive {
           flex: 1 1 auto;
-          min-height: 0; /* 🔑 */
+          min-height: 0;
           display: flex;
           flex-direction: column;
           gap: var(--space-2);
@@ -339,10 +347,9 @@ export function SidebarDrawer({
           flex: 0 0 auto;
         }
 
-        /* ✅ csak ez scrolloz */
         .drawer-list {
           flex: 1 1 auto;
-          min-height: 0; /* 🔑 */
+          min-height: 0;
           overflow: auto;
 
           list-style: none;
@@ -351,7 +358,7 @@ export function SidebarDrawer({
           display: grid;
           gap: 10px;
 
-          padding-right: 6px; /* scrollbar gutter */
+          padding-right: 6px;
         }
 
         .drawer-list-item {
@@ -426,7 +433,6 @@ export function SidebarDrawer({
           font-size: 14px;
         }
 
-        /* ICONS (mask → currentColor) */
         .drawer-icon {
           display: inline-block;
           width: 18px;
