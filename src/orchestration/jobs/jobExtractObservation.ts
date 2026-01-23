@@ -5,6 +5,7 @@ import { sha256 } from "@/src/orchestration/idempotency/materialHash";
 import { jobIdempotencyKeyV0 } from "@/src/orchestration/idempotency/jobKey";
 import { insertObservationVersionIfMissing, upsertObservationLatest } from "@/src/db/repositories/observationRepo";
 import { extractObservationFromEntries } from "@/src/domain/observe/extractObservationFromEntries";
+import { indexObservationIntoGlossary } from "@/src/domain/glossary/indexObservationIntoGlossary";
 
 export async function jobExtractObservation(args: {
   supabase: SupabaseClient;
@@ -61,6 +62,20 @@ export async function jobExtractObservation(args: {
       user_id: event.user_id,
       observation_version_id: obs.id,
     });
+
+    // Best-effort: index non-interpretive memory (term_candidates + occurrences)
+    // Should never fail the observation job.
+    try {
+      await indexObservationIntoGlossary({
+        supabase,
+        user_id: event.user_id,
+        session_id: event.session_id,
+        observation_payload: payload,
+      });
+    } catch (e) {
+      // Intentionally swallow; if needed later, we can add a domain_event log.
+      // console.warn("indexObservationIntoGlossary failed", e);
+    }
 
     await finishJobRun(supabase, {
       job_id: started.job.id,

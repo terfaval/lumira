@@ -322,73 +322,6 @@ create index if not exists idx_material_snapshots_user_created
 on public.material_snapshots (user_id, created_at desc);
 
 -- ─────────────────────────────────────────────────────────────
--- 5) Memory / Glossary (non-interpretive)
--- ─────────────────────────────────────────────────────────────
-create table if not exists public.glossary_terms (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-
-  canonical text not null,
-  created_at timestamptz not null default now(),
-
-  constraint uq_glossary_terms_user_canonical unique (user_id, canonical)
-);
-
-create index if not exists idx_glossary_terms_user_created
-on public.glossary_terms (user_id, created_at desc);
-
-create table if not exists public.glossary_occurrences (
-  term_id uuid not null references public.glossary_terms(id) on delete cascade,
-  session_id uuid not null references public.dream_sessions(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-
-  source text not null default 'observation' check (source in ('observation','user_note','import')),
-  created_at timestamptz not null default now(),
-
-  primary key (term_id, session_id)
-);
-
-create index if not exists idx_glossary_occurrences_user_created
-on public.glossary_occurrences (user_id, created_at desc);
-
-create index if not exists idx_glossary_occurrences_session
-on public.glossary_occurrences (session_id);
-
-create table if not exists public.glossary_notes (
-  id uuid primary key default gen_random_uuid(),
-  term_id uuid not null references public.glossary_terms(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-
-  content text not null,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists idx_glossary_notes_term_created
-on public.glossary_notes (term_id, created_at desc);
-
-create table if not exists public.term_candidates (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-
-  term text not null,
-  count int not null default 0,
-  last_seen_at timestamptz,
-
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-
-  constraint uq_term_candidates_user_term unique (user_id, term)
-);
-
-drop trigger if exists trg_term_candidates_updated_at on public.term_candidates;
-create trigger trg_term_candidates_updated_at
-before update on public.term_candidates
-for each row execute function public.set_updated_at();
-
-create index if not exists idx_term_candidates_user_count
-on public.term_candidates (user_id, count desc);
-
--- ─────────────────────────────────────────────────────────────
 -- 6) Preferences / personalization (minimal)
 -- ─────────────────────────────────────────────────────────────
 create table if not exists public.user_prefs (
@@ -553,6 +486,60 @@ begin
   end loop;
 end $$;
 
+-- 1) glossary_terms: category
+alter table public.glossary_terms
+add column if not exists category text;
+
+-- optional enum-ish constraint
+-- alter table public.glossary_terms
+-- add constraint glossary_terms_category_check
+-- check (category in ('character','place','object','beat','felt_word') or category is null);
+
+create index if not exists idx_glossary_terms_user_category
+on public.glossary_terms(user_id, category);
+
+-- 2) occurrence events
+create table if not exists public.glossary_occurrence_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  term_id uuid not null references public.glossary_terms(id) on delete cascade,
+  session_id uuid not null references public.dream_sessions(id) on delete cascade,
+
+  scene_idx int not null,
+  anchor_name text,
+  anchor_category text,
+  evidence jsonb not null default '{}'::jsonb,
+
+  created_at timestamptz not null default now(),
+
+  constraint uq_glossary_occ_event unique (user_id, term_id, session_id, scene_idx, anchor_name)
+);
+
+create index if not exists idx_glossary_occ_event_user_term_created
+on public.glossary_occurrence_events(user_id, term_id, created_at desc);
+
+create index if not exists idx_glossary_occ_event_session
+on public.glossary_occurrence_events(session_id);
+
+alter table public.glossary_occurrence_events enable row level security;
+
+-- RLS: consistent with your macro pattern
+drop policy if exists "read_own_glossary_occurrence_events" on public.glossary_occurrence_events;
+create policy "read_own_glossary_occurrence_events"
+on public.glossary_occurrence_events for select
+using (user_id = auth.uid());
+
+drop policy if exists "write_own_glossary_occurrence_events" on public.glossary_occurrence_events;
+create policy "write_own_glossary_occurrence_events"
+on public.glossary_occurrence_events for insert
+with check (user_id = auth.uid());
+
+drop policy if exists "update_own_glossary_occurrence_events" on public.glossary_occurrence_events;
+create policy "update_own_glossary_occurrence_events"
+on public.glossary_occurrence_events for update
+using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+
 -- Prefs tables
 do $$
 declare t text;
@@ -602,14 +589,18 @@ create index if not exists idx_wql_user_question_hash
 alter table public.work_question_ledger enable row level security;
 
 -- RLS: user can read/write own rows
+-- work_question_ledger RLS policies (idempotent)
+drop policy if exists "wql_select_own" on public.work_question_ledger;
 create policy "wql_select_own"
   on public.work_question_ledger
   for select
   using (auth.uid() = user_id);
 
+drop policy if exists "wql_insert_own" on public.work_question_ledger;
 create policy "wql_insert_own"
   on public.work_question_ledger
   for insert
   with check (auth.uid() = user_id);
+
   
 commit;
