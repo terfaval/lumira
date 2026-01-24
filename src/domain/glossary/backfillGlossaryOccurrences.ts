@@ -2,6 +2,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { extractGlossaryCandidatesFromObservation } from "./glossaryCandidateExtractor";
 
+export const DEFAULT_MAX_SESSIONS = 200;
+export const MAX_SESSIONS_HARD_LIMIT = 500;
+export const BATCH_SIZE = 200;
+
 type BackfillResult = {
   scanned: number;
   matched: number;
@@ -22,11 +26,17 @@ export async function backfillGlossaryOccurrencesForTerm(params: {
   termId: string;
   canonicalKey: string;
   maxSessions?: number;
+  logProgress?: boolean;
 }): Promise<BackfillResult> {
   const { supabase, userId, termId, canonicalKey } = params;
-  const maxSessions = Math.max(1, params.maxSessions ?? 500);
+  const requested = params.maxSessions ?? DEFAULT_MAX_SESSIONS;
+  const maxSessions = Math.min(Math.max(1, requested), MAX_SESSIONS_HARD_LIMIT);
   const targetKey = (canonicalKey ?? "").trim();
   if (!targetKey) return { scanned: 0, matched: 0, upserted: 0 };
+
+  if (params.logProgress) {
+    console.info("[glossary backfill] start", { userId, termId, maxSessions });
+  }
 
   const latestRes = await supabase
     .from("observation_latest")
@@ -49,7 +59,7 @@ export async function backfillGlossaryOccurrencesForTerm(params: {
   );
 
   const payloadById = new Map<string, any>();
-  for (const batch of chunk(versionIds, 200)) {
+  for (const batch of chunk(versionIds, BATCH_SIZE)) {
     const { data, error } = await supabase
       .from("observation_versions")
       .select("id,payload")
@@ -82,13 +92,20 @@ export async function backfillGlossaryOccurrencesForTerm(params: {
   }
 
   let upserted = 0;
-  for (const batch of chunk(occurrenceRows, 200)) {
+  for (const batch of chunk(occurrenceRows, BATCH_SIZE)) {
     const { error } = await supabase
       .from("glossary_occurrences")
       .upsert(batch, { onConflict: "user_id,term_id,session_id" });
     if (error) throw error;
     upserted += batch.length;
+    if (params.logProgress) {
+      console.info("[glossary backfill] upserted batch", { count: batch.length, total: upserted });
+    }
   }
 
-  return { scanned: latestRows.length, matched: occurrenceRows.length, upserted };
+  const result = { scanned: latestRows.length, matched: occurrenceRows.length, upserted };
+  if (params.logProgress) {
+    console.info("[glossary backfill] done", result);
+  }
+  return result;
 }
