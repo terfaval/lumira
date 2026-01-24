@@ -16,6 +16,7 @@ import {
   upsertObservationLatest,
 } from "@/src/db/repositories/observationRepo";
 import { fetchObservationLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
+import { indexGlossaryFromObservation } from "@/src/domain/glossary/indexGlossaryFromObservation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -439,6 +440,19 @@ export async function POST(req: Request) {
       user_id: userId,
       observation_version_id: obs.id,
     });
+
+    // Best-effort: index glossary occurrences for this session.
+    try {
+      await indexGlossaryFromObservation({
+        supabase,
+        userId,
+        sessionId,
+        observationPayload: observation,
+        source: "observation",
+      });
+    } catch (e) {
+      console.warn("observe: glossary occurrence index failed", e);
+    }
 
     // Log as observation.extracted event (non-fatal if it fails)
     const obsAnchorKeys = buildAnchorKeysFromObservation(observation);

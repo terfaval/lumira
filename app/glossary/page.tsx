@@ -165,6 +165,22 @@ export default function GlossaryPage() {
     setNewNotes("");
   }
 
+  async function backfillOccurrences(termId: string) {
+    try {
+      const res = await fetch("/api/glossary/backfill-occurrences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ term_id: termId }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        console.warn("glossary backfill failed", payload?.error ?? res.statusText);
+      }
+    } catch (e) {
+      console.warn("glossary backfill failed", e);
+    }
+  }
+
   async function onAddItem() {
     setErr(null);
     const name = newName.trim();
@@ -195,6 +211,8 @@ export default function GlossaryPage() {
           .insert({ term_id: inserted.id, content: note, user_id: userId });
         if (noteErr) setErr(noteErr.message || "Nem sikerült elmenteni a jegyzetet.");
       }
+
+      await backfillOccurrences(inserted.id);
 
       await supabase.from("term_candidates").delete().eq("term", anchorKey(name));
       resetForm();

@@ -57,7 +57,7 @@ export async function indexGlossaryFromObservation(params: {
 
       const { error: occErr } = await supabase
         .from("glossary_occurrences")
-        .upsert(occRows, { onConflict: "term_id,session_id" });
+        .upsert(occRows, { onConflict: "user_id,term_id,session_id" });
 
       if (!occErr) occurred = occRows.length;
       else console.warn("[indexGlossaryFromObservation] glossary_occurrences upsert failed", occErr.message);

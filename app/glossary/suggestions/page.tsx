@@ -117,6 +117,22 @@ export default function SuggestionsPage() {
     setErr(null);
   }
 
+  async function backfillOccurrences(termId: string) {
+    try {
+      const res = await fetch("/api/glossary/backfill-occurrences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ term_id: termId }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        console.warn("glossary backfill failed", payload?.error ?? res.statusText);
+      }
+    } catch (e) {
+      console.warn("glossary backfill failed", e);
+    }
+  }
+
   async function acceptSuggestion(item: TermCandidate) {
     if (!userId) {
       setErr("Nincs bejelentkezett felhasználó.");
@@ -140,6 +156,8 @@ export default function SuggestionsPage() {
           .insert({ term_id: inserted.id, content: note, user_id: userId });
         if (noteErr) throw noteErr;
       }
+
+      await backfillOccurrences(inserted.id);
 
       const { error: delErr } = await supabase.from("term_candidates").delete().eq("id", item.id);
       if (delErr) throw delErr;

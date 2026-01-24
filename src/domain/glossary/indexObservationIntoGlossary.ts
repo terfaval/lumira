@@ -117,7 +117,7 @@ export async function indexObservationIntoGlossary(args: Args): Promise<void> {
           user_id,
           source: "observation",
         },
-        { onConflict: "term_id,session_id" }
+        { onConflict: "user_id,term_id,session_id" }
       )
       .select();
   }

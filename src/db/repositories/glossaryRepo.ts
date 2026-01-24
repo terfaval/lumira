@@ -42,7 +42,7 @@ export async function upsertGlossaryOccurrences(
 
   const res = await supabase
     .from("glossary_occurrences")
-    .upsert(payload, { onConflict: "term_id,session_id" });
+    .upsert(payload, { onConflict: "user_id,term_id,session_id" });
 
   if (res.error) throw res.error;
 }
