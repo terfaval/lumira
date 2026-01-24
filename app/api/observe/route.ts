@@ -25,6 +25,12 @@ const OPENAI_TIMEOUT_MS = 15000;
 
 type HistoryItem = { question: string; answer: string | null };
 
+type OpenAIUsage = {
+            prompt_tokens?: number;
+            completion_tokens?: number;
+            total_tokens?: number;
+          };
+
 type RequestBody = {
   session_id?: string;
   dream_text?: string;
@@ -381,7 +387,10 @@ export async function POST(req: Request) {
             OPENAI_TIMEOUT_MS
           );
 
-          const usage = completion.usage ?? {};
+          const usage: OpenAIUsage | undefined =
+  (completion.usage as OpenAIUsage | undefined) ?? undefined;
+
+
           const raw = completion.choices?.[0]?.message?.content ?? "";
           if (!raw) throw new RetryableError("parse_fail", "observe: empty response", usage);
 

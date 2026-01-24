@@ -16,6 +16,13 @@ type ComposeResult = {
   compose_trace: Partial<TracePayload["model"]>;
 };
 
+type OpenAIUsage = {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+};
+
+
 function clampText(text: string, limit: number): string {
   const trimmed = (text ?? "").trim();
   if (!trimmed) return "";
@@ -176,7 +183,7 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
             OPENAI_TIMEOUT_MS
           );
 
-          const usage = completion.usage ?? {};
+          const usage: OpenAIUsage | undefined = completion.usage ?? undefined;
           const raw = completion.choices?.[0]?.message?.content ?? "";
           const parsed = parseModelJSON(raw);
           if (!parsed) {
