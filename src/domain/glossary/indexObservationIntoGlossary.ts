@@ -10,7 +10,7 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
-import { collectGlossaryCandidatesFromObservation } from "./collectGlossaryCandidatesFromObservation";
+import { extractGlossaryCandidatesFromObservation } from "./glossaryCandidateExtractor";
 
 type Args = {
   supabase: SupabaseClient;
@@ -35,12 +35,12 @@ function uniqStrings(xs: string[]): string[] {
 export async function indexObservationIntoGlossary(args: Args): Promise<void> {
   const { supabase, user_id, session_id, observation_payload } = args;
 
-  const candidates = collectGlossaryCandidatesFromObservation(observation_payload);
+  const candidates = extractGlossaryCandidatesFromObservation(observation_payload);
   if (candidates.length === 0) return;
 
   const canonicalKeys = uniqStrings(
     candidates
-      .map((c) => anchorKey(c))
+      .map((c) => c.canonical_key || anchorKey(c.display_label))
       .filter(Boolean) as string[]
   );
 

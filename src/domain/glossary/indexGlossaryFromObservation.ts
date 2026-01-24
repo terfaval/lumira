@@ -1,5 +1,6 @@
 // src/domain/glossary/indexGlossaryFromObservation.ts
 import { extractGlossaryCandidatesFromObservation } from "./glossaryCandidateExtractor";
+import { bumpTermCandidates } from "@/src/db/repositories/glossaryRepo";
 
 type SupabaseLike = any;
 
@@ -19,47 +20,21 @@ export async function indexGlossaryFromObservation(params: {
   const terms = candidates.map((c) => c.canonical_key);
 
   // ---- 1) term_candidates: increment counts (best-effort, batched)
-  const { data: existing, error: existingErr } = await supabase
-    .from("term_candidates")
-    .select("term, count, display_label")
-    .eq("user_id", userId)
-    .in("term", terms);
-
-  if (existingErr) {
-    // don't fail the whole pipeline
-    console.warn("[indexGlossaryFromObservation] term_candidates select failed", existingErr.message);
+  const displayLabels: Record<string, string> = {};
+  for (const c of candidates) {
+    if (!c?.canonical_key) continue;
+    const label = typeof c.display_label === "string" ? c.display_label.trim() : "";
+    if (label) displayLabels[c.canonical_key] = label;
   }
 
-  const counts = new Map<string, number>();
-  const labels = new Map<string, string>();
-  for (const row of existing ?? []) {
-    if (!row?.term) continue;
-    counts.set(row.term, row.count ?? 0);
-    if (typeof row.display_label === "string" && row.display_label.trim()) {
-      labels.set(row.term, row.display_label.trim());
-    }
-  }
-
-  const nowIso = new Date().toISOString();
-  const candidateByKey = new Map(candidates.map((c) => [c.canonical_key, c]));
-  const nextRows = terms.map((t) => {
-    const candidate = candidateByKey.get(t);
-    const display_label = labels.get(t) ?? candidate?.display_label ?? t;
-    return {
+  try {
+    await bumpTermCandidates(supabase, {
       user_id: userId,
-      term: t,
-      display_label,
-      count: (counts.get(t) ?? 0) + 1,
-      last_seen_at: nowIso,
-    };
-  });
-
-  const { error: upsertErr } = await supabase
-    .from("term_candidates")
-    .upsert(nextRows, { onConflict: "user_id,term" });
-
-  if (upsertErr) {
-    console.warn("[indexGlossaryFromObservation] term_candidates upsert failed", upsertErr.message);
+      terms,
+      displayLabels,
+    });
+  } catch (err: any) {
+    console.warn("[indexGlossaryFromObservation] term_candidates upsert failed", err?.message ?? String(err));
   }
 
   // ---- 2) glossary_occurrences: only for already-fixed glossary terms
