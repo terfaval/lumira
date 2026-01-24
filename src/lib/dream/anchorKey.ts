@@ -1,30 +1,11 @@
-const HU_STOP = new Set([ 
-  "a",
-  "az",
-  "egy",
-  "és",
-  "vagy",
-  "hogy",
-  "de",
-  "mert",
-  "amikor",
-  "ahogy",
-  "már",
-  "még",
-  "is",
-  "se",
-  "sem",
-  "ott",
-  "itt",
-  "oda",
-  "ide",
-  "innen",
-  "onnan",
-  "valami",
-  "valaki",
-  "nagyon",
-  "kicsit",
-]);
+const HU_STOP_RAW = [
+  "a", "az", "egy", "és", "vagy", "hogy", "de", "mert",
+  "amikor", "ahogy", "már", "még", "is", "se", "sem",
+  "ott", "itt", "oda", "ide", "innen", "onnan",
+  "valami", "valaki", "nagyon", "kicsit",
+];
+
+const HU_STOP = new Set(HU_STOP_RAW.map((w) => stripDiacritics(w.toLowerCase())));
 
 /**
  * Anchor key normalization only. Do not use for user-facing text.

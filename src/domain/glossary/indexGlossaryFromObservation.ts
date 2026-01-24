@@ -1,5 +1,4 @@
 // src/domain/glossary/indexGlossaryFromObservation.ts
-import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { extractGlossaryCandidatesFromObservation } from "./glossaryCandidateExtractor";
 
 type SupabaseLike = any;
@@ -14,13 +13,15 @@ export async function indexGlossaryFromObservation(params: {
   const { supabase, userId, sessionId, observationPayload } = params;
   const source = params.source ?? "observation";
 
-  const terms = extractGlossaryCandidatesFromObservation(observationPayload);
-  if (terms.length === 0) return { indexed: 0, occurred: 0 };
+  const candidates = extractGlossaryCandidatesFromObservation(observationPayload);
+  if (candidates.length === 0) return { indexed: 0, occurred: 0 };
+
+  const terms = candidates.map((c) => c.canonical_key);
 
   // ---- 1) term_candidates: increment counts (best-effort, batched)
   const { data: existing, error: existingErr } = await supabase
     .from("term_candidates")
-    .select("term, count")
+    .select("term, count, display_label")
     .eq("user_id", userId)
     .in("term", terms);
 
@@ -30,15 +31,28 @@ export async function indexGlossaryFromObservation(params: {
   }
 
   const counts = new Map<string, number>();
-  for (const row of (existing ?? [])) counts.set(row.term, row.count ?? 0);
+  const labels = new Map<string, string>();
+  for (const row of existing ?? []) {
+    if (!row?.term) continue;
+    counts.set(row.term, row.count ?? 0);
+    if (typeof row.display_label === "string" && row.display_label.trim()) {
+      labels.set(row.term, row.display_label.trim());
+    }
+  }
 
   const nowIso = new Date().toISOString();
-  const nextRows = terms.map((t) => ({
-    user_id: userId,
-    term: t,
-    count: (counts.get(t) ?? 0) + 1,
-    last_seen_at: nowIso,
-  }));
+  const candidateByKey = new Map(candidates.map((c) => [c.canonical_key, c]));
+  const nextRows = terms.map((t) => {
+    const candidate = candidateByKey.get(t);
+    const display_label = labels.get(t) ?? candidate?.display_label ?? t;
+    return {
+      user_id: userId,
+      term: t,
+      display_label,
+      count: (counts.get(t) ?? 0) + 1,
+      last_seen_at: nowIso,
+    };
+  });
 
   const { error: upsertErr } = await supabase
     .from("term_candidates")
@@ -49,18 +63,14 @@ export async function indexGlossaryFromObservation(params: {
   }
 
   // ---- 2) glossary_occurrences: only for already-fixed glossary terms
-  const keys = terms
-    .map((t) => anchorKey(t))
-    .filter(Boolean);
-
   let occurred = 0;
 
-  if (keys.length > 0) {
+  if (terms.length > 0) {
     const { data: matchedTerms, error: matchErr } = await supabase
       .from("glossary_terms")
       .select("id, canonical_key")
       .eq("user_id", userId)
-      .in("canonical_key", keys);
+      .in("canonical_key", terms);
 
     if (!matchErr && Array.isArray(matchedTerms) && matchedTerms.length > 0) {
       const occRows = matchedTerms.map((t: any) => ({

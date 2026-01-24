@@ -7,6 +7,7 @@ import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { registerListener } from "@/src/lib/perfDebug";
 import { requireUserId } from "@/src/lib/db";
 import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist"; // ✅
+import { allowGlossaryAccess } from "@/src/lib/glossary/gate";
 
 type Space = "dream" | "evening";
 
@@ -57,8 +58,8 @@ export function SidebarDrawer({
 
       if (error) throw error;
 
-      // ✅ keep existing ">=10 suggestions" gate (admin + ready state)
-      setGlossaryAccess((count ?? 0) >= 1);
+      // ✅ keep glossary gate consistent across UI
+      setGlossaryAccess(allowGlossaryAccess(count ?? 0));
     } catch {
       setGlossaryAccess(false);
     }

@@ -1,56 +1,124 @@
 // src/domain/glossary/indexObservationIntoGlossary.ts
-import { SupabaseClient } from "@supabase/supabase-js";
-import { anchorKey } from "@/src/lib/dream/anchorKey";
-import { extractCandidateTermsFromObservation } from "./extractCandidateTermsFromObservation";
-import { normalizeTerm } from "./normalizeTerm";
-import { bumpTermCandidates, fetchGlossaryTermsByCanonicalKeys, upsertGlossaryOccurrences } from "@/src/db/repositories/glossaryRepo";
 
 /**
- * D1 use-case: “source checking” / grounding.
- * - We DO NOT interpret.
- * - We only index appearances and candidate frequency.
- *
- * Behavior:
- * - Extract candidate terms from observation payload
- * - Normalize -> canonicalize (anchorKey)
- * - Update term_candidates (frequency + last_seen)
- * - If user already has glossary_terms for a canonical_key, upsert an occurrence row for this session
+ * Deprecated / DO NOT USE:
+ * - Uses raw term storage in term_candidates.term (drifts from canonical anchorKey storage)
+ * - Not wired into the current pipeline
+ * Keep only for historical reference until removed.
  */
-export async function indexObservationIntoGlossary(args: {
+
+
+import { SupabaseClient } from "@supabase/supabase-js";
+import { anchorKey } from "@/src/lib/dream/anchorKey";
+import { collectGlossaryCandidatesFromObservation } from "./collectGlossaryCandidatesFromObservation";
+
+type Args = {
   supabase: SupabaseClient;
   user_id: string;
   session_id: string;
-  observation_payload: unknown;
-}): Promise<{
-  candidates_indexed: number;
-  occurrences_upserted: number;
-}> {
+  observation_payload: any;
+};
+
+function uniqStrings(xs: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const x of xs) {
+    const t = (x ?? "").trim();
+    if (!t) continue;
+    if (seen.has(t)) continue;
+    seen.add(t);
+    out.push(t);
+  }
+  return out;
+}
+
+export async function indexObservationIntoGlossary(args: Args): Promise<void> {
   const { supabase, user_id, session_id, observation_payload } = args;
 
-  const rawTerms = extractCandidateTermsFromObservation(observation_payload);
+  const candidates = collectGlossaryCandidatesFromObservation(observation_payload);
+  if (candidates.length === 0) return;
 
-  // canonical_key = anchorKey(normalized)
-  const canonicalKeys = Array.from(
-    new Set(
-      rawTerms
-        .map((t) => normalizeTerm(t))
-        .filter(Boolean)
-        .map((t) => anchorKey(t))
-        .filter(Boolean)
-    )
+  const canonicalKeys = uniqStrings(
+    candidates
+      .map((c) => anchorKey(c))
+      .filter(Boolean) as string[]
   );
 
-  // 1) bump candidates
-  await bumpTermCandidates(supabase, { user_id, terms: canonicalKeys });
+  if (canonicalKeys.length === 0) return;
 
-  // 2) occurrences only for already-accepted glossary terms
-  const existingTerms = await fetchGlossaryTermsByCanonicalKeys(supabase, { user_id, canonical_keys: canonicalKeys });
+  // 1) term_candidates: increment counts (best-effort, batched)
+  try {
+    const { data: existing, error: existingErr } = await supabase
+      .from("term_candidates")
+      .select("term, count")
+      .eq("user_id", user_id)
+      .in("term", canonicalKeys);
 
-  await upsertGlossaryOccurrences(supabase, {
-    user_id,
-    session_id,
-    rows: existingTerms.map((t) => ({ term_id: t.id, source: "observation" })),
-  });
+    if (existingErr) {
+      // swallow, but still try "count=1" insert-only approach
+      // (however insert-only can't be expressed with upsert easily)
+      // We'll still proceed with counts map = 0.
+    }
 
-  return { candidates_indexed: canonicalKeys.length, occurrences_upserted: existingTerms.length };
+    const counts = new Map<string, number>();
+    for (const row of (existing ?? []) as any[]) {
+      if (!row?.term) continue;
+      counts.set(row.term, row.count ?? 0);
+    }
+
+    const nowIso = new Date().toISOString();
+    const nextRows = canonicalKeys.map((term) => ({
+      user_id,
+      term,
+      count: (counts.get(term) ?? 0) + 1,
+      last_seen_at: nowIso,
+    }));
+
+    const { error: upsertErr } = await supabase
+      .from("term_candidates")
+      .upsert(nextRows, { onConflict: "user_id,term" });
+
+    // ignore failures (best-effort)
+    if (upsertErr) {
+      // console.warn("[indexObservationIntoGlossary] term_candidates upsert failed", upsertErr.message);
+    }
+  } catch {
+    // swallow
+  }
+
+  // 2) glossary_terms lookup (ONLY existing terms)
+  const { data: terms } = await supabase
+    .from("glossary_terms")
+    .select("id, canonical_key")
+    .eq("user_id", user_id)
+    .in("canonical_key", canonicalKeys);
+
+  if (!terms || terms.length === 0) return;
+
+  const termIdByKey = new Map<string, string>();
+  for (const t of terms as any[]) {
+    if (t.canonical_key && t.id) {
+      termIdByKey.set(t.canonical_key, t.id);
+    }
+  }
+
+  // 3) glossary_occurrences upsert (idempotent per session)
+  // (batched is better, but keeping your simple loop is OK)
+  for (const key of canonicalKeys) {
+    const term_id = termIdByKey.get(key);
+    if (!term_id) continue;
+
+    await supabase
+      .from("glossary_occurrences")
+      .upsert(
+        {
+          term_id,
+          session_id,
+          user_id,
+          source: "observation",
+        },
+        { onConflict: "term_id,session_id" }
+      )
+      .select();
+  }
 }

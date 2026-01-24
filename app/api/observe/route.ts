@@ -2,6 +2,8 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
+import { OPENAI_MODELS } from "@/src/lib/openai/server";
+import { callWithRetries, RetryableError } from "@/src/lib/openai/modelRouting";
 import {
   compactDreamObservation,
   parseDreamObservation,
@@ -18,7 +20,6 @@ import { fetchObservationLatestWithPayloadAndId } from "@/src/db/repositories/la
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MODEL = "gpt-4o-mini";
 const MIN_DREAM_LEN = 20;
 const OPENAI_TIMEOUT_MS = 15000;
 
@@ -92,6 +93,20 @@ function emptyObs() {
     body: [],
     safety: { flag: "none", evidence: [] as string[] },
   } as const;
+}
+
+function observationQualityLow(obs: any, inputLength: number): boolean {
+  const entities = obs?.entities ?? {};
+  const count = (arr: any) => (Array.isArray(arr) ? arr.length : 0);
+  const coreCount = count(entities.characters) + count(entities.places) + count(entities.objects);
+  const beatsCount = count(obs?.beats);
+  const motifsCount = count(obs?.motifs);
+  const total = coreCount + beatsCount + motifsCount;
+
+  const noCore = coreCount === 0;
+  const sparseForLong = inputLength >= 800 && total < 3;
+
+  return noCore || sparseForLong;
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -341,36 +356,63 @@ export async function POST(req: Request) {
     : "Csak megfigyelhető elemeket sorolj. Nincs értelmezés.",
     };
 
-    let observationRaw: unknown;
-    try {
-      const completion = await withTimeout(
-        (signal) =>
-          client.chat.completions.create(
-            {
-              model: MODEL,
-              temperature: 0.2,
-              response_format: { type: "json_object" },
-              messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: JSON.stringify(userPayload) },
-              ],
-              max_tokens: 1000,
-            },
-            { signal }
-          ),
-        OPENAI_TIMEOUT_MS
-      );
+    let observationResult: ReturnType<typeof parseDreamObservation> | null = null;
+    let modelUsed = OPENAI_MODELS.OBSERVE;
 
-      const raw = completion.choices?.[0]?.message?.content ?? "";
-      observationRaw = parseModelJSON(raw);
+    try {
+      const { result, model_used } = await callWithRetries({
+        jobName: "observe",
+        callFn: async ({ model, attempt, maxAttempts }) => {
+          const completion = await withTimeout(
+            (signal) =>
+              client.chat.completions.create(
+                {
+                  model,
+                  temperature: 0.2,
+                  response_format: { type: "json_object" },
+                  messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: JSON.stringify(userPayload) },
+                  ],
+                  max_tokens: 1000,
+                },
+                { signal }
+              ),
+            OPENAI_TIMEOUT_MS
+          );
+
+          const usage = completion.usage ?? {};
+          const raw = completion.choices?.[0]?.message?.content ?? "";
+          if (!raw) throw new RetryableError("parse_fail", "observe: empty response", usage);
+
+          let parsed: unknown;
+          try {
+            parsed = parseModelJSON(raw);
+          } catch {
+            throw new RetryableError("parse_fail", "observe: invalid JSON", usage);
+          }
+
+          const observation = parseDreamObservation(parsed);
+          if (!observation) throw new RetryableError("schema_fail", "observe: invalid observation schema", usage);
+
+          if (observationQualityLow(observation, primaryText.length) && attempt < maxAttempts - 1) {
+            throw new RetryableError("quality_fail", "observe: low-quality output", usage);
+          }
+
+          return { result: observation, usage };
+        },
+      });
+
+      observationResult = result;
+      modelUsed = model_used;
     } catch (error) {
       console.warn("observe: model call failed", error);
-      return NextResponse.json({ error: "model_failure", message: "Nem sikerült a modellhívás." }, { status: 500 });
+      return NextResponse.json({ error: "model_failure", message: "Nem siker??lt a modellh??v??s." }, { status: 500 });
     }
 
-    const observation = parseDreamObservation(observationRaw);
+    const observation = observationResult;
     if (!observation) {
-      console.warn("observe: invalid observation payload", observationRaw);
+      console.warn("observe: invalid observation payload", observationResult);
       return NextResponse.json({ error: "invalid_observation_schema", message: "Érvénytelen megfigyelés séma." }, { status: 500 });
     }
 
@@ -379,7 +421,7 @@ export async function POST(req: Request) {
       session_id: sessionId,
       user_id: userId,
       input_hash,
-      model: MODEL,
+      model: modelUsed,
       payload: observation,
     });
 

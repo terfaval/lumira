@@ -1,5 +1,6 @@
 // src/domain/frame/generateFrameFromLatent.ts
-import { openaiServer, OPENAI_MODELS } from "@/src/lib/openai/server";
+import { openaiServer } from "@/src/lib/openai/server";
+import { callWithRetries, logModelTrace, RetryableError } from "@/src/lib/openai/modelRouting";
 import type { DirectionCatalogRow } from "@/src/db/repositories/catalogRepo";
 import {
   countWords,
@@ -44,7 +45,6 @@ export async function generateFrameFromLatent(args: {
   topAnchors?: string[];
 }): Promise<{ payload: FramePayloadV0; model: string }> {
   const openai = openaiServer();
-  const model = OPENAI_MODELS.OBSERVE;
 
   const system = [
     "Adj vissza EGY darab JSON objektumot (json) egy álomhoz.",
@@ -121,83 +121,109 @@ export async function generateFrameFromLatent(args: {
     },
   };
 
-  const resp = await openai.chat.completions.create({
-    model,
-    temperature: 0.25,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: JSON.stringify(user) },
-    ],
-    response_format: { type: "json_object" },
-  });
+  const { result: payload, model_used } = await callWithRetries({
+    jobName: "frame",
+    callFn: async ({ model, attempt, maxAttempts }) => {
+      const resp = await openai.chat.completions.create({
+        model,
+        temperature: 0.25,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: JSON.stringify(user) },
+        ],
+        response_format: { type: "json_object" },
+      });
 
-  const content = resp.choices[0]?.message?.content ?? "";
-  const parsed = normalizeFramePayload(content, allowedSet);
+      const usage = resp.usage ?? {};
+      const content = resp.choices[0]?.message?.content ?? "";
+      const parsed = normalizeFramePayload(content, allowedSet);
 
-  let framing_text = parsed.framing_text;
-  let title = parsed.title;
-  let recommended_slugs = parsed.recommended_slugs;
+      let framing_text = parsed.framing_text;
+      let title = parsed.title;
+      let recommended_slugs = parsed.recommended_slugs;
 
-  const firstOk =
-    isValidTitle(title, topAnchors) &&
-    isValidFraming(framing_text, topAnchors, targetSentences) &&
-    !!recommended_slugs;
+      const firstOk =
+        isValidTitle(title, topAnchors) &&
+        isValidFraming(framing_text, topAnchors, targetSentences) &&
+        !!recommended_slugs;
 
-  if (!firstOk) {
-    const repaired = await repairFrameBundle({
-      openai,
-      dreamText: String(args.dreamText ?? ""),
-      latentPayload: args.latent ?? null,
-      dreamObservation: args.observation ?? null,
-      allowedSlugs: args.allowedSlugs ?? [],
-      allowedSet,
-      topAnchors,
-      previous: {
+      if (!firstOk) {
+        const repaired = await repairFrameBundle({
+          openai,
+          model,
+          attemptIndex: attempt,
+          dreamText: String(args.dreamText ?? ""),
+          latentPayload: args.latent ?? null,
+          dreamObservation: args.observation ?? null,
+          allowedSlugs: args.allowedSlugs ?? [],
+          allowedSet,
+          topAnchors,
+          previous: {
+            title,
+            framing_text,
+            recommended_slugs,
+          },
+        });
+
+        if (repaired.title) title = repaired.title;
+        if (repaired.framing_text) framing_text = repaired.framing_text;
+        if (repaired.recommended_slugs) recommended_slugs = repaired.recommended_slugs;
+      }
+
+      if (!recommended_slugs || !recommended_slugs.length) {
+        recommended_slugs = pickFallbackSlugs(args.recommendedSlugsFallback, args.allowedSlugs ?? []);
+      }
+
+      if (!isValidTitle(title, topAnchors)) {
+        const repairedTitle = await repairTitle({
+          openai,
+          model,
+          attemptIndex: attempt,
+          dreamText: String(args.dreamText ?? ""),
+          topAnchors,
+          latentPayload: args.latent ?? null,
+        });
+        if (repairedTitle) title = repairedTitle;
+      }
+
+      if (!isValidTitle(title, topAnchors)) {
+        title = fallbackTitleFromAnchors(topAnchors, args.dreamText ?? "");
+      }
+
+      if (!isValidFraming(framing_text, topAnchors, targetSentences)) {
+        framing_text = fallbackFraming(topAnchors, args.dreamText ?? "");
+      }
+
+      const templated = isTemplatedFrame(framing_text);
+      if (templated && attempt < maxAttempts - 1) {
+        throw new RetryableError("quality_fail", "Frame looks templated", usage);
+      }
+
+      const payload: FramePayloadV0 = {
         title,
         framing_text,
-        recommended_slugs,
-      },
-    });
+        recommended_slugs: recommended_slugs ?? [],
+        meta: {
+          source_observation_version_id: args.sourceIds.observation_version_id,
+          source_latent_version_id: args.sourceIds.latent_version_id,
+          source_session_index_version_id: args.sourceIds.session_index_version_id,
+        },
+      };
 
-    if (repaired.title) title = repaired.title;
-    if (repaired.framing_text) framing_text = repaired.framing_text;
-    if (repaired.recommended_slugs) recommended_slugs = repaired.recommended_slugs;
-  }
+      const invalid =
+        !payload.title ||
+        !payload.framing_text ||
+        !Array.isArray(payload.recommended_slugs) ||
+        payload.recommended_slugs.length < 2;
+      if (invalid) {
+        throw new RetryableError("schema_fail", "Frame schema invalid", usage);
+      }
 
-  if (!recommended_slugs || !recommended_slugs.length) {
-    recommended_slugs = pickFallbackSlugs(args.recommendedSlugsFallback, args.allowedSlugs ?? []);
-  }
-
-  if (!isValidTitle(title, topAnchors)) {
-    const repairedTitle = await repairTitle({
-      openai,
-      dreamText: String(args.dreamText ?? ""),
-      topAnchors,
-      latentPayload: args.latent ?? null,
-    });
-    if (repairedTitle) title = repairedTitle;
-  }
-
-  if (!isValidTitle(title, topAnchors)) {
-    title = fallbackTitleFromAnchors(topAnchors, args.dreamText ?? "");
-  }
-
-  if (!isValidFraming(framing_text, topAnchors, targetSentences)) {
-    framing_text = fallbackFraming(topAnchors, args.dreamText ?? "");
-  }
-
-  const payload: FramePayloadV0 = {
-    title,
-    framing_text,
-    recommended_slugs: recommended_slugs ?? [],
-    meta: {
-      source_observation_version_id: args.sourceIds.observation_version_id,
-      source_latent_version_id: args.sourceIds.latent_version_id,
-      source_session_index_version_id: args.sourceIds.session_index_version_id,
+      return { result: payload, usage };
     },
-  };
+  });
 
-  return { payload, model };
+  return { payload, model: model_used };
 }
 
 function toStringArray(input: unknown): string[] {
@@ -308,6 +334,13 @@ function normalizeHuToken(s: string): string {
     .replace(/\s+/g, " ");
 }
 
+function isTemplatedFrame(text: string): boolean {
+  const t = normalizeHuToken(text);
+  const hasIntro = t.includes(normalizeHuToken("Az álmodban"));
+  const hasOutro = t.includes(normalizeHuToken("A végén dönthetsz"));
+  return hasIntro && hasOutro && text.length < 280;
+}
+
 function isFloorOrdinalHu(t: string): boolean {
   const x = normalizeHuToken(t);
   // common Hungarian ordinals + plain digits
@@ -377,6 +410,8 @@ function cleanAnchors(rawAnchors: string[]): string[] {
 
 async function repairFrameBundle(args: {
   openai: ReturnType<typeof openaiServer>;
+  model: string;
+  attemptIndex: number;
   dreamText: string;
   latentPayload: any;
   dreamObservation: any;
@@ -408,13 +443,21 @@ async function repairFrameBundle(args: {
   };
 
   const resp = await args.openai.chat.completions.create({
-    model: OPENAI_MODELS.OBSERVE,
+    model: args.model,
     temperature: 0.22,
     messages: [
       { role: "system", content: system },
       { role: "user", content: JSON.stringify(user) },
     ],
     response_format: { type: "json_object" },
+  });
+  logModelTrace({
+    job_name: "frame",
+    model_used: args.model,
+    attempt_index: args.attemptIndex,
+    retry_reason: "schema_fail",
+    prompt_tokens: resp.usage?.prompt_tokens ?? null,
+    completion_tokens: resp.usage?.completion_tokens ?? null,
   });
 
   const content = resp.choices?.[0]?.message?.content ?? "";
@@ -424,6 +467,8 @@ async function repairFrameBundle(args: {
 
 async function repairTitle(args: {
   openai: ReturnType<typeof openaiServer>;
+  model: string;
+  attemptIndex: number;
   dreamText: string;
   topAnchors: string[];
   latentPayload: any;
@@ -447,13 +492,21 @@ async function repairTitle(args: {
   };
 
   const resp = await args.openai.chat.completions.create({
-    model: OPENAI_MODELS.OBSERVE,
+    model: args.model,
     temperature: 0.2,
     messages: [
       { role: "system", content: system },
       { role: "user", content: JSON.stringify(user) },
     ],
     response_format: { type: "json_object" },
+  });
+  logModelTrace({
+    job_name: "frame",
+    model_used: args.model,
+    attempt_index: args.attemptIndex,
+    retry_reason: "schema_fail",
+    prompt_tokens: resp.usage?.prompt_tokens ?? null,
+    completion_tokens: resp.usage?.completion_tokens ?? null,
   });
 
   const content = resp.choices?.[0]?.message?.content ?? "";

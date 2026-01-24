@@ -2,8 +2,8 @@ import { openaiServer } from "@/src/lib/openai/server";
 import { stripDiacritics } from "@/src/lib/dream/anchorKey";
 import type { Selected } from "@/src/domain/work/selector/CardMaterialSelector";
 import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
+import { callWithRetries, logModelTrace, RetryableError } from "@/src/lib/openai/modelRouting";
 
-const MODEL = process.env.OPENAI_WORK_MODEL ?? "gpt-4o-mini";
 const OPENAI_TIMEOUT_MS = 15000;
 export const COMPOSE_MAX_ATTEMPTS = 3;
 const BANNED_PROMPT_TOKENS = ["szoveg", "irodalom", "narrativ", "szimbolum", "metafora", "elbeszeles", "narracio"];
@@ -152,67 +152,116 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
     intent_hint: args.intent_hint ?? null,
   };
 
-  for (let attempt = 1; attempt <= COMPOSE_MAX_ATTEMPTS; attempt++) {
-    const system = buildSystemPrompt({ mode: args.selected.mode, strict: attempt > 1 });
-    try {
-      const completion = await withTimeout(
-        (signal) =>
-          openai.chat.completions.create(
-            {
-              model: MODEL,
-              temperature: 0.25,
-              response_format: { type: "json_object" },
-              messages: [
-                { role: "system", content: system },
-                { role: "user", content: JSON.stringify(user) },
-              ],
-              max_tokens: 400,
-            },
-            { signal }
-          ),
-        OPENAI_TIMEOUT_MS
-      );
+  try {
+    const { result } = await callWithRetries({
+      jobName: "compose_card",
+      callFn: async ({ model, attempt }) => {
+        for (let inner = 1; inner <= COMPOSE_MAX_ATTEMPTS; inner++) {
+          const system = buildSystemPrompt({ mode: args.selected.mode, strict: inner > 1 });
+          const completion = await withTimeout(
+            (signal) =>
+              openai.chat.completions.create(
+                {
+                  model,
+                  temperature: 0.25,
+                  response_format: { type: "json_object" },
+                  messages: [
+                    { role: "system", content: system },
+                    { role: "user", content: JSON.stringify(user) },
+                  ],
+                  max_tokens: 400,
+                },
+                { signal }
+              ),
+            OPENAI_TIMEOUT_MS
+          );
 
-      const raw = completion.choices?.[0]?.message?.content ?? "";
-      const parsed = parseModelJSON(raw);
-      if (!parsed) {
-        if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
-        return null;
-      }
+          const usage = completion.usage ?? {};
+          const raw = completion.choices?.[0]?.message?.content ?? "";
+          const parsed = parseModelJSON(raw);
+          if (!parsed) {
+            if (inner < COMPOSE_MAX_ATTEMPTS) {
+              logModelTrace({
+                job_name: "compose_card",
+                model_used: model,
+                attempt_index: attempt,
+                retry_reason: "parse_fail",
+                prompt_tokens: usage?.prompt_tokens ?? null,
+                completion_tokens: usage?.completion_tokens ?? null,
+              });
+              continue;
+            }
+            throw new RetryableError("parse_fail", "Compose parse failed", usage);
+          }
 
-      const leadInRaw = typeof parsed.lead_in === "string" ? parsed.lead_in : "";
-      const promptRaw = typeof parsed.prompt === "string" ? parsed.prompt : "";
-      const leadIn = cleanLeadIn(leadInRaw);
-      const prompt = promptRaw.trim();
+          const leadInRaw = typeof parsed.lead_in === "string" ? parsed.lead_in : "";
+          const promptRaw = typeof parsed.prompt === "string" ? parsed.prompt : "";
+          const leadIn = cleanLeadIn(leadInRaw);
+          const prompt = promptRaw.trim();
 
-      if (!prompt || !isSingleSentencePrompt(prompt)) {
-        if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
-        return null;
-      }
-      const intentLabel = args.selected.material.intent_label ?? "";
-      if (containsBannedDiscourse(prompt) || containsBannedDiscourse(leadIn) || !mentionsDreamContext(prompt)) {
-        if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
-        return null;
-      }
-      if (
-        (intentLabel && containsExactPhrase(prompt, intentLabel)) ||
-        (args.intent_hint && containsExactPhrase(prompt, args.intent_hint))
-      ) {
-        if (attempt < COMPOSE_MAX_ATTEMPTS) continue;
-        return null;
-      }
+          if (!prompt || !isSingleSentencePrompt(prompt)) {
+            if (inner < COMPOSE_MAX_ATTEMPTS) {
+              logModelTrace({
+                job_name: "compose_card",
+                model_used: model,
+                attempt_index: attempt,
+                retry_reason: "schema_fail",
+                prompt_tokens: usage?.prompt_tokens ?? null,
+                completion_tokens: usage?.completion_tokens ?? null,
+              });
+              continue;
+            }
+            throw new RetryableError("schema_fail", "Compose prompt invalid", usage);
+          }
+          const intentLabel = args.selected.material.intent_label ?? "";
+          if (containsBannedDiscourse(prompt) || containsBannedDiscourse(leadIn) || !mentionsDreamContext(prompt)) {
+            if (inner < COMPOSE_MAX_ATTEMPTS) {
+              logModelTrace({
+                job_name: "compose_card",
+                model_used: model,
+                attempt_index: attempt,
+                retry_reason: "schema_fail",
+                prompt_tokens: usage?.prompt_tokens ?? null,
+                completion_tokens: usage?.completion_tokens ?? null,
+              });
+              continue;
+            }
+            throw new RetryableError("schema_fail", "Compose validation failed", usage);
+          }
+          if (
+            (intentLabel && containsExactPhrase(prompt, intentLabel)) ||
+            (args.intent_hint && containsExactPhrase(prompt, args.intent_hint))
+          ) {
+            if (inner < COMPOSE_MAX_ATTEMPTS) {
+              logModelTrace({
+                job_name: "compose_card",
+                model_used: model,
+                attempt_index: attempt,
+                retry_reason: "schema_fail",
+                prompt_tokens: usage?.prompt_tokens ?? null,
+                completion_tokens: usage?.completion_tokens ?? null,
+              });
+              continue;
+            }
+            throw new RetryableError("schema_fail", "Compose prompt reused intent", usage);
+          }
 
-      return {
-        lead_in: clampText(leadIn, 720),
-        prompt: clampText(prompt, 180),
-        direction_slug: args.selected.direction.slug ?? null,
-        group_tags: args.selected.direction.group_tags ?? [],
-        compose_trace: { name: MODEL, temperature: 0.25, retries: attempt - 1 },
-      };
-    } catch {
-      return null;
-    }
+          const result: ComposeResult = {
+            lead_in: clampText(leadIn, 720),
+            prompt: clampText(prompt, 180),
+            direction_slug: args.selected.direction.slug ?? null,
+            group_tags: args.selected.direction.group_tags ?? [],
+            compose_trace: { name: model, temperature: 0.25, retries: inner - 1 },
+          };
+          return { result, usage };
+        }
+
+        throw new RetryableError("schema_fail", "Compose attempts exhausted");
+      },
+    });
+
+    return result;
+  } catch {
+    return null;
   }
-
-  return null;
 }

@@ -13,6 +13,7 @@ import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
+import { allowGlossaryAccess, GLOSSARY_GATE_THRESHOLD } from "@/src/lib/glossary/gate";
 
 type GlossaryItem = {
   id: string;
@@ -24,6 +25,7 @@ type GlossaryItem = {
 type TermCandidate = {
   id: string;
   term: string;
+  display_label?: string | null;
   count: number;
   created_at: string;
 };
@@ -139,7 +141,7 @@ export default function GlossaryPage() {
     setBusy(true);
     const { data, error } = await supabase
       .from("term_candidates")
-      .select("id, term, count, created_at")
+      .select("id, term, display_label, count, created_at")
       .order("count", { ascending: false });
     if (error) {
       console.error(error.message);
@@ -194,7 +196,7 @@ export default function GlossaryPage() {
         if (noteErr) setErr(noteErr.message || "Nem sikerült elmenteni a jegyzetet.");
       }
 
-      await supabase.from("term_candidates").delete().eq("term", name);
+      await supabase.from("term_candidates").delete().eq("term", anchorKey(name));
       resetForm();
       await loadItems();
       await loadSuggestions();
@@ -267,10 +269,9 @@ export default function GlossaryPage() {
     setBusy(false);
   }
 
-  // Determine if we should allow access to the glossary. If there are fewer than 10 suggested items,
-  // the glossary is hidden until more recurring elements appear.
+  // Determine if we should allow access to the glossary until enough recurring elements appear.
   const readyForGate = !loading && !busy;
-  const allowGlossary = suggestions.length >= 10;
+  const allowGlossary = allowGlossaryAccess(suggestions.length);
   const showOverlay = loading || (busy && items.length === 0 && suggestions.length === 0);
 
   // derive filtered list based on search
@@ -337,7 +338,7 @@ export default function GlossaryPage() {
 
           {!busy ? (
             <p style={{ color: "var(--text-muted)" }}>
-              Jelenleg {suggestions.length} javasolt elem található. Legalább 10 elem szükséges az álomszótár
+              Jelenleg {suggestions.length} javasolt elem található. Legalább {GLOSSARY_GATE_THRESHOLD} elem szükséges az álomszótár
               megnyitásához.
             </p>
           ) : null}

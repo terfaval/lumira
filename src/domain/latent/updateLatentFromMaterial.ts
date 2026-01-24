@@ -1,5 +1,6 @@
 // src/domain/latent/updateLatentFromMaterial.ts
-import { openaiServer, OPENAI_MODELS } from "@/src/lib/openai/server";
+import { openaiServer } from "@/src/lib/openai/server";
+import { callWithRetries, RetryableError } from "@/src/lib/openai/modelRouting";
 
 export type SalientElement = {
   key: string;
@@ -29,6 +30,15 @@ export type LatentPayloadV0 = {
   salient_elements?: SalientElement[];
 };
 
+function latentQualityLow(payload: LatentPayloadV0, dreamTextLength: number): boolean {
+  const directionCount = Array.isArray(payload.direction_candidates) ? payload.direction_candidates.length : 0;
+  const questionCount = Array.isArray(payload.question_candidates) ? payload.question_candidates.length : 0;
+  const openLoopCount = Array.isArray(payload.open_loops) ? payload.open_loops.length : 0;
+  const totalSignal = directionCount + questionCount + openLoopCount;
+  const sparseForLong = dreamTextLength >= 800 && totalSignal < 2;
+  return totalSignal === 0 || sparseForLong;
+}
+
 export async function updateLatentFromMaterial(args: {
   observation: any; // observation_versions.payload (Ticket A schema)
   sessionIndex: any; // session_index_versions.payload
@@ -37,7 +47,6 @@ export async function updateLatentFromMaterial(args: {
   dreamTextExcerpt?: string;
 }): Promise<{ payload: LatentPayloadV0; model: string }> {
   const openai = openaiServer();
-  const model = OPENAI_MODELS.OBSERVE;
 
   // Hungarian-only + non-interpretive latent scaffold
   const system = [
@@ -111,31 +120,49 @@ export async function updateLatentFromMaterial(args: {
     session_index: args.sessionIndex ?? null,
   };
 
-  const resp = await openai.chat.completions.create({
-    model,
-    temperature: 0.15,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: JSON.stringify(user) },
-    ],
-    response_format: { type: "json_object" },
+  const { result, model_used } = await callWithRetries({
+    jobName: "latent_update",
+    callFn: async ({ model, attempt, maxAttempts }) => {
+      const resp = await openai.chat.completions.create({
+        model,
+        temperature: 0.15,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: JSON.stringify(user) },
+        ],
+        response_format: { type: "json_object" },
+      });
+
+      const usage = resp.usage ?? {};
+      const content = resp.choices[0]?.message?.content;
+      if (!content) throw new RetryableError("parse_fail", "Latent: empty JSON", usage);
+
+      let parsed: any;
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        throw new RetryableError("parse_fail", "Latent: invalid JSON", usage);
+      }
+
+      // Minimal v0 validation
+      if (
+        !parsed?.coverage ||
+        !Array.isArray(parsed?.direction_candidates) ||
+        !Array.isArray(parsed?.question_candidates) ||
+        !Array.isArray(parsed?.open_loops) ||
+        !Array.isArray(parsed?.hypothesis_slots)
+      ) {
+        throw new RetryableError("schema_fail", "Latent: schema mismatch", usage);
+      }
+
+      const payload = parsed as LatentPayloadV0;
+      if (latentQualityLow(payload, String(args.dreamTextExcerpt ?? "").length) && attempt < maxAttempts - 1) {
+        throw new RetryableError("quality_fail", "Latent: low-quality output", usage);
+      }
+
+      return { result: payload, usage };
+    },
   });
 
-  const content = resp.choices[0]?.message?.content;
-  if (!content) throw new Error("Latent: empty JSON");
-
-  const parsed = JSON.parse(content);
-
-  // Minimal v0 validation
-  if (
-    !parsed?.coverage ||
-    !Array.isArray(parsed?.direction_candidates) ||
-    !Array.isArray(parsed?.question_candidates) ||
-    !Array.isArray(parsed?.open_loops) ||
-    !Array.isArray(parsed?.hypothesis_slots)
-  ) {
-    throw new Error("Latent: schema mismatch");
-  }
-
-  return { payload: parsed as LatentPayloadV0, model };
+  return { payload: result, model: model_used };
 }

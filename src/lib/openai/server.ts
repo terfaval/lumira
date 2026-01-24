@@ -3,6 +3,10 @@ import OpenAI from "openai";
 
 export const OPENAI_MODELS = {
   OBSERVE: process.env.OPENAI_OBSERVE_MODEL ?? "gpt-4o-mini",
+  WORK: process.env.OPENAI_WORK_MODEL ?? "gpt-4o-mini",
+  FRAME: process.env.OPENAI_FRAME_MODEL ?? "gpt-4.1-mini",
+  MINI_41: process.env.OPENAI_41_MINI_MODEL ?? "gpt-4.1-mini",
+  FULL_41: process.env.OPENAI_41_MODEL ?? "gpt-4.1",
   EMBED: process.env.OPENAI_EMBED_MODEL ?? "text-embedding-3-small",
 };
 

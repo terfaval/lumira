@@ -12,12 +12,12 @@ import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface
 import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
-import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
 
 type TermCandidate = {
   id: string;
   term: string;
+  display_label?: string | null;
   count: number;
   created_at: string;
 };
@@ -80,7 +80,7 @@ export default function SuggestionsPage() {
     setErr(null);
     const { data, error } = await supabase
       .from("term_candidates")
-      .select("id, term, count, created_at")
+      .select("id, term, display_label, count, created_at")
       .order("count", { ascending: false });
     if (error) {
       setErr(error.message || "Nem sikerült betölteni a javasolt elemeket.");
@@ -125,9 +125,10 @@ export default function SuggestionsPage() {
 
     setBusy(true);
     try {
+      const label = (item.display_label ?? item.term).trim();
       const { data: inserted, error } = await supabase
         .from("glossary_terms")
-        .insert({ canonical: item.term, canonical_key: anchorKey(item.term), user_id: userId })
+        .insert({ canonical: label, canonical_key: item.term, user_id: userId })
         .select("id")
         .single();
       if (error) throw error;
@@ -231,7 +232,7 @@ export default function SuggestionsPage() {
                 <li key={item.id}>
                   <GlassCardSurface className="glossary-grid-card" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
                     <div className="glossary-card-body stack">
-                      <div style={{ fontWeight: 700 }}>{item.term}</div>
+                      <div style={{ fontWeight: 700 }}>{item.display_label ?? item.term}</div>
                       <label>
                         <span>Jegyzet</span>
                         <textarea
@@ -258,7 +259,7 @@ export default function SuggestionsPage() {
                   <GlassCardSurface className="glossary-grid-card" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
                     <div className="glossary-card-body stack-tight">
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ fontWeight: 700, fontSize: 18 }}>{item.term}</div>
+                        <div style={{ fontWeight: 700, fontSize: 18 }}>{item.display_label ?? item.term}</div>
                         <div style={{ fontSize: 12, color: "var(--text-muted)" }}>x{item.count}</div>
                       </div>
                     </div>

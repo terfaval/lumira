@@ -59,7 +59,7 @@ export async function upsertGlossaryOccurrences(
  */
 export async function bumpTermCandidates(
   supabase: SupabaseClient,
-  args: { user_id: string; terms: string[]; nowISO?: string }
+  args: { user_id: string; terms: string[]; nowISO?: string; displayLabels?: Record<string, string> }
 ): Promise<void> {
   const terms = Array.from(new Set(args.terms)).filter(Boolean);
   if (terms.length === 0) return;
@@ -82,6 +82,7 @@ export async function bumpTermCandidates(
   const upserts = terms.map((t) => ({
     user_id: args.user_id,
     term: t,
+    display_label: args.displayLabels?.[t] ?? t,
     count: (existingMap.get(t) ?? 0) + 1,
     last_seen_at: nowISO,
   }));
