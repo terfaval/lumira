@@ -1,10 +1,12 @@
 // src/domain/glossary/glossaryCandidateExtractor.ts
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 
+type GlossarySourceType = "entities" | "actions" | "raw_facts";
+
 type GlossaryCandidate = {
   canonical_key: string;
   display_label: string;
-  source_types?: Array<"entities" | "actions" | "raw_facts">;
+  source_types?: GlossarySourceType[];
 };
 
 function safeParseJSONMaybeString(payload: any): any {
@@ -25,30 +27,43 @@ function normalizeLabel(raw: unknown): string {
 function addCandidate(
   map: Map<string, GlossaryCandidate>,
   raw: unknown,
-  source: GlossaryCandidate["source_types"][number]
+  source: GlossarySourceType
 ) {
   const label = normalizeLabel(raw);
   if (!label) return;
+
   const canonical_key = anchorKey(label);
   if (!canonical_key) return;
 
   const existing = map.get(canonical_key);
   if (!existing) {
-    map.set(canonical_key, { canonical_key, display_label: label, source_types: [source] });
+    map.set(canonical_key, {
+      canonical_key,
+      display_label: label,
+      source_types: [source],
+    });
     return;
   }
 
-  if (existing.source_types && !existing.source_types.includes(source)) {
-    existing.source_types = [...existing.source_types, source];
+  // ha valaha kerülne be olyan elem, aminek nincs source_types-a, akkor is stabil
+  const current = existing.source_types ?? [];
+  if (!current.includes(source)) {
+    existing.source_types = [...current, source];
   }
 }
 
-function pushArray(map: Map<string, GlossaryCandidate>, raw: unknown, source: GlossaryCandidate["source_types"][number]) {
+function pushArray(
+  map: Map<string, GlossaryCandidate>,
+  raw: unknown,
+  source: GlossarySourceType
+) {
   if (!Array.isArray(raw)) return;
   for (const it of raw) addCandidate(map, it, source);
 }
 
-export function extractGlossaryCandidatesFromObservation(observationRaw: any): GlossaryCandidate[] {
+export function extractGlossaryCandidatesFromObservation(
+  observationRaw: any
+): GlossaryCandidate[] {
   const obs = safeParseJSONMaybeString(observationRaw);
   if (!obs || typeof obs !== "object") return [];
 
