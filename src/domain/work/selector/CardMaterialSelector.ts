@@ -55,7 +55,7 @@ export type SessionState = {
   mode: "normal" | "gentle";
 };
 
-const SIMILARITY_THRESHOLD = 0.85;
+export const SIMILARITY_THRESHOLD = 0.85;
 const RULED_OUT_LIMIT = 8;
 
 type ScoredCandidate = MaterialCandidate & { id: string; similarity_max: number };

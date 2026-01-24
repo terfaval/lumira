@@ -1,3 +1,33 @@
+export type TraceDebugPayload = {
+  session_id: string;
+  sequence: number | null;
+  direction: {
+    selected_slug: string | null;
+    reason: "explicit" | "latent" | "catalog";
+  };
+  material: {
+    kind: "anchor" | "event" | "seed" | "intent";
+    id: string;
+    anchor_keys?: string[];
+    anchor_key?: string | null;
+  };
+  novelty: {
+    recent_material_hit: boolean;
+    similarity_max: number;
+    similarity_threshold: number;
+  };
+  ledger: {
+    recent_question_hashes_count: number;
+    recent_anchor_keys_count: number;
+  };
+  question_fingerprint: string | null;
+  similarity_to_recent: {
+    score: number;
+    threshold: number;
+    compared_to: string | null;
+  };
+};
+
 export type TracePayload = {
   request: {
     request_id: string;
@@ -44,4 +74,5 @@ export type TracePayload = {
     reason_code?: string;
     triggered_by?: string;
   };
+  debug?: TraceDebugPayload;
 };

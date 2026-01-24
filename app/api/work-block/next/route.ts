@@ -10,17 +10,17 @@ import {
 } from "@/src/db/repositories/latestRepo";
 import { ensureAnchorsRanked } from "@/src/orchestration/ensureAnchorsRanked";
 import { recommendDirectionsFromLatent } from "@/src/domain/directions/recommendDirectionsFromLatent";
-import { selectCardMaterial } from "@/src/domain/work/selector/CardMaterialSelector";
+import { selectCardMaterial, SIMILARITY_THRESHOLD } from "@/src/domain/work/selector/CardMaterialSelector";
 import { COMPOSE_MAX_ATTEMPTS, composeCard } from "@/src/domain/work/composer/CardComposer";
 import { evaluateSafety } from "@/src/domain/work/safety/SafetyGate";
 import { buildStopSignal } from "@/src/domain/work/stop/StopEngine";
 import { buildLatentIntentCandidates } from "@/src/domain/work/materials/latentIntent";
-import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
+import type { TraceDebugPayload, TracePayload } from "@/src/domain/work/trace/TraceTypes";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { shouldKeepAnchorKey, shouldKeepAnchorLabel } from "@/src/lib/dream/huAnchorHygiene";
 import { isDirectionCardContent } from "@/src/lib/types";
 import { sha256 } from "@/src/orchestration/idempotency/materialHash";
-import { listRecentAnchorKeys } from "@/src/db/repositories/workQuestionLedgerRepo";
+import { listRecentAnchorKeys, listRecentQuestionHashes } from "@/src/db/repositories/workQuestionLedgerRepo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,6 +36,7 @@ type NextRequest = {
 type NextResponsePayload = {
   request_id: string;
   status: "ok" | "stop";
+  debug?: TraceDebugPayload;
   work_block?: {
     id: string;
     direction_slug: string | null;
@@ -336,6 +337,118 @@ function extractMaterialIdFromPayload(payload: any): string | null {
   return typeof materialId === "string" && materialId ? materialId : null;
 }
 
+function normalizeText(s: string): string {
+  return (s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenSet(s: string): Set<string> {
+  const tokens = normalizeText(s)
+    .split(" ")
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 3);
+  return new Set(tokens);
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  const union = a.size + b.size - inter;
+  return union === 0 ? 0 : inter / union;
+}
+
+function similarityToRecent(prompt: string | null | undefined, recent: string[]): { score: number; compared_to: string | null } {
+  if (!prompt || !recent.length) return { score: 0, compared_to: null };
+  const a = tokenSet(prompt);
+  if (!a.size) return { score: 0, compared_to: null };
+  let bestScore = 0;
+  let bestPrompt: string | null = null;
+  for (const r of recent) {
+    const sim = jaccard(a, tokenSet(r));
+    if (sim > bestScore) {
+      bestScore = sim;
+      bestPrompt = r;
+    }
+  }
+  return { score: bestScore, compared_to: bestPrompt };
+}
+
+function normalizeQuestionHash(prompt: string): string | null {
+  const normalized = (prompt ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+  if (!normalized) return null;
+  return sha256(normalized);
+}
+
+function directionReason(args: {
+  selected_slug: string | null;
+  explicit_slug?: string | null;
+  direction_candidates?: string[];
+  catalog: Array<{ slug: string }>;
+}): TraceDebugPayload["direction"]["reason"] {
+  if (args.selected_slug && args.explicit_slug && args.selected_slug === args.explicit_slug) {
+    const found = args.catalog.some((row) => row.slug === args.explicit_slug);
+    if (found) return "explicit";
+  }
+  if (args.selected_slug && args.direction_candidates?.includes(args.selected_slug)) return "latent";
+  return "catalog";
+}
+
+function buildDebugTrace(args: {
+  selection: TracePayload["selection"];
+  session_id: string;
+  sequence: number | null;
+  explicit_direction_slug?: string | null;
+  direction_candidates?: string[];
+  catalog: Array<{ slug: string }>;
+  recent_material_ids: string[];
+  recent_prompts: string[];
+  recent_question_hashes_count: number;
+  recent_anchor_keys_count: number;
+  question_prompt?: string | null;
+}): TraceDebugPayload {
+  const similarityMax = args.selection.scores?.similarity_max ?? 0;
+  const recentSimilarity = similarityToRecent(args.question_prompt ?? null, args.recent_prompts ?? []);
+  return {
+    session_id: args.session_id,
+    sequence: args.sequence ?? null,
+    direction: {
+      selected_slug: args.selection.direction_slug ?? null,
+      reason: directionReason({
+        selected_slug: args.selection.direction_slug ?? null,
+        explicit_slug: args.explicit_direction_slug ?? null,
+        direction_candidates: args.direction_candidates ?? [],
+        catalog: args.catalog ?? [],
+      }),
+    },
+    material: {
+      kind: args.selection.material_type,
+      id: args.selection.material_id,
+      anchor_keys: args.selection.anchor_keys,
+      anchor_key: args.selection.anchor_keys?.[0] ?? null,
+    },
+    novelty: {
+      recent_material_hit: args.recent_material_ids.includes(args.selection.material_id),
+      similarity_max: similarityMax,
+      similarity_threshold: SIMILARITY_THRESHOLD,
+    },
+    ledger: {
+      recent_question_hashes_count: args.recent_question_hashes_count,
+      recent_anchor_keys_count: args.recent_anchor_keys_count,
+    },
+    question_fingerprint: args.question_prompt ? normalizeQuestionHash(args.question_prompt) : null,
+    similarity_to_recent: {
+      score: recentSimilarity.score,
+      threshold: SIMILARITY_THRESHOLD,
+      compared_to: recentSimilarity.compared_to ? clampText(recentSimilarity.compared_to, 200) : null,
+    },
+  };
+}
+
 export async function POST(req: Request) {
   try {
     const supabase = await supabaseServerAuthed(req);
@@ -358,7 +471,16 @@ export async function POST(req: Request) {
     const request_id = crypto.randomUUID();
     const client_request_id = typeof body.client_request_id === "string" ? body.client_request_id.trim() : null;
 
-    const [catalog, rawDreamText, observationLatest, latentLatest, anchorLatest, recentBlocks, recentAnchorKeys] = await Promise.all([
+    const [
+      catalog,
+      rawDreamText,
+      observationLatest,
+      latentLatest,
+      anchorLatest,
+      recentBlocks,
+      recentAnchorKeys,
+      recentQuestionHashes,
+    ] = await Promise.all([
       fetchDirectionCatalog(supabase),
       fetchLatestRawDreamEntry(supabase, userId, sessionId),
       fetchObservationLatestWithPayloadAndId(supabase, userId, sessionId),
@@ -366,6 +488,7 @@ export async function POST(req: Request) {
       fetchAnchorLatestWithPayloadAndId(supabase, userId, sessionId),
       fetchRecentBlocks(supabase, sessionId, userId),
       listRecentAnchorKeys(supabase, { session_id: sessionId, user_id: userId, limit: 120 }),
+      listRecentQuestionHashes(supabase, { session_id: sessionId, user_id: userId, limit: 120 }),
     ]);
 
     let anchorPayload = anchorLatest?.payload ?? null;
@@ -376,6 +499,13 @@ export async function POST(req: Request) {
 
     const observationPayload = observationLatest?.payload ?? null;
     const observationSafety = observationPayload?.safety?.flag ?? null;
+
+    const recentMaterialIds = recentBlocks
+      .map((row: any) => extractMaterialIdFromPayload(row?.payload))
+      .filter((v: unknown): v is string => typeof v === "string" && v.length > 0);
+    const recentPrompts = recentBlocks
+      .map((row: any) => extractPromptFromPayload(row?.payload))
+      .filter(Boolean);
 
     const safety = evaluateSafety({ dreamText: rawDreamText ?? "", observationFlag: observationSafety });
     const traceBase = buildRequestTrace({
@@ -397,11 +527,25 @@ export async function POST(req: Request) {
         model: { name: "safety_gate" },
         stop: { reason_code: safety.stop.reason_code, triggered_by: safety.stop.triggered_by },
       };
+      trace.debug = buildDebugTrace({
+        selection: trace.selection,
+        session_id: sessionId,
+        sequence: null,
+        explicit_direction_slug: body.direction_slug ?? null,
+        direction_candidates: [],
+        catalog,
+        recent_material_ids: recentMaterialIds,
+        recent_prompts: recentPrompts,
+        recent_question_hashes_count: (recentQuestionHashes ?? []).length,
+        recent_anchor_keys_count: (recentAnchorKeys ?? []).length,
+        question_prompt: null,
+      });
 
       const stop = buildStopSignal("safety_limit");
       return NextResponse.json({
         request_id,
         status: "stop",
+        debug: trace.debug,
         stop_signal: { ...stop, trace },
       } satisfies NextResponsePayload);
     }
@@ -426,12 +570,6 @@ export async function POST(req: Request) {
     if (rankedAnchors.length > 0) {
       materials.anchors = rankedAnchors;
     }
-    const recentMaterialIds = recentBlocks
-      .map((row: any) => extractMaterialIdFromPayload(row?.payload))
-      .filter((v: unknown): v is string => typeof v === "string" && v.length > 0);
-    const recentPrompts = recentBlocks
-      .map((row: any) => extractPromptFromPayload(row?.payload))
-      .filter(Boolean);
 
     const usedAnchorKeys = new Set((recentAnchorKeys ?? []).map((k) => k.trim()).filter(Boolean));
 
@@ -455,19 +593,34 @@ export async function POST(req: Request) {
 
     if (!selectorResult.selected) {
       const stopReason = selectorResult.reason ?? "low_novelty";
+      const selection =
+        selectorResult.selection_trace ??
+        buildFallbackSelectionTrace({ direction_slug: body.direction_slug ?? null, group_tags: [] });
       const trace: TracePayload = {
         ...traceBase,
-        selection:
-          selectorResult.selection_trace ??
-          buildFallbackSelectionTrace({ direction_slug: body.direction_slug ?? null, group_tags: [] }),
+        selection,
         model: { name: "selector" },
         stop: { reason_code: stopReason, triggered_by: "selector" },
       };
+      trace.debug = buildDebugTrace({
+        selection,
+        session_id: sessionId,
+        sequence: null,
+        explicit_direction_slug: body.direction_slug ?? null,
+        direction_candidates: directionCandidates,
+        catalog,
+        recent_material_ids: recentMaterialIds,
+        recent_prompts: recentPrompts,
+        recent_question_hashes_count: (recentQuestionHashes ?? []).length,
+        recent_anchor_keys_count: (recentAnchorKeys ?? []).length,
+        question_prompt: null,
+      });
 
       const stop = buildStopSignal(stopReason);
       return NextResponse.json({
         request_id,
         status: "stop",
+        debug: trace.debug,
         stop_signal: { ...stop, trace },
       } satisfies NextResponsePayload);
     }
@@ -478,17 +631,32 @@ export async function POST(req: Request) {
       if (firstQuestion) {
         composed = buildFallbackCompose({ selected: selectorResult.selected });
       } else {
+        const selection = selectorResult.selection_trace ?? selectorResult.selected.selection_trace;
         const trace: TracePayload = {
           ...traceBase,
-          selection: selectorResult.selection_trace ?? selectorResult.selected.selection_trace,
+          selection,
           model: { name: "composer", parse_fail: true },
           stop: { reason_code: "model_failure", triggered_by: "composer" },
         };
+        trace.debug = buildDebugTrace({
+          selection,
+          session_id: sessionId,
+          sequence: null,
+          explicit_direction_slug: body.direction_slug ?? null,
+          direction_candidates: directionCandidates,
+          catalog,
+          recent_material_ids: recentMaterialIds,
+          recent_prompts: recentPrompts,
+          recent_question_hashes_count: (recentQuestionHashes ?? []).length,
+          recent_anchor_keys_count: (recentAnchorKeys ?? []).length,
+          question_prompt: null,
+        });
 
         const stop = buildStopSignal("model_failure");
         return NextResponse.json({
           request_id,
           status: "stop",
+          debug: trace.debug,
           stop_signal: { ...stop, trace },
         } satisfies NextResponsePayload);
       }
@@ -500,6 +668,19 @@ export async function POST(req: Request) {
       selection: selectionTrace,
       model: { name: composed.compose_trace.name ?? "gpt-4o-mini", temperature: composed.compose_trace.temperature },
     };
+    trace.debug = buildDebugTrace({
+      selection: selectionTrace,
+      session_id: sessionId,
+      sequence: null,
+      explicit_direction_slug: body.direction_slug ?? null,
+      direction_candidates: directionCandidates,
+      catalog,
+      recent_material_ids: recentMaterialIds,
+      recent_prompts: recentPrompts,
+      recent_question_hashes_count: (recentQuestionHashes ?? []).length,
+      recent_anchor_keys_count: (recentAnchorKeys ?? []).length,
+      question_prompt: composed.prompt,
+    });
 
     const idempotencyKey = client_request_id
       ? `client:${sessionId}:${client_request_id}`
@@ -518,9 +699,28 @@ export async function POST(req: Request) {
     if (existing.data) {
       await upsertWorkLatest(supabase, sessionId, userId, existing.data.id);
       const payload = existing.data.payload ?? {};
+      const existingSequence = typeof payload.sequence === "number" ? payload.sequence : null;
+      const existingPrompt = extractPromptFromPayload(payload);
+      const existingTrace: TracePayload = {
+        ...trace,
+        debug: buildDebugTrace({
+          selection: selectionTrace,
+          session_id: sessionId,
+          sequence: existingSequence,
+          explicit_direction_slug: body.direction_slug ?? null,
+          direction_candidates: directionCandidates,
+          catalog,
+          recent_material_ids: recentMaterialIds,
+          recent_prompts: recentPrompts,
+          recent_question_hashes_count: (recentQuestionHashes ?? []).length,
+          recent_anchor_keys_count: (recentAnchorKeys ?? []).length,
+          question_prompt: existingPrompt || composed.prompt,
+        }),
+      };
       return NextResponse.json({
         request_id,
         status: "ok",
+        debug: existingTrace.debug,
         work_block: {
           id: existing.data.id,
           direction_slug: payload.direction_slug ?? selectorResult.selected.direction.slug ?? null,
@@ -528,7 +728,7 @@ export async function POST(req: Request) {
           lead_in: payload.ai?.context ?? composed.lead_in,
           prompt: payload.ai?.prompt ?? payload.ai?.question ?? composed.prompt,
           mode: payload.mode ?? selectorResult.selected.mode,
-          trace,
+          trace: existingTrace,
         },
       } satisfies NextResponsePayload);
     }
@@ -565,6 +765,19 @@ export async function POST(req: Request) {
       if (seq > maxSeq) maxSeq = seq;
     }
     payload.sequence = maxSeq + 1;
+    trace.debug = buildDebugTrace({
+      selection: selectionTrace,
+      session_id: sessionId,
+      sequence: payload.sequence,
+      explicit_direction_slug: body.direction_slug ?? null,
+      direction_candidates: directionCandidates,
+      catalog,
+      recent_material_ids: recentMaterialIds,
+      recent_prompts: recentPrompts,
+      recent_question_hashes_count: (recentQuestionHashes ?? []).length,
+      recent_anchor_keys_count: (recentAnchorKeys ?? []).length,
+      question_prompt: composed.prompt,
+    });
 
     const lastVersion = await supabase
       .from("work_versions")
@@ -597,6 +810,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       request_id,
       status: "ok",
+      debug: trace.debug,
       work_block: {
         id: inserted.data.id,
         direction_slug: payload.direction_slug,
