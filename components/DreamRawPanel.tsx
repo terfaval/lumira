@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/src/lib/supabase/client";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
@@ -75,7 +75,7 @@ function renderWithHighlights(text: string, highlights: DreamHighlight[]) {
     .filter((h) => h.end_offset > h.start_offset)
     .sort((a, b) => a.start_offset - b.start_offset);
 
-  const out: Array<string | JSX.Element> = [];
+  const out: ReactNode[] = [];
   let cursor = 0;
   for (const h of sorted) {
     if (h.start_offset < cursor) continue;
