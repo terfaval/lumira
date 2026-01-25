@@ -1,7 +1,7 @@
 // /components/WorkCard.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { PrimaryButton } from "@/components/PrimaryButton";
@@ -56,11 +56,33 @@ export function WorkCard({
 
   const initial = String(c.user?.answer ?? "");
   const [draft, setDraft] = useState(initial);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const resizeInput = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const maxHeight = Math.max(160, Math.floor(window.innerHeight * 0.4));
+    const nextHeight = Math.min(el.scrollHeight, maxHeight);
+    el.style.height = `${nextHeight}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, []);
 
   useEffect(() => {
     setDraft(String(c.user?.answer ?? ""));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [block.id, c.user?.answered_at, c.user?.answer]);
+
+  useEffect(() => {
+    resizeInput();
+  }, [draft, resizeInput]);
+
+  useEffect(() => {
+    window.addEventListener("resize", resizeInput);
+    return () => {
+      window.removeEventListener("resize", resizeInput);
+    };
+  }, [resizeInput]);
 
   const answered = Boolean(String(c.user?.answer ?? "").trim()) || c.state === "answered";
   const canClick = mode === "read" && !!onOpen;
@@ -101,6 +123,7 @@ export function WorkCard({
           {mode === "edit" ? (
             <textarea
               className="workcard-input"
+              ref={inputRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               rows={7}
@@ -161,7 +184,9 @@ export function WorkCard({
           background: rgba(255, 255, 255, 0.03);
           color: var(--text-primary);
           line-height: 1.6;
-          resize: vertical;
+          resize: none;
+          max-height: 40vh;
+          overflow: auto;
         }
 
         .workcard-answerBox {
@@ -188,6 +213,38 @@ export function WorkCard({
           justify-content: flex-end;
           flex-wrap: wrap;
           align-items: center;
+        }
+
+        @media (max-width: 680px) {
+          .workcard-root :global(.workcard-surface) {
+            padding: var(--space-3);
+          }
+
+          .workcard-context {
+            font-size: 12px;
+          }
+
+          .workcard-question {
+            font-size: 16px;
+          }
+
+          .workcard-input {
+            font-size: 15px;
+          }
+
+          .workcard-actions {
+            position: sticky;
+            bottom: 0;
+            flex-direction: column;
+            align-items: stretch;
+            padding-top: var(--space-2);
+            padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.35));
+          }
+
+          .workcard-actions :global(.btn) {
+            width: 100%;
+          }
         }
 
         /* READ interaction (tile-szerű) */

@@ -310,6 +310,7 @@ export default function FramePage() {
           flex-direction: column;
           justify-content: center;
           padding-block: var(--space-2);
+          overflow-x: hidden;
         }
 
         .frame-framing {
@@ -331,6 +332,10 @@ export default function FramePage() {
           align-items: stretch;
         }
 
+        .direction-grid > * {
+          scroll-snap-align: start;
+        }
+
         @media (min-width: 700px) {
           .direction-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -348,6 +353,34 @@ export default function FramePage() {
           gap: var(--space-3);
           flex-wrap: wrap;
           align-items: center;
+        }
+
+        @media (max-width: 699px) {
+          .frame-framing {
+            max-height: 42vh;
+            overflow: auto;
+            overscroll-behavior: contain;
+          }
+
+          .direction-grid {
+            grid-template-columns: none;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(240px, 78vw);
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-padding-inline: var(--space-2);
+            padding-bottom: var(--space-1);
+            -webkit-overflow-scrolling: touch;
+          }
+
+          .direction-actions {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .direction-actions :global(.btn) {
+            width: 100%;
+          }
         }
       `}</style>
     </div>

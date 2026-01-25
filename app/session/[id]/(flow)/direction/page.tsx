@@ -357,25 +357,38 @@ export default function DirectionPage() {
         paper="evening"
         gloss={false}
         grain={false}>
-        <button
-          ref={closeBtnRef}
-          className={styles.back}
-          onClick={close}
-          aria-label="Vissza"
-          type="button"
-        >
-          <span className={styles.backIcon} aria-hidden="true">←</span>
-          <span>Vissza</span>
-        </button>
+        <div className={styles.backRow}>
+          <button
+            ref={closeBtnRef}
+            className={styles.back}
+            onClick={close}
+            aria-label="Vissza"
+            type="button"
+          >
+            <span className={styles.backIcon} aria-hidden="true">
+              ←
+            </span>
+            <span>Vissza</span>
+          </button>
+        </div>
 
         <div className={styles.stack}>
           {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}
 
-          <div className={styles.grid}>
-            {recommended.map((d) => renderCard(d, { recommended: true }))}
-          </div>
+          <section className={styles.recoSection} aria-label="Ajánlott irányok">
+            <div className={styles.recoHeader}>
+              <div className={styles.recoTitle}>Ajánlott irányok</div>
+              <div className={styles.recoHint}>Gyors választás</div>
+            </div>
+            <div className={styles.recoRow}>
+              {recommended.map((d) => renderCard(d, { recommended: true }))}
+            </div>
+          </section>
 
-          <div className={styles.grid}>{restGroupedFlattened.map((d) => renderCard(d))}</div>
+          <div className={styles.listHeader}>
+            <div className={styles.listTitle}>Összes irány</div>
+          </div>
+          <div className={styles.list}>{restGroupedFlattened.map((d) => renderCard(d))}</div>
         </div>
       </GlassCardSurface>
     </div>

@@ -60,9 +60,48 @@ export async function POST(req: Request) {
       upserted_rows: result.upserted,
     });
   } catch (e: unknown) {
-    const err =
-      e instanceof Error ? { message: e.message, name: e.name, stack: e.stack } : { message: String(e) };
+    const err = serializeError(e);
     console.error("[glossary backfill error]", err);
     return NextResponse.json({ error: err.message, name: err.name }, { status: 500 });
+  }
+}
+
+function serializeError(e: unknown): {
+  message: string;
+  name?: string;
+  stack?: string;
+  raw?: string;
+} {
+  if (e instanceof Error) {
+    const raw = safeStringify(e);
+    return {
+      message: e.message || "Unknown error",
+      name: e.name,
+      stack: e.stack,
+      raw: raw && raw !== "{}" ? raw : undefined,
+    };
+  }
+  if (e && typeof e === "object") {
+    return { message: safeStringify(e), name: "NonError" };
+  }
+  return { message: String(e), name: "NonError" };
+}
+
+function safeStringify(value: unknown): string {
+  const seen = new WeakSet<object>();
+  try {
+    return JSON.stringify(
+      value,
+      (_, v) => {
+        if (v && typeof v === "object") {
+          if (seen.has(v)) return "[Circular]";
+          seen.add(v);
+        }
+        return v;
+      },
+      2
+    );
+  } catch {
+    return String(value);
   }
 }

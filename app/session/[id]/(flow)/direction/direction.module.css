@@ -30,9 +30,14 @@
   position: relative;
 }
 
-.back {
+.backRow {
   position: sticky;
   top: 0;
+  z-index: 6;
+  margin-bottom: var(--space-3);
+}
+
+.back {
   margin-right: auto;
 
   display: inline-flex;
@@ -92,8 +97,61 @@
   overflow-x: hidden;
 }
 
-/* grid */
-.grid {
+/* recommended */
+.recoSection {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: var(--space-3);
+  background: rgba(0, 0, 0, 0.12);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.recoHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.recoTitle {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.recoHint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.recoRow {
+  display: grid;
+  gap: var(--space-3);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(240px, 1fr);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--space-2);
+  padding-bottom: var(--space-1);
+  -webkit-overflow-scrolling: touch;
+}
+
+.recoRow > * {
+  scroll-snap-align: start;
+}
+
+/* list */
+.listHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.listTitle {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.list {
   display: grid;
   gap: var(--space-4);
   grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -101,7 +159,15 @@
 }
 
 @media (min-width: 860px) {
-  .grid {
+  .recoRow {
+    grid-auto-flow: row;
+    grid-auto-columns: unset;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -204,10 +270,31 @@
 }
 
 @media (max-width: 679px) {
+  .overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
   .panel {
     width: 100%;
     max-height: 100dvh;
+    height: 100dvh;
     border-radius: 0;
+    padding: var(--space-3) var(--space-3) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .backRow {
+    position: sticky;
+    top: auto;
+    bottom: 0;
+    margin-bottom: 0;
+    padding: var(--space-2) 0 calc(env(safe-area-inset-bottom, 0px) + var(--space-1));
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0));
+  }
+
+  .back {
+    width: 100%;
+    justify-content: center;
   }
 
   .actions {
@@ -223,6 +310,24 @@
 
   .actions :global(.btn.btn-primary) {
     width: 100%;
+  }
+
+  .card {
+    min-height: 210px;
+  }
+
+  .title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 

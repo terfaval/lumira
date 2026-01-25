@@ -415,20 +415,11 @@ export default function WorkPage() {
   }
 
   return (
-    <div
-      className="work-center"
-      style={{
-        minHeight: "100%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        paddingBlock: 12,
-      }}
-    >
+    <div className="work-center">
       <FullScreenLoadingOverlay open={showBlocker} title={blockerTitle} />
 
-      <div style={{ width: "min(720px, 100%)", marginInline: "auto" }}>
-        <div className="stack" style={{ paddingInline: 10 }}>
+      <div className="work-inner">
+        <div className="stack work-stack">
           {currentBlock ? (
             <div className="stack" style={{ gap: 14 }}>
               <WorkCard
@@ -456,6 +447,35 @@ export default function WorkPage() {
           {err && <p style={{ marginTop: 12, color: "crimson" }}>{err}</p>}
         </div>
       </div>
+
+      <style jsx>{`
+        .work-center {
+          min-height: 100dvh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: var(--space-2);
+        }
+
+        .work-inner {
+          width: min(720px, 100%);
+          margin-inline: auto;
+        }
+
+        .work-stack {
+          padding-inline: var(--space-2);
+        }
+
+        @media (max-width: 680px) {
+          .work-center {
+            padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+          }
+
+          .work-stack {
+            padding-inline: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }
