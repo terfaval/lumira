@@ -60,7 +60,9 @@ export async function POST(req: Request) {
       upserted_rows: result.upserted,
     });
   } catch (e: unknown) {
-    console.error("[glossary backfill error]", e);
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    const err =
+      e instanceof Error ? { message: e.message, name: e.name, stack: e.stack } : { message: String(e) };
+    console.error("[glossary backfill error]", err);
+    return NextResponse.json({ error: err.message, name: err.name }, { status: 500 });
   }
 }
