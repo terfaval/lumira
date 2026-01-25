@@ -17,11 +17,16 @@ type RequestBody = {
 };
 
 export async function POST(req: Request) {
-  console.log("STEP 1: route reached");
+  console.log("STEP 1");
 
   const supabase = await supabaseServerAuthed(req);
+  console.log("STEP 2");
 
-  console.log("STEP 2: supabase created");
+  const { data: authData } = await supabase.auth.getUser();
+  console.log("STEP 3", authData?.user?.id);
 
-  return NextResponse.json({ ok: "supabase ok" });
+  return NextResponse.json({
+    ok: true,
+    userId: authData?.user?.id ?? null,
+  });
 }
