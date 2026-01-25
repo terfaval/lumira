@@ -69,6 +69,7 @@ export async function backfillGlossaryCandidatesForUser(params: {
   }
 
   const counts = new Map<string, number>();
+  const displayLabels = new Map<string, string>();
 
   for (const row of latestRows) {
     const payload = payloadById.get(row.observation_version_id);
@@ -80,6 +81,9 @@ export async function backfillGlossaryCandidatesForUser(params: {
     for (const candidate of candidates) {
       if (!candidate?.canonical_key) continue;
       counts.set(candidate.canonical_key, (counts.get(candidate.canonical_key) ?? 0) + 1);
+      if (!displayLabels.has(candidate.canonical_key) && candidate.display_label) {
+        displayLabels.set(candidate.canonical_key, candidate.display_label);
+      }
     }
   }
 
@@ -87,10 +91,11 @@ export async function backfillGlossaryCandidatesForUser(params: {
   if (terms.length === 0) return { scanned: latestRows.length, candidates: 0, terms: 0, upserted: 0 };
 
   const existingMap = new Map<string, number>();
+  const existingLabels = new Map<string, string>();
   for (const batch of chunk(terms, BATCH_SIZE)) {
     const existingRes = await supabase
       .from("term_candidates")
-      .select("term,count")
+      .select("term,count,display_label")
       .eq("user_id", userId)
       .in("term", batch);
     if (existingRes.error) throw toError(existingRes.error);
@@ -98,6 +103,8 @@ export async function backfillGlossaryCandidatesForUser(params: {
       const term = (row as any).term;
       if (!term) continue;
       existingMap.set(term, Number((row as any).count ?? 0));
+      const label = typeof (row as any).display_label === "string" ? (row as any).display_label.trim() : "";
+      if (label) existingLabels.set(term, label);
     }
   }
 
@@ -105,6 +112,7 @@ export async function backfillGlossaryCandidatesForUser(params: {
   const upserts = terms.map((term) => ({
     user_id: userId,
     term,
+    display_label: existingLabels.get(term) ?? displayLabels.get(term) ?? term,
     count: (existingMap.get(term) ?? 0) + (counts.get(term) ?? 0),
     last_seen_at: nowISO,
   }));
