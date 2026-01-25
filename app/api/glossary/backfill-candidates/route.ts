@@ -1,4 +1,6 @@
 // /app/api/glossary/backfill-candidates/route.ts
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
