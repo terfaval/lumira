@@ -248,7 +248,7 @@ export default function DirectionPage() {
       setErr(null);
       try {
         const nextUrl = `/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`;
-        router.push(nextUrl);
+        router.replace(nextUrl);
 
         const result = await startDirection(sessionId, slug, "direction_modal");
         if (!result.success) {
@@ -257,7 +257,7 @@ export default function DirectionPage() {
         }
         setSelected((prev) => ({ ...prev, [slug]: true }));
         const resolvedNextUrl = result.nextUrl ?? nextUrl;
-        router.push(resolvedNextUrl);
+        router.replace(resolvedNextUrl);
       } catch (e: unknown) {
         setErr(e instanceof Error ? e.message : "Hiba");
       } finally {
