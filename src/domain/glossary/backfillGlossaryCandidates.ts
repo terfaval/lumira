@@ -42,7 +42,7 @@ export async function backfillGlossaryCandidatesForUser(params: {
     .order("updated_at", { ascending: false })
     .limit(maxSessions);
 
-  if (latestRes.error) throw latestRes.error;
+  if (latestRes.error) throw toError(latestRes.error);
 
   const latestRows = (latestRes.data ?? []) as Array<{
     session_id: string;
@@ -62,7 +62,7 @@ export async function backfillGlossaryCandidatesForUser(params: {
       .select("id,payload")
       .eq("user_id", userId)
       .in("id", batch);
-    if (error) throw error;
+    if (error) throw toError(error);
     for (const row of data ?? []) {
       payloadById.set((row as any).id, (row as any).payload);
     }
@@ -99,7 +99,7 @@ export async function backfillGlossaryCandidatesForUser(params: {
       .select("term,count,display_label")
       .eq("user_id", userId)
       .in("term", batch);
-    if (existingRes.error) throw existingRes.error;
+    if (existingRes.error) throw toError(existingRes.error);
     for (const row of existingRes.data ?? []) {
       const term = (row as any).term;
       if (!term) continue;
@@ -123,7 +123,7 @@ export async function backfillGlossaryCandidatesForUser(params: {
     const upsertRes = await supabase
       .from("term_candidates")
       .upsert(batch, { onConflict: "user_id,term" });
-    if (upsertRes.error) throw upsertRes.error;
+    if (upsertRes.error) throw toError(upsertRes.error);
     upserted += batch.length;
   }
 
@@ -135,4 +135,19 @@ export async function backfillGlossaryCandidatesForUser(params: {
   }
 
   return result;
+}
+
+function toError(err: unknown): Error {
+  if (err instanceof Error) return err;
+  if (err && typeof err === "object") {
+    const anyErr = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [
+      typeof anyErr.message === "string" ? anyErr.message : "",
+      typeof anyErr.details === "string" ? anyErr.details : "",
+      typeof anyErr.hint === "string" ? anyErr.hint : "",
+      typeof anyErr.code === "string" ? `code=${anyErr.code}` : "",
+    ].filter(Boolean);
+    return new Error(parts.join(" | ") || "Unknown error");
+  }
+  return new Error(String(err));
 }
