@@ -175,12 +175,13 @@ export default function NewClient() {
           paper="evening"
           corner={cornerSoft}
           cornerMode="soft"
+          className="newdream-card"
           // (ha később kell, helyben felülírható)
           // gloss={false}
           // grain={false}
         >
-          <GlassCardForeground className="stack-tight">
-            <GlassCardMatte padding="md" tone="evening">
+          <GlassCardForeground className="newdream-card-body stack-tight">
+            <GlassCardMatte padding="md" tone="evening" className="newdream-input-wrap">
               <textarea
                 className="newdream-textarea"
                 value={text}
@@ -232,10 +233,25 @@ export default function NewClient() {
       </>
 
       <style jsx>{`
+        :global(.newdream-card-body) {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-3);
+          height: 100%;
+          min-height: 0;
+        }
+
+        :global(.newdream-input-wrap) {
+          flex: 1 1 auto;
+          display: flex;
+          min-height: 0;
+        }
+
         /* textarea becomes "content", not a surface */
         :global(.newdream-textarea) {
           width: 100%;
           min-height: 44vh;
+          flex: 1 1 auto;
 
           background: transparent;
           border: none;
@@ -251,6 +267,46 @@ export default function NewClient() {
 
         :global(.newdream-textarea::placeholder) {
           color: rgba(255, 255, 255, 0.55);
+        }
+
+        @media (max-width: 720px) {
+          :global(.newdream-card) {
+            background: transparent !important;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            min-height: calc(100dvh - 150px);
+          }
+
+          :global(.newdream-card)::before,
+          :global(.newdream-card)::after {
+            opacity: 0;
+          }
+
+          :global(.newdream-input-wrap) {
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+          }
+
+          :global(.newdream-textarea) {
+            min-height: 60vh;
+            font-size: 16px;
+          }
+
+          :global(.newdream-footer) {
+            position: sticky;
+            bottom: 0;
+            padding: var(--space-2) 0;
+            background: var(--bg-layer);
+            border-top: 1px solid var(--line-soft);
+          }
+
+          :global(.newdream-actions) {
+            width: 100%;
+            justify-content: space-between;
+          }
         }
       `}</style>
     </Shell>

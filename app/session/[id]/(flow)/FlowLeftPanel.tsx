@@ -1,6 +1,7 @@
 "use client";
 
 import { DreamRawPanel } from "@/components/DreamRawPanel";
+import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import styles from "./FlowLeftPanel.module.css";
 
 /**
@@ -21,7 +22,21 @@ export default function FlowLeftPanel({
 }) {
   return (
     <div className={styles.wrap}>
-      <DreamRawPanel sessionId={sessionId} variant="bare" />
+      <GlassCardSurface
+        className={styles.rawCard}
+        variant="soft"
+        paper="evening"
+        corner="--accent-2"
+        cornerMode="soft"
+        angle={155}
+        stop1={0}
+        stop2={38}
+        stop3={120}
+      >
+        <div className={styles.rawInner}>
+          <DreamRawPanel sessionId={sessionId} variant="bare" />
+        </div>
+      </GlassCardSurface>
     </div>
   );
 }

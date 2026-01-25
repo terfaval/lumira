@@ -8,6 +8,7 @@ import { registerListener } from "@/src/lib/perfDebug";
 import { requireUserId } from "@/src/lib/db";
 import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist"; // ✅
 import { allowGlossaryAccess } from "@/src/lib/glossary/gate";
+import { BrandLockup } from "@/components/brand/BrandLockup";
 
 type Space = "dream" | "evening";
 
@@ -204,11 +205,26 @@ export function SidebarDrawer({
     >
       <aside className="drawer-sheet" role="document" aria-label="Oldalsáv">
         <div className="drawer-surface">
+          <div className="drawer-header">
+            <div className="drawer-brand">
+              <BrandLockup />
+              <span className="drawer-brand-name">Lumira</span>
+            </div>
+            <button type="button" className="drawer-close" onClick={onClose} aria-label="Bezárás">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 6l12 12M18 6l-12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+          <div className="drawer-scroll">
           {/* TOP */}
           <div className="drawer-section drawer-top">
             <Link href="/about" className="drawer-navlink" onClick={onClose}>
               <DrawerIcon name="reflection" />
-              Mi a Lumira?
+              <span className="drawer-label">
+                <span className="drawer-label-full">Mi a Lumira?</span>
+                <span className="drawer-label-short">Lumira</span>
+              </span>
             </Link>
 
             <Link
@@ -218,7 +234,10 @@ export function SidebarDrawer({
               aria-current={space === "evening" ? "page" : undefined}
             >
               <DrawerIcon name="night" />
-              Álom előkészítés
+              <span className="drawer-label">
+                <span className="drawer-label-full">Álom előkészítés</span>
+                <span className="drawer-label-short">Előkészítés</span>
+              </span>
             </Link>
 
             <Link
@@ -228,13 +247,19 @@ export function SidebarDrawer({
               aria-current={space === "dream" ? "page" : undefined}
             >
               <DrawerIcon name="work" />
-              Új álom rögzítése
+              <span className="drawer-label">
+                <span className="drawer-label-full">Új álom rögzítése</span>
+                <span className="drawer-label-short">Új álom</span>
+              </span>
             </Link>
 
             {glossaryAccess && (
               <Link href="/glossary" className="drawer-navlink" onClick={onClose}>
                 <DrawerIcon name="focus" />
-                Álomszótár
+                <span className="drawer-label">
+                  <span className="drawer-label-full">Álomszótár</span>
+                  <span className="drawer-label-short">Szótár</span>
+                </span>
               </Link>
             )}
           </div>
@@ -244,7 +269,10 @@ export function SidebarDrawer({
             <div className="drawer-section-head">
               <Link href="/archive" className="drawer-navlink drawer-navlink--title" onClick={onClose}>
                 <DrawerIcon name="stop" />
-                Álomnapló
+                <span className="drawer-label">
+                  <span className="drawer-label-full">Álomnapló</span>
+                  <span className="drawer-label-short">Napló</span>
+                </span>
               </Link>
             </div>
 
@@ -277,6 +305,7 @@ export function SidebarDrawer({
             <button className="btn btn-secondary" onClick={onLogout}>
               Kilépés
             </button>
+          </div>
           </div>
         </div>
       </aside>
@@ -321,6 +350,49 @@ export function SidebarDrawer({
           flex-direction: column;
           min-height: 0;
           padding: var(--space-3);
+        }
+
+        .drawer-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: var(--space-2);
+          padding: var(--space-2) var(--space-1);
+        }
+
+        .drawer-brand {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          font-weight: 700;
+          letter-spacing: 0.01em;
+        }
+
+        .drawer-brand-name {
+          font-size: 14px;
+          color: var(--text-muted);
+        }
+
+        .drawer-close {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          border: 1px solid var(--line-soft);
+          background: transparent;
+          color: var(--text-primary);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+
+        .drawer-scroll {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 0;
         }
 
         .drawer-section {
@@ -372,6 +444,7 @@ export function SidebarDrawer({
         }
 
         .drawer-footer {
+          margin-top: auto;
           flex: 0 0 auto;
           padding: var(--space-2) var(--space-1) var(--space-1);
           border-top: 1px solid var(--line-soft);
@@ -400,6 +473,15 @@ export function SidebarDrawer({
           padding: var(--space-1) var(--space-2);
           border: none;
           background: transparent;
+        }
+
+        .drawer-label {
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .drawer-label-short {
+          display: none;
         }
 
         .drawer-item {
@@ -480,8 +562,26 @@ export function SidebarDrawer({
             border-top: 1px solid var(--line-soft);
             box-shadow: 0 18px 44px #00000073;
           }
+
+          .drawer-top {
+            padding-top: var(--space-1);
+            padding-bottom: var(--space-2);
+          }
+
+          .drawer-section {
+            padding-bottom: var(--space-2);
+          }
+
+          .drawer-label-full {
+            display: none;
+          }
+
+          .drawer-label-short {
+            display: inline;
+          }
         }
       `}</style>
     </div>
   );
 }
+

@@ -354,6 +354,26 @@ p { margin: 0; line-height: 1.6; }
   color: var(--text-secondary);
 }
 
+@media (max-width: 720px) {
+  .shell {
+    --shell-content-gap: 0px;
+    padding: var(--space-3) var(--space-2) var(--space-4);
+  }
+
+  .shell-title {
+    font-size: 20px;
+    margin-top: 0;
+    max-width: 60vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .shell-brand {
+    display: none;
+  }
+}
+
 .surface-layer {
   background: var(--bg-layer);
   border: 1px solid var(--line-soft);
@@ -1024,4 +1044,3 @@ main { min-height: 100dvh; }
 .brand-lockup:hover .brand-word {
   pointer-events: none;
 }
-

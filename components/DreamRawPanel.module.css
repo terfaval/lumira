@@ -1,0 +1,122 @@
+.panel {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+}
+
+.textBody {
+  min-height: 0;
+  height: 100%;
+  padding-bottom: calc(var(--space-5) + 46px);
+}
+
+.editor {
+  min-height: 0;
+  height: 100%;
+  resize: vertical;
+  padding-bottom: calc(var(--space-5) + 46px);
+  line-height: 1.6;
+}
+
+.overlay {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-2);
+  transform: translateX(-50%);
+  display: inline-flex;
+  gap: var(--space-2);
+  padding: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  background: rgba(12, 16, 25, 0.72);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.iconButton {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.iconButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--accent-2);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.iconButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.iconButton svg {
+  width: 18px;
+  height: 18px;
+  opacity: 0.9;
+}
+
+.editPanel,
+.highlightPanel {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--space-2) + 60px);
+  transform: translateX(-50%);
+  width: min(520px, 92%);
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: 16px;
+  border: 1px solid var(--line-soft);
+  background: rgba(10, 14, 20, 0.9);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.highlightTitle {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.highlightInput {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--line-soft);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.highlightInput:focus {
+  border-color: var(--accent);
+}
+
+.actionRow {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.actionError {
+  color: #ff8a8a;
+  font-size: 13px;
+}
+
+.highlight {
+  background: linear-gradient(120deg, rgba(255, 214, 140, 0.35), rgba(126, 196, 210, 0.35));
+  border-radius: 6px;
+  padding: 0 2px;
+  color: inherit;
+}

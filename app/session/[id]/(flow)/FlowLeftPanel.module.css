@@ -6,6 +6,33 @@
   height: 100%;
 }
 
+.rawCard {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.rawCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(130, 220, 255, 0.18), transparent 46%),
+    radial-gradient(circle at 86% 20%, rgba(255, 198, 140, 0.16), transparent 52%);
+  mix-blend-mode: screen;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.rawInner {
+  min-height: 0;
+  height: 100%;
+}
+
 /* cím + ceruza egy sorban */
 .titleRow {
   display: flex;

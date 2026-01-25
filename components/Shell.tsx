@@ -181,15 +181,41 @@ export function Shell({
 
       {/* Tartalom */}
       {surface === "none" ? (
-        <section style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%", minWidth: 0, overflowX: "clip" }}>
+        <section
+          style={{
+            marginTop: "var(--shell-content-gap, var(--space-3))",
+            minHeight: 0,
+            height: "100%",
+            minWidth: 0,
+            overflowX: "clip",
+          }}
+        >
           {children}
         </section>
       ) : surface === "ghost" ? (
-        <section className="surface-ghost stack" style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%", minWidth: 0, overflowX: "clip" }}>
+        <section
+          className="surface-ghost stack"
+          style={{
+            marginTop: "var(--shell-content-gap, var(--space-3))",
+            minHeight: 0,
+            height: "100%",
+            minWidth: 0,
+            overflowX: "clip",
+          }}
+        >
           {children}
         </section>
       ) : (
-        <section className="surface-layer card stack" style={{ marginTop: "var(--space-3)", minHeight: 0, height: "100%", minWidth: 0, overflowX: "clip" }}>
+        <section
+          className="surface-layer card stack"
+          style={{
+            marginTop: "var(--shell-content-gap, var(--space-3))",
+            minHeight: 0,
+            height: "100%",
+            minWidth: 0,
+            overflowX: "clip",
+          }}
+        >
           {children}
         </section>
       )}
