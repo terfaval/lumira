@@ -5,6 +5,7 @@ import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
 import { anchorsFromObservation } from "@/src/lib/dream/anchorsFromObservation";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
+import { matchKeyFromLabel } from "@/src/lib/dream/huMatch";
 import { CatalogService } from "@/src/services/CatalogService";
 import {
   fetchLatentLatestWithPayloadAndId,
@@ -124,7 +125,7 @@ function pickTargetFromAnchors(a: Anchors): string {
 }
 
 function targetAnchorInAnchors(target: string, a: Anchors): boolean {
-  const t = (target ?? "").trim();
+  const t = matchKeyFromLabel(target ?? "");
   if (!t) return false;
   const all = new Set([
     ...(a.characters ?? []),
@@ -133,7 +134,10 @@ function targetAnchorInAnchors(target: string, a: Anchors): boolean {
     ...(a.beats ?? []),
     ...(a.felt_words ?? []),
   ]);
-  return all.has(t);
+  for (const item of all) {
+    if (matchKeyFromLabel(item) === t) return true;
+  }
+  return false;
 }
 
 async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
@@ -194,7 +198,7 @@ function anchorKeysFromStrings(arr: unknown): string[] {
   const seen = new Set<string>();
   for (const x of arr) {
     if (typeof x !== "string") continue;
-    const k = anchorKey(x);
+    const k = matchKeyFromLabel(x) || anchorKey(x);
     if (!k) continue;
     if (seen.has(k)) continue;
     seen.add(k);

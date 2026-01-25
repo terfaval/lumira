@@ -1,5 +1,6 @@
 // src/domain/glossary/indexGlossaryFromObservation.ts
 import { extractGlossaryCandidatesFromObservation } from "./glossaryCandidateExtractor";
+import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { bumpTermCandidates } from "@/src/db/repositories/glossaryRepo";
 
 type SupabaseLike = any;
@@ -41,11 +42,19 @@ export async function indexGlossaryFromObservation(params: {
   let occurred = 0;
 
   if (terms.length > 0) {
+    const glossaryMatchKeys = new Set<string>();
+    for (const c of candidates) {
+      if (c.canonical_key) glossaryMatchKeys.add(c.canonical_key);
+      const rawKey = anchorKey(c.display_label);
+      if (rawKey) glossaryMatchKeys.add(rawKey);
+    }
+
+    const matchKeys = Array.from(glossaryMatchKeys.values());
     const { data: matchedTerms, error: matchErr } = await supabase
       .from("glossary_terms")
       .select("id, canonical_key")
       .eq("user_id", userId)
-      .in("canonical_key", terms);
+      .in("canonical_key", matchKeys);
 
     if (!matchErr && Array.isArray(matchedTerms) && matchedTerms.length > 0) {
       const occRows = matchedTerms.map((t: any) => ({

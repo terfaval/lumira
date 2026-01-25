@@ -1,5 +1,6 @@
 // src/domain/glossary/glossaryCandidateExtractor.ts
 import { anchorKey } from "@/src/lib/dream/anchorKey";
+import { matchKeyFromLabel } from "@/src/lib/dream/huMatch";
 
 type GlossarySourceType = "entities" | "actions" | "raw_facts";
 
@@ -32,7 +33,7 @@ function addCandidate(
   const label = normalizeLabel(raw);
   if (!label) return;
 
-  const canonical_key = anchorKey(label);
+  const canonical_key = matchKeyFromLabel(label) || anchorKey(label);
   if (!canonical_key) return;
 
   const existing = map.get(canonical_key);

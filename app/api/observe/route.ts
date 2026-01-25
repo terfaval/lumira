@@ -9,6 +9,7 @@ import {
   parseDreamObservation,
 } from "@/src/lib/dream/observation";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
+import { matchKeyFromLabel } from "@/src/lib/dream/huMatch";
 import { shouldKeepAnchorLabel } from "@/src/lib/dream/huAnchorHygiene";
 import { sha256, materialHashFromPayload } from "@/src/orchestration/idempotency/materialHash";
 import {
@@ -163,7 +164,7 @@ function buildAnchorKeysFromObservation(observation: any): string[] {
     ...labelsFromList(obs.body).filter((s) => shouldKeepAnchorLabel(s))
   );
 
-  const keys = rawLabels.map((s) => anchorKey(s)).filter(Boolean);
+  const keys = rawLabels.map((s) => matchKeyFromLabel(s) || anchorKey(s)).filter(Boolean);
 
   return uniq(keys);
 }

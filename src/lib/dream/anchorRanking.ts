@@ -8,7 +8,7 @@
 //
 // NOTE: tolerant to payload shape drift. No hard schema assumptions.
 
-import { anchorKey, stripDiacritics } from "@/src/lib/dream/anchorKey";
+import { isSoftTokenMatch, matchKeyFromLabel, tokenizeForMatch } from "@/src/lib/dream/huMatch";
 
 export type AnchorCategory = "character" | "place" | "object" | "beat" | "felt_word";
 
@@ -29,6 +29,10 @@ export type AnchorInfo = {
 
 function normaliseKey(s: string): string {
   return (s || "").toLowerCase().trim();
+}
+
+function matchKey(raw: string): string {
+  return matchKeyFromLabel(raw) || normaliseKey(raw);
 }
 
 function uniqByKey(values: string[]): string[] {
@@ -195,142 +199,10 @@ function collectFromLatent(
   return out;
 }
 
-// --- HU morphology (very lightweight, guarded) ---
-const HU_CASE_SUFFIXES = [
-  // inessive / illative / elative
-  "ban",
-  "ben",
-  "ba",
-  "be",
-  "bol",
-  "bel",
-  // superessive / sublative / delative
-  "on",
-  "en",
-  "rol",
-  "tol",
-  "ra",
-  "re",
-  // allative / adessive / ablative
-  "hoz",
-  "hez",
-  "nal",
-  "nel",
-  // instrumental
-  "val",
-  "vel",
-  // dative
-  "nak",
-  "nek",
-  // translative (very common)
-  "kent",
-];
-
-// plural + accusative (guarded)
-const HU_NUMBER_CASE = [
-  "k",
-  "t",
-  "ot",
-  "et",
-  "at",
-  "ok",
-  "ek",
-  "ak",
-];
-
-// possessive (very approximate; guarded)
-const HU_POSSESSIVE = [
-  "m",
-  "d",
-  "ja",
-  "je",
-  "a",
-  "e",
-  "unk",
-  "etek",
-  "otok",
-  "atok",
-  "uk",
-  "juk",
-  "juk",
-];
-
-const HU_MIN_STEM = 3;
-
-const HU_NO_STRIP = new Set(["van", "nem", "igen", "ott", "itt"]);
-
-function safeStripOnce(input: string, suffixes: string[], minStem: number): string {
-  for (const suf of suffixes) {
-    if (!suf) continue;
-    if (!input.endsWith(suf)) continue;
-    const stem = input.slice(0, -suf.length);
-    if (stem.length < minStem) continue;
-    return stem;
-  }
-  return input;
-}
-
-function stripHuSuffixes(raw: string): string {
-  let t = raw;
-  if (!t) return t;
-  if (HU_NO_STRIP.has(t)) return t;
-
-  // Handle common "extra t" after a case suffix (e.g. "kertbent" -> "kertben" -> "kert").
-  if (t.endsWith("t") && t.length >= 5) {
-    const withoutT = t.slice(0, -1);
-    const stripped = safeStripOnce(withoutT, HU_CASE_SUFFIXES, HU_MIN_STEM);
-    if (stripped !== withoutT) return stripped;
-  }
-
-  const caseSuffixes = HU_CASE_SUFFIXES.map((s) => stripDiacritics(s));
-  const numberSuffixes = HU_NUMBER_CASE.map((s) => stripDiacritics(s));
-  const possSuffixes = HU_POSSESSIVE.map((s) => stripDiacritics(s));
-
-  // 1) outer case suffix (ban/ben/hoz/nek etc.)
-  const afterCase = safeStripOnce(t, caseSuffixes, HU_MIN_STEM);
-
-  // 2) number/case tail (k, t, ok/ek/ak etc.) - higher risk
-  const afterNum = safeStripOnce(afterCase, numberSuffixes, HU_MIN_STEM + 1);
-
-  // 3) possessive tail - higher risk
-  const afterPoss = safeStripOnce(afterNum, possSuffixes, HU_MIN_STEM + 2);
-
-  return afterPoss;
-}
-
-function tokenizeForCount(raw: string): string[] {
-  if (!raw) return [];
-  return stripDiacritics(raw.toLowerCase())
-    .split(/[^a-z0-9]+/g)
-    .map((t) => t.trim())
-    .filter(Boolean)
-    .map((t) => stripHuSuffixes(t))
-    .filter((t) => t.length >= 2);
-}
-
-function isSoftTokenMatch(token: string, needle: string): boolean {
-  if (token === needle) return true;
-
-  // prefix match for compounds: only if needle is informative enough
-  if (needle.length >= 4 && token.startsWith(needle)) return true;
-
-  // very small edit distance (<=1) guardrailed
-  if (needle.length >= 5 && token.length === needle.length) {
-    let diff = 0;
-    for (let i = 0; i < token.length; i++) {
-      if (token[i] !== needle[i]) diff++;
-      if (diff > 1) return false;
-    }
-    return diff === 1;
-  }
-
-  return false;
-}
-
 function countOccurrences(name: string, dreamText: string): number {
   if (!name || !dreamText) return 0;
-  const nameTokens = tokenizeForCount(name);
-  const textTokens = tokenizeForCount(dreamText);
+  const nameTokens = tokenizeForMatch(name);
+  const textTokens = tokenizeForMatch(dreamText);
   if (nameTokens.length === 0 || textTokens.length === 0) return 0;
 
   if (nameTokens.length === 1) {
@@ -411,7 +283,7 @@ export async function rankAnchors(params: {
   const latentCandidates = collectFromLatent(latent);
   const obsCountByKey = new Map<string, number>();
   for (const c of obsCandidates) {
-    const k = anchorKey(c.name) || normaliseKey(c.name);
+    const k = matchKey(c.name);
     if (!k) continue;
     obsCountByKey.set(k, (obsCountByKey.get(k) ?? 0) + 1);
   }
@@ -423,7 +295,7 @@ export async function rankAnchors(params: {
   >();
 
   const add = (name: string, category: AnchorCategory, source: string, boost = 0) => {
-    const k = anchorKey(name) || normaliseKey(name);
+    const k = matchKey(name);
     if (!k) return;
 
     const existing = merged.get(k);
@@ -478,7 +350,7 @@ export async function rankAnchors(params: {
       }
 
       for (const term of terms as any[]) {
-        const k = normaliseKey(term.canonical_key);
+        const k = matchKey(term.canonical_key);
         if (!k) continue;
         glossaryMatches[k] = { note: notesByTerm.get(term.id) ?? null };
       }
@@ -489,16 +361,14 @@ export async function rankAnchors(params: {
   let targetAnchorK: string | null = null;
   const seed = latent && typeof latent === "object" ? (latent as any).question_seed : null;
   if (seed && typeof seed === "object" && typeof (seed as any).target_anchor === "string") {
-    targetAnchorK = anchorKey((seed as any).target_anchor) || normaliseKey((seed as any).target_anchor);
+    targetAnchorK = matchKey((seed as any).target_anchor);
   }
 
   // 5) build list
   const anchors: AnchorInfo[] = [];
-  const usedKeySet = new Set(
-    usedAnchorKeys.map((k) => normaliseKey(k)).filter(Boolean)
-  );
+  const usedKeySet = new Set(usedAnchorKeys.map((k) => matchKey(k)).filter(Boolean));
   for (const [k, v] of merged.entries()) {
-    const isUsedByKey = usedKeySet.has(normaliseKey(k));
+    const isUsedByKey = usedKeySet.has(matchKey(k));
     if (!includeUsed && (isUsedByKey || anchorUsed(v.name, prevQs))) continue;
 
     const occurrences = countOccurrences(v.name, dreamText);
@@ -562,7 +432,7 @@ export function buildAnchorRankingPayload(params: {
   const top_keys: string[] = [];
   const seen = new Set<string>();
   for (const item of params.anchors) {
-    const k = anchorKey(item.name) || normaliseKey(item.name);
+    const k = matchKey(item.name);
     if (!k) continue;
     if (seen.has(k)) continue;
     seen.add(k);
