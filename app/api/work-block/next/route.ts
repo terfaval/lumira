@@ -327,6 +327,54 @@ async function fetchRecentBlocks(supabase: any, sessionId: string, userId: strin
   return data ?? [];
 }
 
+async function fetchLatestAnswerText(supabase: any, sessionId: string, userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("dream_answers")
+    .select("answer_text, created_at")
+    .eq("session_id", sessionId)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return null;
+  const t = typeof data?.answer_text === "string" ? data.answer_text.trim() : "";
+  return t ? t : null;
+}
+
+async function fetchLatestWorkPromptFromLastAnswer(
+  supabase: any,
+  sessionId: string,
+  userId: string
+): Promise<string | null> {
+  const { data: ans, error: ansErr } = await supabase
+    .from("dream_answers")
+    .select("work_block_id, created_at")
+    .eq("session_id", sessionId)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (ansErr) return null;
+  const workBlockId = typeof ans?.work_block_id === "string" ? ans.work_block_id.trim() : "";
+  if (!workBlockId) return null;
+
+  const { data: wb, error: wbErr } = await supabase
+    .from("work_versions")
+    .select("payload, created_at")
+    .eq("id", workBlockId)
+    .eq("session_id", sessionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (wbErr || !wb?.payload) return null;
+  const p = extractPromptFromPayload(wb.payload);
+  return p ? p : null;
+}
+
+
+
 function extractPromptFromPayload(payload: any): string {
   const prompt = payload?.ai?.prompt ?? payload?.ai?.question ?? "";
   return typeof prompt === "string" ? prompt.trim() : "";
@@ -480,6 +528,8 @@ export async function POST(req: Request) {
       recentBlocks,
       recentAnchorKeys,
       recentQuestionHashes,
+      prevAnswerText,
+      prevPrompt,
     ] = await Promise.all([
       fetchDirectionCatalog(supabase),
       fetchLatestRawDreamEntry(supabase, userId, sessionId),
@@ -489,6 +539,8 @@ export async function POST(req: Request) {
       fetchRecentBlocks(supabase, sessionId, userId),
       listRecentAnchorKeys(supabase, { session_id: sessionId, user_id: userId, limit: 120 }),
       listRecentQuestionHashes(supabase, { session_id: sessionId, user_id: userId, limit: 120 }),
+      fetchLatestAnswerText(supabase, sessionId, userId),
+      fetchLatestWorkPromptFromLastAnswer(supabase, sessionId, userId),
     ]);
 
     let anchorPayload = anchorLatest?.payload ?? null;
@@ -625,7 +677,15 @@ export async function POST(req: Request) {
       } satisfies NextResponsePayload);
     }
 
-    let composed = await composeCard({ selected: selectorResult.selected, intent_hint: intentHint });
+    let composed = await composeCard({
+      selected: selectorResult.selected,
+      intent_hint: intentHint,
+      prev: {
+        answer_text: prevAnswerText ? clampText(prevAnswerText, 320) : null,
+        prompt: prevPrompt ? clampText(prevPrompt, 200) : null,
+      },
+    });
+
     if (!composed) {
       const firstQuestion = await isFirstQuestion(supabase, sessionId, userId);
       if (firstQuestion) {

@@ -247,15 +247,17 @@ export default function DirectionPage() {
       setBusySlug(slug);
       setErr(null);
       try {
+        const nextUrl = `/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`;
+        router.push(nextUrl);
+
         const result = await startDirection(sessionId, slug, "direction_modal");
         if (!result.success) {
           setErr("Hiba történt, próbáld újra.");
           return;
         }
         setSelected((prev) => ({ ...prev, [slug]: true }));
-        const nextUrl =
-          result.nextUrl ?? `/session/${sessionId}/work?direction=${encodeURIComponent(slug)}`;
-        router.push(nextUrl);
+        const resolvedNextUrl = result.nextUrl ?? nextUrl;
+        router.push(resolvedNextUrl);
       } catch (e: unknown) {
         setErr(e instanceof Error ? e.message : "Hiba");
       } finally {

@@ -22,7 +22,6 @@ type OpenAIUsage = {
   total_tokens?: number;
 };
 
-
 function clampText(text: string, limit: number): string {
   const trimmed = (text ?? "").trim();
   if (!trimmed) return "";
@@ -67,6 +66,21 @@ function mentionsDreamContext(prompt: string): boolean {
   return /\balom\w*\b/.test(t);
 }
 
+function normalizeTokensHU(input: string): string[] {
+  const t = normalizeForMatch(input);
+  if (!t) return [];
+  return t.split(" ").filter((w) => w.length >= 4);
+}
+
+function hasLightOverlap(a: string, b: string): boolean {
+  const A = new Set(normalizeTokensHU(a));
+  if (A.size === 0) return false;
+  const B = normalizeTokensHU(b);
+  let hit = 0;
+  for (const w of B) if (A.has(w)) hit++;
+  return hit >= 1;
+}
+
 function containsExactPhrase(prompt: string, phrase: string): boolean {
   const normPrompt = normalizeForMatch(prompt);
   const normPhrase = normalizeForMatch(phrase);
@@ -101,6 +115,10 @@ function buildSystemPrompt(args: { mode: "normal" | "gentle"; strict?: boolean }
     "- No interpretation, no diagnosis, no meaning claims.",
     "- Avoid non-dream discourse (szoveg, kulonbozo szovegek, irodalom, narrativa).",
     "- Ground the prompt in this dream / this session. Refer to the dream context explicitly.",
+    "- If prev.answer_text is provided, keep continuity: your prompt must connect to what the user just answered.",
+    "- Use prev.answer_text only as a soft anchor (paraphrase or a short reference), do not quote long phrases.",
+    "- Do not jump to a new motif unrelated to the previous answer unless the selected material is explicitly different.",
+    "- Prefer follow-up questions that deepen the same thread (sensation, moment, shift, intensity, location).",
     "- If you mention recurring motifs, compare within this dream (scenes/moments) unless multi-session context is given.",
     "",
     ...(args.strict
@@ -139,8 +157,13 @@ function parseModelJSON(raw: string): any | null {
   }
 }
 
-export async function composeCard(args: { selected: Selected; intent_hint?: string | null }): Promise<ComposeResult | null> {
+export async function composeCard(args: {
+  selected: Selected;
+  intent_hint?: string | null;
+  prev?: { answer_text?: string | null; prompt?: string | null } | null;
+}): Promise<ComposeResult | null> {
   const openai = openaiServer();
+
   const user = {
     material: {
       type: args.selected.material.type,
@@ -157,6 +180,10 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
       question_archetypes: args.selected.direction.question_archetypes ?? [],
     },
     intent_hint: args.intent_hint ?? null,
+    prev: {
+      answer_text: args.prev?.answer_text ?? null,
+      prompt: args.prev?.prompt ?? null,
+    },
   };
 
   try {
@@ -165,6 +192,7 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
       callFn: async ({ model, attempt }) => {
         for (let inner = 1; inner <= COMPOSE_MAX_ATTEMPTS; inner++) {
           const system = buildSystemPrompt({ mode: args.selected.mode, strict: inner > 1 });
+
           const completion = await withTimeout(
             (signal) =>
               openai.chat.completions.create(
@@ -186,6 +214,7 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
           const usage: OpenAIUsage | undefined = completion.usage ?? undefined;
           const raw = completion.choices?.[0]?.message?.content ?? "";
           const parsed = parseModelJSON(raw);
+
           if (!parsed) {
             if (inner < COMPOSE_MAX_ATTEMPTS) {
               logModelTrace({
@@ -206,6 +235,7 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
           const leadIn = cleanLeadIn(leadInRaw);
           const prompt = promptRaw.trim();
 
+          // 0) prompt forma
           if (!prompt || !isSingleSentencePrompt(prompt)) {
             if (inner < COMPOSE_MAX_ATTEMPTS) {
               logModelTrace({
@@ -220,7 +250,10 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
             }
             throw new RetryableError("schema_fail", "Compose prompt invalid", usage);
           }
+
           const intentLabel = args.selected.material.intent_label ?? "";
+
+          // 1) Alap validációk (tiltott diskurzus / álom-kontekstus)
           if (containsBannedDiscourse(prompt) || containsBannedDiscourse(leadIn) || !mentionsDreamContext(prompt)) {
             if (inner < COMPOSE_MAX_ATTEMPTS) {
               logModelTrace({
@@ -235,6 +268,25 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
             }
             throw new RetryableError("schema_fail", "Compose validation failed", usage);
           }
+
+          // 2) Continuity (csak ha van prev válasz)
+          const prevAnswer = args.prev?.answer_text ?? null;
+          if (prevAnswer && !hasLightOverlap(prompt, prevAnswer)) {
+            if (inner < COMPOSE_MAX_ATTEMPTS) {
+              logModelTrace({
+                job_name: "compose_card",
+                model_used: model,
+                attempt_index: attempt,
+                retry_reason: "schema_fail",
+                prompt_tokens: usage?.prompt_tokens ?? null,
+                completion_tokens: usage?.completion_tokens ?? null,
+              });
+              continue;
+            }
+            throw new RetryableError("schema_fail", "Compose prompt did not connect to prev answer", usage);
+          }
+
+          // 3) Ne reuse-olja az intent labelt / intent hintet verbatim
           if (
             (intentLabel && containsExactPhrase(prompt, intentLabel)) ||
             (args.intent_hint && containsExactPhrase(prompt, args.intent_hint))
@@ -260,6 +312,7 @@ export async function composeCard(args: { selected: Selected; intent_hint?: stri
             group_tags: args.selected.direction.group_tags ?? [],
             compose_trace: { name: model, temperature: 0.25, retries: inner - 1 },
           };
+
           return { result, usage };
         }
 
