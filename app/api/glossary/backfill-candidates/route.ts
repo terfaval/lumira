@@ -17,16 +17,42 @@ type RequestBody = {
 };
 
 export async function POST(req: Request) {
-  console.log("STEP 1");
+  try {
+    const body = (await req.json()) as RequestBody;
 
-  const supabase = await supabaseServerAuthed(req);
-  console.log("STEP 2");
+    const supabase = await supabaseServerAuthed(req);
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData?.user) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
 
-  const { data: authData } = await supabase.auth.getUser();
-  console.log("STEP 3", authData?.user?.id);
+    const userId = authData.user.id;
+    if (!isGlossaryAdmin(userId)) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
 
-  return NextResponse.json({
-    ok: true,
-    userId: authData?.user?.id ?? null,
-  });
+    const requested = body.max_sessions ?? DEFAULT_MAX_SESSIONS;
+    const maxSessions = Math.min(
+      Math.max(1, Math.floor(requested)),
+      MAX_SESSIONS_HARD_LIMIT
+    );
+
+    const result = await backfillGlossaryCandidatesForUser({
+      supabase,
+      userId,
+      maxSessions,
+      logProgress: true,
+    });
+
+    return NextResponse.json({
+      ok: true,
+      scanned_sessions: result.scanned,
+      candidate_hits: result.candidates,
+      unique_terms: result.terms,
+      upserted_rows: result.upserted,
+    });
+  } catch (e: unknown) {
+    console.error("[glossary backfill error]", e);
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
