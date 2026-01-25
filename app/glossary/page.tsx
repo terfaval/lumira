@@ -54,6 +54,10 @@ export default function GlossaryPage() {
 
   // modal for adding new items
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [approveTarget, setApproveTarget] = useState<TermCandidate | null>(null);
+  const [approveNote, setApproveNote] = useState("");
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   // filtering and sorting state
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -165,6 +169,24 @@ export default function GlossaryPage() {
     setNewNotes("");
   }
 
+  function resetApprovalForm() {
+    setApproveTarget(null);
+    setApproveNote("");
+    setShowApproveModal(false);
+  }
+
+  function openApproveModal(candidate: TermCandidate) {
+    setApproveTarget(candidate);
+    setApproveNote("");
+    setShowApproveModal(true);
+    setErr(null);
+  }
+
+  function showSavedMessage(message: string) {
+    setSaveMessage(message);
+    window.setTimeout(() => setSaveMessage(null), 2200);
+  }
+
   async function backfillOccurrences(termId: string) {
     try {
       const res = await fetch("/api/glossary/backfill-occurrences", {
@@ -219,6 +241,51 @@ export default function GlossaryPage() {
       await loadItems();
       await loadSuggestions();
     }
+    setBusy(false);
+  }
+
+  async function onApproveCandidate() {
+    if (!approveTarget) return;
+    if (!userId) {
+      setErr("Nincs bejelentkezett felhasználó.");
+      return;
+    }
+
+    const name = (approveTarget.display_label || approveTarget.term).trim();
+    if (!name) {
+      setErr("Adj nevet az elemnek.");
+      return;
+    }
+
+    setBusy(true);
+
+    const { data: inserted, error } = await supabase
+      .from("glossary_terms")
+      .insert({ canonical: name, canonical_key: anchorKey(name), user_id: userId })
+      .select("id")
+      .single();
+
+    if (error) {
+      setErr(error.message || "Nem sikerült hozzáadni az elemet.");
+      setBusy(false);
+      return;
+    }
+
+    const note = approveNote.trim();
+    if (note) {
+      const { error: noteErr } = await supabase
+        .from("glossary_notes")
+        .insert({ term_id: inserted.id, content: note, user_id: userId });
+      if (noteErr) setErr(noteErr.message || "Nem sikerült elmenteni a jegyzetet.");
+    }
+
+    await backfillOccurrences(inserted.id);
+    await supabase.from("term_candidates").delete().eq("id", approveTarget.id);
+
+    resetApprovalForm();
+    showSavedMessage("A bejegyzést elmentettük.");
+    await loadItems();
+    await loadSuggestions();
     setBusy(false);
   }
 
@@ -323,6 +390,10 @@ export default function GlossaryPage() {
     return sorted;
   }, [filteredItems, sortOption]);
 
+  const topCandidates = useMemo(() => {
+    return suggestions.slice(0, 4);
+  }, [suggestions]);
+
   // while admin gate is being resolved, render nothing (prevents flicker)
   if (!loading && !adminChecked) {
     return <FullScreenLoadingOverlay open />;
@@ -388,11 +459,58 @@ export default function GlossaryPage() {
     >
       <FullScreenLoadingOverlay open={showOverlay} />
       <div className="stack" style={{ width: "100%" }}>
+        {saveMessage ? (
+          <div style={{ color: "var(--text-muted)" }} role="status">
+            {saveMessage}
+          </div>
+        ) : null}
         {err && (
           <div style={{ color: "crimson" }} role="alert">
             {err}
           </div>
         )}
+
+        <div className="glossary-block">
+          <div className="glossary-block-header">
+            <div className="glossary-block-title">Ajánlott elemek</div>
+            <div className="glossary-block-subtitle">A leggyakoribb javaslatok gyors jóváhagyása.</div>
+          </div>
+          <div className="glossary-suggestions-grid">
+            <GlassCardSurface className="glossary-suggestion-card" variant="flat" paper="evening">
+              <div className="glossary-suggestion-content">
+                <div style={{ fontWeight: 700 }}>További javaslatok</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Összes jelölt áttekintése.</div>
+              </div>
+              <div className="glossary-card-footer">
+                <Link href="/glossary/suggestions" className="btn btn-secondary">
+                  Megnyitás
+                </Link>
+              </div>
+            </GlassCardSurface>
+
+            {topCandidates.map((candidate) => (
+              <GlassCardSurface key={candidate.id} className="glossary-suggestion-card" variant="flat" paper="evening">
+                <div className="glossary-suggestion-content">
+                  <div style={{ fontWeight: 700 }}>{candidate.display_label || candidate.term}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                    Előfordulás: {candidate.count}
+                  </div>
+                </div>
+                <div className="glossary-card-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => openApproveModal(candidate)} disabled={busy}>
+                    Jóváhagyás
+                  </button>
+                </div>
+              </GlassCardSurface>
+            ))}
+          </div>
+        </div>
+
+        <div className="glossary-block">
+          <div className="glossary-block-header">
+            <div className="glossary-block-title">Rögzített elemek</div>
+            <div className="glossary-block-subtitle">Az álomszótárban lévő elemek és jegyzeteik.</div>
+          </div>
 
         <div
           style={{
@@ -510,10 +628,6 @@ export default function GlossaryPage() {
           </ul>
         )}
 
-        <div style={{ marginTop: 24, display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <Link href="/glossary/suggestions" className="btn btn-secondary">
-            Javaslatok
-          </Link>
         </div>
       </div>
 
@@ -554,7 +668,80 @@ export default function GlossaryPage() {
         </div>
       ) : null}
 
+      {showApproveModal && approveTarget ? (
+        <div className="modal-overlay" onClick={resetApprovalForm}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <GlassCardSurface variant="soft" paper="evening" className="stack">
+              <div style={{ fontWeight: 700 }}>Jóváhagyás</div>
+              <div style={{ fontSize: 14, color: "var(--text-muted)" }}>
+                {approveTarget.display_label || approveTarget.term}
+              </div>
+              <GlassCardMatte padding="sm" tone="evening">
+                <textarea
+                  className="textarea"
+                  placeholder="Jegyzet (opcionális)"
+                  value={approveNote}
+                  onChange={(e) => setApproveNote(e.target.value)}
+                  rows={4}
+                  disabled={busy}
+                />
+              </GlassCardMatte>
+              <div className="glossary-card-footer">
+                <button type="button" className="btn btn-secondary" onClick={resetApprovalForm} disabled={busy}>
+                  Mégse
+                </button>
+                <PrimaryButton onClick={onApproveCandidate} disabled={busy}>
+                  Jóváhagyás
+                </PrimaryButton>
+              </div>
+            </GlassCardSurface>
+          </div>
+        </div>
+      ) : null}
+
       <style jsx>{`
+        .glossary-block {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-3);
+        }
+
+        .glossary-block-header {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .glossary-block-title {
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        .glossary-block-subtitle {
+          font-size: 13px;
+          color: var(--text-muted);
+        }
+
+        .glossary-suggestions-grid {
+          display: grid;
+          gap: var(--space-3);
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .glossary-suggestion-card {
+          padding: var(--space-3);
+          min-height: 140px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+
+        .glossary-suggestion-content {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
         .glossary-grid-card {
           height: 100%;
           display: flex;
@@ -587,6 +774,18 @@ export default function GlossaryPage() {
 
         .modal-card {
           width: min(520px, 100%);
+        }
+
+        @media (max-width: 1100px) {
+          .glossary-suggestions-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 720px) {
+          .glossary-suggestions-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
     </Shell>
