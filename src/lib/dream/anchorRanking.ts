@@ -195,59 +195,107 @@ function collectFromLatent(
   return out;
 }
 
-const HU_SUFFIXES = [
-  "kent",
+// --- HU morphology (very lightweight, guarded) ---
+const HU_CASE_SUFFIXES = [
+  // inessive / illative / elative
   "ban",
   "ben",
-  "bol",
-  "bel",
-  "rol",
-  "tol",
-  "hoz",
-  "hez",
-  "val",
-  "vel",
-  "nak",
-  "nek",
-  "nal",
-  "nel",
   "ba",
   "be",
-  "ra",
-  "re",
+  "bol",
+  "bel",
+  // superessive / sublative / delative
   "on",
   "en",
+  "rol",
+  "tol",
+  "ra",
+  "re",
+  // allative / adessive / ablative
+  "hoz",
+  "hez",
+  "nal",
+  "nel",
+  // instrumental
+  "val",
+  "vel",
+  // dative
+  "nak",
+  "nek",
+  // translative (very common)
+  "kent",
+];
+
+// plural + accusative (guarded)
+const HU_NUMBER_CASE = [
+  "k",
+  "t",
+  "ot",
+  "et",
+  "at",
   "ok",
   "ek",
   "ak",
 ];
 
+// possessive (very approximate; guarded)
+const HU_POSSESSIVE = [
+  "m",
+  "d",
+  "ja",
+  "je",
+  "a",
+  "e",
+  "unk",
+  "etek",
+  "otok",
+  "atok",
+  "uk",
+  "juk",
+  "juk",
+];
+
+const HU_MIN_STEM = 3;
+
+const HU_NO_STRIP = new Set(["van", "nem", "igen", "ott", "itt"]);
+
+function safeStripOnce(input: string, suffixes: string[], minStem: number): string {
+  for (const suf of suffixes) {
+    if (!suf) continue;
+    if (!input.endsWith(suf)) continue;
+    const stem = input.slice(0, -suf.length);
+    if (stem.length < minStem) continue;
+    return stem;
+  }
+  return input;
+}
+
 function stripHuSuffixes(raw: string): string {
   let t = raw;
   if (!t) return t;
-
-  const tryStrip = (input: string): string => {
-    for (const suf of HU_SUFFIXES) {
-      if (input.length - suf.length < 3) continue;
-      if (input.endsWith(suf)) return input.slice(0, -suf.length);
-    }
-    return input;
-  };
+  if (HU_NO_STRIP.has(t)) return t;
 
   // Handle common "extra t" after a case suffix (e.g. "kertbent" -> "kertben" -> "kert").
   if (t.endsWith("t") && t.length >= 5) {
     const withoutT = t.slice(0, -1);
-    const stripped = tryStrip(withoutT);
+    const stripped = safeStripOnce(withoutT, HU_CASE_SUFFIXES, HU_MIN_STEM);
     if (stripped !== withoutT) return stripped;
   }
 
-  for (let i = 0; i < 2; i++) {
-    const next = tryStrip(t);
-    if (next === t) break;
-    t = next;
-  }
+  const caseSuffixes = HU_CASE_SUFFIXES.map((s) => stripDiacritics(s));
+  const numberSuffixes = HU_NUMBER_CASE.map((s) => stripDiacritics(s));
+  const possSuffixes = HU_POSSESSIVE.map((s) => stripDiacritics(s));
 
-  return t;
+  // 1) outer case suffix (ban/ben/hoz/nek etc.)
+  const afterCase = safeStripOnce(t, caseSuffixes, HU_MIN_STEM);
+
+  // 2) number/case tail (k, t, ok/ek/ak etc.) - higher risk
+  const afterNum = safeStripOnce(afterCase, numberSuffixes, HU_MIN_STEM + 1);
+
+  // 3) possessive tail - higher risk
+  const afterPoss = safeStripOnce(afterNum, possSuffixes, HU_MIN_STEM + 2);
+
+  return afterPoss;
 }
 
 function tokenizeForCount(raw: string): string[] {
@@ -260,6 +308,25 @@ function tokenizeForCount(raw: string): string[] {
     .filter((t) => t.length >= 2);
 }
 
+function isSoftTokenMatch(token: string, needle: string): boolean {
+  if (token === needle) return true;
+
+  // prefix match for compounds: only if needle is informative enough
+  if (needle.length >= 4 && token.startsWith(needle)) return true;
+
+  // very small edit distance (<=1) guardrailed
+  if (needle.length >= 5 && token.length === needle.length) {
+    let diff = 0;
+    for (let i = 0; i < token.length; i++) {
+      if (token[i] !== needle[i]) diff++;
+      if (diff > 1) return false;
+    }
+    return diff === 1;
+  }
+
+  return false;
+}
+
 function countOccurrences(name: string, dreamText: string): number {
   if (!name || !dreamText) return 0;
   const nameTokens = tokenizeForCount(name);
@@ -269,7 +336,7 @@ function countOccurrences(name: string, dreamText: string): number {
   if (nameTokens.length === 1) {
     const needle = nameTokens[0];
     let count = 0;
-    for (const t of textTokens) if (t === needle) count++;
+    for (const t of textTokens) if (isSoftTokenMatch(t, needle)) count++;
     return count;
   }
 
@@ -277,7 +344,7 @@ function countOccurrences(name: string, dreamText: string): number {
   for (let i = 0; i <= textTokens.length - nameTokens.length; i++) {
     let match = true;
     for (let j = 0; j < nameTokens.length; j++) {
-      if (textTokens[i + j] !== nameTokens[j]) {
+      if (!isSoftTokenMatch(textTokens[i + j], nameTokens[j])) {
         match = false;
         break;
       }
@@ -342,6 +409,12 @@ export async function rankAnchors(params: {
   // 1) candidates
   const obsCandidates = collectFromObservation(observation);
   const latentCandidates = collectFromLatent(latent);
+  const obsCountByKey = new Map<string, number>();
+  for (const c of obsCandidates) {
+    const k = anchorKey(c.name) || normaliseKey(c.name);
+    if (!k) continue;
+    obsCountByKey.set(k, (obsCountByKey.get(k) ?? 0) + 1);
+  }
 
   // 2) merge by anchorKey() (HU-safe)
   const merged = new Map<
@@ -439,10 +512,14 @@ export async function rankAnchors(params: {
       inGlossary: Boolean(glossary),
     });
 
+    const obsOcc = obsCountByKey.get(k) ?? 0;
+    const hasSceneSource = (v.sources || []).some((s) => s.startsWith("observation.scenes["));
+    const obsWeight = obsOcc * 0.6 + (hasSceneSource ? 0.5 : 0);
+
     anchors.push({
       name: v.name,
       category: v.category,
-      score: base + (v.latentBoost || 0) + (includeUsed && isUsedByKey ? -2 : 0),
+      score: base + (v.latentBoost || 0) + obsWeight + (includeUsed && isUsedByKey ? -2 : 0),
       inGlossary: Boolean(glossary),
       glossaryNotes: glossary ? glossary.note : null,
       occurrences,
