@@ -290,6 +290,19 @@ export default function DirectionPage() {
         variant="soft"
         paper="evening"
         corner={token.bg}
+        role="button"
+        tabIndex={0}
+        aria-disabled={isBusy ? "true" : "false"}
+        onClick={() => {
+          if (!isBusy) void handleStart(d.slug);
+        }}
+        onKeyDown={(e) => {
+          if (isBusy) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            void handleStart(d.slug);
+          }
+        }}
       >
         {opts?.recommended ? (
           <div className={styles.recoIcon} title="Ajánlott" aria-label="Ajánlott">
