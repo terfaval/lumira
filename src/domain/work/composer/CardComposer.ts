@@ -6,6 +6,7 @@ import { callWithRetries, logModelTrace, RetryableError } from "@/src/lib/openai
 
 const OPENAI_TIMEOUT_MS = 15000;
 export const COMPOSE_MAX_ATTEMPTS = 3;
+
 const BANNED_PROMPT_TOKENS = ["szoveg", "irodalom", "narrativ", "szimbolum", "metafora", "elbeszeles", "narracio"];
 
 type ComposeResult = {
@@ -38,13 +39,16 @@ function isSingleSentencePrompt(s: string): boolean {
   const t = (s ?? "").trim();
   if (!t) return false;
   if ((t.match(/\n/g) ?? []).length > 0) return false;
+
   const qCount = (t.match(/\?/g) ?? []).length;
   if (qCount > 1) return false;
   if (qCount === 1 && !t.endsWith("?")) return false;
+
   const inner = t.endsWith("?") ? t.slice(0, -1) : t;
   if (/[.!]/.test(inner)) return false;
   if (/[;:]/.test(t)) return false;
   if (/\d+\)/.test(t) || /^\s*[-*]\s+/m.test(t)) return false;
+
   return true;
 }
 
@@ -56,8 +60,8 @@ function normalizeForMatch(input: string): string {
   return normalizeForCheck(input).replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function containsBannedDiscourse(prompt: string): boolean {
-  const t = normalizeForCheck(prompt);
+function containsBannedDiscourse(text: string): boolean {
+  const t = normalizeForCheck(text);
   return BANNED_PROMPT_TOKENS.some((token) => new RegExp(`\\b${token}\\w*\\b`).test(t));
 }
 
@@ -86,6 +90,19 @@ function containsExactPhrase(prompt: string, phrase: string): boolean {
   const normPhrase = normalizeForMatch(phrase);
   if (!normPrompt || !normPhrase) return false;
   return (` ${normPrompt} `).includes(` ${normPhrase} `);
+}
+
+function shouldEnforceContinuity(args: { prevAnswer: string | null; materialType: string | null }): boolean {
+  if (!args.prevAnswer) return false;
+  const prevLen = args.prevAnswer.trim().length;
+
+  // Ha nagyon rövid a válasz (pl. "nem tudom"), akkor ne erőltessük.
+  if (prevLen < 12) return false;
+
+  // Intent materialnál gyakrabban van téma-váltás / reframing, itt lazábbak lehetünk.
+  if (args.materialType === "intent") return false;
+
+  return true;
 }
 
 async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
@@ -232,6 +249,7 @@ export async function composeCard(args: {
 
           const leadInRaw = typeof parsed.lead_in === "string" ? parsed.lead_in : "";
           const promptRaw = typeof parsed.prompt === "string" ? parsed.prompt : "";
+
           const leadIn = cleanLeadIn(leadInRaw);
           const prompt = promptRaw.trim();
 
@@ -269,9 +287,11 @@ export async function composeCard(args: {
             throw new RetryableError("schema_fail", "Compose validation failed", usage);
           }
 
-          // 2) Continuity (csak ha van prev válasz)
+          // 2) Continuity (csak ha van prev válasz, és érdemes erőltetni)
           const prevAnswer = args.prev?.answer_text ?? null;
-          if (prevAnswer && !hasLightOverlap(prompt, prevAnswer)) {
+          const materialType = args.selected.material.type ?? null;
+
+          if (shouldEnforceContinuity({ prevAnswer, materialType }) && !hasLightOverlap(prompt, prevAnswer!)) {
             if (inner < COMPOSE_MAX_ATTEMPTS) {
               logModelTrace({
                 job_name: "compose_card",
