@@ -18,7 +18,15 @@ type RequestBody = {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as RequestBody;
+    let body: RequestBody = {};
+    const rawBody = await req.text();
+    if (rawBody.trim().length > 0) {
+      try {
+        body = JSON.parse(rawBody) as RequestBody;
+      } catch (err) {
+        return NextResponse.json({ error: "invalid json" }, { status: 400 });
+      }
+    }
 
     const supabase = await supabaseServerAuthed(req);
     const { data: authData } = await supabase.auth.getUser();
