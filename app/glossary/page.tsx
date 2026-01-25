@@ -473,10 +473,9 @@ export default function GlossaryPage() {
         <div className="glossary-block">
           <div className="glossary-block-header">
             <div className="glossary-block-title">Ajánlott elemek</div>
-            <div className="glossary-block-subtitle">A leggyakoribb javaslatok gyors jóváhagyása.</div>
           </div>
           <div className="glossary-suggestions-grid">
-            <GlassCardSurface className="glossary-suggestion-card" variant="flat" paper="evening">
+            <GlassCardSurface className="glossary-suggestion-card glossary-suggestion-card--ghost" variant="flat" paper="evening">
               <div className="glossary-suggestion-content">
                 <div style={{ fontWeight: 700 }}>További javaslatok</div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Összes jelölt áttekintése.</div>
@@ -509,18 +508,9 @@ export default function GlossaryPage() {
         <div className="glossary-block">
           <div className="glossary-block-header">
             <div className="glossary-block-title">Rögzített elemek</div>
-            <div className="glossary-block-subtitle">Az álomszótárban lévő elemek és jegyzeteik.</div>
           </div>
 
-        <div
-          style={{
-            marginTop: 12,
-            marginBottom: 12,
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
+        <div className="glossary-filters">
           <input
             type="text"
             placeholder="Keresés név vagy jegyzet alapján..."
@@ -717,11 +707,6 @@ export default function GlossaryPage() {
           font-weight: 700;
         }
 
-        .glossary-block-subtitle {
-          font-size: 13px;
-          color: var(--text-muted);
-        }
-
         .glossary-suggestions-grid {
           display: grid;
           gap: var(--space-3);
@@ -736,10 +721,28 @@ export default function GlossaryPage() {
           justify-content: space-between;
         }
 
+        .glossary-suggestion-card--ghost {
+          background: transparent;
+          border: 1px dashed rgba(255, 255, 255, 0.2);
+          box-shadow: none;
+        }
+
         .glossary-suggestion-content {
           display: flex;
           flex-direction: column;
           gap: 8px;
+        }
+
+        .glossary-filters {
+          margin-top: 12px;
+          margin-bottom: 12px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          padding: 12px;
+          border-radius: 16px;
+          background: rgba(12, 14, 20, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .glossary-grid-card {

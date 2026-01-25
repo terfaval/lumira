@@ -195,12 +195,69 @@ function collectFromLatent(
   return out;
 }
 
+const HU_SUFFIXES = [
+  "kent",
+  "ban",
+  "ben",
+  "bol",
+  "bel",
+  "rol",
+  "tol",
+  "hoz",
+  "hez",
+  "val",
+  "vel",
+  "nak",
+  "nek",
+  "nal",
+  "nel",
+  "ba",
+  "be",
+  "ra",
+  "re",
+  "on",
+  "en",
+  "ok",
+  "ek",
+  "ak",
+];
+
+function stripHuSuffixes(raw: string): string {
+  let t = raw;
+  if (!t) return t;
+
+  const tryStrip = (input: string): string => {
+    for (const suf of HU_SUFFIXES) {
+      if (input.length - suf.length < 3) continue;
+      if (input.endsWith(suf)) return input.slice(0, -suf.length);
+    }
+    return input;
+  };
+
+  // Handle common "extra t" after a case suffix (e.g. "kertbent" -> "kertben" -> "kert").
+  if (t.endsWith("t") && t.length >= 5) {
+    const withoutT = t.slice(0, -1);
+    const stripped = tryStrip(withoutT);
+    if (stripped !== withoutT) return stripped;
+  }
+
+  for (let i = 0; i < 2; i++) {
+    const next = tryStrip(t);
+    if (next === t) break;
+    t = next;
+  }
+
+  return t;
+}
+
 function tokenizeForCount(raw: string): string[] {
   if (!raw) return [];
   return stripDiacritics(raw.toLowerCase())
     .split(/[^a-z0-9]+/g)
     .map((t) => t.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((t) => stripHuSuffixes(t))
+    .filter((t) => t.length >= 2);
 }
 
 function countOccurrences(name: string, dreamText: string): number {
