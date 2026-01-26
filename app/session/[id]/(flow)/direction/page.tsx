@@ -269,12 +269,12 @@ export default function DirectionPage() {
 
   const recommended = useMemo(() => {
     const slugs = recommendedRaw.map((r) => r.slug).filter(Boolean).slice(0, 3);
-    if (!slugs.length) return filteredAll.slice(0, 3);
+    if (!slugs.length) return orderedAll.slice(0, 3);
 
-    const bySlug = new Map(filteredAll.map((d) => [d.slug, d]));
+    const bySlug = new Map(orderedAll.map((d) => [d.slug, d]));
     const picked = slugs.map((s) => bySlug.get(s)).filter(Boolean) as DirectionCatalogItemDTO[];
-    return picked.length ? picked : filteredAll.slice(0, 3);
-  }, [filteredAll, recommendedRaw]);
+    return picked.length ? picked : orderedAll.slice(0, 3);
+  }, [orderedAll, recommendedRaw]);
 
   const restList = useMemo(() => {
     const recSlugs = new Set(recommended.map((d) => d.slug));
@@ -467,6 +467,16 @@ export default function DirectionPage() {
         <div className={styles.stack}>
           {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}
 
+          <section className={styles.recoSection} aria-label="Ajánlott irányok">
+            <div className={styles.recoHeader}>
+              <div className={styles.recoTitle}>Ajánlott irányok</div>
+              <div className={styles.recoHint}>Gyors választás</div>
+            </div>
+            <div className={styles.recoRow}>
+              {recommended.map((d) => renderCard(d, { recommended: true }))}
+            </div>
+          </section>
+
           <div className={styles.toolbar} ref={toolbarRef}>
             <div className={styles.toolbarActions}>
               <button
@@ -495,7 +505,6 @@ export default function DirectionPage() {
 
             {filterOpen && (
               <div className={styles.toolbarPanel} role="dialog" aria-label="Szűrés">
-                <div className={styles.panelTitle}>Szűrés</div>
                 <div className={styles.panelBody}>
                   <div className={styles.panelList}>
                     <button
@@ -569,7 +578,6 @@ export default function DirectionPage() {
 
             {sortOpen && (
               <div className={styles.toolbarPanel} role="dialog" aria-label="Rendezés">
-                <div className={styles.panelTitle}>Rendezés</div>
                 <div className={styles.panelPills}>
                   {SORT_OPTIONS.map((opt) => (
                     <button
@@ -586,16 +594,6 @@ export default function DirectionPage() {
               </div>
             )}
           </div>
-
-          <section className={styles.recoSection} aria-label="Ajánlott irányok">
-            <div className={styles.recoHeader}>
-              <div className={styles.recoTitle}>Ajánlott irányok</div>
-              <div className={styles.recoHint}>Gyors választás</div>
-            </div>
-            <div className={styles.recoRow}>
-              {recommended.map((d) => renderCard(d, { recommended: true }))}
-            </div>
-          </section>
 
           <div className={styles.listHeader}>
             <div className={styles.listTitle}>Összes irány</div>

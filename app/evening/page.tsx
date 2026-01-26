@@ -544,7 +544,6 @@ export default function EveningLanding() {
 
             {filterOpen && (
               <div className="toolbar-panel" role="dialog" aria-label="Szűrés">
-                <div className="panel-title">Szűrés</div>
                 <div className="panel-body">
                   <div className="panel-list">
                     <button
@@ -644,13 +643,25 @@ export default function EveningLanding() {
                     )}
                   </div>
                 </div>
+                <div className="panel-actions">
+                  <button
+                    type="button"
+                    className="panel-reset"
+                    onClick={() => {
+                      setSelectedPhase("all");
+                      setSelectedIntent("all");
+                      setSelectedTime("all");
+                    }}
+                  >
+                    Visszaállítás
+                  </button>
+                </div>
               </div>
             )}
 
             {sortOpen && (
               <div className="toolbar-panel" role="dialog" aria-label="Rendezés">
-                <div className="panel-title">Rendezés</div>
-                <div className="panel-pills">
+                <div className="panel-pills panel-pills--column">
                   {SORT_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
@@ -801,6 +812,11 @@ export default function EveningLanding() {
           gap: var(--space-2);
         }
 
+        .panel-pills--column {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
         .pill-btn {
           cursor: pointer;
           border: 2px solid currentColor;
@@ -810,6 +826,26 @@ export default function EveningLanding() {
           color: var(--accent);
           border-color: var(--accent);
           background: rgba(255, 255, 255, 0.16);
+        }
+
+        .panel-actions {
+          display: flex;
+          justify-content: flex-end;
+        }
+
+        .panel-reset {
+          height: 34px;
+          padding: 0 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          background: rgba(255, 255, 255, 0.06);
+          color: rgba(255, 255, 255, 0.9);
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .panel-reset:hover {
+          background: rgba(255, 255, 255, 0.12);
         }
 
         .evening-grid {
