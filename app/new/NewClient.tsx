@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import {
@@ -55,6 +55,29 @@ export default function NewClient() {
     const empty = !trimmed;
     return { chars, words, empty };
   }, [text]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const prev = document.body.style.overflow;
+    const mql = window.matchMedia("(max-width: 720px)");
+    const apply = () => {
+      document.body.style.overflow = mql.matches ? "hidden" : prev;
+    };
+    apply();
+    if (mql.addEventListener) {
+      mql.addEventListener("change", apply);
+    } else {
+      mql.addListener(apply);
+    }
+    return () => {
+      if (mql.removeEventListener) {
+        mql.removeEventListener("change", apply);
+      } else {
+        mql.removeListener(apply);
+      }
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   async function createSession() {
     setErr(null);
@@ -169,7 +192,7 @@ export default function NewClient() {
     >
       <FlowLoadingOverlay open={blockingFlow} title={overlayTitle} subtitle={overlaySubtitle} />
 
-      <>
+      <div className="newdream-screen">
         <GlassCardSurface
           variant="soft"
           paper="evening"
@@ -221,19 +244,33 @@ export default function NewClient() {
                   {blockingFlow ? "Előkészítés…" : busy ? "Rögzítés…" : "Rögzítés"}
                 </PrimaryButton>
               </div>
-            </div>
-          </GlassCardForeground>
-        </GlassCardSurface>
+              </div>
+            </GlassCardForeground>
+          </GlassCardSurface>
 
         {err && (
           <div className="newdream-error" role="alert">
             {err}
           </div>
         )}
-      </>
+      </div>
 
       <style jsx>{`
         :global(.newdream-card-body) {
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-3);
+          height: 100%;
+          min-height: 0;
+        }
+
+        :global(.newdream-card) {
+          flex: 1 1 auto;
+          display: flex;
+          min-height: 0;
+        }
+
+        .newdream-screen {
           display: flex;
           flex-direction: column;
           gap: var(--space-3);
@@ -291,13 +328,13 @@ export default function NewClient() {
           }
 
           :global(.newdream-textarea) {
-            min-height: 60vh;
+            min-height: 100%;
+            height: 100%;
             font-size: 16px;
+            resize: none;
           }
 
           :global(.newdream-footer) {
-            position: sticky;
-            bottom: 0;
             padding: var(--space-2) 0;
             background: var(--bg-layer);
             border-top: 1px solid var(--line-soft);
@@ -306,6 +343,11 @@ export default function NewClient() {
           :global(.newdream-actions) {
             width: 100%;
             justify-content: space-between;
+          }
+
+          .newdream-screen {
+            height: 100%;
+            overflow: hidden;
           }
         }
       `}</style>
