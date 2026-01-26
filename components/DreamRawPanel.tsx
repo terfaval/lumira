@@ -31,6 +31,14 @@ type PendingHighlight = {
   text: string;
 };
 
+const highlightCategoryOptions = [
+  { key: "character", label: "Szereplő" },
+  { key: "place", label: "Hely" },
+  { key: "object", label: "Tárgy" },
+  { key: "beat", label: "Kulcsmomentum" },
+  { key: "felt_word", label: "Érzet" },
+];
+
 function cx(...xs: Array<string | false | undefined>) {
   return xs.filter(Boolean).join(" ");
 }
@@ -84,7 +92,12 @@ function renderWithHighlights(text: string, highlights: DreamHighlight[]) {
     const snippet = text.slice(h.start_offset, h.end_offset);
     const title = h.note ? `${h.category} • ${h.note}` : h.category;
     out.push(
-      <mark key={`${h.id}-${h.start_offset}`} className={styles.highlight} title={title}>
+      <mark
+        key={`${h.id}-${h.start_offset}`}
+        className={styles.highlight}
+        title={title}
+        data-category={h.category}
+      >
         {snippet}
       </mark>
     );
@@ -102,7 +115,7 @@ export function DreamRawPanel({
 }: {
   sessionId: string;
   entry?: DreamRawEntry | null;
-  /** default: a rÆcgi viselkedÆcs, bare: semmi extra ƒ?˜dobozƒ?œ styling */
+  /** default: a régi viselkedés, bare: semmi extra "doboz" styling */
   variant?: "default" | "bare";
   className?: string;
 }) {
@@ -156,7 +169,7 @@ export function DreamRawPanel({
         else setFetchedEntry((data as DreamRawEntry) ?? null);
       } catch (e: unknown) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Nem sikerÆ•lt betÆlteni az Æólmot.");
+        setError(e instanceof Error ? e.message : "Nem sikerült betölteni az álmot.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -248,11 +261,11 @@ export function DreamRawPanel({
       setFetchedEntry((prev) => (prev ? { ...prev, content: draftText } : prev));
       setEditMode(false);
     } catch (e: unknown) {
-      setActionError(e instanceof Error ? e.message : "Nem sikerÆ•lt menteni a vÆóltoztatÆóst.");
-    } finally {
-      setSavingEdit(false);
-    }
-  }, [displayEntry?.id, draftText]);
+    setActionError(e instanceof Error ? e.message : "Nem sikerült menteni a változtatást.");
+  } finally {
+    setSavingEdit(false);
+  }
+}, [displayEntry?.id, draftText]);
 
   const handleHighlightToggle = useCallback(() => {
     setActionError(null);
@@ -278,9 +291,9 @@ export function DreamRawPanel({
     if (!displayEntry?.id || !pendingHighlight) return;
     const category = highlightCategory.trim();
     if (!category) {
-      setActionError("Adj meg egy kategÆóriÆót a kiemelÆéshez.");
-      return;
-    }
+    setActionError("Adj meg egy kategóriát a kiemeléshez.");
+    return;
+  }
 
     setSavingHighlight(true);
     setActionError(null);
@@ -313,11 +326,11 @@ export function DreamRawPanel({
       setPendingHighlight(null);
       setHighlightMode(false);
     } catch (e: unknown) {
-      setActionError(e instanceof Error ? e.message : "Nem sikerÆ•lt elmenteni a kiemelÆést.");
-    } finally {
-      setSavingHighlight(false);
-    }
-  }, [displayEntry?.id, highlightCategory, highlightNote, pendingHighlight, sessionId]);
+    setActionError(e instanceof Error ? e.message : "Nem sikerült elmenteni a kiemelést.");
+  } finally {
+    setSavingHighlight(false);
+  }
+}, [displayEntry?.id, highlightCategory, highlightNote, pendingHighlight, sessionId]);
 
   const handleHighlightCancel = useCallback(() => {
     setPendingHighlight(null);
@@ -327,20 +340,20 @@ export function DreamRawPanel({
 
   const renderBody = () => {
     if (error) {
-      return <span style={{ color: "crimson" }}>Nem sikerÆ•lt betÆlteni az Æólmot.</span>;
+      return <span style={{ color: "crimson" }}>Nem sikerült betölteni az álmot.</span>;
     }
 
     if (showLoading) {
       return (
         <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
           <LumiraLoader size={18} spinSeconds={8} tone="light" />
-          <span>BetÆltÆcsƒ?|</span>
+          <span>Betöltés...</span>
         </span>
       );
     }
 
     if (!text) {
-      return <span>Nincs megjelenÆðthet‘' ÆólomszÆveg.</span>;
+      return <span>Nincs megjeleníthető álomszöveg.</span>;
     }
 
     return renderWithHighlights(text, highlights);
@@ -371,7 +384,7 @@ export function DreamRawPanel({
           className={styles.iconButton}
           type="button"
           aria-pressed={editMode}
-          aria-label="SzerkesztÆés"
+          aria-label="Szerkesztés"
           onClick={handleEditToggle}
           disabled={savingEdit || savingHighlight}
         >
@@ -386,7 +399,7 @@ export function DreamRawPanel({
           className={styles.iconButton}
           type="button"
           aria-pressed={highlightMode}
-          aria-label="KiemelÆés"
+          aria-label="Kiemelés"
           onPointerDown={captureSelection}
           onClick={handleHighlightToggle}
           disabled={savingEdit || savingHighlight || editMode}
@@ -405,10 +418,10 @@ export function DreamRawPanel({
           {actionError ? <span className={styles.actionError}>{actionError}</span> : null}
           <div className={styles.actionRow}>
             <button className="btn btn-primary" type="button" onClick={handleEditSave} disabled={savingEdit}>
-              MentÆés
+              Mentés
             </button>
             <button className="btn btn-secondary" type="button" onClick={handleEditCancel} disabled={savingEdit}>
-              MÆégse
+              Mégse
             </button>
           </div>
         </div>
@@ -417,20 +430,37 @@ export function DreamRawPanel({
       {highlightMode ? (
         <div className={styles.highlightPanel}>
           <div className={styles.highlightTitle}>
-            {pendingHighlight ? "KiemelÆés mentÆése" : "JelÆölj ki egy rÆészt az ÆólombÆól."}
+            {pendingHighlight ? "Kiemelés mentése" : "Jelölj ki egy részt az álomból."}
           </div>
           {pendingHighlight ? (
             <>
+              <div className={styles.pillRow}>
+                {highlightCategoryOptions.map((option) => {
+                  const selected = highlightCategory === option.key;
+                  return (
+                    <button
+                      key={option.key}
+                      type="button"
+                      className={cx(
+                        styles.pillButton,
+                        styles[`pill-${option.key}` as keyof typeof styles],
+                        selected && styles.pillButtonActive
+                      )}
+                      aria-pressed={selected}
+                      onClick={() => {
+                        setActionError(null);
+                        setHighlightCategory(option.key);
+                      }}
+                      disabled={savingHighlight}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
               <input
                 className={styles.highlightInput}
-                placeholder="KategÆória"
-                value={highlightCategory}
-                onChange={(event) => setHighlightCategory(event.target.value)}
-                disabled={savingHighlight}
-              />
-              <input
-                className={styles.highlightInput}
-                placeholder="MegjegyzÆés (opcionÆális)"
+                placeholder="Megjegyzés (opcionális)"
                 value={highlightNote}
                 onChange={(event) => setHighlightNote(event.target.value)}
                 disabled={savingHighlight}
@@ -438,10 +468,10 @@ export function DreamRawPanel({
               {actionError ? <span className={styles.actionError}>{actionError}</span> : null}
               <div className={styles.actionRow}>
                 <button className="btn btn-primary" type="button" onClick={handleHighlightSave} disabled={savingHighlight}>
-                  MentÆés
+                  Mentés
                 </button>
                 <button className="btn btn-secondary" type="button" onClick={handleHighlightCancel} disabled={savingHighlight}>
-                  MÆégse
+                  Mégse
                 </button>
               </div>
             </>
