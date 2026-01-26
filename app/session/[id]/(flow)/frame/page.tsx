@@ -41,10 +41,7 @@ function isCanonicalFrameReady(payload: any): boolean {
   if (!payload || typeof payload !== "object") return false;
   const titleOk = typeof payload.title === "string" && payload.title.trim().length > 0;
   const framingOk = typeof payload.framing_text === "string" && payload.framing_text.trim().length > 0;
-  const recOk =
-    (Array.isArray(payload.recommended_directions) && payload.recommended_directions.length >= 1) ||
-    (Array.isArray(payload.recommended_slugs) && payload.recommended_slugs.length >= 1);
-  return titleOk && framingOk && recOk;
+  return titleOk && framingOk;
 }
 
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";

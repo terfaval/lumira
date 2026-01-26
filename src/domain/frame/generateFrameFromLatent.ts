@@ -8,6 +8,7 @@ import {
   safeJsonParse,
   sanitizeWhitespace,
   titleCaseHungarian,
+  normalizeFrameTitle,
   titleHasAnchorFuzzy,
   pickTopAnchors,
 } from "@/src/lib/dream/text";
@@ -319,7 +320,7 @@ function isValidFraming(
 
 function normalizeFramePayload(content: string, allowedSet: Set<string>) {
   const parsed = safeJsonParse<any>(content) ?? {};
-  const title = typeof parsed?.title === "string" ? titleCaseHungarian(parsed.title) : "";
+  const title = typeof parsed?.title === "string" ? normalizeFrameTitle(parsed.title) : "";
   const framing_text =
     typeof parsed?.framing_text === "string" ? sanitizeWhitespace(parsed.framing_text) : "";
   const recommended_slugs = normalizeRecommendedSlugs(parsed?.recommended_slugs, allowedSet);
@@ -512,7 +513,7 @@ async function repairTitle(args: {
   const content = resp.choices?.[0]?.message?.content ?? "";
   const parsed = safeJsonParse<any>(content);
   if (!parsed || typeof parsed?.title !== "string") return null;
-  return titleCaseHungarian(parsed.title);
+  return normalizeFrameTitle(parsed.title);
 }
 
 function pickFallbackSlugs(preferred: string[], allowed: string[]): string[] {

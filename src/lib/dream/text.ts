@@ -107,6 +107,21 @@ export function titleCaseHungarian(s: string): string {
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
+export function normalizeFrameTitle(raw: string): string {
+  let t = sanitizeTitle(raw);
+  if (!t) return "";
+
+  // Remove colons and long dashes that tend to bloat titles.
+  t = t.replace(/[：:]/g, " ");
+  t = t.replace(/[–—]/g, " ");
+
+  // Strip "dream" words anywhere (user preference).
+  t = t.replace(/\bálom(?:beli|od|om|a)?\b/gi, " ");
+
+  t = t.replace(/\s+/g, " ").trim();
+  return titleCaseHungarian(t);
+}
+
 export function normalizeTitleForCheck(t: string) {
   return (t ?? "")
     .toLowerCase()
