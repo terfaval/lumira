@@ -46,6 +46,16 @@ const TIME_LABEL: Record<Exclude<TimeFilterKey, "all">, string> = {
   t5plus: "> 5 perc",
 };
 
+type SortMode = "recommended" | "title_asc" | "title_desc" | "time_asc" | "time_desc";
+type FilterFacet = "phase" | "intent" | "time";
+const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
+  { value: "recommended", label: "Ajánlott" },
+  { value: "title_asc", label: "Cím A-Z" },
+  { value: "title_desc", label: "Cím Z-A" },
+  { value: "time_asc", label: "Idő (rövid elől)" },
+  { value: "time_desc", label: "Idő (hosszú elől)" },
+];
+
 function InfoIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -191,6 +201,11 @@ export default function EveningLanding() {
   const [selectedPhase, setSelectedPhase] = useState<PhaseKey | "all">("all");
   const [selectedIntent, setSelectedIntent] = useState<IntentKey | "all">("all");
   const [selectedTime, setSelectedTime] = useState<TimeFilterKey>("all");
+  const [sortMode, setSortMode] = useState<SortMode>("recommended");
+
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [activeFacet, setActiveFacet] = useState<FilterFacet>("phase");
 
   // overlay
   const [openSlug, setOpenSlug] = useState<string | null>(null);
@@ -203,6 +218,7 @@ export default function EveningLanding() {
   const [infoOpen, setInfoOpen] = useState(false);
 
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
 
   const seedRef = useRef<number>(0);
   if (!seedRef.current) seedRef.current = Math.floor(Date.now() % 2147483647);
@@ -218,6 +234,19 @@ export default function EveningLanding() {
       if (error) setErr(error.message);
       else setCards((data ?? []) as EveningCardCatalogItem[]);
     })();
+  }, []);
+
+  useEffect(() => {
+    function onMouseDown(e: MouseEvent) {
+      if (!toolbarRef.current) return;
+      if (!toolbarRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+        setSortOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
   }, []);
 
   // lock scroll while open
@@ -305,21 +334,45 @@ export default function EveningLanding() {
   }, [cards, selectedPhase, selectedIntent, selectedTime]);
 
   const orderedCards = useMemo(() => {
-    const hour = new Date().getHours();
-    const isNight = hour >= 0 && hour <= 6;
+    if (sortMode === "recommended") {
+      const hour = new Date().getHours();
+      const isNight = hour >= 0 && hour <= 6;
 
-    const rescue = filteredCards.filter((c) => getPhase(c) === "rescue");
-    const other = filteredCards.filter((c) => getPhase(c) !== "rescue");
+      const rescue = filteredCards.filter((c) => getPhase(c) === "rescue");
+      const other = filteredCards.filter((c) => getPhase(c) !== "rescue");
 
-    const otherShuffled = shuffleDeterministic(other, seedRef.current);
-    const rescueShuffled = shuffleDeterministic(rescue, seedRef.current ^ 1337);
+      const otherShuffled = shuffleDeterministic(other, seedRef.current);
+      const rescueShuffled = shuffleDeterministic(rescue, seedRef.current ^ 1337);
 
-    return isNight ? [...rescueShuffled, ...otherShuffled] : [...otherShuffled, ...rescueShuffled];
-  }, [filteredCards]);
+      return isNight ? [...rescueShuffled, ...otherShuffled] : [...otherShuffled, ...rescueShuffled];
+    }
+
+    const byTitle = (a: EveningCardCatalogItem, b: EveningCardCatalogItem) =>
+      String(a.title ?? "").localeCompare(String(b.title ?? ""), "hu");
+
+    const byTime = (a: EveningCardCatalogItem, b: EveningCardCatalogItem) => {
+      const aTime = parseMaxMinutes((a.content as any)?.meta?.time);
+      const bTime = parseMaxMinutes((b.content as any)?.meta?.time);
+      if (aTime == null && bTime == null) return byTitle(a, b);
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      return aTime - bTime;
+    };
+
+    const sorted = [...filteredCards];
+    if (sortMode === "title_asc") sorted.sort(byTitle);
+    if (sortMode === "title_desc") sorted.sort((a, b) => byTitle(b, a));
+    if (sortMode === "time_asc") sorted.sort(byTime);
+    if (sortMode === "time_desc") sorted.sort((a, b) => byTime(b, a));
+    return sorted;
+  }, [filteredCards, sortMode]);
 
   const openCard = useMemo(() => {
     return openSlug ? cards.find((c) => c.slug === openSlug) ?? null : null;
   }, [openSlug, cards]);
+
+  const activeFilterCount =
+    (selectedPhase !== "all" ? 1 : 0) + (selectedIntent !== "all" ? 1 : 0) + (selectedTime !== "all" ? 1 : 0);
 
   function computeGrowStyle(rect: DOMRect | null, isOpening: boolean): React.CSSProperties {
     if (typeof window === "undefined") return {};
@@ -463,54 +516,155 @@ export default function EveningLanding() {
         <div className="stack">
           {err && <p style={{ color: "crimson" }}>{err}</p>}
 
-          <div className="filters">
-            <div className="filter">
-              <div className="filter-label">Fázis</div>
-              <select
-                className="select"
-                value={selectedPhase}
-                onChange={(e) => setSelectedPhase(e.target.value as PhaseKey | "all")}
+          <div className="toolbar" ref={toolbarRef}>
+            <div className="toolbar-actions">
+              <button
+                type="button"
+                className="toolbar-btn"
+                aria-expanded={filterOpen}
+                onClick={() => {
+                  setFilterOpen((v) => !v);
+                  setSortOpen(false);
+                }}
               >
-                <option value="all">Minden fázis</option>
-                {allPhasesInData.map((k) => (
-                  <option key={k} value={k}>
-                    {PHASE_LABEL[k]}
-                  </option>
-                ))}
-              </select>
+                Szűrés{activeFilterCount ? ` (${activeFilterCount})` : ""}
+              </button>
+              <button
+                type="button"
+                className="toolbar-btn"
+                aria-expanded={sortOpen}
+                onClick={() => {
+                  setSortOpen((v) => !v);
+                  setFilterOpen(false);
+                }}
+              >
+                Rendezés
+              </button>
             </div>
 
-            <div className="filter">
-              <div className="filter-label">Szándék</div>
-              <select
-                className="select"
-                value={selectedIntent}
-                onChange={(e) => setSelectedIntent(e.target.value as IntentKey | "all")}
-              >
-                <option value="all">Minden szándék</option>
-                {allIntentsInData.map((k) => (
-                  <option key={k} value={k}>
-                    {INTENT_LABEL[k]}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {filterOpen && (
+              <div className="toolbar-panel" role="dialog" aria-label="Szűrés">
+                <div className="panel-title">Szűrés</div>
+                <div className="panel-body">
+                  <div className="panel-list">
+                    <button
+                      type="button"
+                      className={`panel-option${activeFacet === "phase" ? " is-active" : ""}`}
+                      onClick={() => setActiveFacet("phase")}
+                    >
+                      Fázis
+                    </button>
+                    <button
+                      type="button"
+                      className={`panel-option${activeFacet === "intent" ? " is-active" : ""}`}
+                      onClick={() => setActiveFacet("intent")}
+                    >
+                      Szándék
+                    </button>
+                    <button
+                      type="button"
+                      className={`panel-option${activeFacet === "time" ? " is-active" : ""}`}
+                      onClick={() => setActiveFacet("time")}
+                    >
+                      Idő
+                    </button>
+                  </div>
 
-            <div className="filter">
-              <div className="filter-label">Idő</div>
-              <select
-                className="select"
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value as TimeFilterKey)}
-              >
-                <option value="all">Bármennyi</option>
-                {allTimeBucketsInData.map((k) => (
-                  <option key={k} value={k}>
-                    {TIME_LABEL[k]}
-                  </option>
-                ))}
-              </select>
-            </div>
+                  <div className="panel-pills">
+                    {activeFacet === "phase" && (
+                      <>
+                        <button
+                          type="button"
+                          className={`pill pill--neutral pill-btn${selectedPhase === "all" ? " is-active" : ""}`}
+                          aria-pressed={selectedPhase === "all"}
+                          onClick={() => setSelectedPhase("all")}
+                        >
+                          Mind
+                        </button>
+                        {allPhasesInData.map((k) => (
+                          <button
+                            key={k}
+                            type="button"
+                            className={`pill pill--neutral pill-btn${selectedPhase === k ? " is-active" : ""}`}
+                            aria-pressed={selectedPhase === k}
+                            onClick={() => setSelectedPhase(k)}
+                          >
+                            {PHASE_LABEL[k]}
+                          </button>
+                        ))}
+                      </>
+                    )}
+
+                    {activeFacet === "intent" && (
+                      <>
+                        <button
+                          type="button"
+                          className={`pill pill--neutral pill-btn${selectedIntent === "all" ? " is-active" : ""}`}
+                          aria-pressed={selectedIntent === "all"}
+                          onClick={() => setSelectedIntent("all")}
+                        >
+                          Mind
+                        </button>
+                        {allIntentsInData.map((k) => (
+                          <button
+                            key={k}
+                            type="button"
+                            className={`pill pill--neutral pill-btn${selectedIntent === k ? " is-active" : ""}`}
+                            aria-pressed={selectedIntent === k}
+                            onClick={() => setSelectedIntent(k)}
+                          >
+                            {INTENT_LABEL[k]}
+                          </button>
+                        ))}
+                      </>
+                    )}
+
+                    {activeFacet === "time" && (
+                      <>
+                        <button
+                          type="button"
+                          className={`pill pill--neutral pill-btn${selectedTime === "all" ? " is-active" : ""}`}
+                          aria-pressed={selectedTime === "all"}
+                          onClick={() => setSelectedTime("all")}
+                        >
+                          Bármennyi
+                        </button>
+                        {allTimeBucketsInData.map((k) => (
+                          <button
+                            key={k}
+                            type="button"
+                            className={`pill pill--neutral pill-btn${selectedTime === k ? " is-active" : ""}`}
+                            aria-pressed={selectedTime === k}
+                            onClick={() => setSelectedTime(k)}
+                          >
+                            {TIME_LABEL[k]}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {sortOpen && (
+              <div className="toolbar-panel" role="dialog" aria-label="Rendezés">
+                <div className="panel-title">Rendezés</div>
+                <div className="panel-pills">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`pill pill--neutral pill-btn${sortMode === opt.value ? " is-active" : ""}`}
+                      aria-pressed={sortMode === opt.value}
+                      onClick={() => setSortMode(opt.value)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="evening-grid">{orderedCards.map((c) => renderCardTile(c))}</div>
@@ -559,24 +713,103 @@ export default function EveningLanding() {
       )}
 
       <style jsx>{`
-        .filters {
-          display: grid;
-          grid-template-columns: 1fr;
+        .toolbar {
+          position: relative;
+          display: flex;
+          justify-content: flex-end;
+          margin: var(--space-1) 0;
+          z-index: 2;
+        }
+
+        .toolbar-actions {
+          display: inline-flex;
           gap: var(--space-2);
-          margin-top: var(--space-1);
+          align-items: center;
         }
-        @media (min-width: 720px) {
-          .filters {
-            grid-template-columns: 1fr 1fr 1fr;
-          }
+
+        .toolbar-btn {
+          height: 40px;
+          padding: 0 14px;
+          border-radius: 999px;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          background: rgba(255, 255, 255, 0.06);
+          color: rgba(255, 255, 255, 0.9);
+          font-weight: 700;
+          letter-spacing: -0.01em;
+          cursor: pointer;
         }
-        .filter {
+
+        .toolbar-btn:hover {
+          background: rgba(255, 255, 255, 0.12);
+        }
+
+        .toolbar-panel {
+          position: absolute;
+          right: 0;
+          top: calc(100% + 8px);
+          min-width: 260px;
+          max-width: min(520px, 90vw);
+          padding: var(--space-3);
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(8, 12, 18, 0.92);
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
           display: grid;
-          gap: var(--space-1);
+          gap: var(--space-2);
         }
-        .filter-label {
+
+        .panel-title {
           font-size: 12px;
+          font-weight: 700;
           color: var(--text-muted);
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .panel-body {
+          display: grid;
+          gap: var(--space-2);
+          grid-template-columns: 140px 1fr;
+          align-items: start;
+        }
+
+        .panel-list {
+          display: grid;
+          gap: 8px;
+        }
+
+        .panel-option {
+          text-align: left;
+          padding: 8px 12px;
+          border-radius: 12px;
+          border: 1px solid transparent;
+          background: rgba(255, 255, 255, 0.06);
+          color: rgba(255, 255, 255, 0.78);
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        .panel-option.is-active {
+          border-color: rgba(255, 255, 255, 0.4);
+          color: rgba(255, 255, 255, 0.96);
+          background: rgba(255, 255, 255, 0.14);
+        }
+
+        .panel-pills {
+          display: flex;
+          flex-wrap: wrap;
+          gap: var(--space-2);
+        }
+
+        .pill-btn {
+          cursor: pointer;
+          border: 2px solid currentColor;
+        }
+
+        .pill-btn.is-active {
+          color: var(--accent);
+          border-color: var(--accent);
+          background: rgba(255, 255, 255, 0.16);
         }
 
         .evening-grid {
@@ -643,6 +876,31 @@ export default function EveningLanding() {
 
         .flip-x:hover {
           transform: scale(1.03);
+        }
+
+        @media (max-width: 680px) {
+          .toolbar {
+            position: fixed;
+            right: 14px;
+            bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+            justify-content: flex-end;
+            z-index: 50;
+          }
+
+          .toolbar-actions {
+            flex-direction: column;
+            align-items: flex-end;
+          }
+
+          .toolbar-panel {
+            top: auto;
+            bottom: calc(100% + 10px);
+            right: 0;
+          }
+
+          .panel-body {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
     </Shell>

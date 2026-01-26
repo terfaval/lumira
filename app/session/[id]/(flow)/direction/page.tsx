@@ -19,6 +19,13 @@ import { fetchFrameLatestWithPayloadAndId } from "@/src/db/repositories/latestRe
 
 type GroupKey = "memory" | "somatic" | "patterns" | "meaning" | "creative" | "other";
 type RecommendedDirection = { slug: string; why?: string; reason?: string };
+type SortMode = "catalog" | "title_asc" | "title_desc";
+type FilterFacet = "group" | "tag";
+const SORT_OPTIONS: Array<{ value: SortMode; label: string }> = [
+  { value: "catalog", label: "Katalógus szerint" },
+  { value: "title_asc", label: "Cím A-Z" },
+  { value: "title_desc", label: "Cím Z-A" },
+];
 
 function safeStringArray(x: unknown): string[] {
   if (!Array.isArray(x)) return [];
@@ -89,8 +96,15 @@ export default function DirectionPage() {
   const [recommendedRaw, setRecommendedRaw] = useState<RecommendedDirection[]>([]);
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [selectedGroups, setSelectedGroups] = useState<GroupKey[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sortMode, setSortMode] = useState<SortMode>("catalog");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [activeFacet, setActiveFacet] = useState<FilterFacet>("group");
 
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
   const didLoadRef = useRef(false);
 
   const close = useCallback(() => {
@@ -171,6 +185,19 @@ export default function DirectionPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    function onMouseDown(e: MouseEvent) {
+      if (!toolbarRef.current) return;
+      if (!toolbarRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+        setSortOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, []);
+
   // lock scroll while modal is open
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -206,18 +233,60 @@ export default function DirectionPage() {
     });
   }, [catalog]);
 
+  const groupOptions = useMemo(() => {
+    const map = new Map<GroupKey, string>();
+    for (const d of catalog) {
+      const key = groupKeyFromLabel(d.content.group);
+      if (!map.has(key)) map.set(key, groupLabel(d.content.group));
+    }
+    const keys = Array.from(map.keys()).sort((a, b) => groupOrderKey(a) - groupOrderKey(b));
+    return keys.map((key) => ({ key, label: map.get(key) ?? groupLabel(key) }));
+  }, [catalog]);
+
+  const tagOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const d of catalog) {
+      safeStringArray(d.tags).forEach((t) => set.add(t));
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "hu"));
+  }, [catalog]);
+
+  const filteredAll = useMemo(() => {
+    let out = orderedAll;
+
+    if (selectedGroups.length) {
+      const gSet = new Set(selectedGroups);
+      out = out.filter((d) => gSet.has(groupKeyFromLabel(d.content.group)));
+    }
+
+    if (selectedTags.length) {
+      const tSet = new Set(selectedTags);
+      out = out.filter((d) => safeStringArray(d.tags).some((t) => tSet.has(t)));
+    }
+
+    return out;
+  }, [orderedAll, selectedGroups, selectedTags]);
+
   const recommended = useMemo(() => {
     const slugs = recommendedRaw.map((r) => r.slug).filter(Boolean).slice(0, 3);
-    if (!slugs.length) return orderedAll.slice(0, 3);
+    if (!slugs.length) return filteredAll.slice(0, 3);
 
-    const bySlug = new Map(orderedAll.map((d) => [d.slug, d]));
+    const bySlug = new Map(filteredAll.map((d) => [d.slug, d]));
     const picked = slugs.map((s) => bySlug.get(s)).filter(Boolean) as DirectionCatalogItemDTO[];
-    return picked.length ? picked : orderedAll.slice(0, 3);
-  }, [orderedAll, recommendedRaw]);
+    return picked.length ? picked : filteredAll.slice(0, 3);
+  }, [filteredAll, recommendedRaw]);
 
-  const restGroupedFlattened = useMemo(() => {
+  const restList = useMemo(() => {
     const recSlugs = new Set(recommended.map((d) => d.slug));
-    const rest = orderedAll.filter((d) => !recSlugs.has(d.slug));
+    const rest = filteredAll.filter((d) => !recSlugs.has(d.slug));
+
+    if (sortMode === "title_asc") {
+      return [...rest].sort((a, b) => String(a.title ?? "").localeCompare(String(b.title ?? ""), "hu"));
+    }
+
+    if (sortMode === "title_desc") {
+      return [...rest].sort((a, b) => String(b.title ?? "").localeCompare(String(a.title ?? ""), "hu"));
+    }
 
     const buckets = new Map<GroupKey, DirectionCatalogItemDTO[]>();
     for (const k of ["memory", "somatic", "patterns", "meaning", "creative", "other"] as GroupKey[]) {
@@ -240,7 +309,30 @@ export default function DirectionPage() {
       out.push(...items);
     }
     return out;
-  }, [orderedAll, recommended]);
+  }, [filteredAll, recommended, sortMode]);
+
+  const activeFilterCount = selectedGroups.length + selectedTags.length;
+
+  const selectedGroupSet = useMemo(() => new Set(selectedGroups), [selectedGroups]);
+  const selectedTagSet = useMemo(() => new Set(selectedTags), [selectedTags]);
+
+  function toggleGroup(key: GroupKey) {
+    setSelectedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return Array.from(next);
+    });
+  }
+
+  function toggleTag(tag: string) {
+    setSelectedTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return Array.from(next);
+    });
+  }
 
   const handleStart = useCallback(
     async (slug: string) => {
@@ -375,6 +467,126 @@ export default function DirectionPage() {
         <div className={styles.stack}>
           {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}
 
+          <div className={styles.toolbar} ref={toolbarRef}>
+            <div className={styles.toolbarActions}>
+              <button
+                type="button"
+                className={styles.toolbarBtn}
+                aria-expanded={filterOpen}
+                onClick={() => {
+                  setFilterOpen((v) => !v);
+                  setSortOpen(false);
+                }}
+              >
+                Szűrés{activeFilterCount ? ` (${activeFilterCount})` : ""}
+              </button>
+              <button
+                type="button"
+                className={styles.toolbarBtn}
+                aria-expanded={sortOpen}
+                onClick={() => {
+                  setSortOpen((v) => !v);
+                  setFilterOpen(false);
+                }}
+              >
+                Rendezés
+              </button>
+            </div>
+
+            {filterOpen && (
+              <div className={styles.toolbarPanel} role="dialog" aria-label="Szűrés">
+                <div className={styles.panelTitle}>Szűrés</div>
+                <div className={styles.panelBody}>
+                  <div className={styles.panelList}>
+                    <button
+                      type="button"
+                      className={`${styles.panelOption}${activeFacet === "group" ? ` ${styles.panelOptionActive}` : ""}`}
+                      onClick={() => setActiveFacet("group")}
+                    >
+                      Csoport
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.panelOption}${activeFacet === "tag" ? ` ${styles.panelOptionActive}` : ""}`}
+                      onClick={() => setActiveFacet("tag")}
+                    >
+                      Címkék
+                    </button>
+                  </div>
+
+                  <div className={styles.panelPills}>
+                    {activeFacet === "group" && (
+                      <>
+                        <button
+                          type="button"
+                          className={`${styles.pillBtn}${selectedGroups.length === 0 ? ` ${styles.pillBtnActive}` : ""}`}
+                          aria-pressed={selectedGroups.length === 0}
+                          onClick={() => setSelectedGroups([])}
+                        >
+                          Mind
+                        </button>
+                        {groupOptions.map((opt) => (
+                          <button
+                            key={opt.key}
+                            type="button"
+                            className={`${styles.pillBtn}${selectedGroupSet.has(opt.key) ? ` ${styles.pillBtnActive}` : ""}`}
+                            aria-pressed={selectedGroupSet.has(opt.key)}
+                            onClick={() => toggleGroup(opt.key)}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </>
+                    )}
+
+                    {activeFacet === "tag" && (
+                      <>
+                        <button
+                          type="button"
+                          className={`${styles.pillBtn}${selectedTags.length === 0 ? ` ${styles.pillBtnActive}` : ""}`}
+                          aria-pressed={selectedTags.length === 0}
+                          onClick={() => setSelectedTags([])}
+                        >
+                          Mind
+                        </button>
+                        {tagOptions.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            className={`${styles.pillBtn}${selectedTagSet.has(tag) ? ` ${styles.pillBtnActive}` : ""}`}
+                            aria-pressed={selectedTagSet.has(tag)}
+                            onClick={() => toggleTag(tag)}
+                          >
+                            {huTagDir(tag)}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {sortOpen && (
+              <div className={styles.toolbarPanel} role="dialog" aria-label="Rendezés">
+                <div className={styles.panelTitle}>Rendezés</div>
+                <div className={styles.panelPills}>
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`${styles.pillBtn}${sortMode === opt.value ? ` ${styles.pillBtnActive}` : ""}`}
+                      aria-pressed={sortMode === opt.value}
+                      onClick={() => setSortMode(opt.value)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <section className={styles.recoSection} aria-label="Ajánlott irányok">
             <div className={styles.recoHeader}>
               <div className={styles.recoTitle}>Ajánlott irányok</div>
@@ -388,7 +600,7 @@ export default function DirectionPage() {
           <div className={styles.listHeader}>
             <div className={styles.listTitle}>Összes irány</div>
           </div>
-          <div className={styles.list}>{restGroupedFlattened.map((d) => renderCard(d))}</div>
+          <div className={styles.list}>{restList.map((d) => renderCard(d))}</div>
         </div>
       </GlassCardSurface>
     </div>
