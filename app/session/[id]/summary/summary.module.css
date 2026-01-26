@@ -3,10 +3,18 @@
   flex-direction: column;
   gap: var(--space-4);
 
-  /* fontos: ne tudja a gyerek elem széthúzni a layoutot */
   max-width: 100%;
   min-width: 0;
-  overflow-x: clip;
+
+  /* iOS fallback: clip nem mindig megbízható */
+  overflow-x: hidden;
+}
+
+/* Prefer clip when supported (nice to have) */
+@supports (overflow: clip) {
+  .summaryWrap {
+    overflow-x: clip;
+  }
 }
 
 /* Tabs */
@@ -25,25 +33,31 @@
   border-radius: 999px;
   font-weight: 700;
   font-size: 14px;
+
+  /* sanity: --text helyett létező tokenek */
   color: var(--text-muted);
   transition: background 0.2s ease, color 0.2s ease;
 }
 
 .tabButton:hover {
-  color: var(--text);
+  /* sanity: fallback token */
+  color: var(--text-primary, var(--text));
 }
 
 .tabActive {
-  background: var(--primary);
-  color: var(--surface);
+  /* sanity: fallback tokenek */
+  background: var(--primary, var(--accent));
+  color: var(--surface, var(--accent-ink));
 }
 
 /* Fix back button */
 .backBtn {
   position: fixed;
-  top: var(--space-3);
-  left: var(--space-3);
   z-index: 50;
+
+  /* safe-area aware */
+  top: calc(var(--space-3) + env(safe-area-inset-top, 0px));
+  left: calc(var(--space-3) + env(safe-area-inset-left, 0px));
 
   width: 42px;
   height: 42px;
@@ -52,7 +66,9 @@
 
   background: rgba(20, 20, 24, 0.55);
   backdrop-filter: blur(10px);
-  color: var(--text);
+  -webkit-backdrop-filter: blur(10px);
+
+  color: var(--text-primary, var(--text));
   font-size: 18px;
   font-weight: 900;
 
@@ -69,7 +85,7 @@
 .headerEditBtn {
   border: 1px solid var(--line-soft);
   background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
+  color: var(--text-primary, var(--text));
   width: 36px;
   height: 36px;
   border-radius: 999px;
@@ -101,6 +117,8 @@
   );
 
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
   box-shadow: 0 20px 70px rgba(0, 0, 0, 0.35);
   overflow: hidden;
 }
@@ -120,6 +138,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .gridCardHeader {
@@ -128,37 +147,27 @@
 
 .gridCardBody {
   flex: 1 1 auto;
+  min-height: 0;
 }
 
 .gridCardFooter {
   flex: 0 0 auto;
 }
 
+/* Cards in horizontal scrollers */
 .cardItem {
-  /* Egységes szélesség (mobilon nagyobb, desktopon stabil) */
   flex: 0 0 clamp(280px, 72vw, 360px);
   max-width: 360px;
-
-  /* Egységes “kártya-tile” magasságérzet (finomhangolható) */
   min-height: 220px;
-
-  /* Ha a belső WorkCard tud nyúlni, szépen kitölti */
   display: flex;
+
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .cardItem > * {
-  /* WorkCard töltse ki a tile-t */
   width: 100%;
 }
-
-.carousel {
-  scroll-snap-type: x mandatory;
-}
-
-.cardItem {
-  scroll-snap-align: start;
-}
-
 
 /* Stats */
 .stats {
@@ -189,7 +198,7 @@
   margin-top: 6px;
   font-size: 14px;
   font-weight: 900;
-  color: var(--text);
+  color: var(--text-primary, var(--text));
 }
 
 /* Salient elements */
@@ -220,7 +229,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 12px;
   font-weight: 800;
-  color: var(--text);
+  color: var(--text-primary, var(--text));
   letter-spacing: 0.01em;
 }
 
@@ -244,7 +253,7 @@
   border-radius: 999px;
   border: 1px solid var(--line-soft);
   background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
+  color: var(--text-primary, var(--text));
   font-size: 20px;
   font-weight: 900;
   cursor: pointer;
@@ -266,10 +275,17 @@
   flex-direction: column;
   gap: var(--space-2);
 
-  /* ez fogja meg a kilógást */
   max-width: 100%;
   min-width: 0;
-  overflow-x: clip;
+
+  /* iOS fallback */
+  overflow-x: hidden;
+}
+
+@supports (overflow: clip) {
+  .gallerySection {
+    overflow-x: clip;
+  }
 }
 
 /* The scroller itself */
@@ -288,14 +304,30 @@
   scroll-padding-inline: var(--space-2);
   -webkit-overflow-scrolling: touch;
 
+  /* sanity: ne rántsa a whole page-t vízszintben */
+  overscroll-behavior-x: contain;
+
   box-sizing: border-box;
 }
 
-/* iTunes “peek”: card is not full width, so next card peeks in */
+/* optional: clean scrollbar (mobile) */
+.carousel::-webkit-scrollbar {
+  height: 8px;
+}
+.carousel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+}
+.carousel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* iTunes “peek” card */
 .carouselCard {
   flex: 0 0 auto;
   width: clamp(260px, 86vw, 420px);
   scroll-snap-align: start;
+  scroll-snap-stop: always;
 
   border-radius: 18px;
   padding: var(--space-4);
@@ -312,7 +344,7 @@
 .carouselMeta {
   font-size: 12px;
   font-weight: 900;
-  color: var(--text);
+  color: var(--text-primary, var(--text));
   opacity: 0.85;
 }
 
@@ -506,8 +538,8 @@
 .moreButton {
   cursor: pointer;
   border: none;
-  background: var(--secondary);
-  color: var(--surface);
+  background: var(--secondary, var(--accent-2));
+  color: var(--surface, var(--text-primary));
   padding: 6px 14px;
   border-radius: 8px;
   font-weight: 700;
@@ -522,7 +554,12 @@
   background: rgba(0, 0, 0, 0.42);
   display: grid;
   place-items: center;
-  padding: var(--space-4);
+
+  /* safe-area + kényelmes mobil padding */
+  padding: calc(var(--space-4) + env(safe-area-inset-top, 0px))
+    calc(var(--space-4) + env(safe-area-inset-right, 0px))
+    calc(var(--space-4) + env(safe-area-inset-bottom, 0px))
+    calc(var(--space-4) + env(safe-area-inset-left, 0px));
 }
 
 .titleEditCard {
@@ -541,7 +578,8 @@
 .titleEditInput {
   width: 100%;
   border-radius: 14px;
-  color: var(--text);
+
+  color: var(--text-primary, var(--text));
   padding: 0;
   font-size: 16px;
   font-weight: 800;
@@ -566,19 +604,19 @@
 
 .titleEditBtn {
   background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
+  color: var(--text-primary, var(--text));
 }
 
 .titleEditBtnPrimary {
-  background: var(--primary);
-  color: var(--surface);
+  background: var(--primary, var(--accent));
+  color: var(--surface, var(--accent-ink));
   border-color: transparent;
 }
 
 @media (max-width: 679px) {
   .toolbar {
     position: fixed;
-    right: 14px;
+    right: calc(14px + env(safe-area-inset-right, 0px));
     bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     z-index: 50;
   }

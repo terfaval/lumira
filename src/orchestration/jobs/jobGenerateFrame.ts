@@ -6,7 +6,7 @@ import { jobIdempotencyKeyV0 } from "@/src/orchestration/idempotency/jobKey";
 import { fetchDirectionCatalog } from "@/src/db/repositories/catalogRepo";
 import {
   fetchLatentLatestWithPayloadAndId,
-  fetchObservationLatestWithPayloadAndId,
+  fetchObservationLatestV0WithPayloadAndId,
   fetchSessionIndexLatestWithPayloadAndId,
 } from "@/src/db/repositories/latestRepo";
 import { recommendDirectionsFromLatent } from "@/src/domain/directions/recommendDirectionsFromLatent";
@@ -44,7 +44,7 @@ export async function jobGenerateFrame(args: {
 }> {
   const { supabase, event, material_hash } = args;
 
-  const obs = await fetchObservationLatestWithPayloadAndId(supabase, event.user_id, event.session_id);
+  const obs = await fetchObservationLatestV0WithPayloadAndId(supabase, event.user_id, event.session_id);
   const idx = await fetchSessionIndexLatestWithPayloadAndId(supabase, event.user_id, event.session_id);
   if (!obs || !idx) {
     return { frame_version_id: null, skipped: false, ok: false, recommended_directions: [] };

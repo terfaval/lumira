@@ -48,19 +48,21 @@ export async function jobExtractObservation(args: {
     const userPrefs = prefsRes.error ? null : prefsRes.data;
 
     const { payload, model } = await extractObservationFromEntries({ dreamText, userPrefs });
+    const payloadWithSchema = { ...payload, schema_version: "v0" };
 
     const obs = await insertObservationVersionIfMissing(supabase, {
       session_id: event.session_id,
       user_id: event.user_id,
       input_hash,
       model,
-      payload,
+      payload: payloadWithSchema,
     });
 
     await upsertObservationLatest(supabase, {
       session_id: event.session_id,
       user_id: event.user_id,
       observation_version_id: obs.id,
+      schema_version: "v0",
     });
 
     // Best-effort: index non-interpretive memory (term_candidates + occurrences)
@@ -70,7 +72,7 @@ export async function jobExtractObservation(args: {
         supabase,
         userId: event.user_id,
         sessionId: event.session_id,
-        observationPayload: payload,
+        observationPayload: payloadWithSchema,
         source: "observation",
       });
     } catch (e) {

@@ -8,7 +8,7 @@ export async function hasDreamObservation(params: {
   const { supabase, sessionId, userId } = params;
   const { data, error } = await supabase
     .from("observation_latest")
-    .select("session_id")
+    .select("latest_dream_id")
     .eq("session_id", sessionId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -18,5 +18,5 @@ export async function hasDreamObservation(params: {
     return false;
   }
 
-  return Boolean(data?.session_id);
+  return Boolean((data as any)?.latest_dream_id);
 }

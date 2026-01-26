@@ -86,6 +86,59 @@ function groupOrderKey(k: GroupKey): number {
   return idx === -1 ? 999 : idx;
 }
 
+function useBodyScrollLock(open: boolean) {
+  useEffect(() => {
+    if (!open) return;
+    if (typeof window === "undefined") return;
+
+    const body = document.body;
+    const html = document.documentElement;
+
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+
+    // store previous inline styles (restore exactly)
+    const prevBody = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflow: body.style.overflow,
+      paddingRight: body.style.paddingRight,
+    };
+    const prevHtmlOverflow = html.style.overflow;
+
+    // compensate scrollbar disappearance (desktop)
+    const scrollbarGap = window.innerWidth - html.clientWidth;
+    if (scrollbarGap > 0) {
+      body.style.paddingRight = `${scrollbarGap}px`;
+    }
+
+    // freeze body (iOS-safe)
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+
+      body.style.position = prevBody.position;
+      body.style.top = prevBody.top;
+      body.style.left = prevBody.left;
+      body.style.right = prevBody.right;
+      body.style.width = prevBody.width;
+      body.style.overflow = prevBody.overflow;
+      body.style.paddingRight = prevBody.paddingRight;
+
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
+}
+
 export default function DirectionPage() {
   const { id: sessionId } = useParams<{ id: string }>();
   const router = useRouter();
@@ -181,12 +234,16 @@ export default function DirectionPage() {
     setRecommendedRaw([]);
   }, [sessionId]);
 
+    // iOS-safe body scroll lock while this "modal page" is mounted
+  useBodyScrollLock(true);
+
+
   useEffect(() => {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    function onMouseDown(e: MouseEvent) {
+    useEffect(() => {
+    function onPointerDown(e: PointerEvent) {
       if (!toolbarRef.current) return;
       if (!toolbarRef.current.contains(e.target as Node)) {
         setFilterOpen(false);
@@ -194,36 +251,38 @@ export default function DirectionPage() {
       }
     }
 
-    document.addEventListener("mousedown", onMouseDown);
-    return () => document.removeEventListener("mousedown", onMouseDown);
+    // capture: biztosabb, ha belső elemek megfogják
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
   }, []);
 
-  // lock scroll while modal is open
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
-
-  // ESC + focus X
+    // ESC + focus X
   useEffect(() => {
     closeBtnRef.current?.focus();
 
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
+      if (e.key !== "Escape") return;
+
+      // 1) close popovers first
+      if (filterOpen || sortOpen) {
         e.preventDefault();
-        close();
+        setFilterOpen(false);
+        setSortOpen(false);
+        return;
       }
+
+      // 2) close the modal/page
+      e.preventDefault();
+      close();
     }
+
     const release = registerListener("document.keydown:DirectionModal");
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
       release();
     };
-  }, [close]);
+  }, [close, filterOpen, sortOpen]);
 
   const orderedAll = useMemo(() => {
     return [...catalog].sort((a, b) => {
@@ -439,7 +498,7 @@ export default function DirectionPage() {
       className={styles.overlay}
       role="dialog"
       aria-modal="true"
-      onMouseDown={(e) => {
+      onPointerDown={(e) => {
         if (e.target === e.currentTarget) close();
       }}
     >
@@ -486,6 +545,7 @@ export default function DirectionPage() {
                 onClick={() => {
                   setFilterOpen((v) => !v);
                   setSortOpen(false);
+                  setActiveFacet("group");
                 }}
               >
                 Szűrés{activeFilterCount ? ` (${activeFilterCount})` : ""}

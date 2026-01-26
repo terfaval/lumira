@@ -32,6 +32,20 @@ All colors use HEX. Semi-transparent colors use 8-digit HEX (#RRGGBBAA).
   --shadow-soft: 0 18px 38px #0000001A; /* ~10% */
   --shadow-accent: 0 10px 26px #00000073; /* ~45% (overridden per theme where needed) */
 
+  /* ──────────────────────────────────────────────────────────── */
+  /* Viewport + Safe Area tokens (mobile stability)                */
+  /* ──────────────────────────────────────────────────────────── */
+
+  /* Default fallback */
+  --vh-100: 100vh;
+
+  /* Prefer dvh when available (keyboard can change dvh; still better than pure vh in many cases) */
+  /* Then prefer svh when available (stable viewport height on iOS; best for “no jump” layouts) */
+  --safe-top: 0px;
+  --safe-right: 0px;
+  --safe-bottom: 0px;
+  --safe-left: 0px;
+
   /* ------------------------------------------------------------------ */
   /* SEMANTIC TOKENS (theme sets actual values)                          */
   /* Defaults here act as "Night fallback" until body[data-napszak] sets */
@@ -96,18 +110,18 @@ All colors use HEX. Semi-transparent colors use 8-digit HEX (#RRGGBBAA).
   --newdream-surface-muted: var(--text-muted);
 
   /* Status (theme-safe) */
-  --success: #78DCAAF2;    /* rgba(120,220,170,0.95) */
-  --success-bg: #78DCAA29; /* 16% */
+  --success: #78DCAAF2;
+  --success-bg: #78DCAA29;
 
-  --warning: #FFC878F2;    /* rgba(255,200,120,0.95) */
-  --warning-bg: #FFC87829; /* 16% */
+  --warning: #FFC878F2;
+  --warning-bg: #FFC87829;
 
-  --danger: #FF7878F2;     /* rgba(255,120,120,0.95) */
-  --danger-bg: #FF787829;  /* 16% */
+  --danger: #FF7878F2;
+  --danger-bg: #FF787829;
 
   /* Evening cards “paper” surfaces (theme overrides) */
-  --evening-card-paper: #060C16C2;        /* 76% */
-  --evening-card-paper-strong: #040810DB; /* 86% */
+  --evening-card-paper: #060C16C2;
+  --evening-card-paper-strong: #040810DB;
 
   /* Select (dropdown) */
   --select-bg: var(--card-surface);
@@ -127,34 +141,69 @@ All colors use HEX. Semi-transparent colors use 8-digit HEX (#RRGGBBAA).
   --intent-irany_es_jelentes: #FFDC78F2;
   --intent-test_es_jelenlet: #A0EBFFF2;
 
-  --intent-biztonsag-bg: #78C3FF33;        /* 20% */
-  --intent-lecsendesites-bg: #AA8CFF2E;    /* 18% */
-  --intent-emlekezet-bg: #FFBE782E;        /* 18% */
-  --intent-tudatossag-bg: #78DCAA2E;       /* 18% */
-  --intent-kreativ_inkubacio-bg: #FF96BE2E;/* 18% */
-  --intent-irany_es_jelentes-bg: #FFDC782E;/* 18% */
-  --intent-test_es_jelenlet-bg: #A0EBFF2E; /* 18% */
+  --intent-biztonsag-bg: #78C3FF33;
+  --intent-lecsendesites-bg: #AA8CFF2E;
+  --intent-emlekezet-bg: #FFBE782E;
+  --intent-tudatossag-bg: #78DCAA2E;
+  --intent-kreativ_inkubacio-bg: #FF96BE2E;
+  --intent-irany_es_jelentes-bg: #FFDC782E;
+  --intent-test_es_jelenlet-bg: #A0EBFF2E;
 
   --phase-prep: #FFC878F2;
   --phase-in_bed: #AA8CFFF2;
   --phase-rescue: #78C3FFF2;
 
-  --phase-prep-bg: #FFC8782E;   /* 18% */
-  --phase-in_bed-bg: #AA8CFF2E; /* 18% */
-  --phase-rescue-bg: #78C3FF33; /* 20% */
+  --phase-prep-bg: #FFC8782E;
+  --phase-in_bed-bg: #AA8CFF2E;
+  --phase-rescue-bg: #78C3FF33;
 
   /* Archive status corner accents (pastel) */
---status-vazlat: #C7B6FF;     /* pastel lavender */
---status-vazlat-bg: #C7B6FF33;/* ~20% */
+  --status-vazlat: #C7B6FF;
+  --status-vazlat-bg: #C7B6FF33;
 
---status-erintett: #FFC9A3;     /* pastel peach */
---status-erintett-bg: #FFC9A333;/* ~20% */
+  --status-erintett: #FFC9A3;
+  --status-erintett-bg: #FFC9A333;
 
---status-feldolgozott: #AEE9D1;     /* pastel mint */
---status-feldolgozott-bg: #AEE9D133;/* ~20% */
+  --status-feldolgozott: #AEE9D1;
+  --status-feldolgozott-bg: #AEE9D133;
 
---status-lezart: #A9D2FF;     /* pastel sky */
---status-lezart-bg: #A9D2FF33;/* ~20% */
+  --status-lezart: #A9D2FF;
+  --status-lezart-bg: #A9D2FF33;
+
+  /* Direction groups */
+  --dirgroup-memory: #78C3FFF2;
+  --dirgroup-memory-bg: #78C3FF33;
+
+  --dirgroup-somatic: #78DCAAF2;
+  --dirgroup-somatic-bg: #78DCAA2E;
+
+  --dirgroup-patterns: #FFBE78F2;
+  --dirgroup-patterns-bg: #FFBE782E;
+
+  --dirgroup-meaning: #FFDC78F2;
+  --dirgroup-meaning-bg: #FFDC782E;
+
+  --dirgroup-creative: #FF96BEF2;
+  --dirgroup-creative-bg: #FF96BE2E;
+
+  --dirgroup-other: #A0EBFFF2;
+  --dirgroup-other-bg: #A0EBFF2E;
+}
+
+/* Viewport/safe-area feature detection */
+@supports (height: 100dvh) {
+  :root { --vh-100: 100dvh; }
+}
+@supports (height: 100svh) {
+  :root { --vh-100: 100svh; }
+}
+@supports (padding: env(safe-area-inset-top)) {
+  :root {
+    --safe-top: env(safe-area-inset-top);
+    --safe-right: env(safe-area-inset-right);
+    --safe-bottom: env(safe-area-inset-bottom);
+    --safe-left: env(safe-area-inset-left);
+  }
 }
 
 /* ────────────────────────────────────────────────────────────── */
@@ -163,71 +212,60 @@ All colors use HEX. Semi-transparent colors use 8-digit HEX (#RRGGBBAA).
 
 body[data-napszak="morning"],
 body[data-napszak="day"] {
-  /* background “bőrkötés” */
   --bg-root: #6A4245;
 
-  /* surfaces (papír) */
-  --bg-layer: #FFF5F0DB;        /* 86% */
+  --bg-layer: #FFF5F0DB;
   --bg-layer-strong: #F2D8D0;
 
   --card-surface: #FFF1EB;
   --card-surface-subtle: #F4DCD4;
 
-  /* text */
   --text-primary: #23181A;
   --text-muted: #594244;
 
-  /* secondary (shell title + hamburger alap) */
-  --text-secondary: #FFF5F0DB; /* 86% */
+  --text-secondary: #FFF5F0DB;
 
-  --line-soft: #34181A38; /* 22% */
+  --line-soft: #34181A38;
 
-  /* accents */
   --accent: #C09651;
   --accent-2: #8E4F39;
   --accent-ink: #23181A;
   --accent-hover: #B8893F;
 
-  --focus-ring: #C0965157;    /* 34% */
-  --selection-bg: #C0965133;  /* 20% */
+  --focus-ring: #C0965157;
+  --selection-bg: #C0965133;
 
-  --glow-1: #D8584E2E; /* 18% */
-  --glow-2: #C0965124; /* 14% */
+  --glow-1: #D8584E2E;
+  --glow-2: #C0965124;
 
-  --shadow-accent: 0 10px 26px #220E1038; /* 22% */
+  --shadow-accent: 0 10px 26px #220E1038;
 
   --link: var(--text-primary);
   --link-hover: var(--accent);
 
-  /* pills/badges */
-  --pill-bg: #34181A14;      /* 8% */
-  --badge-bg: #FFF5F047;     /* 28% */
+  --pill-bg: #34181A14;
+  --badge-bg: #FFF5F047;
   --badge-line: var(--line-soft);
   --badge-text: var(--text-muted);
 
-  /* inputs */
   --input-bg: var(--card-surface-subtle);
   --input-bg-focus: var(--bg-layer);
   --input-text: var(--text-primary);
-  --input-placeholder: #23181A6B; /* 42% */
+  --input-placeholder: #23181A6B;
 
-  /* New Dream – a nagy kártya legyen sötét nappaliban */
   --newdream-surface-bg: #513943;
-  --newdream-surface-border: #FFF5F038; /* 22% */
-  --newdream-surface-text: #FFF5F0EB;   /* 92% */
-  --newdream-surface-muted: #FFF5F0B8;  /* 72% */
+  --newdream-surface-border: #FFF5F038;
+  --newdream-surface-text: #FFF5F0EB;
+  --newdream-surface-muted: #FFF5F0B8;
 
-  /* Dream textarea: világos “vajpapír” */
-  --dream-input-bg: #FFF8E8F5;       /* 96% */
-  --dream-input-bg-focus: #FFF8E8;   /* 100% */
+  --dream-input-bg: #FFF8E8F5;
+  --dream-input-bg-focus: #FFF8E8;
   --dream-input-text: var(--text-primary);
-  --dream-input-placeholder: #23181A85; /* 52% */
+  --dream-input-placeholder: #23181A85;
 
-  /* Evening cards – day fallback paper */
-  --evening-card-paper: #FFF7E48C;        /* 55% */
-  --evening-card-paper-strong: #FFF7E4B3; /* 70% */
+  --evening-card-paper: #FFF7E48C;
+  --evening-card-paper-strong: #FFF7E4B3;
 
-  /* Select (dropdown) */
   --select-bg: var(--card-surface);
   --select-text: var(--text-primary);
   --select-option-bg: var(--card-surface);
@@ -249,54 +287,50 @@ body[data-napszak="night"] {
   --card-surface-subtle: #0C1019;
 
   --text-primary: #E6EBF5;
-  --text-secondary: #E6EBF5DB; /* 86% */
+  --text-secondary: #E6EBF5DB;
   --text-muted: #9DA7BC;
 
-  --line-soft: #E2E8F024; /* 14% */
+  --line-soft: #E2E8F024;
 
   --accent: #80B9B9;
   --accent-2: #497C92;
   --accent-ink: #07101A;
   --accent-hover: #6FAEAE;
 
-  --focus-ring: #80B9B957;    /* 34% */
-  --selection-bg: #80B9B938;  /* 22% */
+  --focus-ring: #80B9B957;
+  --selection-bg: #80B9B938;
 
-  --glow-1: #32586D24; /* 14% */
-  --glow-2: #80B9B914; /* 8% */
+  --glow-1: #32586D24;
+  --glow-2: #80B9B914;
 
-  --shadow-accent: 0 10px 26px #00000099; /* 60% */
+  --shadow-accent: 0 10px 26px #00000099;
 
   --link: var(--text-primary);
   --link-hover: var(--accent);
 
-  --pill-bg: #FFFFFF14;   /* 8% */
-  --badge-bg: #FFFFFF1A;  /* 10% */
+  --pill-bg: #FFFFFF14;
+  --badge-bg: #FFFFFF1A;
   --badge-line: var(--line-soft);
   --badge-text: var(--text-muted);
 
   --input-bg: var(--card-surface-subtle);
   --input-bg-focus: var(--bg-layer);
   --input-text: var(--text-primary);
-  --input-placeholder: #FFFFFF8C; /* 55% */
+  --input-placeholder: #FFFFFF8C;
 
-  /* New Dream surface defaults */
   --newdream-surface-bg: var(--bg-layer);
   --newdream-surface-border: var(--line-soft);
   --newdream-surface-text: var(--text-primary);
   --newdream-surface-muted: var(--text-muted);
 
-  /* Dream textarea */
-  --dream-input-bg: #32586D5C;       /* 36% */
-  --dream-input-bg-focus: #32586D85; /* 52% */
-  --dream-input-text: #FFFFFFEB;     /* 92% */
+  --dream-input-bg: #32586D5C;
+  --dream-input-bg-focus: #32586D85;
+  --dream-input-text: #FFFFFFEB;
   --dream-input-placeholder: #FFFFFF8C;
 
-  /* Evening cards: sötét “papír” */
-  --evening-card-paper: #060C16C2;        /* 76% */
-  --evening-card-paper-strong: #040810DB; /* 86% */
+  --evening-card-paper: #060C16C2;
+  --evening-card-paper-strong: #040810DB;
 
-  /* Select (dropdown) */
   --select-bg: var(--card-surface);
   --select-text: var(--text-primary);
   --select-option-bg: var(--card-surface);
@@ -304,20 +338,37 @@ body[data-napszak="night"] {
 }
 
 /* ────────────────────────────────────────────────────────────── */
-/* 3) BASE STYLES                                                  */
+/* 3) BASE STYLES (mobile-safe viewport + scroll)                  */
 /* ────────────────────────────────────────────────────────────── */
 
 * { box-sizing: border-box; }
 
-body {
-  color: var(--text-primary);
-  font-family: var(--font-base);
-  margin: 0;
-  min-height: 100vh;
-  transition: background 240ms ease, color 240ms ease;
+html {
+  height: 100%;
+  background: var(--bg-root);
+  /* iOS overscroll “flash” csökkentése */
+  -webkit-text-size-adjust: 100%;
 }
 
-main { min-height: 100vh; }
+body {
+  margin: 0;
+  font-family: var(--font-base);
+  color: var(--text-primary);
+  background: var(--bg-root);
+
+  /* Egységes viewport magasság — ne keverd külön min-height-ekkel */
+  min-height: var(--vh-100);
+
+  transition: background 240ms ease, color 240ms ease;
+
+  /* fontos: NE lockold itt globálisan a scrollt */
+  overflow-x: hidden;
+}
+
+main {
+  /* A main töltse ki a viewportot, de ne kényszerítsen külön 100vh-t */
+  min-height: var(--vh-100);
+}
 
 a { color: var(--link); }
 a:hover { color: var(--link-hover); }
@@ -332,11 +383,23 @@ p { margin: 0; line-height: 1.6; }
 
 ::selection { background: var(--selection-bg); }
 
+/* Safe-area helpers (hasznos fix/overlay elemekhez) */
+.safe-pad {
+  padding-top: var(--safe-top);
+  padding-right: var(--safe-right);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+}
+.safe-pad-y {
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+}
+.safe-pad-bottom { padding-bottom: var(--safe-bottom); }
+.safe-pad-top { padding-top: var(--safe-top); }
+
 /* ────────────────────────────────────────────────────────────── */
 /* 4) UI PRIMITIVES                                                */
 /* ────────────────────────────────────────────────────────────── */
-
-
 
 .shell {
   max-width: 840px;
@@ -344,9 +407,15 @@ p { margin: 0; line-height: 1.6; }
   padding: var(--space-4) var(--space-3) var(--space-5);
   display: grid;
   gap: var(--space-3);
+
+  /* Shell töltse ki a viewportot stabilan */
+  min-height: var(--vh-100);
+  grid-template-rows: auto 1fr;
 }
 
 .shell--fluid { max-width: clamp(960px, 88vw, 1280px); }
+
+.shell > section { min-height: 0; }
 
 .shell-title {
   font-size: 28px;
@@ -358,6 +427,9 @@ p { margin: 0; line-height: 1.6; }
   .shell {
     --shell-content-gap: 0px;
     padding: var(--space-3) var(--space-2) var(--space-4);
+
+    /* mobilon a safe-area felül/alul néha kell a topbar/alsó gombok miatt */
+    padding-bottom: calc(var(--space-4) + var(--safe-bottom));
   }
 
   .shell-title {
@@ -369,9 +441,7 @@ p { margin: 0; line-height: 1.6; }
     text-overflow: ellipsis;
   }
 
-  .shell-brand {
-    display: none;
-  }
+  .shell-brand { display: none; }
 }
 
 .surface-layer {
@@ -379,6 +449,7 @@ p { margin: 0; line-height: 1.6; }
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-soft);
+  min-height: 0;
 }
 
 .card {
@@ -413,11 +484,12 @@ p { margin: 0; line-height: 1.6; }
 }
 
 .auth-page {
-  min-height: calc(100vh - var(--space-5));
+  min-height: calc(var(--vh-100) - var(--space-5));
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--space-5) var(--space-4);
+  padding-bottom: calc(var(--space-5) + var(--safe-bottom));
 }
 
 .auth-card {
@@ -427,10 +499,7 @@ p { margin: 0; line-height: 1.6; }
   padding: var(--space-4);
 }
 
-.auth-form {
-  display: grid;
-  gap: var(--space-2);
-}
+.auth-form { display: grid; gap: var(--space-2); }
 
 .auth-label {
   display: grid;
@@ -447,9 +516,7 @@ p { margin: 0; line-height: 1.6; }
   transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
 }
 
-.auth-input::placeholder {
-  color: var(--input-placeholder);
-}
+.auth-input::placeholder { color: var(--input-placeholder); }
 
 .auth-input:focus {
   outline: none;
@@ -457,14 +524,8 @@ p { margin: 0; line-height: 1.6; }
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
-.auth-actions {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.auth-card .btn {
-  width: 100%;
-}
+.auth-actions { display: grid; gap: var(--space-2); }
+.auth-card .btn { width: 100%; }
 
 .btn {
   border-radius: 12px;
@@ -490,9 +551,9 @@ p { margin: 0; line-height: 1.6; }
   border-color: transparent;
 }
 
-.btn-primary:hover:not(:disabled) { 
+.btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
-  box-shadow: var(--shadow-accent); 
+  box-shadow: var(--shadow-accent);
 }
 
 .btn-secondary { background: transparent; }
@@ -560,29 +621,27 @@ textarea:focus {
 }
 
 /* SELECT (shared primitive) */
-  .select {
-    width: 100%;
-    border: 1px solid var(--line-soft);
-    border-radius: 12px;
-    padding: var(--space-2) var(--space-3);
+.select {
+  width: 100%;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  padding: var(--space-2) var(--space-3);
 
-    background: var(--select-bg);
-    color: var(--select-text);
-    outline: none;
+  background: var(--select-bg);
+  color: var(--select-text);
+  outline: none;
 
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-  }
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
 
-  .select:focus {
-    border-color: var(--text-muted);
-  }
+.select:focus { border-color: var(--text-muted); }
 
-  .select option {
-    background: var(--select-option-bg);
-    color: var(--select-option-text);
-  }
+.select option {
+  background: var(--select-option-bg);
+  color: var(--select-option-text);
+}
 
 /* best-effort dropdown menu */
 .select option {
@@ -601,16 +660,16 @@ textarea:focus {
   border: 2px solid currentColor;
   background: var(--pill-bg);
   font-size: 12px;
-  font-weight: 800; /* kicsit barátibb */
+  font-weight: 800;
   line-height: 1;
   white-space: nowrap;
-  box-shadow: none; /* ✅ tisztább */
+  box-shadow: none;
 }
 
 .pill--neutral {
   color: var(--text-muted);
-  border-color: #7F7F7F47;   /* 28% */
-  background: #FFFFFF1A;     /* 10% */
+  border-color: #7F7F7F47;
+  background: #FFFFFF1A;
   box-shadow: none;
 }
 
@@ -626,6 +685,11 @@ textarea:focus {
   color: var(--dream-input-text);
 }
 
+@media (max-width: 720px) {
+  /* mobilon kevésbé agresszív magasság (keyboard + Safari UI mellett) */
+  .textarea-dream { min-height: 42vh; }
+}
+
 .textarea-dream::placeholder { color: var(--dream-input-placeholder); }
 .textarea-dream:focus { background: var(--dream-input-bg-focus); }
 
@@ -639,7 +703,7 @@ textarea:focus {
 
 .newdream-error {
   background: var(--bg-layer);
-  border: 1px solid #DC262659; /* 35% */
+  border: 1px solid #DC262659;
   color: var(--text-primary);
   border-radius: 12px;
   padding: var(--space-2) var(--space-3);
@@ -660,60 +724,34 @@ textarea:focus {
 
 .newdream-panel { padding: var(--space-1); }
 
-/* New Dream main card (the <section class="surface-layer card stack"> in Shell) */
 body[data-space="dream"] .shell > section.surface-layer.card.stack {
   background: var(--newdream-surface-bg);
   border-color: var(--newdream-surface-border);
   color: var(--newdream-surface-text);
 }
 
-/* Footer controls on the dark New Dream card */
 body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-footer,
 body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-footer * {
   color: var(--newdream-surface-text);
 }
 
-/* Non-primary buttons readable on dark surface */
 body[data-space="dream"] .shell > section.surface-layer.card.stack .btn:not(.btn-primary) {
   color: var(--newdream-surface-text);
   border-color: var(--newdream-surface-border);
-  background: #FFF5F00F; /* 6% */
+  background: #FFF5F00F;
 }
 
 body[data-space="dream"] .shell > section.surface-layer.card.stack .btn:not(.btn-primary):hover:not(:disabled) {
-  background: #FFF5F01A; /* 10% */
+  background: #FFF5F01A;
 }
 
-/* Stat chip/button */
 body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-stat {
   color: var(--newdream-surface-text);
   border-color: var(--newdream-surface-border);
 }
 
-/* Globals.css — add these tokens under your existing intent/phase tokens (in :root) */
-/* Direction groups */
-:root {
-  --dirgroup-memory: #78C3FFF2;
-  --dirgroup-memory-bg: #78C3FF33;
-
-  --dirgroup-somatic: #78DCAAF2;
-  --dirgroup-somatic-bg: #78DCAA2E;
-
-  --dirgroup-patterns: #FFBE78F2;
-  --dirgroup-patterns-bg: #FFBE782E;
-
-  --dirgroup-meaning: #FFDC78F2;
-  --dirgroup-meaning-bg: #FFDC782E;
-
-  --dirgroup-creative: #FF96BEF2;
-  --dirgroup-creative-bg: #FF96BE2E;
-
-  --dirgroup-other: #A0EBFFF2;
-  --dirgroup-other-bg: #A0EBFF2E;
-}
-
 /* ────────────────────────────────────────────────────────────── */
-/* 6) LAYOUT – Split etc.                                          */
+/* 6) LAYOUT – Split etc. (mobile-safe scrolling)                  */
 /* ────────────────────────────────────────────────────────────── */
 
 .split-layout { display: grid; gap: var(--space-3); }
@@ -732,13 +770,34 @@ body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-sta
   display: grid;
   grid-template-rows: auto 1fr;
   min-height: 0;
-  height: calc(100dvh - 160px);
+
+  /* Desktop/tablet: lehet fix viewport-panel */
+  height: calc(var(--vh-100) - 160px);
+
+  /* fontos: a panel maga ne legyen a scroll csapdája */
   overflow: hidden;
 }
 
 .split-panel-title { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
 
-.panel-body { min-height: 0; overflow: auto; transition: opacity 160ms ease; }
+.panel-body {
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  transition: opacity 160ms ease;
+}
+
+/* Mobil: ne kényszeríts fix magasságot (iOS cím-/home-bar + billentyűzet) */
+@media (max-width: 819px) {
+  .split-panel {
+    height: auto;
+    overflow: visible;
+  }
+
+  .panel-body {
+    overflow: visible;
+  }
+}
 
 .dream-raw-text {
   white-space: pre-wrap;
@@ -748,6 +807,7 @@ body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-sta
   height: 100%;
   max-height: none;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 819px) {
@@ -760,7 +820,7 @@ body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-sta
 
 .panel-body::-webkit-scrollbar-thumb,
 .dream-raw-text::-webkit-scrollbar-thumb {
-  background: #7F7F7F59; /* 35% */
+  background: #7F7F7F59;
   border-radius: 10px;
 }
 
@@ -789,83 +849,31 @@ body[data-space="evening"] {
 /* GLOBAL SCROLLBAR – minimal / translucent     */
 /* ───────────────────────────────────────────── */
 
-/* Firefox */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
-/* WebKit browsers */
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.18);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
-
-*::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.32);
-}
+*::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.32); }
 
 /* ────────────────────────────────────────────────────────────── */
 /* 8) SHELL INFO UI                                                */
 /* ────────────────────────────────────────────────────────────── */
 
-/* Globals.css */
-html { height: 100%; background: var(--bg-root); }
-body { min-height: 100%; background: var(--bg-root); }
-main { min-height: 100dvh; }
-
-/* a Shell töltse ki a viewportot */
-.shell {
-  min-height: 100dvh;
-  display: grid;
-  grid-template-rows: auto 1fr; /* topbar + content */
-}
-
-/* a Shell-ben a tartalom section engedje a gyerekeit zsugorodni/görgetni */
-.shell > section {
-  min-height: 0;
-}
-
-/* ha van surface-layer, az se akadjon a scrollban */
-.surface-layer {
-  min-height: 0;
-}
-
-.surface-ghost {
-  /* ugyanaz a layout “konténer” élmény */
-  min-height: 0;
-  height: 100%;
-  display: grid; 
-  grid-template-rows: 1fr;
-  border-radius: var(--radius-card);
-
-  /* de vizuálisan semmi */
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  padding: 0;
-}
-
-
 .shell-topbar { display: flex; align-items: center; gap: var(--space-3); }
 .shell-topbar-spacer { flex: 1; }
 
-/* Hamburger is a .btn.btn-secondary in your Shell */
 .shell-topbar .btn.btn-secondary { color: var(--text-secondary); }
 .shell-topbar .btn.btn-secondary:hover:not(:disabled) { color: var(--text-primary); }
 
-/* Info icon button (when it is displayed) should be dark by default */
 .shell-topbar .icon-btn { color: var(--text-primary); }
 
 .icon-btn {
@@ -920,7 +928,7 @@ main { min-height: 100dvh; }
   border-radius: var(--radius-card);
 }
 
-.flow-loading-overlay{
+.flow-loading-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
@@ -928,9 +936,10 @@ main { min-height: 100dvh; }
   place-items: center;
   background: rgba(0,0,0,0.35);
   backdrop-filter: blur(6px);
+  padding-bottom: var(--safe-bottom);
 }
 
-.flow-loading-card{
+.flow-loading-card {
   width: min(460px, calc(100vw - 48px));
   border-radius: 18px;
   border: 1px solid var(--line-soft);
@@ -946,7 +955,7 @@ main { min-height: 100dvh; }
   justify-items: center;
 }
 
-.flow-loading-spinner{
+.flow-loading-spinner {
   width: 24px;
   height: 24px;
   border-radius: 999px;
@@ -973,17 +982,16 @@ main { min-height: 100dvh; }
   justify-content: center;
   margin-left: var(--space-2);
   position: relative;
-  z-index: 40; /* drawer fölé/alá: igény szerint */
+  z-index: 40;
 }
 
-/* Fix "slot" a header jobb szélén: nincs layout shift */
 .brand-lockup {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  width: 44px;   /* slot */
+  width: 44px;
   height: 34px;
 
   text-decoration: none;
@@ -991,7 +999,6 @@ main { min-height: 100dvh; }
   overflow: visible;
 }
 
-/* ICON – abszolút középen */
 .brand-mark {
   position: absolute;
   left: 50%;
@@ -1002,12 +1009,9 @@ main { min-height: 100dvh; }
   opacity: 0.92;
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.06));
 
-  transition:
-    opacity 170ms ease,
-    transform 170ms ease;
+  transition: opacity 170ms ease, transform 170ms ease;
 }
 
-/* WORD – abszolút középen, alapból rejtve */
 .brand-word {
   position: absolute;
   left: 50%;
@@ -1024,12 +1028,9 @@ main { min-height: 100dvh; }
   opacity: 0;
   pointer-events: none;
 
-  transition:
-    opacity 170ms ease,
-    transform 170ms ease;
+  transition: opacity 170ms ease, transform 170ms ease;
 }
 
-/* HOVER: "wink" – ikon összenyom + eltűnik, szó feljön középről */
 .brand-lockup:hover .brand-mark {
   opacity: 0;
   transform: translate(-50%, -50%) scaleX(1.02) scaleY(0.12);
@@ -1038,9 +1039,5 @@ main { min-height: 100dvh; }
 .brand-lockup:hover .brand-word {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
-}
-
-/* opcionális: a szó csak hover alatt legyen kattintható vizuálisan */
-.brand-lockup:hover .brand-word {
   pointer-events: none;
 }

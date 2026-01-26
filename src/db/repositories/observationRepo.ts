@@ -12,6 +12,8 @@ export type ObservationVersion = {
   created_at: string;
 };
 
+export type ObservationSchemaVersion = "dream_v1" | "v0";
+
 function coerceJsonPayload(raw: any): any {
   if (raw == null) return null;
   if (typeof raw === "string") {
@@ -93,39 +95,59 @@ export async function insertObservationVersionIfMissing(
 
 export async function upsertObservationLatest(
   supabase: SupabaseClient,
-  params: { session_id: string; user_id: string; observation_version_id: string }
+  params: {
+    session_id: string;
+    user_id: string;
+    observation_version_id: string;
+    schema_version: ObservationSchemaVersion;
+  }
 ) {
   // latest pointers move only when new version exists (we call this only after insert/reuse success)
+  const latestUpdate: {
+    session_id: string;
+    user_id: string;
+    updated_at: string;
+    latest_dream_id?: string;
+    latest_v0_id?: string;
+    observation_version_id?: string;
+  } = {
+    session_id: params.session_id,
+    user_id: params.user_id,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (params.schema_version === "dream_v1") {
+    latestUpdate.latest_dream_id = params.observation_version_id;
+  } else {
+    latestUpdate.latest_v0_id = params.observation_version_id;
+    // Keep legacy column synced for v0-only consumers.
+    latestUpdate.observation_version_id = params.observation_version_id;
+  }
+
   const { error } = await supabase
     .from("observation_latest")
-    .upsert(
-      {
-        session_id: params.session_id,
-        user_id: params.user_id,
-        observation_version_id: params.observation_version_id,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "session_id" }
-    );
+    .upsert(latestUpdate, { onConflict: "session_id" });
   if (error) throw error;
 }
 
-export async function fetchObservationLatestWithPayload(
+export async function fetchObservationLatestV0WithPayload(
   supabase: SupabaseClient,
   session_id: string
 ): Promise<{ latest_id: string; payload: any } | null> {
   const latest = await supabase
     .from("observation_latest")
-    .select("observation_version_id")
+    .select("latest_v0_id")
     .eq("session_id", session_id)
     .single();
 
   if (latest.error) return null;
+  const latestId = (latest.data as any)?.latest_v0_id;
+  if (!latestId) return null;
 
   const ver = await supabase
     .from("observation_versions")
     .select("id,payload")
-    .eq("id", latest.data.observation_version_id)
+    .eq("id", latestId)
     .single();
 
   if (ver.error) throw ver.error;

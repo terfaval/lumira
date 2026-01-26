@@ -1,7 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { rankAnchors, buildAnchorRankingPayload } from "@/src/lib/dream/anchorRanking";
 import { insertAnchorVersionIfMissing, upsertAnchorLatest } from "@/src/db/repositories/anchorRepo";
-import { fetchObservationLatestWithPayloadAndId, fetchLatentLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
+import { fetchLatentLatestWithPayloadAndId, fetchObservationLatestV0WithPayloadAndId } from "@/src/db/repositories/latestRepo";
 import { listRecentAnchorKeys } from "@/src/db/repositories/workQuestionLedgerRepo";
 import { materialHashFromPayload, sha256 } from "@/src/orchestration/idempotency/materialHash";
 
@@ -56,7 +56,7 @@ export async function ensureAnchorsRanked(
   if (!dreamText) return { anchor_version_id: null, payload: null, input_hash: null };
 
   const [observationLatest, latentLatest, recentAnchorKeys] = await Promise.all([
-    fetchObservationLatestWithPayloadAndId(supabase, params.user_id, params.session_id),
+    fetchObservationLatestV0WithPayloadAndId(supabase, params.user_id, params.session_id),
     fetchLatentLatestWithPayloadAndId(supabase, params.user_id, params.session_id),
     listRecentAnchorKeys(supabase, { session_id: params.session_id, user_id: params.user_id, limit: 120 }),
   ]);

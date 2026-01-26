@@ -10,7 +10,7 @@ import { matchKeyFromLabel } from "@/src/lib/dream/huMatch";
 import { CatalogService } from "@/src/services/CatalogService";
 import {
   fetchLatentLatestWithPayloadAndId,
-  fetchObservationLatestWithPayloadAndId,
+  fetchObservationLatestDreamWithPayloadAndId,
   fetchLatestRawDreamEntry,
 } from "@/src/db/repositories/latestRepo";
 import { insertLatentVersionIfMissing, upsertLatentLatest } from "@/src/db/repositories/latentRepo";
@@ -346,7 +346,7 @@ function sanitizeOutput(raw: any, allowedSlugs: string[], fallback: SynthesizeOu
 }
 
 async function fetchObservation(supabase: any, sessionId: string, userId: string) {
-  const latest = await fetchObservationLatestWithPayloadAndId(supabase, userId, sessionId);
+  const latest = await fetchObservationLatestDreamWithPayloadAndId(supabase, userId, sessionId);
   const parsed = parseDreamObservation(latest?.payload ?? null);
   return {
     raw: parsed ?? null,

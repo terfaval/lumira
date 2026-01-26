@@ -5,7 +5,7 @@ import { sha256 } from "@/src/orchestration/idempotency/materialHash";
 import { jobIdempotencyKeyV0 } from "@/src/orchestration/idempotency/jobKey";
 import { fetchDirectionCatalog } from "@/src/db/repositories/catalogRepo";
 import {
-  fetchObservationLatestWithPayloadAndId,
+  fetchObservationLatestV0WithPayloadAndId,
   fetchSessionIndexLatestWithPayloadAndId,
 } from "@/src/db/repositories/latestRepo";
 import { insertLatentVersionIfMissing, upsertLatentLatest } from "@/src/db/repositories/latentRepo";
@@ -20,7 +20,7 @@ export async function jobUpdateLatent(args: {
 }): Promise<{ latent_version_id: string | null; skipped: boolean; ok: boolean }> {
   const { supabase, event, material_hash } = args;
 
-  const obs = await fetchObservationLatestWithPayloadAndId(supabase, event.user_id, event.session_id);
+  const obs = await fetchObservationLatestV0WithPayloadAndId(supabase, event.user_id, event.session_id);
   const idx = await fetchSessionIndexLatestWithPayloadAndId(supabase, event.user_id, event.session_id);
 
   if (!obs || !idx) return { latent_version_id: null, skipped: false, ok: false };

@@ -4,11 +4,23 @@
   z-index: 80;
   background: rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-3);
+
+  /* sanity: safe-area aware overlay padding */
+  padding: calc(var(--space-3) + env(safe-area-inset-top, 0px))
+    calc(var(--space-3) + env(safe-area-inset-right, 0px))
+    calc(var(--space-3) + env(safe-area-inset-bottom, 0px))
+    calc(var(--space-3) + env(safe-area-inset-left, 0px));
+
   overflow-x: hidden;
+
+  /* sanity: ne láncolja a scrollt a háttérre */
+  overscroll-behavior: contain;
+  touch-action: manipulation;
 }
 
 .panelNoBg {
@@ -16,18 +28,24 @@
   border: 0 !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
-
 
 .panel {
   width: min(1180px, 100%);
-  max-height: min(88vh, 980px);
+  /* sanity: vh helyett viewport token (globalsban) */
+  max-height: min(calc(var(--vh-100) - 2 * var(--space-3)), 980px);
+
   overflow: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 
   border-radius: 18px;
   padding: var(--space-3);
   position: relative;
+
+  /* sanity: a panel legyen saját scroll-konténer, ne rántsa a body-t */
+  overscroll-behavior: contain;
 }
 
 .toolbar {
@@ -139,6 +157,14 @@
   top: 0;
   z-index: 6;
   margin-bottom: var(--space-3);
+
+  /* sanity: ha a panel fölött “úszik”, legyen háttér */
+  background: linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+
+  /* hogy a gradient ne “összenyomjon” */
+  padding-top: 2px;
 }
 
 .back {
@@ -189,7 +215,6 @@
   line-height: 1;
 }
 
-
 .loading {
   color: var(--text-muted);
   padding: var(--space-3);
@@ -199,6 +224,7 @@
   display: grid;
   gap: var(--space-4);
   overflow-x: hidden;
+  min-width: 0;
 }
 
 /* recommended */
@@ -228,15 +254,23 @@
   gap: var(--space-3);
   grid-auto-flow: column;
   grid-auto-columns: minmax(240px, 1fr);
+
   overflow-x: auto;
+  overflow-y: hidden;
+
   scroll-snap-type: x mandatory;
   scroll-padding-inline: var(--space-2);
   padding-bottom: var(--space-1);
+
   -webkit-overflow-scrolling: touch;
+
+  /* sanity: ne rántsa a panel/body-t vízszintben */
+  overscroll-behavior-x: contain;
 }
 
 .recoRow > * {
   scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 /* list */
@@ -275,10 +309,9 @@
 /* card */
 .card {
   border-radius: 18px;
-  
   padding: 22px;
   min-height: 230px;
-  min-width: 0; 
+  min-width: 0;
 
   display: flex;
   flex-direction: column;
@@ -318,6 +351,7 @@
   display: grid;
   gap: 12px;
   flex: 1 1 auto;
+  min-height: 0;
 }
 
 .groupRow {
@@ -352,35 +386,41 @@
 
 .actionPills {
   display: flex;
-  flex-wrap: nowrap; /* egysorban */
+  flex-wrap: nowrap;
   gap: 10px;
   align-items: center;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+
+  mask-image: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 78%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }
 
 .actionPills > :global(.pill) {
   flex: 0 0 auto;
 }
 
-/* ha sok pill lenne, ne törje el a sort, inkább vágja le */
-.actionPills {
-  mask-image: linear-gradient(90deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 78%, rgba(0, 0, 0, 0) 100%);
-}
-
 @media (max-width: 679px) {
   .overlay {
-    padding: 0;
+    /* mobil: full-bleed, de safe-area padding maradjon */
     align-items: stretch;
+    justify-content: stretch;
   }
 
   .panel {
     width: 100%;
-    max-height: 100dvh;
-    height: 100dvh;
+    max-height: var(--vh-100);
+    height: var(--vh-100);
     border-radius: 0;
-    padding: var(--space-3) var(--space-3) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+
+    /* sanity: safe-area bottom biztos */
+    padding: var(--space-3) var(--space-3)
+      calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
   }
 
   .backRow {
@@ -388,8 +428,11 @@
     top: auto;
     bottom: 0;
     margin-bottom: 0;
+
     padding: var(--space-2) 0 calc(env(safe-area-inset-bottom, 0px) + var(--space-1));
     background: linear-gradient(0deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   .back {
@@ -404,7 +447,7 @@
   }
 
   .actionPills {
-    flex-wrap: wrap; /* mobilon inkább törhessen */
+    flex-wrap: wrap;
     mask-image: none;
   }
 
@@ -432,7 +475,7 @@
 
   .toolbar {
     position: fixed;
-    right: 14px;
+    right: calc(14px + env(safe-area-inset-right, 0px));
     bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     z-index: 50;
   }

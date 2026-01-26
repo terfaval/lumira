@@ -40,7 +40,7 @@ export async function backfillGlossaryOccurrencesForTerm(params: {
 
   const latestRes = await supabase
     .from("observation_latest")
-    .select("session_id, observation_version_id")
+    .select("session_id, latest_v0_id")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false })
     .limit(maxSessions);
@@ -49,13 +49,13 @@ export async function backfillGlossaryOccurrencesForTerm(params: {
 
   const latestRows = (latestRes.data ?? []) as Array<{
     session_id: string;
-    observation_version_id: string;
+    latest_v0_id: string | null;
   }>;
 
   if (latestRows.length === 0) return { scanned: 0, matched: 0, upserted: 0 };
 
   const versionIds = Array.from(
-    new Set(latestRows.map((row) => row.observation_version_id).filter(Boolean))
+    new Set(latestRows.map((row) => row.latest_v0_id).filter(Boolean))
   );
 
   const payloadById = new Map<string, any>();
@@ -74,7 +74,7 @@ export async function backfillGlossaryOccurrencesForTerm(params: {
   const occurrenceRows: Array<{ user_id: string; term_id: string; session_id: string; source: "observation" }> = [];
 
   for (const row of latestRows) {
-    const payload = payloadById.get(row.observation_version_id);
+    const payload = payloadById.get(row.latest_v0_id);
     if (!payload) continue;
 
     const candidates = extractGlossaryCandidatesFromObservation(payload);

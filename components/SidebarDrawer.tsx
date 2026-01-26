@@ -79,6 +79,55 @@ export function SidebarDrawer({
     };
   }, [open, onClose]);
 
+    useEffect(() => {
+    if (!open) return;
+    if (typeof window === "undefined") return;
+
+    // Save scroll position + inline styles to restore later
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+
+    const body = document.body;
+    const html = document.documentElement;
+
+    const prevBody = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflowY: body.style.overflowY,
+    };
+
+    const prevHtml = {
+      overflowY: html.style.overflowY,
+    };
+
+    // Lock background scroll (iOS-safe)
+    html.style.overflowY = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflowY = "hidden";
+
+    return () => {
+      // Restore styles
+      html.style.overflowY = prevHtml.overflowY;
+
+      body.style.position = prevBody.position;
+      body.style.top = prevBody.top;
+      body.style.left = prevBody.left;
+      body.style.right = prevBody.right;
+      body.style.width = prevBody.width;
+      body.style.overflowY = prevBody.overflowY;
+
+      // Restore scroll position
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
+
+
   useEffect(() => {
     if (open) void checkGlossaryAccess();
   }, [open, checkGlossaryAccess]);
@@ -322,6 +371,8 @@ export function SidebarDrawer({
         .drawer-root.is-open {
           pointer-events: auto;
           opacity: 1;
+          backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
           background: rgba(0, 0, 0, 0.28);
         }
 
@@ -331,7 +382,7 @@ export function SidebarDrawer({
           left: 0;
           bottom: 0;
           width: min(360px, 92vw);
-          height: 100dvh;
+          height: var(--vh-100, 100dvh);
 
           background: var(--bg-layer-strong);
           border-right: 1px solid var(--line-soft);
@@ -349,7 +400,9 @@ export function SidebarDrawer({
           display: flex;
           flex-direction: column;
           min-height: 0;
-          padding: var(--space-3);
+          padding: calc(var(--space-3) + env(safe-area-inset-top, 0px))
+    var(--space-3)
+    calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
         }
 
         .drawer-header {

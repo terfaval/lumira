@@ -13,24 +13,53 @@ function coerceJsonPayload(raw: any): any {
   return raw;
 }
 
-export async function fetchObservationLatestWithPayloadAndId(
+export async function fetchObservationLatestDreamWithPayloadAndId(
   supabase: SupabaseClient,
   user_id: string,
   session_id: string
 ): Promise<{ observation_version_id: string; payload: any } | null> {
   const latest = await supabase
     .from("observation_latest")
-    .select("observation_version_id")
+    .select("latest_dream_id")
     .eq("session_id", session_id)
     .eq("user_id", user_id)
     .single();
 
   if (latest.error) return null;
+  const latestId = (latest.data as any)?.latest_dream_id;
+  if (!latestId) return null;
 
   const ver = await supabase
     .from("observation_versions")
     .select("id,payload")
-    .eq("id", latest.data.observation_version_id)
+    .eq("id", latestId)
+    .eq("user_id", user_id)
+    .single();
+
+  if (ver.error) throw ver.error;
+  return { observation_version_id: ver.data.id, payload: coerceJsonPayload(ver.data.payload) };
+}
+
+export async function fetchObservationLatestV0WithPayloadAndId(
+  supabase: SupabaseClient,
+  user_id: string,
+  session_id: string
+): Promise<{ observation_version_id: string; payload: any } | null> {
+  const latest = await supabase
+    .from("observation_latest")
+    .select("latest_v0_id")
+    .eq("session_id", session_id)
+    .eq("user_id", user_id)
+    .single();
+
+  if (latest.error) return null;
+  const latestId = (latest.data as any)?.latest_v0_id;
+  if (!latestId) return null;
+
+  const ver = await supabase
+    .from("observation_versions")
+    .select("id,payload")
+    .eq("id", latestId)
     .eq("user_id", user_id)
     .single();
 

@@ -6,7 +6,7 @@ import {
   fetchAnchorLatestWithPayloadAndId,
   fetchLatestRawDreamEntry,
   fetchLatentPayloadLatest,
-  fetchObservationLatestWithPayloadAndId,
+  fetchObservationLatestDreamWithPayloadAndId,
 } from "@/src/db/repositories/latestRepo";
 import { ensureAnchorsRanked } from "@/src/orchestration/ensureAnchorsRanked";
 import { recommendDirectionsFromLatent } from "@/src/domain/directions/recommendDirectionsFromLatent";
@@ -533,7 +533,7 @@ export async function POST(req: Request) {
     ] = await Promise.all([
       fetchDirectionCatalog(supabase),
       fetchLatestRawDreamEntry(supabase, userId, sessionId),
-      fetchObservationLatestWithPayloadAndId(supabase, userId, sessionId),
+      fetchObservationLatestDreamWithPayloadAndId(supabase, userId, sessionId),
       fetchLatentPayloadLatest(supabase, userId, sessionId),
       fetchAnchorLatestWithPayloadAndId(supabase, userId, sessionId),
       fetchRecentBlocks(supabase, sessionId, userId),

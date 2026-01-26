@@ -13,7 +13,7 @@ import {
   fetchAnchorLatestWithPayloadAndId,
   fetchFrameLatestWithPayloadAndId,
   fetchLatentLatestWithPayloadAndId,
-  fetchObservationLatestWithPayloadAndId,
+  fetchObservationLatestV0WithPayloadAndId,
   fetchSessionIndexLatestWithPayloadAndId,
 } from "@/src/db/repositories/latestRepo";
 
@@ -200,12 +200,12 @@ const runFrame = body.run?.frame !== false;
       });
       observation_version_id = obsRes.observation_version_id;
     } else {
-      const latest = await fetchObservationLatestWithPayloadAndId(supabase, user_id, session_id);
+      const latest = await fetchObservationLatestV0WithPayloadAndId(supabase, user_id, session_id);
       observation_version_id = latest?.observation_version_id ?? null;
     }
 
     if (!observation_version_id) {
-      const latest = await fetchObservationLatestWithPayloadAndId(supabase, user_id, session_id);
+      const latest = await fetchObservationLatestV0WithPayloadAndId(supabase, user_id, session_id);
       observation_version_id = latest?.observation_version_id ?? null;
     }
 

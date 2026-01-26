@@ -16,7 +16,7 @@ import {
   insertObservationVersionIfMissing,
   upsertObservationLatest,
 } from "@/src/db/repositories/observationRepo";
-import { fetchObservationLatestWithPayloadAndId } from "@/src/db/repositories/latestRepo";
+import { fetchObservationLatestDreamWithPayloadAndId } from "@/src/db/repositories/latestRepo";
 import { indexGlossaryFromObservation } from "@/src/domain/glossary/indexGlossaryFromObservation";
 
 export const runtime = "nodejs";
@@ -269,7 +269,7 @@ async function fetchSessionDreamText(
 }
 
 async function fetchExistingObservation(supabase: any, sessionId: string, userId: string) {
-  const latest = await fetchObservationLatestWithPayloadAndId(supabase, userId, sessionId);
+  const latest = await fetchObservationLatestDreamWithPayloadAndId(supabase, userId, sessionId);
   const parsed = parseDreamObservation(latest?.payload ?? null);
   return parsed ?? null;
 }
@@ -307,22 +307,23 @@ export async function POST(req: Request) {
 
     // ? Short dream -> store schema-complete empty and return
     if (dreamText.length < MIN_DREAM_LEN) {
-      const empty = emptyObs();
+      const emptyPayload = { ...emptyObs(), schema_version: "dream_v1" };
       const input_hash = buildObservationInputHash({ mode, dreamText, rawDelta, history });
       const obs = await insertObservationVersionIfMissing(supabase, {
         session_id: sessionId,
         user_id: userId,
         input_hash,
-        payload: empty,
+        payload: emptyPayload,
       });
       await upsertObservationLatest(supabase, {
         session_id: sessionId,
         user_id: userId,
         observation_version_id: obs.id,
+        schema_version: "dream_v1",
       });
 
       // Log as observation.extracted event (non-fatal if it fails)
-      const anchorKeys = buildAnchorKeysFromObservation(empty);
+      const anchorKeys = buildAnchorKeysFromObservation(emptyPayload);
       await safeInsertObservationEvent({
         supabase,
         sessionId,
@@ -331,7 +332,7 @@ export async function POST(req: Request) {
           mode,
           too_short: true,
           raw_delta_used: false,
-          observation: empty,
+          observation: emptyPayload,
           anchor_keys: anchorKeys,
           observation_version_id: obs.id,
         },
@@ -428,18 +429,20 @@ export async function POST(req: Request) {
     }
 
     const input_hash = buildObservationInputHash({ mode, dreamText, rawDelta, history });
+    const observationPayload = { ...observation, schema_version: "dream_v1" };
     const obs = await insertObservationVersionIfMissing(supabase, {
       session_id: sessionId,
       user_id: userId,
       input_hash,
       model: modelUsed,
-      payload: observation,
+      payload: observationPayload,
     });
 
     await upsertObservationLatest(supabase, {
       session_id: sessionId,
       user_id: userId,
       observation_version_id: obs.id,
+      schema_version: "dream_v1",
     });
 
     // Best-effort: index glossary occurrences for this session.
@@ -448,7 +451,7 @@ export async function POST(req: Request) {
         supabase,
         userId,
         sessionId,
-        observationPayload: observation,
+        observationPayload,
         source: "observation",
       });
     } catch (e) {
@@ -456,7 +459,7 @@ export async function POST(req: Request) {
     }
 
     // Log as observation.extracted event (non-fatal if it fails)
-    const obsAnchorKeys = buildAnchorKeysFromObservation(observation);
+    const obsAnchorKeys = buildAnchorKeysFromObservation(observationPayload);
     await safeInsertObservationEvent({
       supabase,
       sessionId,
@@ -465,7 +468,7 @@ export async function POST(req: Request) {
         mode,
         raw_delta_used: Boolean(rawDelta),
         // store full observation for downstream reasoning (events timeline)
-        observation,
+        observation: observationPayload,
         // small audit hints (optional)
         history_used: history?.length ?? 0,
         anchor_keys: obsAnchorKeys,

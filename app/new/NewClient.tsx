@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import {
@@ -38,15 +38,17 @@ function safeTextFromUnknown(e: unknown): string {
   }
 }
 
+type Step = "idle" | "ensure";
+
 export default function NewClient() {
   const router = useRouter();
   const [text, setText] = useState("");
   const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+
+  // sanity: egyetlen “blocking” jelző elég a UI tiltására + overlayre
   const [blockingFlow, setBlockingFlow] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
-
-  const [step, setStep] = useState<"ensure" | "idle">("idle");
+  const [step, setStep] = useState<Step>("idle");
 
   const stats = useMemo(() => {
     const trimmed = text.trim();
@@ -56,29 +58,6 @@ export default function NewClient() {
     return { chars, words, empty };
   }, [text]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const prev = document.body.style.overflow;
-    const mql = window.matchMedia("(max-width: 720px)");
-    const apply = () => {
-      document.body.style.overflow = mql.matches ? "hidden" : prev;
-    };
-    apply();
-    if (mql.addEventListener) {
-      mql.addEventListener("change", apply);
-    } else {
-      mql.addListener(apply);
-    }
-    return () => {
-      if (mql.removeEventListener) {
-        mql.removeEventListener("change", apply);
-      } else {
-        mql.removeListener(apply);
-      }
-      document.body.style.overflow = prev;
-    };
-  }, []);
-
   async function createSession() {
     setErr(null);
 
@@ -87,7 +66,7 @@ export default function NewClient() {
       return;
     }
 
-    setBusy(true);
+    // sanity: az állapotok egy helyen
     setBlockingFlow(true);
     setStep("idle");
 
@@ -98,6 +77,7 @@ export default function NewClient() {
         user_id: userId,
         status: "draft",
       };
+
       if (
         process.env.NODE_ENV !== "production" &&
         Object.prototype.hasOwnProperty.call(sessionInsert, "raw_entry")
@@ -106,7 +86,11 @@ export default function NewClient() {
         throw new Error("Unexpected raw_entry in dream_sessions insert payload.");
       }
 
-      const { data, error } = await supabase.from("dream_sessions").insert(sessionInsert).select("id").single();
+      const { data, error } = await supabase
+        .from("dream_sessions")
+        .insert(sessionInsert)
+        .select("id")
+        .single();
 
       if (error) throw error;
       const sessionId = (data as any)?.id as string | undefined;
@@ -120,7 +104,7 @@ export default function NewClient() {
       });
       if (entryError) throw entryError;
 
-      // 1) INDEX
+      // 1) ENSURE / INDEX
       setStep("ensure");
       {
         const res = await fetchWithAuth("/api/session/ensure", {
@@ -133,31 +117,29 @@ export default function NewClient() {
         }
       }
 
+      // success: hagyjuk az overlayt aktívan, amíg navigálunk
       router.push(`/session/${sessionId}/frame`);
     } catch (e: unknown) {
       setErr(safeTextFromUnknown(e));
       setBlockingFlow(false);
       setStep("idle");
-    } finally {
-      setBusy(false);
     }
   }
 
   const overlayTitle = step === "ensure" ? "Keretezés készül…" : "Előkészítés…";
-
   const overlaySubtitle =
-    step === "ensure"
-      ? "Cím + keretezés + 3 ajánlott irány."
-      : "Álom feldolgozásának előkészítése.";
+    step === "ensure" ? "Cím + keretezés + 3 ajánlott irány." : "Álom feldolgozásának előkészítése.";
 
   // subtle corner hint (can be swapped later)
   const cornerSoft = "rgba(255,255,255,0.08)";
+
+  const isDisabled = blockingFlow;
 
   return (
     <Shell
       title="Új álom rögzítése"
       space="dream"
-      surface="none" // ✅ fontos: ne legyen Shell card wrapper, mert mi adjuk a fő felületet
+      surface="none"
       headerActions={
         <button
           type="button"
@@ -199,9 +181,6 @@ export default function NewClient() {
           corner={cornerSoft}
           cornerMode="soft"
           className="newdream-card"
-          // (ha később kell, helyben felülírható)
-          // gloss={false}
-          // grain={false}
         >
           <GlassCardForeground className="newdream-card-body stack-tight">
             <GlassCardMatte padding="md" tone="evening" className="newdream-input-wrap">
@@ -212,11 +191,11 @@ export default function NewClient() {
                 placeholder="Írj le mindent, amire most emlékszel az álmodból. Elég töredékekben is."
                 rows={10}
                 aria-invalid={!!err}
-                disabled={busy || blockingFlow}
+                disabled={isDisabled}
                 onKeyDown={(e) => {
                   if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
                     e.preventDefault();
-                    if (!busy && !blockingFlow && !stats.empty) void createSession();
+                    if (!isDisabled && !stats.empty) void createSession();
                   }
                 }}
               />
@@ -235,18 +214,18 @@ export default function NewClient() {
                     setErr(null);
                     setText("");
                   }}
-                  disabled={busy || blockingFlow || !text.length}
+                  disabled={isDisabled || !text.length}
                 >
                   Törlés
                 </button>
 
-                <PrimaryButton onClick={createSession} disabled={busy || blockingFlow || stats.empty}>
-                  {blockingFlow ? "Előkészítés…" : busy ? "Rögzítés…" : "Rögzítés"}
+                <PrimaryButton onClick={createSession} disabled={isDisabled || stats.empty}>
+                  {blockingFlow ? "Előkészítés…" : "Rögzítés"}
                 </PrimaryButton>
               </div>
-              </div>
-            </GlassCardForeground>
-          </GlassCardSurface>
+            </div>
+          </GlassCardForeground>
+        </GlassCardSurface>
 
         {err && (
           <div className="newdream-error" role="alert">
@@ -274,7 +253,6 @@ export default function NewClient() {
           display: flex;
           flex-direction: column;
           gap: var(--space-3);
-          height: 100%;
           min-height: 0;
         }
 
@@ -284,7 +262,6 @@ export default function NewClient() {
           min-height: 0;
         }
 
-        /* textarea becomes "content", not a surface */
         :global(.newdream-textarea) {
           width: 100%;
           min-height: 44vh;
@@ -293,6 +270,10 @@ export default function NewClient() {
           background: transparent;
           border: none;
           outline: none;
+
+          /* sanity: belső scroll -> a page nem ragad be */
+          overflow: auto;
+          -webkit-overflow-scrolling: touch;
 
           resize: vertical;
 
@@ -312,7 +293,9 @@ export default function NewClient() {
             border: none;
             box-shadow: none;
             padding: 0;
-            min-height: calc(100dvh - 150px);
+
+            /* fontos: ne kényszeríts fix 100dvh-t; inkább természetes layout */
+            min-height: 0;
           }
 
           :global(.newdream-card)::before,
@@ -328,14 +311,14 @@ export default function NewClient() {
           }
 
           :global(.newdream-textarea) {
-            min-height: 100%;
-            height: 100%;
-            font-size: 16px;
+            min-height: 42vh;
+            font-size: 16px; /* iOS zoom-avoid */
             resize: none;
           }
 
           :global(.newdream-footer) {
             padding: var(--space-2) 0;
+            padding-bottom: calc(var(--space-2) + var(--safe-bottom));
             background: var(--bg-layer);
             border-top: 1px solid var(--line-soft);
           }
@@ -343,11 +326,6 @@ export default function NewClient() {
           :global(.newdream-actions) {
             width: 100%;
             justify-content: space-between;
-          }
-
-          .newdream-screen {
-            height: 100%;
-            overflow: hidden;
           }
         }
       `}</style>

@@ -3,7 +3,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { beginJobRun, finishJobRun } from "@/src/db/repositories/jobRepo";
 import { sha256 } from "@/src/orchestration/idempotency/materialHash";
 import { jobIdempotencyKeyV0 } from "@/src/orchestration/idempotency/jobKey";
-import { fetchObservationLatestWithPayload } from "@/src/db/repositories/observationRepo";
+import { fetchObservationLatestV0WithPayload } from "@/src/db/repositories/observationRepo";
 import { buildSessionIndexFromObservation } from "@/src/domain/index/buildSessionIndexFromObservation";
 import { insertSessionIndexVersionIfMissing, upsertSessionIndexLatest } from "@/src/db/repositories/sessionIndexRepo";
 
@@ -16,7 +16,7 @@ export async function jobBuildSessionIndexFromObservationJob(args: {
 
   const idempotency_key = jobIdempotencyKeyV0("build_session_index", event.session_id, material_hash);
 
-  const obsLatest = await fetchObservationLatestWithPayload(supabase, event.session_id);
+  const obsLatest = await fetchObservationLatestV0WithPayload(supabase, event.session_id);
   if (!obsLatest) {
     // No observation yet: cannot build index
     return { session_index_version_id: null, skipped: false };

@@ -13,19 +13,20 @@ export async function jobExtractAnchors(args: {
 
   const obsLatest = await supabase
     .from("observation_latest")
-    .select("observation_version_id")
+    .select("latest_v0_id")
     .eq("session_id", event.session_id)
     .eq("user_id", event.user_id)
     .single();
 
-  if (obsLatest.error) {
+  const latestId = (obsLatest.data as any)?.latest_v0_id;
+  if (obsLatest.error || !latestId) {
     return { anchor_version_id: null, skipped: false, ok: false };
   }
 
   const obsVersion = await supabase
     .from("observation_versions")
     .select("id,payload,input_hash")
-    .eq("id", obsLatest.data.observation_version_id)
+    .eq("id", latestId)
     .eq("user_id", event.user_id)
     .single();
 
