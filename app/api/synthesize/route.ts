@@ -1,6 +1,7 @@
 // /app/api/synthesize/route.ts
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { POST as observePOST } from "@/app/api/observe/route";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/observation";
 import { anchorsFromObservation } from "@/src/lib/dream/anchorsFromObservation";
@@ -363,21 +364,20 @@ async function fetchSessionDreamText(supabase: any, sessionId: string, userId: s
 // ✅ best-effort ensure observation exists (same idea as frame)
 async function ensureObservation(args: { req: Request; sessionId: string; dreamText: string }) {
   const url = new URL("/api/observe", args.req.url).toString();
-  const cookieHeader = args.req.headers.get("cookie") ?? "";
-  const authHeader = args.req.headers.get("authorization") ?? "";
+  const headers = new Headers({ "content-type": "application/json", "x-observe-source": "synthesize" });
+  const cookieHeader = args.req.headers.get("cookie");
+  const authHeader = args.req.headers.get("authorization");
+  if (cookieHeader) headers.set("cookie", cookieHeader);
+  if (authHeader) headers.set("authorization", authHeader);
 
   try {
-    await fetch(url, {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        "content-type": "application/json",
-        ...(cookieHeader ? { cookie: cookieHeader } : {}),
-        ...(authHeader ? { authorization: authHeader } : {}),
-        "x-observe-source": "synthesize",
-      },
-      body: JSON.stringify({ session_id: args.sessionId, dream_text: args.dreamText }),
-    });
+    await observePOST(
+      new Request(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ session_id: args.sessionId, dream_text: args.dreamText }),
+      })
+    );
   } catch (e) {
     console.warn("synthesize: ensureObservation failed", e);
   }
