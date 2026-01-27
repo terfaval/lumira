@@ -1,5 +1,7 @@
 // src/db/repositories/latestRepo.ts
 import { SupabaseClient } from "@supabase/supabase-js";
+import { adaptDreamObservationToV0 } from "@/src/domain/observe/adaptDreamObservationToV0";
+import type { DreamObservation } from "@/src/lib/dream/observation";
 
 function coerceJsonPayload(raw: any): any {
   if (raw == null) return null;
@@ -65,14 +67,45 @@ export async function fetchObservationLatestV0WithPayloadAndId(
 ): Promise<{ observation_version_id: string; payload: any } | null> {
   const latest = await supabase
     .from("observation_latest")
-    .select("latest_v0_id")
+    .select("latest_v0_id,latest_dream_id")
     .eq("session_id", session_id)
     .eq("user_id", user_id)
     .single();
 
   if (latest.error) return null;
   const latestId = (latest.data as any)?.latest_v0_id;
-  if (!latestId) return null;
+  if (!latestId) {
+    const dreamId = (latest.data as any)?.latest_dream_id;
+    if (!dreamId) return null;
+
+    const dreamVer = await supabase
+      .from("observation_versions")
+      .select("id,payload")
+      .eq("id", dreamId)
+      .eq("user_id", user_id)
+      .single();
+
+    if (dreamVer.error) throw dreamVer.error;
+    const dreamPayload = coerceJsonPayload(dreamVer.data.payload);
+    const dreamSchema = schemaVersionOf(dreamPayload);
+    if (dreamSchema && dreamSchema !== "dream_v1") {
+      console.warn("observation_latest(v0): schema mismatch", {
+        user_id,
+        session_id,
+        observation_version_id: dreamVer.data.id,
+        schema_version: dreamSchema,
+      });
+      return null;
+    }
+
+    const adapted = adaptDreamObservationToV0(dreamPayload as DreamObservation);
+    console.warn("observation_latest(v0): missing v0, using dream fallback", {
+      user_id,
+      session_id,
+      observation_version_id: dreamVer.data.id,
+    });
+    return { observation_version_id: dreamVer.data.id, payload: adapted };
+  }
 
   const ver = await supabase
     .from("observation_versions")

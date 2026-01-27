@@ -1,6 +1,6 @@
 // src/domain/index/buildSessionIndexFromObservation.ts
 import { openaiServer, OPENAI_MODELS } from "@/src/lib/openai/server";
-import type { ObservationPayloadV0 } from "@/src/domain/observe/extractObservationFromEntries";
+import type { ObservationPayloadV0 } from "@/src/domain/observe/types";
 
 export type SessionIndexPayloadV0 = {
   anchor_summary: string;

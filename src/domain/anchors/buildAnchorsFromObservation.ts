@@ -1,5 +1,5 @@
 // src/domain/anchors/buildAnchorsFromObservation.ts
-import type { ObservationPayloadV0 } from "@/src/domain/observe/extractObservationFromEntries";
+import type { ObservationPayloadV0 } from "@/src/domain/observe/types";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { shouldKeepAnchorKey, shouldKeepAnchorLabel } from "@/src/lib/dream/huAnchorHygiene";
 
