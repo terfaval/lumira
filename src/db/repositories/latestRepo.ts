@@ -13,6 +13,13 @@ function coerceJsonPayload(raw: any): any {
   return raw;
 }
 
+function schemaVersionOf(payload: any): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  return typeof (payload as any).schema_version === "string"
+    ? String((payload as any).schema_version)
+    : null;
+}
+
 export async function fetchObservationLatestDreamWithPayloadAndId(
   supabase: SupabaseClient,
   user_id: string,
@@ -37,7 +44,18 @@ export async function fetchObservationLatestDreamWithPayloadAndId(
     .single();
 
   if (ver.error) throw ver.error;
-  return { observation_version_id: ver.data.id, payload: coerceJsonPayload(ver.data.payload) };
+  const payload = coerceJsonPayload(ver.data.payload);
+  const schema = schemaVersionOf(payload);
+  if (schema && schema !== "dream_v1") {
+    console.warn("observation_latest(dream): schema mismatch", {
+      user_id,
+      session_id,
+      observation_version_id: ver.data.id,
+      schema_version: schema,
+    });
+    return null;
+  }
+  return { observation_version_id: ver.data.id, payload };
 }
 
 export async function fetchObservationLatestV0WithPayloadAndId(
@@ -64,7 +82,18 @@ export async function fetchObservationLatestV0WithPayloadAndId(
     .single();
 
   if (ver.error) throw ver.error;
-  return { observation_version_id: ver.data.id, payload: coerceJsonPayload(ver.data.payload) };
+  const payload = coerceJsonPayload(ver.data.payload);
+  const schema = schemaVersionOf(payload);
+  if (schema && schema !== "v0") {
+    console.warn("observation_latest(v0): schema mismatch", {
+      user_id,
+      session_id,
+      observation_version_id: ver.data.id,
+      schema_version: schema,
+    });
+    return null;
+  }
+  return { observation_version_id: ver.data.id, payload };
 }
 
 /**

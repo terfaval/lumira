@@ -26,6 +26,13 @@ function coerceJsonPayload(raw: any): any {
   return raw;
 }
 
+function schemaVersionOf(payload: any): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  return typeof (payload as any).schema_version === "string"
+    ? String((payload as any).schema_version)
+    : null;
+}
+
 export async function getNextObservationVersionNumber(
   supabase: SupabaseClient,
   session_id: string
@@ -151,5 +158,15 @@ export async function fetchObservationLatestV0WithPayload(
     .single();
 
   if (ver.error) throw ver.error;
-  return { latest_id: ver.data.id, payload: coerceJsonPayload(ver.data.payload) };
+  const payload = coerceJsonPayload(ver.data.payload);
+  const schema = schemaVersionOf(payload);
+  if (schema && schema !== "v0") {
+    console.warn("observation_latest(v0): schema mismatch", {
+      session_id,
+      observation_version_id: ver.data.id,
+      schema_version: schema,
+    });
+    return null;
+  }
+  return { latest_id: ver.data.id, payload };
 }
