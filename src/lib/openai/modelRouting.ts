@@ -1,6 +1,6 @@
 import { OPENAI_MODELS } from "@/src/lib/openai/server";
 
-export type ModelJobName = "frame" | "observe" | "compose_card" | "latent_update";
+export type ModelJobName = "frame" | "observe" | "compose_card" | "latent_update" | "synthesize";
 export type RetryReason = "parse_fail" | "schema_fail" | "lang_fail" | "quality_fail" | "none";
 
 export type ModelTrace = {
@@ -39,6 +39,8 @@ export function pickModelForJob(jobName: ModelJobName, attempt: number): string 
       return OPENAI_MODELS.FULL_41;
     case "latent_update":
       return attempt === 0 ? OPENAI_MODELS.OBSERVE : OPENAI_MODELS.MINI_41;
+    case "synthesize":
+      return attempt === 0 ? OPENAI_MODELS.WORK : OPENAI_MODELS.MINI_41;
     default:
       return OPENAI_MODELS.OBSERVE;
   }
@@ -49,6 +51,8 @@ export function maxAttemptsForJob(jobName: ModelJobName): number {
     case "frame":
       return 2;
     case "latent_update":
+      return 2;
+    case "synthesize":
       return 2;
     case "observe":
     case "compose_card":

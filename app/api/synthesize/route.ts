@@ -1,5 +1,4 @@
 // /app/api/synthesize/route.ts
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { POST as observePOST } from "@/app/api/observe/route";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
@@ -7,6 +6,8 @@ import { compactDreamObservation, parseDreamObservation } from "@/src/lib/dream/
 import { anchorsFromObservation } from "@/src/lib/dream/anchorsFromObservation";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { matchKeyFromLabel } from "@/src/lib/dream/huMatch";
+import { openaiServer } from "@/src/lib/openai/server";
+import { callWithRetries, RetryableError } from "@/src/lib/openai/modelRouting";
 import { CatalogService } from "@/src/services/CatalogService";
 import {
   fetchLatentLatestWithPayloadAndId,
@@ -393,7 +394,8 @@ async function persistLatent(
   sessionId: string,
   userId: string,
   output: SynthesizeOutput,
-  input_hash: string
+  input_hash: string,
+  model: string
 ) {
   const candidate_directions = Array.isArray(output.candidate_directions)
     ? output.candidate_directions.filter((s) => typeof s === "string" && s.trim())
@@ -418,7 +420,7 @@ async function persistLatent(
     session_id: sessionId,
     user_id: userId,
     input_hash,
-    model: MODEL,
+    model,
     payload,
   });
 
@@ -525,7 +527,7 @@ export async function POST(req: Request) {
         allowedSlugs: allowedSlugsReq.length ? allowedSlugsReq : [],
         priorEchoes,
       });
-      await persistLatent(supabase, sessionId, userId, out, input_hash);
+      await persistLatent(supabase, sessionId, userId, out, input_hash, MODEL);
       await persistSynthesizeEvent(supabase, sessionId, userId, out);
       return NextResponse.json(out);
     }
@@ -543,7 +545,7 @@ export async function POST(req: Request) {
         allowedSlugs: allowedSlugsReq.length ? allowedSlugsReq : [],
         priorEchoes,
       });
-      await persistLatent(supabase, sessionId, userId, out, input_hash);
+      await persistLatent(supabase, sessionId, userId, out, input_hash, MODEL);
       await persistSynthesizeEvent(supabase, sessionId, userId, out);
       return NextResponse.json(out);
     }
@@ -562,7 +564,7 @@ export async function POST(req: Request) {
           allowedSlugs: allowedSlugsReq.length ? allowedSlugsReq : [],
           priorEchoes,
         });
-        await persistLatent(supabase, sessionId, userId, out, input_hash);
+        await persistLatent(supabase, sessionId, userId, out, input_hash, MODEL);
         await persistSynthesizeEvent(supabase, sessionId, userId, out);
         return NextResponse.json(out);
       }
@@ -571,7 +573,7 @@ export async function POST(req: Request) {
     const catalog = await fetchCatalogForAI(supabase);
     const allowedPool = allowedSlugsReq.length ? allowedSlugsReq : catalog.map((r: any) => r.slug).filter(Boolean);
 
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const client = openaiServer();
 
     // Deterministic anchor fallback from observation (your new helper)
     const obsDerivedAnchors: Anchors =
@@ -590,26 +592,59 @@ export async function POST(req: Request) {
       observation_anchors: obsDerivedAnchors,
     };
 
-    const completion = await withTimeout(
-      (signal) =>
-        client.chat.completions.create(
-          {
-            model: MODEL,
-            temperature: 0,
-            response_format: { type: "json_object" },
-            messages: [
-              { role: "system", content: systemPrompt() },
-              { role: "user", content: JSON.stringify(userPayload) },
-            ],
-            max_tokens: 750,
-          },
-          { signal }
-        ),
-      OPENAI_TIMEOUT_MS
-    );
+    const { result: parsed, model_used } = await callWithRetries({
+      jobName: "synthesize",
+      callFn: async ({ model, attempt, maxAttempts }) => {
+        const completion = await withTimeout(
+          (signal) =>
+            client.chat.completions.create(
+              {
+                model,
+                temperature: 0,
+                response_format: { type: "json_object" },
+                messages: [
+                  { role: "system", content: systemPrompt() },
+                  { role: "user", content: JSON.stringify(userPayload) },
+                ],
+                max_tokens: 750,
+              },
+              { signal }
+            ),
+          OPENAI_TIMEOUT_MS
+        );
 
-    const rawContent = completion.choices?.[0]?.message?.content ?? "";
-    const parsed = parseModelJSON(rawContent);
+        const usage = completion.usage ?? {};
+        const rawContent = completion.choices?.[0]?.message?.content ?? "";
+        if (!rawContent) throw new RetryableError("parse_fail", "synthesize: empty response", usage);
+
+        const parsed = parseModelJSON(rawContent);
+        if (!parsed) throw new RetryableError("parse_fail", "synthesize: invalid JSON", usage);
+
+        if (
+          typeof parsed !== "object" ||
+          !parsed ||
+          typeof (parsed as any).anchors !== "object" ||
+          typeof (parsed as any).question_seed !== "object" ||
+          typeof (parsed as any).flags !== "object" ||
+          !Array.isArray((parsed as any).candidate_directions)
+        ) {
+          throw new RetryableError("schema_fail", "synthesize: schema mismatch", usage);
+        }
+
+        const sanitized = sanitizeOutput(parsed, allowedPool, defaultOutput());
+        if (
+          attempt < maxAttempts - 1 &&
+          sanitized.flags.safety === "none" &&
+          !sanitized.flags.too_short &&
+          sanitized.candidate_directions.length === 0 &&
+          allowedPool.length > 0
+        ) {
+          throw new RetryableError("quality_fail", "synthesize: empty candidates", usage);
+        }
+
+        return { result: parsed, usage };
+      },
+    });
 
     // 1) sanitize model output
     let out = sanitizeOutput(parsed, allowedPool, defaultOutput());
@@ -639,7 +674,7 @@ export async function POST(req: Request) {
       priorEchoes,
     });
 
-    await persistLatent(supabase, sessionId, userId, out, input_hash);
+    await persistLatent(supabase, sessionId, userId, out, input_hash, model_used);
     await persistSynthesizeEvent(supabase, sessionId, userId, out);
     return NextResponse.json(out);
   } catch (e: any) {
