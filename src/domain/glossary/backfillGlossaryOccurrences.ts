@@ -55,7 +55,7 @@ export async function backfillGlossaryOccurrencesForTerm(params: {
   if (latestRows.length === 0) return { scanned: 0, matched: 0, upserted: 0 };
 
   const versionIds = Array.from(
-    new Set(latestRows.map((row) => row.latest_v0_id).filter(Boolean))
+    new Set(latestRows.map((row) => row.latest_v0_id).filter((id): id is string => typeof id === "string"))
   );
 
   const payloadById = new Map<string, any>();
@@ -74,6 +74,7 @@ export async function backfillGlossaryOccurrencesForTerm(params: {
   const occurrenceRows: Array<{ user_id: string; term_id: string; session_id: string; source: "observation" }> = [];
 
   for (const row of latestRows) {
+    if (!row.latest_v0_id) continue;
     const payload = payloadById.get(row.latest_v0_id);
     if (!payload) continue;
 
