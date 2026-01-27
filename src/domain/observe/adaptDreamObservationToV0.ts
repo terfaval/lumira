@@ -58,9 +58,9 @@ export function adaptDreamObservationToV0(dreamObs: DreamObservation | null | un
     summary: "",
     scenes: [],
     entities: {
-      people: uniqStrings([...characters, ...other]),
-      places: uniqStrings(places),
-      objects: uniqStrings(objects),
+      people: uniqStrings([...characters, ...other]).slice(0, 12),
+      places: uniqStrings(places).slice(0, 12),
+      objects: uniqStrings(objects).slice(0, 12),
       themes_words: themesWords,
     },
     raw_facts: rawFacts,
