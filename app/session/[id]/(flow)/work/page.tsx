@@ -335,15 +335,22 @@ export default function WorkPage() {
 
   // v0: index-session should read dream_entries; do NOT send dream_text
   useEffect(() => {
-    if (!rawDreamText) return;
-    if (indexAttemptedRef.current) return;
-    indexAttemptedRef.current = true;
+  if (!sessionId) return;
+  if (indexAttemptedRef.current) return;
+  if (!loaded) return;
+  if (rawLoading) return;
 
-    void fetchWithAuth("/api/index-session", {
-      method: "POST",
-      json: { session_id: sessionId },
-    }).catch(() => {});
-  }, [rawDreamText, sessionId]);
+  indexAttemptedRef.current = true;
+
+  void fetchWithAuth("/api/session/ensure", {
+    method: "POST",
+    json: {
+      session_id: sessionId,
+      run: { observe: true, anchors: true, session_index: true, latent: false, frame: false },
+    },
+  }).catch(() => {});
+}, [sessionId, loaded, rawLoading]);
+
 
   const saveAnswer = useCallback(
     async (block: DirectionWorkBlock, answer: string) => {
