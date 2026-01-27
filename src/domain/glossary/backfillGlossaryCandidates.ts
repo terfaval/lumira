@@ -52,7 +52,7 @@ export async function backfillGlossaryCandidatesForUser(params: {
   if (latestRows.length === 0) return { scanned: 0, candidates: 0, terms: 0, upserted: 0 };
 
   const versionIds = Array.from(
-    new Set(latestRows.map((row) => row.latest_v0_id).filter(Boolean))
+    new Set(latestRows.map((row) => row.latest_v0_id).filter((id): id is string => typeof id === "string"))
   );
 
   const payloadById = new Map<string, any>();
@@ -72,6 +72,7 @@ export async function backfillGlossaryCandidatesForUser(params: {
   const displayLabels = new Map<string, string>();
 
   for (const row of latestRows) {
+    if (!row.latest_v0_id) continue;
     const payload = payloadById.get(row.latest_v0_id);
     if (!payload) continue;
 
