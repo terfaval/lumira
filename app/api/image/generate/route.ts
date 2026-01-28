@@ -3,12 +3,17 @@ import { NextResponse } from "next/server";
 import { lumiraStonePassage_v0 } from "@/src/domain/image/presets/lumiraStonePassage_v0";
 import { generateImage } from "@/src/domain/image/pipeline/generateImage";
 import { OpenAIImageAdapter } from "@/src/domain/image/render/OpenAIImageAdapter";
-import { requireUserId } from "@/src/lib/db";
+import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const userId = await requireUserId(); // uses your existing auth
+  const supabase = await supabaseServerAuthed(req);
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    return NextResponse.json({ error: "Auth session missing" }, { status: 401 });
+  }
+  const userId = authData.user.id;
   const body = await req.json().catch(() => ({}));
 
   const preset_id = body?.preset_id ?? "lumira_stone_passage";
