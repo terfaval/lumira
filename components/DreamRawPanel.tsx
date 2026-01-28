@@ -6,6 +6,7 @@ import { supabase } from "@/src/lib/supabase/client";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
 import { requireUserId } from "@/src/lib/db";
+import { indexGlossaryFromHighlight } from "@/src/domain/glossary/indexGlossaryFromHighlight";
 import styles from "./DreamRawPanel.module.css";
 
 type DreamRawEntry = {
@@ -344,6 +345,7 @@ export function DreamRawPanel({
       }
 
       if (pendingHighlight) {
+        const highlightLabel = pendingHighlight.text;
         const payload = {
           user_id: uid,
           session_id: sessionId,
@@ -367,6 +369,13 @@ export function DreamRawPanel({
         }
 
         if (data) setHighlights((prev) => [...prev, data as DreamHighlight]);
+        void indexGlossaryFromHighlight({
+          supabase,
+          userId: uid,
+          sessionId,
+          label: highlightLabel,
+          source: "user_note",
+        });
         setPendingHighlight(null);
         setHighlightMode(false);
       }
