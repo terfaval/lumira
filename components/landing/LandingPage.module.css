@@ -1,156 +1,459 @@
-"use client";
+/* LandingPage.module.css — cleaned + consistent */
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { supabase } from "@/src/lib/supabase/client";
-import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
-import styles from "./LandingPage.module.css";
+/* -------------------------------- */
+/* PAGE                              */
+/* -------------------------------- */
 
-type Panel = {
-  key: string;
-  title: string;
-  short: string;
-  long?: string;
-  href?: string;
-  cta?: string;
-};
-
-const PANELS: Panel[] = [
-  {
-    key: "new",
-    title: "Új / Kezdés",
-    short:
-      "Innen indul minden: rögzíts pár sort arról, ami megmaradt (kép, mondat, hangulat). Nem kell szépen megírni — elég, ha később visszaidézhető.",
-    long:
-      "Ez az indítás adja meg a session alapját, és ebből épül fel a későbbi visszatükrözés és irányválasztás. Ha bizonytalan vagy, kezdd a töredékekkel — a rendezés ráér később.",
-    href: "/new",
-    cta: "Új indítása",
-  },
-  {
-    key: "evening",
-    title: "Esti tér",
-    short:
-      "Lefekvéshez és éjszakai ébredéshez való, kíméletesebb mód. Inkább lecsendesít és lezár, mint elemez — a saját tempódban.",
-    long:
-      "Az esti folyamat elkülönül a nappali, aktívabb munkától. Akkor is jó, ha csak egy finom „most elég” jelzést szeretnél a nap végén.",
-    href: "/evening",
-    cta: "Belépek",
-  },
-  {
-    key: "glossary",
-    title: "Álomszótár",
-    short:
-      "A visszatérő szavak és motívumok rendezett gyűjteménye. Segít egységesíteni a nyelvet és később könnyebben visszanézni, mi ismétlődik.",
-    long:
-      "Nem értelmez helyetted: inkább tisztázni segít, mit nevezel ugyanúgy újra és újra. Idővel bővülhet és finomodhat — ettől lesz stabilabb a visszanézés.",
-    href: "/glossary",
-    cta: "Megnyitom",
-  },
-  {
-    key: "archive",
-    title: "Archívum",
-    short:
-      "Régebbi sessionök visszanézése és összevetése. Akkor hasznos, amikor már van több anyagod, és kíváncsi vagy a mintákra.",
-    long:
-      "Itt a fókusz a változásokon és ismétlődéseken van, nem egyetlen álmon. Nyugodt tér: nem sürget, inkább áttekintést ad.",
-    href: "/archive",
-    cta: "Megnyitom",
-  },
-  {
-    key: "session",
-    title: "Session",
-    short:
-      "Egy álom teljes folyamata egy helyen: rögzítés → visszatükrözés → irány → elmélyítés → lezárás.",
-    long:
-      "A session nézetek ugyanannak a folyamatnak külön fókuszai. Session csak rögzítés után jön létre, ezért nincs külön belépő gombja.",
-  },
-];
-
-function Chevron({ expanded }: { expanded: boolean }) {
-  return (
-    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24">
-      <path
-        d="M6 9l6 6 6-6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        style={{
-          transformOrigin: "50% 50%",
-          transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-          transition: "transform 160ms ease",
-        }}
-      />
-    </svg>
-  );
+.page {
+  width: 100%;
+  max-width: clamp(980px, 86vw, 1180px);
+  margin: 0 auto;
+  padding: calc(var(--space-5) * 1.25) var(--space-4) calc(var(--space-5) * 1.8);
 }
 
-export function AboutSubpagePanels() {
-  const [isAuthed, setIsAuthed] = useState(false);
-  const [openKey, setOpenKey] = useState<string | null>(null);
+/* -------------------------------- */
+/* HERO (2-column grid)              */
+/* -------------------------------- */
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!mounted) return;
-      setIsAuthed(!!data?.user);
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+.hero {
+  padding: calc(var(--space-5) * 1.4) 0;
+}
 
-  return (
-    <div className={styles.aboutPanelsGrid}>
-      {PANELS.map((p) => {
-        const expanded = openKey === p.key;
-        const hasLong = !!p.long;
+.heroGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: calc(var(--space-5) * 1.1);
+}
 
-        return (
-          <GlassCardSurface
-            key={p.key}
-            className={`${styles.glassCard} ${styles.gridCard}`}
-            variant="soft"
-            paper="evening"
-          >
-            <div className={`${styles.gridCardHeader} ${styles.aboutCardHeader}`}>
-              <div className={styles.cardTitle}>{p.title}</div>
+@media (min-width: 900px) {
+  .heroGrid {
+    grid-template-columns: 1fr 1fr; /* ✅ 2 oszlop */
+    align-items: stretch;
+  }
+}
 
-              {hasLong ? (
-                <button
-                  type="button"
-                  className={styles.expandToggle}
-                  aria-expanded={expanded}
-                  aria-label={expanded ? "Bezárás" : "Bővebben"}
-                  onClick={() => setOpenKey(expanded ? null : p.key)}
-                >
-                  <Chevron expanded={expanded} />
-                </button>
-              ) : (
-                <span className={styles.expandToggleSpacer} aria-hidden="true" />
-              )}
-            </div>
+.heroLeft,
+.heroRight {
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+}
 
-            <div className={styles.gridCardBody}>
-              <div className={styles.cardBody}>{p.short}</div>
+/* középre, de ne legyen túl széles */
+.heroLeftInner,
+.heroRightInner {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  text-align: center;
+  max-width: 44ch;
+}
 
-              {hasLong && expanded ? (
-                <div className={`${styles.cardBody} ${styles.aboutLongBody}`}>{p.long}</div>
-              ) : null}
+.heroMark {
+  opacity: 0.92;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.05));
+}
 
-              {isAuthed && p.href && p.cta ? (
-                <div className={styles.aboutCardActions}>
-                  <Link href={p.href} className="btn btn-secondary">
-                    {p.cta}
-                  </Link>
-                </div>
-              ) : null}
-            </div>
-          </GlassCardSurface>
-        );
-      })}
-    </div>
+.heroName {
+  font-family: var(--font-space-grotesk), var(--font-base);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: lowercase;
+  font-size: 22px;
+  line-height: 1;
+  opacity: 0.92;
+}
+
+.heroOneLiner {
+  font-family: var(--font-space-grotesk), var(--font-base);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  font-size: 18px;
+  line-height: 1.3;
+  opacity: 0.9;
+}
+
+.toolIntro {
+  margin: 0;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.heroCta {
+  padding: 14px 18px;
+  border-radius: 14px;
+}
+
+/* -------------------------------- */
+/* SECTIONS                           */
+/* -------------------------------- */
+
+.section {
+  margin-top: calc(var(--space-5) * 1.45);
+}
+
+.h2 {
+  margin: 0 0 var(--space-3) 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  opacity: 0.95;
+}
+
+/* -------------------------------- */
+/* GLASS CARD (shared)               */
+/* -------------------------------- */
+
+.glassCard {
+  border-radius: 18px;
+  padding: var(--space-4);
+}
+
+.gridCard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.gridCardHeader {
+  flex: 0 0 auto;
+}
+
+.gridCardBody {
+  flex: 1 1 auto;
+}
+
+.gridCardFooter {
+  flex: 0 0 auto;
+}
+
+.cardTitle {
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  margin-top: 12px;
+}
+
+.cardBody {
+  margin-top: 10px;
+  opacity: 0.88;
+  line-height: 1.65;
+}
+
+/* icon fallback (ha fekete svg) */
+.bigIcon {
+  opacity: 0.95;
+  filter: brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.06));
+}
+
+/* -------------------------------- */
+/* HOW IT WORKS: 3 + 1               */
+/* -------------------------------- */
+
+.howTop {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 860px) {
+  .howTop {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.howStopRow {
+  margin-top: var(--space-4);
+}
+
+.stopCard {
+  padding: calc(var(--space-4) * 1.15);
+}
+
+/* ✅ 2 grid: icon | text */
+.stopInner {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.stopText {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 560px) {
+  .stopInner {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .stopText {
+    justify-items: center;
+  }
+}
+
+.howStepHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* -------------------------------- */
+/* ADAPTIVITY (new layout)           */
+/* -------------------------------- */
+
+.adaptPrimaryRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  .adaptPrimaryRow {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.adaptPrimaryCard {
+  padding: calc(var(--space-4) * 1.05);
+}
+
+.adaptPrimaryInner {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.adaptPrimaryIconCol {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.adaptPrimaryLabel {
+  font-weight: 800;
+  opacity: 0.95;
+}
+
+.adaptPrimaryTextCol {
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .adaptPrimaryInner {
+    grid-template-columns: 1fr;
+  }
+  .adaptPrimaryTextCol {
+    text-align: center;
+  }
+}
+
+.adaptNote {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: 16px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.02);
+  opacity: 0.85;
+  text-align: center;
+}
+
+.adaptSecondaryGrid {
+  margin-top: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+@media (min-width: 860px) {
+  .adaptSecondaryGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.adaptSecondaryItem {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: var(--space-3);
+  border-radius: 16px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.adaptSecondaryLabel {
+  font-size: 13px;
+  opacity: 0.86;
+  font-weight: 700;
+}
+
+/* -------------------------------- */
+/* EVENING PREVIEW                   */
+/* -------------------------------- */
+
+.eveningGrid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .eveningGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+
+/* -------------------------------- */
+/* FOOTER                             */
+/* -------------------------------- */
+
+.footer {
+  margin-top: calc(var(--space-5) * 1.6);
+  padding: calc(var(--space-5) * 1.2) 0;
+}
+
+.footerInner {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  text-align: center;
+
+  padding: calc(var(--space-5) * 1.1) var(--space-4);
+  border-radius: 22px;
+  border: 1px solid var(--line-soft);
+
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.02)
   );
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.footerLine {
+  max-width: 70ch;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.footerCta {
+  padding: 14px 22px;
+  border-radius: 14px;
+}
+
+/* -------------------------------- */
+/* GUEST MODE                        */
+/* -------------------------------- */
+
+
+.heroCtas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.heroCtaSecondary {
+  /* ha a btn-secondary globális, elég lehet üresen is */
+}
+
+.heroCtaNote {
+  font-size: 13px;
+  opacity: 0.8;
+  text-align: center;
+  max-width: 360px;
+}
+
+.footerCtas {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.footerCtaSecondary {
+}
+
+.footerCtaNote {
+  font-size: 13px;
+  opacity: 0.8;
+  text-align: center;
+  max-width: 420px;
+}
+
+/* -------------------------------- */
+/* ABOUT: subpage panels             */
+/* -------------------------------- */
+
+.aboutPanelsGrid {
+  margin-top: var(--space-4);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  .aboutPanelsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* header: title balra, chevron jobbra */
+.aboutCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* a cardTitle-nál van margin-top: 12px; a headerben ez jól néz ki, de a gombot feljebb húzzuk */
+.expandToggle {
+  margin-top: 2px;
+  flex: 0 0 auto;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.02);
+
+  color: inherit;
+  cursor: pointer;
+}
+
+.expandToggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.expandToggle:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.28);
+  outline-offset: 2px;
+}
+
+/* ha nincs long szöveg, ne „ugráljon” a layout: tartunk helyet a chevrontól */
+.expandToggleSpacer {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  opacity: 0;
+}
+
+.aboutLongBody {
+  margin-top: 10px; /* a cardBody alapból 10px, ezt finoman növeljük vizuálisan */
+}
+
+.aboutCardActions {
+  margin-top: 14px;
 }
