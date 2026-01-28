@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/src/lib/supabase/client";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { LumiraLoader } from "@/components/LumiraLoader/LumiraLoader";
@@ -71,7 +72,11 @@ function readSelection(container: HTMLElement | null): PendingHighlight | null {
   }
 }
 
-function renderWithHighlights(text: string, highlights: DreamHighlight[]) {
+function renderWithHighlights(
+  text: string,
+  highlights: DreamHighlight[],
+  onHighlightClick?: (highlight: DreamHighlight) => void
+) {
   if (!highlights.length) return text;
 
   const sorted = highlights
@@ -97,6 +102,15 @@ function renderWithHighlights(text: string, highlights: DreamHighlight[]) {
         className={styles.highlight}
         title={title}
         data-category={h.category}
+        role={onHighlightClick ? "button" : undefined}
+        onClick={
+          onHighlightClick
+            ? (event) => {
+                event.stopPropagation();
+                onHighlightClick(h);
+              }
+            : undefined
+        }
       >
         {snippet}
       </mark>
@@ -111,12 +125,14 @@ export function DreamRawPanel({
   sessionId,
   entry,
   variant = "default",
+  highlightPlacement = "inline",
   className = "",
 }: {
   sessionId: string;
   entry?: DreamRawEntry | null;
   /** default: a régi viselkedés, bare: semmi extra "doboz" styling */
   variant?: "default" | "bare";
+  highlightPlacement?: "inline" | "flow-right";
   className?: string;
 }) {
   const [fetchedEntry, setFetchedEntry] = useState<DreamRawEntry | null>(null);
@@ -134,6 +150,7 @@ export function DreamRawPanel({
   const [highlightCategory, setHighlightCategory] = useState("");
   const [highlightNote, setHighlightNote] = useState("");
   const [savingHighlight, setSavingHighlight] = useState(false);
+  const [editingHighlight, setEditingHighlight] = useState<DreamHighlight | null>(null);
 
   const textRef = useRef<HTMLDivElement | null>(null);
   const selectionRef = useRef<PendingHighlight | null>(null);
@@ -223,14 +240,15 @@ export function DreamRawPanel({
   const captureSelection = useCallback(() => {
     const next = readSelection(textRef.current);
     if (next) selectionRef.current = next;
-    if (highlightMode) setPendingHighlight(next);
-  }, [highlightMode]);
+    if (highlightMode && !editingHighlight) setPendingHighlight(next);
+  }, [highlightMode, editingHighlight]);
 
   const handleEditToggle = useCallback(() => {
     setActionError(null);
     if (savingEdit) return;
     setHighlightMode(false);
     setPendingHighlight(null);
+    setEditingHighlight(null);
     setEditMode((prev) => !prev);
   }, [savingEdit]);
 
@@ -276,10 +294,12 @@ export function DreamRawPanel({
     if (highlightMode) {
       setHighlightMode(false);
       setPendingHighlight(null);
+      setEditingHighlight(null);
       return;
     }
 
     setHighlightMode(true);
+    setEditingHighlight(null);
     setPendingHighlight(next);
     if (next) {
       setHighlightCategory("");
@@ -288,55 +308,95 @@ export function DreamRawPanel({
   }, [highlightMode, savingHighlight]);
 
   const handleHighlightSave = useCallback(async () => {
-    if (!displayEntry?.id || !pendingHighlight) return;
+    if (!displayEntry?.id) return;
     const category = highlightCategory.trim();
     if (!category) {
-    setActionError("Adj meg egy kategóriát a kiemeléshez.");
-    return;
-  }
+      setActionError("Adj meg egy kategóriát a kiemeléshez.");
+      return;
+    }
+    if (!pendingHighlight && !editingHighlight) return;
 
     setSavingHighlight(true);
     setActionError(null);
 
     try {
       const uid = await requireUserId();
-      const payload = {
-        user_id: uid,
-        session_id: sessionId,
-        entry_id: displayEntry.id,
-        start_offset: pendingHighlight.start,
-        end_offset: pendingHighlight.end,
-        text: pendingHighlight.text,
-        category,
-        note: highlightNote.trim() ? highlightNote.trim() : null,
-      };
+      if (editingHighlight) {
+        const note = highlightNote.trim() ? highlightNote.trim() : null;
+        const { error: updateError } = await supabase
+          .from("dream_entry_highlights")
+          .update({ category, note })
+          .eq("id", editingHighlight.id)
+          .eq("user_id", uid);
 
-      const { data, error: insertError } = await supabase
-        .from("dream_entry_highlights")
-        .insert(payload)
-        .select("id, entry_id, start_offset, end_offset, text, category, note, created_at")
-        .maybeSingle();
+        if (updateError) {
+          setActionError(updateError.message);
+          return;
+        }
 
-      if (insertError) {
-        setActionError(insertError.message);
+        setHighlights((prev) =>
+          prev.map((item) => (item.id === editingHighlight.id ? { ...item, category, note } : item))
+        );
+        setEditingHighlight(null);
+        setPendingHighlight(null);
+        setHighlightMode(false);
         return;
       }
 
-      if (data) setHighlights((prev) => [...prev, data as DreamHighlight]);
-      setPendingHighlight(null);
-      setHighlightMode(false);
+      if (pendingHighlight) {
+        const payload = {
+          user_id: uid,
+          session_id: sessionId,
+          entry_id: displayEntry.id,
+          start_offset: pendingHighlight.start,
+          end_offset: pendingHighlight.end,
+          text: pendingHighlight.text,
+          category,
+          note: highlightNote.trim() ? highlightNote.trim() : null,
+        };
+
+        const { data, error: insertError } = await supabase
+          .from("dream_entry_highlights")
+          .insert(payload)
+          .select("id, entry_id, start_offset, end_offset, text, category, note, created_at")
+          .maybeSingle();
+
+        if (insertError) {
+          setActionError(insertError.message);
+          return;
+        }
+
+        if (data) setHighlights((prev) => [...prev, data as DreamHighlight]);
+        setPendingHighlight(null);
+        setHighlightMode(false);
+      }
     } catch (e: unknown) {
-    setActionError(e instanceof Error ? e.message : "Nem sikerült elmenteni a kiemelést.");
-  } finally {
-    setSavingHighlight(false);
-  }
-}, [displayEntry?.id, highlightCategory, highlightNote, pendingHighlight, sessionId]);
+      setActionError(e instanceof Error ? e.message : "Nem sikerült elmenteni a kiemelést.");
+    } finally {
+      setSavingHighlight(false);
+    }
+  }, [displayEntry?.id, highlightCategory, highlightNote, pendingHighlight, sessionId, editingHighlight]);
 
   const handleHighlightCancel = useCallback(() => {
     setPendingHighlight(null);
     setHighlightMode(false);
+    setEditingHighlight(null);
     setActionError(null);
   }, []);
+
+  const handleHighlightClick = useCallback(
+    (highlight: DreamHighlight) => {
+      if (savingEdit || savingHighlight) return;
+      setActionError(null);
+      setEditMode(false);
+      setHighlightMode(true);
+      setPendingHighlight(null);
+      setEditingHighlight(highlight);
+      setHighlightCategory(highlight.category ?? "");
+      setHighlightNote(highlight.note ?? "");
+    },
+    [savingEdit, savingHighlight]
+  );
 
   const renderBody = () => {
     if (error) {
@@ -356,7 +416,7 @@ export function DreamRawPanel({
       return <span>Nincs megjeleníthető álomszöveg.</span>;
     }
 
-    return renderWithHighlights(text, highlights);
+    return renderWithHighlights(text, highlights, handleHighlightClick);
   };
 
   const content = (
@@ -427,57 +487,87 @@ export function DreamRawPanel({
         </div>
       ) : null}
 
-      {highlightMode ? (
-        <div className={styles.highlightPanel}>
-          <div className={styles.highlightTitle}>
-            {pendingHighlight ? "Kiemelés mentése" : "Jelölj ki egy részt az álomból."}
-          </div>
-          {pendingHighlight ? (
-            <>
-              <div className={styles.pillRow}>
-                {highlightCategoryOptions.map((option) => {
-                  const selected = highlightCategory === option.key;
-                  return (
-                    <button
-                      key={option.key}
-                      type="button"
-                      className={cx(
-                        styles.pillButton,
-                        styles[`pill-${option.key}` as keyof typeof styles],
-                        selected && styles.pillButtonActive
-                      )}
-                      aria-pressed={selected}
-                      onClick={() => {
-                        setActionError(null);
-                        setHighlightCategory(option.key);
-                      }}
+      {highlightMode
+        ? (() => {
+            const panel = (
+              <div
+                className={cx(
+                  styles.highlightPanel,
+                  highlightPlacement === "flow-right" && styles.highlightPanelOverlay
+                )}
+              >
+                <div className={styles.highlightTitle}>
+                  {editingHighlight
+                    ? "Kiemelés szerkesztése"
+                    : pendingHighlight
+                      ? "Kiemelés mentése"
+                      : "Jelölj ki egy részt az álomból."}
+                </div>
+                {pendingHighlight || editingHighlight ? (
+                  <>
+                    <div className={styles.pillRow}>
+                      {highlightCategoryOptions.map((option) => {
+                        const selected = highlightCategory === option.key;
+                        return (
+                          <button
+                            key={option.key}
+                            type="button"
+                            className={cx(
+                              styles.pillButton,
+                              styles[`pill-${option.key}` as keyof typeof styles],
+                              selected && styles.pillButtonActive
+                            )}
+                            aria-pressed={selected}
+                            onClick={() => {
+                              setActionError(null);
+                              setHighlightCategory(option.key);
+                            }}
+                            disabled={savingHighlight}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <input
+                      className={styles.highlightInput}
+                      placeholder="Megjegyzés (opcionális)"
+                      value={highlightNote}
+                      onChange={(event) => setHighlightNote(event.target.value)}
                       disabled={savingHighlight}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
+                    />
+                    {actionError ? <span className={styles.actionError}>{actionError}</span> : null}
+                    <div className={styles.actionRow}>
+                      <button
+                        className="btn btn-primary"
+                        type="button"
+                        onClick={handleHighlightSave}
+                        disabled={savingHighlight}
+                      >
+                        Mentés
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        type="button"
+                        onClick={handleHighlightCancel}
+                        disabled={savingHighlight}
+                      >
+                        Mégse
+                      </button>
+                    </div>
+                  </>
+                ) : null}
               </div>
-              <input
-                className={styles.highlightInput}
-                placeholder="Megjegyzés (opcionális)"
-                value={highlightNote}
-                onChange={(event) => setHighlightNote(event.target.value)}
-                disabled={savingHighlight}
-              />
-              {actionError ? <span className={styles.actionError}>{actionError}</span> : null}
-              <div className={styles.actionRow}>
-                <button className="btn btn-primary" type="button" onClick={handleHighlightSave} disabled={savingHighlight}>
-                  Mentés
-                </button>
-                <button className="btn btn-secondary" type="button" onClick={handleHighlightCancel} disabled={savingHighlight}>
-                  Mégse
-                </button>
-              </div>
-            </>
-          ) : null}
-        </div>
-      ) : null}
+            );
+
+            if (highlightPlacement === "flow-right") {
+              const target = typeof document === "undefined" ? null : document.body;
+              return target ? createPortal(panel, target) : null;
+            }
+
+            return panel;
+          })()
+        : null}
     </div>
   );
 

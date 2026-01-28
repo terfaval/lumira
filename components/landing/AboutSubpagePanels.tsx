@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/src/lib/supabase/client";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import styles from "./LandingPage.module.css";
@@ -9,9 +9,9 @@ import styles from "./LandingPage.module.css";
 type Panel = {
   key: string;
   title: string;
-  short: string;
-  long?: string;
-  href?: string;
+  short: string; // mindig látszik
+  long?: string; // kibontva látszik
+  href?: string; // ha van és authed, lesz "Ugrás" gomb
   cta?: string;
 };
 
@@ -22,7 +22,7 @@ const PANELS: Panel[] = [
     short:
       "Innen indul minden: rögzíts pár sort arról, ami megmaradt (kép, mondat, hangulat). Nem kell szépen megírni — elég, ha később visszaidézhető.",
     long:
-      "Ez az indítás adja meg a session alapját, és ebből épül fel a későbbi visszatükrözés és irányválasztás. Ha bizonytalan vagy, kezdd a töredékekkel — a rendezés ráér később.",
+      "Ez az indítás adja meg a session alapját, és ebből épül fel a későbbi visszatükrözés és irányválasztás. Ha bizonytalan vagy, itt a legkevesebb az elvárás: kezdd a töredékekkel, a rendszer később segít rendezni.",
     href: "/new",
     cta: "Új indítása",
   },
@@ -32,7 +32,7 @@ const PANELS: Panel[] = [
     short:
       "Lefekvéshez és éjszakai ébredéshez való, kíméletesebb mód. Inkább lecsendesít és lezár, mint elemez — a saját tempódban.",
     long:
-      "Az esti folyamat elkülönül a nappali, aktívabb munkától. Akkor is jó, ha csak egy finom „most elég” jelzést szeretnél a nap végén.",
+      "Az esti folyamat külön térben fut, hogy ne keveredjen a nappali, aktívabb munkával. Akkor is hasznos, ha csak egy kis rendet szeretnél a fejedben, vagy egy finom „most elég” jelzést a nap végén.",
     href: "/evening",
     cta: "Belépek",
   },
@@ -42,7 +42,7 @@ const PANELS: Panel[] = [
     short:
       "A visszatérő szavak és motívumok rendezett gyűjteménye. Segít egységesíteni a nyelvet és később könnyebben visszanézni, mi ismétlődik.",
     long:
-      "Nem értelmez helyetted: inkább tisztázni segít, mit nevezel ugyanúgy újra és újra. Idővel bővülhet és finomodhat — ettől lesz stabilabb a visszanézés.",
+      "Nem értelmez helyetted, inkább tisztázni segít: mi az, amit te ugyanúgy nevezel újra és újra. Idővel bővülhet, finomodhat — és ettől lesz a rendszer egyre következetesebb és személyesebb.",
     href: "/glossary",
     cta: "Megnyitom",
   },
@@ -52,7 +52,7 @@ const PANELS: Panel[] = [
     short:
       "Régebbi sessionök visszanézése és összevetése. Akkor hasznos, amikor már van több anyagod, és kíváncsi vagy a mintákra.",
     long:
-      "Itt a fókusz a változásokon és ismétlődéseken van, nem egyetlen álmon. Nyugodt tér: nem sürget, inkább áttekintést ad.",
+      "Itt a fókusz nem egyetlen álmon van, hanem azon, hogyan alakulnak a visszatérő elemek és hangsúlyok. Nyugodt tér: nem sürget, inkább áttekintést ad.",
     href: "/archive",
     cta: "Megnyitom",
   },
@@ -62,13 +62,21 @@ const PANELS: Panel[] = [
     short:
       "Egy álom teljes folyamata egy helyen: rögzítés → visszatükrözés → irány → elmélyítés → lezárás.",
     long:
-      "A session nézetek ugyanannak a folyamatnak külön fókuszai. Session csak rögzítés után jön létre, ezért nincs külön belépő gombja.",
+      "A session nézetek ugyanannak az egy folyamatnak külön fókuszai. Session csak rögzítés után jön létre, ezért nincs külön belépő gombja.",
+    // nincs href → nincs nav gomb
   },
 ];
 
 function Chevron({ expanded }: { expanded: boolean }) {
+  // Minimal inline SVG, nincs extra dependency
   return (
-    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24">
+    <svg
+      aria-hidden="true"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      className={expanded ? styles.chevronUp : styles.chevronDown}
+    >
       <path
         d="M6 9l6 6 6-6"
         fill="none"
@@ -76,11 +84,6 @@ function Chevron({ expanded }: { expanded: boolean }) {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        style={{
-          transformOrigin: "50% 50%",
-          transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
-          transition: "transform 160ms ease",
-        }}
       />
     </svg>
   );
@@ -102,9 +105,11 @@ export function AboutSubpagePanels() {
     };
   }, []);
 
+  const panels = useMemo(() => PANELS, []);
+
   return (
     <div className={styles.aboutPanelsGrid}>
-      {PANELS.map((p) => {
+      {panels.map((p) => {
         const expanded = openKey === p.key;
         const hasLong = !!p.long;
 
@@ -115,7 +120,7 @@ export function AboutSubpagePanels() {
             variant="soft"
             paper="evening"
           >
-            <div className={`${styles.gridCardHeader} ${styles.aboutCardHeader}`}>
+            <div className={styles.gridCardHeader}>
               <div className={styles.cardTitle}>{p.title}</div>
 
               {hasLong ? (
@@ -128,20 +133,20 @@ export function AboutSubpagePanels() {
                 >
                   <Chevron expanded={expanded} />
                 </button>
-              ) : (
-                <span className={styles.expandToggleSpacer} aria-hidden="true" />
-              )}
+              ) : null}
             </div>
 
             <div className={styles.gridCardBody}>
               <div className={styles.cardBody}>{p.short}</div>
 
               {hasLong && expanded ? (
-                <div className={`${styles.cardBody} ${styles.aboutLongBody}`}>{p.long}</div>
+                <div className={styles.cardBody} style={{ marginTop: 10 }}>
+                  {p.long}
+                </div>
               ) : null}
 
               {isAuthed && p.href && p.cta ? (
-                <div className={styles.aboutCardActions}>
+                <div style={{ marginTop: 14 }}>
                   <Link href={p.href} className="btn btn-secondary">
                     {p.cta}
                   </Link>

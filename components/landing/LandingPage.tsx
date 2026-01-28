@@ -3,6 +3,7 @@ import { LumiraMark } from "@/components/brand/LumiraMark";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { GuestStartButton } from "@/components/auth/GuestStartButton";
 import styles from "./LandingPage.module.css";
+import { AboutSubpagePanels } from "./AboutSubpagePanels";
 
 const howStepsTop = [
   {
@@ -104,7 +105,7 @@ export function LandingPage() {
                   className={`btn btn-secondary ${styles.heroCtaSecondary}`}
                   redirectTo="/new"
                   label="Kipróbálom"
-                />
+                /> 
 
                 <div className={styles.heroCtaNote}>
                   Anonim próba. Kilépéskor minden törlődik.
@@ -220,6 +221,13 @@ export function LandingPage() {
           ))}
         </div>
       </section>
+
+      {/* ABOUT SUBPAGES */}
+      <section className={styles.section}>
+  <h2 className={styles.h2}>Terek és oldalak</h2>
+
+  <AboutSubpagePanels />
+</section>
 
       {/* EVENING PREVIEW */}
       <section className={styles.section}>
