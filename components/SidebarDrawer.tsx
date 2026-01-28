@@ -276,6 +276,14 @@ export function SidebarDrawer({
               </span>
             </Link>
 
+            <Link href="/dreamspace/how-to-approach-dreams" className="drawer-navlink" onClick={onClose}>
+              <DrawerIcon name="focus" />
+              <span className="drawer-label">
+                <span className="drawer-label-full">Álomtér</span>
+                <span className="drawer-label-short">Álomtér</span>
+              </span>
+            </Link>
+
             <Link
               href="/evening"
               className="drawer-navlink"
