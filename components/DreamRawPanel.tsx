@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "@/src/lib/supabase/client";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
@@ -152,7 +160,10 @@ export function DreamRawPanel({
   const [highlightNote, setHighlightNote] = useState("");
   const [savingHighlight, setSavingHighlight] = useState(false);
   const [editingHighlight, setEditingHighlight] = useState<DreamHighlight | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [overlayStyle, setOverlayStyle] = useState<CSSProperties | null>(null);
 
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const textRef = useRef<HTMLDivElement | null>(null);
   const selectionRef = useRef<PendingHighlight | null>(null);
 
@@ -203,6 +214,65 @@ export function DreamRawPanel({
     const next = displayEntry?.content ?? "";
     setDraftText(next);
   }, [displayEntry?.content]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(min-width: 900px)");
+    const handle = () => setIsDesktop(media.matches);
+    handle();
+    if ("addEventListener" in media) {
+      media.addEventListener("change", handle);
+      return () => media.removeEventListener("change", handle);
+    }
+    media.addListener(handle);
+    return () => media.removeListener(handle);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (highlightPlacement !== "flow-right" || !isDesktop) {
+      setOverlayStyle(null);
+      return;
+    }
+
+    const gap = 20;
+    const edge = 16;
+    const update = () => {
+      const panel = panelRef.current;
+      if (!panel) return;
+      const rect = panel.getBoundingClientRect();
+      const available = window.innerWidth - rect.right - gap - edge;
+      const width = Math.max(280, Math.min(rect.width, available));
+      const height = Math.min(rect.height, window.innerHeight - edge * 2);
+      const left = Math.min(rect.right + gap, window.innerWidth - width - edge);
+      const top = Math.max(edge, Math.min(rect.top, window.innerHeight - height - edge));
+      setOverlayStyle({
+        position: "fixed",
+        top,
+        left,
+        width,
+        height,
+      });
+    };
+
+    update();
+    const onScroll = () => update();
+    const onResize = () => update();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
+
+    let resizeObserver: ResizeObserver | null = null;
+    if ("ResizeObserver" in window) {
+      resizeObserver = new ResizeObserver(() => update());
+      if (panelRef.current) resizeObserver.observe(panelRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
+      resizeObserver?.disconnect();
+    };
+  }, [highlightPlacement, isDesktop]);
 
   useEffect(() => {
     let cancelled = false;
@@ -386,6 +456,34 @@ export function DreamRawPanel({
     }
   }, [displayEntry?.id, highlightCategory, highlightNote, pendingHighlight, sessionId, editingHighlight]);
 
+  const handleHighlightDelete = useCallback(async () => {
+    if (!editingHighlight || savingHighlight) return;
+    setSavingHighlight(true);
+    setActionError(null);
+    try {
+      const uid = await requireUserId();
+      const { error: deleteError } = await supabase
+        .from("dream_entry_highlights")
+        .delete()
+        .eq("id", editingHighlight.id)
+        .eq("user_id", uid);
+
+      if (deleteError) {
+        setActionError(deleteError.message);
+        return;
+      }
+
+      setHighlights((prev) => prev.filter((item) => item.id !== editingHighlight.id));
+      setEditingHighlight(null);
+      setPendingHighlight(null);
+      setHighlightMode(false);
+    } catch (e: unknown) {
+      setActionError(e instanceof Error ? e.message : "Nem sikerült törölni a kiemelést.");
+    } finally {
+      setSavingHighlight(false);
+    }
+  }, [editingHighlight, savingHighlight]);
+
   const handleHighlightCancel = useCallback(() => {
     setPendingHighlight(null);
     setHighlightMode(false);
@@ -429,7 +527,7 @@ export function DreamRawPanel({
   };
 
   const content = (
-    <div className={styles.panel} aria-live="polite">
+    <div ref={panelRef} className={styles.panel} aria-live="polite">
       {editMode ? (
         <textarea
           className={cx(styles.editor, rootClass)}
@@ -498,12 +596,14 @@ export function DreamRawPanel({
 
       {highlightMode
         ? (() => {
+            const shouldPortal = highlightPlacement === "flow-right" && isDesktop;
             const panel = (
               <div
                 className={cx(
                   styles.highlightPanel,
-                  highlightPlacement === "flow-right" && styles.highlightPanelOverlay
+                  shouldPortal && styles.highlightPanelOverlay
                 )}
+                style={shouldPortal ? overlayStyle ?? undefined : undefined}
               >
                 <div className={styles.highlightTitle}>
                   {editingHighlight
@@ -546,7 +646,26 @@ export function DreamRawPanel({
                       disabled={savingHighlight}
                     />
                     {actionError ? <span className={styles.actionError}>{actionError}</span> : null}
-                    <div className={styles.actionRow}>
+                    <div className={styles.highlightActionRow}>
+                      {editingHighlight ? (
+                        <button
+                          className={styles.trashButton}
+                          type="button"
+                          title="Kiemelés törlése"
+                          aria-label="Kiemelés törlése"
+                          onClick={handleHighlightDelete}
+                          disabled={savingHighlight}
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                              fill="currentColor"
+                              d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v9h-2V9Zm4 0h2v9h-2V9ZM7 9h2v9H7V9Z"
+                            />
+                          </svg>
+                        </button>
+                      ) : (
+                        <span />
+                      )}
                       <button
                         className="btn btn-primary"
                         type="button"
@@ -569,7 +688,7 @@ export function DreamRawPanel({
               </div>
             );
 
-            if (highlightPlacement === "flow-right") {
+            if (shouldPortal) {
               const target = typeof document === "undefined" ? null : document.body;
               return target ? createPortal(panel, target) : null;
             }

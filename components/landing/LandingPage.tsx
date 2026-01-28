@@ -4,6 +4,7 @@ import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface
 import { GuestStartButton } from "@/components/auth/GuestStartButton";
 import styles from "./LandingPage.module.css";
 import { AboutSubpagePanels } from "./AboutSubpagePanels";
+import { EveningPreview } from "./EveningPreview";
 
 const howStepsTop = [
   {
@@ -233,32 +234,12 @@ export function LandingPage() {
       <section className={styles.section}>
         <h2 className={styles.h2}>Esti előnézet</h2>
 
-        <div className={styles.eveningGrid}>
-          {[
-            {
-              title: "Csendes indulás",
-              body: "Rövid rendezés lefekvés előtt: mi maradjon kint, mi jöhet be az éjszakába.",
-            },
-            {
-              title: "Alvás-hangolás",
-              body: "Választható gyakorlatok: emlékezet, lecsendesítés, rémálom-csökkentés, inkubáció — ami ma jól esik.",
-            },
-            {
-              title: "Finom lezárás",
-              body: "Egy egyszerű jelzés a végén: most elég. Nem kell tovább dolgozni — jöhet az alvás.",
-            },
-          ].map((card) => (
-            <GlassCardSurface
-              key={card.title}
-              className={`${styles.glassCard} ${styles.eveningCard} ${styles.gridCard}`}
-              variant="soft"
-              paper="evening"
-              corner="--glow-2"
-            >
-              <div className={`${styles.cardTitle} ${styles.gridCardHeader}`}>{card.title}</div>
-              <div className={`${styles.cardBody} ${styles.gridCardBody}`}>{card.body}</div>
-            </GlassCardSurface>
-          ))}
+        <EveningPreview />
+
+        <div className={styles.eveningCtaRow}>
+          <Link href="/evening" className="btn btn-secondary">
+            Nézd meg a többit
+          </Link>
         </div>
       </section>
 

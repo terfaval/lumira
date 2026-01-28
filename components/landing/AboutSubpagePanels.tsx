@@ -46,16 +46,6 @@ const PANELS: Panel[] = [
     cta: "Megnyitom",
   },
   {
-    key: "evening",
-    title: "Esti tér",
-    short:
-      "Lefekvéshez való, nyugodtabb mód. Inkább lecsendesít és lezár, mint elemez — akkor is jó, ha csak „rendben vagyok” érzéssel mennél aludni.",
-    long:
-      "Használhatod este vagy éjszakai ébredéskor. Rövid, kíméletes lépések: nem kell végigcsinálni, és nem visz automatikusan bele mély munkába.",
-    href: "/evening",
-    cta: "Belépek",
-  },
-  {
     key: "glossary",
     title: "Álomszótár",
     short:
