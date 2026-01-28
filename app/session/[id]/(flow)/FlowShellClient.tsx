@@ -122,6 +122,7 @@ export default function FlowShellClient({
   const [savingTitle, setSavingTitle] = useState(false);
 
   const hideLeftPanelTitle = pathname.endsWith("/frame") || pathname.includes("/work");
+  const [activePanel, setActivePanel] = useState<"flow" | "raw">("flow");
 
   const safeHeaderTitle = useMemo(() => {
     const t = compact(overrideTitle) || compact(frameTitle);
@@ -244,22 +245,42 @@ export default function FlowShellClient({
       onToggleInfo={() => setInfoOpen((v) => !v)}
       infoPanel={info.body}
     >
-      <div className={styles.flowInner}>
-        <div
-          className={styles.leftTile}
-          style={{
-            height: "100%",
-            minHeight: 0,
-            maxHeight: "80vh",
-            overflowY: "auto",
-            background: `linear-gradient(120deg, var(--evening-card-paper-strong) 0%, var(--evening-card-paper) 75%, var(--accent) 112%)`,
-          }}
-        >
-          {id ? <FlowLeftPanel sessionId={id} hideTitle={hideLeftPanelTitle} /> : null}
+      <div className={styles.flowFrame}>
+        <div className={styles.mobilePanelToggle} role="tablist" aria-label="Panelek">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activePanel === "flow"}
+            className={`${styles.mobilePanelButton} ${
+              activePanel === "flow" ? styles.mobilePanelButtonActive : ""
+            }`}
+            onClick={() => setActivePanel("flow")}
+          >
+            Flow
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activePanel === "raw"}
+            className={`${styles.mobilePanelButton} ${
+              activePanel === "raw" ? styles.mobilePanelButtonActive : ""
+            }`}
+            onClick={() => setActivePanel("raw")}
+          >
+            Raw dream
+          </button>
         </div>
 
-        <div className={styles.rightPlain}>
-          <div style={{ minHeight: "100%", display: "flex", flexDirection: "column" }}>{children}</div>
+        <div className={styles.flowInner} data-active-panel={activePanel}>
+          <div className={styles.leftTile}>
+            <div className={styles.panelFill}>
+              {id ? <FlowLeftPanel sessionId={id} hideTitle={hideLeftPanelTitle} /> : null}
+            </div>
+          </div>
+
+          <div className={styles.rightPlain}>
+            <div className={styles.panelScroll}>{children}</div>
+          </div>
         </div>
       </div>
 

@@ -216,17 +216,23 @@ export function DreamRawPanel({
   }, [displayEntry?.content]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const media = window.matchMedia("(min-width: 900px)");
-    const handle = () => setIsDesktop(media.matches);
-    handle();
-    if ("addEventListener" in media) {
-      media.addEventListener("change", handle);
-      return () => media.removeEventListener("change", handle);
-    }
-    media.addListener(handle);
-    return () => media.removeListener(handle);
-  }, []);
+  if (typeof window === "undefined") return;
+
+  const media: MediaQueryList = window.matchMedia("(min-width: 900px)");
+  const handle = () => setIsDesktop(media.matches);
+
+  handle();
+
+  // TS-safe feature detection: ne "in" operátorral, mert attól az else ágad never lesz
+  if (typeof (media as any).addEventListener === "function") {
+    media.addEventListener("change", handle);
+    return () => media.removeEventListener("change", handle);
+  }
+
+  // Legacy fallback (régi Safari)
+  (media as any).addListener?.(handle);
+  return () => (media as any).removeListener?.(handle);
+}, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
