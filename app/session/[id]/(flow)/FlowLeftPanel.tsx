@@ -34,7 +34,7 @@ export default function FlowLeftPanel({
         stop3={120}
       >
         <div className={styles.rawInner}>
-          <DreamRawPanel sessionId={sessionId} variant="bare" />
+          <DreamRawPanel sessionId={sessionId} variant="bare" highlightPlacement="flow-right" />
         </div>
       </GlassCardSurface>
     </div>
