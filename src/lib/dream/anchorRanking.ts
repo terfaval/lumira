@@ -262,6 +262,7 @@ function scoreAnchor(params: {
 export async function rankAnchors(params: {
   supabase: any;
   userId: string;
+  sessionId?: string | null;
   dreamText: string;
 
   observation: any | null;
@@ -273,6 +274,7 @@ export async function rankAnchors(params: {
   maxCount?: number;
 }): Promise<AnchorInfo[]> {
   const { supabase, userId, dreamText, observation, latent } = params;
+  const sessionId = typeof params.sessionId === "string" ? params.sessionId.trim() : "";
   const prevQs = Array.isArray(params.prevQuestions) ? params.prevQuestions : [];
   const usedAnchorKeys = Array.isArray(params.usedAnchorKeys) ? params.usedAnchorKeys : [];
   const includeUsed = params.includeUsed ?? false;
@@ -332,12 +334,32 @@ export async function rankAnchors(params: {
     if (!error && Array.isArray(terms) && terms.length > 0) {
       const termIds = terms.map((t: any) => t.id).filter(Boolean);
       const notesByTerm = new Map<string, string | null>();
+      let occurredTermIds = new Set<string>();
 
-      if (termIds.length > 0) {
+      if (sessionId && termIds.length > 0) {
+        const { data: occ, error: occErr } = await supabase
+          .from("glossary_occurrences")
+          .select("term_id")
+          .eq("user_id", userId)
+          .eq("session_id", sessionId)
+          .in("term_id", termIds);
+
+        if (!occErr && Array.isArray(occ)) {
+          occurredTermIds = new Set(occ.map((row: any) => row?.term_id).filter(Boolean));
+        }
+      }
+
+      const allowedTerms = sessionId
+        ? (terms as any[]).filter((t: any) => occurredTermIds.has(t.id))
+        : (terms as any[]);
+
+      const allowedTermIds = allowedTerms.map((t: any) => t.id).filter(Boolean);
+
+      if (allowedTermIds.length > 0) {
         const { data: notes, error: notesErr } = await supabase
           .from("glossary_notes")
           .select("term_id, content, created_at")
-          .in("term_id", termIds)
+          .in("term_id", allowedTermIds)
           .order("created_at", { ascending: false });
 
         if (!notesErr && Array.isArray(notes)) {
@@ -349,7 +371,7 @@ export async function rankAnchors(params: {
         }
       }
 
-      for (const term of terms as any[]) {
+      for (const term of allowedTerms) {
         const k = matchKey(term.canonical_key);
         if (!k) continue;
         glossaryMatches[k] = { note: notesByTerm.get(term.id) ?? null };

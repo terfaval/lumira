@@ -2,6 +2,7 @@ import { openaiServer } from "@/src/lib/openai/server";
 import { stripDiacritics } from "@/src/lib/dream/anchorKey";
 import type { Selected } from "@/src/domain/work/selector/CardMaterialSelector";
 import type { TracePayload } from "@/src/domain/work/trace/TraceTypes";
+import type { GlossaryContext } from "@/src/domain/work/glossary/fetchGlossaryContext";
 import { callWithRetries, logModelTrace, RetryableError } from "@/src/lib/openai/modelRouting";
 
 const OPENAI_TIMEOUT_MS = 15000;
@@ -92,6 +93,27 @@ function containsExactPhrase(prompt: string, phrase: string): boolean {
   return (` ${normPrompt} `).includes(` ${normPhrase} `);
 }
 
+function mentionsCanonical(text: string, canonical: string): boolean {
+  if (!text || !canonical) return false;
+  if (containsExactPhrase(text, canonical)) return true;
+  return hasLightOverlap(text, canonical);
+}
+
+function sanitizeGlossaryForCompose(glossary?: GlossaryContext | null): GlossaryContext | null {
+  if (!glossary) return null;
+  const canonical = typeof glossary.canonical === "string" ? glossary.canonical.trim() : "";
+  const canonical_key = typeof glossary.canonical_key === "string" ? glossary.canonical_key.trim() : "";
+  if (!canonical || !canonical_key) return null;
+  const doNotSurface = Boolean((glossary as any)?.do_not_surface);
+  const noteRaw = typeof glossary.note === "string" ? glossary.note.trim() : "";
+  return {
+    ...glossary,
+    canonical,
+    canonical_key,
+    note: doNotSurface ? null : noteRaw || null,
+  };
+}
+
 function shouldEnforceContinuity(args: { prevAnswer: string | null; materialType: string | null }): boolean {
   if (!args.prevAnswer) return false;
   const prevLen = args.prevAnswer.trim().length;
@@ -137,6 +159,9 @@ function buildSystemPrompt(args: { mode: "normal" | "gentle"; strict?: boolean }
     "- Do not jump to a new motif unrelated to the previous answer unless the selected material is explicitly different.",
     "- Prefer follow-up questions that deepen the same thread (sensation, moment, shift, intensity, location).",
     "- If you mention recurring motifs, compare within this dream (scenes/moments) unless multi-session context is given.",
+    "- If glossary is provided, use glossary.canonical naming in lead_in and prompt.",
+    "- glossary.note is a soft reminder only; do not interpret or add new facts.",
+    "- Do not introduce glossary items that are not present in material.",
     "",
     ...(args.strict
       ? [
@@ -177,9 +202,11 @@ function parseModelJSON(raw: string): any | null {
 export async function composeCard(args: {
   selected: Selected;
   intent_hint?: string | null;
+  glossary?: GlossaryContext | null;
   prev?: { answer_text?: string | null; prompt?: string | null } | null;
 }): Promise<ComposeResult | null> {
   const openai = openaiServer();
+  const glossary = sanitizeGlossaryForCompose(args.glossary);
 
   const user = {
     material: {
@@ -197,6 +224,7 @@ export async function composeCard(args: {
       question_archetypes: args.selected.direction.question_archetypes ?? [],
     },
     intent_hint: args.intent_hint ?? null,
+    glossary,
     prev: {
       answer_text: args.prev?.answer_text ?? null,
       prompt: args.prev?.prompt ?? null,
@@ -323,6 +351,26 @@ export async function composeCard(args: {
               continue;
             }
             throw new RetryableError("schema_fail", "Compose prompt reused intent", usage);
+          }
+
+          // 4) Glossary canonical enforcement (anchor only)
+          if (args.selected.material.type === "anchor" && glossary?.canonical) {
+            const inLead = mentionsCanonical(leadIn, glossary.canonical);
+            const inPrompt = mentionsCanonical(prompt, glossary.canonical);
+            if (!inLead && !inPrompt) {
+              if (inner < COMPOSE_MAX_ATTEMPTS) {
+                logModelTrace({
+                  job_name: "compose_card",
+                  model_used: model,
+                  attempt_index: attempt,
+                  retry_reason: "schema_fail",
+                  prompt_tokens: usage?.prompt_tokens ?? null,
+                  completion_tokens: usage?.completion_tokens ?? null,
+                });
+                continue;
+              }
+              throw new RetryableError("schema_fail", "Compose prompt missing glossary canonical", usage);
+            }
           }
 
           const result: ComposeResult = {

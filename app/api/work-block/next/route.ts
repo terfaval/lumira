@@ -16,6 +16,7 @@ import { evaluateSafety } from "@/src/domain/work/safety/SafetyGate";
 import { buildStopSignal } from "@/src/domain/work/stop/StopEngine";
 import { buildLatentIntentCandidates } from "@/src/domain/work/materials/latentIntent";
 import type { TraceDebugPayload, TracePayload } from "@/src/domain/work/trace/TraceTypes";
+import { fetchGlossaryContext, type GlossaryContext } from "@/src/domain/work/glossary/fetchGlossaryContext";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { shouldKeepAnchorKey, shouldKeepAnchorLabel } from "@/src/lib/dream/huAnchorHygiene";
 import { isDirectionCardContent } from "@/src/lib/types";
@@ -385,6 +386,25 @@ function extractMaterialIdFromPayload(payload: any): string | null {
   return typeof materialId === "string" && materialId ? materialId : null;
 }
 
+function normalizeSelectedWithGlossary(
+  selected: NonNullable<ReturnType<typeof selectCardMaterial>["selected"]>,
+  glossary: GlossaryContext | null
+): NonNullable<ReturnType<typeof selectCardMaterial>["selected"]> {
+  if (!selected || selected.material.type !== "anchor") return selected;
+  const canonical = glossary?.canonical?.trim() ?? "";
+  const canonicalKey = glossary?.canonical_key?.trim() ?? "";
+  if (!canonical || !canonicalKey) return selected;
+  const anchorKeys = selected.material.anchor_keys ?? [];
+  if (!anchorKeys.includes(canonicalKey)) return selected;
+  return {
+    ...selected,
+    material: {
+      ...selected.material,
+      text_snippet: canonical,
+    },
+  };
+}
+
 function normalizeText(s: string): string {
   return (s ?? "")
     .toLowerCase()
@@ -677,9 +697,22 @@ export async function POST(req: Request) {
       } satisfies NextResponsePayload);
     }
 
+    const glossaryContext =
+      selectorResult.selected.material.type === "anchor" && selectorResult.selected.material.anchor_keys?.length
+        ? await fetchGlossaryContext({
+            supabase,
+            userId,
+            sessionId,
+            anchorKeys: selectorResult.selected.material.anchor_keys,
+          })
+        : null;
+
+    const selectedForCompose = normalizeSelectedWithGlossary(selectorResult.selected, glossaryContext);
+
     let composed = await composeCard({
-      selected: selectorResult.selected,
+      selected: selectedForCompose,
       intent_hint: intentHint,
+      glossary: glossaryContext,
       prev: {
         answer_text: prevAnswerText ? clampText(prevAnswerText, 320) : null,
         prompt: prevPrompt ? clampText(prevPrompt, 200) : null,
@@ -689,7 +722,7 @@ export async function POST(req: Request) {
     if (!composed) {
       const firstQuestion = await isFirstQuestion(supabase, sessionId, userId);
       if (firstQuestion) {
-        composed = buildFallbackCompose({ selected: selectorResult.selected });
+        composed = buildFallbackCompose({ selected: selectedForCompose });
       } else {
         const selection = selectorResult.selection_trace ?? selectorResult.selected.selection_trace;
         const trace: TracePayload = {

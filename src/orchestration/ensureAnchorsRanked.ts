@@ -77,6 +77,7 @@ export async function ensureAnchorsRanked(
   const anchors = await rankAnchors({
     supabase,
     userId: params.user_id,
+    sessionId: params.session_id,
     dreamText,
     observation: observationPayload,
     latent: latentPayload,
