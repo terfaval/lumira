@@ -63,7 +63,11 @@ const adaptSecondary = [
   },
 ];
 
-export function LandingPage() {
+type LandingPageProps = {
+  showHeroCtas?: boolean;
+};
+
+export function LandingPage({ showHeroCtas = true }: LandingPageProps) {
   return (
     <main className={styles.page}>
       {/* HERO: 2-column grid */}
@@ -97,21 +101,23 @@ export function LandingPage() {
               </p>
 
               {/* CTA STACK */}
-              <div className={styles.heroCtas}>
-                <Link href="/login" className={`btn btn-primary ${styles.heroCta}`}>
-                  Kezdj bele
-                </Link>
+              {showHeroCtas ? (
+                <div className={styles.heroCtas}>
+                  <Link href="/login" className={`btn btn-primary ${styles.heroCta}`}>
+                    Kezdj bele
+                  </Link>
 
-                <GuestStartButton
-                  className={`btn btn-secondary ${styles.heroCtaSecondary}`}
-                  redirectTo="/new"
-                  label="Kipróbálom"
-                /> 
+                  <GuestStartButton
+                    className={`btn btn-secondary ${styles.heroCtaSecondary}`}
+                    redirectTo="/new"
+                    label="Kipróbálom"
+                  /> 
 
-                <div className={styles.heroCtaNote}>
-                  Anonim próba. Kilépéskor minden törlődik.
+                  <div className={styles.heroCtaNote}>
+                    Anonim próba. Kilépéskor minden törlődik.
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </div>
           </div>
         </div>

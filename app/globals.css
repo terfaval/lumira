@@ -414,6 +414,15 @@ p { margin: 0; line-height: 1.6; }
 }
 
 .shell--fluid { max-width: clamp(960px, 88vw, 1280px); }
+.shell--fullHeight { min-height: var(--vh-100); }
+
+@media (min-width: 900px) {
+  .shell--fullHeight { height: var(--vh-100); }
+}
+
+@media (max-width: 899px) {
+  .shell--fullHeight { height: auto; }
+}
 
 .shell > section { min-height: 0; }
 
@@ -663,6 +672,10 @@ textarea:focus {
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   box-shadow: none;
 }
 
@@ -808,6 +821,13 @@ body[data-space="dream"] .shell > section.surface-layer.card.stack .newdream-sta
   max-height: none;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 899px) {
+  .dream-raw-text {
+    height: auto;
+    overflow: visible;
+  }
 }
 
 @media (max-width: 819px) {

@@ -132,6 +132,18 @@
   .flowInner[data-active-panel="flow"] .leftTile {
     display: none;
   }
+
+  .flowFrame,
+  .flowInner,
+  .leftTile,
+  .rightPlain {
+    height: auto;
+    overflow: visible;
+  }
+
+  .panelScroll {
+    overflow: visible;
+  }
 }
 
 /* ────────────────────────────────────────────────────────────── */

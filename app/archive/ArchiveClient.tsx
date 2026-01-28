@@ -342,6 +342,8 @@ export default function ArchiveClient() {
           justify-content: space-between;
           gap: var(--space-3);
           flex: 0 0 auto;
+          flex-wrap: wrap;
+          min-width: 0;
         }
 
         .tile-left {
@@ -364,6 +366,10 @@ export default function ArchiveClient() {
           font-size: 12px;
           font-weight: 800;
           white-space: nowrap;
+          max-width: 100%;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .tile-snippet {
@@ -387,6 +393,8 @@ export default function ArchiveClient() {
           gap: var(--space-3);
           margin-top: 10px;
           flex: 0 0 auto;
+          flex-wrap: wrap;
+          min-width: 0;
         }
 
         .tile-meta {
@@ -400,6 +408,10 @@ export default function ArchiveClient() {
           color: var(--text-muted);
           opacity: 0.7;
           white-space: nowrap;
+          max-width: 100%;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .archive-controls-wrap :global(.filters) {

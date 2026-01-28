@@ -18,6 +18,7 @@ export function Shell({
   infoOpen,
   onToggleInfo,
   surface = "card",
+  fullHeight = false,
 }: {
   title: string;
   children: ReactNode;
@@ -27,6 +28,7 @@ export function Shell({
   infoOpen?: boolean;
   onToggleInfo?: () => void;
   surface?: "card" | "none" | "ghost";
+  fullHeight?: boolean;
 }) {
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -106,7 +108,9 @@ export function Shell({
 
   return (
     <div
-      className={`shell shell--fluid ${space === "evening" ? "evening-shell" : ""}`}
+      className={`shell shell--fluid ${fullHeight ? "shell--fullHeight" : ""} ${
+        space === "evening" ? "evening-shell" : ""
+      }`}
       style={{ position: "relative", minWidth: 0, overflowX: "clip" }}
     >
       <NapszakInitializer space={space} />

@@ -111,4 +111,9 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  .hint {
+    white-space: normal;
+    max-width: 100%;
+  }
 }

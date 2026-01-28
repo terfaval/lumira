@@ -214,6 +214,7 @@ export default function FlowShellClient({
       title={titleLoading ? "…" : safeHeaderTitle}
       space="dream"
       surface="ghost"
+      fullHeight
       headerActions={
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
           <button
