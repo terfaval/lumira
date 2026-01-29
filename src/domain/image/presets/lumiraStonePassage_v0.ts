@@ -2,7 +2,7 @@ import type { ImageStylePreset } from "./types";
 
 export const lumiraStonePassage_v0: ImageStylePreset = {
   id: "lumira_stone_passage",
-  version: 0,
+  version: 0, 
   name: "Lumira — Stone Passage / Portal",
 
   locks: {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServerService } from "@/src/lib/supabase/serverService";
-import { lumiraStonePassage_v0 } from "@/src/domain/image/presets/lumiraStonePassage_v0";
+import { lumiraStonePassage_v1 } from "@/src/domain/image/presets/lumiraStonePassage_v1";
 
 // TODO: ha már van adaptered/pipeline-od, használd azt.
 // Itt egy minimal v0 flow-t feltételezek: prompt összeállítás + seed + openai render + storage upload.
@@ -12,7 +12,7 @@ function normalizeVariant(v: unknown): "morning" | "dawn" | "night" | null {
   return null;
 }
 
-function assemblePrompt(preset: typeof lumiraStonePassage_v0, variantKey: "morning" | "dawn" | "night") {
+function assemblePrompt(preset: typeof lumiraStonePassage_v1, variantKey: "morning" | "dawn" | "night") {
   const v = preset.variants.find((x) => x.key === variantKey);
   if (!v) throw new Error(`Unknown variant: ${variantKey}`);
 
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing/invalid variant" }, { status: 400 });
     }
 
-    const preset = lumiraStonePassage_v0;
+    const preset = lumiraStonePassage_v1;
     const { prompt, negative } = assemblePrompt(preset, variant);
 
     const inputHash = hashString(
