@@ -108,8 +108,8 @@ no glow, no dramatic lighting
 
   canvas: {
     aspect: "desktop_16_9",
-    width: 1920,
-    height: 1080,
+    width: 1536,
+    height: 1024,
   },
 
   seed_strategy: "deterministic",

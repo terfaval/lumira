@@ -100,13 +100,50 @@ export async function POST(req: Request) {
     if (insErr) throw new Error(`image_jobs insert failed: ${insErr.message}`);
     const jobId = jobRow.id as string;
 
-    // 2) render image (OpenAI Images)
-    // NOTE: ide azt a részt tedd be, ami nálad már működik (adapter/pipeline).
-    // Addig is: dobjunk érthető hibát, ha nincs implementálva.
-    // --- START: replace me with your renderer ---
-    // If you already have OpenAI image generation here, return { pngBytes } or a URL.
-    throw new Error("Renderer not wired yet in route.ts (replace render section with your OpenAI image call).");
-    // --- END ---
+        // 2) render image (OpenAI Images API) -> returns PNG bytes
+    const pngBytes = await renderWithOpenAI({
+      prompt,
+      negative,
+      width: preset.canvas.width,
+      height: preset.canvas.height,
+    });
+
+    // 3) upload to storage
+    const path = `presets/${preset.id}/v${preset.version}/${variant}/${jobId}.png`;
+
+    const { error: upErr } = await svc.storage.from("backgrounds").upload(path, pngBytes, {
+      contentType: "image/png",
+      upsert: true,
+    });
+
+    if (upErr) throw new Error(`storage upload failed: ${upErr.message}`);
+
+    // 4) update job status succeeded
+    const { error: updErr } = await svc
+      .from("image_jobs")
+      .update({
+        status: "succeeded",
+        result_paths: [`backgrounds/${path}`],
+        finished_at: new Date().toISOString(),
+      })
+      .eq("id", jobId);
+
+    if (updErr) throw new Error(`image_jobs update failed: ${updErr.message}`);
+
+    // 5) signed URL (bucket private)
+    const { data: signed, error: signErr } = await svc.storage
+      .from("backgrounds")
+      .createSignedUrl(path, 60 * 60); // 1 hour
+
+    if (signErr) throw new Error(`createSignedUrl failed: ${signErr.message}`);
+
+    return NextResponse.json({
+      job_id: jobId,
+      status: "succeeded",
+      path: `backgrounds/${path}`,
+      url: signed?.signedUrl ?? null,
+    });
+
 
     // 3) upload to storage (example)
     // const path = `presets/${preset.id}/v${preset.version}/${variant}/${jobId}.png`;
@@ -129,4 +166,45 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+}
+
+async function renderWithOpenAI(args: {
+  prompt: string;
+  negative: string;
+  width: number;
+  height: number;
+}): Promise<Uint8Array> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("Missing OPENAI_API_KEY");
+
+  // IMPORTANT: OpenAI Images supports only specific sizes.
+  // Use 1792x1024 for desktop-ish. If your preset is 1920x1080, it will likely fail.
+  const size = `${args.width}x${args.height}`;
+
+  const fullPrompt = `${args.prompt}\n\nAvoid: ${args.negative}`;
+
+  const res = await fetch("https://api.openai.com/v1/images/generations", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-image-1",
+      prompt: fullPrompt,
+      size,
+    }),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`OpenAI image generation failed (${res.status}): ${text}`);
+  }
+
+  const json = JSON.parse(text);
+  const b64 = json?.data?.[0]?.b64_json;
+  if (!b64) throw new Error("OpenAI image response missing b64_json");
+
+  const buf = Buffer.from(b64, "base64");
+  return new Uint8Array(buf);
 }

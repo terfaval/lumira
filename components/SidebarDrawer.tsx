@@ -38,6 +38,7 @@ export function SidebarDrawer({
   const [err, setErr] = useState<string | null>(null);
   const [recent, setRecent] = useState<DreamRow[]>([]);
   const [glossaryAccess, setGlossaryAccess] = useState<boolean>(false);
+  const [dreamspaceAccess, setDreamspaceAccess] = useState<boolean>(false);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -48,8 +49,10 @@ export function SidebarDrawer({
       // ✅ admin-only gate (allowlist)
       if (!isGlossaryAdmin(userId)) {
         setGlossaryAccess(false);
+        setDreamspaceAccess(false);
         return;
       }
+      setDreamspaceAccess(true);
 
       // ✅ count suggestions for this user
       const { count, error } = await supabase
@@ -63,6 +66,7 @@ export function SidebarDrawer({
       setGlossaryAccess(allowGlossaryAccess(count ?? 0));
     } catch {
       setGlossaryAccess(false);
+      setDreamspaceAccess(false);
     }
   }, []);
 
@@ -276,13 +280,15 @@ export function SidebarDrawer({
               </span>
             </Link>
 
-            <Link href="/dreamspace/how-to-approach-dreams" className="drawer-navlink" onClick={onClose}>
-              <DrawerIcon name="focus" />
-              <span className="drawer-label">
-                <span className="drawer-label-full">Álomtér</span>
-                <span className="drawer-label-short">Álomtér</span>
-              </span>
-            </Link>
+            {dreamspaceAccess && (
+              <Link href="/dreamspace/how-to-approach-dreams" className="drawer-navlink" onClick={onClose}>
+                <DrawerIcon name="focus" />
+                <span className="drawer-label">
+                  <span className="drawer-label-full">Álomtér</span>
+                  <span className="drawer-label-short">Álomtér</span>
+                </span>
+              </Link>
+            )}
 
             <Link
               href="/evening"
