@@ -65,8 +65,13 @@ export async function jobBuildDreamMapV0(args: {
   supabase: SupabaseClient;
   event: { id: string; user_id: string; session_id: string };
   material_hash: string;
+  algo_version_override?: string;
 }): Promise<{ dream_map_version_id: string | null; skipped: boolean }> {
   const { supabase, event, material_hash } = args;
+  const algoVersion =
+    typeof args.algo_version_override === "string" && args.algo_version_override.trim().length > 0
+      ? args.algo_version_override.trim()
+      : ALGO_VERSION;
 
   const obsLatest = await fetchObservationLatestV0WithPayloadAndId(supabase, event.user_id, event.session_id);
   if (!obsLatest) {
@@ -87,7 +92,7 @@ export async function jobBuildDreamMapV0(args: {
       anchorLatest?.anchor_version_id ?? "none",
       sessionIndexLatest?.session_index_version_id ?? "none",
       gh,
-      ALGO_VERSION,
+      algoVersion,
     ].join(":")
   );
 
@@ -116,7 +121,7 @@ export async function jobBuildDreamMapV0(args: {
         observation_version_id: obsLatest.observation_version_id,
         anchor_version_id: anchorLatest?.anchor_version_id,
         session_index_version_id: sessionIndexLatest?.session_index_version_id,
-        algo_version: ALGO_VERSION,
+        algo_version: algoVersion,
         session_id: event.session_id,
         user_id: event.user_id,
         computed_at: new Date().toISOString(),
@@ -127,7 +132,7 @@ export async function jobBuildDreamMapV0(args: {
       session_id: event.session_id,
       user_id: event.user_id,
       input_hash,
-      algo_version: ALGO_VERSION,
+      algo_version: algoVersion,
       payload,
     });
 

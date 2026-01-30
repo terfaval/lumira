@@ -1,0 +1,227 @@
+// app/api/admin/dreammap/backfill/route.ts
+import { NextResponse } from "next/server";
+import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
+import { supabaseServerService } from "@/src/lib/supabase/serverService";
+import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
+import { createDomainEvent } from "@/src/db/repositories/eventRepo";
+import { jobBuildDreamMapV0 } from "@/src/orchestration/jobs/jobBuildDreamMapV0";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type BackfillBody = {
+  limit?: number;
+  cursor?: string | null;
+  dry_run?: boolean;
+  algo_version?: string;
+  only_missing?: boolean;
+};
+
+type CursorPayload = { created_at: string; id: string };
+
+export async function POST(req: Request) {
+  try {
+    let body: BackfillBody = {};
+    const rawBody = await req.text();
+    if (rawBody.trim().length > 0) {
+      try {
+        body = JSON.parse(rawBody) as BackfillBody;
+      } catch {
+        return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+      }
+    }
+
+    const supabaseAuthed = await supabaseServerAuthed(req);
+    const { data: auth } = await supabaseAuthed.auth.getUser();
+    if (!auth?.user) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+
+    const adminId = auth.user.id;
+    if (!isGlossaryAdmin(adminId)) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+
+    const limit = normalizeLimit(body.limit);
+    const dryRun = body.dry_run === true;
+    const onlyMissing = body.only_missing !== false;
+    const algoVersion =
+      typeof body.algo_version === "string" && body.algo_version.trim().length > 0
+        ? body.algo_version.trim()
+        : "dream_map_v0.2";
+
+    const cursor = parseCursor(body.cursor ?? null);
+
+    const supabase = supabaseServerService();
+    let query = supabase
+      .from("dream_sessions")
+      .select("id,user_id,created_at" + (onlyMissing ? ",dream_map_latest!left(session_id)" : ""));
+
+    if (onlyMissing) {
+      query = query.is("dream_map_latest.session_id", null);
+    }
+
+    if (cursor) {
+      query = query.or(
+        `created_at.gt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.gt.${cursor.id})`
+      );
+    }
+
+    const { data: sessions, error } = await query
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(limit);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const scanned = sessions?.length ?? 0;
+    const nextCursor =
+      sessions && sessions.length > 0
+        ? encodeCursor({
+            created_at: sessions[sessions.length - 1].created_at as string,
+            id: sessions[sessions.length - 1].id as string,
+          })
+        : null;
+
+    const userIds = Array.from(new Set((sessions ?? []).map((row: any) => row.user_id).filter(Boolean)));
+    const guestMap = await fetchGuestFlags(supabase, userIds);
+
+    let built = 0;
+    let skipped = 0;
+    let failures = 0;
+    const results: Array<{
+      session_id: string;
+      action: "built" | "skipped" | "failed";
+      dream_map_version_id?: string | null;
+      reason?: string;
+    }> = [];
+
+    for (const row of sessions ?? []) {
+      const session_id = row.id as string;
+      const user_id = row.user_id as string;
+      const isGuest = guestMap.get(user_id) === true;
+
+      if (isGuest) {
+        skipped += 1;
+        results.push({ session_id, action: "skipped", reason: "guest_user" });
+        continue;
+      }
+
+      if (dryRun) {
+        skipped += 1;
+        results.push({ session_id, action: "skipped", reason: "dry_run" });
+        continue;
+      }
+
+      try {
+        const event = await createDomainEvent(supabase, {
+          user_id,
+          session_id,
+          type: "dreammap.backfill_requested",
+          payload: { algo_version: algoVersion, material_hash: "backfill" },
+        });
+
+        const res = await jobBuildDreamMapV0({
+          supabase,
+          event: { id: event.id, user_id, session_id },
+          material_hash: "backfill",
+          algo_version_override: algoVersion,
+        });
+
+        if (res.skipped) {
+          skipped += 1;
+          results.push({
+            session_id,
+            action: "skipped",
+            dream_map_version_id: res.dream_map_version_id ?? null,
+            reason: "job_skipped",
+          });
+          continue;
+        }
+
+        if (!res.dream_map_version_id) {
+          failures += 1;
+          results.push({
+            session_id,
+            action: "failed",
+            reason: "job_failed_or_missing_observation",
+          });
+          continue;
+        }
+
+        built += 1;
+        results.push({
+          session_id,
+          action: "built",
+          dream_map_version_id: res.dream_map_version_id,
+        });
+      } catch (err: any) {
+        failures += 1;
+        results.push({
+          session_id,
+          action: "failed",
+          reason: err?.message ?? "unknown_error",
+        });
+      }
+    }
+
+    return NextResponse.json({
+      status: "ok",
+      scanned,
+      built,
+      skipped,
+      failures,
+      next_cursor: nextCursor,
+      results,
+    });
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message ?? "internal_error" }, { status: 500 });
+  }
+}
+
+function normalizeLimit(limit?: number): number {
+  if (limit === undefined) return 25;
+  if (typeof limit !== "number" || !Number.isFinite(limit)) return 25;
+  return Math.max(1, Math.floor(limit));
+}
+
+function parseCursor(cursor: string | null): CursorPayload | null {
+  if (!cursor) return null;
+  const raw = cursor.trim();
+  if (!raw) return null;
+
+  if (raw.includes("|")) {
+    const [created_at, id] = raw.split("|");
+    if (created_at && id) return { created_at, id };
+  }
+
+  try {
+    const decoded = Buffer.from(raw, "base64").toString("utf8");
+    const parsed = JSON.parse(decoded) as CursorPayload;
+    if (parsed?.created_at && parsed?.id) {
+      return { created_at: parsed.created_at, id: parsed.id };
+    }
+  } catch {}
+
+  return null;
+}
+
+function encodeCursor(payload: CursorPayload): string {
+  return Buffer.from(JSON.stringify(payload)).toString("base64");
+}
+
+async function fetchGuestFlags(supabase: ReturnType<typeof supabaseServerService>, userIds: string[]) {
+  const map = new Map<string, boolean>();
+  if (userIds.length === 0) return map;
+
+  const { data } = await supabase.from("user_flags").select("user_id,is_guest").in("user_id", userIds);
+  for (const row of data ?? []) {
+    if (row?.user_id) {
+      map.set(row.user_id as string, Boolean((row as any).is_guest));
+    }
+  }
+
+  return map;
+}
