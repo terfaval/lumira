@@ -253,6 +253,7 @@ export default function SessionSummary() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Load session, frame, work blocks and directions on mount
   useEffect(() => {
@@ -367,6 +368,47 @@ export default function SessionSummary() {
       setSavingTitle(false);
     }
   }, [draftTitle, sessionId]);
+
+  const deleteSession = useCallback(async () => {
+    if (!sessionId || typeof sessionId !== "string") return;
+    if (deleting) return;
+
+    const ok = window.confirm(
+      "Biztosan törlöd ezt az álmot? A teljes session és minden kapcsolódó adat végleg törlődik."
+    );
+    if (!ok) return;
+
+    try {
+      setDeleting(true);
+      setErr(null);
+
+      const res = await fetch("/api/session/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+
+      if (!res.ok) {
+        let detail = "Nem sikerült törölni a sessiont.";
+        try {
+          const data = (await res.json()) as any;
+          detail = data?.message || data?.error || detail;
+        } catch {
+          // ignore JSON parse errors
+        }
+        throw new Error(detail);
+      }
+
+      router.replace("/archive");
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+      setErr("Nem sikerült törölni a sessiont.");
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleting, router, sessionId]);
 
   // Build a slug→catalog map for quick lookups
   const catalogBySlug = useMemo(() => {
@@ -644,16 +686,28 @@ export default function SessionSummary() {
       title={shellTitle}
       space="dream"
       headerActions={
-        <button
-          type="button"
-          className={styles.headerEditBtn}
-          aria-label="Cím szerkesztése"
-          onClick={() => setEditingTitle(true)}
-          disabled={savingTitle || loading || !session}
-          title="Cím szerkesztése"
-        >
-          ✎
-        </button>
+        <div className={styles.headerActions}>
+          <button
+            type="button"
+            className={styles.headerDeleteBtn}
+            aria-label="Álom törlése"
+            onClick={deleteSession}
+            disabled={deleting || loading || !session}
+            title="Álom törlése"
+          >
+            Törlés
+          </button>
+          <button
+            type="button"
+            className={styles.headerEditBtn}
+            aria-label="Cím szerkesztése"
+            onClick={() => setEditingTitle(true)}
+            disabled={savingTitle || loading || !session}
+            title="Cím szerkesztése"
+          >
+            ✎
+          </button>
+        </div>
       }
       surface="none"
     >
@@ -705,6 +759,7 @@ export default function SessionSummary() {
       ) : null}
 
       <FullScreenLoadingOverlay open={loading && !session} title="Betöltés…" />
+      <FullScreenLoadingOverlay open={deleting} title="Törlés…" />
 
       <div className={styles.summaryWrap}>
         {err ? <p style={{ color: "crimson", margin: 0 }}>{err}</p> : null}
