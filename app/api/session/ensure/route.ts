@@ -83,12 +83,12 @@ export async function POST(req: Request) {
     // -------------------------------------------------------------------------
     // Run flags (guest: minimal pipeline)
     // -------------------------------------------------------------------------
-    const runObserve = body.run?.observe !== false;
-    const runAnchors = body.run?.anchors !== false;
-    const runSessionIndex = body.run?.session_index !== false;
-    const runLatent = body.run?.latent !== false;
+    const runObserve = !isGuest && body.run?.observe !== false;
+    const runAnchors = !isGuest && body.run?.anchors !== false;
+    const runSessionIndex = !isGuest && body.run?.session_index !== false;
+    const runLatent = !isGuest && body.run?.latent !== false;
     const runFrame = body.run?.frame !== false;
-    const runDreamMap = body.run?.dream_map !== false;
+    const runDreamMap = !isGuest && body.run?.dream_map !== false;
 
     // -------------------------------------------------------------------------
     // Validate session ownership
