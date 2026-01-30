@@ -281,11 +281,11 @@ export function SidebarDrawer({
             </Link>
 
             {dreamspaceAccess && (
-              <Link href="/dreamspace/how-to-approach-dreams" className="drawer-navlink" onClick={onClose}>
+              <Link href="/dreamspace/guide" className="drawer-navlink" onClick={onClose}>
                 <DrawerIcon name="focus" />
                 <span className="drawer-label">
-                  <span className="drawer-label-full">Álomtér</span>
-                  <span className="drawer-label-short">Álomtér</span>
+                  <span className="drawer-label-full">Útikalaúz az álmokhoz</span>
+                  <span className="drawer-label-short">Útikalaúz</span>
                 </span>
               </Link>
             )}

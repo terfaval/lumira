@@ -4,26 +4,15 @@
 //
 // Assumptions:
 // - ComfyUI is running and reachable at COMFYUI_BASE_URL (e.g. http://127.0.0.1:8188)
-// - Required models/nodes are installed in ComfyUI:
-//   - SDXL base:       sd_xl_base_1.0.safetensors
-//   - SDXL refiner:    sd_xl_refiner_1.0.safetensors
-//   - ControlNet depth SDXL: controlnet-depth-sdxl.safetensors
-//   - IP-Adapter SDXL: ip-adapter-plus_sdxl_vit-h.safetensors
-//   - CLIP vision:     CLIP-ViT-H-14-... (your actual filename under models/clip_vision)
-//   - Depth preprocessor node class_type "Midas-DepthMapPreprocessor" (may differ in your install)
+// - Required models/nodes are installed in ComfyUI (custom nodes likely required)
 //
 // Notes:
-// - ComfyUI API shapes vary a bit across versions/extensions. This implementation aims to be robust.
-// - It uses HTTP polling (/history/{prompt_id}) rather than websocket for simplicity.
-// - It uploads a reference image to ComfyUI input folder and uses it in the workflow.
+// - Uses HTTP polling (/history/{prompt_id}) rather than websocket for simplicity.
+// - Uploads a reference image to ComfyUI input folder and uses it in the workflow.
 // - If you get "unknown class_type" errors, export a working workflow from your ComfyUI and
 //   adjust the COMFY_WORKFLOW_V0 node class_type names accordingly.
 
-import type { ImageRenderer } from "@/src/domain/image/render/types";
-
-// If your ImageRenderer interface differs, adapt this class' method signature.
-// Expected return matches your existing pipeline: { bytes, contentType }.
-type Rendered = { bytes: Uint8Array; contentType: string };
+import type { ImageRenderer, RenderSpec, RenderedImage } from "@/src/domain/image/render/types";
 
 type ReferenceImage = {
   bytes: Uint8Array;
@@ -31,41 +20,26 @@ type ReferenceImage = {
   filename?: string; // optional original name
 };
 
-type RenderParams = {
-  prompt: string;
-  negative_prompt: string;
-  width: number;
-  height: number;
-  seed: number;
-
-  // Optional reference image. Strongly recommended for "Lumira" style.
-  reference_image?: ReferenceImage;
-
-  // Optional tuning knobs (v0 defaults are good starting points)
-  ip_adapter_strength?: number; // default 0.78
-  depth_strength?: number; // default 0.45
-
-  // Optional: reduce timeouts for local testing
-  timeout_ms?: number; // default 180_000
-  poll_interval_ms?: number; // default 1000
-};
+type ComfyImageOut = { filename: string; subfolder?: string; type?: string };
 
 export class ComfyReferenceRenderer implements ImageRenderer {
-  constructor(private baseUrl: string) {
-    if (!this.baseUrl) throw new Error("ComfyReferenceRenderer: baseUrl is required");
-    // strip trailing slash
-    this.baseUrl = this.baseUrl.replace(/\/+$/, "");
+  private baseUrl: string;
+
+  constructor(baseUrl: string) {
+    if (!baseUrl) throw new Error("ComfyReferenceRenderer: baseUrl is required");
+    this.baseUrl = baseUrl.replace(/\/+$/, "");
   }
 
-  async render(params: RenderParams): Promise<Rendered> {
-    const timeoutMs = params.timeout_ms ?? 180_000;
-    const pollIntervalMs = params.poll_interval_ms ?? 1000;
+  async render(spec: RenderSpec): Promise<RenderedImage> {
+    const timeoutMs = this.readNumber((spec as any).timeout_ms, 180_000);
+    const pollIntervalMs = this.readNumber((spec as any).poll_interval_ms, 1000);
 
-    // 1) Upload reference image (required for best results)
-    const ref = params.reference_image;
+    const seedNum = this.seedToNumber(spec.seed);
+
+    const ref = spec.reference_image as ReferenceImage | undefined;
     if (!ref?.bytes?.length) {
       throw new Error(
-        "ComfyReferenceRenderer: reference_image is required for v0 (SDXL+IPAdapter+Depth) to match the target quality."
+        "ComfyReferenceRenderer: reference_image is required for v0 (SDXL+IPAdapter+Depth)."
       );
     }
 
@@ -75,25 +49,19 @@ export class ComfyReferenceRenderer implements ImageRenderer {
       mime: ref.mime ?? "image/png",
     });
 
-    // 2) Build ComfyUI workflow
     const workflow = buildWorkflowV0({
-      prompt: params.prompt,
-      negative: params.negative_prompt,
-      width: params.width,
-      height: params.height,
-      seed: params.seed,
+      prompt: spec.prompt,
+      negative: spec.negative_prompt,
+      width: spec.width,
+      height: spec.height,
+      seed: seedNum,
       referenceImageName: refName,
-      ipAdapterStrength: params.ip_adapter_strength ?? 0.78,
-      depthStrength: params.depth_strength ?? 0.45,
+      ipAdapterStrength: this.readNumber((spec as any).ip_adapter_strength, 0.78),
+      depthStrength: this.readNumber((spec as any).depth_strength, 0.45),
     });
 
-    // 3) Queue prompt
     const promptId = await this.queuePrompt(workflow);
-
-    // 4) Poll until we have an image output
     const imageOut = await this.waitForFirstImageOutput(promptId, timeoutMs, pollIntervalMs);
-
-    // 5) Download the output image bytes from /view
     const bytes = await this.downloadImageBytes(imageOut);
 
     return { bytes, contentType: "image/png" };
@@ -104,12 +72,19 @@ export class ComfyReferenceRenderer implements ImageRenderer {
   // -----------------------------
 
   private async uploadImage(input: { bytes: Uint8Array; filename: string; mime: string }): Promise<string> {
-    const form = new FormData();
-    form.append("image", new Blob([input.bytes], { type: input.mime }), input.filename);
+    const { FormDataCtor, BlobCtor } = this.getFormDataAndBlob();
+
+    const form = new FormDataCtor();
+
+    // Make a dedicated copy to force a plain ArrayBuffer (avoid SharedArrayBuffer union issues in TS)
+    const copy = new Uint8Array(input.bytes);
+    const ab: ArrayBuffer = copy.buffer;
+
+    form.append("image", new BlobCtor([ab], { type: input.mime }), input.filename);
 
     const res = await fetch(`${this.baseUrl}/upload/image`, {
       method: "POST",
-      body: form,
+      body: form as any, // node/undici FormData type variance
     });
 
     if (!res.ok) {
@@ -118,10 +93,6 @@ export class ComfyReferenceRenderer implements ImageRenderer {
     }
 
     const json: any = await res.json();
-
-    // Common shapes:
-    //  - { name: "file.png", subfolder: "", type: "input" }
-    //  - { filename: "file.png", ... }
     const name = json?.name ?? json?.filename;
     if (!name || typeof name !== "string") {
       throw new Error(`ComfyUI upload returned unexpected payload: ${JSON.stringify(json)}`);
@@ -153,19 +124,16 @@ export class ComfyReferenceRenderer implements ImageRenderer {
     promptId: string,
     timeoutMs: number,
     pollIntervalMs: number
-  ): Promise<{ filename: string; subfolder?: string; type?: string }> {
+  ): Promise<ComfyImageOut> {
     const start = Date.now();
+    let lastNonOk: string | null = null;
 
     while (Date.now() - start < timeoutMs) {
-      const res = await fetch(`${this.baseUrl}/history/${encodeURIComponent(promptId)}`, {
-        method: "GET",
-      });
+      const res = await fetch(`${this.baseUrl}/history/${encodeURIComponent(promptId)}`, { method: "GET" });
 
       if (res.ok) {
         const json: any = await res.json();
 
-        // Typical:
-        // { "<promptId>": { outputs: { "17": { images: [{filename, subfolder, type}, ...] } } } }
         const entry = json?.[promptId];
         const outputs = entry?.outputs;
 
@@ -176,39 +144,36 @@ export class ComfyReferenceRenderer implements ImageRenderer {
             if (Array.isArray(images) && images.length > 0) {
               const img = images[0];
               const filename = img?.filename;
-              if (filename) {
+              if (filename && typeof filename === "string") {
                 return {
                   filename,
-                  subfolder: img?.subfolder ?? "",
-                  type: img?.type ?? "output",
+                  subfolder: typeof img?.subfolder === "string" ? img.subfolder : "",
+                  type: typeof img?.type === "string" ? img.type : "output",
                 };
               }
             }
           }
         }
 
-        // Also check for error info
+        // Look for explicit error marker (varies by Comfy builds)
         const status = entry?.status;
         if (status?.status_str === "error") {
           const err = status?.messages ? JSON.stringify(status.messages) : "unknown comfy error";
           throw new Error(`ComfyUI run failed: ${err}`);
         }
       } else {
-        // history endpoint might transiently fail; keep polling unless fatal
-        // (but include status in case it repeats)
+        // transient failures can happen while history isn't ready yet
+        lastNonOk = `${res.status}: ${await safeText(res)}`;
       }
 
       await sleep(pollIntervalMs);
     }
 
-    throw new Error(`ComfyUI timed out waiting for output (prompt_id=${promptId}, timeoutMs=${timeoutMs})`);
+    const extra = lastNonOk ? ` last_history_error=${lastNonOk}` : "";
+    throw new Error(`ComfyUI timed out waiting for output (prompt_id=${promptId}, timeoutMs=${timeoutMs})${extra}`);
   }
 
-  private async downloadImageBytes(imageOut: {
-    filename: string;
-    subfolder?: string;
-    type?: string;
-  }): Promise<Uint8Array> {
+  private async downloadImageBytes(imageOut: ComfyImageOut): Promise<Uint8Array> {
     const url = new URL(`${this.baseUrl}/view`);
     url.searchParams.set("filename", imageOut.filename);
     if (imageOut.subfolder != null) url.searchParams.set("subfolder", imageOut.subfolder);
@@ -219,8 +184,33 @@ export class ComfyReferenceRenderer implements ImageRenderer {
       const text = await safeText(res);
       throw new Error(`ComfyUI /view failed (${res.status}): ${text}`);
     }
-    const buf = new Uint8Array(await res.arrayBuffer());
-    return buf;
+    return new Uint8Array(await res.arrayBuffer());
+  }
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+
+  private seedToNumber(seed: number | bigint): number {
+    if (typeof seed === "number") return seed;
+    const mod = seed % BigInt(2 ** 31 - 1);
+    return Number(mod);
+  }
+
+  private readNumber(v: unknown, fallback: number): number {
+    return typeof v === "number" && Number.isFinite(v) ? v : fallback;
+  }
+
+  private getFormDataAndBlob(): { FormDataCtor: any; BlobCtor: any } {
+    const FormDataCtor = (globalThis as any).FormData;
+    const BlobCtor = (globalThis as any).Blob;
+
+    if (!FormDataCtor || !BlobCtor) {
+      throw new Error(
+        "ComfyReferenceRenderer: FormData/Blob not available in this runtime. Ensure Node 18+ / undici globals."
+      );
+    }
+    return { FormDataCtor, BlobCtor };
   }
 }
 
@@ -289,7 +279,7 @@ const COMFY_WORKFLOW_V0: Record<string, any> = {
     inputs: { image: "__REF_IMAGE_NAME__" },
   },
 
-  // Depth preprocess (may require ComfyUI ControlNet preprocessors extension)
+  // Depth preprocess (custom node risk)
   "6": {
     class_type: "Midas-DepthMapPreprocessor",
     inputs: { image: ["5", 0], a: 6.28318, bg_threshold: 0.1 },
@@ -313,7 +303,7 @@ const COMFY_WORKFLOW_V0: Record<string, any> = {
     },
   },
 
-  // IP-Adapter reference (style/composition guidance)
+  // IP-Adapter reference (custom node risk)
   "9": {
     class_type: "CLIPVisionLoader",
     inputs: { clip_name: "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors" },

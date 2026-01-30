@@ -29,6 +29,7 @@ export const dynamic = "force-dynamic";
 
 const MIN_DREAM_LENGTH = 20;
 const OPENAI_TIMEOUT_MS = 15000;
+const MICRO_WORD_MAX = 6;
 
 const MAX_CANDIDATES = 5;
 const MIN_CANDIDATES = 3;
@@ -103,6 +104,18 @@ const emptyAnchors = (): Anchors => ({
   felt_words: [],
 });
 
+function anchorsFromShortText(text: string): Anchors {
+  const t = (text ?? "").trim();
+  if (!t) return emptyAnchors();
+  return {
+    characters: [],
+    places: [],
+    objects: [],
+    beats: [t],
+    felt_words: [],
+  };
+}
+
 const defaultOutput = (): SynthesizeOutput => ({
   anchors: emptyAnchors(),
   candidate_directions: [],
@@ -176,6 +189,12 @@ function clampHistory(history: unknown): HistoryItem[] {
         (typeof h?.answer === "string" || h?.answer === null)
     )
     .slice(-MAX_HISTORY_USED);
+}
+
+function countWords(input: string): number {
+  const t = (input ?? "").trim();
+  if (!t) return 0;
+  return t.split(/\s+/g).filter(Boolean).length;
 }
 
 function mapObsSafetyToFlags(obsFlag?: string): SafetyValue {
@@ -344,10 +363,22 @@ export async function POST(req: Request) {
     const obsSafety = mapObsSafetyToFlags(
       raw?.safety?.flag ?? compact?.safety?.flag
     );
+    const obsDerivedAnchors = raw
+      ? anchorsFromObservation(raw)
+      : emptyAnchors();
 
-    if (dreamText && dreamText.length < MIN_DREAM_LENGTH) {
+    const wordCount = countWords(dreamText);
+    const isMicroShort =
+      dreamText && (dreamText.length < MIN_DREAM_LENGTH || (wordCount > 0 && wordCount <= MICRO_WORD_MAX));
+
+    if (isMicroShort) {
       const out = defaultOutput();
       out.flags.too_short = true;
+      const microAnchors = !anchorsAreEmpty(obsDerivedAnchors)
+        ? obsDerivedAnchors
+        : anchorsFromShortText(dreamText);
+      out.anchors = microAnchors;
+      out.question_seed.target_anchor = pickTargetFromAnchors(microAnchors);
       const input_hash = buildLatentInputHash({
         dreamText,
         observation: compact ?? raw,
@@ -391,10 +422,6 @@ export async function POST(req: Request) {
     const allowedPool = allowedSlugsReq.length
       ? allowedSlugsReq
       : catalog.map((r: any) => r.slug).filter(Boolean);
-
-    const obsDerivedAnchors = raw
-      ? anchorsFromObservation(raw)
-      : emptyAnchors();
 
     const client = openaiServer();
 

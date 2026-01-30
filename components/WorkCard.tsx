@@ -126,6 +126,12 @@ export function WorkCard({
               ref={inputRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  if (!busy) onSave?.(draft);
+                }
+              }}
               rows={7}
               placeholder="Fejtsd ki szabadon"
             />

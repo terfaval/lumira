@@ -24,6 +24,7 @@ export const dynamic = "force-dynamic";
 
 const MIN_DREAM_LEN = 20;
 const OPENAI_TIMEOUT_MS = 15000;
+const MICRO_WORD_MAX = 6;
 
 type HistoryItem = { question: string; answer: string | null };
 
@@ -45,6 +46,12 @@ type RequestBody = {
 
 function sanitizeText(input: string): string {
   return (input ?? "").replace(/\s+/g, " ").trim();
+}
+
+function countWords(input: string): number {
+  const t = sanitizeText(input);
+  if (!t) return 0;
+  return t.split(" ").filter(Boolean).length;
 }
 
 function buildObservationInputHash(params: {
@@ -93,6 +100,25 @@ function emptyObs() {
       places: [],
       objects: [],
       other: [],
+    },
+    beats: [],
+    motifs: [],
+    tone: [],
+    structure: [],
+    body: [],
+    safety: { flag: "none", evidence: [] as string[] },
+  } as const;
+}
+
+function microObs(input: string) {
+  const text = sanitizeText(input);
+  if (!text) return emptyObs();
+  return {
+    entities: {
+      characters: [],
+      places: [],
+      objects: [],
+      other: [{ label: text, evidence: [text] }],
     },
     beats: [],
     motifs: [],
@@ -304,10 +330,13 @@ export async function POST(req: Request) {
     const history = mode === "refresh" ? clampHistory(body.history, 3) : [];
     const rawDelta = mode === "refresh" ? sanitizeText(body.raw_delta ?? "") : "";
     const primaryText = rawDelta || dreamText;
+    const wordCount = countWords(primaryText);
+    const isMicroShort = dreamText.length < MIN_DREAM_LEN || (mode === "initial" && wordCount > 0 && wordCount <= MICRO_WORD_MAX);
 
-    // ? Short dream -> store schema-complete empty and return
-    if (dreamText.length < MIN_DREAM_LEN) {
-      const emptyPayload = { ...emptyObs(), schema_version: "dream_v1" };
+    // ? Short dream -> store micro observation and return
+    if (isMicroShort) {
+      const base = microObs(primaryText);
+      const emptyPayload = { ...base, schema_version: "dream_v1" };
       const input_hash = buildObservationInputHash({ mode, dreamText, rawDelta, history });
       const obs = await insertObservationVersionIfMissing(supabase, {
         session_id: sessionId,
@@ -331,6 +360,8 @@ export async function POST(req: Request) {
         payload: {
           mode,
           too_short: true,
+          micro_mode: true,
+          word_count: wordCount,
           raw_delta_used: false,
           observation: emptyPayload,
           anchor_keys: anchorKeys,

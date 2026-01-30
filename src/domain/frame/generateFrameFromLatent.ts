@@ -73,6 +73,7 @@ export async function generateFrameFromLatent(args: {
     "",
     "Framing_text (rövid, feszes, nem ténylista):",
     "- 4–7 mondatban rajzolj tér-idő-ívet (2–3 csomópont).",
+    "- Ha brevity_mode=true (kevés jel), akkor 2–4 mondatban írj, és csak 1–2 biztos részletet nevezhetsz meg.",
     "- Érzelem/reakció csak akkor, ha a megfigyelésekben (observation_payload) explicit szerepel; ne találj ki újat.",
     "- A végén legyen 1 nagyon rövid invitálás (1 mondat), választási lehetőséggel.",
     "",
@@ -83,7 +84,7 @@ export async function generateFrameFromLatent(args: {
     "",
     "Anchor szabályok:",
     "- A title tartalmazzon legalább 1 TOP ANCHOR-t.",
-    "- A framing_text tartalmazzon legalább 2–4 TOP ANCHOR-t.",
+    "- A framing_text tartalmazzon legalább 2–4 TOP ANCHOR-t (brevity_mode esetén 1–2 is elég).",
     "",
     "Ajánlott irányok (recommended_slugs):",
     "- Pontosan 2–4 különböző slug.",
@@ -106,7 +107,10 @@ export async function generateFrameFromLatent(args: {
 
   const rawTopAnchors = (args.topAnchors ?? extractTopAnchors(args.observation)).slice(0, 8);
   const topAnchors = cleanAnchors(rawTopAnchors).slice(0, 8);
-  const targetSentences = { min: 4, max: 7 };
+  const dreamTextLen = String(args.dreamText ?? "").trim().length;
+  const shortMode = dreamTextLen > 0 && (dreamTextLen < 60 || topAnchors.length <= 1);
+  const targetSentences = shortMode ? { min: 2, max: 4 } : { min: 4, max: 7 };
+  const minAnchorMentions = shortMode ? 1 : 2;
 
   const user = {
     dream_text: String(args.dreamText ?? ""),
@@ -114,6 +118,7 @@ export async function generateFrameFromLatent(args: {
     observation_payload: args.observation ?? null,
     catalog,
     top_anchors: topAnchors,
+    brevity_mode: shortMode,
     allowed_slugs: args.allowedSlugs ?? [],
     constraints: {
       title_words_allowed: "2-6",
@@ -145,7 +150,7 @@ export async function generateFrameFromLatent(args: {
 
       const firstOk =
         isValidTitle(title, topAnchors) &&
-        isValidFraming(framing_text, topAnchors, targetSentences) &&
+        isValidFraming(framing_text, topAnchors, targetSentences, minAnchorMentions) &&
         !!recommended_slugs;
 
       if (!firstOk) {
@@ -159,6 +164,7 @@ export async function generateFrameFromLatent(args: {
           allowedSlugs: args.allowedSlugs ?? [],
           allowedSet,
           topAnchors,
+          brevityMode: shortMode,
           previous: {
             title,
             framing_text,
@@ -191,7 +197,7 @@ export async function generateFrameFromLatent(args: {
         title = fallbackTitleFromAnchors(topAnchors, args.dreamText ?? "");
       }
 
-      if (!isValidFraming(framing_text, topAnchors, targetSentences)) {
+      if (!isValidFraming(framing_text, topAnchors, targetSentences, minAnchorMentions)) {
         framing_text = fallbackFraming(topAnchors, args.dreamText ?? "");
       }
 
@@ -308,14 +314,15 @@ function isValidTitle(title: string, topAnchors: string[]): boolean {
 function isValidFraming(
   framing: string,
   topAnchors: string[],
-  targetSentences: { min: number; max: number }
+  targetSentences: { min: number; max: number },
+  minAnchorMentions: number
 ): boolean {
   const text = sanitizeWhitespace(framing);
   const n = countSentencesHu(text);
   if (n < targetSentences.min || n > targetSentences.max) return false;
   if (!isSecondPersonStyle(text)) return false;
   if (!topAnchors.length) return true;
-  return isFramingAnchoredFuzzy(text, topAnchors, 2);
+  return isFramingAnchoredFuzzy(text, topAnchors, minAnchorMentions);
 }
 
 function normalizeFramePayload(content: string, allowedSet: Set<string>) {
@@ -419,6 +426,7 @@ async function repairFrameBundle(args: {
   allowedSlugs: string[];
   allowedSet: Set<string>;
   topAnchors: string[];
+  brevityMode: boolean;
   previous: { title?: string; framing_text?: string; recommended_slugs?: any };
 }) {
   const system = [
@@ -426,7 +434,8 @@ async function repairFrameBundle(args: {
     "CSAK magyarul írj; ne használj angolt (kivéve tulajdonnévként, ha a bemenetben szerepel).",
     "title: 2–6 szó, tartalmazzon 1 top anchort.",
     "framing_text: 4–7 mondat, 2. személy múlt idő, ív + 1 rövid invitálás a végén.",
-    "framing_text: 2–4 top anchor említés.",
+    "Ha brevity_mode=true, framing_text legyen 2–4 mondat és csak 1–2 biztos részlet.",
+    "framing_text: 2–4 top anchor említés (brevity_mode esetén 1–2 is elég).",
     "Érzelem/reakció csak akkor, ha observation_payload alapján explicit; ne találj ki újat.",
     "Óvatos megfigyelés: opcionális, max 1 mondat, csak így: „Lehet, hogy ...”.",
     "Óvatos megfigyelés: tilos biztos jelentés/diagnózis/pszichologizálás.",
@@ -440,6 +449,7 @@ async function repairFrameBundle(args: {
     observation_payload: args.dreamObservation ?? null,
     allowed_slugs: args.allowedSlugs,
     top_anchors: args.topAnchors,
+    brevity_mode: args.brevityMode,
     previous: args.previous ?? {},
   };
 

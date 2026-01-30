@@ -30,11 +30,14 @@ export type LatentPayloadV0 = {
   salient_elements?: SalientElement[];
 };
 
-function latentQualityLow(payload: LatentPayloadV0, dreamTextLength: number): boolean {
+const SHORT_DREAM_LEN = 60;
+
+function latentQualityLow(payload: LatentPayloadV0, dreamTextLength: number, allowEmpty: boolean): boolean {
   const directionCount = Array.isArray(payload.direction_candidates) ? payload.direction_candidates.length : 0;
   const questionCount = Array.isArray(payload.question_candidates) ? payload.question_candidates.length : 0;
   const openLoopCount = Array.isArray(payload.open_loops) ? payload.open_loops.length : 0;
   const totalSignal = directionCount + questionCount + openLoopCount;
+  if (allowEmpty && totalSignal === 0) return false;
   const sparseForLong = dreamTextLength >= 800 && totalSignal < 2;
   return totalSignal === 0 || sparseForLong;
 }
@@ -47,6 +50,8 @@ export async function updateLatentFromMaterial(args: {
   dreamTextExcerpt?: string;
 }): Promise<{ payload: LatentPayloadV0; model: string }> {
   const openai = openaiServer();
+  const excerptLen = String(args.dreamTextExcerpt ?? "").trim().length;
+  const shortMode = excerptLen > 0 && excerptLen < SHORT_DREAM_LEN;
 
   // Hungarian-only + non-interpretive latent scaffold
   const system = [
@@ -83,6 +88,10 @@ export async function updateLatentFromMaterial(args: {
     "- text: magyar; mode='question' esetén 1 darab '?' a végén, mode='prompt' esetén 0 '?'",
     "- why: 1 rövid mondat, miért hasznos ez a fókusz (nem jelentés!).",
     "",
+    "Ha kevés a jel (brevity_mode=true), akkor megengedett a minimális output:",
+    "- open_loops / question_candidates / direction_candidates lehet 0–1 elem",
+    "- ne töltsd fel kitalált tartalommal",
+    "",
     "Csak az alábbi sémát add vissza, extra kulcs nélkül:",
     JSON.stringify(
       {
@@ -116,6 +125,7 @@ export async function updateLatentFromMaterial(args: {
     allowed_slugs: args.allowedSlugs,
     user_prefs: args.userPrefs ?? null,
     dream_text_excerpt: args.dreamTextExcerpt ?? "",
+    brevity_mode: shortMode,
     observation: args.observation ?? null,
     session_index: args.sessionIndex ?? null,
   };
@@ -156,7 +166,7 @@ export async function updateLatentFromMaterial(args: {
       }
 
       const payload = parsed as LatentPayloadV0;
-      if (latentQualityLow(payload, String(args.dreamTextExcerpt ?? "").length) && attempt < maxAttempts - 1) {
+      if (latentQualityLow(payload, String(args.dreamTextExcerpt ?? "").length, shortMode) && attempt < maxAttempts - 1) {
         throw new RetryableError("quality_fail", "Latent: low-quality output", usage);
       }
 

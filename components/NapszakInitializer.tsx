@@ -11,6 +11,8 @@ export type Napszak =
   | "evening"
   | "night";
 
+export type Space = "dream" | "evening";
+
 /**
  * Debug / override kapcsoló
  * true  => mindig "default"
@@ -29,7 +31,7 @@ function resolveNapszak(date: Date): Exclude<Napszak, "default"> {
   return "night";
 }
 
-export function NapszakInitializer() {
+export function NapszakInitializer({ space }: { space?: Space }) {
   useEffect(() => {
     if (typeof document === "undefined") return;
 
@@ -37,7 +39,12 @@ export function NapszakInitializer() {
       FORCE_DEFAULT_THEME ? "default" : resolveNapszak(new Date());
 
     document.body.dataset.napszak = napszak;
-  }, []);
+    if (space) {
+      document.body.dataset.space = space;
+    } else {
+      document.body.removeAttribute("data-space");
+    }
+  }, [space]);
 
   return null;
 }
