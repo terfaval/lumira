@@ -14,6 +14,7 @@ type PollingSummary = {
   attempts: number;
   elapsed_ms: number;
   last_status?: string;
+  last_outputs?: string[];
 };
 
 export class ComfyTextRenderer implements ImageRenderer {
@@ -81,7 +82,6 @@ export class ComfyTextRenderer implements ImageRenderer {
     let lastStatus: string | undefined;
     let lastOutputsKeys: string[] | undefined;
 
-
     while (Date.now() - start < timeoutMs) {
       attempts += 1;
       const res = await fetch(`${this.baseUrl}/history/${encodeURIComponent(promptId)}`, {
@@ -112,6 +112,7 @@ export class ComfyTextRenderer implements ImageRenderer {
                     attempts,
                     elapsed_ms: Date.now() - start,
                     last_status: lastStatus,
+                    last_outputs: lastOutputsKeys,
                   },
                 };
               }
@@ -122,16 +123,48 @@ export class ComfyTextRenderer implements ImageRenderer {
         const status = entry?.status;
         if (status?.status_str) lastStatus = String(status.status_str);
         if (status?.status_str === "error") {
-          const err = status?.messages ? JSON.stringify(status.messages) : "unknown comfy error";
-          throw new Error(`ComfyUI run failed: ${err}`);
-        }
+  const errMsg = status?.messages ? JSON.stringify(status.messages) : "unknown comfy error";
+  throwWithMeta(`ComfyUI run failed: ${errMsg}`, {
+    comfy_prompt_id: promptId,
+    comfy_polling: {
+      attempts,
+      elapsed_ms: Date.now() - start,
+      last_status: lastStatus,
+      last_outputs: lastOutputsKeys,
+    },
+  });
+}
+
+        if (status?.status_str === "success" || status?.status_str === "completed") {
+  throwWithMeta(
+    `ComfyUI completed but no images were found (prompt_id=${promptId}, outputs=${lastOutputsKeys?.join(",") ?? "n/a"})`,
+    {
+      comfy_prompt_id: promptId,
+      comfy_polling: {
+        attempts,
+        elapsed_ms: Date.now() - start,
+        last_status: lastStatus,
+        last_outputs: lastOutputsKeys,
+      },
+    }
+  );
+}
       }
 
       await sleep(pollIntervalMs);
     }
 
-    throw new Error(
-  `ComfyUI timed out waiting for output (prompt_id=${promptId}, timeoutMs=${timeoutMs}, last_status=${lastStatus ?? "n/a"}, last_outputs=${lastOutputsKeys?.join(",") ?? "n/a"})`
+    throwWithMeta(
+  `ComfyUI timed out waiting for output (prompt_id=${promptId}, timeoutMs=${timeoutMs}, last_status=${lastStatus ?? "n/a"}, last_outputs=${lastOutputsKeys?.join(",") ?? "n/a"})`,
+  {
+    comfy_prompt_id: promptId,
+    comfy_polling: {
+      attempts,
+      elapsed_ms: Date.now() - start,
+      last_status: lastStatus,
+      last_outputs: lastOutputsKeys,
+    },
+  }
 );
   }
 
@@ -243,4 +276,10 @@ async function safeText(res: Response) {
   } catch {
     return "";
   }
+}
+
+function throwWithMeta(message: string, meta: Record<string, unknown>): never {
+  const err: any = new Error(message);
+  err.meta = meta;
+  throw err;
 }

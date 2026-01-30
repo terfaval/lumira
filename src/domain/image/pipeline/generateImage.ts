@@ -1,11 +1,14 @@
-// src/domain/image/pipeline/generateImage.ts
-
 import type { ImageStylePreset } from "@/src/domain/image/presets/types";
 import { assemblePrompt } from "./PromptAssembler";
 import { computeSeed } from "./SeedManager";
 import { inputHash } from "./hash";
 import type { ImageRenderer } from "@/src/domain/image/render/types";
-import { insertImageJob, markImageJobFailed, markImageJobRunning, markImageJobSucceeded } from "@/src/db/repositories/imageJobRepo";
+import {
+  insertImageJob,
+  markImageJobFailed,
+  markImageJobRunning,
+  markImageJobSucceeded,
+} from "@/src/db/repositories/imageJobRepo";
 import { supabaseServerService } from "@/src/lib/supabase/serverService";
 
 export async function generateImage(params: {
@@ -17,17 +20,25 @@ export async function generateImage(params: {
   renderer_name?: string;
   debug?: boolean;
 }) {
-  const { prompt, negative_prompt } = assemblePrompt(params.preset, params.variant, params.user_text);
+  const { prompt, negative_prompt } = assemblePrompt(
+    params.preset,
+    params.variant,
+    params.user_text
+  );
+
+  const width = params.preset.canvas.width;
+  const height = params.preset.canvas.height;
+  const prompt_hash = inputHash(`${prompt}\n---\n${negative_prompt}\n---\n${width}x${height}`);
+
   const { seed, input_hash } = computeSeed({
     presetId: params.preset.id,
     presetVersion: params.preset.version,
     variant: params.variant,
     userText: params.user_text,
+    promptHash: prompt_hash,
+    width,
+    height,
   });
-
-  const width = params.preset.canvas.width;
-  const height = params.preset.canvas.height;
-  const prompt_hash = inputHash(`${prompt}\n---\n${negative_prompt}\n---\n${width}x${height}`);
 
   const job = await insertImageJob({
     user_id: params.user_id,
@@ -53,18 +64,15 @@ export async function generateImage(params: {
       seed,
     });
 
-    // Upload to Supabase Storage
     const supabase = supabaseServerService();
     const bucket = "backgrounds";
-    const path = `presets/${params.preset.id}/v${params.preset.version}/${params.variant}/${job.id}.png`;
+    const path = `${job.id}.png`;
     const bytes_length = rendered.bytes.length;
 
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(path, rendered.bytes, {
-        contentType: rendered.contentType,
-        upsert: true,
-      });
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(path, rendered.bytes, {
+      contentType: rendered.contentType,
+      upsert: true,
+    });
 
     if (uploadError) throw new Error(`storage upload failed: ${uploadError.message}`);
 
@@ -83,7 +91,7 @@ export async function generateImage(params: {
           seed: seed.toString(),
           supabase_path: `${bucket}/${path}`,
           bytes_length,
-          ...(rendered.meta ?? {}),
+          ...(rendered.meta ?? {}), // ✅ success meta comes from renderer
         }
       : undefined;
 
@@ -96,6 +104,12 @@ export async function generateImage(params: {
   } catch (e: any) {
     const msg = e?.message ? String(e.message) : "Unknown error";
     await markImageJobFailed(job.id, msg);
+
+    const meta =
+      e?.meta && typeof e.meta === "object" && !Array.isArray(e.meta)
+        ? (e.meta as Record<string, unknown>)
+        : undefined;
+
     const debug = params.debug
       ? {
           renderer: params.renderer_name ?? "unknown",
@@ -109,8 +123,10 @@ export async function generateImage(params: {
           seed: seed.toString(),
           supabase_path: null,
           bytes_length: null,
+          ...(meta ?? {}), // ✅ fail meta comes from thrown error
         }
       : undefined;
+
     return { job_id: job.id, status: "failed" as const, error: msg, debug };
   }
 }

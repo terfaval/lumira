@@ -8,6 +8,7 @@ import { jobExtractObservation } from "@/src/orchestration/jobs/jobExtractObserv
 import { ensureAnchorsRanked } from "@/src/orchestration/ensureAnchorsRanked";
 import { jobBuildSessionIndexFromObservationJob } from "@/src/orchestration/jobs/jobBuildSessionIndexFromObservation";
 import { jobUpdateLatent } from "@/src/orchestration/jobs/jobUpdateLatent";
+import { jobBuildDreamMapV0 } from "@/src/orchestration/jobs/jobBuildDreamMapV0";
 import { jobGenerateFrame } from "@/src/orchestration/jobs/jobGenerateFrame";
 import {
   fetchAnchorLatestWithPayloadAndId,
@@ -16,6 +17,7 @@ import {
   fetchObservationLatestV0WithPayloadAndId,
   fetchSessionIndexLatestWithPayloadAndId,
 } from "@/src/db/repositories/latestRepo";
+import { fetchDreamMapLatest } from "@/src/db/repositories/dreamMapRepo";
 
 type EnsureBody = {
   session_id: string;
@@ -25,6 +27,7 @@ type EnsureBody = {
     session_index?: boolean;
     latent?: boolean;
     frame?: boolean;
+    dream_map?: boolean;
   };
 };
 
@@ -81,11 +84,11 @@ export async function POST(req: Request) {
     // Run flags (guest: minimal pipeline)
     // -------------------------------------------------------------------------
     const runObserve = body.run?.observe !== false;
-const runAnchors = body.run?.anchors !== false;
-const runSessionIndex = body.run?.session_index !== false;
-const runLatent = body.run?.latent !== false;
-const runFrame = body.run?.frame !== false;
-
+    const runAnchors = body.run?.anchors !== false;
+    const runSessionIndex = body.run?.session_index !== false;
+    const runLatent = body.run?.latent !== false;
+    const runFrame = body.run?.frame !== false;
+    const runDreamMap = body.run?.dream_map !== false;
 
     // -------------------------------------------------------------------------
     // Validate session ownership
@@ -187,6 +190,7 @@ const runFrame = body.run?.frame !== false;
     let session_index_version_id: string | null = null;
     let latent_version_id: string | null = null;
     let frame_version_id: string | null = null;
+    let dream_map_version_id: string | null = null;
     let recommended_directions: Array<{ slug: string; title: string; why: string }> = [];
 
     // -------------------------------------------------------------------------
@@ -266,6 +270,26 @@ const runFrame = body.run?.frame !== false;
     }
 
     // -------------------------------------------------------------------------
+    // Dream map (anchors utĂˇn, frame elĹ‘tt)
+    // -------------------------------------------------------------------------
+    if (runDreamMap) {
+      const dreamMapRes = await jobBuildDreamMapV0({
+        supabase,
+        event: { id: eventId, user_id, session_id },
+        material_hash,
+      });
+      dream_map_version_id = dreamMapRes.dream_map_version_id;
+    } else {
+      const latest = await fetchDreamMapLatest(supabase, { session_id, user_id });
+      dream_map_version_id = latest?.dream_map_version_id ?? null;
+    }
+
+    if (!dream_map_version_id) {
+      const latest = await fetchDreamMapLatest(supabase, { session_id, user_id });
+      dream_map_version_id = latest?.dream_map_version_id ?? null;
+    }
+
+    // -------------------------------------------------------------------------
     // Frame (guestben is fut, latent nélkül is fallbackolhat)
     // -------------------------------------------------------------------------
     if (runFrame) {
@@ -320,6 +344,7 @@ const runFrame = body.run?.frame !== false;
       anchor_version_id,
       session_index_version_id,
       latent_version_id,
+      dream_map_version_id,
       frame_version_id,
       recommended_directions,
     });

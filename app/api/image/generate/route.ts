@@ -130,7 +130,7 @@ export async function POST(req: Request) {
       }
 
       signedUrl = signed?.signedUrl ?? null;
-    } // ✅ EZ HIÁNYZOTT
+    }
 
     return NextResponse.json({
       job_id: result.job_id,
