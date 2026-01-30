@@ -116,28 +116,26 @@ export async function fetchDreamMapLatest(
     .from("dream_map_latest")
     .select("dream_map_version_id")
     .eq("session_id", args.session_id)
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
 
   if (args.user_id) {
     latestQuery = latestQuery.eq("user_id", args.user_id);
   }
 
-  const latest = await latestQuery;
+  const latest = await latestQuery.maybeSingle();
   if (latest.error || !latest.data?.dream_map_version_id) return null;
 
   let verQuery = supabase
     .from("dream_map_versions")
     .select("id,payload,algo_version")
     .eq("id", latest.data.dream_map_version_id)
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
 
   if (args.user_id) {
     verQuery = verQuery.eq("user_id", args.user_id);
   }
 
-  const ver = await verQuery;
+  const ver = await verQuery.maybeSingle();
   if (ver.error || !ver.data) return null;
 
   return {
