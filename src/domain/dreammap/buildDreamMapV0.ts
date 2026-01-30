@@ -78,7 +78,6 @@ function nodeKeyFor(
   kind: DreamMapNodeKind,
   label: string,
   existingByKindBase: Map<string, string>,
-  baseKeyUsage: Map<string, Set<string>>
 ): { key: string; baseKey: string } | null {
   const baseKey = normalizeBaseKey(label);
   if (!baseKey) return null;
@@ -87,17 +86,13 @@ function nodeKeyFor(
   const existing = existingByKindBase.get(kindBase);
   if (existing) return { key: existing, baseKey };
 
-  const usage = baseKeyUsage.get(baseKey) ?? new Set<string>();
-  let key = baseKey;
-  if (usage.size > 0 && !usage.has(kind)) {
-    key = `${baseKey}:${kind}`;
-  }
+  // v0 determinisztikus: mindig kind-suffix
+  const key = `${baseKey}:${kind}`;
 
-  usage.add(kind);
-  baseKeyUsage.set(baseKey, usage);
   existingByKindBase.set(kindBase, key);
   return { key, baseKey };
 }
+
 
 function scenePairs(keys: string[]): Array<[string, string]> {
   const pairs: Array<[string, string]> = [];
@@ -154,11 +149,10 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
 
   const computedAt = meta.computed_at ?? new Date().toISOString();
   const nodes = new Map<string, NodeAccumulator>();
-  const baseKeyUsage = new Map<string, Set<string>>();
   const existingByKindBase = new Map<string, string>();
 
   const addNode = (kind: DreamMapNodeKind, label: string, path: string) => {
-    const keyInfo = nodeKeyFor(kind, label, existingByKindBase, baseKeyUsage);
+    const keyInfo = nodeKeyFor(kind, label, existingByKindBase);
     if (!keyInfo) return null;
     const { key, baseKey } = keyInfo;
     const existing = nodes.get(key);
@@ -255,12 +249,27 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
   if (!input.anchorPayload) warnings.push({ code: "anchors_missing" });
   if (!glossaryProvided) warnings.push({ code: "glossary_missing" });
 
-  for (const [baseKey, anchorOcc] of anchorMaps.occByBaseKey.entries()) {
-    const computedOcc = occByBaseKey.get(baseKey);
-    if (typeof computedOcc === "number" && anchorOcc !== computedOcc) {
-      warnings.push({ code: "occurrence_mismatch", key: baseKey, anchor_occ: anchorOcc, computed_occ: computedOcc });
-    }
-  }
+  for (const [baseKey, anchorOccRaw] of anchorMaps.occByBaseKey.entries()) {
+  const computedOcc = occByBaseKey.get(baseKey);
+  if (typeof computedOcc !== "number") continue;
+
+  const anchorOcc = Number(anchorOccRaw);
+  if (!Number.isFinite(anchorOcc)) continue;
+
+  // v0 compat mode: only flag meaningful drift
+  if (anchorOcc < 1 || computedOcc < 1) continue;
+
+  const diff = Math.abs(anchorOcc - computedOcc);
+  if (diff < 2) continue;
+
+  warnings.push({
+    code: "occurrence_mismatch",
+    key: baseKey,
+    anchor_occ: anchorOcc,
+    computed_occ: computedOcc,
+  });
+}
+
 
   const edgeArray = Array.from(edges.values());
   const maxEdgeWeight = edgeArray.reduce((max, e) => Math.max(max, e.weight), 0);

@@ -19,6 +19,7 @@ export async function generateImage(params: {
   renderer: ImageRenderer;
   renderer_name?: string;
   debug?: boolean;
+  reference_image?: { bytes: Uint8Array; mime: string; filename?: string };
 }) {
   const { prompt, negative_prompt } = assemblePrompt(
     params.preset,
@@ -62,6 +63,7 @@ export async function generateImage(params: {
       width,
       height,
       seed,
+      reference_image: params.reference_image,
     });
 
     const supabase = supabaseServerService();

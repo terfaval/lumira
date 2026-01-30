@@ -5,6 +5,7 @@ import { OpenAIImageAdapter } from "@/src/domain/image/render/OpenAIImageAdapter
 import { ComfyTextRenderer } from "@/src/domain/image/render/ComfyTextRenderer";
 import type { ImageRenderer, RenderSpec, RenderedImage } from "@/src/domain/image/render/types";
 import { supabaseServerService } from "@/src/lib/supabase/serverService";
+import { loadReferenceImage, type ReferenceKey } from "@/src/domain/image/reference/loadReferenceImage";
 
 export const runtime = "nodejs";
 
@@ -63,6 +64,12 @@ export async function POST(req: Request) {
     const variant = typeof body?.variant === "string" ? body.variant : null;
     const debug = Boolean(body?.debug);
 
+    const reference_key =
+      typeof body?.reference_key === "string" ? (body.reference_key as ReferenceKey) : null;
+
+    const reference_image = reference_key ? await loadReferenceImage(reference_key) : undefined;
+
+
     if (!variant) {
       return NextResponse.json({ error: "Missing/invalid variant" }, { status: 400 });
     }
@@ -106,6 +113,7 @@ if (!preset) {
       renderer,
       renderer_name: rendererName,
       debug,
+      reference_image,
     });
 
     if (result.status === "failed") {
