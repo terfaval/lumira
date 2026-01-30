@@ -1,13 +1,13 @@
-// components/Shell.tsx
+﻿// components/Shell.tsx
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
 import { NapszakInitializer } from "./NapszakInitializer";
 import { SidebarDrawer } from "./SidebarDrawer";
 import { BrandLockup } from "@/components/brand/BrandLockup";
-import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
+import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 
 export function Shell({
   title,
@@ -33,9 +33,14 @@ export function Shell({
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // ✅ Guest state
+  // âś… Guest state
   const [isGuest, setIsGuest] = useState<boolean>(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [showGuestSignup, setShowGuestSignup] = useState(false);
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestPassword, setGuestPassword] = useState("");
+  const [guestError, setGuestError] = useState<string | null>(null);
+  const [guestBusy, setGuestBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,13 +82,13 @@ export function Shell({
     };
   }, []);
 
-  // ✅ Normal logout (registered users)
+  // âś… Normal logout (registered users)
   async function logout() {
     await supabase.auth.signOut();
     router.replace("/login");
   }
 
-  // ✅ Guest exit + delete
+  // âś… Guest exit + delete
   async function guestExit() {
     try {
       const res = await fetch("/api/auth/guest/exit", { method: "POST" });
@@ -101,7 +106,45 @@ export function Shell({
     }
   }
 
-  // ✅ Guestben ne nyissunk drawert (biztonsági öv)
+  async function handleGuestSignup(e: FormEvent) {
+    e.preventDefault();
+    if (guestBusy) return;
+    setGuestBusy(true);
+    setGuestError(null);
+
+    const { error } = await supabase.auth.updateUser({
+      email: guestEmail,
+      password: guestPassword,
+    });
+
+    if (error) {
+      setGuestError(error.message);
+      setGuestBusy(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/guest/convert", { method: "POST" });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j?.error || "guest_convert_failed");
+      }
+    } catch (err: any) {
+      setGuestError(err?.message ?? "Nem sikerĂĽlt menteni a fiĂłkot.");
+      setGuestBusy(false);
+      return;
+    }
+
+    setIsGuest(false);
+    setAuthChecked(true);
+    setShowGuestSignup(false);
+    setGuestEmail("");
+    setGuestPassword("");
+    setGuestBusy(false);
+    router.refresh();
+  }
+
+  // âś… Guestben ne nyissunk drawert (biztonsĂˇgi Ă¶v)
   useEffect(() => {
     if (isGuest && drawerOpen) setDrawerOpen(false);
   }, [isGuest, drawerOpen]);
@@ -115,13 +158,13 @@ export function Shell({
     >
       <NapszakInitializer space={space} />
 
-      {/* Felső sáv */}
+      {/* FelsĹ‘ sĂˇv */}
       <div className="shell-topbar">
-        {/* ✅ MENU: guestben tiltva/elrejtve */}
+        {/* âś… MENU: guestben tiltva/elrejtve */}
         {!isGuest ? (
           <button
             type="button"
-            aria-label="Menü"
+            aria-label="MenĂĽ"
             className="btn btn-secondary"
             onClick={() => setDrawerOpen(true)}
             style={{
@@ -139,7 +182,7 @@ export function Shell({
             </svg>
           </button>
         ) : (
-          // ha szeretnéd, hagyhatsz itt egy helykitöltőt, hogy ne ugráljon a layout
+          // ha szeretnĂ©d, hagyhatsz itt egy helykitĂ¶ltĹ‘t, hogy ne ugrĂˇljon a layout
           <div style={{ width: 40, height: 40 }} aria-hidden="true" />
         )}
 
@@ -149,11 +192,16 @@ export function Shell({
 
         <div className="shell-topbar-spacer" />
 
-        {/* ✅ Guestben tegyünk ki "Kilépés és törlés" gombot */}
+        {/* âś… Guestben tegyĂĽnk ki "KilĂ©pĂ©s Ă©s tĂ¶rlĂ©s" gombot */}
         {authChecked && isGuest ? (
-          <button className="btn btn-secondary" onClick={guestExit}>
-            Kilépés és törlés
-          </button>
+          <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+            <button className="btn btn-primary" onClick={() => setShowGuestSignup(true)}>
+              Mentés és belépés
+            </button>
+            <button className="btn btn-secondary" onClick={guestExit}>
+              Kilépés és törlés
+            </button>
+          </div>
         ) : (
           headerActions
         )}
@@ -162,14 +210,14 @@ export function Shell({
           <button
             type="button"
             className="icon-btn"
-            aria-label="Információ"
+            aria-label="InformĂˇciĂł"
             aria-expanded={!!infoOpen}
             onClick={onToggleInfo}
             style={{ display: "none" }}
           />
         )}
 
-        {/* BRAND bal felső sarokban */}
+        {/* BRAND bal felsĹ‘ sarokban */}
         <div className="shell-brand">
           <BrandLockup />
         </div>
@@ -224,7 +272,7 @@ export function Shell({
         </section>
       )}
 
-      {/* ✅ SidebarDrawer: guestben teljesen OFF */}
+      {/* âś… SidebarDrawer: guestben teljesen OFF */}
       {!isGuest && (
         <SidebarDrawer
           open={drawerOpen}
@@ -233,6 +281,64 @@ export function Shell({
           onLogout={logout}
         />
       )}
+
+      {showGuestSignup && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Regisztráció"
+          onClick={() => !guestBusy && setShowGuestSignup(false)}
+        >
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <GlassCardSurface className="auth-card" variant="soft" paper="evening">
+              <h1>Regisztráció</h1>
+              <form onSubmit={handleGuestSignup} className="auth-form">
+                <label className="auth-label">
+                  <span>Email</span>
+                  <GlassCardMatte padding="sm" tone="evening">
+                    <input
+                      className="auth-input matte-input"
+                      type="email"
+                      value={guestEmail}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                      required
+                    />
+                  </GlassCardMatte>
+                </label>
+                <label className="auth-label">
+                  <span>Jelszó</span>
+                  <GlassCardMatte padding="sm" tone="evening">
+                    <input
+                      className="auth-input matte-input"
+                      type="password"
+                      value={guestPassword}
+                      onChange={(e) => setGuestPassword(e.target.value)}
+                      required
+                    />
+                  </GlassCardMatte>
+                </label>
+                <div className="auth-actions">
+                  <button type="submit" disabled={guestBusy} className="btn btn-primary">
+                    {guestBusy ? "Mentés..." : "Mentés és belépés"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={guestBusy}
+                    className="btn btn-secondary"
+                    onClick={() => setShowGuestSignup(false)}
+                  >
+                    Mégse
+                  </button>
+                </div>
+              </form>
+              {guestError && <p style={{ color: "crimson" }}>{guestError}</p>}
+            </GlassCardSurface>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+

@@ -508,6 +508,25 @@ p { margin: 0; line-height: 1.6; }
   padding: var(--space-4);
 }
 
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.modal-card {
+  width: min(460px, 100%);
+  max-height: calc(var(--vh-100) - (var(--space-4) * 2));
+  overflow: auto;
+}
+
+.modal-card .auth-card { width: 100%; }
+
 .auth-form { display: grid; gap: var(--space-2); }
 
 .auth-label {
