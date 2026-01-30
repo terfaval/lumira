@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getImagePreset } from "@/src/db/repositories/imagePresetRepo";
+import { getImagePresetService } from "@/src/db/repositories/imagePresetRepo";
 import { generateImage } from "@/src/domain/image/pipeline/generateImage";
 import { OpenAIImageAdapter } from "@/src/domain/image/render/OpenAIImageAdapter";
 import { ComfyTextRenderer } from "@/src/domain/image/render/ComfyTextRenderer";
@@ -67,10 +67,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing/invalid variant" }, { status: 400 });
     }
 
-    const preset = await getImagePreset(preset_id);
-    if (!preset) {
-      return NextResponse.json({ error: "Unknown preset_id" }, { status: 404 });
-    }
+    const preset = await getImagePresetService(preset_id);
+
+if (!preset) {
+  if (debug) {
+    const svc = supabaseServerService();
+    const { data } = await svc
+      .from("image_style_presets")
+      .select("id,version")
+      .eq("id", preset_id)
+      .order("version", { ascending: false })
+      .limit(5);
+
+    return NextResponse.json(
+      { error: "Unknown preset_id", debug: { looked_up: preset_id, rows: data ?? null } },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({ error: "Unknown preset_id" }, { status: 404 });
+}
+
 
     if (!presetHasVariant(preset as any, variant)) {
       return NextResponse.json(

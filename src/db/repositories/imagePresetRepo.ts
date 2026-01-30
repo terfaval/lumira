@@ -1,28 +1,11 @@
-import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
+import { supabaseServerService } from "@/src/lib/supabase/serverService";
 import type { ImageStylePreset } from "@/src/domain/image/presets/types";
 
-export async function upsertImagePreset(preset: ImageStylePreset) {
-  const supabase = await supabaseServerAuthed();
-
-  const { error } = await supabase
-    .from("image_style_presets")
-    .upsert({
-      id: preset.id,
-      version: preset.version,
-      name: preset.name,
-      payload: preset,
-    });
-
-  if (error) {
-    throw new Error(`Failed to upsert image preset: ${error.message}`);
-  }
-}
-
-export async function getImagePreset(
+export async function getImagePresetService(
   presetId: string,
   version?: number
 ): Promise<ImageStylePreset | null> {
-  const supabase = await supabaseServerAuthed();
+  const supabase = supabaseServerService();
 
   let query = supabase
     .from("image_style_presets")
@@ -38,7 +21,7 @@ export async function getImagePreset(
   const { data, error } = await query.maybeSingle();
 
   if (error) {
-    throw new Error(`Failed to fetch image preset: ${error.message}`);
+    throw new Error(`Failed to fetch image preset (service): ${error.message}`);
   }
 
   return data?.payload ?? null;

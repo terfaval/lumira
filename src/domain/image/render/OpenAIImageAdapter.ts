@@ -33,7 +33,7 @@ export class OpenAIImageAdapter implements ImageRenderer {
 
     (body as any).prompt = mergedPrompt;
 
-    const res = await fetch("https://api.openai.com/v1/images", {
+    const res = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
