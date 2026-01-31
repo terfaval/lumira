@@ -9,13 +9,20 @@ import type {
   DreamMapPayloadV0,
 } from "@/src/domain/dreammap/types";
 
-const W_OCC = 0.6;
 const W_CENT = 0.4;
-const W_ANCHOR = 0.2;
-const W_GLOSSARY = 0.1;
 
 const POROSITY_Z_WEIGHT = 0.7;
 const POROSITY_RECURRENCE_WEIGHT = 0.3;
+
+const KIND_WEIGHTS: Record<DreamMapNodeKind, number> = {
+  people: 1.0,
+  places: 1.0,
+  objects: 1.0,
+  themes_words: 1.0,
+  sensations: 0.7,
+  mood_words: 0.7,
+  actions: 0.25,
+};
 
 type NodeAccumulator = {
   key: string;
@@ -184,37 +191,67 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
 
   const edges = new Map<string, EdgeAccumulator>();
   const scenes = Array.isArray(observation?.scenes) ? observation.scenes : [];
+  const scenePresenceByIndex = new Map<number, Set<string>>();
+  const sceneCountsByIndex = new Map<number, Map<string, number>>();
+  const presentScenesByKey = new Map<string, Set<number>>();
+  const primaryScenesByKey = new Map<string, Set<number>>();
 
   for (let i = 0; i < scenes.length; i++) {
     const scene = scenes[i] ?? ({} as ObservationPayloadV0["scenes"][number]);
     const sceneKeys = new Set<string>();
+    const sceneCounts = new Map<string, number>();
     const pathBase = `observation.scenes[${i}]`;
 
     const setting = parseString(scene?.setting);
     if (setting) {
       const key = addNode("places", setting, `${pathBase}.setting`);
-      if (key) sceneKeys.add(key);
+      if (key) {
+        sceneKeys.add(key);
+        sceneCounts.set(key, (sceneCounts.get(key) ?? 0) + 1);
+      }
     }
 
     for (const label of parseStringList(scene?.characters)) {
       const key = addNode("people", label, `${pathBase}.characters`);
-      if (key) sceneKeys.add(key);
+      if (key) {
+        sceneKeys.add(key);
+        sceneCounts.set(key, (sceneCounts.get(key) ?? 0) + 1);
+      }
     }
     for (const label of parseStringList(scene?.objects)) {
       const key = addNode("objects", label, `${pathBase}.objects`);
-      if (key) sceneKeys.add(key);
+      if (key) {
+        sceneKeys.add(key);
+        sceneCounts.set(key, (sceneCounts.get(key) ?? 0) + 1);
+      }
     }
     for (const label of parseStringList(scene?.actions)) {
       const key = addNode("actions", label, `${pathBase}.actions`);
-      if (key) sceneKeys.add(key);
+      if (key) {
+        sceneKeys.add(key);
+        sceneCounts.set(key, (sceneCounts.get(key) ?? 0) + 1);
+      }
     }
     for (const label of parseStringList(scene?.sensations)) {
       const key = addNode("sensations", label, `${pathBase}.sensations`);
-      if (key) sceneKeys.add(key);
+      if (key) {
+        sceneKeys.add(key);
+        sceneCounts.set(key, (sceneCounts.get(key) ?? 0) + 1);
+      }
     }
     for (const label of parseStringList(scene?.mood_words)) {
       const key = addNode("mood_words", label, `${pathBase}.mood_words`);
-      if (key) sceneKeys.add(key);
+      if (key) {
+        sceneKeys.add(key);
+        sceneCounts.set(key, (sceneCounts.get(key) ?? 0) + 1);
+      }
+    }
+    for (const label of parseStringList(scene?.themes_words)) {
+      const key = addNode("themes_words", label, `${pathBase}.themes_words`);
+      if (key) {
+        sceneKeys.add(key);
+        sceneCounts.set(key, (sceneCounts.get(key) ?? 0) + 1);
+      }
     }
 
     const keyList = Array.from(sceneKeys);
@@ -233,6 +270,44 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
           evidence: [{ source: "observation", path: pathBase, explicit: false }],
         });
       }
+    }
+
+    if (sceneKeys.size > 0) {
+      scenePresenceByIndex.set(i, new Set(sceneKeys));
+      if (sceneCounts.size > 0) sceneCountsByIndex.set(i, sceneCounts);
+    }
+
+    for (const key of sceneKeys) {
+      const set = presentScenesByKey.get(key) ?? new Set<number>();
+      set.add(i);
+      presentScenesByKey.set(key, set);
+    }
+  }
+
+  // Fallback: mark scene presence using edge evidence paths
+  for (const edge of edges.values()) {
+    for (const ev of edge.evidence ?? []) {
+      const match = /observation\.scenes\[(\d+)\]/.exec(ev.path);
+      if (!match) continue;
+      const idx = Number(match[1]);
+      if (!Number.isFinite(idx)) continue;
+
+      const present = scenePresenceByIndex.get(idx) ?? new Set<string>();
+      present.add(edge.from);
+      present.add(edge.to);
+      scenePresenceByIndex.set(idx, present);
+
+      const fromScenes = presentScenesByKey.get(edge.from) ?? new Set<number>();
+      fromScenes.add(idx);
+      presentScenesByKey.set(edge.from, fromScenes);
+      const toScenes = presentScenesByKey.get(edge.to) ?? new Set<number>();
+      toScenes.add(idx);
+      presentScenesByKey.set(edge.to, toScenes);
+
+      const counts = sceneCountsByIndex.get(idx) ?? new Map<string, number>();
+      if (!counts.has(edge.from)) counts.set(edge.from, 1);
+      if (!counts.has(edge.to)) counts.set(edge.to, 1);
+      sceneCountsByIndex.set(idx, counts);
     }
   }
 
@@ -281,31 +356,55 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
   }
 
   const maxDegree = Math.max(0, ...Array.from(degreeByNode.values()));
-  const maxOccurrence = Math.max(0, ...Array.from(nodes.values()).map((n) => n.occurrence));
-  const maxAnchorScore = Math.max(0, ...Array.from(anchorMaps.scoreByBaseKey.values()));
   const maxGlossaryOcc = Math.max(0, ...Array.from(glossaryMap.values()));
 
-  const baseScores: Array<{ key: string; baseScore: number }> = [];
-  for (const node of nodes.values()) {
-    const occNorm = maxOccurrence > 0 ? node.occurrence / maxOccurrence : 0;
-    const centrality = maxDegree > 0 ? (degreeByNode.get(node.key) ?? 0) / maxDegree : 0;
-    const baseScore = W_OCC * occNorm + W_CENT * centrality;
-    baseScores.push({ key: node.key, baseScore });
+  const scenePresenceCount = new Map<string, number>();
+  const primarySceneCount = new Map<string, number>();
+
+  for (let i = 0; i < scenes.length; i++) {
+    const present = scenePresenceByIndex.get(i);
+    if (!present || present.size === 0) continue;
+    const counts = sceneCountsByIndex.get(i) ?? new Map<string, number>();
+
+    let primaryKey: string | null = null;
+    const pickPrimary = (kind: DreamMapNodeKind) => {
+      let best: { key: string; count: number } | null = null;
+      for (const key of present) {
+        const node = nodes.get(key);
+        if (!node || node.kind !== kind) continue;
+        const count = counts.get(key) ?? 1;
+        if (!best || count > best.count) best = { key, count };
+      }
+      if (best) primaryKey = best.key;
+    };
+
+    pickPrimary("people");
+    if (!primaryKey) pickPrimary("places");
+    if (!primaryKey) pickPrimary("objects");
+    if (!primaryKey) pickPrimary("mood_words");
+    if (!primaryKey) pickPrimary("sensations");
+
+    for (const key of present) {
+      scenePresenceCount.set(key, (scenePresenceCount.get(key) ?? 0) + 1);
+    }
+
+    if (primaryKey) {
+      primarySceneCount.set(primaryKey, (primarySceneCount.get(primaryKey) ?? 0) + 1);
+      const set = primaryScenesByKey.get(primaryKey) ?? new Set<number>();
+      set.add(i);
+      primaryScenesByKey.set(primaryKey, set);
+    }
   }
-  const maxBaseScore = Math.max(0, ...baseScores.map((b) => b.baseScore));
 
   const nodeArray: DreamMapNode[] = [];
+  const zRawByKey = new Map<string, number>();
+  const glossaryNormByKey = new Map<string, number>();
   for (const node of nodes.values()) {
-    const occNorm = maxOccurrence > 0 ? node.occurrence / maxOccurrence : 0;
     const centrality = maxDegree > 0 ? (degreeByNode.get(node.key) ?? 0) / maxDegree : 0;
-    const baseScore = W_OCC * occNorm + W_CENT * centrality;
-    const baseNorm = maxBaseScore > 0 ? baseScore / maxBaseScore : 0;
-
     const anchorScore = anchorMaps.scoreByBaseKey.get(node.baseKey) ?? 0;
-    const anchorNorm = maxAnchorScore > 0 ? anchorScore / maxAnchorScore : 0;
-
     const glossaryOcc = glossaryMap.get(node.baseKey) ?? 0;
     const glossaryNorm = maxGlossaryOcc > 0 ? glossaryOcc / maxGlossaryOcc : 0;
+    glossaryNormByKey.set(node.key, glossaryNorm);
 
     if (anchorScore > 0) {
       addNodeKindEvidence(node, "anchors", "anchors.payload.anchors");
@@ -314,19 +413,19 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
       addNodeKindEvidence(node, "glossary", "glossary_occurrences");
     }
 
-    let z = baseNorm;
-    z = clamp01(z + W_ANCHOR * anchorNorm);
-    z = clamp01(z + W_GLOSSARY * glossaryNorm);
+    const presenceCount = scenePresenceCount.get(node.key) ?? 0;
+    const primaryCount = primarySceneCount.get(node.key) ?? 0;
+    const kindWeight = KIND_WEIGHTS[node.kind] ?? 1;
+    const base = node.occurrence + presenceCount;
+    const sceneEmphasis = 1.5 * primaryCount;
+    const zRaw = kindWeight * (base + sceneEmphasis) + W_CENT * centrality;
+    zRawByKey.set(node.key, zRaw);
 
     const x = null;
     const y = null;
-    const opacity = y == null ? z : z * (1 - Math.abs(y));
 
-    let porosity: number | null = null;
-    if (glossaryProvided) {
-      const stability = clamp01(POROSITY_Z_WEIGHT * z + POROSITY_RECURRENCE_WEIGHT * glossaryNorm);
-      porosity = 1 - stability;
-    }
+    const sceneIndices = Array.from(presentScenesByKey.get(node.key) ?? []).sort((a, b) => a - b);
+    const primarySceneIndices = Array.from(primaryScenesByKey.get(node.key) ?? []).sort((a, b) => a - b);
 
     nodeArray.push({
       key: node.key,
@@ -334,14 +433,32 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
       kind: node.kind,
       x,
       y,
-      z,
+      z: 0,
       centrality,
       occurrence: node.occurrence,
-      size: z,
-      opacity,
-      porosity,
+      size: 0,
+      opacity: 0,
+      porosity: null,
+      scene_presence_count: presenceCount,
+      primary_scene_count: primaryCount,
+      scene_indices: sceneIndices,
+      primary_scene_indices: primarySceneIndices.length > 0 ? primarySceneIndices : undefined,
       evidence: node.evidence,
     });
+  }
+
+  const maxZRaw = Math.max(0, ...Array.from(zRawByKey.values()));
+  for (const node of nodeArray) {
+    const zRaw = zRawByKey.get(node.key) ?? 0;
+    const z = maxZRaw > 0 ? zRaw / maxZRaw : 0;
+    node.z = z;
+    node.size = z;
+    node.opacity = Math.min(Math.max(z, 0.15), 1.0);
+    if (glossaryProvided) {
+      const glossaryNorm = glossaryNormByKey.get(node.key) ?? 0;
+      const stability = clamp01(POROSITY_Z_WEIGHT * z + POROSITY_RECURRENCE_WEIGHT * glossaryNorm);
+      node.porosity = 1 - stability;
+    }
   }
 
   const edgesOut: DreamMapEdge[] = edgeArray.map((edge) => ({
@@ -370,13 +487,18 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
         node_count: nodeArray.length,
         edge_count: edgesOut.length,
         scene_count: scenes.length,
+        primary_nodes_count: Array.from(primarySceneCount.values()).filter((c) => c > 0).length,
       },
       warnings,
       weights: {
-        w_occ: W_OCC,
         w_cent: W_CENT,
-        w_anchor: W_ANCHOR,
-        w_glossary: W_GLOSSARY,
+        w_kind_people: KIND_WEIGHTS.people,
+        w_kind_places: KIND_WEIGHTS.places,
+        w_kind_objects: KIND_WEIGHTS.objects,
+        w_kind_themes: KIND_WEIGHTS.themes_words,
+        w_kind_sensations: KIND_WEIGHTS.sensations,
+        w_kind_mood_words: KIND_WEIGHTS.mood_words,
+        w_kind_actions: KIND_WEIGHTS.actions,
         porosity_z: POROSITY_Z_WEIGHT,
         porosity_recurrence: POROSITY_RECURRENCE_WEIGHT,
       },

@@ -5,6 +5,10 @@ import type { DreamMapEdge, DreamMapNode } from "@/src/domain/dreammap/types";
 
 type GraphNode = DreamMapNode & { xPos: number; yPos: number };
 
+function isFiniteNumber(value: number) {
+  return Number.isFinite(value);
+}
+
 function hashToUnit(key: string, seed: number) {
   let hash = seed;
   for (let i = 0; i < key.length; i += 1) {
@@ -13,9 +17,35 @@ function hashToUnit(key: string, seed: number) {
   return (hash % 1000) / 1000;
 }
 
+function fallbackLayout(nodes: DreamMapNode[], width: number, height: number): GraphNode[] {
+  const count = nodes.length;
+  if (count === 0) return [];
+
+  const safeWidth = Number.isFinite(width) && width > 0 ? width : 0;
+  const safeHeight = Number.isFinite(height) && height > 0 ? height : 0;
+  const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
+  const rows = Math.max(1, Math.ceil(count / cols));
+  const spacing = 48;
+  const startX = safeWidth / 2 - ((cols - 1) * spacing) / 2;
+  const startY = safeHeight / 2 - ((rows - 1) * spacing) / 2;
+
+  return nodes.map((node, idx) => {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    return {
+      ...node,
+      xPos: startX + col * spacing,
+      yPos: startY + row * spacing,
+    };
+  });
+}
+
 function computeLayout(nodes: DreamMapNode[], edges: DreamMapEdge[], width: number, height: number) {
   const count = nodes.length;
-  if (count === 0 || width <= 0 || height <= 0) return [];
+  if (count === 0) return [];
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return fallbackLayout(nodes, width, height);
+  }
 
   const area = width * height;
   const k = Math.sqrt(area / Math.max(1, count));
@@ -29,7 +59,12 @@ function computeLayout(nodes: DreamMapNode[], edges: DreamMapEdge[], width: numb
   });
 
   const byKey = new Map(positions.map((p) => [p.key, p]));
-  const edgeList = edges.filter((edge) => byKey.has(edge.from) && byKey.has(edge.to));
+  const edgeList = edges
+    .filter((edge) => byKey.has(edge.from) && byKey.has(edge.to))
+    .map((edge) => ({
+      ...edge,
+      weight: isFiniteNumber(edge.weight) ? edge.weight : 0,
+    }));
 
   const iterations = Math.min(120, 30 + count * 2);
   const damping = 0.85;
@@ -62,7 +97,7 @@ function computeLayout(nodes: DreamMapNode[], edges: DreamMapEdge[], width: numb
         const dx = other.x - a.x;
         const dy = other.y - a.y;
         const dist = Math.sqrt(dx * dx + dy * dy) + 0.01;
-        const force = (dist * dist) * attraction * (edge.weight || 0.2);
+        const force = dist * dist * attraction * (edge.weight ?? 0);
         fx += (dx / dist) * force;
         fy += (dy / dist) * force;
       }
@@ -79,6 +114,13 @@ function computeLayout(nodes: DreamMapNode[], edges: DreamMapEdge[], width: numb
       p.x += p.vx * 0.04;
       p.y += p.vy * 0.04;
     }
+
+    const hasNonFinite = positions.some(
+      (p) => !isFiniteNumber(p.x) || !isFiniteNumber(p.y) || !isFiniteNumber(p.vx) || !isFiniteNumber(p.vy)
+    );
+    if (hasNonFinite) {
+      return fallbackLayout(nodes, width, height);
+    }
   }
 
   const maxX = (width - padding * 2) / 2;
@@ -86,8 +128,15 @@ function computeLayout(nodes: DreamMapNode[], edges: DreamMapEdge[], width: numb
 
   return nodes.map((node) => {
     const p = byKey.get(node.key);
-    const x = p ? Math.max(-maxX, Math.min(maxX, p.x)) : 0;
-    const y = p ? Math.max(-maxY, Math.min(maxY, p.y)) : 0;
+    if (!p || !isFiniteNumber(p.x) || !isFiniteNumber(p.y)) {
+      return {
+        ...node,
+        xPos: width / 2,
+        yPos: height / 2,
+      };
+    }
+    const x = Math.max(-maxX, Math.min(maxX, p.x));
+    const y = Math.max(-maxY, Math.min(maxY, p.y));
     return {
       ...node,
       xPos: x + width / 2,
@@ -95,6 +144,9 @@ function computeLayout(nodes: DreamMapNode[], edges: DreamMapEdge[], width: numb
     };
   });
 }
+
+const AXIS_LENGTH = 520;
+const AXIS_PADDING = 24;
 
 export function DreamMapGraph({
   nodes,
@@ -141,6 +193,10 @@ export function DreamMapGraph({
 
   const nodeByKey = new Map(layout.map((n) => [n.key, n]));
   const activeEdges = edges.filter((edge) => nodeByKey.has(edge.from) && nodeByKey.has(edge.to));
+  const centerX = size.width / 2;
+  const centerY = size.height / 2;
+  const axisHalfX = Math.min(AXIS_LENGTH / 2, Math.max(0, centerX - AXIS_PADDING));
+  const axisHalfY = Math.min(AXIS_LENGTH / 2, Math.max(0, centerY - AXIS_PADDING));
 
   return (
     <div ref={wrapRef} style={{ width: "100%", height: "100%" }}>
@@ -152,10 +208,38 @@ export function DreamMapGraph({
         onClick={() => onSelectNode(null)}
       >
         <g>
+          <line
+            x1={centerX - axisHalfX}
+            y1={centerY}
+            x2={centerX + axisHalfX}
+            y2={centerY}
+            stroke="var(--line-soft)"
+            strokeOpacity={0.5}
+            strokeWidth={1}
+          />
+          <line
+            x1={centerX}
+            y1={centerY - axisHalfY}
+            x2={centerX}
+            y2={centerY + axisHalfY}
+            stroke="var(--line-soft)"
+            strokeOpacity={0.5}
+            strokeWidth={1}
+          />
+        </g>
+        <g>
           {activeEdges.map((edge, idx) => {
             const from = nodeByKey.get(edge.from) as GraphNode | undefined;
             const to = nodeByKey.get(edge.to) as GraphNode | undefined;
-            if (!from || !to) return null;
+            if (
+              !from ||
+              !to ||
+              !isFiniteNumber(from.xPos) ||
+              !isFiniteNumber(from.yPos) ||
+              !isFiniteNumber(to.xPos) ||
+              !isFiniteNumber(to.yPos)
+            )
+              return null;
             const isActive =
               selectedKey && (edge.from === selectedKey || edge.to === selectedKey);
             return (
@@ -174,6 +258,7 @@ export function DreamMapGraph({
         </g>
         <g>
           {layout.map((node) => {
+            if (!isFiniteNumber(node.xPos) || !isFiniteNumber(node.yPos)) return null;
             const isSelected = node.key === selectedKey;
             const isNeighbor = neighborKeys.has(node.key);
             const isHighlight = highlightKeys.has(node.key);

@@ -39,6 +39,8 @@ type AggNode = {
   centralitySum: number;
   centralityCount: number;
   labelOcc: number;
+  scenePresenceSum: number;
+  primarySceneSum: number;
   evidenceKeys: Set<string>;
   evidence: Array<{ source: "observation" | "anchors" | "glossary"; path: string }>;
 };
@@ -118,11 +120,15 @@ function aggregateDreamMaps(payloads: DreamMapPayloadV0[], kinds: DreamMapNodeKi
 
       const occ = Number(node.occurrence ?? 0);
       const cent = Number(node.centrality ?? 0);
+      const scenePresence = Number(node.scene_presence_count ?? 0);
+      const primaryScenes = Number(node.primary_scene_count ?? 0);
       const entry = nodeAgg.get(node.key);
       if (entry) {
         entry.occurrence += Number.isFinite(occ) ? occ : 0;
         entry.centralitySum += Number.isFinite(cent) ? cent : 0;
         entry.centralityCount += 1;
+        entry.scenePresenceSum += Number.isFinite(scenePresence) ? scenePresence : 0;
+        entry.primarySceneSum += Number.isFinite(primaryScenes) ? primaryScenes : 0;
         if (Number.isFinite(occ) && occ > entry.labelOcc && typeof node.label === "string") {
           entry.label = node.label;
           entry.labelOcc = occ;
@@ -137,6 +143,8 @@ function aggregateDreamMaps(payloads: DreamMapPayloadV0[], kinds: DreamMapNodeKi
           centralitySum: Number.isFinite(cent) ? cent : 0,
           centralityCount: 1,
           labelOcc: Number.isFinite(occ) ? occ : 0,
+          scenePresenceSum: Number.isFinite(scenePresence) ? scenePresence : 0,
+          primarySceneSum: Number.isFinite(primaryScenes) ? primaryScenes : 0,
           evidenceKeys: new Set<string>(),
           evidence: [],
         };
@@ -147,7 +155,10 @@ function aggregateDreamMaps(payloads: DreamMapPayloadV0[], kinds: DreamMapNodeKi
 
     for (const edge of payload.edges) {
       if (!nodeByKey.has(edge.from) || !nodeByKey.has(edge.to)) continue;
-      const key = `${edge.from}::${edge.to}`;
+      const isDirected = edge.directed === true;
+      const [fromKey, toKey] =
+        !isDirected && edge.from > edge.to ? [edge.to, edge.from] : [edge.from, edge.to];
+      const key = `${fromKey}::${toKey}`;
       const w = Number(edge.weight ?? 0);
       const entry = edgeAgg.get(key);
       if (entry) {
@@ -155,8 +166,8 @@ function aggregateDreamMaps(payloads: DreamMapPayloadV0[], kinds: DreamMapNodeKi
         for (const ev of edge.evidence ?? []) addEvidence(entry, ev);
       } else {
         const next: AggEdge = {
-          from: edge.from,
-          to: edge.to,
+          from: fromKey,
+          to: toKey,
           weightSum: Number.isFinite(w) ? w : 0,
           evidenceKeys: new Set<string>(),
           evidence: [],
@@ -176,6 +187,8 @@ function aggregateDreamMaps(payloads: DreamMapPayloadV0[], kinds: DreamMapNodeKi
       kind: node.kind,
       occurrence: node.occurrence,
       centrality,
+      scene_presence_count: node.scenePresenceSum,
+      primary_scene_count: node.primarySceneSum,
       evidence: node.evidence,
     };
   });
@@ -213,7 +226,11 @@ function aggregateDreamMaps(payloads: DreamMapPayloadV0[], kinds: DreamMapNodeKi
     };
   });
 
-  const limitedNodes = computedNodes
+  const finiteNodes = computedNodes.filter(
+    (node) => Number.isFinite(node.z) && Number.isFinite(node.size) && Number.isFinite(node.opacity)
+  );
+
+  const limitedNodes = finiteNodes
     .sort((a, b) => b.z - a.z)
     .slice(0, limitNodes);
 
@@ -226,13 +243,15 @@ function aggregateDreamMaps(payloads: DreamMapPayloadV0[], kinds: DreamMapNodeKi
 
   const maxEdgeWeight = Math.max(0, ...filteredEdges.map((e) => e.weightSum));
 
-  const computedEdges: DreamMapEdge[] = filteredEdges.map((edge) => ({
-    from: edge.from,
-    to: edge.to,
-    weight: maxEdgeWeight > 0 ? edge.weightSum / maxEdgeWeight : 0,
-    directed: false,
-    evidence: edge.evidence,
-  }));
+  const computedEdges: DreamMapEdge[] = filteredEdges
+    .map((edge) => ({
+      from: edge.from,
+      to: edge.to,
+      weight: maxEdgeWeight > 0 ? edge.weightSum / maxEdgeWeight : 0,
+      directed: false,
+      evidence: edge.evidence,
+    }))
+    .filter((edge) => Number.isFinite(edge.weight));
 
   return { nodes: limitedNodes, edges: computedEdges };
 }

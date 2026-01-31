@@ -32,6 +32,10 @@ export type DreamMapNode = {
   size: number;
   opacity: number;
   porosity: number | null;
+  scene_presence_count?: number;
+  primary_scene_count?: number;
+  scene_indices?: number[];
+  primary_scene_indices?: number[];
   evidence: DreamMapEvidence[];
 };
 
@@ -61,6 +65,7 @@ export type DreamMapPayloadV0 = {
       node_count: number;
       edge_count: number;
       scene_count: number;
+      primary_nodes_count?: number;
     };
     warnings: Array<
       | { code: "anchors_missing" }
@@ -68,10 +73,17 @@ export type DreamMapPayloadV0 = {
       | { code: "glossary_missing" }
     >;
     weights?: {
-      w_occ: number;
-      w_cent: number;
-      w_anchor: number;
-      w_glossary: number;
+      w_cent?: number;
+      w_occ?: number;
+      w_anchor?: number;
+      w_glossary?: number;
+      w_kind_people?: number;
+      w_kind_places?: number;
+      w_kind_objects?: number;
+      w_kind_themes?: number;
+      w_kind_sensations?: number;
+      w_kind_mood_words?: number;
+      w_kind_actions?: number;
       porosity_z: number;
       porosity_recurrence: number;
     };

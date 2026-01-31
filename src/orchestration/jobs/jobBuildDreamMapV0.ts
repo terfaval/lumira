@@ -12,7 +12,7 @@ import { insertDreamMapVersionIfMissing, upsertDreamMapLatest } from "@/src/db/r
 import { buildDreamMapV0 } from "@/src/domain/dreammap/buildDreamMapV0";
 import type { DreamMapGlossaryOccurrence } from "@/src/domain/dreammap/types";
 
-const ALGO_VERSION = "dream_map_v0.2";
+const ALGO_VERSION = "dream_map_v0.3";
 
 async function fetchGlossaryOccurrences(
   supabase: SupabaseClient,

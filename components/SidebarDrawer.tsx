@@ -333,6 +333,16 @@ export function SidebarDrawer({
                 <span className="drawer-label-short">Álomtér</span>
               </span>
             </Link>
+
+            {dreamspaceAccess && (
+              <Link href="/admin/dreammap/backfill" className="drawer-navlink" onClick={onClose}>
+                <DrawerIcon name="work" />
+                <span className="drawer-label">
+                  <span className="drawer-label-full">Dream map backfill (admin)</span>
+                  <span className="drawer-label-short">Backfill</span>
+                </span>
+              </Link>
+            )}
           </div>
 
           {/* ARCHIVE */}
