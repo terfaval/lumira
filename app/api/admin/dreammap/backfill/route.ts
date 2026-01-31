@@ -19,6 +19,15 @@ type BackfillBody = {
 
 type CursorPayload = { created_at: string; id: string };
 
+type DreamSessionRow = {
+  id: string;
+  user_id: string;
+  created_at: string;
+  // onlyMissing esetén jön a left join mező, de nekünk itt nem kell kiolvasni
+  dream_map_latest?: unknown;
+};
+
+
 export async function POST(req: Request) {
   try {
     let body: BackfillBody = {};
@@ -53,9 +62,13 @@ export async function POST(req: Request) {
     const cursor = parseCursor(body.cursor ?? null);
 
     const supabase = supabaseServerService();
+    const SELECT_ALL = "id,user_id,created_at" as const;
+    const SELECT_ONLY_MISSING =
+      "id,user_id,created_at,dream_map_latest!left(session_id)" as const;
+
     let query = supabase
       .from("dream_sessions")
-      .select("id,user_id,created_at" + (onlyMissing ? ",dream_map_latest!left(session_id)" : ""));
+      .select(onlyMissing ? SELECT_ONLY_MISSING : SELECT_ALL);
 
     if (onlyMissing) {
       query = query.is("dream_map_latest.session_id", null);
@@ -76,16 +89,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const scanned = sessions?.length ?? 0;
+    const rows: DreamSessionRow[] = (sessions ?? []) as unknown as DreamSessionRow[];
+
+    const scanned = rows.length;
+
     const nextCursor =
-      sessions && sessions.length > 0
+      rows.length > 0
         ? encodeCursor({
-            created_at: sessions[sessions.length - 1].created_at as string,
-            id: sessions[sessions.length - 1].id as string,
+            created_at: rows[rows.length - 1].created_at,
+            id: rows[rows.length - 1].id,
           })
         : null;
 
-    const userIds = Array.from(new Set((sessions ?? []).map((row: any) => row.user_id).filter(Boolean)));
+    const userIds = Array.from(new Set(rows.map((row) => row.user_id).filter(Boolean)));
+
     const guestMap = await fetchGuestFlags(supabase, userIds);
 
     let built = 0;
@@ -98,9 +115,9 @@ export async function POST(req: Request) {
       reason?: string;
     }> = [];
 
-    for (const row of sessions ?? []) {
-      const session_id = row.id as string;
-      const user_id = row.user_id as string;
+    for (const row of rows) {
+      const session_id = row.id;
+      const user_id = row.user_id;
       const isGuest = guestMap.get(user_id) === true;
 
       if (isGuest) {
