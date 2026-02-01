@@ -7,6 +7,7 @@ export type ObservationPayloadV0 = {
     actions: string[];
     sensations: string[];
     mood_words: string[];
+    themes_words?: string[];
   }>;
   entities: {
     people: string[];

@@ -24,13 +24,15 @@ const KIND_WEIGHTS: Record<DreamMapNodeKind, number> = {
   actions: 0.25,
 };
 
+const HIGHLIGHT_OCC_BOOST = 2;
+
 type NodeAccumulator = {
   key: string;
   baseKey: string;
   label: string;
   kind: DreamMapNodeKind;
   occurrence: number;
-  evidence: Array<{ source: "observation" | "anchors" | "glossary"; path: string }>;
+  evidence: Array<{ source: "observation" | "anchors" | "glossary" | "highlight"; path: string }>;
 };
 
 type EdgeAccumulator = {
@@ -60,7 +62,11 @@ function addEvidence<T extends { source: string; path: string }>(list: T[], entr
   list.push(entry);
 }
 
-function addNodeKindEvidence(node: NodeAccumulator, source: "observation" | "anchors" | "glossary", path: string) {
+function addNodeKindEvidence(
+  node: NodeAccumulator,
+  source: "observation" | "anchors" | "glossary" | "highlight",
+  path: string
+) {
   addEvidence(node.evidence, { source, path });
 }
 
@@ -79,6 +85,37 @@ function parseString(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const t = raw.trim();
   return t ? t : null;
+}
+
+function normalizeHighlightLabel(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const t = raw.replace(/\s+/g, " ").trim();
+  return t ? t : null;
+}
+
+function highlightKindFromCategory(category: unknown, label: string): DreamMapNodeKind {
+  const raw = typeof category === "string" ? category.trim().toLowerCase() : "";
+  switch (raw) {
+    case "character":
+      return "people";
+    case "place":
+      return "places";
+    case "object":
+      return "objects";
+    case "beat":
+      return "themes_words";
+    case "felt_word":
+      return "sensations";
+    default: {
+      const hasSpace = label.includes(" ");
+      return hasSpace ? "themes_words" : "objects";
+    }
+  }
+}
+
+function isHighlightPrimary(row: { category?: string | null; note?: string | null }): boolean {
+  const hay = `${row?.category ?? ""} ${row?.note ?? ""}`.toLowerCase();
+  return hay.includes("core") || hay.includes("very important") || hay.includes("very_important");
 }
 
 function nodeKeyFor(
@@ -178,6 +215,30 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
       evidence: [],
     };
     addNodeKindEvidence(node, "observation", path);
+    nodes.set(key, node);
+    return key;
+  };
+
+  const addHighlightNode = (kind: DreamMapNodeKind, label: string, path: string) => {
+    const keyInfo = nodeKeyFor(kind, label, existingByKindBase);
+    if (!keyInfo) return null;
+    const { key, baseKey } = keyInfo;
+    const existing = nodes.get(key);
+    if (existing) {
+      existing.occurrence += HIGHLIGHT_OCC_BOOST;
+      addNodeKindEvidence(existing, "highlight", path);
+      return key;
+    }
+
+    const node: NodeAccumulator = {
+      key,
+      baseKey,
+      label,
+      kind,
+      occurrence: HIGHLIGHT_OCC_BOOST,
+      evidence: [],
+    };
+    addNodeKindEvidence(node, "highlight", path);
     nodes.set(key, node);
     return key;
   };
@@ -311,6 +372,17 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
     }
   }
 
+  const highlightRows = Array.isArray(input.highlights) ? input.highlights : [];
+  const highlightPrimaryKeys = new Set<string>();
+  for (const row of highlightRows) {
+    const label = normalizeHighlightLabel(row?.text);
+    if (!label) continue;
+    const kind = highlightKindFromCategory(row?.category, label);
+    const path = typeof row?.id === "string" && row.id ? `highlights[${row.id}]` : "highlights[unknown]";
+    const key = addHighlightNode(kind, label, path);
+    if (key && isHighlightPrimary(row)) highlightPrimaryKeys.add(key);
+  }
+
   const anchorMaps = buildAnchorMaps(input.anchorPayload ?? null);
   const glossaryProvided = Array.isArray(input.glossaryOccurrences);
   const glossaryMap = glossaryProvided ? buildGlossaryMap(input.glossaryOccurrences ?? []) : new Map<string, number>();
@@ -393,6 +465,31 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
       const set = primaryScenesByKey.get(primaryKey) ?? new Set<number>();
       set.add(i);
       primaryScenesByKey.set(primaryKey, set);
+    }
+  }
+
+  if (highlightPrimaryKeys.size > 0) {
+    for (const key of highlightPrimaryKeys) {
+      const present = presentScenesByKey.get(key);
+      if (!present || present.size === 0) continue;
+
+      let bestIndex: number | null = null;
+      let bestCount = -1;
+      for (const idx of present) {
+        const counts = sceneCountsByIndex.get(idx);
+        const count = counts?.get(key) ?? 1;
+        if (count > bestCount) {
+          bestCount = count;
+          bestIndex = idx;
+        }
+      }
+
+      if (bestIndex === null) continue;
+      const set = primaryScenesByKey.get(key) ?? new Set<number>();
+      if (set.has(bestIndex)) continue;
+      set.add(bestIndex);
+      primaryScenesByKey.set(key, set);
+      primarySceneCount.set(key, (primarySceneCount.get(key) ?? 0) + 1);
     }
   }
 
@@ -492,6 +589,7 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
       warnings,
       weights: {
         w_cent: W_CENT,
+        highlight_occ_boost: HIGHLIGHT_OCC_BOOST,
         w_kind_people: KIND_WEIGHTS.people,
         w_kind_places: KIND_WEIGHTS.places,
         w_kind_objects: KIND_WEIGHTS.objects,

@@ -2,14 +2,13 @@ import { NextResponse } from "next/server";
 import { getImagePresetService } from "@/src/db/repositories/imagePresetRepo";
 import { generateImage } from "@/src/domain/image/pipeline/generateImage";
 import { OpenAIImageAdapter } from "@/src/domain/image/render/OpenAIImageAdapter";
-import { ComfyTextRenderer } from "@/src/domain/image/render/ComfyTextRenderer";
 import type { ImageRenderer, RenderSpec, RenderedImage } from "@/src/domain/image/render/types";
 import { supabaseServerService } from "@/src/lib/supabase/serverService";
 import { loadReferenceImage, type ReferenceKey } from "@/src/domain/image/reference/loadReferenceImage";
 
 export const runtime = "nodejs";
 
-type RendererName = "openai" | "comfy";
+const DEFAULT_RENDERER_NAME = "openai" as const;
 
 class FailingRenderer implements ImageRenderer {
   constructor(private error: Error) {}
@@ -19,18 +18,7 @@ class FailingRenderer implements ImageRenderer {
   }
 }
 
-function resolveRendererName(): RendererName {
-  const raw = process.env.IMAGE_RENDERER?.toLowerCase();
-  return raw === "comfy" ? "comfy" : "openai";
-}
-
-function buildRenderer(rendererName: RendererName): ImageRenderer {
-  if (rendererName === "comfy") {
-    const baseUrl = process.env.COMFYUI_BASE_URL;
-    if (!baseUrl) return new FailingRenderer(new Error("COMFYUI_BASE_URL missing"));
-    return new ComfyTextRenderer(baseUrl);
-  }
-
+function buildRenderer(): ImageRenderer {
   // OpenAI adapter usually reads key from env internally, but we still fail fast to keep behavior consistent
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return new FailingRenderer(new Error("OPENAI_API_KEY missing"));
@@ -103,8 +91,8 @@ if (!preset) {
       );
     }
 
-    const rendererName = resolveRendererName();
-    const renderer = buildRenderer(rendererName);
+    const rendererName = DEFAULT_RENDERER_NAME;
+    const renderer = buildRenderer();
 
     const result = await generateImage({
       preset,

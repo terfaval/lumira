@@ -5,9 +5,9 @@ Goal: help decide when to keep the current provider vs. route some requests to a
 ## Current baseline in this repo
 
 Image pipeline:
-- Entry point: `app/api/image/generate/route.ts` selects renderer via `IMAGE_RENDERER` (defaults to "openai"). It builds either `OpenAIImageAdapter` or `ComfyTextRenderer` based on env and then calls `generateImage(...)`.
+- Entry point: `app/api/image/generate/route.ts` builds the OpenAI renderer and calls `generateImage(...)`.
 - Pipeline: `src/domain/image/pipeline/generateImage.ts` assembles prompt/negative prompt, creates an image job, renders via the selected renderer, and uploads to Supabase.
-- Renderers: `src/domain/image/render/OpenAIImageAdapter.ts`, `src/domain/image/render/ComfyTextRenderer.ts`, plus `ComfyReferenceRenderer.ts` for reference-image workflows.
+- Renderers: `src/domain/image/render/OpenAIImageAdapter.ts`.
 
 Text generation:
 - OpenAI chat completions are called in multiple domains:
@@ -34,7 +34,7 @@ Use these to compare current provider vs. alternatives:
 - Feature needs: reference image, ControlNet, LoRA, inpainting, etc.
 
 Typical signs you should add a second image provider:
-- You need strict style control or custom nodes (ComfyUI wins).
+- You need strict style control or custom nodes (consider a workflow-specific renderer).
 - You need fast, cheap, consistent "good enough" images at scale (API wins).
 - You need a fallback when the primary provider rate-limits or fails.
 
@@ -65,7 +65,7 @@ Option B: "primary + fallback"
 
 Option C: per-task routing
 - Define a router for each major task, e.g.:
-  - image_background: openai vs comfy
+  - image_background: openai vs secondary renderer
   - observe_extract: model A
   - frame_generate: model B
   - glossary/index/embedding: model C
@@ -122,10 +122,10 @@ Sum the weighted scores, but treat it as a guide, not a verdict.
 ## Quick recommendations for this repo (starting point)
 
 Image:
-- Keep OpenAI as default for now (simple, fast), use ComfyUI for:
+- Keep OpenAI as default for now (simple, fast), use a secondary renderer for:
   - fine control (reference images, LoRA, custom style)
   - tricky prompts that require strict adherence
-- Add a fallback for OpenAI failures to ComfyUI (or vice versa).
+- Add a fallback for OpenAI failures to a secondary renderer (or vice versa).
 
 Text:
 - Keep OpenAI for the structured JSON-heavy tasks (frame/observe/index) unless another provider beats it on parse success.

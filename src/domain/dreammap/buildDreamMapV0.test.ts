@@ -68,4 +68,17 @@ describe("buildDreamMapV0", () => {
     expect(mismatch).toBeTruthy();
     expect(mismatch && "computed_occ" in mismatch ? mismatch.computed_occ : null).toBe(3);
   });
+
+  it("boosts highlighted terms and records evidence", () => {
+    const payload = buildDreamMapV0({
+      observationPayloadV0: sampleObservation,
+      glossaryOccurrences: [],
+      highlights: [{ id: "hl-1", text: "Kulcs", category: "object", note: null }],
+      meta: baseMeta,
+    });
+
+    const kulcs = payload.nodes.find((n) => n.label === "Kulcs" && n.kind === "objects");
+    expect(kulcs?.occurrence).toBe(5);
+    expect(kulcs?.evidence.some((ev) => ev.source === "highlight")).toBe(true);
+  });
 });

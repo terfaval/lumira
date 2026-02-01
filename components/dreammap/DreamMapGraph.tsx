@@ -40,6 +40,46 @@ function fallbackLayout(nodes: DreamMapNode[], width: number, height: number): G
   });
 }
 
+function collectSceneIndices(nodes: DreamMapNode[]) {
+  const set = new Set<number>();
+  for (const node of nodes) {
+    if (Array.isArray(node.scene_indices)) {
+      for (const idx of node.scene_indices) {
+        if (Number.isFinite(idx)) set.add(idx);
+      }
+    }
+    if (Array.isArray(node.primary_scene_indices)) {
+      for (const idx of node.primary_scene_indices) {
+        if (Number.isFinite(idx)) set.add(idx);
+      }
+    }
+  }
+  return Array.from(set).sort((a, b) => a - b);
+}
+
+function buildSceneAnchors(nodes: DreamMapNode[], width: number, height: number, padding: number) {
+  const indices = collectSceneIndices(nodes);
+  if (indices.length === 0) return new Map<number, { x: number; y: number }>();
+
+  const maxRadius = Math.min(width, height) / 2 - padding * 2;
+  const baseRadius = Math.min(width, height) * 0.35;
+  const radius = Math.max(40, Math.min(maxRadius, baseRadius));
+  const angleOffset = (hashToUnit("scene", indices.length) * 2 - 1) * Math.PI;
+
+  const anchors = new Map<number, { x: number; y: number }>();
+  if (indices.length === 1) {
+    anchors.set(indices[0], { x: 0, y: 0 });
+    return anchors;
+  }
+
+  const step = (Math.PI * 2) / indices.length;
+  for (let i = 0; i < indices.length; i += 1) {
+    const angle = angleOffset + i * step;
+    anchors.set(indices[i], { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius });
+  }
+  return anchors;
+}
+
 function computeLayout(nodes: DreamMapNode[], edges: DreamMapEdge[], width: number, height: number) {
   const count = nodes.length;
   if (count === 0) return [];
@@ -51,10 +91,52 @@ function computeLayout(nodes: DreamMapNode[], edges: DreamMapEdge[], width: numb
   const k = Math.sqrt(area / Math.max(1, count));
   const padding = 24;
 
+  const sceneAnchors = buildSceneAnchors(nodes, width, height, padding);
+  const nodeByKey = new Map(nodes.map((node) => [node.key, node]));
+
   const positions = nodes.map((node, idx) => {
     const seed = idx + 17;
-    const x = (hashToUnit(node.key, seed) - 0.5) * (width - padding * 2);
-    const y = (hashToUnit(node.key, seed * 3) - 0.5) * (height - padding * 2);
+    const jitter = Math.max(12, k * 0.3);
+    let anchorX = 0;
+    let anchorY = 0;
+    let anchorWeight = 0;
+
+    if (sceneAnchors.size > 0) {
+      const seen = new Set<number>();
+      if (Array.isArray(node.scene_indices)) {
+        for (const idxScene of node.scene_indices) {
+          if (seen.has(idxScene)) continue;
+          const anchor = sceneAnchors.get(idxScene);
+          if (anchor) {
+            anchorX += anchor.x;
+            anchorY += anchor.y;
+            anchorWeight += 1;
+            seen.add(idxScene);
+          }
+        }
+      }
+      if (Array.isArray(node.primary_scene_indices)) {
+        for (const idxScene of node.primary_scene_indices) {
+          if (seen.has(idxScene)) continue;
+          const anchor = sceneAnchors.get(idxScene);
+          if (anchor) {
+            anchorX += anchor.x * 1.8;
+            anchorY += anchor.y * 1.8;
+            anchorWeight += 1.8;
+            seen.add(idxScene);
+          }
+        }
+      }
+    }
+
+    let x = (hashToUnit(node.key, seed) - 0.5) * (width - padding * 2);
+    let y = (hashToUnit(node.key, seed * 3) - 0.5) * (height - padding * 2);
+    if (anchorWeight > 0) {
+      x = anchorX / anchorWeight;
+      y = anchorY / anchorWeight;
+      x += (hashToUnit(node.key, seed * 5) - 0.5) * jitter;
+      y += (hashToUnit(node.key, seed * 11) - 0.5) * jitter;
+    }
     return { key: node.key, x, y, vx: 0, vy: 0 };
   });
 
@@ -70,6 +152,8 @@ function computeLayout(nodes: DreamMapNode[], edges: DreamMapEdge[], width: numb
   const damping = 0.85;
   const repulsion = k * k;
   const attraction = 1 / k;
+  const sceneSpring = 0.02;
+  const primarySceneSpring = 0.05;
 
   for (let iter = 0; iter < iterations; iter += 1) {
     for (let i = 0; i < positions.length; i += 1) {
@@ -100,6 +184,28 @@ function computeLayout(nodes: DreamMapNode[], edges: DreamMapEdge[], width: numb
         const force = dist * dist * attraction * (edge.weight ?? 0);
         fx += (dx / dist) * force;
         fy += (dy / dist) * force;
+      }
+
+      if (sceneAnchors.size > 0) {
+        const node = nodeByKey.get(a.key);
+        if (node) {
+          if (Array.isArray(node.scene_indices)) {
+            for (const idxScene of node.scene_indices) {
+              const anchor = sceneAnchors.get(idxScene);
+              if (!anchor) continue;
+              fx += (anchor.x - a.x) * sceneSpring;
+              fy += (anchor.y - a.y) * sceneSpring;
+            }
+          }
+          if (Array.isArray(node.primary_scene_indices)) {
+            for (const idxScene of node.primary_scene_indices) {
+              const anchor = sceneAnchors.get(idxScene);
+              if (!anchor) continue;
+              fx += (anchor.x - a.x) * primarySceneSpring;
+              fy += (anchor.y - a.y) * primarySceneSpring;
+            }
+          }
+        }
       }
 
       const centering = 0.01;

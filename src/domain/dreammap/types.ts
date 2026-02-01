@@ -10,7 +10,7 @@ export type DreamMapNodeKind =
   | "themes_words";
 
 export type DreamMapEvidence = {
-  source: "observation" | "anchors" | "glossary";
+  source: "observation" | "anchors" | "glossary" | "highlight";
   path: string;
 };
 
@@ -77,6 +77,7 @@ export type DreamMapPayloadV0 = {
       w_occ?: number;
       w_anchor?: number;
       w_glossary?: number;
+      highlight_occ_boost?: number;
       w_kind_people?: number;
       w_kind_places?: number;
       w_kind_objects?: number;
@@ -95,10 +96,18 @@ export type DreamMapGlossaryOccurrence = {
   occurrences?: number | null;
 };
 
+export type DreamMapHighlightRow = {
+  id: string;
+  text: string;
+  category?: string | null;
+  note?: string | null;
+};
+
 export type DreamMapBuilderInput = {
   observationPayloadV0: ObservationPayloadV0;
   anchorPayload?: any | null;
   glossaryOccurrences?: DreamMapGlossaryOccurrence[] | null;
+  highlights?: DreamMapHighlightRow[] | null;
   meta: {
     observation_version_id: string;
     anchor_version_id?: string;

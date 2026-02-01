@@ -38,9 +38,9 @@
 
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.26),
-    rgba(255, 255, 255, 0.10) 40%,
-    rgba(255, 255, 255, 0) 70%
+    var(--glass-gloss-strong),
+    var(--glass-gloss-medium) 40%,
+    transparent 70%
   );
 
   transform: rotate(-8deg);
@@ -55,9 +55,12 @@
   position: absolute;
   inset: 0;
 
-  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-image: radial-gradient(
+    var(--glass-grain-dot) 1px,
+    transparent 1px
+  );
   background-size: 22px 22px;
-  opacity: 0.12;
+  opacity: var(--glass-grain-opacity);
 
   pointer-events: none;
   mix-blend-mode: overlay;
@@ -80,7 +83,7 @@
 .variantHero {
   backdrop-filter: blur(18px) saturate(145%);
   -webkit-backdrop-filter: blur(18px) saturate(145%);
-  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--glass-shadow-hero);
 }
 
 .variantSoft {
@@ -112,7 +115,7 @@
   color: var(--gc-hover-text, inherit);
 
   box-shadow:
-    0 22px 56px rgba(0, 0, 0, 0.28),
+    var(--glass-shadow-hover),
     0 0 0 1px var(--gc-hover-border, var(--line-soft)),
     /* glow is toggled via --gc-hover-glow-on (0/1) */
     0 0 calc(26px * var(--gc-hover-glow-on, 0)) var(--gc-glow-a, var(--accent)),
@@ -131,17 +134,26 @@
 
 .matte {
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-matte-line);
 
-  background: linear-gradient(180deg, rgba(10, 14, 20, 0.86), rgba(6, 9, 14, 0.86));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: linear-gradient(
+    180deg,
+    var(--glass-matte-bg-strong),
+    var(--glass-matte-bg)
+  );
+
+  box-shadow: inset 0 1px 0 var(--glass-matte-highlight);
 
   position: relative;
   z-index: 2;
 }
 
 .matteTonePlain {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.06));
+  background: linear-gradient(
+    180deg,
+    var(--glass-plain-bg-strong),
+    var(--glass-plain-bg)
+  );
 }
 
 .mattePadSm { padding: 12px; }

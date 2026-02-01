@@ -10,9 +10,9 @@ import {
 } from "@/src/db/repositories/latestRepo";
 import { insertDreamMapVersionIfMissing, upsertDreamMapLatest } from "@/src/db/repositories/dreamMapRepo";
 import { buildDreamMapV0 } from "@/src/domain/dreammap/buildDreamMapV0";
-import type { DreamMapGlossaryOccurrence } from "@/src/domain/dreammap/types";
+import type { DreamMapGlossaryOccurrence, DreamMapHighlightRow } from "@/src/domain/dreammap/types";
 
-const ALGO_VERSION = "dream_map_v0.3";
+const ALGO_VERSION = "dream_map_v0.4";
 
 async function fetchGlossaryOccurrences(
   supabase: SupabaseClient,
@@ -50,6 +50,32 @@ async function fetchGlossaryOccurrences(
   }
 }
 
+async function fetchHighlightRows(
+  supabase: SupabaseClient,
+  args: { user_id: string; session_id: string }
+): Promise<DreamMapHighlightRow[] | null> {
+  try {
+    const res = await supabase
+      .from("dream_entry_highlights")
+      .select("id,text,category,note")
+      .eq("user_id", args.user_id)
+      .eq("session_id", args.session_id);
+
+    if (res.error) return null;
+
+    return (res.data ?? [])
+      .map((row: any) => ({
+        id: typeof row?.id === "string" ? row.id : "",
+        text: typeof row?.text === "string" ? row.text : "",
+        category: typeof row?.category === "string" ? row.category : null,
+        note: typeof row?.note === "string" ? row.note : null,
+      }))
+      .filter((row: DreamMapHighlightRow) => row.id && row.text.trim());
+  } catch {
+    return null;
+  }
+}
+
 function glossaryHash(glossary: DreamMapGlossaryOccurrence[] | null): string {
   if (!glossary) return "none";
   const sorted = glossary
@@ -58,6 +84,19 @@ function glossaryHash(glossary: DreamMapGlossaryOccurrence[] | null): string {
       occurrences: row.occurrences ?? 1,
     }))
     .sort((a, b) => a.canonical_key.localeCompare(b.canonical_key));
+  return materialHashFromPayload(sorted);
+}
+
+function highlightHash(highlights: DreamMapHighlightRow[] | null): string {
+  if (!highlights) return "none";
+  const sorted = highlights
+    .map((row) => ({
+      id: row.id,
+      text: row.text,
+      category: row.category ?? null,
+      note: row.note ?? null,
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
   return materialHashFromPayload(sorted);
 }
 
@@ -78,13 +117,15 @@ export async function jobBuildDreamMapV0(args: {
     return { dream_map_version_id: null, skipped: false };
   }
 
-  const [anchorLatest, sessionIndexLatest, glossaryOccurrences] = await Promise.all([
+  const [anchorLatest, sessionIndexLatest, glossaryOccurrences, highlightRows] = await Promise.all([
     fetchAnchorLatestWithPayloadAndId(supabase, event.user_id, event.session_id),
     fetchSessionIndexLatestWithPayloadAndId(supabase, event.user_id, event.session_id),
     fetchGlossaryOccurrences(supabase, { user_id: event.user_id, session_id: event.session_id }),
+    fetchHighlightRows(supabase, { user_id: event.user_id, session_id: event.session_id }),
   ]);
 
   const gh = glossaryHash(glossaryOccurrences);
+  const hh = highlightHash(highlightRows);
   const input_hash = sha256(
     [
       "dream_map_v0",
@@ -92,6 +133,7 @@ export async function jobBuildDreamMapV0(args: {
       anchorLatest?.anchor_version_id ?? "none",
       sessionIndexLatest?.session_index_version_id ?? "none",
       gh,
+      hh,
       algoVersion,
     ].join(":")
   );
@@ -117,6 +159,7 @@ export async function jobBuildDreamMapV0(args: {
       observationPayloadV0: obsLatest.payload,
       anchorPayload: anchorLatest?.payload ?? null,
       glossaryOccurrences: glossaryOccurrences ?? null,
+      highlights: highlightRows ?? null,
       meta: {
         observation_version_id: obsLatest.observation_version_id,
         anchor_version_id: anchorLatest?.anchor_version_id,

@@ -85,7 +85,7 @@
 }
 
 .notrec {
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  border-top: 1px solid var(--line-strong, var(--line-soft));
   padding-top: var(--space-2);
   display: grid;
   gap: var(--space-1);
@@ -150,7 +150,7 @@
   width: 26px;
   height: 26px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--line-strong, var(--line-soft));
   display: grid;
   place-items: center;
   font-weight: 900;
@@ -159,7 +159,7 @@
 }
 
 .stepText {
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--text-primary);
   line-height: 1.5;
 }
 
@@ -174,7 +174,7 @@
 
 .inlineError {
   margin-top: var(--space-2);
-  color: crimson;
+  color: var(--danger);
 }
 
 /* rest face */

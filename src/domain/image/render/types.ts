@@ -7,7 +7,7 @@ export type RenderSpec = {
   height: number;
   seed: bigint;
 
-  // optional (for future comfy reference renderer v0/v1)
+  // optional (for future reference-image renderer support)
   reference_image?: { bytes: Uint8Array; mime: string; filename?: string };
 };
 
