@@ -34,20 +34,17 @@
   font-weight: 700;
   font-size: 14px;
 
-  /* sanity: --text helyett létező tokenek */
   color: var(--text-muted);
   transition: background 0.2s ease, color 0.2s ease;
 }
 
 .tabButton:hover {
-  /* sanity: fallback token */
-  color: var(--text-primary, var(--text));
+  color: var(--text-primary);
 }
 
 .tabActive {
-  /* sanity: fallback tokenek */
-  background: var(--primary, var(--accent));
-  color: var(--surface, var(--accent-ink));
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 /* Fix back button */
@@ -64,15 +61,15 @@
   border-radius: 999px;
   border: 1px solid var(--line-soft);
 
-  background: rgba(20, 20, 24, 0.55);
+  background: var(--overlay-surface, var(--bg-root));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 
-  color: var(--text-primary, var(--text));
+  color: var(--text-primary);
   font-size: 18px;
   font-weight: 900;
 
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--overlay-shadow, var(--shadow-soft));
   cursor: pointer;
   transition: transform 140ms ease, opacity 140ms ease;
 }
@@ -90,8 +87,8 @@
 
 .headerEditBtn {
   border: 1px solid var(--line-soft);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary, var(--text));
+  background: var(--glass-bg-weak, var(--badge-bg));
+  color: var(--text-primary);
   width: 36px;
   height: 36px;
   border-radius: 999px;
@@ -111,9 +108,9 @@
 }
 
 .headerDeleteBtn {
-  border: 1px solid rgba(255, 100, 100, 0.45);
-  background: rgba(120, 20, 20, 0.32);
-  color: rgba(255, 210, 210, 0.95);
+  border: 1px solid var(--danger-line, var(--danger-bg));
+  background: var(--danger-bg);
+  color: var(--danger-ink, var(--text-primary));
   height: 36px;
   padding: 0 12px;
   border-radius: 999px;
@@ -127,7 +124,7 @@
 .headerDeleteBtn:hover {
   opacity: 0.95;
   transform: translateY(-1px);
-  background: rgba(150, 20, 20, 0.4);
+  background: var(--danger-bg-hover, var(--danger-bg));
 }
 
 .headerDeleteBtn:disabled {
@@ -139,19 +136,19 @@
 /* Glass panel for text */
 .glassPanel {
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--glass-matte-line, var(--line-soft));
 
   background: linear-gradient(
     135deg,
-    rgba(20, 20, 26, 0.78) 0%,
-    rgba(40, 30, 44, 0.62) 42%,
-    rgba(80, 40, 70, 0.22) 100%
+    var(--summary-glass-a, var(--bg-layer)) 0%,
+    var(--summary-glass-b, var(--card-surface)) 42%,
+    var(--summary-glass-c, transparent) 100%
   );
 
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 
-  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--summary-glass-shadow, var(--shadow-soft));
   overflow: hidden;
 }
 
@@ -162,7 +159,7 @@
 .textBlock {
   white-space: pre-wrap;
   line-height: 1.65;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -230,7 +227,7 @@
   margin-top: 6px;
   font-size: 14px;
   font-weight: 900;
-  color: var(--text-primary, var(--text));
+  color: var(--text-primary);
 }
 
 /* Salient elements */
@@ -257,11 +254,11 @@
 .salientPill {
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--pill-bg);
+  border: 1px solid var(--line-soft);
   font-size: 12px;
   font-weight: 800;
-  color: var(--text-primary, var(--text));
+  color: var(--text-primary);
   letter-spacing: 0.01em;
 }
 
@@ -284,8 +281,8 @@
   height: 40px;
   border-radius: 999px;
   border: 1px solid var(--line-soft);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary, var(--text));
+  background: var(--glass-bg-weak, var(--badge-bg));
+  color: var(--text-primary);
   font-size: 20px;
   font-weight: 900;
   cursor: pointer;
@@ -347,7 +344,7 @@
   height: 8px;
 }
 .carousel::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--scrollbar-thumb, #7F7F7F59);
   border-radius: 999px;
 }
 .carousel::-webkit-scrollbar-track {
@@ -376,7 +373,7 @@
 .carouselMeta {
   font-size: 12px;
   font-weight: 900;
-  color: var(--text-primary, var(--text));
+  color: var(--text-primary);
   opacity: 0.85;
 }
 
@@ -436,16 +433,18 @@
   height: 40px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line-soft);
+  background: var(--glass-bg-weak, var(--badge-bg));
+  color: var(--text-primary);
   font-weight: 700;
   letter-spacing: -0.01em;
   cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease, opacity 140ms ease;
 }
 
 .toolbarBtn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--glass-bg-medium, var(--pill-bg));
+  transform: translateY(-1px);
 }
 
 .toolbarPanel {
@@ -456,9 +455,9 @@
   max-width: min(520px, 90vw);
   padding: var(--space-3);
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(8, 12, 18, 0.92);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--glass-matte-line, var(--line-soft));
+  background: var(--panel-surface, var(--bg-layer-strong));
+  box-shadow: var(--panel-shadow, var(--shadow-accent));
   display: grid;
   gap: var(--space-2);
   z-index: 5;
@@ -481,16 +480,22 @@
   padding: 8px 12px;
   border-radius: 12px;
   border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.78);
+  background: var(--glass-bg-weak, var(--badge-bg));
+  color: var(--text-secondary);
   font-weight: 600;
   cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.panelOption:hover {
+  background: var(--glass-bg-medium, var(--pill-bg));
+  transform: translateY(-1px);
 }
 
 .panelOptionActive {
-  border-color: rgba(255, 255, 255, 0.4);
-  color: rgba(255, 255, 255, 0.96);
-  background: rgba(255, 255, 255, 0.14);
+  border-color: var(--line-strong, var(--line-soft));
+  color: var(--text-primary);
+  background: var(--badge-bg);
 }
 
 .panelPills {
@@ -505,7 +510,7 @@
   border-radius: 999px;
   padding: var(--space-1) var(--space-3);
   min-height: 30px;
-  background: #FFFFFF1A;
+  background: var(--badge-bg);
   color: var(--text-muted);
   font-weight: 600;
 }
@@ -513,7 +518,7 @@
 .pillBtnActive {
   color: var(--accent);
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--pill-bg);
 }
 
 .dirGrid {
@@ -570,8 +575,8 @@
 .moreButton {
   cursor: pointer;
   border: none;
-  background: var(--secondary, var(--accent-2));
-  color: var(--surface, var(--text-primary));
+  background: var(--accent-2);
+  color: var(--text-primary);
   padding: 6px 14px;
   border-radius: 8px;
   font-weight: 700;
@@ -583,7 +588,7 @@
   position: fixed;
   inset: 0;
   z-index: 80;
-  background: rgba(0, 0, 0, 0.42);
+  background: var(--modal-overlay-bg, #0000006B);
   display: grid;
   place-items: center;
 
@@ -611,7 +616,7 @@
   width: 100%;
   border-radius: 14px;
 
-  color: var(--text-primary, var(--text));
+  color: var(--text-primary);
   padding: 0;
   font-size: 16px;
   font-weight: 800;
@@ -635,13 +640,13 @@
 }
 
 .titleEditBtn {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary, var(--text));
+  background: var(--glass-bg-weak, var(--badge-bg));
+  color: var(--text-primary);
 }
 
 .titleEditBtnPrimary {
-  background: var(--primary, var(--accent));
-  color: var(--surface, var(--accent-ink));
+  background: var(--accent);
+  color: var(--accent-ink);
   border-color: transparent;
 }
 

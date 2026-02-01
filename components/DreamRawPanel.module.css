@@ -28,8 +28,11 @@
   padding: 6px;
   border-radius: 999px;
   border: 1px solid var(--line-soft);
-  background: rgba(12, 16, 25, 0.72);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+
+  /* napszak-biztos: ne a --bg-root-ra essen vissza (day-ben túl karakteres) */
+  background: var(--overlay-surface, var(--glass-bg-medium, var(--badge-bg)));
+
+  box-shadow: var(--shadow-accent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -58,9 +61,9 @@
   border-color: var(--accent-2);
   background: var(--card-surface);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 0 18px rgba(128, 185, 185, 0.35),
-    0 0 30px rgba(73, 124, 146, 0.25);
+    0 0 0 1px var(--glass-matte-line, var(--line-soft)),
+    0 0 18px var(--glow-accent-a, var(--accent)),
+    0 0 30px var(--glow-accent-b, var(--accent-2));
 }
 
 .iconButton:disabled {
@@ -86,9 +89,9 @@
   gap: var(--space-3);
   padding: var(--space-4);
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(10, 14, 20, 0.96);
-  box-shadow: 0 22px 46px rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--glass-matte-line, var(--line-soft));
+  background: var(--panel-surface, var(--bg-layer-strong));
+  box-shadow: var(--panel-shadow, var(--shadow-accent));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -96,7 +99,7 @@
 .highlightPanelOverlay {
   position: fixed;
   transform: none;
-  max-height: calc(100vh - 80px);
+  max-height: calc(var(--vh-100) - 80px);
   overflow: auto;
   z-index: 70;
 }
@@ -121,7 +124,7 @@
   border: 1px solid var(--line-soft);
   padding: 12px var(--space-3);
   min-height: 46px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--input-overlay-bg, var(--badge-bg));
   color: var(--text-primary);
   outline: none;
 }
@@ -146,27 +149,31 @@
   padding-top: var(--space-2);
   position: sticky;
   bottom: 0;
-  background: linear-gradient(180deg, rgba(10, 14, 20, 0) 0%, rgba(10, 14, 20, 0.96) 45%);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--panel-surface, var(--bg-layer-strong)) 45%
+  );
 }
 
 .actionError {
-  color: #ff8a8a;
+  color: var(--danger);
   font-size: 13px;
 }
 
 .highlight {
-  background: rgba(255, 214, 140, 0.3);
+  background: var(--hl-default-bg, var(--warning-bg));
   border-radius: 6px;
   padding: 0 2px;
-  color: #fff;
+  color: var(--hl-text, var(--text-primary));
   font-weight: 700;
 }
 
-.highlight[data-category="character"] { background: rgba(120, 195, 255, 0.35); }
-.highlight[data-category="place"] { background: rgba(255, 220, 120, 0.35); }
-.highlight[data-category="object"] { background: rgba(255, 150, 190, 0.35); }
-.highlight[data-category="beat"] { background: rgba(255, 200, 120, 0.35); }
-.highlight[data-category="felt_word"] { background: rgba(120, 220, 170, 0.35); }
+.highlight[data-category="character"] { background: var(--hl-character-bg, var(--intent-biztonsag-bg)); }
+.highlight[data-category="place"] { background: var(--hl-place-bg, var(--intent-irany_es_jelentes-bg)); }
+.highlight[data-category="object"] { background: var(--hl-object-bg, var(--intent-kreativ_inkubacio-bg)); }
+.highlight[data-category="beat"] { background: var(--hl-beat-bg, var(--intent-emlekezet-bg)); }
+.highlight[data-category="felt_word"] { background: var(--hl-felt_word-bg, var(--intent-tudatossag-bg)); }
 
 .pillRow {
   display: flex;
@@ -191,7 +198,7 @@
   height: 40px;
   border-radius: 999px;
   border: 1px solid var(--line-soft);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--trash-btn-bg, var(--pill-bg));
   color: var(--text-primary);
   display: inline-flex;
   align-items: center;
@@ -207,16 +214,16 @@
 
 .pillButton:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: var(--pill-hover-line, var(--text-muted));
 }
 
 .pillButtonActive {
   border-color: currentColor;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 2px var(--glass-matte-line, var(--line-soft));
 }
 
-.pill-character { color: #78C3FF; }
-.pill-place { color: #FFDC78; }
-.pill-object { color: #FF96BE; }
-.pill-beat { color: #FFC878; }
-.pill-felt_word { color: #78DCAA; }
+.pill-character { color: var(--intent-biztonsag); }
+.pill-place { color: var(--intent-irany_es_jelentes); }
+.pill-object { color: var(--intent-kreativ_inkubacio); }
+.pill-beat { color: var(--intent-emlekezet); }
+.pill-felt_word { color: var(--intent-tudatossag); }

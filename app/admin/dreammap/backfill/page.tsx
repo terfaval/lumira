@@ -23,7 +23,7 @@ type BackfillResponse = {
   scanned?: number;
   built?: number;
   skipped?: number;
-  failures?: number;
+  failures?: number; 
   next_cursor?: string | null;
   results?: BackfillResultRow[];
   error?: string;
@@ -42,7 +42,7 @@ export default function DreamMapBackfillAdminPage() {
   const [cursor, setCursor] = useState("");
   const [dryRun, setDryRun] = useState(false);
   const [onlyMissing, setOnlyMissing] = useState(true);
-  const [algoVersion, setAlgoVersion] = useState("dream_map_v0.2");
+  const [algoVersion, setAlgoVersion] = useState("dream_map_v0.4");
 
   // admin-only gate
   useEffect(() => {

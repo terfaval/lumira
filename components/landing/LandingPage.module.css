@@ -51,7 +51,7 @@
 
 .heroMark {
   opacity: 0.92;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.05));
+  filter: drop-shadow(0 0 10px var(--hero-mark-shadow, #FFFFFF0D));
 }
 
 .heroName {
@@ -143,7 +143,7 @@
 /* icon fallback (ha fekete svg) */
 .bigIcon {
   opacity: 0.95;
-  filter: brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.06));
+  filter: brightness(0) invert(1) drop-shadow(0 0 10px var(--icon-shadow, #FFFFFF0F));
 }
 
 /* -------------------------------- */
@@ -257,7 +257,7 @@
   padding: var(--space-3) var(--space-4);
   border-radius: 16px;
   border: 1px solid var(--line-soft);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--glass-bg-subtle, #FFFFFF05);
   opacity: 0.85;
   text-align: center;
 }
@@ -283,7 +283,7 @@
   padding: var(--space-3);
   border-radius: 16px;
   border: 1px solid var(--line-soft);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--glass-bg-subtle, #FFFFFF05);
 }
 
 .adaptSecondaryLabel {
@@ -314,7 +314,6 @@
   justify-content: center;
 }
 
-
 /* -------------------------------- */
 /* FOOTER                             */
 /* -------------------------------- */
@@ -336,10 +335,10 @@
 
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.05),
-    rgba(255, 255, 255, 0.02)
+    var(--glass-bg-weak, #FFFFFF0D),
+    var(--glass-bg-subtle, #FFFFFF05)
   );
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--landing-footer-shadow, var(--shadow-soft));
   backdrop-filter: blur(10px);
 }
 
@@ -357,7 +356,6 @@
 /* -------------------------------- */
 /* GUEST MODE                        */
 /* -------------------------------- */
-
 
 .heroCtas {
   display: flex;
@@ -433,18 +431,20 @@
   border-radius: 999px;
 
   border: 1px solid var(--line-soft);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--glass-bg-subtle, #FFFFFF05);
 
   color: inherit;
   cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
 }
 
 .expandToggle:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg-weak, #FFFFFF0D);
+  transform: translateY(-1px);
 }
 
 .expandToggle:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.28);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 

@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     const algoVersion =
       typeof body.algo_version === "string" && body.algo_version.trim().length > 0
         ? body.algo_version.trim()
-        : "dream_map_v0.2";
+        : "dream_map_v0.4";
 
     const cursor = parseCursor(body.cursor ?? null);
 
@@ -140,13 +140,15 @@ export async function POST(req: Request) {
           payload: { algo_version: algoVersion, material_hash: "backfill" },
         });
 
+        const materialHash = `backfill:${algoVersion}`;
+
         const res = await jobBuildDreamMapV0({
           supabase,
           event: { id: event.id, user_id, session_id },
-          material_hash: "backfill",
+          material_hash: materialHash,
           algo_version_override: algoVersion,
         });
-
+        
         if (res.skipped) {
           skipped += 1;
           results.push({
