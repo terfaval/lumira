@@ -68,7 +68,10 @@ export async function generateImage(params: {
 
     const supabase = supabaseServerService();
     const bucket = "backgrounds";
-    const path = `${job.id}.png`;
+    const path =
+      params.preset.id === "lumira_gate"
+        ? `gate/${job.id}/${params.variant}.png`
+        : `${job.id}.png`;
     const bytes_length = rendered.bytes.length;
 
     const { error: uploadError } = await supabase.storage.from(bucket).upload(path, rendered.bytes, {

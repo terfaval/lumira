@@ -7,7 +7,11 @@ import type {
   DreamMapNode,
   DreamMapNodeKind,
   DreamMapPayloadV0,
+  DreamMapSceneAxis,
 } from "@/src/domain/dreammap/types";
+
+import { computeSceneAxisFromTokens } from "@/src/domain/dreammap/axis/computeSceneAxis";
+import { AXIS_LEXICON_V1 } from "@/src/domain/dreammap/axis/axis_lexicon_v1";
 
 const W_CENT = 0.4;
 
@@ -44,6 +48,13 @@ type EdgeAccumulator = {
 
 function clamp01(value: number): number {
   if (value <= 0) return 0;
+  if (value >= 1) return 1;
+  return value;
+}
+
+function clampSigned(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  if (value <= -1) return -1;
   if (value >= 1) return 1;
   return value;
 }
@@ -97,15 +108,22 @@ function highlightKindFromCategory(category: unknown, label: string): DreamMapNo
   const raw = typeof category === "string" ? category.trim().toLowerCase() : "";
   switch (raw) {
     case "character":
+    case "person":
       return "people";
     case "place":
       return "places";
     case "object":
       return "objects";
     case "beat":
+    case "theme":
       return "themes_words";
     case "felt_word":
+    case "feeling":
       return "sensations";
+    case "action":
+      return "actions";
+    case "direction":
+      return "themes_words";
     default: {
       const hasSpace = label.includes(" ");
       return hasSpace ? "themes_words" : "objects";
@@ -121,7 +139,7 @@ function isHighlightPrimary(row: { category?: string | null; note?: string | nul
 function nodeKeyFor(
   kind: DreamMapNodeKind,
   label: string,
-  existingByKindBase: Map<string, string>,
+  existingByKindBase: Map<string, string>
 ): { key: string; baseKey: string } | null {
   const baseKey = normalizeBaseKey(label);
   if (!baseKey) return null;
@@ -136,7 +154,6 @@ function nodeKeyFor(
   existingByKindBase.set(kindBase, key);
   return { key, baseKey };
 }
-
 
 function scenePairs(keys: string[]): Array<[string, string]> {
   const pairs: Array<[string, string]> = [];
@@ -257,8 +274,41 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
   const presentScenesByKey = new Map<string, Set<number>>();
   const primaryScenesByKey = new Map<string, Set<number>>();
 
+  // --- NEW: scene axis (X1 lexicon) ---
+  const sceneAxisByIndex = new Map<
+    number,
+    { x: number | null; y: number | null; confidence: number; lexicon_version: string; evidence: any[] }
+  >();
+  const sceneAxisOut: DreamMapSceneAxis[] = [];
+
   for (let i = 0; i < scenes.length; i++) {
     const scene = scenes[i] ?? ({} as ObservationPayloadV0["scenes"][number]);
+
+    // --- NEW: compute scene axis from tokens ---
+    const axis = computeSceneAxisFromTokens({
+      mood_words: parseStringList(scene?.mood_words),
+      sensations: parseStringList(scene?.sensations),
+      themes_words: parseStringList((scene as any)?.themes_words),
+      lexicon: AXIS_LEXICON_V1,
+    });
+
+    sceneAxisByIndex.set(i, {
+      x: axis.x,
+      y: axis.y,
+      confidence: axis.confidence,
+      lexicon_version: axis.lexicon_version,
+      evidence: axis.evidence,
+    });
+
+    sceneAxisOut.push({
+      scene_index: i,
+      x: axis.x,
+      y: axis.y,
+      confidence: axis.confidence,
+      lexicon_version: axis.lexicon_version,
+      evidence: axis.evidence,
+    });
+
     const sceneKeys = new Set<string>();
     const sceneCounts = new Map<string, number>();
     const pathBase = `observation.scenes[${i}]`;
@@ -307,7 +357,7 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
         sceneCounts.set(key, (sceneCounts.get(key) ?? 0) + 1);
       }
     }
-    for (const label of parseStringList(scene?.themes_words)) {
+    for (const label of parseStringList((scene as any)?.themes_words)) {
       const key = addNode("themes_words", label, `${pathBase}.themes_words`);
       if (key) {
         sceneKeys.add(key);
@@ -397,26 +447,25 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
   if (!glossaryProvided) warnings.push({ code: "glossary_missing" });
 
   for (const [baseKey, anchorOccRaw] of anchorMaps.occByBaseKey.entries()) {
-  const computedOcc = occByBaseKey.get(baseKey);
-  if (typeof computedOcc !== "number") continue;
+    const computedOcc = occByBaseKey.get(baseKey);
+    if (typeof computedOcc !== "number") continue;
 
-  const anchorOcc = Number(anchorOccRaw);
-  if (!Number.isFinite(anchorOcc)) continue;
+    const anchorOcc = Number(anchorOccRaw);
+    if (!Number.isFinite(anchorOcc)) continue;
 
-  // v0 compat mode: only flag meaningful drift
-  if (anchorOcc < 1 || computedOcc < 1) continue;
+    // v0 compat mode: only flag meaningful drift
+    if (anchorOcc < 1 || computedOcc < 1) continue;
 
-  const diff = Math.abs(anchorOcc - computedOcc);
-  if (diff < 2) continue;
+    const diff = Math.abs(anchorOcc - computedOcc);
+    if (diff < 2) continue;
 
-  warnings.push({
-    code: "occurrence_mismatch",
-    key: baseKey,
-    anchor_occ: anchorOcc,
-    computed_occ: computedOcc,
-  });
-}
-
+    warnings.push({
+      code: "occurrence_mismatch",
+      key: baseKey,
+      anchor_occ: anchorOcc,
+      computed_occ: computedOcc,
+    });
+  }
 
   const edgeArray = Array.from(edges.values());
   const maxEdgeWeight = edgeArray.reduce((max, e) => Math.max(max, e.weight), 0);
@@ -496,6 +545,7 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
   const nodeArray: DreamMapNode[] = [];
   const zRawByKey = new Map<string, number>();
   const glossaryNormByKey = new Map<string, number>();
+
   for (const node of nodes.values()) {
     const centrality = maxDegree > 0 ? (degreeByNode.get(node.key) ?? 0) / maxDegree : 0;
     const anchorScore = anchorMaps.scoreByBaseKey.get(node.baseKey) ?? 0;
@@ -518,11 +568,37 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
     const zRaw = kindWeight * (base + sceneEmphasis) + W_CENT * centrality;
     zRawByKey.set(node.key, zRaw);
 
-    const x = null;
-    const y = null;
-
+    // --- NEW: compute inherited axis from scenes ---
     const sceneIndices = Array.from(presentScenesByKey.get(node.key) ?? []).sort((a, b) => a - b);
     const primarySceneIndices = Array.from(primaryScenesByKey.get(node.key) ?? []).sort((a, b) => a - b);
+
+    let sumWX = 0;
+    let sumX = 0;
+    let sumWY = 0;
+    let sumY = 0;
+
+    const addAxis = (idx: number, w: number) => {
+      const ax = sceneAxisByIndex.get(idx);
+      if (!ax) return;
+
+      if (ax.x !== null) {
+        sumWX += w;
+        sumX += w * ax.x;
+      }
+      if (ax.y !== null) {
+        sumWY += w;
+        sumY += w * ax.y;
+      }
+    };
+
+    for (const idx of sceneIndices) addAxis(idx, 1.0);
+    for (const idx of primarySceneIndices) addAxis(idx, 1.8);
+
+    const x = sumWX > 0 ? clampSigned(sumX / sumWX) : null;
+    const y = sumWY > 0 ? clampSigned(sumY / sumWY) : null;
+
+    const axisEvidenceSceneIndex =
+      primarySceneIndices.length > 0 ? primarySceneIndices[0] : sceneIndices.length > 0 ? sceneIndices[0] : null;
 
     nodeArray.push({
       key: node.key,
@@ -530,6 +606,9 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
       kind: node.kind,
       x,
       y,
+      axis_source: sumWX > 0 || sumWY > 0 ? "scene_inherited" : "none",
+      axis_evidence_scene_index: axisEvidenceSceneIndex,
+
       z: 0,
       centrality,
       occurrence: node.occurrence,
@@ -587,6 +666,13 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
         primary_nodes_count: Array.from(primarySceneCount.values()).filter((c) => c > 0).length,
       },
       warnings,
+
+      // --- NEW: axis meta ---
+      axis: {
+        lexicon_version: AXIS_LEXICON_V1.version,
+        scene_axis: sceneAxisOut,
+      },
+
       weights: {
         w_cent: W_CENT,
         highlight_occ_boost: HIGHLIGHT_OCC_BOOST,

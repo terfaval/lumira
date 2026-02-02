@@ -56,18 +56,19 @@ async function fetchHighlightRows(
 ): Promise<DreamMapHighlightRow[] | null> {
   try {
     const res = await supabase
-      .from("dream_entry_highlights")
-      .select("id,text,category,note")
+      .from("dream_session_highlights")
+      .select("id,label,kind,note")
       .eq("user_id", args.user_id)
-      .eq("session_id", args.session_id);
+      .eq("session_id", args.session_id)
+      .eq("status", "active");
 
     if (res.error) return null;
 
     return (res.data ?? [])
       .map((row: any) => ({
         id: typeof row?.id === "string" ? row.id : "",
-        text: typeof row?.text === "string" ? row.text : "",
-        category: typeof row?.category === "string" ? row.category : null,
+        text: typeof row?.label === "string" ? row.label : "",
+        category: typeof row?.kind === "string" ? row.kind : null,
         note: typeof row?.note === "string" ? row.note : null,
       }))
       .filter((row: DreamMapHighlightRow) => row.id && row.text.trim());

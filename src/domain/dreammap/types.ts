@@ -26,6 +26,10 @@ export type DreamMapNode = {
   kind: DreamMapNodeKind;
   x: number | null;
   y: number | null;
+
+  axis_source?: "scene_inherited" | "none";
+  axis_evidence_scene_index?: number | null;
+
   z: number;
   centrality: number;
   occurrence: number;
@@ -72,6 +76,13 @@ export type DreamMapPayloadV0 = {
       | { code: "occurrence_mismatch"; key: string; anchor_occ: number; computed_occ: number }
       | { code: "glossary_missing" }
     >;
+
+    // NEW (additív)
+    axis?: {
+      lexicon_version: string;
+      scene_axis: DreamMapSceneAxis[];
+    };
+
     weights?: {
       w_cent?: number;
       w_occ?: number;
@@ -101,6 +112,25 @@ export type DreamMapHighlightRow = {
   text: string;
   category?: string | null;
   note?: string | null;
+};
+
+export type DreamMapSceneAxisEvidence = {
+  token: string;
+  lex_key: string;
+  x: number;
+  y: number;
+  weight: number;
+  contrib_x: number;
+  contrib_y: number;
+};
+
+export type DreamMapSceneAxis = {
+  scene_index: number;
+  x: number | null;
+  y: number | null;
+  confidence: number; // 0..1
+  lexicon_version: string;
+  evidence: DreamMapSceneAxisEvidence[];
 };
 
 export type DreamMapBuilderInput = {

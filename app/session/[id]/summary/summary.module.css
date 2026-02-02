@@ -10,6 +10,51 @@
   overflow-x: hidden;
 }
 
+.summaryHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.summaryHeaderLeft {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.textCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.textCardHeader {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rawSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.summaryHeaderRight {
+  min-width: 0;
+}
+
+@media (max-width: 980px) {
+  .summaryHeader {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Prefer clip when supported (nice to have) */
 @supports (overflow: clip) {
   .summaryWrap {
@@ -159,9 +204,23 @@
 .textBlock {
   white-space: pre-wrap;
   line-height: 1.65;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 14px;
 }
+
+.rawHighlight {
+  background: var(--hl-default-bg, var(--warning-bg));
+  border-radius: 6px;
+  padding: 0 2px;
+  color: var(--hl-text, var(--text-primary));
+  font-weight: 700;
+}
+
+.rawHighlight[data-category="character"] { background: var(--hl-character-bg, var(--intent-biztonsag-bg)); }
+.rawHighlight[data-category="place"] { background: var(--hl-place-bg, var(--intent-irany_es_jelentes-bg)); }
+.rawHighlight[data-category="object"] { background: var(--hl-object-bg, var(--intent-kreativ_inkubacio-bg)); }
+.rawHighlight[data-category="beat"] { background: var(--hl-beat-bg, var(--intent-emlekezet-bg)); }
+.rawHighlight[data-category="felt_word"] { background: var(--hl-felt_word-bg, var(--intent-tudatossag-bg)); }
 
 .gridCard {
   height: 100%;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
@@ -12,6 +12,14 @@ import { WorkCard } from "@/components/WorkCard";
 import { startDirection } from "@/src/lib/startDirection";
 import type { DirectionCardContent } from "@/src/lib/types";
 import type { DirectionCatalogItemDTO } from "@/src/domain/catalog/catalogTypes";
+import { HighlightsPanel, type SessionHighlight } from "@/components/HighlightsPanel";
+import {
+  aggregateSessionSuggestions,
+  normalizeKind,
+  type HighlightKind,
+  type HighlightSuggestion,
+} from "@/src/domain/highlights/aggregateSessionSuggestions";
+import { indexGlossaryFromHighlight } from "@/src/domain/glossary/indexGlossaryFromHighlight";
 import { requireUserId } from "@/src/lib/db";
 import { huTagDir } from "@/src/lib/tags/dirTagsHu";
 
@@ -200,6 +208,90 @@ function applyAnswerToContent(content: DirectionCardContent, answer: WorkAnswerR
   };
 }
 
+type EntryHighlight = {
+  id: string;
+  start_offset: number;
+  end_offset: number;
+  text: string;
+  category: string;
+  note: string | null;
+};
+
+function renderEntryHighlights(text: string, highlights: EntryHighlight[], className: string): ReactNode {
+  if (!highlights.length) return text;
+
+  const sorted = highlights
+    .map((h) => ({
+      ...h,
+      start_offset: Math.max(0, Math.min(h.start_offset, text.length)),
+      end_offset: Math.max(0, Math.min(h.end_offset, text.length)),
+    }))
+    .filter((h) => h.end_offset > h.start_offset)
+    .sort((a, b) => a.start_offset - b.start_offset);
+
+  const out: ReactNode[] = [];
+  let cursor = 0;
+  for (const h of sorted) {
+    if (h.start_offset < cursor) continue;
+    if (h.start_offset > cursor) out.push(text.slice(cursor, h.start_offset));
+    out.push(
+      <mark key={`${h.id}-${h.start_offset}`} className={className} data-category={h.category}>
+        {text.slice(h.start_offset, h.end_offset)}
+      </mark>
+    );
+    cursor = h.end_offset;
+  }
+  if (cursor < text.length) out.push(text.slice(cursor));
+  return out;
+}
+
+function highlightKindFromCategory(raw: unknown): HighlightKind {
+  const k = String(raw ?? "").trim().toLowerCase();
+  switch (k) {
+    case "character":
+      return "person";
+    case "place":
+      return "place";
+    case "object":
+      return "object";
+    case "beat":
+      return "action";
+    case "felt_word":
+      return "feeling";
+    default:
+      return "other";
+  }
+}
+
+function categoryFromKind(raw: HighlightKind): string {
+  switch (raw) {
+    case "person":
+      return "character";
+    case "place":
+      return "place";
+    case "object":
+      return "object";
+    case "action":
+    case "theme":
+      return "beat";
+    case "feeling":
+      return "felt_word";
+    default:
+      return "felt_word";
+  }
+}
+
+function findFirstMatch(text: string, label: string): { start: number; end: number; snippet: string } | null {
+  const cleanLabel = label.trim();
+  if (!cleanLabel) return null;
+  const hay = text.toLowerCase();
+  const needle = cleanLabel.toLowerCase();
+  const start = hay.indexOf(needle);
+  if (start === -1) return null;
+  const end = start + cleanLabel.length;
+  return { start, end, snippet: text.slice(start, end) };
+}
+
 function toWorkBlock(row: any, answersByWorkId: Map<string, WorkAnswerRow>): DirectionWorkBlock | null {
   if (!row || typeof row !== "object") return null;
   const rawContent = (row as any).payload ?? null;
@@ -231,6 +323,7 @@ export default function SessionSummary() {
   const [framePayload, setFramePayload] = useState<FramePayload | null>(null);
   const [latentPayload, setLatentPayload] = useState<LatentPayload | null>(null);
   const [rawEntry, setRawEntry] = useState<string | null>(null);
+  const [rawEntryId, setRawEntryId] = useState<string | null>(null);
 
   const [workBlocks, setWorkBlocks] = useState<DirectionWorkBlock[]>([]);
   const [directionCatalog, setDirectionCatalog] = useState<DirectionCatalogItemDTO[]>([]);
@@ -243,11 +336,12 @@ export default function SessionSummary() {
   const [sortOpen, setSortOpen] = useState(false);
   const [activeFacet, setActiveFacet] = useState<FilterFacet>("group");
 
-  // Default: AI summary
-  const [tab, setTab] = useState<"raw" | "summary">("summary");
-
   const [err, setErr] = useState<string | null>(null);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
+
+  const [entryHighlights, setEntryHighlights] = useState<EntryHighlight[]>([]);
+  const [rejectedKeys, setRejectedKeys] = useState<string[]>([]);
+  const [highlightSuggestions, setHighlightSuggestions] = useState<HighlightSuggestion[]>([]);
 
   // Title edit
   const [editingTitle, setEditingTitle] = useState(false);
@@ -321,6 +415,144 @@ export default function SessionSummary() {
       isMounted = false;
     };
   }, [sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || typeof sessionId !== "string") return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const uid = await requireUserId();
+        const { data, error } = await supabase
+          .from("dream_entries")
+          .select("id, content")
+          .eq("session_id", sessionId)
+          .eq("user_id", uid)
+          .eq("kind", "raw")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (cancelled) return;
+        if (error) return;
+        if (data?.id) {
+          setRawEntryId(data.id);
+          if (typeof data.content === "string") setRawEntry(data.content);
+        }
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!rawEntryId) {
+      setEntryHighlights([]);
+      return;
+    }
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const uid = await requireUserId();
+        const { data, error } = await supabase
+          .from("dream_entry_highlights")
+          .select("id, entry_id, start_offset, end_offset, text, category, note, created_at")
+          .eq("entry_id", rawEntryId)
+          .eq("user_id", uid)
+          .order("created_at", { ascending: true });
+
+        if (cancelled) return;
+        if (error) {
+          setEntryHighlights([]);
+          return;
+        }
+        setEntryHighlights((data as EntryHighlight[]) ?? []);
+      } catch {
+        if (!cancelled) setEntryHighlights([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rawEntryId]);
+
+  useEffect(() => {
+    if (!sessionId || typeof sessionId !== "string") return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/highlights`, {
+          credentials: "include",
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as any;
+        if (cancelled) return;
+        setRejectedKeys(Array.isArray(data?.rejected_keys) ? data.rejected_keys : []);
+      } catch {
+        if (!cancelled) {
+          setRejectedKeys([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || typeof sessionId !== "string") return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const uid = await requireUserId();
+
+        const [frameRes, latentRes] = await Promise.all([
+          supabase
+            .from("frame_versions")
+            .select("payload, created_at")
+            .eq("session_id", sessionId)
+            .eq("user_id", uid)
+            .order("created_at", { ascending: true }),
+          supabase
+            .from("latent_versions")
+            .select("payload, created_at")
+            .eq("session_id", sessionId)
+            .eq("user_id", uid)
+            .order("created_at", { ascending: true }),
+        ]);
+
+        if (cancelled) return;
+
+        const catalogBySlug = new Map<string, { title?: string | null }>();
+        for (const item of directionCatalog ?? []) {
+          if (item?.slug) catalogBySlug.set(item.slug, { title: item.title ?? null });
+        }
+
+        const suggestions = aggregateSessionSuggestions({
+          framePayloads: (frameRes.data ?? []).map((row: any) => row?.payload),
+          latentPayloads: (latentRes.data ?? []).map((row: any) => row?.payload),
+          catalogBySlug,
+        });
+
+        setHighlightSuggestions(suggestions);
+      } catch {
+        if (!cancelled) setHighlightSuggestions([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, directionCatalog]);
 
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
@@ -424,6 +656,23 @@ export default function SessionSummary() {
   }, [workBlocks]);
 
   const framing = framePayload?.framing_text ?? null;
+  const rawText = String(rawEntry ?? "");
+  const rawHighlighted = useMemo(
+    () => renderEntryHighlights(rawText, entryHighlights, styles.rawHighlight),
+    [rawText, entryHighlights]
+  );
+  const highlights = useMemo<SessionHighlight[]>(
+    () =>
+      entryHighlights.map((h) => ({
+        id: h.id,
+        label: h.text,
+        kind: highlightKindFromCategory(h.category),
+        note: h.note ?? null,
+        source: "user",
+        source_ref: null,
+      })),
+    [entryHighlights]
+  );
 
   const salientElements = useMemo(() => {
     const raw = latentPayload?.salient_elements;
@@ -770,30 +1019,151 @@ export default function SessionSummary() {
           </div>
         ) : (
           <>
-            {/* Tabs */}
-            <div className={styles.tabs} role="tablist">
-              <button
-                className={`${styles.tabButton} ${tab === "raw" ? styles.tabActive : ""}`}
-                role="tab"
-                aria-selected={tab === "raw"}
-                onClick={() => setTab("raw")}
-              >
-                Nyers álom
-              </button>
-              <button
-                className={`${styles.tabButton} ${tab === "summary" ? styles.tabActive : ""}`}
-                role="tab"
-                aria-selected={tab === "summary"}
-                onClick={() => setTab("summary")}
-              >
-                AI összefoglaló
-              </button>
+            <div className={styles.summaryHeader}>
+              <div className={styles.summaryHeaderLeft}>
+                <div className={styles.textCard}>
+                  <div className={styles.textCardHeader}>Nyers álom</div>
+                  <div className={styles.glassPanel}>
+                    <div className={styles.glassInner}>
+                      <div className={styles.textBlock}>{rawHighlighted || "—"}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.summaryHeaderRight}>
+                <HighlightsPanel
+                  sessionId={sessionId}
+                  suggestions={highlightSuggestions}
+                  highlights={highlights}
+                  rejectedKeys={rejectedKeys}
+                  allowLabelEdit={false}
+                  onAdd={async ({ suggestion, kind, note }) => {
+                    const entryId = rawEntryId;
+                    const content = rawText;
+                    if (!entryId || !content) throw new Error("Hiányzik a nyers álom szövege.");
+
+                    const match = findFirstMatch(content, suggestion.label);
+                    if (!match) throw new Error("Nem találom a szövegben ezt a részt.");
+
+                    const uid = await requireUserId();
+                    const category = categoryFromKind(normalizeKind(kind));
+
+                    const payload = {
+                      user_id: uid,
+                      session_id: sessionId,
+                      entry_id: entryId,
+                      start_offset: match.start,
+                      end_offset: match.end,
+                      text: match.snippet,
+                      category,
+                      note: note ?? null,
+                    };
+
+                    const { data, error } = await supabase
+                      .from("dream_entry_highlights")
+                      .insert(payload)
+                      .select("id, entry_id, start_offset, end_offset, text, category, note, created_at")
+                      .maybeSingle();
+
+                    if (error) throw new Error(error.message);
+                    if (data) setEntryHighlights((prev) => [...prev, data as EntryHighlight]);
+
+                    await supabase
+                      .from("dream_session_rejected_suggestions")
+                      .delete()
+                      .eq("session_id", sessionId)
+                      .eq("user_id", uid)
+                      .eq("suggestion_key", suggestion.suggestion_key);
+                    setRejectedKeys((prev) => prev.filter((k) => k !== suggestion.suggestion_key));
+
+                    void indexGlossaryFromHighlight({
+                      supabase,
+                      userId: uid,
+                      sessionId,
+                      label: match.snippet,
+                      source: "user_note",
+                    });
+                  }}
+                  onReject={async (suggestionKey) => {
+                    const res = await fetch(
+                      `/api/sessions/${encodeURIComponent(sessionId)}/highlights/reject`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ suggestion_key: suggestionKey }),
+                      }
+                    );
+                    if (!res.ok) throw new Error("Nem sikerült elutasítani.");
+                    setRejectedKeys((prev) => (prev.includes(suggestionKey) ? prev : [...prev, suggestionKey]));
+                  }}
+                  onEdit={async (highlight) => {
+                    const entryId = rawEntryId;
+                    if (!entryId) throw new Error("Hiányzik a nyers álom.");
+                    const uid = await requireUserId();
+                    const category = categoryFromKind(normalizeKind(highlight.kind));
+                    const note = highlight.note ?? null;
+
+                    const { error } = await supabase
+                      .from("dream_entry_highlights")
+                      .update({ category, note })
+                      .eq("id", highlight.id)
+                      .eq("entry_id", entryId)
+                      .eq("user_id", uid);
+
+                    if (error) throw new Error("Nem sikerült frissíteni.");
+
+                    setEntryHighlights((prev) =>
+                      prev.map((h) => (h.id === highlight.id ? { ...h, category, note } : h))
+                    );
+                  }}
+                  onCreateCustom={async (payload) => {
+                    const entryId = rawEntryId;
+                    const content = rawText;
+                    if (!entryId || !content) throw new Error("Hiányzik a nyers álom szövege.");
+
+                    const match = findFirstMatch(content, payload.label);
+                    if (!match) throw new Error("Nem találom a szövegben ezt a részt.");
+
+                    const uid = await requireUserId();
+                    const category = categoryFromKind(normalizeKind(payload.kind));
+
+                    const { data, error } = await supabase
+                      .from("dream_entry_highlights")
+                      .insert({
+                        user_id: uid,
+                        session_id: sessionId,
+                        entry_id: entryId,
+                        start_offset: match.start,
+                        end_offset: match.end,
+                        text: match.snippet,
+                        category,
+                        note: payload.note ?? null,
+                      })
+                      .select("id, entry_id, start_offset, end_offset, text, category, note, created_at")
+                      .maybeSingle();
+
+                    if (error) throw new Error("Nem sikerült menteni a kiemelést.");
+                    if (data) setEntryHighlights((prev) => [...prev, data as EntryHighlight]);
+
+                    void indexGlossaryFromHighlight({
+                      supabase,
+                      userId: uid,
+                      sessionId,
+                      label: match.snippet,
+                      source: "user_note",
+                    });
+                  }}
+                />
+              </div>
             </div>
 
-            {/* Glass text panel */}
-            <div className={styles.glassPanel}>
-              <div className={styles.glassInner}>
-                {tab === "raw" ? <div className={styles.textBlock}>{rawEntry}</div> : <div className={styles.textBlock}>{framing ?? "—"}</div>}
+            <div className={styles.rawSection}>
+              <div className={styles.textCardHeader}>AI összefoglaló</div>
+              <div className={styles.glassPanel}>
+                <div className={styles.glassInner}>
+                  <div className={styles.textBlock}>{framing ?? "—"}</div>
+                </div>
               </div>
             </div>
 
