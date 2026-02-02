@@ -1,8 +1,8 @@
 const baseUrl = process.env.BASE_URL || "http://localhost:3000";
 
 const body = {
-  preset_id: "lumira_gate",
-  variant: "dawn",
+  preset_id: "lumira_core_space",
+  variant: "night",
   debug: true,
 };
 

@@ -2,11 +2,17 @@ import { anchorKey, stripDiacritics } from "@/src/lib/dream/anchorKey";
 import type { ObservationPayloadV0 } from "@/src/domain/observe/types";
 import type {
   DreamMapBuilderInput,
+  DreamMapCoocEvent,
   DreamMapEdge,
   DreamMapEdgeEvidence,
+  DreamMapEdgeTrace,
+  DreamMapEntryHighlight,
+  DreamMapEntrySpan,
   DreamMapNode,
   DreamMapNodeKind,
+  DreamMapNodeEvidenceSpan,
   DreamMapPayloadV0,
+  DreamMapSessionEntry,
   DreamMapSceneAxis,
 } from "@/src/domain/dreammap/types";
 
@@ -30,6 +36,26 @@ const KIND_WEIGHTS: Record<DreamMapNodeKind, number> = {
 
 const HIGHLIGHT_OCC_BOOST = 2;
 
+const COOC_WEIGHT_BY_BUCKET: Record<"same_span" | "same_sentence" | "same_paragraph", number> = {
+  same_span: 1.0,
+  same_sentence: 0.7,
+  same_paragraph: 0.35,
+};
+
+const COOC_MAX_EDGES = 250;
+const COOC_MAX_UNIT_NODES = 16;
+const COOC_MAX_SENTENCES = 200;
+const COOC_MAX_PARAGRAPHS = 120;
+
+const CANDIDATE_ANCHORS_MAX = 60;
+const CANDIDATE_GLOSSARY_MAX = 40;
+const CANDIDATE_HIGHLIGHT_MAX = 40;
+const OCCURRENCE_BOOST = 1.0;
+
+const NODE_EVIDENCE_SPAN_LIMIT = 5;
+const EDGE_TRACE_LIMIT = 3;
+const TRACE_SAMPLE_LIMIT = 10;
+
 type NodeAccumulator = {
   key: string;
   baseKey: string;
@@ -44,6 +70,46 @@ type EdgeAccumulator = {
   to: string;
   weight: number;
   evidence: DreamMapEdgeEvidence[];
+};
+
+type MaterializedSession = {
+  full_text: string;
+  entry_spans: DreamMapEntrySpan[];
+  entries_count_by_kind: Record<string, number>;
+};
+
+type CandidateInfo = {
+  baseKey: string;
+  label: string;
+  kind: DreamMapNodeKind;
+  baseScore: number;
+  normKey: string;
+  sources: Array<"anchors" | "glossary" | "highlight">;
+};
+
+type UnitCandidate = {
+  baseKey: string;
+  label: string;
+  kind: DreamMapNodeKind;
+  occ: number;
+  score: number;
+};
+
+type CoocNodeAccumulator = {
+  key: string;
+  baseKey: string;
+  label: string;
+  kind: DreamMapNodeKind;
+  occurrence: number;
+  evidence: Array<{ source: "anchors" | "glossary" | "highlight" | "observation"; path: string }>;
+  evidence_spans: DreamMapNodeEvidenceSpan[];
+};
+
+type CoocEdgeAccumulator = {
+  from: string;
+  to: string;
+  weight_raw: number;
+  trace: DreamMapEdgeTrace[];
 };
 
 function clamp01(value: number): number {
@@ -67,6 +133,114 @@ function normalizeBaseKey(raw: string): string {
   return stripDiacritics(trimmed.toLowerCase()).replace(/\s+/g, " ").trim();
 }
 
+function normalizeForMatch(raw: string): string {
+  const cleaned = stripDiacritics(String(raw ?? "").toLowerCase());
+  return cleaned.replace(/[^a-z0-9]+/gi, " ").replace(/\s+/g, " ").trim();
+}
+
+export function materializeSessionText(entries: DreamMapSessionEntry[] | null | undefined): MaterializedSession {
+  const rows = (Array.isArray(entries) ? entries.slice() : []).filter(
+    (row) => typeof row?.content === "string" && row.content.length > 0
+  );
+  rows.sort((a, b) => {
+    const at = a.created_at ?? "";
+    const bt = b.created_at ?? "";
+    if (at !== bt) return at.localeCompare(bt);
+    return String(a.id ?? "").localeCompare(String(b.id ?? ""));
+  });
+
+  let fullText = "";
+  let cursor = 0;
+  const entrySpans: DreamMapEntrySpan[] = [];
+  const countsByKind: Record<string, number> = {};
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const content = row.content;
+
+    const start = cursor;
+    fullText += content;
+    cursor += content.length;
+    const end = cursor;
+
+    entrySpans.push({
+      entry_id: row.id,
+      kind: row.kind ?? null,
+      start,
+      end,
+    });
+
+    const kindKey = row.kind ?? "unknown";
+    countsByKind[kindKey] = (countsByKind[kindKey] ?? 0) + 1;
+
+    if (i < rows.length - 1) {
+      fullText += "\n\n";
+      cursor += 2;
+    }
+  }
+
+  return { full_text: fullText, entry_spans: entrySpans, entries_count_by_kind: countsByKind };
+}
+
+function trimSpan(text: string, start: number, end: number): { start: number; end: number } | null {
+  let s = Math.max(0, start);
+  let e = Math.max(s, end);
+  while (s < e && /\s/.test(text[s])) s++;
+  while (e > s && /\s/.test(text[e - 1])) e--;
+  if (e <= s) return null;
+  return { start: s, end: e };
+}
+
+export function extractParagraphSpans(text: string, maxUnits: number): Array<{ start: number; end: number }> {
+  const spans: Array<{ start: number; end: number }> = [];
+  if (!text) return spans;
+
+  const regex = /\n\s*\n+/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null = null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (spans.length >= maxUnits) break;
+    const rawStart = lastIndex;
+    const rawEnd = match.index;
+    const trimmed = trimSpan(text, rawStart, rawEnd);
+    if (trimmed) spans.push(trimmed);
+    lastIndex = regex.lastIndex;
+  }
+
+  if (spans.length < maxUnits && lastIndex < text.length) {
+    const trimmed = trimSpan(text, lastIndex, text.length);
+    if (trimmed) spans.push(trimmed);
+  }
+
+  return spans;
+}
+
+export function extractSentenceSpans(text: string, maxUnits: number): Array<{ start: number; end: number }> {
+  const spans: Array<{ start: number; end: number }> = [];
+  if (!text) return spans;
+
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch !== "." && ch !== "!" && ch !== "?") continue;
+    const next = text[i + 1] ?? "";
+    if (next && !/\s/.test(next)) continue;
+    const rawEnd = i + 1;
+    const trimmed = trimSpan(text, start, rawEnd);
+    if (trimmed) spans.push(trimmed);
+    start = rawEnd;
+    if (spans.length >= maxUnits) break;
+  }
+
+  if (spans.length < maxUnits && start < text.length) {
+    const trimmed = trimSpan(text, start, text.length);
+    if (trimmed) spans.push(trimmed);
+  }
+
+  return spans;
+}
+
 function addEvidence<T extends { source: string; path: string }>(list: T[], entry: T) {
   if (!entry?.source || !entry?.path) return;
   if (list.some((e) => e.source === entry.source && e.path === entry.path)) return;
@@ -74,7 +248,7 @@ function addEvidence<T extends { source: string; path: string }>(list: T[], entr
 }
 
 function addNodeKindEvidence(
-  node: NodeAccumulator,
+  node: { evidence: Array<{ source: "observation" | "anchors" | "glossary" | "highlight"; path: string }> },
   source: "observation" | "anchors" | "glossary" | "highlight",
   path: string
 ) {
@@ -126,6 +300,31 @@ function highlightKindFromCategory(category: unknown, label: string): DreamMapNo
       return "themes_words";
     default: {
       const hasSpace = label.includes(" ");
+      return hasSpace ? "themes_words" : "objects";
+    }
+  }
+}
+
+function anchorKindFromCategory(category: unknown, fallbackLabel: string): DreamMapNodeKind {
+  const raw = typeof category === "string" ? category.trim().toLowerCase() : "";
+  switch (raw) {
+    case "character":
+    case "person":
+      return "people";
+    case "place":
+      return "places";
+    case "object":
+      return "objects";
+    case "beat":
+    case "theme":
+      return "themes_words";
+    case "felt_word":
+    case "feeling":
+      return "sensations";
+    case "action":
+      return "actions";
+    default: {
+      const hasSpace = fallbackLabel.includes(" ");
       return hasSpace ? "themes_words" : "objects";
     }
   }
@@ -204,7 +403,648 @@ function buildGlossaryMap(glossaryOccurrences: Array<{ canonical_key: string; oc
   return occByBaseKey;
 }
 
-export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 {
+function buildCandidatePool(params: {
+  anchorPayload: any | null | undefined;
+  glossaryOccurrences: Array<{ canonical_key: string; occurrences?: number | null }> | null | undefined;
+  highlights: Array<{ text: string; category?: string | null }> | null | undefined;
+}): CandidateInfo[] {
+  const byKey = new Map<string, CandidateInfo>();
+
+  const addCandidate = (baseKey: string, label: string, kind: DreamMapNodeKind, score: number, source: CandidateInfo["sources"][number]) => {
+    if (!baseKey) return;
+    const existing = byKey.get(baseKey);
+    if (!existing) {
+      byKey.set(baseKey, {
+        baseKey,
+        label,
+        kind,
+        baseScore: score,
+        normKey: normalizeForMatch(baseKey),
+        sources: [source],
+      });
+      return;
+    }
+
+    existing.baseScore = Math.max(existing.baseScore, score);
+    if (!existing.sources.includes(source)) existing.sources.push(source);
+
+    const sourceRank: Record<CandidateInfo["sources"][number], number> = {
+      anchors: 3,
+      highlight: 2,
+      glossary: 1,
+    };
+
+    if (sourceRank[source] > sourceRank[existing.sources[0]]) {
+      existing.label = label || existing.label;
+      existing.kind = kind;
+      existing.sources = [source, ...existing.sources.filter((s) => s !== source)];
+    }
+  };
+
+  const anchors = Array.isArray(params.anchorPayload?.anchors) ? params.anchorPayload.anchors : [];
+  const anchorRows = anchors
+    .map((row: any) => {
+      const name = typeof row?.name === "string" ? row.name.trim() : "";
+      if (!name) return null;
+      const baseKey = normalizeBaseKey(name);
+      if (!baseKey) return null;
+      const score = Number(row?.score ?? 0);
+      return {
+        baseKey,
+        label: name,
+        kind: anchorKindFromCategory(row?.category, name),
+        score: Number.isFinite(score) ? score : 0,
+      };
+    })
+    .filter(Boolean) as Array<{ baseKey: string; label: string; kind: DreamMapNodeKind; score: number }>;
+
+  anchorRows.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.label.localeCompare(b.label);
+  });
+
+  for (const row of anchorRows.slice(0, CANDIDATE_ANCHORS_MAX)) {
+    addCandidate(row.baseKey, row.label, row.kind, row.score, "anchors");
+  }
+
+  const glossaryRows = Array.isArray(params.glossaryOccurrences) ? params.glossaryOccurrences : [];
+  const glossarySorted = glossaryRows
+    .map((row) => {
+      const raw = typeof row?.canonical_key === "string" ? row.canonical_key.trim() : "";
+      if (!raw) return null;
+      const baseKey = normalizeBaseKey(raw);
+      if (!baseKey) return null;
+      const occ = Number(row?.occurrences ?? 1);
+      return {
+        baseKey,
+        label: raw,
+        occ: Number.isFinite(occ) ? occ : 1,
+      };
+    })
+    .filter(Boolean) as Array<{ baseKey: string; label: string; occ: number }>;
+
+  glossarySorted.sort((a, b) => {
+    if (b.occ !== a.occ) return b.occ - a.occ;
+    return a.label.localeCompare(b.label);
+  });
+
+  for (const row of glossarySorted.slice(0, CANDIDATE_GLOSSARY_MAX)) {
+    addCandidate(row.baseKey, row.label, "themes_words", row.occ, "glossary");
+  }
+
+  const highlightRows = Array.isArray(params.highlights) ? params.highlights : [];
+  const highlightSorted = highlightRows
+    .map((row) => {
+      const label = normalizeHighlightLabel(row?.text);
+      if (!label) return null;
+      const baseKey = normalizeBaseKey(label);
+      if (!baseKey) return null;
+      return { baseKey, label, kind: highlightKindFromCategory(row?.category, label) };
+    })
+    .filter(Boolean) as Array<{ baseKey: string; label: string; kind: DreamMapNodeKind }>;
+
+  highlightSorted.sort((a, b) => a.label.localeCompare(b.label));
+
+  for (const row of highlightSorted.slice(0, CANDIDATE_HIGHLIGHT_MAX)) {
+    addCandidate(row.baseKey, row.label, row.kind, 1.5, "highlight");
+  }
+
+  const out = Array.from(byKey.values());
+  out.sort((a, b) => {
+    if (b.baseScore !== a.baseScore) return b.baseScore - a.baseScore;
+    return a.baseKey.localeCompare(b.baseKey);
+  });
+  return out;
+}
+
+function countOccurrencesInNormalizedText(normalizedText: string, normalizedKey: string): number {
+  if (!normalizedKey) return 0;
+  const hay = ` ${normalizedText} `;
+  const needle = ` ${normalizedKey} `;
+  let count = 0;
+  let idx = hay.indexOf(needle);
+  while (idx >= 0) {
+    count++;
+    idx = hay.indexOf(needle, idx + needle.length);
+  }
+  return count;
+}
+
+function selectUnitCandidates(
+  unitText: string,
+  pool: CandidateInfo[],
+  forcedKeys: Set<string> | null,
+  maxNodes: number
+): UnitCandidate[] {
+  if (!unitText || pool.length === 0) return [];
+  const normalizedText = normalizeForMatch(unitText);
+  if (!normalizedText) return [];
+
+  const out: UnitCandidate[] = [];
+  for (const cand of pool) {
+    const occ = countOccurrencesInNormalizedText(normalizedText, cand.normKey);
+    if (occ <= 0 && (!forcedKeys || !forcedKeys.has(cand.baseKey))) continue;
+    out.push({
+      baseKey: cand.baseKey,
+      label: cand.label,
+      kind: cand.kind,
+      occ,
+      score: cand.baseScore + occ * OCCURRENCE_BOOST,
+    });
+  }
+
+  out.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.baseKey.localeCompare(b.baseKey);
+  });
+
+  return out.slice(0, maxNodes);
+}
+
+function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0 {
+  const observation = input.observationPayloadV0 as ObservationPayloadV0;
+  const meta = input.meta;
+  const computedAt = meta.computed_at ?? new Date().toISOString();
+
+  const material = materializeSessionText(input.sessionEntries);
+  const fullText = material.full_text;
+  const entrySpans = material.entry_spans;
+  const entrySpanById = new Map(entrySpans.map((span) => [span.entry_id, span]));
+
+  const candidatePool = buildCandidatePool({
+    anchorPayload: input.anchorPayload ?? null,
+    glossaryOccurrences: input.glossaryOccurrences ?? null,
+    highlights: input.highlights ?? null,
+  });
+  const candidateByBaseKey = new Map(candidatePool.map((c) => [c.baseKey, c]));
+
+  const nodes = new Map<string, CoocNodeAccumulator>();
+  const nodeKeyByBase = new Map<string, string>();
+  const occByBaseKey = new Map<string, number>();
+
+  const addNodeEvidenceSpan = (node: CoocNodeAccumulator, span: DreamMapNodeEvidenceSpan) => {
+    if (node.evidence_spans.length >= NODE_EVIDENCE_SPAN_LIMIT) return;
+    if (
+      node.evidence_spans.some(
+        (ev) =>
+          ev.source === span.source &&
+          ev.entry_id === span.entry_id &&
+          ev.start === span.start &&
+          ev.end === span.end &&
+          ev.entry_start === span.entry_start &&
+          ev.entry_end === span.entry_end
+      )
+    ) {
+      return;
+    }
+    node.evidence_spans.push(span);
+  };
+
+  const addNodeFromCandidate = (candidate: UnitCandidate, source: DreamMapEdgeTrace["source"], span: DreamMapEdgeTrace) => {
+    const baseKey = candidate.baseKey;
+    const kind = candidate.kind;
+    const key = `${baseKey}:${kind}`;
+    const occurrence = Math.max(1, candidate.occ || 0) + (source === "highlight_span" ? HIGHLIGHT_OCC_BOOST : 0);
+
+    let node = nodes.get(key);
+    if (!node) {
+      node = {
+        key,
+        baseKey,
+        label: candidate.label,
+        kind,
+        occurrence: 0,
+        evidence: [],
+        evidence_spans: [],
+      };
+
+      const pool = candidateByBaseKey.get(baseKey);
+      if (pool?.sources.includes("anchors")) addNodeKindEvidence(node, "anchors", "anchors.payload.anchors");
+      if (pool?.sources.includes("glossary")) addNodeKindEvidence(node, "glossary", "glossary_occurrences");
+      if (pool?.sources.includes("highlight")) addNodeKindEvidence(node, "highlight", "session_highlights");
+      nodes.set(key, node);
+    }
+
+    node.occurrence += occurrence;
+    occByBaseKey.set(baseKey, (occByBaseKey.get(baseKey) ?? 0) + occurrence);
+    nodeKeyByBase.set(baseKey, key);
+
+    addNodeEvidenceSpan(node, {
+      source,
+      entry_id: span.entry_id,
+      start: span.start,
+      end: span.end,
+      entry_start: span.entry_start,
+      entry_end: span.entry_end,
+    });
+  };
+
+  const events: DreamMapCoocEvent[] = [];
+  const eventsBySource: Record<string, number> = {
+    highlight_span: 0,
+    raw_sentence: 0,
+    raw_paragraph: 0,
+  };
+
+  let highlightSpanCharsTotal = 0;
+  const entryHighlights = Array.isArray(input.entryHighlights) ? input.entryHighlights : [];
+
+  for (const row of entryHighlights) {
+    const entrySpan = entrySpanById.get(row.entry_id);
+    if (!entrySpan) continue;
+    const entryLen = entrySpan.end - entrySpan.start;
+    if (entryLen <= 0) continue;
+
+    const localStart = Math.max(0, Math.min(row.start, entryLen));
+    const localEnd = Math.max(localStart, Math.min(row.end, entryLen));
+    if (localEnd <= localStart) continue;
+
+    const sessionStart = entrySpan.start + localStart;
+    const sessionEnd = entrySpan.start + localEnd;
+    if (sessionEnd <= sessionStart) continue;
+
+    highlightSpanCharsTotal += sessionEnd - sessionStart;
+    const spanText = fullText.slice(sessionStart, sessionEnd);
+
+    const forcedKeys = new Set<string>();
+    const anchorKeyRaw = typeof row.anchor_key === "string" ? row.anchor_key.trim() : "";
+    if (anchorKeyRaw) {
+      const baseKey = normalizeBaseKey(anchorKeyRaw);
+      if (baseKey) forcedKeys.add(baseKey);
+    }
+
+    let unitCandidates = selectUnitCandidates(spanText, candidatePool, forcedKeys, COOC_MAX_UNIT_NODES);
+
+    if (forcedKeys.size > 0) {
+      for (const baseKey of forcedKeys) {
+        if (unitCandidates.some((c) => c.baseKey === baseKey)) continue;
+        const label = typeof row.label === "string" && row.label.trim() ? row.label.trim() : baseKey;
+        unitCandidates = [
+          ...unitCandidates,
+          {
+            baseKey,
+            label,
+            kind: highlightKindFromCategory(row.category, label),
+            occ: 0,
+            score: 0,
+          },
+        ];
+      }
+    }
+
+    const spanMeta: DreamMapEdgeTrace = {
+      source: "highlight_span",
+      entry_id: row.entry_id,
+      start: sessionStart,
+      end: sessionEnd,
+      unit: "span",
+      proximity_bucket: "same_span",
+      entry_start: localStart,
+      entry_end: localEnd,
+    };
+
+    for (const candidate of unitCandidates) {
+      addNodeFromCandidate(candidate, "highlight_span", spanMeta);
+    }
+
+    const baseKeys = Array.from(new Set(unitCandidates.map((c) => c.baseKey))).sort();
+    if (baseKeys.length < 2) continue;
+    for (let i = 0; i < baseKeys.length; i++) {
+      for (let j = i + 1; j < baseKeys.length; j++) {
+        const a = baseKeys[i];
+        const b = baseKeys[j];
+        events.push({
+          source: "highlight_span",
+          span: {
+            entry_id: row.entry_id,
+            start: sessionStart,
+            end: sessionEnd,
+            entry_start: localStart,
+            entry_end: localEnd,
+          },
+          unit: "span",
+          a_key: a,
+          b_key: b,
+          count: 1,
+          proximity_bucket: "same_span",
+        });
+      }
+    }
+  }
+
+  eventsBySource.highlight_span = events.filter((e) => e.source === "highlight_span").length;
+
+  const highlightCoverageRatio = fullText.length > 0 ? highlightSpanCharsTotal / fullText.length : 0;
+
+  const shouldFallback = eventsBySource.highlight_span === 0;
+  if (shouldFallback && fullText.length > 0) {
+    const sentenceSpans = extractSentenceSpans(fullText, COOC_MAX_SENTENCES);
+    for (const span of sentenceSpans) {
+      const text = fullText.slice(span.start, span.end);
+      const unitCandidates = selectUnitCandidates(text, candidatePool, null, COOC_MAX_UNIT_NODES);
+      const spanMeta: DreamMapEdgeTrace = {
+        source: "raw_sentence",
+        start: span.start,
+        end: span.end,
+        unit: "sentence",
+        proximity_bucket: "same_sentence",
+      };
+
+      for (const candidate of unitCandidates) {
+        addNodeFromCandidate(candidate, "raw_sentence", spanMeta);
+      }
+
+      const baseKeys = Array.from(new Set(unitCandidates.map((c) => c.baseKey))).sort();
+      if (baseKeys.length < 2) continue;
+      for (let i = 0; i < baseKeys.length; i++) {
+        for (let j = i + 1; j < baseKeys.length; j++) {
+          events.push({
+            source: "raw_sentence",
+            span: { start: span.start, end: span.end },
+            unit: "sentence",
+            a_key: baseKeys[i],
+            b_key: baseKeys[j],
+            count: 1,
+            proximity_bucket: "same_sentence",
+          });
+        }
+      }
+    }
+
+    const paragraphSpans = extractParagraphSpans(fullText, COOC_MAX_PARAGRAPHS);
+    for (const span of paragraphSpans) {
+      const text = fullText.slice(span.start, span.end);
+      const unitCandidates = selectUnitCandidates(text, candidatePool, null, COOC_MAX_UNIT_NODES);
+      const spanMeta: DreamMapEdgeTrace = {
+        source: "raw_paragraph",
+        start: span.start,
+        end: span.end,
+        unit: "paragraph",
+        proximity_bucket: "same_paragraph",
+      };
+
+      for (const candidate of unitCandidates) {
+        addNodeFromCandidate(candidate, "raw_paragraph", spanMeta);
+      }
+
+      const baseKeys = Array.from(new Set(unitCandidates.map((c) => c.baseKey))).sort();
+      if (baseKeys.length < 2) continue;
+      for (let i = 0; i < baseKeys.length; i++) {
+        for (let j = i + 1; j < baseKeys.length; j++) {
+          events.push({
+            source: "raw_paragraph",
+            span: { start: span.start, end: span.end },
+            unit: "paragraph",
+            a_key: baseKeys[i],
+            b_key: baseKeys[j],
+            count: 1,
+            proximity_bucket: "same_paragraph",
+          });
+        }
+      }
+    }
+  }
+
+  eventsBySource.raw_sentence = events.filter((e) => e.source === "raw_sentence").length;
+  eventsBySource.raw_paragraph = events.filter((e) => e.source === "raw_paragraph").length;
+
+  const edges = new Map<string, CoocEdgeAccumulator>();
+  for (const event of events) {
+    const baseWeight = COOC_WEIGHT_BY_BUCKET[event.proximity_bucket] ?? 0;
+    if (baseWeight <= 0) continue;
+
+    const fromKey = nodeKeyByBase.get(event.a_key) ?? `${event.a_key}:themes_words`;
+    const toKey = nodeKeyByBase.get(event.b_key) ?? `${event.b_key}:themes_words`;
+    if (fromKey === toKey) continue;
+    const [from, to] = fromKey < toKey ? [fromKey, toKey] : [toKey, fromKey];
+    const edgeKey = `${from}::${to}`;
+
+    const trace: DreamMapEdgeTrace = {
+      source: event.source,
+      entry_id: event.span.entry_id,
+      start: event.span.start,
+      end: event.span.end,
+      unit: event.unit,
+      proximity_bucket: event.proximity_bucket,
+      entry_start: event.span.entry_start,
+      entry_end: event.span.entry_end,
+    };
+
+    const existing = edges.get(edgeKey);
+    if (existing) {
+      existing.weight_raw += baseWeight * event.count;
+      if (existing.trace.length < EDGE_TRACE_LIMIT) existing.trace.push(trace);
+    } else {
+      edges.set(edgeKey, {
+        from,
+        to,
+        weight_raw: baseWeight * event.count,
+        trace: [trace],
+      });
+    }
+  }
+
+  const edgeArray = Array.from(edges.values());
+  edgeArray.sort((a, b) => {
+    if (b.weight_raw !== a.weight_raw) return b.weight_raw - a.weight_raw;
+    return `${a.from}::${a.to}`.localeCompare(`${b.from}::${b.to}`);
+  });
+
+  const uniqueEdgesBeforePrune = edgeArray.length;
+  const prunedEdges = edgeArray.slice(0, COOC_MAX_EDGES);
+  const maxEdgeWeight = prunedEdges.reduce((max, e) => Math.max(max, e.weight_raw), 0);
+
+  const degreeByNode = new Map<string, number>();
+  for (const edge of prunedEdges) {
+    degreeByNode.set(edge.from, (degreeByNode.get(edge.from) ?? 0) + edge.weight_raw);
+    degreeByNode.set(edge.to, (degreeByNode.get(edge.to) ?? 0) + edge.weight_raw);
+  }
+
+  const maxDegree = Math.max(0, ...Array.from(degreeByNode.values()));
+  const glossaryProvided = Array.isArray(input.glossaryOccurrences);
+  const glossaryMap = buildGlossaryMap(input.glossaryOccurrences ?? []);
+  const maxGlossaryOcc = Math.max(0, ...Array.from(glossaryMap.values()));
+
+  const nodeArray: DreamMapNode[] = [];
+  const zRawByKey = new Map<string, number>();
+  const glossaryNormByKey = new Map<string, number>();
+
+  const nodesSorted = Array.from(nodes.values()).sort((a, b) => a.key.localeCompare(b.key));
+  for (const node of nodesSorted) {
+    const centrality = maxDegree > 0 ? (degreeByNode.get(node.key) ?? 0) / maxDegree : 0;
+    const glossaryOcc = glossaryMap.get(node.baseKey) ?? 0;
+    const glossaryNorm = maxGlossaryOcc > 0 ? glossaryOcc / maxGlossaryOcc : 0;
+    glossaryNormByKey.set(node.key, glossaryNorm);
+
+    const kindWeight = KIND_WEIGHTS[node.kind] ?? 1;
+    const zRaw = kindWeight * node.occurrence + W_CENT * centrality;
+    zRawByKey.set(node.key, zRaw);
+
+    nodeArray.push({
+      key: node.key,
+      label: node.label,
+      kind: node.kind,
+      x: null,
+      y: null,
+      axis_source: "none",
+      axis_evidence_scene_index: null,
+      z: 0,
+      centrality,
+      occurrence: node.occurrence,
+      size: 0,
+      opacity: 0,
+      porosity: null,
+      scene_presence_count: 0,
+      primary_scene_count: 0,
+      scene_indices: [],
+      evidence: node.evidence,
+      evidence_spans: node.evidence_spans,
+    });
+  }
+
+  const maxZRaw = Math.max(0, ...Array.from(zRawByKey.values()));
+  for (const node of nodeArray) {
+    const zRaw = zRawByKey.get(node.key) ?? 0;
+    const z = maxZRaw > 0 ? zRaw / maxZRaw : 0;
+    node.z = z;
+    node.size = z;
+    node.opacity = Math.min(Math.max(z, 0.15), 1.0);
+    if (glossaryProvided) {
+      const glossaryNorm = glossaryNormByKey.get(node.key) ?? 0;
+      const stability = clamp01(POROSITY_Z_WEIGHT * z + POROSITY_RECURRENCE_WEIGHT * glossaryNorm);
+      node.porosity = 1 - stability;
+    } else {
+      node.porosity = null;
+    }
+  }
+
+  const edgesOut: DreamMapEdge[] = prunedEdges.map((edge) => {
+    const norm = maxEdgeWeight > 0 ? edge.weight_raw / maxEdgeWeight : 0;
+    return {
+      from: edge.from,
+      to: edge.to,
+      weight: norm,
+      weight_raw: edge.weight_raw,
+      weight_norm: norm,
+      directed: false,
+      evidence: [{ source: "cooc_event", path: "cooc_events" }],
+      trace: edge.trace,
+    };
+  });
+
+  const traceSamples = edgesOut.slice(0, TRACE_SAMPLE_LIMIT).map((edge) => ({
+    edge: { from: edge.from, to: edge.to },
+    trace: (edge.trace ?? []).slice(0, EDGE_TRACE_LIMIT),
+  }));
+
+  const scenes = Array.isArray(observation?.scenes) ? observation.scenes : [];
+  const sceneAxisOut: DreamMapSceneAxis[] = [];
+  for (let i = 0; i < scenes.length; i++) {
+    const scene = scenes[i] ?? ({} as ObservationPayloadV0["scenes"][number]);
+    const axis = computeSceneAxisFromTokens({
+      mood_words: parseStringList(scene?.mood_words),
+      sensations: parseStringList(scene?.sensations),
+      themes_words: parseStringList((scene as any)?.themes_words),
+      lexicon: AXIS_LEXICON_V1,
+    });
+    sceneAxisOut.push({
+      scene_index: i,
+      x: axis.x,
+      y: axis.y,
+      confidence: axis.confidence,
+      lexicon_version: axis.lexicon_version,
+      evidence: axis.evidence,
+    });
+  }
+
+  const warnings: DreamMapPayloadV0["meta"]["warnings"] = [];
+  if (!input.anchorPayload) warnings.push({ code: "anchors_missing" });
+  if (!Array.isArray(input.glossaryOccurrences)) warnings.push({ code: "glossary_missing" });
+
+  const anchorMaps = buildAnchorMaps(input.anchorPayload ?? null);
+  for (const [baseKey, anchorOccRaw] of anchorMaps.occByBaseKey.entries()) {
+    const computedOcc = occByBaseKey.get(baseKey);
+    if (typeof computedOcc !== "number") continue;
+
+    const anchorOcc = Number(anchorOccRaw);
+    if (!Number.isFinite(anchorOcc)) continue;
+    if (anchorOcc < 1 || computedOcc < 1) continue;
+
+    const diff = Math.abs(anchorOcc - computedOcc);
+    if (diff < 2) continue;
+
+    warnings.push({
+      code: "occurrence_mismatch",
+      key: baseKey,
+      anchor_occ: anchorOcc,
+      computed_occ: computedOcc,
+    });
+  }
+
+  return {
+    schema_version: "dream_map_v0",
+    algo_version: meta.algo_version,
+    nodes: nodeArray,
+    edges: edgesOut,
+    meta: {
+      session_id: meta.session_id,
+      user_id: meta.user_id,
+      computed_at: computedAt,
+      source_version_ids: {
+        observation_version_id: meta.observation_version_id,
+        anchor_version_id: meta.anchor_version_id,
+        session_index_version_id: meta.session_index_version_id,
+      },
+      counts: {
+        node_count: nodeArray.length,
+        edge_count: edgesOut.length,
+        scene_count: scenes.length,
+        primary_nodes_count: 0,
+      },
+      warnings,
+      axis: {
+        lexicon_version: AXIS_LEXICON_V1.version,
+        scene_axis: sceneAxisOut,
+      },
+      debug: {
+        algo_version: "dream_map_v1_span_cooc_mvp",
+        material: {
+          full_text_len: fullText.length,
+          entry_spans_count: entrySpans.length,
+          entries_count_by_kind: material.entries_count_by_kind,
+        },
+        coverage: {
+          highlights_count: entryHighlights.length,
+          highlight_span_chars_total: highlightSpanCharsTotal,
+          highlight_coverage_ratio: highlightCoverageRatio,
+        },
+        cooc_stats: {
+          events_by_source: eventsBySource,
+          unique_edges_before_prune: uniqueEdgesBeforePrune,
+          edges_after_prune: edgesOut.length,
+          nodes_count: nodeArray.length,
+        },
+        trace_samples: traceSamples,
+        determinism_hash: meta.determinism_hash,
+      },
+      weights: {
+        w_cent: W_CENT,
+        highlight_occ_boost: HIGHLIGHT_OCC_BOOST,
+        w_kind_people: KIND_WEIGHTS.people,
+        w_kind_places: KIND_WEIGHTS.places,
+        w_kind_objects: KIND_WEIGHTS.objects,
+        w_kind_themes: KIND_WEIGHTS.themes_words,
+        w_kind_sensations: KIND_WEIGHTS.sensations,
+        w_kind_mood_words: KIND_WEIGHTS.mood_words,
+        w_kind_actions: KIND_WEIGHTS.actions,
+        porosity_z: POROSITY_Z_WEIGHT,
+        porosity_recurrence: POROSITY_RECURRENCE_WEIGHT,
+      },
+    },
+  };
+}
+
+function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayloadV0 {
   const observation = input.observationPayloadV0 as ObservationPayloadV0;
   const meta = input.meta;
 
@@ -688,4 +1528,12 @@ export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 
       },
     },
   };
+}
+
+export function buildDreamMapV0(input: DreamMapBuilderInput): DreamMapPayloadV0 {
+  const algo = (input.meta?.algo_version ?? "").trim();
+  if (algo === "v0_scenePairs" || algo === "dream_map_v0_scenePairs") {
+    return buildDreamMapV0ScenePairs(input);
+  }
+  return buildDreamMapV1SpanCooc(input);
 }

@@ -2,6 +2,10 @@
 // Converts a structured GateSpec into safe, non-narrative prompt fragments.
 // IMPORTANT: Fragments must never override locks (scene/style/negatives).
 
+type GateDistance = "close" | "medium" | "far"; // kamera távolság / kivágás
+type PortalArchetype = "absence" | "gate_like" | "doorframe"; // jellege (nem túloldal!)
+type LifeLevel = "none" | "subtle" | "present"; // élővilág mennyisége
+
 export type GateSpec = {
   material?: "stone" | "metal" | "wood" | "crystal" | "unknown";
   material_state?: "smooth" | "cracked" | "eroded" | "timeless";
@@ -11,6 +15,12 @@ export type GateSpec = {
   environment?: "overgrown" | "dusty" | "ruined" | "clean";
   particles?: "none" | "dust" | "mist" | "light_sparks";
   mood?: "calm" | "neutral" | "tense" | "mysterious" | "somber";
+
+  // NEW:
+  distance?: GateDistance;
+  portal_archetype?: PortalArchetype;
+  life_level?: LifeLevel;
+  user_free_text?: string; // opcionális, ebből inferálunk
 };
 
 export function buildGatePromptFragments(spec?: GateSpec): string[] {

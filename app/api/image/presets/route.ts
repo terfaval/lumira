@@ -1,7 +1,7 @@
 // app/api/image/presets/route.ts
 import { NextResponse } from "next/server";
 import { lumiraStonePassage_v0 } from "@/src/domain/image/presets/lumiraStonePassage_v0";
-import { lumiraGate_v2 } from "@/src/domain/image/presets/lumira_gate_v0";
+import { lumiraCoreSpace_v1 } from "@/src/domain/image/presets/lumira_core_space_v1";
 import type { ImageStylePreset } from "@/src/domain/image/presets/types";
 
 export const runtime = "nodejs";
@@ -24,7 +24,7 @@ export async function GET() {
   return NextResponse.json({
     presets: [
       toPresetResponse(lumiraStonePassage_v0),
-      toPresetResponse(lumiraGate_v2),
+      toPresetResponse(lumiraCoreSpace_v1),
     ],
   });
 }

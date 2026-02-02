@@ -69,7 +69,7 @@ export async function generateImage(params: {
     const supabase = supabaseServerService();
     const bucket = "backgrounds";
     const path =
-      params.preset.id === "lumira_gate"
+      params.preset.id === "lumira_core_space"
         ? `gate/${job.id}/${params.variant}.png`
         : `${job.id}.png`;
     const bytes_length = rendered.bytes.length;

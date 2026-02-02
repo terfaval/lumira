@@ -14,12 +14,6 @@ export type ImageVariant = {
   light_prompt: string;   // ONLY the light block
 };
 
-export type ImageCanvasSpec = {
-  aspect: "desktop_16_9" | "portrait_9_16";
-  width: number;
-  height: number;
-};
-
 export type ImageStylePreset = {
   id: string;               // "lumira_stone_passage"
   version: number;          // 0
@@ -29,4 +23,10 @@ export type ImageStylePreset = {
   canvas: ImageCanvasSpec;
   seed_strategy: "deterministic";
   created_at?: string;
+};
+
+export type ImageCanvasSpec = {
+  aspect: "desktop_16_9" | "desktop_3_2" | "portrait_9_16";
+  width: number;
+  height: number;
 };

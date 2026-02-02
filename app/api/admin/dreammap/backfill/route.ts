@@ -140,7 +140,7 @@ export async function POST(req: Request) {
           payload: { algo_version: algoVersion, material_hash: "backfill" },
         });
 
-        const materialHash = `backfill:${algoVersion}`;
+        const materialHash = `backfill:${algoVersion}:${event.id}`;
 
         const res = await jobBuildDreamMapV0({
           supabase,

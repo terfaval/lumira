@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseServerService } from "@/src/lib/supabase/serverService";
 import { lumiraStonePassage_v1 } from "@/src/domain/image/presets/lumiraStonePassage_v1"; // TODO: adjust path if different
-import { lumiraGate_v2 } from "@/src/domain/image/presets/lumira_gate_v0";
+import { lumiraCoreSpace_v1 } from "@/src/domain/image/presets/lumira_core_space_v1";
 
 export const runtime = "nodejs";
 
@@ -11,7 +11,7 @@ export async function POST() {
     return NextResponse.json({ error: "Not allowed in production" }, { status: 403 });
   }
 
-  const presets = [lumiraStonePassage_v1, lumiraGate_v2];
+  const presets = [lumiraStonePassage_v1, lumiraCoreSpace_v1];
 
   const supabase = supabaseServerService();
   const { error } = await supabase.from("image_style_presets").upsert(

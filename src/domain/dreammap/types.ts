@@ -15,9 +15,29 @@ export type DreamMapEvidence = {
 };
 
 export type DreamMapEdgeEvidence = {
-  source: "observation";
+  source: "observation" | "cooc_event";
   path: string;
   explicit?: boolean;
+};
+
+export type DreamMapEdgeTrace = {
+  source: "highlight_span" | "raw_sentence" | "raw_paragraph";
+  entry_id?: string;
+  start: number;
+  end: number;
+  unit: "span" | "sentence" | "paragraph";
+  proximity_bucket: "same_span" | "same_sentence" | "same_paragraph";
+  entry_start?: number;
+  entry_end?: number;
+};
+
+export type DreamMapNodeEvidenceSpan = {
+  source: "highlight_span" | "raw_sentence" | "raw_paragraph";
+  entry_id?: string;
+  start: number;
+  end: number;
+  entry_start?: number;
+  entry_end?: number;
 };
 
 export type DreamMapNode = {
@@ -41,14 +61,18 @@ export type DreamMapNode = {
   scene_indices?: number[];
   primary_scene_indices?: number[];
   evidence: DreamMapEvidence[];
+  evidence_spans?: DreamMapNodeEvidenceSpan[];
 };
 
 export type DreamMapEdge = {
   from: string;
   to: string;
   weight: number;
+  weight_raw?: number;
+  weight_norm?: number;
   directed: boolean;
   evidence: DreamMapEdgeEvidence[];
+  trace?: DreamMapEdgeTrace[];
 };
 
 export type DreamMapPayloadV0 = {
@@ -83,6 +107,28 @@ export type DreamMapPayloadV0 = {
       scene_axis: DreamMapSceneAxis[];
     };
 
+    debug?: {
+      algo_version?: string;
+      material?: {
+        full_text_len: number;
+        entry_spans_count: number;
+        entries_count_by_kind: Record<string, number>;
+      };
+      coverage?: {
+        highlights_count: number;
+        highlight_span_chars_total: number;
+        highlight_coverage_ratio: number;
+      };
+      cooc_stats?: {
+        events_by_source: Record<string, number>;
+        unique_edges_before_prune: number;
+        edges_after_prune: number;
+        nodes_count: number;
+      };
+      trace_samples?: Array<{ edge: { from: string; to: string }; trace: DreamMapEdgeTrace[] }>;
+      determinism_hash?: string;
+    };
+
     weights?: {
       w_cent?: number;
       w_occ?: number;
@@ -114,6 +160,47 @@ export type DreamMapHighlightRow = {
   note?: string | null;
 };
 
+export type DreamMapSessionEntry = {
+  id: string;
+  content: string;
+  kind?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type DreamMapEntrySpan = {
+  entry_id: string;
+  kind?: string | null;
+  start: number;
+  end: number;
+};
+
+export type DreamMapEntryHighlight = {
+  id: string;
+  entry_id: string;
+  start: number;
+  end: number;
+  anchor_key?: string | null;
+  label?: string | null;
+  category?: string | null;
+};
+
+export type DreamMapCoocEvent = {
+  source: "highlight_span" | "raw_sentence" | "raw_paragraph";
+  span: {
+    entry_id?: string;
+    start: number;
+    end: number;
+    entry_start?: number;
+    entry_end?: number;
+  };
+  unit: "span" | "sentence" | "paragraph";
+  a_key: string;
+  b_key: string;
+  count: number;
+  proximity_bucket: "same_span" | "same_sentence" | "same_paragraph";
+};
+
 export type DreamMapSceneAxisEvidence = {
   token: string;
   lex_key: string;
@@ -138,6 +225,8 @@ export type DreamMapBuilderInput = {
   anchorPayload?: any | null;
   glossaryOccurrences?: DreamMapGlossaryOccurrence[] | null;
   highlights?: DreamMapHighlightRow[] | null;
+  sessionEntries?: DreamMapSessionEntry[] | null;
+  entryHighlights?: DreamMapEntryHighlight[] | null;
   meta: {
     observation_version_id: string;
     anchor_version_id?: string;
@@ -146,5 +235,6 @@ export type DreamMapBuilderInput = {
     session_id: string;
     user_id: string;
     computed_at?: string;
+    determinism_hash?: string;
   };
 };
