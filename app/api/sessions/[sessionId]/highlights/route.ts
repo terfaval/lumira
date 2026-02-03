@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 
 export const runtime = "nodejs";
@@ -32,14 +32,17 @@ function normalizeSource(raw: unknown): "user" | "suggested" {
   return s === "suggested" ? "suggested" : "user";
 }
 
-function safeJsonBody(req: Request): Promise<any | null> {
+function safeJsonBody(req: NextRequest): Promise<any | null> {
   return req.json().catch(() => null);
 }
 
-export async function GET(req: Request, context: { params: { sessionId: string } }) {
+type Ctx = { params: Promise<{ sessionId: string }> };
+
+export async function GET(req: NextRequest, { params }: Ctx) {
   try {
-    const sessionId = String(context?.params?.sessionId ?? "").trim();
-    if (!sessionId) {
+    const { sessionId } = await params;
+    const sessionIdValue = String(sessionId ?? "").trim();
+    if (!sessionIdValue) {
       return NextResponse.json({ error: "session_id_required" }, { status: 400 });
     }
 
@@ -54,7 +57,7 @@ export async function GET(req: Request, context: { params: { sessionId: string }
     const highlightsReq = supabase
       .from("dream_session_highlights")
       .select("id, session_id, label, label_norm, kind, note, source, source_ref, status, created_at, updated_at")
-      .eq("session_id", sessionId)
+      .eq("session_id", sessionIdValue)
       .eq("user_id", user_id)
       .eq("status", "active")
       .order("created_at", { ascending: true });
@@ -62,7 +65,7 @@ export async function GET(req: Request, context: { params: { sessionId: string }
     const rejectedReq = supabase
       .from("dream_session_rejected_suggestions")
       .select("suggestion_key")
-      .eq("session_id", sessionId)
+      .eq("session_id", sessionIdValue)
       .eq("user_id", user_id)
       .order("created_at", { ascending: true });
 
@@ -98,10 +101,11 @@ export async function GET(req: Request, context: { params: { sessionId: string }
   }
 }
 
-export async function POST(req: Request, context: { params: { sessionId: string } }) {
+export async function POST(req: NextRequest, { params }: Ctx) {
   try {
-    const sessionId = String(context?.params?.sessionId ?? "").trim();
-    if (!sessionId) {
+    const { sessionId } = await params;
+    const sessionIdValue = String(sessionId ?? "").trim();
+    if (!sessionIdValue) {
       return NextResponse.json({ error: "session_id_required" }, { status: 400 });
     }
 
@@ -138,7 +142,7 @@ export async function POST(req: Request, context: { params: { sessionId: string 
         .from("dream_session_highlights")
         .update({ label, label_norm, kind, note, source, source_ref, status })
         .eq("id", id)
-        .eq("session_id", sessionId)
+        .eq("session_id", sessionIdValue)
         .eq("user_id", user_id)
         .select("id, session_id, label, label_norm, kind, note, source, source_ref, status, created_at, updated_at")
         .maybeSingle();
@@ -158,7 +162,7 @@ export async function POST(req: Request, context: { params: { sessionId: string 
       .upsert(
         {
           user_id,
-          session_id: sessionId,
+          session_id: sessionIdValue,
           label,
           label_norm,
           kind,
@@ -185,7 +189,7 @@ export async function POST(req: Request, context: { params: { sessionId: string 
       await supabase
         .from("dream_session_rejected_suggestions")
         .delete()
-        .eq("session_id", sessionId)
+        .eq("session_id", sessionIdValue)
         .eq("user_id", user_id)
         .eq("suggestion_key", suggestionKey.trim());
     }
