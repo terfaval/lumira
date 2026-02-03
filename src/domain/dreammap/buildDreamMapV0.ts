@@ -10,6 +10,7 @@ import type {
   DreamMapEdgeTrace,
   DreamMapEntryHighlight,
   DreamMapEntrySpan,
+  DreamMapGlossaryOccurrence,
   DreamMapGlossaryRecurrence,
   DreamMapNode,
   DreamMapNodeKind,
