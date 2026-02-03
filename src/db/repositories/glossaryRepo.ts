@@ -75,7 +75,7 @@ async function fetchGlossaryTermsByIds(
       .eq("user_id", args.user_id)
       .in("id", ids);
 
-    if (!res.error) return (res.data ?? []) as GlossaryTermRow[];
+    if (!res.error) return (res.data ?? []) as unknown as GlossaryTermRow[];
 
     let removed = false;
     for (const col of ["anchor_key", "canonical_name", "canonical", "name", "term"]) {
