@@ -4,19 +4,17 @@ import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function safeJsonBody(req: Request): Promise<any | null> {
+function safeJsonBody(req: NextRequest): Promise<any | null> {
   return req.json().catch(() => null);
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ sessionId: string }> }
-) {
-  try {
-    const { sessionId: rawSessionId } = await params;
-    const sessionId = String(rawSessionId ?? "").trim();
+type Ctx = { params: Promise<{ sessionId: string }> };
 
-    if (!sessionId) {
+export async function POST(req: NextRequest, { params }: Ctx) {
+  try {
+    const { sessionId } = await params; // <-- EZ A LÉNYEG
+    const sid = String(sessionId ?? "").trim();
+    if (!sid) {
       return NextResponse.json({ error: "session_id_required" }, { status: 400 });
     }
 
@@ -41,7 +39,7 @@ export async function POST(
     const res = await supabase
       .from("dream_session_rejected_suggestions")
       .upsert(
-        { user_id, session_id: sessionId, suggestion_key },
+        { user_id, session_id: sid, suggestion_key },
         { onConflict: "session_id,suggestion_key" }
       )
       .select("suggestion_key")
