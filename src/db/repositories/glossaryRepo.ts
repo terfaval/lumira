@@ -1,5 +1,5 @@
 // src/db/repositories/glossaryRepo.ts
-import { SupabaseClient } from "@supabase/supabase-js";
+import { PostgrestSingleResponse, SupabaseClient } from "@supabase/supabase-js";
 
 export type GlossaryTermRow = {
   id: string;
@@ -94,7 +94,7 @@ export async function fetchGlossaryRecurrence(
   supabase: SupabaseClient,
   args: { user_id: string }
 ): Promise<GlossaryRecurrenceRow[]> {
-  let occRes = await supabase
+  let occRes: PostgrestSingleResponse<GlossaryOccurrenceRaw[]> = await supabase
     .from("glossary_occurrences")
     .select("term_id,session_id,created_at,count")
     .eq("user_id", args.user_id);
