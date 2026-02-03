@@ -9,6 +9,29 @@ export type DreamMapNodeKind =
   | "mood_words"
   | "themes_words";
 
+export type DreamMapArchetypeDomain =
+  | "people"
+  | "places"
+  | "objects"
+  | "actions"
+  | "sensations"
+  | "mood_words"
+  | "themes_words";
+
+export type DreamMapArchetypeTerm = {
+  id: string;
+  user_id: string;
+  domain: DreamMapArchetypeDomain;
+  canonical_key: string;
+  canonical_label: string;
+  aliases?: string[] | null;
+  alias_keys?: string[] | null;
+  status: "proposed" | "verified" | "deprecated";
+  provenance?: "auto" | "admin" | "user";
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type DreamMapEvidence = {
   source: "observation" | "anchors" | "glossary" | "highlight";
   path: string;
@@ -42,10 +65,18 @@ export type DreamMapNodeEvidenceSpan = {
 
 export type DreamMapNode = {
   key: string;
+  base_key?: string;
   label: string;
   kind: DreamMapNodeKind;
   x: number | null;
   y: number | null;
+
+  canonical?: {
+    archetype_id?: string | null;
+    canonical_key: string;
+    canonical_label: string;
+    match_source: "archetype" | "glossary";
+  };
 
   axis_source?: "scene_inherited" | "none";
   axis_evidence_scene_index?: number | null;
@@ -60,6 +91,13 @@ export type DreamMapNode = {
   primary_scene_count?: number;
   scene_indices?: number[];
   primary_scene_indices?: number[];
+  recurrence?: {
+    occurrence_count: number;
+    session_count: number;
+    first_seen_at: string | null;
+    last_seen_at: string | null;
+    score: number;
+  };
   evidence: DreamMapEvidence[];
   evidence_spans?: DreamMapNodeEvidenceSpan[];
 };
@@ -127,6 +165,26 @@ export type DreamMapPayloadV0 = {
       };
       trace_samples?: Array<{ edge: { from: string; to: string }; trace: DreamMapEdgeTrace[] }>;
       determinism_hash?: string;
+      canonicalizer?: {
+        coverage: {
+          total_nodes: number;
+          matched_nodes: number;
+          matched_ratio: number;
+        };
+        matched_by_source: {
+          archetype: number;
+          glossary: number;
+          raw: number;
+        };
+        proposals_sample?: Array<{
+          domain: DreamMapArchetypeDomain;
+          baseKey: string;
+          label: string;
+          occurrence: number;
+          suggested_canonical_key: string;
+          evidence_spans_sample?: DreamMapNodeEvidenceSpan[];
+        }>;
+      };
     };
 
     weights?: {
@@ -151,6 +209,22 @@ export type DreamMapPayloadV0 = {
 export type DreamMapGlossaryOccurrence = {
   canonical_key: string;
   occurrences?: number | null;
+};
+
+export type DreamMapGlossaryRecurrence = {
+  term_id: string;
+  occurrence_count: number;
+  session_count: number;
+  first_seen_at: string | null;
+  last_seen_at: string | null;
+  last_session_id?: string | null;
+  canonical_key?: string | null;
+  anchor_key?: string | null;
+  canonical_name?: string | null;
+  canonical?: string | null;
+  name?: string | null;
+  term?: string | null;
+  category?: string | null;
 };
 
 export type DreamMapHighlightRow = {
@@ -197,6 +271,8 @@ export type DreamMapCoocEvent = {
   unit: "span" | "sentence" | "paragraph";
   a_key: string;
   b_key: string;
+  a_node?: string;
+  b_node?: string;
   count: number;
   proximity_bucket: "same_span" | "same_sentence" | "same_paragraph";
 };
@@ -224,6 +300,8 @@ export type DreamMapBuilderInput = {
   observationPayloadV0: ObservationPayloadV0;
   anchorPayload?: any | null;
   glossaryOccurrences?: DreamMapGlossaryOccurrence[] | null;
+  glossaryRecurrence?: DreamMapGlossaryRecurrence[] | null;
+  archetypeTerms?: DreamMapArchetypeTerm[] | null;
   highlights?: DreamMapHighlightRow[] | null;
   sessionEntries?: DreamMapSessionEntry[] | null;
   entryHighlights?: DreamMapEntryHighlight[] | null;

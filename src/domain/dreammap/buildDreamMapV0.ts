@@ -1,6 +1,8 @@
 import { anchorKey, stripDiacritics } from "@/src/lib/dream/anchorKey";
 import type { ObservationPayloadV0 } from "@/src/domain/observe/types";
 import type {
+  DreamMapArchetypeDomain,
+  DreamMapArchetypeTerm,
   DreamMapBuilderInput,
   DreamMapCoocEvent,
   DreamMapEdge,
@@ -8,6 +10,7 @@ import type {
   DreamMapEdgeTrace,
   DreamMapEntryHighlight,
   DreamMapEntrySpan,
+  DreamMapGlossaryRecurrence,
   DreamMapNode,
   DreamMapNodeKind,
   DreamMapNodeEvidenceSpan,
@@ -34,6 +37,26 @@ const KIND_WEIGHTS: Record<DreamMapNodeKind, number> = {
   actions: 0.25,
 };
 
+type LabelSource = "archetype" | "anchors" | "highlight" | "glossary" | "raw";
+
+const LABEL_SOURCE_RANK: Record<LabelSource, number> = {
+  archetype: 0,
+  anchors: 1,
+  highlight: 2,
+  glossary: 3,
+  raw: 4,
+};
+
+const DOMAIN_BY_KIND: Record<DreamMapNodeKind, DreamMapArchetypeDomain> = {
+  people: "people",
+  places: "places",
+  objects: "objects",
+  actions: "actions",
+  sensations: "sensations",
+  mood_words: "mood_words",
+  themes_words: "themes_words",
+};
+
 const HIGHLIGHT_OCC_BOOST = 2;
 
 const COOC_WEIGHT_BY_BUCKET: Record<"same_span" | "same_sentence" | "same_paragraph", number> = {
@@ -55,12 +78,16 @@ const OCCURRENCE_BOOST = 1.0;
 const NODE_EVIDENCE_SPAN_LIMIT = 5;
 const EDGE_TRACE_LIMIT = 3;
 const TRACE_SAMPLE_LIMIT = 10;
+const CANONICALIZER_PROPOSAL_LIMIT = 20;
+const CANONICALIZER_EVIDENCE_LIMIT = 3;
 
 type NodeAccumulator = {
   key: string;
   baseKey: string;
   label: string;
+  label_rank?: number;
   kind: DreamMapNodeKind;
+  canonical?: DreamMapNode["canonical"];
   occurrence: number;
   evidence: Array<{ source: "observation" | "anchors" | "glossary" | "highlight"; path: string }>;
 };
@@ -99,7 +126,9 @@ type CoocNodeAccumulator = {
   key: string;
   baseKey: string;
   label: string;
+  label_rank?: number;
   kind: DreamMapNodeKind;
+  canonical?: DreamMapNode["canonical"];
   occurrence: number;
   evidence: Array<{ source: "anchors" | "glossary" | "highlight" | "observation"; path: string }>;
   evidence_spans: DreamMapNodeEvidenceSpan[];
@@ -110,6 +139,16 @@ type CoocEdgeAccumulator = {
   to: string;
   weight_raw: number;
   trace: DreamMapEdgeTrace[];
+};
+
+type CanonicalizerStat = {
+  domain: DreamMapArchetypeDomain;
+  baseKey: string;
+  label: string;
+  label_rank: number;
+  occurrence: number;
+  match_source: "archetype" | "glossary" | "raw";
+  evidence_spans: DreamMapNodeEvidenceSpan[];
 };
 
 function clamp01(value: number): number {
@@ -133,9 +172,382 @@ function normalizeBaseKey(raw: string): string {
   return stripDiacritics(trimmed.toLowerCase()).replace(/\s+/g, " ").trim();
 }
 
+function pickFirstString(...values: Array<unknown>): string | null {
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+}
+
 function normalizeForMatch(raw: string): string {
   const cleaned = stripDiacritics(String(raw ?? "").toLowerCase());
   return cleaned.replace(/[^a-z0-9]+/gi, " ").replace(/\s+/g, " ").trim();
+}
+
+function applyLabelChoice(node: { label: string; label_rank?: number }, label: string, source: LabelSource) {
+  const trimmed = String(label ?? "").trim();
+  if (!trimmed) return;
+  const nextRank = LABEL_SOURCE_RANK[source] ?? LABEL_SOURCE_RANK.raw;
+  const currentRank = typeof node.label_rank === "number" ? node.label_rank : LABEL_SOURCE_RANK.raw;
+
+  if (node.label_rank === undefined || nextRank < currentRank) {
+    node.label = trimmed;
+    node.label_rank = nextRank;
+    return;
+  }
+
+  if (nextRank === currentRank && trimmed.localeCompare(node.label) < 0) {
+    node.label = trimmed;
+  }
+}
+
+type ArchetypeIndex = {
+  canonicalByDomain: Map<DreamMapArchetypeDomain, Map<string, DreamMapArchetypeTerm[]>>;
+  aliasByDomain: Map<DreamMapArchetypeDomain, Map<string, DreamMapArchetypeTerm[]>>;
+};
+
+function buildArchetypeIndex(terms: DreamMapArchetypeTerm[] | null | undefined): ArchetypeIndex {
+  const canonicalByDomain = new Map<DreamMapArchetypeDomain, Map<string, DreamMapArchetypeTerm[]>>();
+  const aliasByDomain = new Map<DreamMapArchetypeDomain, Map<string, DreamMapArchetypeTerm[]>>();
+  const rows = Array.isArray(terms) ? terms : [];
+
+  const ensure = (map: Map<DreamMapArchetypeDomain, Map<string, DreamMapArchetypeTerm[]>>, domain: DreamMapArchetypeDomain) => {
+    let bucket = map.get(domain);
+    if (!bucket) {
+      bucket = new Map<string, DreamMapArchetypeTerm[]>();
+      map.set(domain, bucket);
+    }
+    return bucket;
+  };
+
+  for (const row of rows) {
+    if (!row?.domain || row.status === "deprecated") continue;
+    const domain = row.domain as DreamMapArchetypeDomain;
+    const canonicalKey = normalizeBaseKey(row.canonical_key);
+    if (!canonicalKey) continue;
+
+    const canonicalBucket = ensure(canonicalByDomain, domain);
+    const canonicalList = canonicalBucket.get(canonicalKey) ?? [];
+    canonicalList.push(row);
+    canonicalBucket.set(canonicalKey, canonicalList);
+
+    const aliasKeys = Array.isArray(row.alias_keys) ? row.alias_keys : [];
+    for (const alias of aliasKeys) {
+      const aliasKey = normalizeBaseKey(alias);
+      if (!aliasKey) continue;
+      const aliasBucket = ensure(aliasByDomain, domain);
+      const aliasList = aliasBucket.get(aliasKey) ?? [];
+      aliasList.push(row);
+      aliasBucket.set(aliasKey, aliasList);
+    }
+  }
+
+  return { canonicalByDomain, aliasByDomain };
+}
+
+function pickBestArchetypeTerm(terms: DreamMapArchetypeTerm[]): DreamMapArchetypeTerm {
+  const statusRank: Record<DreamMapArchetypeTerm["status"], number> = {
+    verified: 0,
+    proposed: 1,
+    deprecated: 2,
+  };
+
+  return terms
+    .slice()
+    .sort((a, b) => {
+      const rankDiff = statusRank[a.status] - statusRank[b.status];
+      if (rankDiff !== 0) return rankDiff;
+      if (a.canonical_key !== b.canonical_key) return a.canonical_key.localeCompare(b.canonical_key);
+      return String(a.id ?? "").localeCompare(String(b.id ?? ""));
+    })[0];
+}
+
+type GlossaryCanonicalKeyMap = Map<
+  string,
+  {
+    canonical_key: string;
+    occurrence: number;
+  }
+>;
+
+function buildGlossaryCanonicalKeyMap(
+  glossaryRecurrence: DreamMapGlossaryRecurrence[] | null | undefined,
+  glossaryOccurrences: DreamMapGlossaryOccurrence[] | null | undefined
+): GlossaryCanonicalKeyMap {
+  const map: GlossaryCanonicalKeyMap = new Map();
+
+  const add = (aliasLabel: string | null, canonicalLabel: string | null, occurrence: number) => {
+    if (!aliasLabel || !canonicalLabel) return;
+    const aliasKey = normalizeBaseKey(aliasLabel);
+    const canonicalKey = normalizeBaseKey(canonicalLabel);
+    if (!aliasKey || !canonicalKey) return;
+
+    const existing = map.get(aliasKey);
+    if (!existing) {
+      map.set(aliasKey, { canonical_key: canonicalKey, occurrence });
+      return;
+    }
+
+    if (occurrence > existing.occurrence) {
+      map.set(aliasKey, { canonical_key: canonicalKey, occurrence });
+      return;
+    }
+
+    if (occurrence === existing.occurrence && canonicalKey.localeCompare(existing.canonical_key) < 0) {
+      map.set(aliasKey, { canonical_key: canonicalKey, occurrence });
+    }
+  };
+
+  const recurrenceRows = Array.isArray(glossaryRecurrence) ? glossaryRecurrence : [];
+  for (const row of recurrenceRows) {
+    const canonicalLabel = pickFirstString(
+      row.canonical_key,
+      row.anchor_key,
+      row.canonical_name,
+      row.canonical,
+      row.name,
+      row.term
+    );
+    const occurrence = Number(row.occurrence_count ?? row.session_count ?? 1);
+    const occValue = Number.isFinite(occurrence) && occurrence > 0 ? occurrence : 1;
+
+    add(row.canonical_key ?? null, canonicalLabel, occValue);
+    add(row.anchor_key ?? null, canonicalLabel, occValue);
+    add(row.canonical_name ?? null, canonicalLabel, occValue);
+  }
+
+  const occRows = Array.isArray(glossaryOccurrences) ? glossaryOccurrences : [];
+  for (const row of occRows) {
+    const canonicalLabel = typeof row?.canonical_key === "string" ? row.canonical_key.trim() : "";
+    if (!canonicalLabel) continue;
+    const occValue = Number(row?.occurrences ?? 1);
+    add(canonicalLabel, canonicalLabel, Number.isFinite(occValue) && occValue > 0 ? occValue : 1);
+  }
+
+  return map;
+}
+
+type ResolvedNodeIdentity = {
+  nodeKey: string;
+  raw_base_key: string;
+  domain: DreamMapArchetypeDomain;
+  canonical?: DreamMapNode["canonical"];
+  match_source: "archetype" | "glossary" | "raw";
+};
+
+function resolveNodeIdentity(params: {
+  baseKey: string;
+  kind: DreamMapNodeKind;
+  label: string;
+  archetypeIndex: ArchetypeIndex;
+  glossaryKeyMap: GlossaryCanonicalKeyMap;
+}): ResolvedNodeIdentity | null {
+  const baseKey = normalizeBaseKey(params.baseKey);
+  if (!baseKey) return null;
+  const domain = DOMAIN_BY_KIND[params.kind];
+
+  const canonicalBucket = params.archetypeIndex.canonicalByDomain.get(domain);
+  const aliasBucket = params.archetypeIndex.aliasByDomain.get(domain);
+
+  const canonicalMatch = canonicalBucket?.get(baseKey);
+  if (canonicalMatch && canonicalMatch.length > 0) {
+    const term = pickBestArchetypeTerm(canonicalMatch);
+    const canonicalLabel = String(term.canonical_label ?? term.canonical_key ?? params.label).trim();
+    const canonicalKey = normalizeBaseKey(term.canonical_key);
+    return {
+      nodeKey: `arch:${domain}:${canonicalKey}`,
+      raw_base_key: baseKey,
+      domain,
+      canonical: {
+        archetype_id: term.id ?? null,
+        canonical_key: canonicalKey,
+        canonical_label: canonicalLabel || canonicalKey,
+        match_source: "archetype",
+      },
+      match_source: "archetype",
+    };
+  }
+
+  const aliasMatch = aliasBucket?.get(baseKey);
+  if (aliasMatch && aliasMatch.length > 0) {
+    const term = pickBestArchetypeTerm(aliasMatch);
+    const canonicalLabel = String(term.canonical_label ?? term.canonical_key ?? params.label).trim();
+    const canonicalKey = normalizeBaseKey(term.canonical_key);
+    return {
+      nodeKey: `arch:${domain}:${canonicalKey}`,
+      raw_base_key: baseKey,
+      domain,
+      canonical: {
+        archetype_id: term.id ?? null,
+        canonical_key: canonicalKey,
+        canonical_label: canonicalLabel || canonicalKey,
+        match_source: "archetype",
+      },
+      match_source: "archetype",
+    };
+  }
+
+  const glossaryKey = params.glossaryKeyMap.get(baseKey)?.canonical_key ?? null;
+  if (glossaryKey && canonicalBucket) {
+    const glossaryMatch = canonicalBucket.get(glossaryKey);
+    if (glossaryMatch && glossaryMatch.length > 0) {
+      const term = pickBestArchetypeTerm(glossaryMatch);
+      const canonicalLabel = String(term.canonical_label ?? term.canonical_key ?? params.label).trim();
+      const canonicalKey = normalizeBaseKey(term.canonical_key);
+      return {
+        nodeKey: `arch:${domain}:${canonicalKey}`,
+        raw_base_key: baseKey,
+        domain,
+        canonical: {
+          archetype_id: term.id ?? null,
+          canonical_key: canonicalKey,
+          canonical_label: canonicalLabel || canonicalKey,
+          match_source: "glossary",
+        },
+        match_source: "glossary",
+      };
+    }
+  }
+
+  return {
+    nodeKey: `${baseKey}:${params.kind}`,
+    raw_base_key: baseKey,
+    domain,
+    match_source: "raw",
+  };
+}
+
+const MATCH_SOURCE_RANK: Record<ResolvedNodeIdentity["match_source"], number> = {
+  archetype: 0,
+  glossary: 1,
+  raw: 2,
+};
+
+function pushEvidenceSpanSample(list: DreamMapNodeEvidenceSpan[], span: DreamMapNodeEvidenceSpan) {
+  if (list.length >= NODE_EVIDENCE_SPAN_LIMIT) return;
+  if (
+    list.some(
+      (ev) =>
+        ev.source === span.source &&
+        ev.entry_id === span.entry_id &&
+        ev.start === span.start &&
+        ev.end === span.end &&
+        ev.entry_start === span.entry_start &&
+        ev.entry_end === span.entry_end
+    )
+  ) {
+    return;
+  }
+  list.push(span);
+}
+
+function updateCanonicalizerStat(
+  stats: Map<string, CanonicalizerStat>,
+  params: {
+    domain: DreamMapArchetypeDomain;
+    baseKey: string;
+    label: string;
+    labelSource: LabelSource;
+    occurrence: number;
+    match_source: ResolvedNodeIdentity["match_source"];
+    evidence_span?: DreamMapNodeEvidenceSpan;
+  }
+) {
+  const key = `${params.domain}::${params.baseKey}`;
+  const labelValue = String(params.label ?? "").trim() || params.baseKey;
+  const existing = stats.get(key);
+  const nextLabelRank = LABEL_SOURCE_RANK[params.labelSource] ?? LABEL_SOURCE_RANK.raw;
+  const nextMatchRank = MATCH_SOURCE_RANK[params.match_source] ?? MATCH_SOURCE_RANK.raw;
+
+  if (!existing) {
+    const entry: CanonicalizerStat = {
+      domain: params.domain,
+      baseKey: params.baseKey,
+      label: labelValue,
+      label_rank: nextLabelRank,
+      occurrence: Math.max(0, params.occurrence),
+      match_source: params.match_source,
+      evidence_spans: [],
+    };
+    if (params.match_source === "raw" && params.evidence_span) {
+      pushEvidenceSpanSample(entry.evidence_spans, params.evidence_span);
+    }
+    stats.set(key, entry);
+    return;
+  }
+
+  existing.occurrence += Math.max(0, params.occurrence);
+
+  if (nextLabelRank < existing.label_rank || (nextLabelRank === existing.label_rank && labelValue < existing.label)) {
+    existing.label = labelValue;
+    existing.label_rank = nextLabelRank;
+  }
+
+  if (nextMatchRank < MATCH_SOURCE_RANK[existing.match_source]) {
+    existing.match_source = params.match_source;
+  }
+
+  if (params.match_source === "raw" && params.evidence_span) {
+    pushEvidenceSpanSample(existing.evidence_spans, params.evidence_span);
+  }
+}
+
+function buildCanonicalizerDebug(
+  nodes: DreamMapNode[],
+  stats: Map<string, CanonicalizerStat>
+): DreamMapPayloadV0["meta"]["debug"]["canonicalizer"] {
+  const matchedBySource = { archetype: 0, glossary: 0, raw: 0 };
+
+  for (const node of nodes) {
+    const matchSource = node.canonical?.match_source ?? "raw";
+    if (matchSource === "archetype") matchedBySource.archetype += 1;
+    else if (matchSource === "glossary") matchedBySource.glossary += 1;
+    else matchedBySource.raw += 1;
+  }
+
+  const total = nodes.length;
+  const matched = matchedBySource.archetype + matchedBySource.glossary;
+  const proposals = Array.from(stats.values())
+    .filter((row) => row.match_source === "raw" && row.occurrence > 0)
+    .sort((a, b) => {
+      if (b.occurrence !== a.occurrence) return b.occurrence - a.occurrence;
+      if (a.baseKey !== b.baseKey) return a.baseKey.localeCompare(b.baseKey);
+      return a.domain.localeCompare(b.domain);
+    })
+    .slice(0, CANONICALIZER_PROPOSAL_LIMIT)
+    .map((row) => {
+      const evidence = row.evidence_spans
+        .slice()
+        .sort((a, b) => {
+          const aEntry = String(a.entry_id ?? "");
+          const bEntry = String(b.entry_id ?? "");
+          if (aEntry !== bEntry) return aEntry.localeCompare(bEntry);
+          if (a.start !== b.start) return a.start - b.start;
+          return a.end - b.end;
+        })
+        .slice(0, CANONICALIZER_EVIDENCE_LIMIT);
+
+      return {
+        domain: row.domain,
+        baseKey: row.baseKey,
+        label: row.label,
+        occurrence: row.occurrence,
+        suggested_canonical_key: row.baseKey,
+        evidence_spans_sample: evidence.length > 0 ? evidence : undefined,
+      };
+    });
+
+  return {
+    coverage: {
+      total_nodes: total,
+      matched_nodes: matched,
+      matched_ratio: total > 0 ? matched / total : 0,
+    },
+    matched_by_source: matchedBySource,
+    proposals_sample: proposals,
+  };
 }
 
 export function materializeSessionText(entries: DreamMapSessionEntry[] | null | undefined): MaterializedSession {
@@ -330,28 +742,88 @@ function anchorKindFromCategory(category: unknown, fallbackLabel: string): Dream
   }
 }
 
+function isRecurrenceBetter(
+  next: { session_count: number; occurrence_count: number; last_seen_at: string | null },
+  existing: { session_count: number; occurrence_count: number; last_seen_at: string | null }
+): boolean {
+  if (next.session_count !== existing.session_count) return next.session_count > existing.session_count;
+  if (next.occurrence_count !== existing.occurrence_count) return next.occurrence_count > existing.occurrence_count;
+  const nextSeen = next.last_seen_at;
+  const existingSeen = existing.last_seen_at;
+  if (nextSeen === existingSeen) return false;
+  if (nextSeen && !existingSeen) return true;
+  if (!nextSeen && existingSeen) return false;
+  return String(nextSeen) > String(existingSeen);
+}
+
+function termIdToBaseKey(row: DreamMapGlossaryRecurrence): string | null {
+  const direct = pickFirstString(row.canonical_key, row.anchor_key);
+  let baseKey = "";
+  if (direct) {
+    baseKey = normalizeBaseKey(direct);
+  } else {
+    const canonicalName = pickFirstString(row.canonical_name);
+    if (canonicalName) {
+      baseKey = normalizeBaseKey(anchorKey(canonicalName));
+    } else {
+      const fallbackName = pickFirstString(row.canonical, row.name, row.term);
+      if (fallbackName) baseKey = normalizeBaseKey(anchorKey(fallbackName));
+    }
+  }
+
+  return baseKey || null;
+}
+
+function sortGlossaryRecurrence(rows: DreamMapGlossaryRecurrence[] | null | undefined): DreamMapGlossaryRecurrence[] {
+  const out = Array.isArray(rows) ? rows.slice() : [];
+  out.sort((a, b) => String(a.term_id ?? "").localeCompare(String(b.term_id ?? "")));
+  return out;
+}
+
 function isHighlightPrimary(row: { category?: string | null; note?: string | null }): boolean {
   const hay = `${row?.category ?? ""} ${row?.note ?? ""}`.toLowerCase();
   return hay.includes("core") || hay.includes("very important") || hay.includes("very_important");
 }
 
-function nodeKeyFor(
-  kind: DreamMapNodeKind,
-  label: string,
-  existingByKindBase: Map<string, string>
-): { key: string; baseKey: string } | null {
-  const baseKey = normalizeBaseKey(label);
+function nodeKeyFor(params: {
+  kind: DreamMapNodeKind;
+  label: string;
+  resolvedByKindBase: Map<string, ResolvedNodeIdentity>;
+  archetypeIndex: ArchetypeIndex;
+  glossaryKeyMap: GlossaryCanonicalKeyMap;
+}): { key: string; baseKey: string; canonical?: DreamMapNode["canonical"]; match_source: ResolvedNodeIdentity["match_source"]; domain: DreamMapArchetypeDomain } | null {
+  const baseKey = normalizeBaseKey(params.label);
   if (!baseKey) return null;
 
-  const kindBase = `${kind}::${baseKey}`;
-  const existing = existingByKindBase.get(kindBase);
-  if (existing) return { key: existing, baseKey };
+  const kindBase = `${params.kind}::${baseKey}`;
+  const existing = params.resolvedByKindBase.get(kindBase);
+  if (existing) {
+    return {
+      key: existing.nodeKey,
+      baseKey: existing.raw_base_key,
+      canonical: existing.canonical,
+      match_source: existing.match_source,
+      domain: existing.domain,
+    };
+  }
 
-  // v0 determinisztikus: mindig kind-suffix
-  const key = `${baseKey}:${kind}`;
+  const resolved = resolveNodeIdentity({
+    baseKey,
+    kind: params.kind,
+    label: params.label,
+    archetypeIndex: params.archetypeIndex,
+    glossaryKeyMap: params.glossaryKeyMap,
+  });
+  if (!resolved) return null;
 
-  existingByKindBase.set(kindBase, key);
-  return { key, baseKey };
+  params.resolvedByKindBase.set(kindBase, resolved);
+  return {
+    key: resolved.nodeKey,
+    baseKey: resolved.raw_base_key,
+    canonical: resolved.canonical,
+    match_source: resolved.match_source,
+    domain: resolved.domain,
+  };
 }
 
 function scenePairs(keys: string[]): Array<[string, string]> {
@@ -403,9 +875,47 @@ function buildGlossaryMap(glossaryOccurrences: Array<{ canonical_key: string; oc
   return occByBaseKey;
 }
 
+function buildGlossaryRecurrenceMap(glossaryRecurrence: DreamMapGlossaryRecurrence[]) {
+  const occByBaseKey = new Map<string, number>();
+  for (const row of glossaryRecurrence) {
+    const baseKey = termIdToBaseKey(row);
+    if (!baseKey) continue;
+    const count = Number(row?.session_count ?? 0);
+    const occ = Number.isFinite(count) && count > 0 ? count : 0;
+    const existing = occByBaseKey.get(baseKey) ?? 0;
+    occByBaseKey.set(baseKey, Math.max(existing, occ));
+  }
+  return occByBaseKey;
+}
+
+function buildGlossaryCandidatesFromRecurrence(glossaryRecurrence: DreamMapGlossaryRecurrence[]) {
+  const out: Array<{ baseKey: string; label: string; occ: number }> = [];
+  for (const row of glossaryRecurrence) {
+    const label = pickFirstString(
+      row.canonical_key,
+      row.anchor_key,
+      row.canonical_name,
+      row.canonical,
+      row.name,
+      row.term
+    );
+    if (!label) continue;
+    const baseKey = normalizeBaseKey(label);
+    if (!baseKey) continue;
+    const occ = Number(row?.occurrence_count ?? row?.session_count ?? 1);
+    out.push({
+      baseKey,
+      label,
+      occ: Number.isFinite(occ) && occ > 0 ? occ : 1,
+    });
+  }
+  return out;
+}
+
 function buildCandidatePool(params: {
   anchorPayload: any | null | undefined;
   glossaryOccurrences: Array<{ canonical_key: string; occurrences?: number | null }> | null | undefined;
+  glossaryRecurrence: DreamMapGlossaryRecurrence[] | null | undefined;
   highlights: Array<{ text: string; category?: string | null }> | null | undefined;
 }): CandidateInfo[] {
   const byKey = new Map<string, CandidateInfo>();
@@ -467,17 +977,20 @@ function buildCandidatePool(params: {
     addCandidate(row.baseKey, row.label, row.kind, row.score, "anchors");
   }
 
-  const glossaryRows = Array.isArray(params.glossaryOccurrences) ? params.glossaryOccurrences : [];
+  const recurrenceRows = Array.isArray(params.glossaryRecurrence) ? params.glossaryRecurrence : [];
+  const glossaryRows =
+    recurrenceRows.length > 0 ? buildGlossaryCandidatesFromRecurrence(recurrenceRows) : params.glossaryOccurrences ?? [];
+
   const glossarySorted = glossaryRows
-    .map((row) => {
+    .map((row: any) => {
       const raw = typeof row?.canonical_key === "string" ? row.canonical_key.trim() : "";
-      if (!raw) return null;
-      const baseKey = normalizeBaseKey(raw);
+      const label = raw || (typeof row?.label === "string" ? row.label.trim() : "");
+      const baseKey = normalizeBaseKey(label || row?.baseKey || "");
       if (!baseKey) return null;
-      const occ = Number(row?.occurrences ?? 1);
+      const occ = Number(row?.occurrences ?? row?.occ ?? 1);
       return {
         baseKey,
-        label: raw,
+        label: label || baseKey,
         occ: Number.isFinite(occ) ? occ : 1,
       };
     })
@@ -574,13 +1087,54 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
   const candidatePool = buildCandidatePool({
     anchorPayload: input.anchorPayload ?? null,
     glossaryOccurrences: input.glossaryOccurrences ?? null,
+    glossaryRecurrence: input.glossaryRecurrence ?? null,
     highlights: input.highlights ?? null,
   });
   const candidateByBaseKey = new Map(candidatePool.map((c) => [c.baseKey, c]));
+  const archetypeIndex = buildArchetypeIndex(input.archetypeTerms);
+  const glossaryKeyMap = buildGlossaryCanonicalKeyMap(input.glossaryRecurrence, input.glossaryOccurrences);
+  const resolvedByKindBase = new Map<string, ResolvedNodeIdentity>();
+  const canonicalizerStats = new Map<string, CanonicalizerStat>();
 
   const nodes = new Map<string, CoocNodeAccumulator>();
-  const nodeKeyByBase = new Map<string, string>();
   const occByBaseKey = new Map<string, number>();
+  type NodePair = { nodeKey: string; baseKey: string };
+
+  const labelSourceForBaseKey = (baseKey: string): LabelSource => {
+    const pool = candidateByBaseKey.get(baseKey);
+    const source = pool?.sources?.[0];
+    if (source === "anchors") return "anchors";
+    if (source === "glossary") return "glossary";
+    if (source === "highlight") return "highlight";
+    return "raw";
+  };
+
+  const resolveCandidateIdentity = (candidate: UnitCandidate): ResolvedNodeIdentity | null => {
+    const cacheKey = `${candidate.kind}::${candidate.baseKey}`;
+    const cached = resolvedByKindBase.get(cacheKey);
+    if (cached) return cached;
+    const resolved = resolveNodeIdentity({
+      baseKey: candidate.baseKey,
+      kind: candidate.kind,
+      label: candidate.label,
+      archetypeIndex,
+      glossaryKeyMap,
+    });
+    if (resolved) resolvedByKindBase.set(cacheKey, resolved);
+    return resolved;
+  };
+
+  const unitNodePairs = (candidates: UnitCandidate[]): NodePair[] => {
+    const map = new Map<string, string>();
+    for (const cand of candidates) {
+      const resolved = resolveCandidateIdentity(cand);
+      if (!resolved) continue;
+      if (!map.has(resolved.nodeKey)) map.set(resolved.nodeKey, resolved.raw_base_key);
+    }
+    return Array.from(map.entries())
+      .map(([nodeKey, baseKey]) => ({ nodeKey, baseKey }))
+      .sort((a, b) => a.nodeKey.localeCompare(b.nodeKey));
+  };
 
   const addNodeEvidenceSpan = (node: CoocNodeAccumulator, span: DreamMapNodeEvidenceSpan) => {
     if (node.evidence_spans.length >= NODE_EVIDENCE_SPAN_LIMIT) return;
@@ -600,11 +1154,19 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
     node.evidence_spans.push(span);
   };
 
-  const addNodeFromCandidate = (candidate: UnitCandidate, source: DreamMapEdgeTrace["source"], span: DreamMapEdgeTrace) => {
-    const baseKey = candidate.baseKey;
+  const addNodeFromCandidate = (
+    candidate: UnitCandidate,
+    source: DreamMapEdgeTrace["source"],
+    span: DreamMapEdgeTrace,
+    labelSourceOverride?: LabelSource
+  ) => {
+    const resolved = resolveCandidateIdentity(candidate);
+    if (!resolved) return;
+    const baseKey = resolved.raw_base_key;
     const kind = candidate.kind;
-    const key = `${baseKey}:${kind}`;
+    const key = resolved.nodeKey;
     const occurrence = Math.max(1, candidate.occ || 0) + (source === "highlight_span" ? HIGHLIGHT_OCC_BOOST : 0);
+    const labelSource = labelSourceOverride ?? labelSourceForBaseKey(baseKey);
 
     let node = nodes.get(key);
     if (!node) {
@@ -612,7 +1174,9 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
         key,
         baseKey,
         label: candidate.label,
+        label_rank: LABEL_SOURCE_RANK[labelSource],
         kind,
+        canonical: resolved.canonical,
         occurrence: 0,
         evidence: [],
         evidence_spans: [],
@@ -622,20 +1186,35 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
       if (pool?.sources.includes("anchors")) addNodeKindEvidence(node, "anchors", "anchors.payload.anchors");
       if (pool?.sources.includes("glossary")) addNodeKindEvidence(node, "glossary", "glossary_occurrences");
       if (pool?.sources.includes("highlight")) addNodeKindEvidence(node, "highlight", "session_highlights");
+
       nodes.set(key, node);
+    }
+
+    applyLabelChoice(node, candidate.label, labelSource);
+    if (resolved.canonical?.canonical_label) {
+      applyLabelChoice(node, resolved.canonical.canonical_label, "archetype");
     }
 
     node.occurrence += occurrence;
     occByBaseKey.set(baseKey, (occByBaseKey.get(baseKey) ?? 0) + occurrence);
-    nodeKeyByBase.set(baseKey, key);
 
-    addNodeEvidenceSpan(node, {
+    const evidenceSpan: DreamMapNodeEvidenceSpan = {
       source,
       entry_id: span.entry_id,
       start: span.start,
       end: span.end,
       entry_start: span.entry_start,
       entry_end: span.entry_end,
+    };
+    addNodeEvidenceSpan(node, evidenceSpan);
+    updateCanonicalizerStat(canonicalizerStats, {
+      domain: resolved.domain,
+      baseKey,
+      label: candidate.label,
+      labelSource,
+      occurrence,
+      match_source: resolved.match_source,
+      evidence_span: evidenceSpan,
     });
   };
 
@@ -704,15 +1283,19 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
     };
 
     for (const candidate of unitCandidates) {
-      addNodeFromCandidate(candidate, "highlight_span", spanMeta);
+      const override =
+        forcedKeys.has(candidate.baseKey) && !candidateByBaseKey.has(candidate.baseKey) ? "highlight" : undefined;
+      addNodeFromCandidate(candidate, "highlight_span", spanMeta, override);
     }
 
-    const baseKeys = Array.from(new Set(unitCandidates.map((c) => c.baseKey))).sort();
-    if (baseKeys.length < 2) continue;
-    for (let i = 0; i < baseKeys.length; i++) {
-      for (let j = i + 1; j < baseKeys.length; j++) {
-        const a = baseKeys[i];
-        const b = baseKeys[j];
+    const unitNodes = unitNodePairs(unitCandidates);
+    if (unitNodes.length < 2) continue;
+    for (let i = 0; i < unitNodes.length; i++) {
+      for (let j = i + 1; j < unitNodes.length; j++) {
+        const aNode = unitNodes[i].nodeKey;
+        const bNode = unitNodes[j].nodeKey;
+        const aKey = unitNodes[i].baseKey;
+        const bKey = unitNodes[j].baseKey;
         events.push({
           source: "highlight_span",
           span: {
@@ -723,8 +1306,10 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
             entry_end: localEnd,
           },
           unit: "span",
-          a_key: a,
-          b_key: b,
+          a_key: aKey,
+          b_key: bKey,
+          a_node: aNode,
+          b_node: bNode,
           count: 1,
           proximity_bucket: "same_span",
         });
@@ -754,16 +1339,22 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
         addNodeFromCandidate(candidate, "raw_sentence", spanMeta);
       }
 
-      const baseKeys = Array.from(new Set(unitCandidates.map((c) => c.baseKey))).sort();
-      if (baseKeys.length < 2) continue;
-      for (let i = 0; i < baseKeys.length; i++) {
-        for (let j = i + 1; j < baseKeys.length; j++) {
+      const unitNodes = unitNodePairs(unitCandidates);
+      if (unitNodes.length < 2) continue;
+      for (let i = 0; i < unitNodes.length; i++) {
+        for (let j = i + 1; j < unitNodes.length; j++) {
+          const aNode = unitNodes[i].nodeKey;
+          const bNode = unitNodes[j].nodeKey;
+          const aKey = unitNodes[i].baseKey;
+          const bKey = unitNodes[j].baseKey;
           events.push({
             source: "raw_sentence",
             span: { start: span.start, end: span.end },
             unit: "sentence",
-            a_key: baseKeys[i],
-            b_key: baseKeys[j],
+            a_key: aKey,
+            b_key: bKey,
+            a_node: aNode,
+            b_node: bNode,
             count: 1,
             proximity_bucket: "same_sentence",
           });
@@ -787,16 +1378,22 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
         addNodeFromCandidate(candidate, "raw_paragraph", spanMeta);
       }
 
-      const baseKeys = Array.from(new Set(unitCandidates.map((c) => c.baseKey))).sort();
-      if (baseKeys.length < 2) continue;
-      for (let i = 0; i < baseKeys.length; i++) {
-        for (let j = i + 1; j < baseKeys.length; j++) {
+      const unitNodes = unitNodePairs(unitCandidates);
+      if (unitNodes.length < 2) continue;
+      for (let i = 0; i < unitNodes.length; i++) {
+        for (let j = i + 1; j < unitNodes.length; j++) {
+          const aNode = unitNodes[i].nodeKey;
+          const bNode = unitNodes[j].nodeKey;
+          const aKey = unitNodes[i].baseKey;
+          const bKey = unitNodes[j].baseKey;
           events.push({
             source: "raw_paragraph",
             span: { start: span.start, end: span.end },
             unit: "paragraph",
-            a_key: baseKeys[i],
-            b_key: baseKeys[j],
+            a_key: aKey,
+            b_key: bKey,
+            a_node: aNode,
+            b_node: bNode,
             count: 1,
             proximity_bucket: "same_paragraph",
           });
@@ -813,8 +1410,8 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
     const baseWeight = COOC_WEIGHT_BY_BUCKET[event.proximity_bucket] ?? 0;
     if (baseWeight <= 0) continue;
 
-    const fromKey = nodeKeyByBase.get(event.a_key) ?? `${event.a_key}:themes_words`;
-    const toKey = nodeKeyByBase.get(event.b_key) ?? `${event.b_key}:themes_words`;
+    const fromKey = event.a_node ?? `${event.a_key}:themes_words`;
+    const toKey = event.b_node ?? `${event.b_key}:themes_words`;
     if (fromKey === toKey) continue;
     const [from, to] = fromKey < toKey ? [fromKey, toKey] : [toKey, fromKey];
     const edgeKey = `${from}::${to}`;
@@ -861,18 +1458,53 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
   }
 
   const maxDegree = Math.max(0, ...Array.from(degreeByNode.values()));
-  const glossaryProvided = Array.isArray(input.glossaryOccurrences);
-  const glossaryMap = buildGlossaryMap(input.glossaryOccurrences ?? []);
+  const glossaryRecurrenceSorted = sortGlossaryRecurrence(input.glossaryRecurrence);
+  const glossaryProvided = Array.isArray(input.glossaryOccurrences) || glossaryRecurrenceSorted.length > 0;
+  const glossaryMap =
+    glossaryRecurrenceSorted.length > 0
+      ? buildGlossaryRecurrenceMap(glossaryRecurrenceSorted)
+      : buildGlossaryMap(input.glossaryOccurrences ?? []);
   const maxGlossaryOcc = Math.max(0, ...Array.from(glossaryMap.values()));
 
   const nodeArray: DreamMapNode[] = [];
   const zRawByKey = new Map<string, number>();
   const glossaryNormByKey = new Map<string, number>();
+  const recurrenceByBaseKey = new Map<
+    string,
+    {
+      occurrence_count: number;
+      session_count: number;
+      first_seen_at: string | null;
+      last_seen_at: string | null;
+    }
+  >();
+
+  for (const row of glossaryRecurrenceSorted) {
+    const baseKey = termIdToBaseKey(row);
+    if (!baseKey) continue;
+    const existing = recurrenceByBaseKey.get(baseKey);
+    const next = {
+      occurrence_count: Number(row.occurrence_count ?? 0),
+      session_count: Number(row.session_count ?? 0),
+      first_seen_at: row.first_seen_at ?? null,
+      last_seen_at: row.last_seen_at ?? null,
+    };
+
+    if (!existing || isRecurrenceBetter(next, existing)) {
+      recurrenceByBaseKey.set(baseKey, next);
+    }
+  }
+
+  const maxSessionCount = Math.max(
+    0,
+    ...Array.from(recurrenceByBaseKey.values()).map((row) => Number(row.session_count ?? 0))
+  );
 
   const nodesSorted = Array.from(nodes.values()).sort((a, b) => a.key.localeCompare(b.key));
   for (const node of nodesSorted) {
     const centrality = maxDegree > 0 ? (degreeByNode.get(node.key) ?? 0) / maxDegree : 0;
-    const glossaryOcc = glossaryMap.get(node.baseKey) ?? 0;
+    const effectiveBaseKey = node.canonical?.canonical_key ?? node.baseKey;
+    const glossaryOcc = glossaryMap.get(effectiveBaseKey) ?? 0;
     const glossaryNorm = maxGlossaryOcc > 0 ? glossaryOcc / maxGlossaryOcc : 0;
     glossaryNormByKey.set(node.key, glossaryNorm);
 
@@ -880,10 +1512,18 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
     const zRaw = kindWeight * node.occurrence + W_CENT * centrality;
     zRawByKey.set(node.key, zRaw);
 
+    const recurrence = recurrenceByBaseKey.get(effectiveBaseKey);
+    const recurrenceScore =
+      recurrence && maxSessionCount > 0
+        ? Math.log1p(Math.max(0, recurrence.session_count)) / Math.log1p(maxSessionCount)
+        : 0;
+
     nodeArray.push({
       key: node.key,
+      base_key: node.baseKey,
       label: node.label,
       kind: node.kind,
+      canonical: node.canonical,
       x: null,
       y: null,
       axis_source: "none",
@@ -897,6 +1537,15 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
       scene_presence_count: 0,
       primary_scene_count: 0,
       scene_indices: [],
+      recurrence: recurrence
+        ? {
+            occurrence_count: Math.max(0, Number(recurrence.occurrence_count ?? 0)),
+            session_count: Math.max(0, Number(recurrence.session_count ?? 0)),
+            first_seen_at: recurrence.first_seen_at ?? null,
+            last_seen_at: recurrence.last_seen_at ?? null,
+            score: Number.isFinite(recurrenceScore) ? recurrenceScore : 0,
+          }
+        : undefined,
       evidence: node.evidence,
       evidence_spans: node.evidence_spans,
     });
@@ -959,7 +1608,7 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
 
   const warnings: DreamMapPayloadV0["meta"]["warnings"] = [];
   if (!input.anchorPayload) warnings.push({ code: "anchors_missing" });
-  if (!Array.isArray(input.glossaryOccurrences)) warnings.push({ code: "glossary_missing" });
+  if (!glossaryProvided) warnings.push({ code: "glossary_missing" });
 
   const anchorMaps = buildAnchorMaps(input.anchorPayload ?? null);
   for (const [baseKey, anchorOccRaw] of anchorMaps.occByBaseKey.entries()) {
@@ -1026,6 +1675,7 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
         },
         trace_samples: traceSamples,
         determinism_hash: meta.determinism_hash,
+        canonicalizer: buildCanonicalizerDebug(nodeArray, canonicalizerStats),
       },
       weights: {
         w_cent: W_CENT,
@@ -1050,16 +1700,37 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
 
   const computedAt = meta.computed_at ?? new Date().toISOString();
   const nodes = new Map<string, NodeAccumulator>();
-  const existingByKindBase = new Map<string, string>();
+  const archetypeIndex = buildArchetypeIndex(input.archetypeTerms);
+  const glossaryKeyMap = buildGlossaryCanonicalKeyMap(input.glossaryRecurrence, input.glossaryOccurrences);
+  const resolvedByKindBase = new Map<string, ResolvedNodeIdentity>();
+  const canonicalizerStats = new Map<string, CanonicalizerStat>();
 
   const addNode = (kind: DreamMapNodeKind, label: string, path: string) => {
-    const keyInfo = nodeKeyFor(kind, label, existingByKindBase);
+    const keyInfo = nodeKeyFor({
+      kind,
+      label,
+      resolvedByKindBase,
+      archetypeIndex,
+      glossaryKeyMap,
+    });
     if (!keyInfo) return null;
     const { key, baseKey } = keyInfo;
     const existing = nodes.get(key);
     if (existing) {
       existing.occurrence += 1;
       addNodeKindEvidence(existing, "observation", path);
+      applyLabelChoice(existing, label, "raw");
+      if (keyInfo.canonical?.canonical_label) {
+        applyLabelChoice(existing, keyInfo.canonical.canonical_label, "archetype");
+      }
+      updateCanonicalizerStat(canonicalizerStats, {
+        domain: keyInfo.domain,
+        baseKey,
+        label,
+        labelSource: "raw",
+        occurrence: 1,
+        match_source: keyInfo.match_source,
+      });
       return key;
     }
 
@@ -1067,23 +1738,55 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
       key,
       baseKey,
       label,
+      label_rank: LABEL_SOURCE_RANK.raw,
       kind,
+      canonical: keyInfo.canonical,
       occurrence: 1,
       evidence: [],
     };
     addNodeKindEvidence(node, "observation", path);
+    applyLabelChoice(node, label, "raw");
+    if (keyInfo.canonical?.canonical_label) {
+      applyLabelChoice(node, keyInfo.canonical.canonical_label, "archetype");
+    }
     nodes.set(key, node);
+    updateCanonicalizerStat(canonicalizerStats, {
+      domain: keyInfo.domain,
+      baseKey,
+      label,
+      labelSource: "raw",
+      occurrence: 1,
+      match_source: keyInfo.match_source,
+    });
     return key;
   };
 
   const addHighlightNode = (kind: DreamMapNodeKind, label: string, path: string) => {
-    const keyInfo = nodeKeyFor(kind, label, existingByKindBase);
+    const keyInfo = nodeKeyFor({
+      kind,
+      label,
+      resolvedByKindBase,
+      archetypeIndex,
+      glossaryKeyMap,
+    });
     if (!keyInfo) return null;
     const { key, baseKey } = keyInfo;
     const existing = nodes.get(key);
     if (existing) {
       existing.occurrence += HIGHLIGHT_OCC_BOOST;
       addNodeKindEvidence(existing, "highlight", path);
+      applyLabelChoice(existing, label, "highlight");
+      if (keyInfo.canonical?.canonical_label) {
+        applyLabelChoice(existing, keyInfo.canonical.canonical_label, "archetype");
+      }
+      updateCanonicalizerStat(canonicalizerStats, {
+        domain: keyInfo.domain,
+        baseKey,
+        label,
+        labelSource: "highlight",
+        occurrence: HIGHLIGHT_OCC_BOOST,
+        match_source: keyInfo.match_source,
+      });
       return key;
     }
 
@@ -1091,12 +1794,26 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
       key,
       baseKey,
       label,
+      label_rank: LABEL_SOURCE_RANK.highlight,
       kind,
+      canonical: keyInfo.canonical,
       occurrence: HIGHLIGHT_OCC_BOOST,
       evidence: [],
     };
     addNodeKindEvidence(node, "highlight", path);
+    applyLabelChoice(node, label, "highlight");
+    if (keyInfo.canonical?.canonical_label) {
+      applyLabelChoice(node, keyInfo.canonical.canonical_label, "archetype");
+    }
     nodes.set(key, node);
+    updateCanonicalizerStat(canonicalizerStats, {
+      domain: keyInfo.domain,
+      baseKey,
+      label,
+      labelSource: "highlight",
+      occurrence: HIGHLIGHT_OCC_BOOST,
+      match_source: keyInfo.match_source,
+    });
     return key;
   };
 
@@ -1274,8 +1991,12 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
   }
 
   const anchorMaps = buildAnchorMaps(input.anchorPayload ?? null);
-  const glossaryProvided = Array.isArray(input.glossaryOccurrences);
-  const glossaryMap = glossaryProvided ? buildGlossaryMap(input.glossaryOccurrences ?? []) : new Map<string, number>();
+  const glossaryRecurrenceSorted = sortGlossaryRecurrence(input.glossaryRecurrence);
+  const glossaryProvided = Array.isArray(input.glossaryOccurrences) || glossaryRecurrenceSorted.length > 0;
+  const glossaryMap =
+    glossaryRecurrenceSorted.length > 0
+      ? buildGlossaryRecurrenceMap(glossaryRecurrenceSorted)
+      : buildGlossaryMap(input.glossaryOccurrences ?? []);
 
   const occByBaseKey = new Map<string, number>();
   for (const node of nodes.values()) {
@@ -1382,6 +2103,37 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
     }
   }
 
+  const recurrenceByBaseKey = new Map<
+    string,
+    {
+      occurrence_count: number;
+      session_count: number;
+      first_seen_at: string | null;
+      last_seen_at: string | null;
+    }
+  >();
+
+  for (const row of glossaryRecurrenceSorted) {
+    const baseKey = termIdToBaseKey(row);
+    if (!baseKey) continue;
+    const existing = recurrenceByBaseKey.get(baseKey);
+    const next = {
+      occurrence_count: Number(row.occurrence_count ?? 0),
+      session_count: Number(row.session_count ?? 0),
+      first_seen_at: row.first_seen_at ?? null,
+      last_seen_at: row.last_seen_at ?? null,
+    };
+
+    if (!existing || isRecurrenceBetter(next, existing)) {
+      recurrenceByBaseKey.set(baseKey, next);
+    }
+  }
+
+  const maxSessionCount = Math.max(
+    0,
+    ...Array.from(recurrenceByBaseKey.values()).map((row) => Number(row.session_count ?? 0))
+  );
+
   const nodeArray: DreamMapNode[] = [];
   const zRawByKey = new Map<string, number>();
   const glossaryNormByKey = new Map<string, number>();
@@ -1389,7 +2141,8 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
   for (const node of nodes.values()) {
     const centrality = maxDegree > 0 ? (degreeByNode.get(node.key) ?? 0) / maxDegree : 0;
     const anchorScore = anchorMaps.scoreByBaseKey.get(node.baseKey) ?? 0;
-    const glossaryOcc = glossaryMap.get(node.baseKey) ?? 0;
+    const effectiveBaseKey = node.canonical?.canonical_key ?? node.baseKey;
+    const glossaryOcc = glossaryMap.get(effectiveBaseKey) ?? 0;
     const glossaryNorm = maxGlossaryOcc > 0 ? glossaryOcc / maxGlossaryOcc : 0;
     glossaryNormByKey.set(node.key, glossaryNorm);
 
@@ -1440,10 +2193,18 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
     const axisEvidenceSceneIndex =
       primarySceneIndices.length > 0 ? primarySceneIndices[0] : sceneIndices.length > 0 ? sceneIndices[0] : null;
 
+    const recurrence = recurrenceByBaseKey.get(effectiveBaseKey);
+    const recurrenceScore =
+      recurrence && maxSessionCount > 0
+        ? Math.log1p(Math.max(0, recurrence.session_count)) / Math.log1p(maxSessionCount)
+        : 0;
+
     nodeArray.push({
       key: node.key,
+      base_key: node.baseKey,
       label: node.label,
       kind: node.kind,
+      canonical: node.canonical,
       x,
       y,
       axis_source: sumWX > 0 || sumWY > 0 ? "scene_inherited" : "none",
@@ -1459,6 +2220,15 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
       primary_scene_count: primaryCount,
       scene_indices: sceneIndices,
       primary_scene_indices: primarySceneIndices.length > 0 ? primarySceneIndices : undefined,
+      recurrence: recurrence
+        ? {
+            occurrence_count: Math.max(0, Number(recurrence.occurrence_count ?? 0)),
+            session_count: Math.max(0, Number(recurrence.session_count ?? 0)),
+            first_seen_at: recurrence.first_seen_at ?? null,
+            last_seen_at: recurrence.last_seen_at ?? null,
+            score: Number.isFinite(recurrenceScore) ? recurrenceScore : 0,
+          }
+        : undefined,
       evidence: node.evidence,
     });
   }
@@ -1511,6 +2281,10 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
       axis: {
         lexicon_version: AXIS_LEXICON_V1.version,
         scene_axis: sceneAxisOut,
+      },
+      debug: {
+        determinism_hash: meta.determinism_hash,
+        canonicalizer: buildCanonicalizerDebug(nodeArray, canonicalizerStats),
       },
 
       weights: {

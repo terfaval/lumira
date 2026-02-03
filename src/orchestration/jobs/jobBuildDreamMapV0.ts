@@ -3,6 +3,8 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { beginJobRun, finishJobRun } from "@/src/db/repositories/jobRepo";
 import { jobIdempotencyKeyV0 } from "@/src/orchestration/idempotency/jobKey";
 import { materialHashFromPayload, sha256 } from "@/src/orchestration/idempotency/materialHash";
+import { fetchGlossaryRecurrence } from "@/src/db/repositories/glossaryRepo";
+import { fetchArchetypeTerms } from "@/src/db/repositories/archetypeRepo";
 import {
   fetchAnchorLatestWithPayloadAndId,
   fetchObservationLatestV0WithPayloadAndId,
@@ -11,46 +13,63 @@ import {
 import { insertDreamMapVersionIfMissing, upsertDreamMapLatest } from "@/src/db/repositories/dreamMapRepo";
 import { buildDreamMapV0 } from "@/src/domain/dreammap/buildDreamMapV0";
 import type {
+  DreamMapArchetypeTerm,
   DreamMapEntryHighlight,
   DreamMapGlossaryOccurrence,
+  DreamMapGlossaryRecurrence,
   DreamMapHighlightRow,
   DreamMapSessionEntry,
 } from "@/src/domain/dreammap/types";
 
 const DEFAULT_ALGO_VERSION = "dream_map_v1_span_cooc_mvp";
 const ALGO_VERSION = process.env.DREAM_MAP_ALGO_VERSION || DEFAULT_ALGO_VERSION;
+const CANONICALIZER_ENABLED = (process.env.DREAM_MAP_CANONICALIZER || "").toLowerCase() !== "off";
 
-async function fetchGlossaryOccurrences(
-  supabase: SupabaseClient,
-  args: { user_id: string; session_id: string }
-): Promise<DreamMapGlossaryOccurrence[] | null> {
-  try {
-    const occRes = await supabase
-      .from("glossary_occurrences")
-      .select("term_id")
-      .eq("user_id", args.user_id)
-      .eq("session_id", args.session_id);
-
-    if (occRes.error) return null;
-
-    const termIds = (occRes.data ?? []).map((row: any) => row?.term_id).filter(Boolean);
-    if (termIds.length === 0) return [];
-
-    const termRes = await supabase
-      .from("glossary_terms")
-      .select("id,canonical_key")
-      .eq("user_id", args.user_id)
-      .in("id", termIds);
-
-    if (termRes.error) return null;
-
-    const out: DreamMapGlossaryOccurrence[] = [];
-    for (const row of termRes.data ?? []) {
-      const key = typeof (row as any)?.canonical_key === "string" ? (row as any).canonical_key.trim() : "";
-      if (!key) continue;
-      out.push({ canonical_key: key, occurrences: 1 });
+function pickFirstString(...values: Array<unknown>): string | null {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) return trimmed;
     }
-    return out;
+  }
+  return null;
+}
+
+function glossaryLabelForRecurrence(row: DreamMapGlossaryRecurrence): string | null {
+  return pickFirstString(row.canonical_key, row.anchor_key, row.canonical_name, row.canonical, row.name, row.term);
+}
+
+function glossaryOccurrencesFromRecurrence(rows: DreamMapGlossaryRecurrence[] | null): DreamMapGlossaryOccurrence[] | null {
+  if (!Array.isArray(rows)) return null;
+  const out: DreamMapGlossaryOccurrence[] = [];
+  for (const row of rows) {
+    const label = glossaryLabelForRecurrence(row);
+    if (!label) continue;
+    out.push({
+      canonical_key: label,
+      occurrences: row.occurrence_count ?? 1,
+    });
+  }
+  return out;
+}
+
+async function fetchGlossaryRecurrenceRows(
+  supabase: SupabaseClient,
+  args: { user_id: string }
+): Promise<DreamMapGlossaryRecurrence[] | null> {
+  try {
+    return await fetchGlossaryRecurrence(supabase, { user_id: args.user_id });
+  } catch {
+    return null;
+  }
+}
+
+async function fetchArchetypeTermRows(
+  supabase: SupabaseClient,
+  args: { user_id: string }
+): Promise<DreamMapArchetypeTerm[] | null> {
+  try {
+    return await fetchArchetypeTerms(supabase, { user_id: args.user_id, statuses: ["verified", "proposed"] });
   } catch {
     return null;
   }
@@ -158,14 +177,16 @@ async function fetchEntryHighlights(
   }
 }
 
-function glossaryHash(glossary: DreamMapGlossaryOccurrence[] | null): string {
+function glossaryRecurrenceHash(glossary: DreamMapGlossaryRecurrence[] | null): string {
   if (!glossary) return "none";
   const sorted = glossary
     .map((row) => ({
-      canonical_key: row.canonical_key,
-      occurrences: row.occurrences ?? 1,
+      term_id: row.term_id,
+      session_count: row.session_count ?? 0,
+      occurrence_count: row.occurrence_count ?? 0,
+      last_seen_at: row.last_seen_at ?? null,
     }))
-    .sort((a, b) => a.canonical_key.localeCompare(b.canonical_key));
+    .sort((a, b) => a.term_id.localeCompare(b.term_id));
   return materialHashFromPayload(sorted);
 }
 
@@ -212,12 +233,42 @@ function entryHighlightsHash(highlights: DreamMapEntryHighlight[] | null): strin
   return materialHashFromPayload(sorted);
 }
 
+function lexiconMaterialHash(terms: DreamMapArchetypeTerm[] | null): string {
+  if (!terms) return "none";
+  const sorted = terms
+    .map((row) => {
+      const aliasKeys = Array.isArray(row.alias_keys) ? row.alias_keys.filter(Boolean).slice().sort() : [];
+      return {
+        domain: row.domain,
+        canonical_key: row.canonical_key,
+        status: row.status,
+        canonical_label: row.canonical_label,
+        alias_keys: aliasKeys,
+      };
+    })
+    .sort((a, b) => {
+      if (a.domain !== b.domain) return a.domain.localeCompare(b.domain);
+      return a.canonical_key.localeCompare(b.canonical_key);
+    });
+  return materialHashFromPayload(sorted);
+}
+
 function determinismHash(params: {
   entries: DreamMapSessionEntry[] | null;
   entryHighlights: DreamMapEntryHighlight[] | null;
+  glossaryRecurrence: DreamMapGlossaryRecurrence[] | null;
+  archetypeTerms: DreamMapArchetypeTerm[] | null;
 }): string {
   return sha256(
     materialHashFromPayload({
+      glossary_recurrence: (params.glossaryRecurrence ?? [])
+        .map((row) => ({
+          term_id: row.term_id,
+          session_count: row.session_count ?? 0,
+          occurrence_count: row.occurrence_count ?? 0,
+          last_seen_at: row.last_seen_at ?? null,
+        }))
+        .sort((a, b) => a.term_id.localeCompare(b.term_id)),
       entries: (params.entries ?? [])
         .map((row) => ({
           id: row.id,
@@ -233,6 +284,7 @@ function determinismHash(params: {
           end: row.end,
         }))
         .sort((a, b) => a.id.localeCompare(b.id)),
+      archetype_lexicon: lexiconMaterialHash(params.archetypeTerms),
     })
   );
 }
@@ -254,20 +306,38 @@ export async function jobBuildDreamMapV0(args: {
     return { dream_map_version_id: null, skipped: false };
   }
 
-  const [anchorLatest, sessionIndexLatest, glossaryOccurrences, highlightRows, sessionEntries, entryHighlights] =
-    await Promise.all([
+  const [
+    anchorLatest,
+    sessionIndexLatest,
+    glossaryRecurrenceRows,
+    highlightRows,
+    sessionEntries,
+    entryHighlights,
+    archetypeRows,
+  ] = await Promise.all([
     fetchAnchorLatestWithPayloadAndId(supabase, event.user_id, event.session_id),
     fetchSessionIndexLatestWithPayloadAndId(supabase, event.user_id, event.session_id),
-    fetchGlossaryOccurrences(supabase, { user_id: event.user_id, session_id: event.session_id }),
+    fetchGlossaryRecurrenceRows(supabase, { user_id: event.user_id }),
     fetchHighlightRows(supabase, { user_id: event.user_id, session_id: event.session_id }),
     fetchSessionEntries(supabase, { user_id: event.user_id, session_id: event.session_id }),
     fetchEntryHighlights(supabase, { user_id: event.user_id, session_id: event.session_id }),
+    CANONICALIZER_ENABLED ? fetchArchetypeTermRows(supabase, { user_id: event.user_id }) : Promise.resolve(null),
   ]);
 
-  const gh = glossaryHash(glossaryOccurrences);
+  const glossaryRecurrence = glossaryRecurrenceRows ?? null;
+  const glossaryOccurrencesCompat = glossaryOccurrencesFromRecurrence(glossaryRecurrence) ?? null;
+  const gh = glossaryRecurrenceHash(glossaryRecurrence);
   const hh = highlightHash(highlightRows);
   const sh = sessionEntriesHash(sessionEntries);
   const eh = entryHighlightsHash(entryHighlights);
+  const archetypeTerms =
+    CANONICALIZER_ENABLED && Array.isArray(archetypeRows)
+      ? archetypeRows.slice().sort((a, b) => {
+          if (a.domain !== b.domain) return a.domain.localeCompare(b.domain);
+          return a.canonical_key.localeCompare(b.canonical_key);
+        })
+      : null;
+  const lexiconHash = CANONICALIZER_ENABLED ? lexiconMaterialHash(archetypeTerms) : "off";
   const input_hash = sha256(
     [
       "dream_map_v0",
@@ -278,6 +348,7 @@ export async function jobBuildDreamMapV0(args: {
       hh,
       sh,
       eh,
+      lexiconHash,
       algoVersion,
     ].join(":")
   );
@@ -302,12 +373,16 @@ export async function jobBuildDreamMapV0(args: {
     const determinism_hash = determinismHash({
       entries: sessionEntries ?? null,
       entryHighlights: entryHighlights ?? null,
+      glossaryRecurrence: glossaryRecurrence ?? null,
+      archetypeTerms,
     });
 
     const payload = buildDreamMapV0({
       observationPayloadV0: obsLatest.payload,
       anchorPayload: anchorLatest?.payload ?? null,
-      glossaryOccurrences: glossaryOccurrences ?? null,
+      glossaryOccurrences: glossaryOccurrencesCompat ?? null,
+      glossaryRecurrence: glossaryRecurrence ?? null,
+      archetypeTerms,
       highlights: highlightRows ?? null,
       sessionEntries: sessionEntries ?? null,
       entryHighlights: entryHighlights ?? null,
@@ -365,3 +440,6 @@ export async function jobBuildDreamMapV0(args: {
     return { dream_map_version_id: null, skipped: false };
   }
 }
+
+export const __test_only_glossaryRecurrenceHash = glossaryRecurrenceHash;
+export const __test_only_determinismHash = determinismHash;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServerService } from "@/src/lib/supabase/serverService";
-import { lumiraStonePassage_v1 } from "@/src/domain/image/presets/lumiraStonePassage_v1"; // TODO: adjust path if different
+import { lumiraStonePassage_v1 } from "@/src/domain/image/presets/lumiraStonePassage_v1";
 import { lumiraCoreSpace_v1 } from "@/src/domain/image/presets/lumira_core_space_v1";
 
 export const runtime = "nodejs";

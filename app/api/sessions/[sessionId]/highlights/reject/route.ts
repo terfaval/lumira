@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 
 export const runtime = "nodejs";
@@ -8,9 +8,14 @@ function safeJsonBody(req: Request): Promise<any | null> {
   return req.json().catch(() => null);
 }
 
-export async function POST(req: Request, context: { params: { sessionId: string } }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ sessionId: string }> }
+) {
   try {
-    const sessionId = String(context?.params?.sessionId ?? "").trim();
+    const { sessionId: rawSessionId } = await params;
+    const sessionId = String(rawSessionId ?? "").trim();
+
     if (!sessionId) {
       return NextResponse.json({ error: "session_id_required" }, { status: 400 });
     }
@@ -36,11 +41,7 @@ export async function POST(req: Request, context: { params: { sessionId: string 
     const res = await supabase
       .from("dream_session_rejected_suggestions")
       .upsert(
-        {
-          user_id,
-          session_id: sessionId,
-          suggestion_key,
-        },
+        { user_id, session_id: sessionId, suggestion_key },
         { onConflict: "session_id,suggestion_key" }
       )
       .select("suggestion_key")

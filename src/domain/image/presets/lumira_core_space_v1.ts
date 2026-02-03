@@ -2,102 +2,140 @@ import type { ImageStylePreset } from "./types";
 
 export const lumiraCoreSpace_v1: ImageStylePreset = {
   id: "lumira_core_space",
-  version: 1.1,
+  version: 1,
   name: "Lumira — Core Space / Structural Absence",
 
   locks: {
     base_style: `
-      stylized 2D animation background,
-      subtle inked linework with soft painterly fills,
-      paper-like grain and stone-wash texture,
-      illustrated, non-photorealistic,
+hand-illustrated 2D environment background,
+editorial illustration style rather than animation still,
+subtle inked linework with soft painterly fills,
 
-      muted cool blues and blue-gray stone tones,
-      globally restrained contrast with localized visual emphasis,
-      calm and ancient atmosphere,
-      quiet, inward-facing, static composition,
+muted cool blues and blue-gray stone tones,
+globally restrained contrast with localized visual emphasis,
+ancient through erosion and abandonment, not through mythology,
+quiet, inward-facing, static composition,
 
-      no cinematic lighting, no spectacle,
-      no realism, no 3D render, no dramatic effects
+no cinematic lighting, no spectacle,
+no realism, no 3D render, no dramatic effects
     `.trim(),
 
     scene: `
-      an enclosed ancient stone chamber carved into rock,
-      walls feel close, heavy, and inward-pressing,
-      the space feels eroded rather than constructed,
+an enclosed ancient stone chamber carved into rock,
+the space feels eroded and worn rather than constructed,
 
-      the camera is positioned inside the chamber,
-      set back several steps from a structural absence in the far wall,
-      allowing a calm foreground space to unfold,
+the camera is positioned inside the chamber,
+clearly offset toward the left side of the space,
+creating a calm diagonal perspective across the room,
+never frontal, never symmetrical,
 
-      the stone floor occupies a larger portion of the frame,
-      uneven, worn, and gently leading the eye inward,
-      depth is created through layering and perspective,
+the camera is set back many steps from the far wall,
+allowing a spacious, quiet foreground to unfold,
 
-      not a corridor, not a tunnel, not a passageway,
-      the space does not lead anywhere; it simply holds presence
+the broken opening is located in the far wall,
+drifting subtly toward the right side of the frame,
+never centered, never aligned to the camera axis,
+
+the stone floor occupies a large portion of the image,
+uneven, cracked, and gently leading the eye inward,
+
+this is not a corridor, tunnel, or passageway,
+no implied path, no visual invitation to move forward,
+it simply holds presence like a reclaimed haven
     `.trim(),
 
     portal: `
-      a large irregular absence where stone is missing,
-      located in the far wall of the chamber,
+a large structural void where stone is missing from the wall,
 
-      edges are broken, collapsed, and asymmetrical,
-      the absence is a flat, matte darkness,
-      uniform in tone, without texture or depth cues,
+the edges are broken, collapsed, and asymmetrical,
+surrounded by loose stones and structural debris,
 
-      no light source, no glow, no visible space beyond,
-      it does not function as a doorway or passage,
-      it feels like erosion, loss, or removal
+the absence itself is a flat, matte darkness,
+uniform in tone, without texture or depth cues,
+
+no light source, no glow, no visible space beyond,
+the darkness is secondary to the broken stone edge,
+
+this is not a doorway or gate,
+it reads clearly as wall damage, erosion, or removal
     `.trim(),
 
     detail: `
-      abstract geometric markings are clearly present on the stone walls,
-      they form a subtle but deliberate visual system,
+the stone walls show layered erosion,
+with surface material worn away in irregular patches,
 
-      the geometric markings feel etched into deeper stone layers,
-      as if revealed by erosion rather than applied to the surface,
-      their brightness is subtle but internally coherent,
+edges are chipped and softened,
+corners rounded by time rather than impact,
 
-      markings align into faint horizontal bands or systems,
-      suggesting measurement, calibration, or forgotten surveying,
-      never ornamental, never expressive,
-      non-linguistic, non-symbolic, never readable,
+some sections reveal deeper stone strata beneath,
+uneven, coarse, and untreated,
 
-      stone surfaces carry partial circles, lines,
-      and measurement-like traces integrated into the rock itself,
+the degradation is gradual and quiet,
+never dramatic, never catastrophic
 
-      soft moss and small plants emerge directly from the stone,
-      growing inside cracks, seams, and fractures,
-      the stone and the growth feel inseparable,
-      as if the chamber has been breathing slowly for a long time,
-      thin vines and small plants grow quietly from cracks and seams,
+  the space is archaeological but not ritualistic,
+utilitarian rather than ceremonial,
 
-      tiny embedded blue pinpoints appear very sparsely,
-      as if light is trapped inside mineral inclusions,
-      they do not float, flicker, or move,
-      they feel geological, not atmospheric,
+    abstract geometric markings are etched into the stone walls,
+the markings resemble structural measurement traces,
+not symbols, not writing, not language
 
-      subtle dust in the air, calm and non-magical
+the markings feel embedded in deeper stone layers,
+as if revealed slowly by erosion rather than applied,
+their brightness is low but internally consistent,
+
+lines, circles, and measurement-like traces align loosely,
+suggesting forgotten surveying or calibration,
+never symbolic, never readable, never ornamental,
+
+vegetation is denser near the far wall and collapsed areas,
+where moisture and debris have accumulated,
+
+growth there appears less controlled,
+but still subdued and secondary to the stone
+
+a quiet variety of plant life has reclaimed the chamber,
+soft moss blankets floor seams, step edges, and wall joints,
+
+small ferns and low leafy plants grow from cracks and fallen stones,
+delicate grasses and tiny sprouts emerge in foreground fractures,
+
+thin climbing vines extend further up the walls,
+some reaching into mid-wall height before fading,
+
+plant growth appears in multiple scales,
+from tiny sprouts to longer, thread-like tendrils,
+
+vegetation follows cracks, gravity, and moisture lines,
+never evenly distributed, never mirrored,
+
+the growth feels slow, patient, and established,
+as if the space has been quietly alive for generations,
+
+tiny mineral inclusions with a muted blue tint,
+non-emissive in daylight, matte, visible only as subtle color variation
+
+subtle dust rests in the air, calm and non-magical
     `.trim(),
 
     negative: `
-      corridor, hallway, tunnel,
-      doorway, entrance, gate, arch,
-      landscape, exterior world, horizon,
-      clear passage beyond, visible other side,
+portal, gateway, doorway, entrance, arch, gate,
+interdimensional opening, other world visible, space beyond,
+corridor, hallway, tunnel, passageway, stairs leading out,
 
-      temple, shrine, altar,
-      religious symbolism,
-      mythic fantasy aesthetics,
+temple, shrine, altar, ritual, religion, worship,
+mythic fantasy, epic fantasy aesthetics,
 
-      fantasy, magic symbols, runes, glyphs,
-      glow effects, sparkles, energy,
-      high contrast lighting, cinematic lighting, volumetric light,
+runes, glyphs, magic symbols, sigils, readable writing,
+text, letters, numbers, signage,
 
-      characters, people, faces, silhouettes,
-      photorealism, 3d render, unreal engine, octane,
-      text, letters, readable symbols
+glow effects, bloom, halo, light rays, god rays,
+volumetric light, fog beams, sparkles, particles, energy effects,
+high contrast lighting, cinematic lighting, dramatic lighting,
+
+characters, people, faces, silhouettes, creatures,
+photorealism, hyperrealism,
+3d render, CGI, unreal engine, octane, ray tracing
     `.trim(),
   },
 
@@ -106,69 +144,148 @@ export const lumiraCoreSpace_v1: ImageStylePreset = {
       key: "dawn",
       label: "Hajnal",
       light_prompt: `
-        very soft pre-dawn blue-gray ambient light,
-        extremely low contrast,
-        quiet and barely-awake atmosphere,
-        subtle tonal separation between surfaces,
-        no directional shadows
+very soft pre-dawn blue-gray ambient light,
+extremely low contrast, quiet and barely-awake atmosphere,
+
+the chamber is readable in broad shapes only,
+fine texture remains subdued, no crisp highlights,
+
+the structural void stays flat matte darkness,
+no depth cues, no glow, no space beyond,
+
+vegetation is present but understated,
+slightly darker than stone, damp and quiet,
+
+geometric markings are barely perceptible,
+appearing as faint tonal differences within the stone,
+never bright, never emissive,
+
+keep the exact same composition, camera position, and geometry as the base scene
       `.trim(),
     },
+
     {
       key: "morning",
       label: "Reggel",
       light_prompt: `
-        cool diffuse daylight filtered indirectly into the chamber,
-        soft and even illumination,
-        low contrast with gentle readability of textures,
-        one wall slightly darker than the other,
-        no strong shadows
+cool diffuse daylight filtered indirectly into the chamber,
+soft and even illumination, low contrast, no direct sun,
+
+stone textures become gently readable,
+edges remain soft, no hard shadows,
+
+the structural void stays flat matte darkness,
+no glow, no reflected light inside the absence,
+
+vegetation appears fresher and slightly more saturated than stone,
+moss and small leaves readable in clusters near debris and seams,
+
+geometric markings are subtly discernible as etched traces,
+still low brightness, never decorative, never luminous,
+
+keep the exact same composition, camera position, and geometry as the base scene
       `.trim(),
     },
+
     {
       key: "noon",
       label: "Dél",
       light_prompt: `
-        neutral, evenly distributed ambient light,
-        the brightest state of the day without harshness,
-        still very low contrast and restrained,
-        stone textures clearly readable but not emphasized
+neutral, evenly distributed ambient daylight,
+the brightest state of the day without harshness,
+still restrained contrast, no sparkle, no dramatic highlights,
+
+stone surfaces are clearly readable but not emphasized,
+no glossy reflections, no sharp shadow shapes,
+
+the structural void remains flat matte darkness,
+the darkest region in the frame, still without depth,
+
+vegetation is most readable in this state,
+multiple scales of growth visible in cracks and seams,
+still calm, not lush, never overgrown into a jungle,
+
+geometric markings are the clearest here,
+as quiet measurement-like traces within the stone,
+no glow, no magical effect,
+
+no bokeh, no depth-of-field blur,
+keep the exact same composition, camera position, and geometry as the base scene
       `.trim(),
     },
+
     {
       key: "afternoon",
       label: "Délután",
       light_prompt: `
-        slightly warmer, softened ambient light,
-        gentle transition toward evening tones,
-        low contrast with mild shadow presence,
-        the space feels settled and quiet
+slightly warmer, softened ambient light,
+gentle transition toward evening tones,
+low contrast with mild shadow presence, still diffuse,
+
+stone textures remain readable but begin to soften again,
+shadows are broad and quiet, never directional beams,
+
+the structural void stays flat matte darkness,
+no rim light, no outline glow,
+
+vegetation gains a mild warmth on some edges,
+subtle tonal separation in leaves and vines,
+still secondary to stone, never decorative,
+
+geometric markings remain readable as faint etched systems,
+less clear than at noon, still internally consistent,
+
+keep the exact same composition, camera position, and geometry as the base scene
       `.trim(),
     },
+
     {
       key: "evening",
       label: "Este",
       light_prompt: `
-        cooling ambient light with subdued warmth fading,
-        details begin to recede into shadow,
-        very low contrast and enclosed feeling,
-        the space feels inward and still
+cooling ambient light with subdued warmth fading,
+details begin to recede into shadow,
+very low contrast, enclosed and inward atmosphere,
+
+stone surfaces become less descriptive,
+forms remain clear, textures soften and merge,
+
+the structural void remains flat matte darkness,
+no visible depth, no reflected light, no glow,
+
+vegetation becomes more silhouette-like in places,
+clusters remain visible near debris and seams,
+never turning into high-contrast shapes,
+
+geometric markings fade back into the stone,
+visible only as occasional faint lines and circles,
+never luminous,
+
+keep the exact same composition, camera position, and geometry as the base scene
       `.trim(),
     },
+
     {
       key: "night",
       label: "Éjszaka",
       light_prompt: `
-        deep night ambience with dark indigo-blue fill light,
-        very low contrast and closed atmosphere,
-        details barely visible but still present,
-        no glow, no dramatic lighting,
+deep night ambience with dark indigo-blue fill light,
+very low contrast and enclosed atmosphere,
+details barely visible but still present,
 
-        a barely perceptible tonal separation around the structural absence,
-        the darkness feels slightly heavier than the surrounding stone,
+the structural void remains flat matte darkness,
+no visible depth, no glow, no space beyond,
 
-        the markings appear faintly more luminous than the stone,
-        without glow, halo, or light spill,
-        as if the stone itself remembers light
+a few sparse mineral pinpoints in the stone appear faintly emissive,
+tiny dim blue points of light only, localized and controlled,
+no halo, no bloom, no spill, no volumetric rays,
+never bright enough to illuminate the room,
+
+the geometric markings appear slightly brighter than the surrounding stone,
+as a gentle tonal lift only, not a light source,
+
+no bokeh, no depth-of-field blur,
+keep the exact same composition, camera position, and geometry as the base scene
       `.trim(),
     },
 
@@ -177,20 +294,43 @@ export const lumiraCoreSpace_v1: ImageStylePreset = {
       key: "night_fireflies",
       label: "Éjszaka — Szentjánosbogár",
       light_prompt: `
-        deep night ambience with extremely subtle warm pinpoints,
-        sparse, embedded points of light within the stone itself,
-        non-decorative, non-magical,
-        the chamber remains calm and restrained
+deep night ambience, very low contrast, enclosed atmosphere,
+
+the structural void stays flat matte darkness,
+no depth, no glow, no space beyond,
+
+a small number of tiny warm points appear near vegetation clusters,
+very sparse, very dim, localized and controlled,
+no trails, no swarms, no sparkle, no bloom, no halo,
+no bokeh, no depth-of-field blur,
+
+mineral blue pinpoints may remain faint and minimal,
+never competing with the warm points,
+nothing illuminates the room,
+
+keep the exact same composition, camera position, and geometry as the base scene
       `.trim(),
     },
+
     {
       key: "night_fullmoon",
       label: "Éjszaka — Telihold",
       light_prompt: `
-        cool, even moonlit ambience,
-        soft rim light gently touching some stone edges,
-        very low contrast, no sparkle or glow,
-        the space feels open yet still enclosed
+cool, even moonlit ambience, still very low contrast,
+a gentle tonal lift touches some upper stone planes,
+source remains unseen, no visible window, no beams,
+no exterior cues, no stars, no sky light visible,
+
+the structural void stays flat matte darkness,
+no rim-glow, no outlined edge, no reflected interior light,
+
+stone edges gain a barely perceptible soft relief,
+no sharp highlights, no cinematic lighting,
+
+geometric markings become slightly clearer than base night,
+as quiet etched traces, never luminous,
+
+keep the exact same composition, camera position, and geometry as the base scene
       `.trim(),
     },
   ],
