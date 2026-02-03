@@ -13,6 +13,7 @@ import {
 import { insertDreamMapVersionIfMissing, upsertDreamMapLatest } from "@/src/db/repositories/dreamMapRepo";
 import { buildDreamMapV0 } from "@/src/domain/dreammap/buildDreamMapV0";
 import type {
+  DreamMapArchetypeDomain,
   DreamMapArchetypeTerm,
   DreamMapEntryHighlight,
   DreamMapGlossaryOccurrence,
@@ -24,6 +25,19 @@ import type {
 const DEFAULT_ALGO_VERSION = "dream_map_v1_span_cooc_mvp";
 const ALGO_VERSION = process.env.DREAM_MAP_ALGO_VERSION || DEFAULT_ALGO_VERSION;
 const CANONICALIZER_ENABLED = (process.env.DREAM_MAP_CANONICALIZER || "").toLowerCase() !== "off";
+const ARCHETYPE_DOMAINS = new Set<DreamMapArchetypeDomain>([
+  "people",
+  "places",
+  "objects",
+  "actions",
+  "sensations",
+  "mood_words",
+  "themes_words",
+]);
+
+function isDreamMapArchetypeDomain(value: string): value is DreamMapArchetypeDomain {
+  return ARCHETYPE_DOMAINS.has(value as DreamMapArchetypeDomain);
+}
 
 function pickFirstString(...values: Array<unknown>): string | null {
   for (const value of values) {
@@ -69,7 +83,13 @@ async function fetchArchetypeTermRows(
   args: { user_id: string }
 ): Promise<DreamMapArchetypeTerm[] | null> {
   try {
-    return await fetchArchetypeTerms(supabase, { user_id: args.user_id, statuses: ["verified", "proposed"] });
+    const rows = await fetchArchetypeTerms(supabase, { user_id: args.user_id, statuses: ["verified", "proposed"] });
+    return rows
+      .filter((row) => typeof row.domain === "string" && isDreamMapArchetypeDomain(row.domain))
+      .map((row) => ({
+        ...row,
+        domain: row.domain as DreamMapArchetypeDomain,
+      }));
   } catch {
     return null;
   }
