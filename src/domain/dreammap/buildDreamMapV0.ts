@@ -152,6 +152,10 @@ type CanonicalizerStat = {
   evidence_spans: DreamMapNodeEvidenceSpan[];
 };
 
+type DreamMapCanonicalizerDebug = NonNullable<
+  NonNullable<DreamMapPayloadV0["meta"]["debug"]>["canonicalizer"]
+>;
+
 function clamp01(value: number): number {
   if (value <= 0) return 0;
   if (value >= 1) return 1;
@@ -498,7 +502,7 @@ function updateCanonicalizerStat(
 function buildCanonicalizerDebug(
   nodes: DreamMapNode[],
   stats: Map<string, CanonicalizerStat>
-): DreamMapPayloadV0["meta"]["debug"]["canonicalizer"] {
+): DreamMapCanonicalizerDebug {
   const matchedBySource = { archetype: 0, glossary: 0, raw: 0 };
 
   for (const node of nodes) {
