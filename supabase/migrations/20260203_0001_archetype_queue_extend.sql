@@ -9,13 +9,23 @@ alter table public.archetype_term_queue
   add column if not exists dream_map_version_id uuid,
   add column if not exists note text;
 
+-- Backfill base_key safely (canonical_key -> canonical_label)
 update public.archetype_term_queue
-set base_key = canonical_key
+set base_key = nullif(btrim(canonical_key), '')
 where base_key is null;
 
 update public.archetype_term_queue
-set suggested_canonical_key = canonical_key
+set base_key = nullif(btrim(canonical_label), '')
+where base_key is null;
+
+-- suggested canonical defaults to canonical_key (or base_key as fallback)
+update public.archetype_term_queue
+set suggested_canonical_key = nullif(btrim(canonical_key), '')
 where suggested_canonical_key is null;
+
+update public.archetype_term_queue
+set suggested_canonical_key = base_key
+where suggested_canonical_key is null and base_key is not null;
 
 update public.archetype_term_queue
 set occurrence = 0
@@ -25,6 +35,7 @@ update public.archetype_term_queue
 set source = 'legacy'
 where source is null;
 
+-- normalize legacy status
 update public.archetype_term_queue
 set status = 'new'
 where status = 'pending';
@@ -45,7 +56,9 @@ begin
   end if;
 end $$;
 
+-- Idempotency: enforce uniqueness only when base_key is present
 create unique index if not exists archetype_term_queue_user_domain_base_key_uidx
-  on public.archetype_term_queue (user_id, domain, base_key);
+  on public.archetype_term_queue (user_id, domain, base_key)
+  where base_key is not null and base_key <> '';
 
 commit;
