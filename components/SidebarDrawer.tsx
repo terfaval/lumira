@@ -39,6 +39,7 @@ export function SidebarDrawer({
   const [recent, setRecent] = useState<DreamRow[]>([]);
   const [glossaryAccess, setGlossaryAccess] = useState<boolean>(false);
   const [dreamspaceAccess, setDreamspaceAccess] = useState<boolean>(false);
+  const [adminAccess, setAdminAccess] = useState<boolean>(false);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -50,8 +51,10 @@ export function SidebarDrawer({
       if (!isGlossaryAdmin(userId)) {
         setGlossaryAccess(false);
         setDreamspaceAccess(false);
+        setAdminAccess(false);
         return;
       }
+      setAdminAccess(true);
       setDreamspaceAccess(true);
 
       // ✅ count suggestions for this user
@@ -67,6 +70,7 @@ export function SidebarDrawer({
     } catch {
       setGlossaryAccess(false);
       setDreamspaceAccess(false);
+      setAdminAccess(false);
     }
   }, []);
 
@@ -334,12 +338,12 @@ export function SidebarDrawer({
               </span>
             </Link>
 
-            {dreamspaceAccess && (
-              <Link href="/admin/dreammap/backfill" className="drawer-navlink" onClick={onClose}>
+            {adminAccess && (
+              <Link href="/admin" className="drawer-navlink" onClick={onClose}>
                 <DrawerIcon name="work" />
                 <span className="drawer-label">
-                  <span className="drawer-label-full">Dream map backfill (admin)</span>
-                  <span className="drawer-label-short">Backfill</span>
+                  <span className="drawer-label-full">Admin</span>
+                  <span className="drawer-label-short">Admin</span>
                 </span>
               </Link>
             )}
