@@ -5,6 +5,7 @@ import { jobIdempotencyKeyV0 } from "@/src/orchestration/idempotency/jobKey";
 import { materialHashFromPayload, sha256 } from "@/src/orchestration/idempotency/materialHash";
 import { fetchGlossaryRecurrence } from "@/src/db/repositories/glossaryRepo";
 import { fetchArchetypeTerms } from "@/src/db/repositories/archetypeRepo";
+import { upsertArchetypeQueueProposal } from "@/src/db/repositories/archetypeQueueRepo";
 import {
   fetchAnchorLatestWithPayloadAndId,
   fetchObservationLatestV0WithPayloadAndId,
@@ -273,6 +274,39 @@ function lexiconMaterialHash(terms: DreamMapArchetypeTerm[] | null): string {
   return materialHashFromPayload(sorted);
 }
 
+async function enqueueArchetypeQueueProposals(args: {
+  supabase: SupabaseClient;
+  event: { user_id: string };
+  payload: unknown;
+  dream_map_version_id: string;
+}) {
+  try {
+    if (!CANONICALIZER_ENABLED) return;
+    const proposals = (args.payload as any)?.meta?.debug?.canonicalizer?.proposals_sample ?? [];
+    if (!Array.isArray(proposals) || proposals.length === 0) return;
+
+    for (const p of proposals) {
+      const domain = String(p?.domain ?? "").trim();
+      const baseKey = String(p?.baseKey ?? "").trim();
+      if (!domain || !baseKey) continue;
+
+      await upsertArchetypeQueueProposal(args.supabase, {
+        user_id: args.event.user_id,
+        domain,
+        base_key: baseKey,
+        canonical_label: String(p?.label ?? baseKey),
+        occurrence: Number(p?.occurrence ?? 0),
+        suggested_canonical_key: String(p?.suggested_canonical_key ?? baseKey),
+        evidence_spans_sample: p?.evidence_spans_sample ?? null,
+        dream_map_version_id: args.dream_map_version_id,
+        source: "dream_map_canonicalizer",
+      });
+    }
+  } catch {
+    // swallow - must not fail the job
+  }
+}
+
 function determinismHash(params: {
   entries: DreamMapSessionEntry[] | null;
   entryHighlights: DreamMapEntryHighlight[] | null;
@@ -432,6 +466,13 @@ export async function jobBuildDreamMapV0(args: {
       dream_map_version_id: saved.id,
     });
 
+    await enqueueArchetypeQueueProposals({
+      supabase,
+      event,
+      payload,
+      dream_map_version_id: saved.id,
+    });
+
     await finishJobRun(supabase, {
       job_id: started.job.id,
       status: "success",
@@ -463,3 +504,4 @@ export async function jobBuildDreamMapV0(args: {
 
 export const __test_only_glossaryRecurrenceHash = glossaryRecurrenceHash;
 export const __test_only_determinismHash = determinismHash;
+export const __test_only_enqueueArchetypeQueueProposals = enqueueArchetypeQueueProposals;

@@ -1,4 +1,5 @@
-import { anchorKey, stripDiacritics } from "@/src/lib/dream/anchorKey";
+import { stripDiacritics } from "@/src/lib/dream/anchorKey";
+import { normalizeBaseKey } from "@/src/domain/archetypes/normalizeBaseKey";
 import type { ObservationPayloadV0 } from "@/src/domain/observe/types";
 import type {
   DreamMapArchetypeDomain,
@@ -167,14 +168,6 @@ function clampSigned(value: number): number {
   if (value <= -1) return -1;
   if (value >= 1) return 1;
   return value;
-}
-
-function normalizeBaseKey(raw: string): string {
-  const trimmed = String(raw ?? "").trim();
-  if (!trimmed) return "";
-  const fromAnchor = anchorKey(trimmed);
-  if (fromAnchor) return fromAnchor;
-  return stripDiacritics(trimmed.toLowerCase()).replace(/\s+/g, " ").trim();
 }
 
 function pickFirstString(...values: Array<unknown>): string | null {
@@ -791,10 +784,10 @@ function termIdToBaseKey(row: DreamMapGlossaryRecurrence): string | null {
   } else {
     const canonicalName = pickFirstString(row.canonical_name);
     if (canonicalName) {
-      baseKey = normalizeBaseKey(anchorKey(canonicalName));
+      baseKey = normalizeBaseKey(canonicalName);
     } else {
       const fallbackName = pickFirstString(row.canonical, row.name, row.term);
-      if (fallbackName) baseKey = normalizeBaseKey(anchorKey(fallbackName));
+      if (fallbackName) baseKey = normalizeBaseKey(fallbackName);
     }
   }
 

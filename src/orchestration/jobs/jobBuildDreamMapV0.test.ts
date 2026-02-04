@@ -1,6 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { __test_only_determinismHash } from "@/src/orchestration/jobs/jobBuildDreamMapV0";
+vi.mock("@/src/db/repositories/archetypeQueueRepo", () => ({
+  upsertArchetypeQueueProposal: vi.fn(async () => ({ id: "q1" })),
+}));
+
+import { upsertArchetypeQueueProposal } from "@/src/db/repositories/archetypeQueueRepo";
+import {
+  __test_only_determinismHash,
+  __test_only_enqueueArchetypeQueueProposals,
+} from "@/src/orchestration/jobs/jobBuildDreamMapV0";
 
 describe("jobBuildDreamMapV0 determinism hash", () => {
   it("changes when only session_count changes", () => {
@@ -69,5 +77,51 @@ describe("jobBuildDreamMapV0 determinism hash", () => {
     } as any);
 
     expect(hash1).not.toBe(hash2);
+  });
+});
+
+describe("jobBuildDreamMapV0 canonicalizer queue", () => {
+  it("enqueues proposals when present", async () => {
+    const payload = {
+      meta: {
+        debug: {
+          canonicalizer: {
+            proposals_sample: [
+              { domain: "people", baseKey: "Lany", label: "Lany", occurrence: 2, suggested_canonical_key: "lany" },
+              { domain: "", baseKey: "Skip", label: "Skip", occurrence: 1, suggested_canonical_key: "skip" },
+            ],
+          },
+        },
+      },
+    };
+
+    await __test_only_enqueueArchetypeQueueProposals({
+      supabase: {} as any,
+      event: { user_id: "u1" },
+      payload,
+      dream_map_version_id: "dm1",
+    });
+
+    expect((upsertArchetypeQueueProposal as any).mock.calls.length).toBe(1);
+    expect((upsertArchetypeQueueProposal as any).mock.calls[0]?.[1]?.base_key).toBe("Lany");
+  });
+
+  it("swallows upsert errors", async () => {
+    (upsertArchetypeQueueProposal as any).mockImplementationOnce(async () => {
+      throw new Error("fail");
+    });
+
+    await __test_only_enqueueArchetypeQueueProposals({
+      supabase: {} as any,
+      event: { user_id: "u1" },
+      payload: {
+        meta: {
+          debug: {
+            canonicalizer: { proposals_sample: [{ domain: "people", baseKey: "Lany" }] },
+          },
+        },
+      },
+      dream_map_version_id: "dm1",
+    });
   });
 });
