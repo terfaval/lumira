@@ -1,7 +1,6 @@
 // app/api/admin/dreammap/backfill/route.ts
 import { NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
-import { supabaseServerService } from "@/src/lib/supabase/serverService";
 import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
 import { createDomainEvent } from "@/src/db/repositories/eventRepo";
 import { jobBuildDreamMapV0 } from "@/src/orchestration/jobs/jobBuildDreamMapV0";
@@ -82,7 +81,7 @@ export async function POST(req: Request) {
               }
             : { mode: "all" as const };
 
-      const supabase = supabaseServerService();
+      const supabase = supabaseAuthed;
 
       const result = await jobBackfillArchetypeMissing({
         supabase,
@@ -111,7 +110,7 @@ export async function POST(req: Request) {
 
     const cursor = parseCursor(body.cursor ?? null);
 
-    const supabase = supabaseServerService();
+    const supabase = supabaseAuthed;
     const SELECT_ALL = "id,user_id,created_at" as const;
     const SELECT_ONLY_MISSING =
       "id,user_id,created_at,dream_map_latest!left(session_id)" as const;
