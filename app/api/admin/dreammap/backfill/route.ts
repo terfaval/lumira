@@ -9,6 +9,8 @@ import { jobBackfillArchetypeMissing } from "@/src/orchestration/jobs/jobBackfil
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type SupabaseAuthedClient = Awaited<ReturnType<typeof supabaseServerAuthed>>;
+
 type BackfillBody = {
   target?: "missing_dreammap" | "missing_archetype";
   limit?: number;
@@ -286,7 +288,7 @@ function encodeCursor(payload: CursorPayload): string {
   return Buffer.from(JSON.stringify(payload)).toString("base64");
 }
 
-async function fetchGuestFlags(supabase: ReturnType<typeof supabaseServerService>, userIds: string[]) {
+async function fetchGuestFlags(supabase: SupabaseAuthedClient, userIds: string[]) {
   const map = new Map<string, boolean>();
   if (userIds.length === 0) return map;
 
