@@ -42,7 +42,7 @@ function hasMissingArchetype(payload: any): boolean {
   const nodes = Array.isArray(payload?.nodes) ? payload.nodes : [];
   if (nodes.length === 0) return false;
 
-  return nodes.some((node) => {
+  return nodes.some((node: Record<string, unknown>) => {
     const canonical = (node as any)?.canonical;
     if (!canonical) return true;
     const key = normalizeKey((canonical as any).canonical_key);
