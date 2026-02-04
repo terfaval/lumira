@@ -144,3 +144,81 @@ export async function fetchDreamMapLatest(
     algo_version: ver.data.algo_version,
   };
 }
+
+export type DreamMapLatestPayloadRow = {
+  session_id: string;
+  user_id: string;
+  dream_map_version_id: string;
+  updated_at: string;
+  payload: any;
+  algo_version: string;
+};
+
+export async function listDreamMapLatestWithPayload(
+  supabase: SupabaseClient,
+  args: {
+    user_id?: string;
+    since?: string;
+    until?: string;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<DreamMapLatestPayloadRow[]> {
+  const limit = Math.min(Math.max(args.limit ?? 50, 1), 200);
+  const offset = Math.max(args.offset ?? 0, 0);
+
+  let query = supabase
+    .from("dream_map_latest")
+    .select("session_id,user_id,dream_map_version_id,updated_at")
+    .order("updated_at", { ascending: true })
+    .order("user_id", { ascending: true })
+    .order("session_id", { ascending: true });
+
+  if (args.user_id) query = query.eq("user_id", args.user_id);
+  if (args.since) query = query.gte("updated_at", args.since);
+  if (args.until) query = query.lte("updated_at", args.until);
+
+  const latestRes = await query.range(offset, offset + limit - 1);
+  if (latestRes.error) throw latestRes.error;
+
+  const latestRows = (latestRes.data ?? []) as Array<{
+    session_id: string;
+    user_id: string;
+    dream_map_version_id: string;
+    updated_at: string;
+  }>;
+
+  if (latestRows.length === 0) return [];
+
+  const versionIds = latestRows.map((row) => row.dream_map_version_id).filter(Boolean);
+  if (versionIds.length === 0) return [];
+
+  const versionsRes = await supabase
+    .from("dream_map_versions")
+    .select("id,payload,algo_version")
+    .in("id", versionIds);
+
+  if (versionsRes.error) throw versionsRes.error;
+
+  const byId = new Map<string, { payload: any; algo_version: string }>();
+  for (const row of versionsRes.data ?? []) {
+    if (!row?.id) continue;
+    byId.set(row.id, { payload: (row as any).payload, algo_version: (row as any).algo_version });
+  }
+
+  const out: DreamMapLatestPayloadRow[] = [];
+  for (const row of latestRows) {
+    const ver = byId.get(row.dream_map_version_id);
+    if (!ver) continue;
+    out.push({
+      session_id: row.session_id,
+      user_id: row.user_id,
+      dream_map_version_id: row.dream_map_version_id,
+      updated_at: row.updated_at,
+      payload: ver.payload,
+      algo_version: ver.algo_version,
+    });
+  }
+
+  return out;
+}
