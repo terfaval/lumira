@@ -395,24 +395,46 @@ function resolveNodeIdentity(params: {
   }
 
   const glossaryKey = params.glossaryKeyMap.get(baseKey)?.canonical_key ?? null;
-  if (glossaryKey && canonicalBucket) {
-    const glossaryMatch = canonicalBucket.get(glossaryKey);
-    if (glossaryMatch && glossaryMatch.length > 0) {
-      const term = pickBestArchetypeTerm(glossaryMatch);
-      const canonicalLabel = String(term.canonical_label ?? term.canonical_key ?? params.label).trim();
-      const canonicalKey = normalizeBaseKey(term.canonical_key);
-      return {
-        nodeKey: `arch:${domain}:${canonicalKey}`,
-        raw_base_key: baseKey,
-        domain,
-        canonical: {
-          archetype_id: term.id ?? null,
-          canonical_key: canonicalKey,
-          canonical_label: canonicalLabel || canonicalKey,
+  if (glossaryKey) {
+    const glossaryBase = normalizeBaseKey(glossaryKey);
+    if (glossaryBase) {
+      const byCanonical = canonicalBucket?.get(glossaryBase);
+      if (byCanonical && byCanonical.length > 0) {
+        const term = pickBestArchetypeTerm(byCanonical);
+        const canonicalLabel = String(term.canonical_label ?? term.canonical_key ?? params.label).trim();
+        const canonicalKey = normalizeBaseKey(term.canonical_key);
+        return {
+          nodeKey: `arch:${domain}:${canonicalKey}`,
+          raw_base_key: baseKey,
+          domain,
+          canonical: {
+            archetype_id: term.id ?? null,
+            canonical_key: canonicalKey,
+            canonical_label: canonicalLabel || canonicalKey,
+            match_source: "glossary",
+          },
           match_source: "glossary",
-        },
-        match_source: "glossary",
-      };
+        };
+      }
+
+      const byAlias = aliasBucket?.get(glossaryBase);
+      if (byAlias && byAlias.length > 0) {
+        const term = pickBestArchetypeTerm(byAlias);
+        const canonicalLabel = String(term.canonical_label ?? term.canonical_key ?? params.label).trim();
+        const canonicalKey = normalizeBaseKey(term.canonical_key);
+        return {
+          nodeKey: `arch:${domain}:${canonicalKey}`,
+          raw_base_key: baseKey,
+          domain,
+          canonical: {
+            archetype_id: term.id ?? null,
+            canonical_key: canonicalKey,
+            canonical_label: canonicalLabel || canonicalKey,
+            match_source: "glossary",
+          },
+          match_source: "glossary",
+        };
+      }
     }
   }
 
