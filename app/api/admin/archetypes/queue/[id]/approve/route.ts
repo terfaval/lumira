@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabaseServerAuthed } from "@/src/db/supabaseServerAuthed";
-import { supabaseServerService } from "@/src/db/supabaseServerService";
-import { isGlossaryAdmin } from "@/src/lib/auth/isGlossaryAdmin";
+import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
+import { supabaseServerService } from "@/src/lib/supabase/serverService";
+import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
 import { setArchetypeQueueStatus } from "@/src/db/repositories/archetypeQueueRepo";
 import { upsertArchetypeTerm } from "@/src/db/repositories/archetypeRepo";
 import { normalizeBaseKey } from "@/src/domain/archetypes/normalizeBaseKey";
 
-export async function POST(_req: Request, ctx: { params: { id: string } }) {
-  const authed = await supabaseServerAuthed();
-  if (!authed) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+export async function POST(req: Request, ctx: { params: { id: string } }) {
+  const supabase = await supabaseServerAuthed(req);
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const admin = await isGlossaryAdmin(authed.supabase, authed.user.id);
+  const admin = isGlossaryAdmin(auth.user.id);
   if (!admin) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  const svc = await supabaseServerService();
+  const svc = supabaseServerService();
   const id = ctx.params.id;
 
   const q = await svc.from("archetype_term_queue").select("*").eq("id", id).single();
