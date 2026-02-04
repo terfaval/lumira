@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 import { supabaseServerService } from "@/src/lib/supabase/serverService";
 import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
@@ -6,7 +6,7 @@ import { setArchetypeQueueStatus } from "@/src/db/repositories/archetypeQueueRep
 import { mergeAliasIntoArchetypeTerm } from "@/src/db/repositories/archetypeRepo";
 import { normalizeBaseKey } from "@/src/domain/archetypes/normalizeBaseKey";
 
-export async function POST(req: Request, ctx: { params: { id: string } }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const supabase = await supabaseServerAuthed(req);
   const { data: auth } = await supabase.auth.getUser();
   if (!auth?.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -19,7 +19,7 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
   if (!target_canonical_key) return NextResponse.json({ error: "missing_target" }, { status: 400 });
 
   const svc = supabaseServerService();
-  const id = ctx.params.id;
+  const { id } = await ctx.params;
 
   const q = await svc.from("archetype_term_queue").select("*").eq("id", id).single();
   if (q.error || !q.data) return NextResponse.json({ error: "not_found" }, { status: 404 });
