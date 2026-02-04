@@ -20,11 +20,18 @@ type BackfillResultRow = {
 
 type BackfillResponse = {
   status?: string;
+  target?: "missing_dreammap" | "missing_archetype";
   scanned?: number;
+  eligible?: number;
+  not_eligible?: number;
+  ran?: number;
   built?: number;
   skipped?: number;
-  failures?: number; 
+  failures?: number;
+  errors?: number;
   next_cursor?: string | null;
+  next_offset?: number | null;
+  error_samples?: Array<{ session_id: string; user_id: string; message: string }>;
   results?: BackfillResultRow[];
   error?: string;
 };
@@ -40,9 +47,15 @@ export default function DreamMapBackfillAdminPage() {
 
   const [limit, setLimit] = useState("25");
   const [cursor, setCursor] = useState("");
+  const [offset, setOffset] = useState("0");
   const [dryRun, setDryRun] = useState(false);
   const [onlyMissing, setOnlyMissing] = useState(true);
   const [algoVersion, setAlgoVersion] = useState("dream_map_v0.4");
+  const [target, setTarget] = useState<"missing_dreammap" | "missing_archetype">("missing_dreammap");
+  const [scopeMode, setScopeMode] = useState<"all" | "user" | "window">("all");
+  const [userId, setUserId] = useState("");
+  const [since, setSince] = useState("");
+  const [until, setUntil] = useState("");
 
   // admin-only gate
   useEffect(() => {
@@ -90,13 +103,35 @@ export default function DreamMapBackfillAdminPage() {
       body.limit = Math.floor(parsed);
     }
 
-    const cursorTrim = cursor.trim();
-    if (cursorTrim.length > 0) body.cursor = cursorTrim;
+    if (target === "missing_dreammap") {
+      const cursorTrim = cursor.trim();
+      if (cursorTrim.length > 0) body.cursor = cursorTrim;
+      if (!onlyMissing) body.only_missing = false;
+    }
+    if (target === "missing_archetype") {
+      const offsetTrim = offset.trim();
+      if (offsetTrim.length > 0) {
+        const parsedOffset = Number(offsetTrim);
+        if (!Number.isFinite(parsedOffset) || parsedOffset < 0) {
+          setErr("Az offset mező csak 0 vagy pozitív szám lehet.");
+          setBusy(false);
+          return;
+        }
+        body.offset = Math.floor(parsedOffset);
+      }
+      body.scope_mode = scopeMode;
+      const userIdTrim = userId.trim();
+      if (userIdTrim.length > 0) body.user_id = userIdTrim;
+      const sinceTrim = since.trim();
+      if (sinceTrim.length > 0) body.since = sinceTrim;
+      const untilTrim = until.trim();
+      if (untilTrim.length > 0) body.until = untilTrim;
+    }
     if (dryRun) body.dry_run = true;
-    if (!onlyMissing) body.only_missing = false;
 
     const algoTrim = algoVersion.trim();
     if (algoTrim.length > 0) body.algo_version = algoTrim;
+    body.target = target;
 
     try {
       const res = await fetch("/api/admin/dreammap/backfill", {
@@ -168,6 +203,19 @@ export default function DreamMapBackfillAdminPage() {
             </label>
 
             <label className="stack-tight">
+              <span>Cél</span>
+              <select
+                className="input"
+                value={target}
+                onChange={(e) => setTarget(e.target.value as "missing_dreammap" | "missing_archetype")}
+                disabled={busy}
+              >
+                <option value="missing_dreammap">Hiányzó dream map</option>
+                <option value="missing_archetype">Hiányzó archetype</option>
+              </select>
+            </label>
+
+            <label className="stack-tight">
               <span>Algo verzió</span>
               <input
                 type="text"
@@ -179,24 +227,96 @@ export default function DreamMapBackfillAdminPage() {
               />
             </label>
 
-            <label className="stack-tight" style={{ gridColumn: "1 / -1" }}>
-              <span>Cursor</span>
-              <input
-                type="text"
-                className="input"
-                value={cursor}
-                onChange={(e) => setCursor(e.target.value)}
-                disabled={busy}
-                placeholder="base64 vagy created_at|id"
-              />
-            </label>
+            {target === "missing_dreammap" ? (
+              <label className="stack-tight" style={{ gridColumn: "1 / -1" }}>
+                <span>Cursor</span>
+                <input
+                  type="text"
+                  className="input"
+                  value={cursor}
+                  onChange={(e) => setCursor(e.target.value)}
+                  disabled={busy}
+                  placeholder="base64 vagy created_at|id"
+                />
+              </label>
+            ) : (
+              <label className="stack-tight" style={{ gridColumn: "1 / -1" }}>
+                <span>Offset</span>
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  className="input"
+                  value={offset}
+                  onChange={(e) => setOffset(e.target.value)}
+                  disabled={busy}
+                />
+              </label>
+            )}
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-            <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input type="checkbox" checked={onlyMissing} onChange={() => setOnlyMissing(!onlyMissing)} />
-              <span>Csak hiányzó</span>
-            </label>
+            {target === "missing_dreammap" ? (
+              <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <input type="checkbox" checked={onlyMissing} onChange={() => setOnlyMissing(!onlyMissing)} />
+                <span>Csak hiányzó</span>
+              </label>
+            ) : (
+              <>
+                <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <span>Scope</span>
+                  <select
+                    className="input"
+                    value={scopeMode}
+                    onChange={(e) => setScopeMode(e.target.value as "all" | "user" | "window")}
+                    disabled={busy}
+                  >
+                    <option value="all">Minden user</option>
+                    <option value="user">Egy user</option>
+                    <option value="window">Időablak</option>
+                  </select>
+                </label>
+                {scopeMode !== "all" && (
+                  <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span>User ID</span>
+                    <input
+                      type="text"
+                      className="input"
+                      value={userId}
+                      onChange={(e) => setUserId(e.target.value)}
+                      disabled={busy}
+                      placeholder="uuid"
+                    />
+                  </label>
+                )}
+                {scopeMode === "window" && (
+                  <>
+                    <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span>Since</span>
+                      <input
+                        type="text"
+                        className="input"
+                        value={since}
+                        onChange={(e) => setSince(e.target.value)}
+                        disabled={busy}
+                        placeholder="2026-01-01T00:00:00Z"
+                      />
+                    </label>
+                    <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span>Until</span>
+                      <input
+                        type="text"
+                        className="input"
+                        value={until}
+                        onChange={(e) => setUntil(e.target.value)}
+                        disabled={busy}
+                        placeholder="2026-01-31T23:59:59Z"
+                      />
+                    </label>
+                  </>
+                )}
+              </>
+            )}
             <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <input type="checkbox" checked={dryRun} onChange={() => setDryRun(!dryRun)} />
               <span>Dry run</span>
@@ -225,25 +345,86 @@ export default function DreamMapBackfillAdminPage() {
           <GlassCardSurface className="stack" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
             <div className="stack-tight">
               <p className="section-title">Eredmény</p>
-              <p style={{ color: "var(--text-muted)" }}>
-                Szkennelt: {result.scanned ?? 0} · Built: {result.built ?? 0} · Skipped:{" "}
-                {result.skipped ?? 0} · Failures: {result.failures ?? 0}
-              </p>
+              {result.target === "missing_archetype" ? (
+                <p style={{ color: "var(--text-muted)" }}>
+                  Szkennelt: {result.scanned ?? 0} · Érintett: {result.eligible ?? 0} · Futott: {result.ran ?? 0} ·
+                  Skipped: {result.skipped ?? 0} · Errors: {result.errors ?? 0}
+                </p>
+              ) : (
+                <p style={{ color: "var(--text-muted)" }}>
+                  Szkennelt: {result.scanned ?? 0} · Built: {result.built ?? 0} · Skipped:{" "}
+                  {result.skipped ?? 0} · Failures: {result.failures ?? 0}
+                </p>
+              )}
             </div>
 
-            <div className="stack-tight">
-              <span style={{ color: "var(--text-muted)" }}>Következő cursor</span>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-                <code style={{ wordBreak: "break-all" }}>{result.next_cursor ?? "nincs"}</code>
-                {result.next_cursor && (
-                  <button type="button" className="btn btn-secondary" onClick={() => setCursor(result.next_cursor ?? "")}>
-                    Cursor beállítása
-                  </button>
-                )}
+            {result.target === "missing_archetype" ? (
+              <div className="stack-tight">
+                <span style={{ color: "var(--text-muted)" }}>Következő offset</span>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                  <code style={{ wordBreak: "break-all" }}>
+                    {typeof result.next_offset === "number" ? result.next_offset : "nincs"}
+                  </code>
+                  {typeof result.next_offset === "number" && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setOffset(String(result.next_offset ?? 0))}
+                    >
+                      Offset beállítása
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="stack-tight">
+                <span style={{ color: "var(--text-muted)" }}>Következő cursor</span>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                  <code style={{ wordBreak: "break-all" }}>{result.next_cursor ?? "nincs"}</code>
+                  {result.next_cursor && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setCursor(result.next_cursor ?? "")}
+                    >
+                      Cursor beállítása
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
-            {result.results && result.results.length > 0 ? (
+            {result.target === "missing_archetype" ? (
+              result.error_samples && result.error_samples.length > 0 ? (
+                <div className="stack-tight">
+                  <span style={{ color: "var(--text-muted)" }}>Hibaminták</span>
+                  <div style={{ display: "grid", gap: 10 }}>
+                    {result.error_samples.map((row) => (
+                      <div
+                        key={`${row.session_id}:${row.user_id}`}
+                        style={{
+                          display: "grid",
+                          gap: 6,
+                          padding: "12px 14px",
+                          borderRadius: 12,
+                          border: "1px solid var(--card-border)",
+                          background: "var(--card-inner)",
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                          <strong>{row.session_id}</strong>
+                          <span style={{ textTransform: "uppercase", letterSpacing: 1 }}>error</span>
+                        </div>
+                        <div style={{ color: "var(--text-muted)" }}>user: {row.user_id}</div>
+                        <div style={{ color: "var(--text-muted)" }}>ok: {row.message}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p style={{ color: "var(--text-muted)" }}>Nincs részletes eredmény.</p>
+              )
+            ) : result.results && result.results.length > 0 ? (
               <div className="stack-tight">
                 <span style={{ color: "var(--text-muted)" }}>Utolsó futás részletei</span>
                 <div style={{ display: "grid", gap: 10 }}>

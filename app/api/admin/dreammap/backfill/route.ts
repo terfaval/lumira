@@ -5,16 +5,23 @@ import { supabaseServerService } from "@/src/lib/supabase/serverService";
 import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
 import { createDomainEvent } from "@/src/db/repositories/eventRepo";
 import { jobBuildDreamMapV0 } from "@/src/orchestration/jobs/jobBuildDreamMapV0";
+import { jobBackfillArchetypeMissing } from "@/src/orchestration/jobs/jobBackfillArchetype";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type BackfillBody = {
+  target?: "missing_dreammap" | "missing_archetype";
   limit?: number;
   cursor?: string | null;
+  offset?: number;
   dry_run?: boolean;
   algo_version?: string;
   only_missing?: boolean;
+  scope_mode?: "all" | "user" | "window";
+  user_id?: string;
+  since?: string;
+  until?: string;
 };
 
 type CursorPayload = { created_at: string; id: string };
@@ -51,6 +58,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
+    const target = body.target === "missing_archetype" ? "missing_archetype" : "missing_dreammap";
     const limit = normalizeLimit(body.limit);
     const dryRun = body.dry_run === true;
     const onlyMissing = body.only_missing !== false;
@@ -58,6 +66,48 @@ export async function POST(req: Request) {
       typeof body.algo_version === "string" && body.algo_version.trim().length > 0
         ? body.algo_version.trim()
         : "dream_map_v0.4";
+
+    if (target === "missing_archetype") {
+      const scopeMode = body.scope_mode ?? "all";
+      const offset = normalizeOffset(body.offset);
+      const scope =
+        scopeMode === "user" && body.user_id
+          ? { mode: "user" as const, user_id: body.user_id }
+          : scopeMode === "window"
+            ? {
+                mode: "window" as const,
+                since: body.since,
+                until: body.until,
+                user_id: body.user_id,
+              }
+            : { mode: "all" as const };
+
+      const supabase = supabaseServerService();
+
+      const result = await jobBackfillArchetypeMissing({
+        supabase,
+        options: {
+          scope,
+          limit,
+          offset,
+          dry_run: dryRun,
+          algo_version_override: algoVersion,
+        },
+      });
+
+      return NextResponse.json({
+        status: "ok",
+        target,
+        scanned: result.scanned,
+        eligible: result.eligible,
+        not_eligible: result.not_eligible,
+        ran: result.ran,
+        skipped: result.skipped,
+        errors: result.errors,
+        next_offset: result.next_offset,
+        error_samples: result.error_samples,
+      });
+    }
 
     const cursor = parseCursor(body.cursor ?? null);
 
@@ -204,6 +254,12 @@ function normalizeLimit(limit?: number): number {
   if (limit === undefined) return 25;
   if (typeof limit !== "number" || !Number.isFinite(limit)) return 25;
   return Math.max(1, Math.floor(limit));
+}
+
+function normalizeOffset(offset?: number): number {
+  if (offset === undefined) return 0;
+  if (typeof offset !== "number" || !Number.isFinite(offset)) return 0;
+  return Math.max(0, Math.floor(offset));
 }
 
 function parseCursor(cursor: string | null): CursorPayload | null {
