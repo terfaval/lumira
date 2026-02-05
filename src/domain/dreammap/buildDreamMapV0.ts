@@ -49,6 +49,15 @@ const LABEL_SOURCE_RANK: Record<LabelSource, number> = {
   raw: 4,
 };
 
+type MotifLabelSource = "highlight" | "archetype" | "candidate" | "raw";
+
+const MOTIF_LABEL_SOURCE_RANK: Record<MotifLabelSource, number> = {
+  highlight: 0,
+  archetype: 1,
+  candidate: 2,
+  raw: 3,
+};
+
 const DOMAIN_BY_KIND: Record<DreamMapNodeKind, DreamMapArchetypeDomain> = {
   people: "people",
   places: "places",
@@ -86,6 +95,10 @@ const CANONICALIZER_EVIDENCE_LIMIT = 3;
 type NodeAccumulator = {
   key: string;
   baseKey: string;
+  motif_key: string;
+  motif_label: string;
+  motif_label_rank?: number;
+  motif_domain: DreamMapArchetypeDomain;
   label: string;
   label_rank?: number;
   kind: DreamMapNodeKind;
@@ -127,6 +140,10 @@ type UnitCandidate = {
 type CoocNodeAccumulator = {
   key: string;
   baseKey: string;
+  motif_key: string;
+  motif_label: string;
+  motif_label_rank?: number;
+  motif_domain: DreamMapArchetypeDomain;
   label: string;
   label_rank?: number;
   kind: DreamMapNodeKind;
@@ -184,6 +201,13 @@ function normalizeForMatch(raw: string): string {
   return cleaned.replace(/[^a-z0-9]+/gi, " ").replace(/\s+/g, " ").trim();
 }
 
+function humanizeBaseKey(raw: string): string {
+  return String(raw ?? "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function applyLabelChoice(node: { label: string; label_rank?: number }, label: string, source: LabelSource) {
   const trimmed = String(label ?? "").trim();
   if (!trimmed) return;
@@ -199,6 +223,30 @@ function applyLabelChoice(node: { label: string; label_rank?: number }, label: s
   if (nextRank === currentRank && trimmed.localeCompare(node.label) < 0) {
     node.label = trimmed;
   }
+}
+
+function applyMotifLabelChoice(node: { motif_label: string; motif_label_rank?: number }, label: string, source: MotifLabelSource) {
+  const trimmed = String(label ?? "").trim();
+  if (!trimmed) return;
+  const nextRank = MOTIF_LABEL_SOURCE_RANK[source] ?? MOTIF_LABEL_SOURCE_RANK.raw;
+  const currentRank = typeof node.motif_label_rank === "number" ? node.motif_label_rank : MOTIF_LABEL_SOURCE_RANK.raw;
+
+  if (node.motif_label_rank === undefined || nextRank < currentRank) {
+    node.motif_label = trimmed;
+    node.motif_label_rank = nextRank;
+    return;
+  }
+
+  if (nextRank === currentRank && trimmed.localeCompare(node.motif_label) < 0) {
+    node.motif_label = trimmed;
+  }
+}
+
+function motifLabelSourceFromLabelSource(source: LabelSource): MotifLabelSource {
+  if (source === "highlight") return "highlight";
+  if (source === "archetype") return "archetype";
+  if (source === "anchors" || source === "glossary") return "candidate";
+  return "raw";
 }
 
 type ArchetypeIndex = {
@@ -331,11 +379,14 @@ type ResolvedNodeIdentity = {
   nodeKey: string;
   raw_base_key: string;
   domain: DreamMapArchetypeDomain;
+  motif_key: string;
+  motif_label: string;
+  motif_domain: DreamMapArchetypeDomain;
   canonical?: DreamMapNode["canonical"];
   match_source: "archetype" | "glossary" | "raw";
 };
 
-function resolveNodeIdentity(params: {
+function resolveMotifIdentity(params: {
   baseKey: string;
   kind: DreamMapNodeKind;
   label: string;
@@ -345,6 +396,7 @@ function resolveNodeIdentity(params: {
   const baseKey = normalizeBaseKey(params.baseKey);
   if (!baseKey) return null;
   const domain = DOMAIN_BY_KIND[params.kind];
+  const fallbackLabel = humanizeBaseKey(baseKey) || baseKey;
 
   const canonicalBucket = params.archetypeIndex.canonicalByDomain.get(domain);
   const aliasBucket = params.archetypeIndex.aliasByDomain.get(domain);
@@ -355,9 +407,12 @@ function resolveNodeIdentity(params: {
     const canonicalLabel = String(term.canonical_label ?? term.canonical_key ?? params.label).trim();
     const canonicalKey = normalizeBaseKey(term.canonical_key);
     return {
-      nodeKey: `arch:${domain}:${canonicalKey}`,
+      nodeKey: `motif:${domain}:${canonicalKey}`,
       raw_base_key: baseKey,
       domain,
+      motif_key: canonicalKey,
+      motif_label: canonicalLabel || canonicalKey,
+      motif_domain: domain,
       canonical: {
         archetype_id: term.id ?? null,
         canonical_key: canonicalKey,
@@ -374,9 +429,12 @@ function resolveNodeIdentity(params: {
     const canonicalLabel = String(term.canonical_label ?? term.canonical_key ?? params.label).trim();
     const canonicalKey = normalizeBaseKey(term.canonical_key);
     return {
-      nodeKey: `arch:${domain}:${canonicalKey}`,
+      nodeKey: `motif:${domain}:${canonicalKey}`,
       raw_base_key: baseKey,
       domain,
+      motif_key: canonicalKey,
+      motif_label: canonicalLabel || canonicalKey,
+      motif_domain: domain,
       canonical: {
         archetype_id: term.id ?? null,
         canonical_key: canonicalKey,
@@ -397,9 +455,12 @@ function resolveNodeIdentity(params: {
         const canonicalLabel = String(term.canonical_label ?? term.canonical_key ?? params.label).trim();
         const canonicalKey = normalizeBaseKey(term.canonical_key);
         return {
-          nodeKey: `arch:${domain}:${canonicalKey}`,
+          nodeKey: `motif:${domain}:${canonicalKey}`,
           raw_base_key: baseKey,
           domain,
+          motif_key: canonicalKey,
+          motif_label: canonicalLabel || canonicalKey,
+          motif_domain: domain,
           canonical: {
             archetype_id: term.id ?? null,
             canonical_key: canonicalKey,
@@ -416,9 +477,12 @@ function resolveNodeIdentity(params: {
         const canonicalLabel = String(term.canonical_label ?? term.canonical_key ?? params.label).trim();
         const canonicalKey = normalizeBaseKey(term.canonical_key);
         return {
-          nodeKey: `arch:${domain}:${canonicalKey}`,
+          nodeKey: `motif:${domain}:${canonicalKey}`,
           raw_base_key: baseKey,
           domain,
+          motif_key: canonicalKey,
+          motif_label: canonicalLabel || canonicalKey,
+          motif_domain: domain,
           canonical: {
             archetype_id: term.id ?? null,
             canonical_key: canonicalKey,
@@ -432,9 +496,12 @@ function resolveNodeIdentity(params: {
   }
 
   return {
-    nodeKey: `${baseKey}:${params.kind}`,
+    nodeKey: `motif:${domain}:${baseKey}`,
     raw_base_key: baseKey,
     domain,
+    motif_key: baseKey,
+    motif_label: fallbackLabel,
+    motif_domain: domain,
     match_source: "raw",
   };
 }
@@ -808,11 +875,21 @@ function isHighlightPrimary(row: { category?: string | null; note?: string | nul
 function nodeKeyFor(params: {
   kind: DreamMapNodeKind;
   label: string;
+  baseKey?: string;
   resolvedByKindBase: Map<string, ResolvedNodeIdentity>;
   archetypeIndex: ArchetypeIndex;
   glossaryKeyMap: GlossaryCanonicalKeyMap;
-}): { key: string; baseKey: string; canonical?: DreamMapNode["canonical"]; match_source: ResolvedNodeIdentity["match_source"]; domain: DreamMapArchetypeDomain } | null {
-  const baseKey = normalizeBaseKey(params.label);
+}): {
+  key: string;
+  baseKey: string;
+  canonical?: DreamMapNode["canonical"];
+  match_source: ResolvedNodeIdentity["match_source"];
+  domain: DreamMapArchetypeDomain;
+  motif_key: string;
+  motif_label: string;
+  motif_domain: DreamMapArchetypeDomain;
+} | null {
+  const baseKey = normalizeBaseKey(params.baseKey ?? params.label);
   if (!baseKey) return null;
 
   const kindBase = `${params.kind}::${baseKey}`;
@@ -824,10 +901,13 @@ function nodeKeyFor(params: {
       canonical: existing.canonical,
       match_source: existing.match_source,
       domain: existing.domain,
+      motif_key: existing.motif_key,
+      motif_label: existing.motif_label,
+      motif_domain: existing.motif_domain,
     };
   }
 
-  const resolved = resolveNodeIdentity({
+  const resolved = resolveMotifIdentity({
     baseKey,
     kind: params.kind,
     label: params.label,
@@ -843,6 +923,9 @@ function nodeKeyFor(params: {
     canonical: resolved.canonical,
     match_source: resolved.match_source,
     domain: resolved.domain,
+    motif_key: resolved.motif_key,
+    motif_label: resolved.motif_label,
+    motif_domain: resolved.motif_domain,
   };
 }
 
@@ -1133,7 +1216,7 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
     const cacheKey = `${candidate.kind}::${candidate.baseKey}`;
     const cached = resolvedByKindBase.get(cacheKey);
     if (cached) return cached;
-    const resolved = resolveNodeIdentity({
+    const resolved = resolveMotifIdentity({
       baseKey: candidate.baseKey,
       kind: candidate.kind,
       label: candidate.label,
@@ -1187,12 +1270,17 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
     const key = resolved.nodeKey;
     const occurrence = Math.max(1, candidate.occ || 0) + (source === "highlight_span" ? HIGHLIGHT_OCC_BOOST : 0);
     const labelSource = labelSourceOverride ?? labelSourceForBaseKey(baseKey);
+    const motifLabelSource = motifLabelSourceFromLabelSource(labelSource);
 
     let node = nodes.get(key);
     if (!node) {
       node = {
         key,
         baseKey,
+        motif_key: resolved.motif_key,
+        motif_label: resolved.motif_label,
+        motif_label_rank: MOTIF_LABEL_SOURCE_RANK.raw,
+        motif_domain: resolved.motif_domain,
         label: candidate.label,
         label_rank: LABEL_SOURCE_RANK[labelSource],
         kind,
@@ -1211,8 +1299,10 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
     }
 
     applyLabelChoice(node, candidate.label, labelSource);
+    applyMotifLabelChoice(node, candidate.label, motifLabelSource);
     if (resolved.canonical?.canonical_label) {
       applyLabelChoice(node, resolved.canonical.canonical_label, "archetype");
+      applyMotifLabelChoice(node, resolved.canonical.canonical_label, "archetype");
     }
 
     node.occurrence += occurrence;
@@ -1430,8 +1520,9 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
     const baseWeight = COOC_WEIGHT_BY_BUCKET[event.proximity_bucket] ?? 0;
     if (baseWeight <= 0) continue;
 
-    const fromKey = event.a_node ?? `${event.a_key}:themes_words`;
-    const toKey = event.b_node ?? `${event.b_key}:themes_words`;
+    if (!event.a_node || !event.b_node) continue;
+    const fromKey = event.a_node;
+    const toKey = event.b_node;
     if (fromKey === toKey) continue;
     const [from, to] = fromKey < toKey ? [fromKey, toKey] : [toKey, fromKey];
     const edgeKey = `${from}::${to}`;
@@ -1523,7 +1614,7 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
   const nodesSorted = Array.from(nodes.values()).sort((a, b) => a.key.localeCompare(b.key));
   for (const node of nodesSorted) {
     const centrality = maxDegree > 0 ? (degreeByNode.get(node.key) ?? 0) / maxDegree : 0;
-    const effectiveBaseKey = node.canonical?.canonical_key ?? node.baseKey;
+    const effectiveBaseKey = node.motif_key;
     const glossaryOcc = glossaryMap.get(effectiveBaseKey) ?? 0;
     const glossaryNorm = maxGlossaryOcc > 0 ? glossaryOcc / maxGlossaryOcc : 0;
     glossaryNormByKey.set(node.key, glossaryNorm);
@@ -1541,6 +1632,9 @@ function buildDreamMapV1SpanCooc(input: DreamMapBuilderInput): DreamMapPayloadV0
     nodeArray.push({
       key: node.key,
       base_key: node.baseKey,
+      motif_key: node.motif_key,
+      motif_label: node.motif_label,
+      motif_domain: node.motif_domain,
       label: node.label,
       kind: node.kind,
       canonical: node.canonical,
@@ -1726,9 +1820,11 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
   const canonicalizerStats = new Map<string, CanonicalizerStat>();
 
   const addNode = (kind: DreamMapNodeKind, label: string, path: string) => {
+    const explicitBaseKey = normalizeBaseKey(label);
     const keyInfo = nodeKeyFor({
       kind,
       label,
+      baseKey: explicitBaseKey || undefined,
       resolvedByKindBase,
       archetypeIndex,
       glossaryKeyMap,
@@ -1740,8 +1836,10 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
       existing.occurrence += 1;
       addNodeKindEvidence(existing, "observation", path);
       applyLabelChoice(existing, label, "raw");
+      applyMotifLabelChoice(existing, label, "raw");
       if (keyInfo.canonical?.canonical_label) {
         applyLabelChoice(existing, keyInfo.canonical.canonical_label, "archetype");
+        applyMotifLabelChoice(existing, keyInfo.canonical.canonical_label, "archetype");
       }
       updateCanonicalizerStat(canonicalizerStats, {
         domain: keyInfo.domain,
@@ -1757,6 +1855,10 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
     const node: NodeAccumulator = {
       key,
       baseKey,
+      motif_key: keyInfo.motif_key,
+      motif_label: keyInfo.motif_label,
+      motif_label_rank: MOTIF_LABEL_SOURCE_RANK.raw,
+      motif_domain: keyInfo.motif_domain,
       label,
       label_rank: LABEL_SOURCE_RANK.raw,
       kind,
@@ -1766,8 +1868,10 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
     };
     addNodeKindEvidence(node, "observation", path);
     applyLabelChoice(node, label, "raw");
+    applyMotifLabelChoice(node, label, "raw");
     if (keyInfo.canonical?.canonical_label) {
       applyLabelChoice(node, keyInfo.canonical.canonical_label, "archetype");
+      applyMotifLabelChoice(node, keyInfo.canonical.canonical_label, "archetype");
     }
     nodes.set(key, node);
     updateCanonicalizerStat(canonicalizerStats, {
@@ -1796,8 +1900,10 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
       existing.occurrence += HIGHLIGHT_OCC_BOOST;
       addNodeKindEvidence(existing, "highlight", path);
       applyLabelChoice(existing, label, "highlight");
+      applyMotifLabelChoice(existing, label, "highlight");
       if (keyInfo.canonical?.canonical_label) {
         applyLabelChoice(existing, keyInfo.canonical.canonical_label, "archetype");
+        applyMotifLabelChoice(existing, keyInfo.canonical.canonical_label, "archetype");
       }
       updateCanonicalizerStat(canonicalizerStats, {
         domain: keyInfo.domain,
@@ -1813,6 +1919,10 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
     const node: NodeAccumulator = {
       key,
       baseKey,
+      motif_key: keyInfo.motif_key,
+      motif_label: keyInfo.motif_label,
+      motif_label_rank: MOTIF_LABEL_SOURCE_RANK.raw,
+      motif_domain: keyInfo.motif_domain,
       label,
       label_rank: LABEL_SOURCE_RANK.highlight,
       kind,
@@ -1822,8 +1932,10 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
     };
     addNodeKindEvidence(node, "highlight", path);
     applyLabelChoice(node, label, "highlight");
+    applyMotifLabelChoice(node, label, "highlight");
     if (keyInfo.canonical?.canonical_label) {
       applyLabelChoice(node, keyInfo.canonical.canonical_label, "archetype");
+      applyMotifLabelChoice(node, keyInfo.canonical.canonical_label, "archetype");
     }
     nodes.set(key, node);
     updateCanonicalizerStat(canonicalizerStats, {
@@ -2161,7 +2273,7 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
   for (const node of nodes.values()) {
     const centrality = maxDegree > 0 ? (degreeByNode.get(node.key) ?? 0) / maxDegree : 0;
     const anchorScore = anchorMaps.scoreByBaseKey.get(node.baseKey) ?? 0;
-    const effectiveBaseKey = node.canonical?.canonical_key ?? node.baseKey;
+    const effectiveBaseKey = node.motif_key;
     const glossaryOcc = glossaryMap.get(effectiveBaseKey) ?? 0;
     const glossaryNorm = maxGlossaryOcc > 0 ? glossaryOcc / maxGlossaryOcc : 0;
     glossaryNormByKey.set(node.key, glossaryNorm);
@@ -2222,6 +2334,9 @@ function buildDreamMapV0ScenePairs(input: DreamMapBuilderInput): DreamMapPayload
     nodeArray.push({
       key: node.key,
       base_key: node.baseKey,
+      motif_key: node.motif_key,
+      motif_label: node.motif_label,
+      motif_domain: node.motif_domain,
       label: node.label,
       kind: node.kind,
       canonical: node.canonical,

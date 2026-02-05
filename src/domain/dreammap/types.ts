@@ -66,6 +66,9 @@ export type DreamMapNodeEvidenceSpan = {
 export type DreamMapNode = {
   key: string;
   base_key?: string;
+  motif_key?: string;
+  motif_label?: string;
+  motif_domain?: DreamMapArchetypeDomain;
   label: string;
   kind: DreamMapNodeKind;
   x: number | null;
