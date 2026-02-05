@@ -215,6 +215,7 @@ type EntryHighlight = {
   text: string;
   category: string;
   note: string | null;
+  glossary_term_id?: string | null;
 };
 
 function renderEntryHighlights(text: string, highlights: EntryHighlight[], className: string): ReactNode {
@@ -461,7 +462,7 @@ export default function SessionSummary() {
         const uid = await requireUserId();
         const { data, error } = await supabase
           .from("dream_entry_highlights")
-          .select("id, entry_id, start_offset, end_offset, text, category, note, created_at")
+          .select("id, entry_id, start_offset, end_offset, text, category, note, glossary_term_id, created_at")
           .eq("entry_id", rawEntryId)
           .eq("user_id", uid)
           .order("created_at", { ascending: true });
@@ -1077,13 +1078,29 @@ export default function SessionSummary() {
                       .eq("suggestion_key", suggestion.suggestion_key);
                     setRejectedKeys((prev) => prev.filter((k) => k !== suggestion.suggestion_key));
 
-                    void indexGlossaryFromHighlight({
+                    const glossary = await indexGlossaryFromHighlight({
                       supabase,
                       userId: uid,
                       sessionId,
                       label: match.snippet,
                       source: "user_note",
                     });
+
+                    if (glossary.matched_term_id && data?.id) {
+                      const { data: linked } = await supabase
+                        .from("dream_entry_highlights")
+                        .update({ glossary_term_id: glossary.matched_term_id })
+                        .eq("id", data.id)
+                        .eq("user_id", uid)
+                        .select("id, glossary_term_id")
+                        .maybeSingle();
+
+                      if (linked?.id) {
+                        setEntryHighlights((prev) =>
+                          prev.map((h) => (h.id === linked.id ? { ...h, glossary_term_id: linked.glossary_term_id } : h))
+                        );
+                      }
+                    }
                   }}
                   onReject={async (suggestionKey) => {
                     const res = await fetch(
@@ -1146,13 +1163,29 @@ export default function SessionSummary() {
                     if (error) throw new Error("Nem sikerült menteni a kiemelést.");
                     if (data) setEntryHighlights((prev) => [...prev, data as EntryHighlight]);
 
-                    void indexGlossaryFromHighlight({
+                    const glossary = await indexGlossaryFromHighlight({
                       supabase,
                       userId: uid,
                       sessionId,
                       label: match.snippet,
                       source: "user_note",
                     });
+
+                    if (glossary.matched_term_id && data?.id) {
+                      const { data: linked } = await supabase
+                        .from("dream_entry_highlights")
+                        .update({ glossary_term_id: glossary.matched_term_id })
+                        .eq("id", data.id)
+                        .eq("user_id", uid)
+                        .select("id, glossary_term_id")
+                        .maybeSingle();
+
+                      if (linked?.id) {
+                        setEntryHighlights((prev) =>
+                          prev.map((h) => (h.id === linked.id ? { ...h, glossary_term_id: linked.glossary_term_id } : h))
+                        );
+                      }
+                    }
                   }}
                 />
               </div>

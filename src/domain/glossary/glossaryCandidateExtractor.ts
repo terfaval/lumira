@@ -1,6 +1,7 @@
 // src/domain/glossary/glossaryCandidateExtractor.ts
 import { anchorKey } from "@/src/lib/dream/anchorKey";
 import { matchKeyFromLabel } from "@/src/lib/dream/huMatch";
+import { isGlossaryCandidateAllowed } from "./glossaryCandidateRules";
 
 type GlossarySourceType = "entities" | "actions" | "raw_facts";
 
@@ -9,6 +10,9 @@ type GlossaryCandidate = {
   display_label: string;
   source_types?: GlossarySourceType[];
 };
+
+const OBSERVATION_MAX_WORDS = 2;
+const OBSERVATION_MAX_CHARS = 40;
 
 function safeParseJSONMaybeString(payload: any): any {
   if (typeof payload === "string") {
@@ -25,6 +29,15 @@ function normalizeLabel(raw: unknown): string {
   return typeof raw === "string" ? raw.replace(/\s+/g, " ").trim() : "";
 }
 
+function isObservationCandidate(label: string): boolean {
+  if (!isGlossaryCandidateAllowed(label)) return false;
+  if (label.length > OBSERVATION_MAX_CHARS) return false;
+  if (/[,:;()]/.test(label)) return false;
+  const words = label.split(/\s+/).filter(Boolean);
+  if (words.length > OBSERVATION_MAX_WORDS) return false;
+  return true;
+}
+
 function addCandidate(
   map: Map<string, GlossaryCandidate>,
   raw: unknown,
@@ -32,6 +45,7 @@ function addCandidate(
 ) {
   const label = normalizeLabel(raw);
   if (!label) return;
+  if (!isObservationCandidate(label)) return;
 
   const canonical_key = matchKeyFromLabel(label) || anchorKey(label);
   if (!canonical_key) return;
@@ -90,12 +104,8 @@ export function extractGlossaryCandidatesFromObservation(
       pushArray(out, (sc as any).objects, "entities");
       pushArray(out, (sc as any).mood_words, "entities");
       pushArray(out, (sc as any).sensations, "entities");
-
-      pushArray(out, (sc as any).actions, "actions");
     }
   }
-
-  pushArray(out, (obs as any).raw_facts, "raw_facts");
 
   return Array.from(out.values());
 }

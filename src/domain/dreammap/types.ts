@@ -260,6 +260,7 @@ export type DreamMapEntryHighlight = {
   anchor_key?: string | null;
   label?: string | null;
   category?: string | null;
+  glossary_term_id?: string | null;
 };
 
 export type DreamMapCoocEvent = {

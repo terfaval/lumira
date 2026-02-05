@@ -190,6 +190,7 @@ async function fetchEntryHighlights(
           anchor_key: typeof row?.anchor_key === "string" ? row.anchor_key : null,
           label: typeof row?.label === "string" ? row.label : null,
           category: typeof row?.category === "string" ? row.category : null,
+          glossary_term_id: typeof row?.glossary_term_id === "string" ? row.glossary_term_id : null,
         } as DreamMapEntryHighlight;
       })
       .filter((row: DreamMapEntryHighlight) => row.id && row.entry_id && row.end > row.start);
