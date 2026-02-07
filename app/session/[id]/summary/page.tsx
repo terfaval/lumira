@@ -218,6 +218,11 @@ type EntryHighlight = {
   glossary_term_id?: string | null;
 };
 
+type GlossaryTermOption = {
+  id: string;
+  label: string;
+};
+
 function renderEntryHighlights(text: string, highlights: EntryHighlight[], className: string): ReactNode {
   if (!highlights.length) return text;
 
@@ -343,6 +348,7 @@ export default function SessionSummary() {
   const [entryHighlights, setEntryHighlights] = useState<EntryHighlight[]>([]);
   const [rejectedKeys, setRejectedKeys] = useState<string[]>([]);
   const [highlightSuggestions, setHighlightSuggestions] = useState<HighlightSuggestion[]>([]);
+  const [glossaryTerms, setGlossaryTerms] = useState<GlossaryTermOption[]>([]);
 
   // Title edit
   const [editingTitle, setEditingTitle] = useState(false);
@@ -482,6 +488,50 @@ export default function SessionSummary() {
       cancelled = true;
     };
   }, [rawEntryId]);
+
+  useEffect(() => {
+    if (!sessionId || typeof sessionId !== "string") return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const uid = await requireUserId();
+        const { data, error } = await supabase
+          .from("glossary_terms")
+          .select("id, canonical, canonical_key, canonical_name, name, term")
+          .eq("user_id", uid)
+          .order("created_at", { ascending: false });
+
+        if (cancelled) return;
+        if (error) {
+          setGlossaryTerms([]);
+          return;
+        }
+
+        const mapped = (data ?? [])
+          .map((row: any) => {
+            const label =
+              (typeof row?.canonical === "string" && row.canonical.trim()) ||
+              (typeof row?.canonical_name === "string" && row.canonical_name.trim()) ||
+              (typeof row?.name === "string" && row.name.trim()) ||
+              (typeof row?.term === "string" && row.term.trim()) ||
+              (typeof row?.canonical_key === "string" && row.canonical_key.trim()) ||
+              "";
+            return { id: String(row?.id ?? ""), label };
+          })
+          .filter((row: GlossaryTermOption) => row.id && row.label)
+          .sort((a: GlossaryTermOption, b: GlossaryTermOption) => a.label.localeCompare(b.label));
+
+        setGlossaryTerms(mapped);
+      } catch {
+        if (!cancelled) setGlossaryTerms([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId || typeof sessionId !== "string") return;
@@ -1038,8 +1088,9 @@ export default function SessionSummary() {
                   suggestions={highlightSuggestions}
                   highlights={highlights}
                   rejectedKeys={rejectedKeys}
+                  glossaryTerms={glossaryTerms}
                   allowLabelEdit={false}
-                  onAdd={async ({ suggestion, kind, note }) => {
+                  onAdd={async ({ suggestion, kind, note, glossaryTermId }) => {
                     const entryId = rawEntryId;
                     const content = rawText;
                     if (!entryId || !content) throw new Error("Hiányzik a nyers álom szövege.");
@@ -1059,12 +1110,13 @@ export default function SessionSummary() {
                       text: match.snippet,
                       category,
                       note: note ?? null,
+                      glossary_term_id: glossaryTermId ?? null,
                     };
 
                     const { data, error } = await supabase
                       .from("dream_entry_highlights")
                       .insert(payload)
-                      .select("id, entry_id, start_offset, end_offset, text, category, note, created_at")
+                      .select("id, entry_id, start_offset, end_offset, text, category, note, glossary_term_id, created_at")
                       .maybeSingle();
 
                     if (error) throw new Error(error.message);
@@ -1084,9 +1136,11 @@ export default function SessionSummary() {
                       sessionId,
                       label: match.snippet,
                       source: "user_note",
+                      rawText: content,
+                      glossaryTermId: glossaryTermId ?? null,
                     });
 
-                    if (glossary.matched_term_id && data?.id) {
+                    if (glossary.matched_term_id && data?.id && data?.glossary_term_id !== glossary.matched_term_id) {
                       const { data: linked } = await supabase
                         .from("dream_entry_highlights")
                         .update({ glossary_term_id: glossary.matched_term_id })
@@ -1157,7 +1211,7 @@ export default function SessionSummary() {
                         category,
                         note: payload.note ?? null,
                       })
-                      .select("id, entry_id, start_offset, end_offset, text, category, note, created_at")
+                      .select("id, entry_id, start_offset, end_offset, text, category, note, glossary_term_id, created_at")
                       .maybeSingle();
 
                     if (error) throw new Error("Nem sikerült menteni a kiemelést.");
@@ -1169,9 +1223,10 @@ export default function SessionSummary() {
                       sessionId,
                       label: match.snippet,
                       source: "user_note",
+                      rawText: content,
                     });
 
-                    if (glossary.matched_term_id && data?.id) {
+                    if (glossary.matched_term_id && data?.id && data?.glossary_term_id !== glossary.matched_term_id) {
                       const { data: linked } = await supabase
                         .from("dream_entry_highlights")
                         .update({ glossary_term_id: glossary.matched_term_id })

@@ -214,21 +214,33 @@ export async function upsertGlossaryOccurrences(
   args: {
     user_id: string;
     session_id: string;
-    rows: Array<{ term_id: string; source: "observation" | "user_note" | "import" }>;
+    rows: Array<{ term_id: string; source: "observation" | "user_note" | "import"; count?: number | null }>;
   }
 ): Promise<void> {
   if (args.rows.length === 0) return;
 
-  const payload = args.rows.map((r) => ({
-    term_id: r.term_id,
-    session_id: args.session_id,
-    user_id: args.user_id,
-    source: r.source,
-  }));
+  const payload = args.rows.map((r) => {
+    const count = Number(r.count);
+    const normalizedCount = Number.isFinite(count) && count > 0 ? Math.floor(count) : null;
+    return {
+      term_id: r.term_id,
+      session_id: args.session_id,
+      user_id: args.user_id,
+      source: r.source,
+      ...(normalizedCount ? { count: normalizedCount } : {}),
+    };
+  });
 
-  const res = await supabase
+  let res = await supabase
     .from("glossary_occurrences")
     .upsert(payload, { onConflict: "user_id,term_id,session_id" });
+
+  if (res.error && isMissingColumnError(res.error, "count")) {
+    const fallback = payload.map(({ count, ...rest }) => rest);
+    res = await supabase
+      .from("glossary_occurrences")
+      .upsert(fallback, { onConflict: "user_id,term_id,session_id" });
+  }
 
   if (res.error) throw res.error;
 }

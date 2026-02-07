@@ -24,10 +24,12 @@ export type HighlightsPanelProps = {
   suggestions: HighlightSuggestion[];
   highlights: SessionHighlight[];
   rejectedKeys?: string[];
+  glossaryTerms?: Array<{ id: string; label: string }>;
   onAdd: (payload: {
     suggestion: HighlightSuggestion;
     kind: HighlightKind;
     note?: string | null;
+    glossaryTermId?: string | null;
   }) => Promise<void> | void;
   onReject: (suggestionKey: string) => Promise<void> | void;
   onEdit: (highlight: { id: string; label: string; kind: HighlightKind; note?: string | null }) => Promise<void> | void;
@@ -57,6 +59,7 @@ export function HighlightsPanel({
   suggestions,
   highlights,
   rejectedKeys = [],
+  glossaryTerms = [],
   onAdd,
   onReject,
   onEdit,
@@ -76,6 +79,7 @@ export function HighlightsPanel({
   const [activeSuggestion, setActiveSuggestion] = useState<HighlightSuggestion | null>(null);
   const [modalKind, setModalKind] = useState<HighlightKind>("other");
   const [modalNote, setModalNote] = useState("");
+  const [modalGlossaryTermId, setModalGlossaryTermId] = useState<string>("");
 
   const rejectedSet = useMemo(() => new Set(rejectedKeys), [rejectedKeys]);
   const acceptedDedup = useMemo(() => {
@@ -173,12 +177,13 @@ export function HighlightsPanel({
     suggestion: HighlightSuggestion;
     kind: HighlightKind;
     note?: string | null;
+    glossaryTermId?: string | null;
   }) => {
-    const { suggestion, kind, note } = payload;
+    const { suggestion, kind, note, glossaryTermId } = payload;
     setError(null);
     setPendingKey(suggestion.suggestion_key);
     try {
-      await onAdd({ suggestion, kind, note });
+      await onAdd({ suggestion, kind, note, glossaryTermId });
     } catch (e: any) {
       setError(e?.message ?? "Nem sikerült hozzáadni.");
       throw e;
@@ -203,9 +208,15 @@ export function HighlightsPanel({
     if (!activeSuggestion) return;
     const note = modalNote.trim() ? modalNote.trim() : null;
     try {
-      await handleAdd({ suggestion: activeSuggestion, kind: modalKind, note });
+      await handleAdd({
+        suggestion: activeSuggestion,
+        kind: modalKind,
+        note,
+        glossaryTermId: modalGlossaryTermId || null,
+      });
       setActiveSuggestion(null);
       setModalNote("");
+      setModalGlossaryTermId("");
     } catch {
       // handleAdd already sets error
     }
@@ -347,6 +358,7 @@ export function HighlightsPanel({
                   const safeBaseKind = baseKind === "direction" ? "other" : baseKind;
                   setModalKind(safeBaseKind);
                   setModalNote("");
+                  setModalGlossaryTermId("");
                   setActiveSuggestion(s);
                 }}
                 onKeyDown={(event) => {
@@ -357,6 +369,7 @@ export function HighlightsPanel({
                     const safeBaseKind = baseKind === "direction" ? "other" : baseKind;
                     setModalKind(safeBaseKind);
                     setModalNote("");
+                    setModalGlossaryTermId("");
                     setActiveSuggestion(s);
                   }
                 }}
@@ -386,6 +399,7 @@ export function HighlightsPanel({
                       const safeBaseKind = baseKind === "direction" ? "other" : baseKind;
                       setModalKind(safeBaseKind);
                       setModalNote("");
+                      setModalGlossaryTermId("");
                       setActiveSuggestion(s);
                     }}
                     disabled={pendingKey === s.suggestion_key}
@@ -420,6 +434,7 @@ export function HighlightsPanel({
             if (pendingKey) return;
             setActiveSuggestion(null);
             setModalNote("");
+            setModalGlossaryTermId("");
           }}
         >
           <div
@@ -452,6 +467,23 @@ export function HighlightsPanel({
               placeholder="Megjegyzés (opcionális)"
               aria-label="Megjegyzés"
             />
+            {glossaryTerms.length > 0 ? (
+              <div className={styles.modalRow}>
+                <span className={styles.modalHint}>Glossary</span>
+                <select
+                  className={styles.kindSelect}
+                  value={modalGlossaryTermId}
+                  onChange={(event) => setModalGlossaryTermId(event.target.value)}
+                >
+                  <option value="">Nincs hozzárendelve</option>
+                  {glossaryTerms.map((term) => (
+                    <option key={term.id} value={term.id}>
+                      {term.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <div className={styles.modalActions}>
               <button
                 type="button"
@@ -460,6 +492,7 @@ export function HighlightsPanel({
                   if (pendingKey) return;
                   setActiveSuggestion(null);
                   setModalNote("");
+                  setModalGlossaryTermId("");
                 }}
                 disabled={Boolean(pendingKey)}
               >
