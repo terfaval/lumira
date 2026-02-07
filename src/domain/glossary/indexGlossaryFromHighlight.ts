@@ -28,7 +28,7 @@ export async function indexGlossaryFromHighlight(params: {
   if (!isGlossaryCandidateAllowed(label, canonicalKey)) return { indexed: 0, occurred: 0 };
 
   const source = params.source ?? "user_note";
-  const allowCreate = params.allowCreate !== false;
+  const allowCreate = params.allowCreate === true;
   const occurrenceCount = countOccurrencesInText(params.rawText ?? null, label);
 
   // ---- 1) term_candidates: increment counts (best-effort)
@@ -125,7 +125,7 @@ export async function indexGlossaryFromHighlight(params: {
   return { indexed: 1, occurred, matched_term_id, matched_canonical_key, occurrence_count: occurrenceCount };
 }
 
-function countOccurrencesInText(rawText: string | null, label: string): number {
+export function countOccurrencesInText(rawText: string | null, label: string): number {
   if (!rawText) return 1;
   const needleTokens = tokenizeForMatch(label);
   if (needleTokens.length === 0) return 1;

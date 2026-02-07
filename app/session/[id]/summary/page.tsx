@@ -721,8 +721,70 @@ export default function SessionSummary() {
         note: h.note ?? null,
         source: "user",
         source_ref: null,
+        glossary_term_id: h.glossary_term_id ?? null,
       })),
     [entryHighlights]
+  );
+
+  const handlePinToGlossary = useCallback(
+    async (highlight: SessionHighlight) => {
+      if (!sessionId || typeof sessionId !== "string") {
+        throw new Error("Hiányzó session azonosító.");
+      }
+
+      const label = String(highlight.label ?? "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!label) throw new Error("Nincs rögzíthetõ szöveg.");
+
+      const res = await fetch("/api/highlights/pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          sessionId,
+          highlightId: highlight.id,
+          label,
+          kind: highlight.kind ?? "other",
+          note: highlight.note ?? null,
+          rawText,
+        }),
+      });
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload?.message ?? payload?.error ?? "Nem sikerült a rögzítés.");
+      }
+
+      const payload = (await res.json()) as any;
+      const termId = typeof payload?.termId === "string" ? payload.termId : "";
+      const termLabel =
+        (typeof payload?.canonical === "string" && payload.canonical.trim()) ||
+        (typeof payload?.label === "string" && payload.label.trim()) ||
+        label;
+
+      if (!termId) throw new Error("Nem sikerült lexikon elemet létrehozni.");
+
+      setEntryHighlights((prev) =>
+        prev.map((h) => (h.id === highlight.id ? { ...h, glossary_term_id: termId } : h))
+      );
+      setGlossaryTerms((prev) => {
+        if (prev.some((t) => t.id === termId)) return prev;
+        const next = [...prev, { id: termId, label: termLabel }];
+        next.sort((a, b) => a.label.localeCompare(b.label));
+        return next;
+      });
+    },
+    [rawText, sessionId]
+  );
+      setGlossaryTerms((prev) => {
+        if (prev.some((t) => t.id === termId)) return prev;
+        const next = [...prev, { id: termId, label: termLabel }];
+        next.sort((a, b) => a.label.localeCompare(b.label));
+        return next;
+      });
+    },
+    [rawText, sessionId]
   );
 
   const salientElements = useMemo(() => {
@@ -1083,14 +1145,15 @@ export default function SessionSummary() {
               </div>
 
               <div className={styles.summaryHeaderRight}>
-                <HighlightsPanel
-                  sessionId={sessionId}
-                  suggestions={highlightSuggestions}
-                  highlights={highlights}
-                  rejectedKeys={rejectedKeys}
-                  glossaryTerms={glossaryTerms}
-                  allowLabelEdit={false}
-                  onAdd={async ({ suggestion, kind, note, glossaryTermId }) => {
+                  <HighlightsPanel
+                    sessionId={sessionId}
+                    suggestions={highlightSuggestions}
+                    highlights={highlights}
+                    rejectedKeys={rejectedKeys}
+                    glossaryTerms={glossaryTerms}
+                    onPinToGlossary={handlePinToGlossary}
+                    allowLabelEdit={false}
+                    onAdd={async ({ suggestion, kind, note, glossaryTermId }) => {
                     const entryId = rawEntryId;
                     const content = rawText;
                     if (!entryId || !content) throw new Error("HiÃ¡nyzik a nyers Ã¡lom szÃ¶vege.");
@@ -1130,7 +1193,7 @@ export default function SessionSummary() {
                       .eq("suggestion_key", suggestion.suggestion_key);
                     setRejectedKeys((prev) => prev.filter((k) => k !== suggestion.suggestion_key));
 
-                    const glossary = await indexGlossaryFromHighlight({
+                    await indexGlossaryFromHighlight({
                       supabase,
                       userId: uid,
                       sessionId,
@@ -1138,23 +1201,8 @@ export default function SessionSummary() {
                       source: "user_note",
                       rawText: content,
                       glossaryTermId: glossaryTermId ?? null,
+                      allowCreate: false,
                     });
-
-                    if (glossary.matched_term_id && data?.id && data?.glossary_term_id !== glossary.matched_term_id) {
-                      const { data: linked } = await supabase
-                        .from("dream_entry_highlights")
-                        .update({ glossary_term_id: glossary.matched_term_id })
-                        .eq("id", data.id)
-                        .eq("user_id", uid)
-                        .select("id, glossary_term_id")
-                        .maybeSingle();
-
-                      if (linked?.id) {
-                        setEntryHighlights((prev) =>
-                          prev.map((h) => (h.id === linked.id ? { ...h, glossary_term_id: linked.glossary_term_id } : h))
-                        );
-                      }
-                    }
                   }}
                   onReject={async (suggestionKey) => {
                     const res = await fetch(
@@ -1217,30 +1265,15 @@ export default function SessionSummary() {
                     if (error) throw new Error("Nem sikerÃ¼lt menteni a kiemelÃ©st.");
                     if (data) setEntryHighlights((prev) => [...prev, data as EntryHighlight]);
 
-                    const glossary = await indexGlossaryFromHighlight({
+                    await indexGlossaryFromHighlight({
                       supabase,
                       userId: uid,
                       sessionId,
                       label: match.snippet,
                       source: "user_note",
                       rawText: content,
+                      allowCreate: false,
                     });
-
-                    if (glossary.matched_term_id && data?.id && data?.glossary_term_id !== glossary.matched_term_id) {
-                      const { data: linked } = await supabase
-                        .from("dream_entry_highlights")
-                        .update({ glossary_term_id: glossary.matched_term_id })
-                        .eq("id", data.id)
-                        .eq("user_id", uid)
-                        .select("id, glossary_term_id")
-                        .maybeSingle();
-
-                      if (linked?.id) {
-                        setEntryHighlights((prev) =>
-                          prev.map((h) => (h.id === linked.id ? { ...h, glossary_term_id: linked.glossary_term_id } : h))
-                        );
-                      }
-                    }
                   }}
                 />
               </div>

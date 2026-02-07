@@ -230,7 +230,7 @@ export default function GlossaryPage() {
       if (note) {
         const { error: noteErr } = await supabase
           .from("glossary_notes")
-          .insert({ term_id: inserted.id, content: note, user_id: userId });
+          .upsert({ term_id: inserted.id, content: note, user_id: userId }, { onConflict: "user_id,term_id" });
         if (noteErr) setErr(noteErr.message || "Nem sikerült elmenteni a jegyzetet.");
       }
 
@@ -275,7 +275,7 @@ export default function GlossaryPage() {
     if (note) {
       const { error: noteErr } = await supabase
         .from("glossary_notes")
-        .insert({ term_id: inserted.id, content: note, user_id: userId });
+        .upsert({ term_id: inserted.id, content: note, user_id: userId }, { onConflict: "user_id,term_id" });
       if (noteErr) setErr(noteErr.message || "Nem sikerült elmenteni a jegyzetet.");
     }
 
@@ -331,7 +331,7 @@ export default function GlossaryPage() {
     if (note) {
       const { error: noteErr } = await supabase
         .from("glossary_notes")
-        .insert({ term_id: editingId, content: note, user_id: userId });
+        .upsert({ term_id: editingId, content: note, user_id: userId }, { onConflict: "user_id,term_id" });
       if (noteErr) setErr(noteErr.message || "Nem sikerült elmenteni a jegyzetet.");
     }
 

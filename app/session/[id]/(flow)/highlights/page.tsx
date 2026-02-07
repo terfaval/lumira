@@ -185,6 +185,7 @@ export default function HighlightsStep() {
               label: suggestion.label,
               source: "user_note",
               glossaryTermId: glossaryTermId ?? null,
+              allowCreate: false,
             });
           } catch {
             // best-effort only
@@ -249,6 +250,7 @@ export default function HighlightsStep() {
               sessionId,
               label: payload.label,
               source: "user_note",
+              allowCreate: false,
             });
           } catch {
             // best-effort only

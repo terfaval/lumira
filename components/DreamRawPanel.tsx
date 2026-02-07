@@ -451,6 +451,7 @@ export function DreamRawPanel({
           sessionId,
           label: highlightLabel,
           source: "user_note",
+          allowCreate: false,
         });
         setPendingHighlight(null);
         setHighlightMode(false);

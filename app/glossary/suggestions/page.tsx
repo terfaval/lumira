@@ -153,7 +153,7 @@ export default function SuggestionsPage() {
       if (note) {
         const { error: noteErr } = await supabase
           .from("glossary_notes")
-          .insert({ term_id: inserted.id, content: note, user_id: userId });
+          .upsert({ term_id: inserted.id, content: note, user_id: userId }, { onConflict: "user_id,term_id" });
         if (noteErr) throw noteErr;
       }
 

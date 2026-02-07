@@ -17,6 +17,7 @@ export type SessionHighlight = {
   note?: string | null;
   source: "user" | "suggested";
   source_ref?: Record<string, unknown> | null;
+  glossary_term_id?: string | null;
 };
 
 export type HighlightsPanelProps = {
@@ -34,6 +35,7 @@ export type HighlightsPanelProps = {
   onReject: (suggestionKey: string) => Promise<void> | void;
   onEdit: (highlight: { id: string; label: string; kind: HighlightKind; note?: string | null }) => Promise<void> | void;
   onCreateCustom: (payload: { label: string; kind: HighlightKind; note?: string | null }) => Promise<void> | void;
+  onPinToGlossary?: (highlight: SessionHighlight) => Promise<void> | void;
   allowLabelEdit?: boolean;
 };
 
@@ -64,6 +66,7 @@ export function HighlightsPanel({
   onReject,
   onEdit,
   onCreateCustom,
+  onPinToGlossary,
   allowLabelEdit = true,
 }: HighlightsPanelProps) {
   const [customLabel, setCustomLabel] = useState("");
@@ -204,6 +207,19 @@ export function HighlightsPanel({
     }
   };
 
+  const handlePinToGlossary = async (highlight: SessionHighlight) => {
+    if (!onPinToGlossary) return;
+    setError(null);
+    setPendingKey(`pin:${highlight.id}`);
+    try {
+      await onPinToGlossary(highlight);
+    } catch (e: any) {
+      setError(e?.message ?? "Nem sikerÄ‚Ä½lt lexikonba rÄ‚Â¶gzÄ‚Â­teni.");
+    } finally {
+      setPendingKey(null);
+    }
+  };
+
   const commitSuggestion = async () => {
     if (!activeSuggestion) return;
     const note = modalNote.trim() ? modalNote.trim() : null;
@@ -324,15 +340,31 @@ export function HighlightsPanel({
                     </div>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    className={styles.savedPill}
-                    data-kind={normalizeKind(h.kind)}
-                    onClick={() => beginEdit(h)}
-                    title={`SzerkesztÃ©s: ${kindLabel(h.kind)}${h.note ? ` â€¢ ${h.note}` : ""}`}
-                  >
-                    {h.label}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className={styles.savedPill}
+                      data-kind={normalizeKind(h.kind)}
+                      onClick={() => beginEdit(h)}
+                      title={`Szerkesztés: ${kindLabel(h.kind)}${h.note ? ` • ${h.note}` : ""}`}
+                    >
+                      {h.label}
+                    </button>
+                    {onPinToGlossary ? (
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() => handlePinToGlossary(h)}
+                        disabled={Boolean(h.glossary_term_id) || pendingKey === `pin:${h.id}`}
+                      >
+                        {h.glossary_term_id
+                          ? "Lexikonban"
+                          : pendingKey === `pin:${h.id}`
+                            ? "Rögzítés…"
+                            : "Pin to Lexikon"}
+                      </button>
+                    ) : null}
+                  </>
                 )}
               </div>
             ))}
