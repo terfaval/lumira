@@ -21,21 +21,42 @@ export async function generateImage(params: {
   debug?: boolean;
   reference_image?: { bytes: Uint8Array; mime: string; filename?: string };
 }) {
+  // ✅ FULL prompt (includes variant light)
   const { prompt, negative_prompt } = assemblePrompt(
     params.preset,
     params.variant,
-    params.user_text
+    params.user_text,
+    { includeVariantLight: true }
+  );
+
+  // ✅ COMPOSITION prompt (excludes variant light)
+  const { prompt: composition_prompt, negative_prompt: composition_negative } = assemblePrompt(
+    params.preset,
+    params.variant,
+    params.user_text,
+    { includeVariantLight: false }
   );
 
   const width = params.preset.canvas.width;
   const height = params.preset.canvas.height;
-  const prompt_hash = inputHash(`${prompt}\n---\n${negative_prompt}\n---\n${width}x${height}`);
 
+  // Full prompt hash (variant-dependent)
+  const prompt_hash = inputHash(
+    `${prompt}\n---\n${negative_prompt}\n---\n${width}x${height}`
+  );
+
+  // Composition hash (variant-independent)
+  const composition_hash = inputHash(
+    `${composition_prompt}\n---\n${composition_negative}\n---\n${width}x${height}`
+  );
+
+  // ✅ seed is stable across variants; input_hash remains variant-specific
   const { seed, input_hash } = computeSeed({
     presetId: params.preset.id,
     presetVersion: params.preset.version,
     variant: params.variant,
     userText: params.user_text,
+    compositionHash: composition_hash,
     promptHash: prompt_hash,
     width,
     height,
@@ -68,10 +89,15 @@ export async function generateImage(params: {
 
     const supabase = supabaseServerService();
     const bucket = "backgrounds";
+
+    // NOTE: you probably want core_space to go into a stable folder name like:
+    // `core_space/${job.id}/${params.variant}.png` (not `gate/...`)
+    // I keep your original logic, but you may want to rename gate->core_space later.
     const path =
       params.preset.id === "lumira_core_space"
         ? `gate/${job.id}/${params.variant}.png`
         : `${job.id}.png`;
+
     const bytes_length = rendered.bytes.length;
 
     const { error: uploadError } = await supabase.storage.from(bucket).upload(path, rendered.bytes, {
@@ -93,10 +119,11 @@ export async function generateImage(params: {
           height,
           input_hash,
           prompt_hash,
+          composition_hash, // ✅ NEW
           seed: seed.toString(),
           supabase_path: `${bucket}/${path}`,
           bytes_length,
-          ...(rendered.meta ?? {}), // ✅ success meta comes from renderer
+          ...(rendered.meta ?? {}),
         }
       : undefined;
 
@@ -125,10 +152,11 @@ export async function generateImage(params: {
           height,
           input_hash,
           prompt_hash,
+          composition_hash, // ✅ NEW
           seed: seed.toString(),
           supabase_path: null,
           bytes_length: null,
-          ...(meta ?? {}), // ✅ fail meta comes from thrown error
+          ...(meta ?? {}),
         }
       : undefined;
 
