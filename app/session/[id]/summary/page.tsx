@@ -20,6 +20,7 @@ import {
   type HighlightSuggestion,
 } from "@/src/domain/highlights/aggregateSessionSuggestions";
 import { indexGlossaryFromHighlight } from "@/src/domain/glossary/indexGlossaryFromHighlight";
+import { pinHighlightToLexikon } from "@/src/domain/glossary/pinHighlightToLexikon";
 import { requireUserId } from "@/src/lib/db";
 import { huTagDir } from "@/src/lib/tags/dirTagsHu";
 
@@ -737,33 +738,20 @@ export default function SessionSummary() {
         .trim();
       if (!label) throw new Error("Nincs rögzíthető szöveg.");
 
-      const res = await fetch("/api/highlights/pin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          sessionId,
-          highlightId: highlight.id,
+      const uid = await requireUserId();
+      const { termId, termLabel } = await pinHighlightToLexikon({
+        supabase,
+        user_id: uid,
+        session_id: sessionId,
+        rawText,
+        highlight: {
+          id: highlight.id,
           label,
           kind: highlight.kind ?? "other",
           note: highlight.note ?? null,
-          rawText,
-        }),
+          glossary_term_id: highlight.glossary_term_id ?? null,
+        },
       });
-
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload?.message ?? payload?.error ?? "Nem sikerült a rögzítés.");
-      }
-
-      const payload = (await res.json()) as any;
-      const termId = typeof payload?.termId === "string" ? payload.termId : "";
-      const termLabel =
-        (typeof payload?.canonical === "string" && payload.canonical.trim()) ||
-        (typeof payload?.label === "string" && payload.label.trim()) ||
-        label;
-
-      if (!termId) throw new Error("Nem sikerült lexikon elemet létrehozni.");
 
       setEntryHighlights((prev) =>
         prev.map((h) => (h.id === highlight.id ? { ...h, glossary_term_id: termId } : h))
@@ -1164,7 +1152,6 @@ export default function SessionSummary() {
                       text: match.snippet,
                       category,
                       note: note ?? null,
-                      glossary_term_id: glossaryTermId ?? null,
                     };
 
                     const { data, error } = await supabase

@@ -33,7 +33,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased`}>
         <NapszakInitializer />
         <BackgroundLayerGate />
-        <FractalLayerGate/>
         <main style={{ position: "relative", zIndex: 1 }}>{children}</main>
 
       </body>

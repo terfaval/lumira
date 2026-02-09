@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" &&
@@ -10,36 +10,77 @@ function prefersReducedMotion(): boolean {
 
 export default function BackgroundImageLayer({
   enabled = true,
-  src = "/background/background.png",
+  src = "/background/morning.png",
 }: {
   enabled?: boolean;
   src?: string;
 }) {
   const [reduce, setReduce] = useState(false);
+  const [activeSrc, setActiveSrc] = useState(src);
+  const [nextSrc, setNextSrc] = useState<string | null>(null);
+  const [fade, setFade] = useState(false);
 
   useEffect(() => {
     setReduce(prefersReducedMotion());
   }, []);
 
+  // crossfade when src changes
+  useEffect(() => {
+    if (!src || src === activeSrc) return;
+    setNextSrc(src);
+    setFade(true);
+
+    const t = window.setTimeout(() => {
+      setActiveSrc(src);
+      setNextSrc(null);
+      setFade(false);
+    }, 420);
+
+    return () => window.clearTimeout(t);
+  }, [src, activeSrc]);
+
   if (!enabled) return null;
 
   return (
     <div aria-hidden="true" style={styles.root}>
-      {/* 0) image */}
-      <div style={{ ...styles.image, backgroundImage: `url(${src})` }} />
+      {/* base image */}
+      <div
+        style={{
+          ...styles.image,
+          backgroundImage: `url(${activeSrc})`,
+          opacity: fade ? 0 : 1,
+          transition: "opacity 420ms ease",
+        }}
+      />
+      {/* next image for crossfade */}
+      {nextSrc && (
+        <div
+          style={{
+            ...styles.image,
+            backgroundImage: `url(${nextSrc})`,
+            opacity: fade ? 1 : 0,
+            transition: "opacity 420ms ease",
+          }}
+        />
+      )}
 
-      {/* 1) animated gradient (now visible even without blend modes) */}
+      {/* animated gradient */}
       <div
         style={{
           ...styles.gradient,
+          opacity: Number(
+            getComputedStyle(document.documentElement)
+              .getPropertyValue("--bg-gradient-opacity")
+              .trim() || "0.55"
+          ),
           animation: reduce ? "none" : "lumiraBgDrift 36s ease-in-out infinite",
         }}
       />
 
-      {/* 2) dark scrim to ensure “sötétekkel” */}
+      {/* scrim */}
       <div style={styles.scrim} />
 
-      {/* 3) vignette for readability */}
+      {/* vignette */}
       <div style={styles.vignette} />
 
       <style jsx global>{`
@@ -73,7 +114,7 @@ const styles: Record<string, React.CSSProperties> = {
     pointerEvents: "none",
     overflow: "hidden",
     transform: "translateZ(0)",
-    isolation: "isolate", // ✅ blend/overlay stabil
+    isolation: "isolate",
   },
 
   image: {
@@ -85,14 +126,13 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundRepeat: "no-repeat",
     transform: "scale(1.02)",
     filter: "saturate(1.02) contrast(1.04)",
+    willChange: "opacity",
   },
 
   gradient: {
     position: "absolute",
     inset: "-14%",
     zIndex: 1,
-    opacity: 0.55, // ✅ láthatóbb
-    // itt NINCS screen; inkább “soft light”/normal + scrim adja a sötétet
     mixBlendMode: "soft-light",
     backgroundImage: `
       radial-gradient(closest-side at 18% 28%, var(--glow-2), transparent 55%),
@@ -108,9 +148,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "absolute",
     inset: 0,
     zIndex: 2,
-    // ✅ garantált “sötétítés”, de még átengedi a képet
-    background:
-      "linear-gradient(180deg, rgba(12,16,25,0.40), rgba(12,16,25,0.62))",
+    background: "var(--bg-scrim)",
     opacity: 1,
   },
 
@@ -118,8 +156,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "absolute",
     inset: 0,
     zIndex: 3,
-    background:
-      "radial-gradient(circle at 50% 35%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.30) 70%, rgba(0,0,0,0.62) 100%)",
-    opacity: 0.95,
+    background: "var(--bg-vignette)",
+    opacity: 1,
   },
 };

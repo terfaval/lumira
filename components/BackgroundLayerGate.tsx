@@ -3,20 +3,26 @@
 import { useEffect, useState } from "react";
 import BackgroundImageLayer from "@/components/BackgroundImageLayer";
 import { resolveBackground } from "@/src/domain/background/resolveBackground";
+import { localBackgroundFor } from "@/src/domain/background/localBackgroundMap";
 
 const ENABLE_SUPABASE_BACKGROUND = true;
 
 export default function BackgroundLayerGate() {
   const [space, setSpace] = useState<string | undefined>(undefined);
   const [napszak, setNapszak] = useState<string | undefined>(undefined);
-  const [src, setSrc] = useState<string | null>(null);
+  const [src, setSrc] = useState<string>(() => localBackgroundFor(undefined));
 
   useEffect(() => {
     const body = document.body;
 
     const compute = () => {
-      setSpace(body.getAttribute("data-space") ?? undefined);
-      setNapszak(body.getAttribute("data-napszak") ?? undefined);
+      const nextSpace = body.getAttribute("data-space") ?? undefined;
+      const nextNapszak = body.getAttribute("data-napszak") ?? undefined;
+      setSpace(nextSpace);
+      setNapszak(nextNapszak);
+
+      // azonnali local váltás, hogy ne villanjon üresen
+      setSrc(localBackgroundFor(nextNapszak));
     };
 
     compute();
@@ -29,22 +35,19 @@ export default function BackgroundLayerGate() {
   useEffect(() => {
     if (!ENABLE_SUPABASE_BACKGROUND) return;
     let cancelled = false;
-    setSrc(null);
 
     resolveBackground({ space, napszak })
       .then((url) => {
-        if (!cancelled) setSrc(url);
+        if (!cancelled && url) setSrc(url);
       })
       .catch(() => {
-        if (!cancelled) setSrc(null);
+        // ha Supabase fail → marad a local
       });
 
     return () => {
       cancelled = true;
     };
   }, [space, napszak]);
-
-  if (!ENABLE_SUPABASE_BACKGROUND || !src) return null;
 
   return <BackgroundImageLayer enabled src={src} />;
 }
