@@ -282,13 +282,13 @@ export default function HighlightsStep() {
   const handlePinToGlossary = useCallback(
     async (highlight: SessionHighlight) => {
       if (!sessionId || typeof sessionId !== "string") {
-        throw new Error("Hi·nyzÛ session azonosÌtÛ.");
+        throw new Error("Hi√°nyz√≥ session azonos√≠t√≥.");
       }
 
       const label = String(highlight.label ?? "")
         .replace(/\s+/g, " ")
         .trim();
-      if (!label) throw new Error("Nincs rˆgzÌthetı szˆveg.");
+      if (!label) throw new Error("Nincs r√∂gz√≠thet√µ sz√∂veg.");
 
       const uid = await requireUserId();
       const { termId, termLabel } = await pinHighlightToLexikon({
@@ -319,7 +319,7 @@ export default function HighlightsStep() {
   );
 
   if (!sessionId || typeof sessionId !== "string") {
-    return <div className={styles.wrap}>Hi·nyzÛ session azonosÌtÛ.</div>;
+    return <div className={styles.wrap}>Hi√°nyz√≥ session azonos√≠t√≥.</div>;
   }
 
   return (
@@ -335,10 +335,10 @@ export default function HighlightsStep() {
         onAdd={async ({ suggestion, kind, note, glossaryTermId }) => {
           const entryId = rawEntryId;
           const content = rawText ?? "";
-          if (!entryId || !content) throw new Error("Hi·nyzik a nyers ·lom szˆvege.");
+          if (!entryId || !content) throw new Error("Hi√°nyzik a nyers √°lom sz√∂vege.");
 
           const match = findFirstMatch(content, suggestion.label);
-          if (!match) throw new Error("Nem tal·lom a szˆvegben ezt a rÈszt.");
+          if (!match) throw new Error("Nem tal√°lom a sz√∂vegben ezt a r√©szt.");
 
           const uid = await requireUserId();
           const category = categoryFromKind(normalizeKind(kind));
@@ -358,7 +358,7 @@ export default function HighlightsStep() {
             .select("id, entry_id, start_offset, end_offset, text, category, note, glossary_term_id, created_at")
             .maybeSingle();
 
-          if (error) throw new Error("Nem siker¸lt menteni a kiemelÈst.");
+          if (error) throw new Error("Nem siker√ºlt menteni a kiemel√©st.");
           if (data) setEntryHighlights((prev) => [...prev, data as EntryHighlight]);
 
           setRejectedKeys((prev) => prev.filter((k) => k !== suggestion.suggestion_key));
@@ -390,12 +390,12 @@ export default function HighlightsStep() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ suggestion_key: suggestionKey }),
           });
-          if (!res.ok) throw new Error("Nem siker¸lt elutasÌtani.");
+          if (!res.ok) throw new Error("Nem siker√ºlt elutas√≠tani.");
           setRejectedKeys((prev) => (prev.includes(suggestionKey) ? prev : [...prev, suggestionKey]));
         }}
         onEdit={async (highlight) => {
           const entryId = rawEntryId;
-          if (!entryId) throw new Error("Hi·nyzik a nyers ·lom.");
+          if (!entryId) throw new Error("Hi√°nyzik a nyers √°lom.");
           const uid = await requireUserId();
           const category = categoryFromKind(normalizeKind(highlight.kind));
           const note = highlight.note ?? null;
@@ -407,7 +407,7 @@ export default function HighlightsStep() {
             .eq("entry_id", entryId)
             .eq("user_id", uid);
 
-          if (error) throw new Error("Nem siker¸lt frissÌteni.");
+          if (error) throw new Error("Nem siker√ºlt friss√≠teni.");
 
           setEntryHighlights((prev) =>
             prev.map((h) => (h.id === highlight.id ? { ...h, category, note } : h))
@@ -416,10 +416,10 @@ export default function HighlightsStep() {
         onCreateCustom={async (payload) => {
           const entryId = rawEntryId;
           const content = rawText ?? "";
-          if (!entryId || !content) throw new Error("Hi·nyzik a nyers ·lom szˆvege.");
+          if (!entryId || !content) throw new Error("Hi√°nyzik a nyers √°lom sz√∂vege.");
 
           const match = findFirstMatch(content, payload.label);
-          if (!match) throw new Error("Nem tal·lom a szˆvegben ezt a rÈszt.");
+          if (!match) throw new Error("Nem tal√°lom a sz√∂vegben ezt a r√©szt.");
 
           const uid = await requireUserId();
           const category = categoryFromKind(normalizeKind(payload.kind));
@@ -439,7 +439,7 @@ export default function HighlightsStep() {
             .select("id, entry_id, start_offset, end_offset, text, category, note, glossary_term_id, created_at")
             .maybeSingle();
 
-          if (error) throw new Error("Nem siker¸lt menteni a kiemelÈst.");
+          if (error) throw new Error("Nem siker√ºlt menteni a kiemel√©st.");
           if (data) setEntryHighlights((prev) => [...prev, data as EntryHighlight]);
 
           try {
