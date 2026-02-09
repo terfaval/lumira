@@ -19,9 +19,21 @@ export default function BackgroundImageLayer({
   const [activeSrc, setActiveSrc] = useState(src);
   const [nextSrc, setNextSrc] = useState<string | null>(null);
   const [fade, setFade] = useState(false);
+  const [gradientOpacity, setGradientOpacity] = useState(0.55);
 
   useEffect(() => {
     setReduce(prefersReducedMotion());
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = getComputedStyle(document.documentElement)
+      .getPropertyValue("--bg-gradient-opacity")
+      .trim();
+    const parsed = Number(raw);
+    if (!Number.isNaN(parsed) && Number.isFinite(parsed)) {
+      setGradientOpacity(parsed);
+    }
   }, []);
 
   // crossfade when src changes
@@ -68,11 +80,7 @@ export default function BackgroundImageLayer({
       <div
         style={{
           ...styles.gradient,
-          opacity: Number(
-            getComputedStyle(document.documentElement)
-              .getPropertyValue("--bg-gradient-opacity")
-              .trim() || "0.55"
-          ),
+          opacity: gradientOpacity,
           animation: reduce ? "none" : "lumiraBgDrift 36s ease-in-out infinite",
         }}
       />
