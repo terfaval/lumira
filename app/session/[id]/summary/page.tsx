@@ -729,13 +729,13 @@ export default function SessionSummary() {
   const handlePinToGlossary = useCallback(
     async (highlight: SessionHighlight) => {
       if (!sessionId || typeof sessionId !== "string") {
-        throw new Error("Hiányzó session azonosító.");
+        throw new Error("HiÃ¡nyzÃ³ session azonosÃ­tÃ³.");
       }
 
       const label = String(highlight.label ?? "")
         .replace(/\s+/g, " ")
         .trim();
-      if (!label) throw new Error("Nincs rögzíthetõ szöveg.");
+      if (!label) throw new Error("Nincs rÃ¶gzÃ­thetÅ‘ szÃ¶veg.");
 
       const res = await fetch("/api/highlights/pin", {
         method: "POST",
@@ -753,7 +753,7 @@ export default function SessionSummary() {
 
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        throw new Error(payload?.message ?? payload?.error ?? "Nem sikerült a rögzítés.");
+        throw new Error(payload?.message ?? payload?.error ?? "Nem sikerÃ¼lt a rÃ¶gzÃ­tÃ©s.");
       }
 
       const payload = (await res.json()) as any;
@@ -763,7 +763,7 @@ export default function SessionSummary() {
         (typeof payload?.label === "string" && payload.label.trim()) ||
         label;
 
-      if (!termId) throw new Error("Nem sikerült lexikon elemet létrehozni.");
+      if (!termId) throw new Error("Nem sikerÃ¼lt lexikon elemet lÃ©trehozni.");
 
       setEntryHighlights((prev) =>
         prev.map((h) => (h.id === highlight.id ? { ...h, glossary_term_id: termId } : h))

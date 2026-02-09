@@ -346,7 +346,7 @@ export function HighlightsPanel({
                       className={styles.savedPill}
                       data-kind={normalizeKind(h.kind)}
                       onClick={() => beginEdit(h)}
-                      title={`Szerkesztés: ${kindLabel(h.kind)}${h.note ? ` • ${h.note}` : ""}`}
+                      title={`SzerkesztÃ©s: ${kindLabel(h.kind)}${h.note ? ` â€¢ ${h.note}` : ""}`}
                     >
                       {h.label}
                     </button>
@@ -360,7 +360,7 @@ export function HighlightsPanel({
                         {h.glossary_term_id
                           ? "Lexikonban"
                           : pendingKey === `pin:${h.id}`
-                            ? "Rögzítés…"
+                            ? "RÃ¶gzÃ­tÃ©sâ€¦"
                             : "Pin to Lexikon"}
                       </button>
                     ) : null}
