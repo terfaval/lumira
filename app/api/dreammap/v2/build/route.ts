@@ -14,7 +14,7 @@ function isMissingColumnError(error: unknown, column: string): boolean {
 }
 
 async function fetchGlossaryOccurrences(supabase: Awaited<ReturnType<typeof supabaseServerAuthed>>, user_id: string) {
-  let res = await supabase
+  let res: any = await supabase
     .from("glossary_occurrences")
     .select("term_id,session_id,count")
     .eq("user_id", user_id);
