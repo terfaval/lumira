@@ -18,7 +18,7 @@ export type Space = "dream" | "evening";
  * true  => mindig "default"
  * false => automatikus napszak
  */
-const FORCE_DEFAULT_THEME = false;
+const FORCE_DEFAULT_THEME = true;
 
 function resolveNapszak(date: Date): Exclude<Napszak, "default"> {
   const hour = date.getHours();
