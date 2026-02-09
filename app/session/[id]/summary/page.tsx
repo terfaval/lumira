@@ -777,15 +777,6 @@ export default function SessionSummary() {
     },
     [rawText, sessionId]
   );
-      setGlossaryTerms((prev) => {
-        if (prev.some((t) => t.id === termId)) return prev;
-        const next = [...prev, { id: termId, label: termLabel }];
-        next.sort((a, b) => a.label.localeCompare(b.label));
-        return next;
-      });
-    },
-    [rawText, sessionId]
-  );
 
   const salientElements = useMemo(() => {
     const raw = latentPayload?.salient_elements;
