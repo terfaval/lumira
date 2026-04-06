@@ -27,7 +27,7 @@ Primary outputs:
 - Domain map: domain units, responsibilities, dependencies.
 - Pipeline map: steps tagged as block / async / deferred.
 - First-response contract: minimal required data/state.
-- Cleanup backlog: ordered list of concrete tasks (planning only).
+- Cleanup plan: ordered waves with concrete tasks (planning only).
 
 Secondary outputs:
 - Drift notes: mismatches between domain intent and implementation.
@@ -67,7 +67,12 @@ Drift detection:
 - Cleanup backlog is ordered and actionable.
 - No code changes made.
 
-## 6) Cleanup Backlog Format
+## 6) Cleanup Plan Format (Waves)
+
+The audit must converge into a concrete, ordered cleanup plan with three waves:
+- Wave 1: First-response core boundary cleanup.
+- Wave 2: Reflective support cleanup.
+- Wave 3: Deferred / exploratory separation.
 
 Each item includes:
 - Area / module
@@ -84,5 +89,5 @@ Each item includes:
 
 ## 8) Next Step After Audit
 
-- Write a multi-step implementation plan (separate doc) for the first cleanup wave.
+- Write a multi-step implementation plan (separate doc) for Wave 1.
 
