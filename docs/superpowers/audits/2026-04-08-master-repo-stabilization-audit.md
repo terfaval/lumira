@@ -137,19 +137,66 @@ Rules:
 
 ## 6) DB Consolidation Plan
 
-### Target Tables (authoritative)
-- `observation`, `material`, `frame`, `latent`, `session_index`, `anchor`, `glossary`, `job`, `image_job`, `dream_map_v2`
+### Authoritative Tables
+- `dream_sessions` ? canonical session header and ownership record for the core flow.
+- `dream_entries` ? raw session narrative / intake payloads used by session and work entry points.
+- `dream_answers` ? persisted work answers tied back to a session and work block.
+- `observation_versions` ? source-of-truth observation payload history for the observe pipeline.
+- `observation_latest` ? pointer table for current observation material, including typed latest references.
+- `anchor_versions` ? canonical anchor payload history for ranked anchor extraction.
+- `anchor_latest` ? pointer table for the current ranked anchor version.
+- `latent_versions` ? canonical latent payload history for enrichment and downstream work.
+- `latent_latest` ? pointer table for the current latent payload.
+- `frame_versions` ? canonical frame payload history for blocking first-response output.
+- `frame_latest` ? pointer table for the current frame payload.
+- `work_versions` ? canonical work payload history for first-response composition.
+- `work_latest` ? pointer table for the current work payload.
+- `session_index_versions` ? canonical session index payload history for async session enrichment.
+- `session_index_latest` ? pointer table for the current session index payload.
+- `domain_events` ? append-only event log for cross-domain orchestration and auditing.
+- `domain_jobs` ? job queue/state table for async orchestration and retry control.
+- `material_snapshots` ? persisted material snapshots consumed by blocking work assembly.
+- `glossary_terms` ? canonical glossary terms and their owned metadata.
+- `glossary_occurrences` ? term-to-session occurrence ledger used by glossary enrichment.
+- `glossary_notes` ? user-authored notes attached to glossary terms.
+- `term_candidates` ? candidate term staging table for glossary scoring and approval.
+- `glossary_occurrence_events` ? append-only glossary event stream for occurrence history.
+- `archetype_terms` ? canonical archetype terms used by glossary-to-archetype linking.
+- `archetype_term_queue` ? queue of pending archetype work items.
+- `dream_entry_highlights` ? highlight rows extracted from entries for secondary analysis.
+- `dream_session_highlights` ? session-level highlights used by the highlights UI and backfills.
+- `dream_session_rejected_suggestions` ? rejected highlight suggestions retained for user preference tracking.
+- `image_style_presets` ? image style configuration source table.
+- `image_jobs` ? async image generation job state table.
+- `work_question_ledger` ? user-facing work prompt ledger for traceability.
+- `dream_map_v2_versions` ? current dream-map v2 payload history.
+- `dream_map_v2_latest` ? pointer table for the current dream-map v2 version.
 
-### Consolidation Rules
-- Prefer a single repo per authoritative table or table family.
-- Keep legacy repos only when they bridge an active migration window.
-- Move maintenance/backfill access behind explicit job boundaries.
+### Candidate Removals / Archives
+- `dream_map_versions` and `dream_map_latest` ? legacy v0 dream-map tables; the only direct callers are `dreamMapRepo` and admin backfill surfaces, which are already deferred.
+- `dream_observation` ? legacy singular observation table from the earliest MVP schema; no keep/improve file depends on it.
+- `user_behavior_stats` ? legacy analytics/support table with no active keep/improve references in the current inventory.
+- `user_prefs` ? candidate for archival only if the session/work path is moved to a dedicated profile table; current code still reads it, so keep it live until that migration exists.
+- `material_snapshots` ? candidate for eventual consolidation into `work_versions` if snapshot semantics can be represented there without losing history.
 
-### Migration Order
-1. Stabilize blocking-path repos: `observationRepo`, `materialRepo`, `frameRepo`, `workQuestionLedgerRepo`.
-2. Normalize support-path repos: `latentRepo`, `sessionIndexRepo`, `anchorRepo`, `glossaryRepo`, `jobRepo`, `imageJobRepo`.
-3. Retire or quarantine legacy surfaces: `dreamMapRepo`, `latestRepo`, legacy v0 job and domain variants.
+### Explicit Migrations
+1. `supabase/migrations/20260408_0001_archive_legacy_dream_map_v0.sql`
+- Operations: freeze writes to `dream_map_versions` / `dream_map_latest`, copy current rows into an archive schema or backup table, then drop the live tables once callers are removed.
+- Rollback guidance: restore the archived rows into the original tables and re-create dependent policies/indexes before re-enabling callers.
 
-### Notes
-- This inventory intentionally keeps the table decision-oriented rather than implementation-specific.
-- No runtime code was changed in this task.
+2. `supabase/migrations/20260408_0002_drop_legacy_dream_observation.sql`
+- Operations: verify no application code references `dream_observation`, export a final backup, then drop the table.
+- Rollback guidance: recreate the table from the prior migration definition and reload the backup if a rollback is needed.
+
+3. `supabase/migrations/20260408_0003_retire_user_behavior_stats.sql`
+- Operations: archive historical rows, remove the table, and replace any surviving analytics reads with the newer source tables.
+- Rollback guidance: restore from archive and re-point analytics queries to the restored table.
+
+4. `supabase/migrations/20260408_0004_consolidate_material_snapshots.sql`
+- Operations: migrate any remaining snapshot-only fields into `work_versions` or a dedicated archive table, then remove duplicate snapshot storage if confirmed unused.
+- Rollback guidance: keep the archive copy intact until all downstream reads are verified; restore the original table only if consumers still need the old shape.
+
+### Rollout Notes
+- Treat the legacy v0 dream-map pair as the first archive target because the current inventory already classifies its code paths as deferred.
+- Do not drop `user_prefs`, `dream_anchor_*`, or any of the `*_latest` pointer tables until the replacement read paths are proven stable.
+- Migration sequencing should be: archive, switch callers, verify, then drop.
