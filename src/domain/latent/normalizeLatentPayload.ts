@@ -52,7 +52,7 @@ type CleanEvidence = {
 };
 
 function toRawEvidence(e: unknown): RawEvidence {
-  const o = e && typeof e === "object" ? (e as any) : {};
+  const o = e && typeof e === "object" ? (e as { source?: unknown; path?: unknown }) : {};
   return {
     source: isEvidenceSource(o.source) ? o.source : null,
     path: typeof o.path === "string" ? o.path.trim() : "",
@@ -74,12 +74,13 @@ function normalizeSalientElements(raw: unknown): SalientElement[] {
   arr.forEach((item: unknown) => {
     if (!item || typeof item !== "object") return;
 
-    const key = typeof (item as any).key === "string" ? (item as any).key.trim() : "";
-    const label = typeof (item as any).label === "string" ? (item as any).label.trim() : "";
+    const itemObj = item as { key?: unknown; label?: unknown; evidence?: unknown };
+    const key = typeof itemObj.key === "string" ? itemObj.key.trim() : "";
+    const label = typeof itemObj.label === "string" ? itemObj.label.trim() : "";
 
     if (!key || !label) return;
 
-    const evidenceRaw: unknown[] = Array.isArray((item as any).evidence) ? (item as any).evidence : [];
+    const evidenceRaw: unknown[] = Array.isArray(itemObj.evidence) ? itemObj.evidence : [];
     const evidence: CleanEvidence[] = evidenceRaw.map(toRawEvidence).filter(isCleanEvidence);
 
     if (evidence.length === 0) return;
@@ -115,7 +116,7 @@ function normalizeSalientElements(raw: unknown): SalientElement[] {
 
 function isDirectionCandidate(x: unknown): x is DirectionCandidate {
   if (!x || typeof x !== "object") return false;
-  const o = x as any;
+  const o = x as { slug?: unknown; score?: unknown };
   return typeof o.slug === "string" && typeof o.score === "number" && Number.isFinite(o.score);
 }
 
@@ -123,14 +124,14 @@ function isDirectionCandidate(x: unknown): x is DirectionCandidate {
 /* Public API                                                     */
 /* ────────────────────────────────────────────────────────────── */
 
-export function normalizeLatentPayload(raw: unknown): any {
-  const obj = raw && typeof raw === "object" ? raw : {};
+export function normalizeLatentPayload(raw: unknown): Record<string, unknown> {
+  const obj = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
 
   const candidatesRaw =
-    (obj as any).direction_candidates ??
-    (obj as any).candidate_directions ??
-    (obj as any).directionCandidates ??
-    (obj as any).candidates ??
+    (obj as { direction_candidates?: unknown }).direction_candidates ??
+    (obj as { candidate_directions?: unknown }).candidate_directions ??
+    (obj as { directionCandidates?: unknown }).directionCandidates ??
+    (obj as { candidates?: unknown }).candidates ??
     [];
 
   const parsedCandidates: DirectionCandidate[] = Array.isArray(candidatesRaw)
@@ -138,19 +139,20 @@ export function normalizeLatentPayload(raw: unknown): any {
         .map((it: unknown): DirectionCandidate | null => {
           if (!it || typeof it !== "object") return null;
 
-          const slug = typeof (it as any).slug === "string" ? (it as any).slug.trim() : "";
+          const itObj = it as { slug?: unknown; score?: unknown; weight?: unknown; why?: unknown; reason?: unknown };
+          const slug = typeof itObj.slug === "string" ? itObj.slug.trim() : "";
           if (!slug) return null;
 
           const scoreRaw =
-            typeof (it as any).score === "number"
-              ? (it as any).score
-              : typeof (it as any).weight === "number"
-              ? (it as any).weight
+            typeof itObj.score === "number"
+              ? itObj.score
+              : typeof itObj.weight === "number"
+              ? itObj.weight
               : 0;
 
           const score = clamp01(scoreRaw);
 
-          const why = sanitizeWhy((it as any).why ?? (it as any).reason, 140);
+          const why = sanitizeWhy(itObj.why ?? itObj.reason, 140);
 
           return { slug, score, why };
         })
@@ -169,7 +171,7 @@ export function normalizeLatentPayload(raw: unknown): any {
 
   const trimmed = direction_candidates.slice(0, 10);
 
-  const salient_elements = normalizeSalientElements((obj as any).salient_elements);
+  const salient_elements = normalizeSalientElements((obj as { salient_elements?: unknown }).salient_elements);
 
   return {
     ...obj,
