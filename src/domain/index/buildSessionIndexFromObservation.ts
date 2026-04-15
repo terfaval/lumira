@@ -18,7 +18,7 @@ type IndexLimits = {
   entities_max: number;
 };
 
-function toStringArray(x: any): string[] {
+function toStringArray(x: unknown): string[] {
   if (!Array.isArray(x)) return [];
   return x.map((v) => String(v ?? "").trim()).filter(Boolean);
 }
@@ -69,7 +69,7 @@ function looksHungarian(p: SessionIndexPayloadV0): boolean {
   return !sample.some((x) => containsLikelyEnglishToken(String(x ?? "")));
 }
 
-function observationSignalCount(obs: any): number {
+function observationSignalCount(obs: ObservationPayloadV0 | null | undefined): number {
   const entities = obs?.entities ?? {};
   const people = Array.isArray(entities.people) ? entities.people.length : 0;
   const places = Array.isArray(entities.places) ? entities.places.length : 0;
@@ -79,14 +79,17 @@ function observationSignalCount(obs: any): number {
   return people + places + objects + rawFacts + scenes;
 }
 
-function normalizePayload(parsed: any, limits: IndexLimits): SessionIndexPayloadV0 {
+function normalizePayload(parsed: unknown, limits: IndexLimits): SessionIndexPayloadV0 {
+  const obj = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+  const entities = obj.entities && typeof obj.entities === "object" ? (obj.entities as Record<string, unknown>) : {};
+
   const out: SessionIndexPayloadV0 = {
-    anchor_summary: String(parsed?.anchor_summary ?? "").trim(),
-    keyphrases: toStringArray(parsed?.keyphrases).slice(0, limits.keyphrases_max),
+    anchor_summary: String(obj.anchor_summary ?? "").trim(),
+    keyphrases: toStringArray(obj.keyphrases).slice(0, limits.keyphrases_max),
     entities: {
-      people: toStringArray(parsed?.entities?.people).slice(0, limits.entities_max),
-      places: toStringArray(parsed?.entities?.places).slice(0, limits.entities_max),
-      objects: toStringArray(parsed?.entities?.objects).slice(0, limits.entities_max),
+      people: toStringArray(entities.people).slice(0, limits.entities_max),
+      places: toStringArray(entities.places).slice(0, limits.entities_max),
+      objects: toStringArray(entities.objects).slice(0, limits.entities_max),
     },
   };
   if (out.anchor_summary) {
@@ -147,7 +150,7 @@ export async function buildSessionIndexFromObservation(args: {
 
 
   // Give the model only what it needs, but keep it grounded
-  const obs = args.observation ?? ({} as any);
+  const obs = args.observation;
   const compactObservation = {
     summary: String(obs.summary ?? ""),
     raw_facts: Array.isArray(obs.raw_facts) ? obs.raw_facts.slice(0, 12) : [],
@@ -158,7 +161,7 @@ export async function buildSessionIndexFromObservation(args: {
       themes_words: Array.isArray(obs.entities?.themes_words) ? obs.entities.themes_words.slice(0, 12) : [],
     },
     scenes: Array.isArray(obs.scenes)
-      ? obs.scenes.slice(0, 4).map((s: any) => ({
+    ? obs.scenes.slice(0, 4).map((s: ObservationPayloadV0["scenes"][number]) => ({
           setting: String(s?.setting ?? ""),
           characters: Array.isArray(s?.characters) ? s.characters.slice(0, 8) : [],
           objects: Array.isArray(s?.objects) ? s.objects.slice(0, 10) : [],
