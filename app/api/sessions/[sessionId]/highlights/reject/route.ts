@@ -22,8 +22,9 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     if (!body || typeof body !== "object") {
       return NextResponse.json({ error: "invalid_body" }, { status: 400 });
     }
+    const payload = body as Record<string, unknown>;
 
-    const suggestion_key = String(body.suggestion_key ?? "").trim();
+    const suggestion_key = String(payload.suggestion_key ?? "").trim();
     if (!suggestion_key) {
       return NextResponse.json({ error: "suggestion_key_required" }, { status: 400 });
     }
