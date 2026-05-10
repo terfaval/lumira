@@ -28,7 +28,9 @@ export async function POST(req: Request) {
     const sessionIdRaw =
   typeof body.session_id === "string" ? body.session_id : typeof body.sessionId === "string" ? body.sessionId : "";
 const sessionId = sessionIdRaw.trim();
-    if (!sessionId) return NextResponse.json({ error: "Hiányzó session_id." }, { status: 400 });
+    if (!sessionId) {
+      return NextResponse.json({ ok: false, error: "session_id_required" }, { status: 400 });
+    }
 
     const ensureRes = await fetch(new URL("/api/frame/ensure", req.url), {
       method: "POST",
@@ -42,6 +44,9 @@ const sessionId = sessionIdRaw.trim();
       headers: { "content-type": ensureRes.headers.get("content-type") ?? "application/json" },
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message ?? "Ismeretlen hiba." }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "frame_route_internal_error", message: error?.message ?? "Ismeretlen hiba." },
+      { status: 500 }
+    );
   }
 }

@@ -26,6 +26,10 @@ import { listRecentAnchorKeys, listRecentQuestionHashes } from "@/src/db/reposit
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function warnCoreFlowContract(issue: string, details: Record<string, unknown>) {
+  console.warn("[core-flow-contract]", { stage: "work.next", issue, ...details });
+}
+
 type NextRequest = {
   session_id?: string;
   direction_slug?: string | null;
@@ -331,7 +335,7 @@ async function fetchRecentBlocks(supabase: any, sessionId: string, userId: strin
 async function fetchLatestAnswerText(supabase: any, sessionId: string, userId: string): Promise<string | null> {
   const { data, error } = await supabase
     .from("dream_answers")
-    .select("answer_text, created_at")
+    .select("content, created_at")
     .eq("session_id", sessionId)
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
@@ -339,7 +343,13 @@ async function fetchLatestAnswerText(supabase: any, sessionId: string, userId: s
     .maybeSingle();
 
   if (error) return null;
-  const t = typeof data?.answer_text === "string" ? data.answer_text.trim() : "";
+  const t = typeof data?.content === "string" ? data.content.trim() : "";
+  if (!t && data) {
+    console.warn("work-block/next: latest dream_answers row has empty content", {
+      session_id: sessionId,
+      user_id: userId,
+    });
+  }
   return t ? t : null;
 }
 
@@ -350,7 +360,7 @@ async function fetchLatestWorkPromptFromLastAnswer(
 ): Promise<string | null> {
   const { data: ans, error: ansErr } = await supabase
     .from("dream_answers")
-    .select("work_block_id, created_at")
+    .select("work_id, created_at")
     .eq("session_id", sessionId)
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
@@ -358,8 +368,16 @@ async function fetchLatestWorkPromptFromLastAnswer(
     .maybeSingle();
 
   if (ansErr) return null;
-  const workBlockId = typeof ans?.work_block_id === "string" ? ans.work_block_id.trim() : "";
-  if (!workBlockId) return null;
+  const workBlockId = typeof ans?.work_id === "string" ? ans.work_id.trim() : "";
+  if (!workBlockId) {
+    if (ans) {
+      console.warn("work-block/next: latest dream_answers row missing work_id", {
+        session_id: sessionId,
+        user_id: userId,
+      });
+    }
+    return null;
+  }
 
   const { data: wb, error: wbErr } = await supabase
     .from("work_versions")
@@ -524,8 +542,11 @@ export async function POST(req: Request) {
     if (!authData?.user) return NextResponse.json({ error: "Nincs jogosultság." }, { status: 401 });
     const userId = authData.user.id;
 
-    const body = (await req.json()) as NextRequest;
-    const sessionId = typeof body.session_id === "string" ? body.session_id : "";
+    const body = (await req.json().catch(() => null)) as NextRequest | null;
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
+    }
+    const sessionId = typeof body.session_id === "string" ? body.session_id.trim() : "";
     if (!sessionId) return NextResponse.json({ error: "Hiányzó session_id." }, { status: 400 });
 
     const sess = await supabase
@@ -563,10 +584,32 @@ export async function POST(req: Request) {
       fetchLatestWorkPromptFromLastAnswer(supabase, sessionId, userId),
     ]);
 
+    if (!observationLatest?.payload) {
+      warnCoreFlowContract("missing_observation_payload", {
+        sessionId,
+        hasObservationVersionId: Boolean(observationLatest?.observation_version_id),
+      });
+    }
+    if (!latentLatest) {
+      warnCoreFlowContract("missing_latent_payload", { sessionId });
+    }
+    if (!anchorLatest?.payload) {
+      warnCoreFlowContract("missing_anchor_payload_before_ensure", { sessionId });
+    }
+    if (!prevAnswerText) {
+      warnCoreFlowContract("missing_previous_answer_content", { sessionId });
+    }
+    if (!prevPrompt) {
+      warnCoreFlowContract("missing_previous_work_prompt", { sessionId });
+    }
+
     let anchorPayload = anchorLatest?.payload ?? null;
     if (!anchorPayload) {
       const ensured = await ensureAnchorsRanked(supabase, { user_id: userId, session_id: sessionId });
       anchorPayload = ensured.payload ?? null;
+      if (!anchorPayload) {
+        warnCoreFlowContract("anchor_payload_unavailable_after_ensure", { sessionId });
+      }
     }
 
     const observationPayload = observationLatest?.payload ?? null;

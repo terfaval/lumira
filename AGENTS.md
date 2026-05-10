@@ -1,22 +1,28 @@
-# AGENTS.md — Agent Operating Guide (Repository Root)
+# AGENTS.md - Agent Operating Guide (Repository Root)
 
 This repository is developed with an AI coding agent collaborating with a human owner.
-This file defines the global rules, conventions, and delivery format.
 
-## 0) Scope & precedence
-- This is the default rule set for the entire repo.
-- Domain/local `AGENTS.md` files may add or override rules for their scope.
-- In case of conflict, the more specific (local) rule wins.
+## 0) Scope and precedence
+- Default rule set for the entire repo.
+- More specific `AGENTS.md` files can override this within their scope.
 
-## 1) Working mode
+## 1) Required first step
+Before starting any ticket, read:
+1. `docs/AGENT_START_HERE.md`
+2. the ticket itself
+3. any files explicitly referenced by the ticket
+
+Do not read every document by default. Use `docs/AGENT_START_HERE.md` and `docs/SPEC_INDEX.md` to decide what is relevant.
+
+## 2) Working mode
 - Prefer small, reviewable changes per ticket.
-- If the task is large, first provide an AUDIT plan, then proceed with BUILD.
-- New files: provide full file contents.
-- Existing files: keep diffs minimal and localized.
+- If scope is large, produce an AUDIT plan first, then BUILD.
+- Keep diffs minimal and localized.
+- Do not change unrelated code.
 
-## 2) Ticket protocol
+## 3) Ticket protocol
 For each ticket:
-1. Restate goal in 2–4 bullets.
+1. Restate goal in 2-4 bullets.
 2. List touched files (existing + new).
 3. Implementation steps (ordered).
 4. Acceptance criteria (DoD).
@@ -25,32 +31,23 @@ For each ticket:
 
 If blocked by ambiguity, ask one clear question with concrete options.
 
-## 3) Repository conventions (general)
-- Follow the project’s TypeScript / Next.js conventions.
+## 4) Engineering rules
+- Follow TypeScript / Next.js project conventions.
 - Keep logic pure where possible; isolate I/O in repos/services.
 - Prefer deterministic ordering; explicitly sort keys when needed.
-
-## 4) Data & DB guidelines
 - Use idempotent migrations where possible.
-- Avoid destructive changes unless explicitly requested.
-- Store debug/meta payloads in designated fields where applicable.
+- Avoid destructive DB changes unless explicitly requested.
 
-## 5) Output format (delivery)
-- Provide patch-style diffs where practical.
-- For new files, provide the entire file.
-- Include a short verification checklist.
-
-## 6) Must NOT do
+## 5) Must not do
 - No unrelated refactors or style-only changes.
 - No new dependencies without explicit approval.
 - No public API renames without migration/compat plan.
-- Do not remove debug/logging fields unless requested.
+- Do not remove debug/logging/meta fields unless requested.
 
-## 7) Commands / checks
-Use repo scripts if available. If unknown, suggest:
-- `npm test` / `pnpm test`
+## 6) Validation commands
+Use repo scripts when available:
+- `npm test`
 - `npm run lint`
 - `npm run typecheck`
 
----
 Owner timezone: Europe/Budapest.

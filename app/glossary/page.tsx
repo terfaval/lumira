@@ -30,6 +30,11 @@ type TermCandidate = {
   created_at: string;
 };
 
+type GlossaryNoteRow = {
+  term_id: string;
+  content: string | null;
+};
+
 export default function GlossaryPage() {
   const router = useRouter();
   // ensure the user is authenticated; will redirect to login otherwise
@@ -122,7 +127,7 @@ export default function GlossaryPage() {
       if (noteErr) {
         setErr(noteErr.message || "Nem sikerült betölteni a jegyzeteket.");
       } else {
-        (notes ?? []).forEach((row: any) => {
+        ((notes as GlossaryNoteRow[] | null) ?? []).forEach((row) => {
           if (!notesByTerm.has(row.term_id)) {
             notesByTerm.set(row.term_id, row.content ?? "");
           }
@@ -151,7 +156,7 @@ export default function GlossaryPage() {
       console.error(error.message);
       setSuggestions([]);
     } else {
-      setSuggestions((data as any) ?? []);
+      setSuggestions((data as TermCandidate[] | null) ?? []);
     }
     setBusy(false);
   }
@@ -159,8 +164,12 @@ export default function GlossaryPage() {
   useEffect(() => {
     // only load after admin gate resolved
     if (!loading && adminChecked) {
-      void loadItems();
-      void loadSuggestions();
+      const timer = window.setTimeout(() => {
+        void loadItems();
+        void loadSuggestions();
+      }, 0);
+
+      return () => window.clearTimeout(timer);
     }
   }, [loading, adminChecked]);
 

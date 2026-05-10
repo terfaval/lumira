@@ -34,6 +34,10 @@ type EnsureBody = {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function warnCoreFlowContract(stage: string, issue: string, details: Record<string, unknown>) {
+  console.warn("[core-flow-contract]", { stage, issue, ...details });
+}
+
 export async function POST(req: Request) {
   try {
     const supabase = await supabaseServerAuthed(req);
@@ -57,7 +61,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const session_id = body.session_id;
+    const session_id = typeof body.session_id === "string" ? body.session_id.trim() : "";
     if (!session_id) {
       return NextResponse.json(
         { error: "session_id_required", message: "Hiányzó session_id." },
@@ -211,6 +215,13 @@ export async function POST(req: Request) {
     if (!observation_version_id) {
       const latest = await fetchObservationLatestV0WithPayloadAndId(supabase, user_id, session_id);
       observation_version_id = latest?.observation_version_id ?? null;
+      if (!observation_version_id) {
+        warnCoreFlowContract("observe", "missing_observation_latest_v0", {
+          session_id,
+          runObserve,
+          isGuest,
+        });
+      }
     }
 
     // -------------------------------------------------------------------------
@@ -231,6 +242,13 @@ export async function POST(req: Request) {
     if (!session_index_version_id) {
       const latest = await fetchSessionIndexLatestWithPayloadAndId(supabase, user_id, session_id);
       session_index_version_id = latest?.session_index_version_id ?? null;
+      if (!session_index_version_id) {
+        warnCoreFlowContract("session_index", "missing_session_index_latest", {
+          session_id,
+          runSessionIndex,
+          isGuest,
+        });
+      }
     }
 
     // -------------------------------------------------------------------------
@@ -251,6 +269,13 @@ export async function POST(req: Request) {
     if (!latent_version_id) {
       const latest = await fetchLatentLatestWithPayloadAndId(supabase, user_id, session_id);
       latent_version_id = latest?.latent_version_id ?? null;
+      if (!latent_version_id) {
+        warnCoreFlowContract("latent", "missing_latent_latest", {
+          session_id,
+          runLatent,
+          isGuest,
+        });
+      }
     }
 
     // -------------------------------------------------------------------------
@@ -267,6 +292,13 @@ export async function POST(req: Request) {
     if (!anchor_version_id) {
       const latest = await fetchAnchorLatestWithPayloadAndId(supabase, user_id, session_id);
       anchor_version_id = latest?.anchor_version_id ?? null;
+      if (!anchor_version_id) {
+        warnCoreFlowContract("anchors", "missing_anchor_latest", {
+          session_id,
+          runAnchors,
+          isGuest,
+        });
+      }
     }
 
     // -------------------------------------------------------------------------
@@ -287,6 +319,13 @@ export async function POST(req: Request) {
     if (!dream_map_version_id) {
       const latest = await fetchDreamMapLatest(supabase, { session_id, user_id });
       dream_map_version_id = latest?.dream_map_version_id ?? null;
+      if (!dream_map_version_id) {
+        warnCoreFlowContract("dream_map", "missing_dream_map_latest", {
+          session_id,
+          runDreamMap,
+          isGuest,
+        });
+      }
     }
 
     // -------------------------------------------------------------------------
@@ -332,6 +371,13 @@ export async function POST(req: Request) {
             why: "",
           }));
         }
+      }
+      if (!frame_version_id) {
+        warnCoreFlowContract("frame", "missing_frame_latest", {
+          session_id,
+          runFrame,
+          isGuest,
+        });
       }
     }
 

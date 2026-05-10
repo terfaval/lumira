@@ -37,12 +37,12 @@ export async function POST(req: Request) {
   try {
     body = (await req.json()) as EnsureBody;
   } catch {
-    return NextResponse.json({ error: "Érvénytelen JSON." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
   }
 
-  const session_id = body.session_id;
+  const session_id = typeof body.session_id === "string" ? body.session_id.trim() : "";
   if (!session_id) {
-    return NextResponse.json({ error: "Hiányzó session_id." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "session_id_required" }, { status: 400 });
   }
 
   // ---- delegate EVERYTHING to session.ensure

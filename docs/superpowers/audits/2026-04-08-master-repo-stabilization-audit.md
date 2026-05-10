@@ -177,7 +177,6 @@ Rules:
 - `dream_observation` ? legacy singular observation table from the earliest MVP schema; no keep/improve file depends on it.
 - `user_behavior_stats` ? legacy analytics/support table with no active keep/improve references in the current inventory.
 - `user_prefs` ? candidate for archival only if the session/work path is moved to a dedicated profile table; current code still reads it, so keep it live until that migration exists.
-- `material_snapshots` ? candidate for eventual consolidation into `work_versions` if snapshot semantics can be represented there without losing history.
 
 ### Explicit Migrations
 1. `supabase/migrations/20260408_0001_archive_legacy_dream_map_v0.sql`

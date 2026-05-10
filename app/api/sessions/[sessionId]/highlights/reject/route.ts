@@ -4,7 +4,7 @@ import { supabaseServerAuthed } from "@/src/lib/supabase/serverAuthed";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function safeJsonBody(req: NextRequest): Promise<any | null> {
+function safeJsonBody(req: NextRequest): Promise<unknown | null> {
   return req.json().catch(() => null);
 }
 
@@ -53,7 +53,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     }
 
     return NextResponse.json({ ok: true, suggestion_key: res.data?.suggestion_key ?? suggestion_key });
-  } catch (e: any) {
-    return NextResponse.json({ error: "internal", message: e?.message ?? "unknown_error" }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json(
+      { error: "internal", message: e instanceof Error ? e.message : "unknown_error" },
+      { status: 500 }
+    );
   }
 }

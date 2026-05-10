@@ -71,7 +71,11 @@ export default function SuggestionsPage() {
 
   useEffect(() => {
     if (!loading && adminChecked) {
-      void loadSuggestions();
+      const timer = window.setTimeout(() => {
+        void loadSuggestions();
+      }, 0);
+
+      return () => window.clearTimeout(timer);
     }
   }, [loading, adminChecked]);
 
@@ -86,7 +90,7 @@ export default function SuggestionsPage() {
       setErr(error.message || "Nem sikerült betölteni a javasolt elemeket.");
       setItems([]);
     } else {
-      setItems((data as any) ?? []);
+      setItems((data as TermCandidate[] | null) ?? []);
     }
     setBusy(false);
   }
@@ -164,8 +168,8 @@ export default function SuggestionsPage() {
 
       cancelEdit();
       await loadSuggestions();
-    } catch (e: any) {
-      setErr(e?.message ?? "Nem sikerült frissíteni az elemet.");
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Nem sikerült frissíteni az elemet.");
     } finally {
       setBusy(false);
     }
