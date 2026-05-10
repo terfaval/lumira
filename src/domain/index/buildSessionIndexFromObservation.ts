@@ -70,7 +70,7 @@ function looksHungarian(p: SessionIndexPayloadV0): boolean {
 }
 
 function observationSignalCount(obs: ObservationPayloadV0 | null | undefined): number {
-  const entities = obs?.entities ?? {};
+  const entities = (obs?.entities ?? {}) as Record<string, unknown>;
   const people = Array.isArray(entities.people) ? entities.people.length : 0;
   const places = Array.isArray(entities.places) ? entities.places.length : 0;
   const objects = Array.isArray(entities.objects) ? entities.objects.length : 0;
