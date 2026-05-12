@@ -1,9 +1,5 @@
 // src/orchestration/jobs/jobBackfillArchetype.ts
 import { SupabaseClient } from "@supabase/supabase-js";
-import { createDomainEvent } from "@/src/db/repositories/eventRepo";
-import { listDreamMapLatestWithPayload } from "@/src/db/repositories/dreamMapRepo";
-import { sha256 } from "@/src/orchestration/idempotency/materialHash";
-import { jobBuildDreamMapV0 } from "@/src/orchestration/jobs/jobBuildDreamMapV0";
 
 export type ArchetypeBackfillScope =
   | { mode: "all" }
@@ -31,8 +27,6 @@ export type ArchetypeBackfillResult = {
 };
 
 const DEFAULT_LIMIT = 50;
-const BACKFILL_MATERIAL_PREFIX = "backfill_archetype:v1";
-
 function normalizeKey(value: unknown): string {
   if (typeof value !== "string") return "";
   return value.trim();
@@ -60,6 +54,69 @@ function resolveScopeFilters(scope: ArchetypeBackfillScope): {
   return {};
 }
 
+type DreamMapLatestRow = {
+  session_id: string;
+  user_id: string;
+  dream_map_version_id: string;
+  updated_at: string;
+  payload: unknown;
+};
+
+async function listDreamMapLatestRows(
+  supabase: SupabaseClient,
+  args: {
+    user_id?: string;
+    since?: string;
+    until?: string;
+    limit: number;
+    offset: number;
+  }
+): Promise<DreamMapLatestRow[]> {
+  let latestQ = supabase
+    .from("dream_map_latest")
+    .select("session_id,user_id,dream_map_version_id,updated_at")
+    .order("updated_at", { ascending: false })
+    .range(args.offset, args.offset + args.limit - 1);
+
+  if (args.user_id) latestQ = latestQ.eq("user_id", args.user_id);
+  if (args.since) latestQ = latestQ.gte("updated_at", args.since);
+  if (args.until) latestQ = latestQ.lte("updated_at", args.until);
+
+  const latest = await latestQ;
+  if (latest.error) throw latest.error;
+
+  const latestRows = (latest.data ?? []) as Array<{
+    session_id: string;
+    user_id: string;
+    dream_map_version_id: string;
+    updated_at: string;
+  }>;
+  if (latestRows.length === 0) return [];
+
+  const versionIds = latestRows.map((row) => row.dream_map_version_id).filter(Boolean);
+  if (versionIds.length === 0) return [];
+
+  const versions = await supabase.from("dream_map_versions").select("id,payload").in("id", versionIds);
+  if (versions.error) throw versions.error;
+
+  const payloadById = new Map<string, unknown>();
+  for (const row of versions.data ?? []) {
+    if (row?.id) payloadById.set(String(row.id), (row as any).payload ?? null);
+  }
+
+  const out: DreamMapLatestRow[] = [];
+  for (const row of latestRows) {
+    out.push({
+      session_id: row.session_id,
+      user_id: row.user_id,
+      dream_map_version_id: row.dream_map_version_id,
+      updated_at: row.updated_at,
+      payload: payloadById.get(row.dream_map_version_id) ?? null,
+    });
+  }
+  return out;
+}
+
 export async function jobBackfillArchetypeMissing(args: {
   supabase: SupabaseClient;
   options: ArchetypeBackfillOptions;
@@ -70,8 +127,10 @@ export async function jobBackfillArchetypeMissing(args: {
   const dryRun = Boolean(options.dry_run);
 
   const filters = resolveScopeFilters(options.scope);
-  const rows = await listDreamMapLatestWithPayload(supabase, {
-    ...filters,
+  const rows = await listDreamMapLatestRows(supabase, {
+    user_id: filters.user_id,
+    since: filters.since,
+    until: filters.until,
     limit,
     offset,
   });
@@ -97,34 +156,15 @@ export async function jobBackfillArchetypeMissing(args: {
     result.eligible += 1;
     if (dryRun) continue;
 
-    try {
-      const event = await createDomainEvent(supabase, {
-        user_id: row.user_id,
+    // Dream-map build runtime is removed; keep archetype backfill callable while
+    // explicitly treating each eligible row as skipped in this transitional phase.
+    result.skipped += 1;
+    if (result.error_samples.length < 10) {
+      result.error_samples.push({
         session_id: row.session_id,
-        type: "backfill_archetype",
-        payload: { source: "backfill_archetype", dream_map_version_id: row.dream_map_version_id },
+        user_id: row.user_id,
+        message: "dream_map_runtime_removed",
       });
-
-      const material_hash = sha256(`${BACKFILL_MATERIAL_PREFIX}:${row.dream_map_version_id}`);
-
-      const run = await jobBuildDreamMapV0({
-        supabase,
-        event: { id: event.id, user_id: row.user_id, session_id: row.session_id },
-        material_hash,
-        algo_version_override: options.algo_version_override,
-      });
-
-      if (run.skipped) result.skipped += 1;
-      else result.ran += 1;
-    } catch (err: any) {
-      result.errors += 1;
-      if (result.error_samples.length < 10) {
-        result.error_samples.push({
-          session_id: row.session_id,
-          user_id: row.user_id,
-          message: err?.message ?? "backfill_archetype_failed",
-        });
-      }
     }
   }
 

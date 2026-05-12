@@ -8,7 +8,6 @@ import { jobExtractObservation } from "@/src/orchestration/jobs/jobExtractObserv
 import { ensureAnchorsRanked } from "@/src/orchestration/ensureAnchorsRanked";
 import { jobBuildSessionIndexFromObservationJob } from "@/src/orchestration/jobs/jobBuildSessionIndexFromObservation";
 import { jobUpdateLatent } from "@/src/orchestration/jobs/jobUpdateLatent";
-import { jobBuildDreamMapV0 } from "@/src/orchestration/jobs/jobBuildDreamMapV0";
 import { jobGenerateFrame } from "@/src/orchestration/jobs/jobGenerateFrame";
 import {
   fetchAnchorLatestWithPayloadAndId,
@@ -17,7 +16,6 @@ import {
   fetchObservationLatestV0WithPayloadAndId,
   fetchSessionIndexLatestWithPayloadAndId,
 } from "@/src/db/repositories/latestRepo";
-import { fetchDreamMapLatest } from "@/src/db/repositories/dreamMapRepo";
 
 type EnsureBody = {
   session_id: string;
@@ -92,7 +90,6 @@ export async function POST(req: Request) {
     const runSessionIndex = !isGuest && body.run?.session_index !== false;
     const runLatent = !isGuest && body.run?.latent !== false;
     const runFrame = body.run?.frame !== false;
-    const runDreamMap = !isGuest && body.run?.dream_map !== false;
 
     // -------------------------------------------------------------------------
     // Validate session ownership
@@ -194,6 +191,7 @@ export async function POST(req: Request) {
     let session_index_version_id: string | null = null;
     let latent_version_id: string | null = null;
     let frame_version_id: string | null = null;
+    // Response compatibility field; dream-map execution is decoupled from ensure.
     let dream_map_version_id: string | null = null;
     let recommended_directions: Array<{ slug: string; title: string; why: string }> = [];
 
@@ -301,32 +299,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // -------------------------------------------------------------------------
-    // Dream map (anchors utĂˇn, frame elĹ‘tt)
-    // -------------------------------------------------------------------------
-    if (runDreamMap) {
-      const dreamMapRes = await jobBuildDreamMapV0({
-        supabase,
-        event: { id: eventId, user_id, session_id },
-        material_hash,
-      });
-      dream_map_version_id = dreamMapRes.dream_map_version_id;
-    } else {
-      const latest = await fetchDreamMapLatest(supabase, { session_id, user_id });
-      dream_map_version_id = latest?.dream_map_version_id ?? null;
-    }
-
-    if (!dream_map_version_id) {
-      const latest = await fetchDreamMapLatest(supabase, { session_id, user_id });
-      dream_map_version_id = latest?.dream_map_version_id ?? null;
-      if (!dream_map_version_id) {
-        warnCoreFlowContract("dream_map", "missing_dream_map_latest", {
-          session_id,
-          runDreamMap,
-          isGuest,
-        });
-      }
-    }
+    // Dream-map execution intentionally removed from ensure default path.
 
     // -------------------------------------------------------------------------
     // Frame (guestben is fut, latent nélkül is fallbackolhat)

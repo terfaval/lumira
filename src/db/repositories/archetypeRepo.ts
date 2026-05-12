@@ -1,7 +1,8 @@
 // src/db/repositories/archetypeRepo.ts
 import { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeBaseKey } from "@/src/domain/archetypes/normalizeBaseKey";
-import type { DreamMapArchetypeDomain } from "@/src/domain/dreammap/types";
+
+export type ArchetypeDomain = "people" | "places" | "objects" | "symbols" | "actions" | "states" | "unknown";
 
 export type ArchetypeTermRow = {
   id: string;
@@ -39,7 +40,7 @@ export async function upsertArchetypeTerm(
   supabase: SupabaseClient,
   args: {
     user_id: string;
-    domain: DreamMapArchetypeDomain;
+    domain: ArchetypeDomain;
     canonical_key: string;
     canonical_label: string;
     alias_keys?: string[] | null;
@@ -77,7 +78,7 @@ export async function upsertArchetypeTerm(
 
 export async function mergeAliasIntoArchetypeTerm(
   supabase: SupabaseClient,
-  args: { user_id: string; domain: DreamMapArchetypeDomain; canonical_key: string; alias_key: string }
+  args: { user_id: string; domain: ArchetypeDomain; canonical_key: string; alias_key: string }
 ) {
   const canonical_key = normalizeBaseKey(args.canonical_key);
   const alias_key = normalizeBaseKey(args.alias_key);

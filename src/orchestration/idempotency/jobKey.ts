@@ -3,7 +3,6 @@ export type JobType =
   | "extract_observation"
   | "extract_anchors"
   | "build_session_index"
-  | "build_dream_map_v0"
   | "update_latent"
   | "generate_frame";
 

@@ -18,3 +18,6 @@
 - `/evening/cards` – esti kártya katalógus.
 - `/evening/card/[slug]` – kártya előnézet.
 - `/evening/run/[slug]` – lépés-alapú kártyafuttatás, kilépés a katalógusra.
+## Alpha-disabled surfaces
+- `/dreammap` - disabled for alpha (returns not found).
+- `/admin/dreammap/backfill` - disabled for alpha (returns not found).

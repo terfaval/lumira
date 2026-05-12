@@ -54,10 +54,8 @@ export default function AdminIndexPage() {
       <div className="stack" style={{ width: "100%" }}>
         <GlassCardSurface className="stack" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
           <div className="stack-tight">
-            <p className="section-title">Admin k√∂zpont</p>
-            <p style={{ color: "var(--text-muted)" }}>
-              Innen √©red el az admin aloldalakat.
-            </p>
+            <p className="section-title">Admin kˆzpont</p>
+            <p style={{ color: "var(--text-muted)" }}>Innen Èred el az admin aloldalakat.</p>
           </div>
 
           <div
@@ -77,25 +75,9 @@ export default function AdminIndexPage() {
               }}
             >
               <strong>Archetype queue</strong>
-              <p style={{ color: "var(--text-muted)" }}>Queue elemek list√°z√°sa √©s admin m≈±veletek.</p>
+              <p style={{ color: "var(--text-muted)" }}>Queue elemek list·z·sa Ès admin m˚veletek.</p>
               <Link href="/admin/archetypes" className="btn btn-primary">
-                Megnyit√°s
-              </Link>
-            </div>
-
-            <div
-              className="stack-tight"
-              style={{
-                padding: "var(--space-3)",
-                borderRadius: 12,
-                border: "1px solid var(--card-border)",
-                background: "var(--card-inner)",
-              }}
-            >
-              <strong>Dream map backfill</strong>
-              <p style={{ color: "var(--text-muted)" }}>Hi√°nyz√≥ dream map-ek admin backfillje.</p>
-              <Link href="/admin/dreammap/backfill" className="btn btn-primary">
-                Megnyit√°s
+                Megnyit·s
               </Link>
             </div>
           </div>
