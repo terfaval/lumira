@@ -1,4 +1,4 @@
-// /app/admin/page.tsx
+Ôªø// /app/admin/page.tsx
 "use client";
 
 import Link from "next/link";
@@ -54,8 +54,8 @@ export default function AdminIndexPage() {
       <div className="stack" style={{ width: "100%" }}>
         <GlassCardSurface className="stack" style={{ padding: "var(--space-3)" }} variant="flat" paper="evening">
           <div className="stack-tight">
-            <p className="section-title">Admin kˆzpont</p>
-            <p style={{ color: "var(--text-muted)" }}>Innen Èred el az admin aloldalakat.</p>
+            <p className="section-title">Admin k√∂zpont</p>
+            <p style={{ color: "var(--text-muted)" }}>Innen √©red el az admin aloldalakat.</p>
           </div>
 
           <div
@@ -75,9 +75,9 @@ export default function AdminIndexPage() {
               }}
             >
               <strong>Archetype queue</strong>
-              <p style={{ color: "var(--text-muted)" }}>Queue elemek list·z·sa Ès admin m˚veletek.</p>
+              <p style={{ color: "var(--text-muted)" }}>Queue elemek list√°z√°sa √©s admin m≈±veletek.</p>
               <Link href="/admin/archetypes" className="btn btn-primary">
-                Megnyit·s
+                Megnyit√°s
               </Link>
             </div>
           </div>
@@ -86,3 +86,4 @@ export default function AdminIndexPage() {
     </Shell>
   );
 }
+
