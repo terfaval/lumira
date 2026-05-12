@@ -4,7 +4,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GlassCardMatte, GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
@@ -12,7 +11,6 @@ import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay"
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
 import { anchorKey } from "@/src/lib/dream/anchorKey";
-import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
 import { allowGlossaryAccess, GLOSSARY_GATE_THRESHOLD } from "@/src/lib/glossary/gate";
 
 type GlossaryItem = {
@@ -36,12 +34,11 @@ type GlossaryNoteRow = {
 };
 
 export default function GlossaryPage() {
-  const router = useRouter();
   // ensure the user is authenticated; will redirect to login otherwise
   const { loading } = useRequireAuth();
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [adminChecked, setAdminChecked] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   const [items, setItems] = useState<GlossaryItem[]>([]);
   const [suggestions, setSuggestions] = useState<TermCandidate[]>([]);
@@ -68,7 +65,7 @@ export default function GlossaryPage() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [sortOption, setSortOption] = useState<string>("created_desc");
 
-  // admin-only: resolve user id and gate to /404
+  // resolve authenticated user id for write actions
   useEffect(() => {
     if (loading) return;
 
@@ -78,24 +75,14 @@ export default function GlossaryPage() {
       if (cancelled) return;
 
       const uid = data?.user?.id ?? null;
-      if (error || !uid) {
-        router.replace("/404");
-        return;
-      }
-
-      if (!isGlossaryAdmin(uid)) {
-        router.replace("/404");
-        return;
-      }
-
-      setUserId(uid);
-      setAdminChecked(true);
+      if (!error && uid) setUserId(uid);
+      setAuthChecked(true);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [loading, router]);
+  }, [loading]);
 
   async function loadItems() {
     setBusy(true);
@@ -162,8 +149,8 @@ export default function GlossaryPage() {
   }
 
   useEffect(() => {
-    // only load after admin gate resolved
-    if (!loading && adminChecked) {
+    // only load after auth check resolved
+    if (!loading && authChecked) {
       const timer = window.setTimeout(() => {
         void loadItems();
         void loadSuggestions();
@@ -171,7 +158,7 @@ export default function GlossaryPage() {
 
       return () => window.clearTimeout(timer);
     }
-  }, [loading, adminChecked]);
+  }, [loading, authChecked]);
 
   function resetForm() {
     setNewName("");
@@ -403,8 +390,8 @@ export default function GlossaryPage() {
     return suggestions.slice(0, 4);
   }, [suggestions]);
 
-  // while admin gate is being resolved, render nothing (prevents flicker)
-  if (!loading && !adminChecked) {
+  // while auth state is being resolved, render nothing (prevents flicker)
+  if (!loading && !authChecked) {
     return <FullScreenLoadingOverlay open />;
   }
 

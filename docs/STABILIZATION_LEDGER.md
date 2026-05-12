@@ -16,6 +16,88 @@ Prepare Lumira for public alpha by stabilizing:
 
 ## Completed Tickets
 
+### Shared entry-highlight client mutation helper (build)
+Date: 2026-05-12
+Commit: N/A (working tree update)
+Summary:
+Extracted duplicated client-side `dream_entry_highlights` mutation behavior from summary and highlights flow pages into one shared helper, while preserving existing runtime semantics (direct Supabase page-side mutations, rejection clear on accept, and best-effort glossary indexing with `allowCreate: false`).
+Files touched:
+- `src/domain/highlights/entryHighlightClientMutations.ts` (new)
+- `app/session/[id]/summary/page.tsx`
+- `app/session/[id]/(flow)/highlights/page.tsx`
+- `docs/STABILIZATION_LEDGER.md`
+Validation:
+- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation and it passed.
+- `npm.cmd run lint` (escalated) failed due existing repo-wide lint backlog (`2848 problems: 2646 errors, 202 warnings`, many from `.worktrees` and unrelated files); no ticket-specific lint regression identified.
+- Manual runtime verification not completed in this environment.
+Follow-up:
+- Session-highlight API contract hardening remains separate.
+- Keep dual highlight-table contract and glossary candidate policy unchanged in this slice.
+
+### Highlight data contract tightening (audit/plan)
+Date: 2026-05-12
+Commit: N/A (working tree update)
+Summary:
+Produced an evidence-based highlight runtime contract audit covering ownership boundaries, mutation-path duplication, coupling classification, and a smallest-safe stabilization BUILD recommendation without changing runtime behavior.
+Files touched:
+- `docs/audits/highlight-data-contract-tightening.md`
+- `docs/STABILIZATION_LEDGER.md`
+Validation:
+- Audit/plan-only highlight contract ticket.
+- Runtime evidence collected via targeted `rg` searches across routes, APIs, components, and domain helpers.
+- No runtime code, DB schema, or migration changes were made.
+Follow-up:
+- Recommended smallest-safe BUILD slice:
+  - `BUILD (small) — Shared client mutation helper for entry-highlight add/edit/create + rejection-clear`
+- Keep highlight table dual-model and glossary couplings unchanged during this slice.
+
+### Open glossary pages to authenticated users (build)
+Date: 2026-05-12
+Commit: N/A (working tree update)
+Summary:
+Removed page-level glossary admin gating so `/glossary` and `/glossary/suggestions` are accessible to authenticated users, while preserving `useRequireAuth`, existing glossary threshold gate behavior, and current API boundaries.
+Files touched:
+- `app/glossary/page.tsx`
+- `app/glossary/suggestions/page.tsx`
+- `docs/STABILIZATION_LEDGER.md`
+Validation:
+- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation and it passed.
+- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation and it failed due existing repo-wide lint backlog (`2848 problems: 2646 errors, 202 warnings`, including `.worktrees` paths), not from this ticket scope.
+- Manual runtime validation not completed in this environment.
+Follow-up:
+- Highlight data contract tightening remains a separate ticket.
+- Glossary API admin gates are unchanged in this slice (`/api/glossary/backfill-candidates` remains admin-only; `/api/glossary/backfill-occurrences` remains authenticated + owner-scoped).
+
+### Highlight contract + glossary access gate (audit/plan)
+Date: 2026-05-12
+Commit: N/A (working tree update)
+Summary:
+Documented an implementation-ready alpha contract for dual highlight storage (`dream_entry_highlights` vs `dream_session_highlights`) and glossary access gating, including explicit route/API access classifications and a smallest safe next BUILD slice.
+Files touched:
+- `docs/plans/highlight-contract-glossary-access-gate.md`
+- `docs/STABILIZATION_LEDGER.md`
+Validation:
+- Planning-only highlight contract + glossary access gate ticket.
+- No runtime code, DB schema, or migration changes were made.
+Follow-up:
+- Execute next small BUILD:
+  - `BUILD — Open Glossary Pages To Authenticated Users`
+  - Scope limited to removing admin-only page gating on `/glossary` and `/glossary/suggestions` while preserving authenticated access and existing glossary/highlight behavior.
+
+### Summary + highlights + glossary alpha boundary (audit/plan)
+Date: 2026-05-12
+Commit: N/A (working tree update)
+Summary:
+Defined the alpha boundary for summary, highlights, glossary, candidate policy, and glossary-in-work usage, with explicit KEEP/SIMPLIFY/DEFER/POST-ALPHA/UNCLEAR classification and file-level runtime evidence.
+Files touched:
+- `docs/plans/summary-highlights-glossary-alpha-boundary.md`
+- `docs/STABILIZATION_LEDGER.md`
+Validation:
+- Planning-only summary/highlights/glossary boundary ticket.
+- No runtime code, DB schema, or migration changes were made.
+Follow-up:
+- Execute boundary follow-up tickets for glossary access gating decision, highlight data contract tightening, and summary/highlights mutation-path simplification.
+
 ### Remove remaining dream-map runtime APIs/jobs/repos/domain layers (cleanup/build)
 Date: 2026-05-12
 Commit: N/A (working tree update)

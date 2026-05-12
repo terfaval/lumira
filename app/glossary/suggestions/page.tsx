@@ -5,14 +5,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Shell } from "@/components/Shell";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { GlassCardSurface } from "@/components/GlassCardSurface/GlassCardSurface";
 import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { supabase } from "@/src/lib/supabase/client";
 import { useRequireAuth } from "@/src/hooks/useRequireAuth";
-import { isGlossaryAdmin } from "@/src/lib/auth/adminAllowlist";
 
 type TermCandidate = {
   id: string;
@@ -23,12 +21,11 @@ type TermCandidate = {
 };
 
 export default function SuggestionsPage() {
-  const router = useRouter();
   // require authentication - will redirect to login if not logged in
   const { loading } = useRequireAuth();
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [adminChecked, setAdminChecked] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   const [items, setItems] = useState<TermCandidate[]>([]);
   const [busy, setBusy] = useState(false);
@@ -41,7 +38,7 @@ export default function SuggestionsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState("");
 
-  // admin-only gate
+  // resolve authenticated user id for write actions
   useEffect(() => {
     if (loading) return;
 
@@ -51,33 +48,24 @@ export default function SuggestionsPage() {
       if (cancelled) return;
 
       const uid = data?.user?.id ?? null;
-      if (error || !uid) {
-        router.replace("/404");
-        return;
-      }
-      if (!isGlossaryAdmin(uid)) {
-        router.replace("/404");
-        return;
-      }
-
-      setUserId(uid);
-      setAdminChecked(true);
+      if (!error && uid) setUserId(uid);
+      setAuthChecked(true);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [loading, router]);
+  }, [loading]);
 
   useEffect(() => {
-    if (!loading && adminChecked) {
+    if (!loading && authChecked) {
       const timer = window.setTimeout(() => {
         void loadSuggestions();
       }, 0);
 
       return () => window.clearTimeout(timer);
     }
-  }, [loading, adminChecked]);
+  }, [loading, authChecked]);
 
   async function loadSuggestions() {
     setBusy(true);
@@ -188,8 +176,8 @@ export default function SuggestionsPage() {
     setBusy(false);
   }
 
-  // while gate resolves, prevent flicker
-  if (!loading && !adminChecked) {
+  // while auth state resolves, prevent flicker
+  if (!loading && !authChecked) {
     return <FullScreenLoadingOverlay open />;
   }
 

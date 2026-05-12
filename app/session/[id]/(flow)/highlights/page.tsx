@@ -11,8 +11,13 @@ import {
   type HighlightKind,
   type HighlightSuggestion,
 } from "@/src/domain/highlights/aggregateSessionSuggestions";
-import { indexGlossaryFromHighlight } from "@/src/domain/glossary/indexGlossaryFromHighlight";
 import { pinHighlightToLexikon } from "@/src/domain/glossary/pinHighlightToLexikon";
+import {
+  bestEffortIndexHighlightInGlossary,
+  clearRejectedSuggestionForUser,
+  insertEntryHighlightFromLabel,
+  updateEntryHighlightFromClient,
+} from "@/src/domain/highlights/entryHighlightClientMutations";
 import styles from "./highlights.module.css";
 
 type EntryHighlight = {
@@ -43,35 +48,6 @@ function highlightKindFromCategory(raw: unknown): HighlightKind {
     default:
       return "other";
   }
-}
-
-function categoryFromKind(raw: HighlightKind): string {
-  switch (raw) {
-    case "person":
-      return "character";
-    case "place":
-      return "place";
-    case "object":
-      return "object";
-    case "action":
-    case "theme":
-      return "beat";
-    case "feeling":
-      return "felt_word";
-    default:
-      return "felt_word";
-  }
-}
-
-function findFirstMatch(text: string, label: string): { start: number; end: number; snippet: string } | null {
-  const cleanLabel = label.trim();
-  if (!cleanLabel) return null;
-  const hay = text.toLowerCase();
-  const needle = cleanLabel.toLowerCase();
-  const start = hay.indexOf(needle);
-  if (start === -1) return null;
-  const end = start + cleanLabel.length;
-  return { start, end, snippet: text.slice(start, end) };
 }
 
 export default function HighlightsStep() {
@@ -333,56 +309,33 @@ export default function HighlightsStep() {
         onPinToGlossary={handlePinToGlossary}
         allowLabelEdit={false}
         onAdd={async ({ suggestion, kind, note, glossaryTermId }) => {
-          const entryId = rawEntryId;
           const content = rawText ?? "";
-          if (!entryId || !content) throw new Error("Hiányzik a nyers álom szövege.");
-
-          const match = findFirstMatch(content, suggestion.label);
-          if (!match) throw new Error("Nem találom a szövegben ezt a részt.");
-
-          const uid = await requireUserId();
-          const category = categoryFromKind(normalizeKind(kind));
-
-          const { data, error } = await supabase
-            .from("dream_entry_highlights")
-            .insert({
-              user_id: uid,
-              session_id: sessionId,
-              entry_id: entryId,
-              start_offset: match.start,
-              end_offset: match.end,
-              text: match.snippet,
-              category,
-              note: note ?? null,
-            })
-            .select("id, entry_id, start_offset, end_offset, text, category, note, glossary_term_id, created_at")
-            .maybeSingle();
-
-          if (error) throw new Error("Nem sikerült menteni a kiemelést.");
-          if (data) setEntryHighlights((prev) => [...prev, data as EntryHighlight]);
-
+          const { userId, inserted, match } = await insertEntryHighlightFromLabel({
+            supabase,
+            sessionId,
+            entryId: rawEntryId,
+            rawText: content,
+            label: suggestion.label,
+            kind: normalizeKind(kind),
+            note: note ?? null,
+            insertErrorMessage: "Nem sikerült menteni a kiemelést.",
+          });
+          setEntryHighlights((prev) => [...prev, inserted as EntryHighlight]);
           setRejectedKeys((prev) => prev.filter((k) => k !== suggestion.suggestion_key));
-          await supabase
-            .from("dream_session_rejected_suggestions")
-            .delete()
-            .eq("session_id", sessionId)
-            .eq("user_id", uid)
-            .eq("suggestion_key", suggestion.suggestion_key);
-
-          try {
-            await indexGlossaryFromHighlight({
-              supabase,
-              userId: uid,
-              sessionId,
-              label: match.snippet,
-              source: "user_note",
-              rawText: content,
-              glossaryTermId: glossaryTermId ?? null,
-              allowCreate: false,
-            });
-          } catch {
-            // best-effort only
-          }
+          await clearRejectedSuggestionForUser({
+            supabase,
+            sessionId,
+            userId,
+            suggestionKey: suggestion.suggestion_key,
+          });
+          await bestEffortIndexHighlightInGlossary({
+            supabase,
+            userId,
+            sessionId,
+            label: match.snippet,
+            rawText: content,
+            glossaryTermId: glossaryTermId ?? null,
+          });
         }}
         onReject={async (suggestionKey) => {
           const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/highlights/reject`, {
@@ -394,67 +347,37 @@ export default function HighlightsStep() {
           setRejectedKeys((prev) => (prev.includes(suggestionKey) ? prev : [...prev, suggestionKey]));
         }}
         onEdit={async (highlight) => {
-          const entryId = rawEntryId;
-          if (!entryId) throw new Error("Hiányzik a nyers álom.");
-          const uid = await requireUserId();
-          const category = categoryFromKind(normalizeKind(highlight.kind));
-          const note = highlight.note ?? null;
-
-          const { error } = await supabase
-            .from("dream_entry_highlights")
-            .update({ category, note })
-            .eq("id", highlight.id)
-            .eq("entry_id", entryId)
-            .eq("user_id", uid);
-
-          if (error) throw new Error("Nem sikerült frissíteni.");
-
+          const { update } = await updateEntryHighlightFromClient({
+            supabase,
+            highlightId: highlight.id,
+            entryId: rawEntryId,
+            kind: normalizeKind(highlight.kind),
+            note: highlight.note ?? null,
+          });
           setEntryHighlights((prev) =>
-            prev.map((h) => (h.id === highlight.id ? { ...h, category, note } : h))
+            prev.map((h) => (h.id === highlight.id ? { ...h, ...update } : h))
           );
         }}
         onCreateCustom={async (payload) => {
-          const entryId = rawEntryId;
           const content = rawText ?? "";
-          if (!entryId || !content) throw new Error("Hiányzik a nyers álom szövege.");
-
-          const match = findFirstMatch(content, payload.label);
-          if (!match) throw new Error("Nem találom a szövegben ezt a részt.");
-
-          const uid = await requireUserId();
-          const category = categoryFromKind(normalizeKind(payload.kind));
-
-          const { data, error } = await supabase
-            .from("dream_entry_highlights")
-            .insert({
-              user_id: uid,
-              session_id: sessionId,
-              entry_id: entryId,
-              start_offset: match.start,
-              end_offset: match.end,
-              text: match.snippet,
-              category,
-              note: payload.note ?? null,
-            })
-            .select("id, entry_id, start_offset, end_offset, text, category, note, glossary_term_id, created_at")
-            .maybeSingle();
-
-          if (error) throw new Error("Nem sikerült menteni a kiemelést.");
-          if (data) setEntryHighlights((prev) => [...prev, data as EntryHighlight]);
-
-          try {
-            await indexGlossaryFromHighlight({
-              supabase,
-              userId: uid,
-              sessionId,
-              label: match.snippet,
-              source: "user_note",
-              rawText: content,
-              allowCreate: false,
-            });
-          } catch {
-            // best-effort only
-          }
+          const { userId, inserted, match } = await insertEntryHighlightFromLabel({
+            supabase,
+            sessionId,
+            entryId: rawEntryId,
+            rawText: content,
+            label: payload.label,
+            kind: normalizeKind(payload.kind),
+            note: payload.note ?? null,
+            insertErrorMessage: "Nem sikerült menteni a kiemelést.",
+          });
+          setEntryHighlights((prev) => [...prev, inserted as EntryHighlight]);
+          await bestEffortIndexHighlightInGlossary({
+            supabase,
+            userId,
+            sessionId,
+            label: match.snippet,
+            rawText: content,
+          });
         }}
       />
     </div>
