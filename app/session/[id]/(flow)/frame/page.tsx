@@ -143,9 +143,18 @@ export default function FramePage() {
           pollRef.current.tries += 1;
           setBusy(true);
 
-          const res = await fetchWithAuth("/api/frame/ensure", {
+          const res = await fetchWithAuth("/api/session/ensure", {
             method: "POST",
-            json: { session_id: id, ...(opts?.force ? { force: true } : {}) },
+            json: {
+              session_id: id,
+              ...(opts?.force ? { force: true } : {}),
+              run: {
+                observe: true,
+                session_index: true,
+                latent: true,
+                frame: true,
+              },
+            },
           });
 
           await loadLatest(userId);

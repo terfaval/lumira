@@ -1,4 +1,4 @@
-# Alpha Runtime Truth Matrix
+ï»¿# Alpha Runtime Truth Matrix
 
 ## Purpose
 
@@ -6,7 +6,7 @@ Provide one evidence-based runtime map for the alpha core flow (`session -> obse
 
 ## Scope
 
-Included: auth/basic access, `/new`, `/session` + `/sessions` alias, `/session/[id]`, `/session/[id]/(flow)/frame`, `/session/[id]/(flow)/direction`, `/session/[id]/(flow)/work`, `/archive`, `/api/session/ensure`, `/api/frame/ensure`, `/api/frame`, `/api/session/bootstrap`, `/api/direction/select`, `/api/work-block/next`, `/api/work/answer`, `/api/session-summary` (currently active via summary page), and transitively touched DB/runtime layers.
+Included: auth/basic access, `/new`, `/session` + `/sessions` alias, `/session/[id]`, `/session/[id]/(flow)/frame`, `/session/[id]/(flow)/direction`, `/session/[id]/(flow)/work`, `/archive`, `/api/session/ensure`, `/api/direction/select`, `/api/work-block/next`, `/api/work/answer`, `/api/session-summary` (currently active via summary page), and transitively touched DB/runtime layers.
 
 Excluded unless coupled: dreammap product surfaces, glossary/highlights product surfaces, evening, image/background generation, admin backfills, non-core synth routes.
 
@@ -25,15 +25,14 @@ Excluded unless coupled: dreammap product surfaces, glossary/highlights product 
 | Auth/basic access gate | `/new`, `/archive`, `/sessions`, `/session/:path*`, `/api/:path*` | N/A (middleware/session) | Next proxy + Supabase auth | auth cookie/session via `supabase.auth.getUser()` | session refresh cookie side effects | KEEP | `proxy.ts:26-34`, `proxy.ts:9-24`; API routes enforce auth (`app/api/session/ensure/route.ts:44-49`, `app/api/work/answer/route.ts:41-44`) | High |
 | Create session + raw dream | `/new` | `POST /api/session/ensure` | page-side insert + ensure orchestrator | `dream_sessions` (ownership check), `dream_entries`, `dream_answers`, `user_prefs` | `dream_sessions`, `dream_entries`, then downstream ensure writes | KEEP | `app/new/NewClient.tsx:90`, `app/new/NewClient.tsx:99`, `app/new/NewClient.tsx:110`; ensure reads in `app/api/session/ensure/route.ts:101-128` | High |
 | Observe/index/latent/frame orchestration | indirectly from `/new`, `/frame`, `/direction`, `/work` | `POST /api/session/ensure` | `jobExtractObservation`, `jobBuildSessionIndexFromObservationJob`, `jobUpdateLatent`, `ensureAnchorsRanked`, `jobGenerateFrame` | `dream_entries`, `dream_answers`, `user_prefs`, latest pointers and versions | `material_snapshots`, `domain_events`, `domain_jobs`, `observation_*`, `session_index_*`, `latent_*`, `dream_anchor_*`, `frame_*` | KEEP | Orchestration and run flags in `app/api/session/ensure/route.ts:7-12`, `:93-99`, `:204-336`; repo table usage in `src/db/repositories/*Repo.ts` (observation/sessionIndex/latent/frame/anchor/material/event/job) | High |
-| Frame step UI | `/session/[id]/(flow)/frame` | `POST /api/frame/ensure` (delegates to ensure) | `fetchFrameLatestWithPayloadAndId`, `CatalogService`, `startDirection` | `frame_latest`, `frame_versions`, `direction_catalog` | none directly on page; direction selection writes later | KEEP | `app/session/[id]/(flow)/frame/page.tsx:17`, `:103-107`, `:146`; wrapper delegation `app/api/frame/ensure/route.ts:49-58` | High |
+| Frame step UI | `/session/[id]/(flow)/frame` | `POST /api/session/ensure` (direct call with run flags) | `fetchFrameLatestWithPayloadAndId`, `CatalogService`, `startDirection` | `frame_latest`, `frame_versions`, `direction_catalog` | none directly on page; direction selection writes later | KEEP | direct ensure caller `app/session/[id]/(flow)/frame/page.tsx:146-156`; ensure run flags evaluated in `app/api/session/ensure/route.ts:92-93` | High |
 | Direction step UI + selection | `/session/[id]/(flow)/direction` | `POST /api/direction/select` (+ soft `POST /api/session/ensure` run.frame) | `CatalogService`, `fetchFrameLatestWithPayloadAndId`, `startDirection` | `session_directions`, `frame_latest/frame_versions`, `direction_catalog`, `dream_sessions` | `session_directions` insert | KEEP | Page reads/soft ensure `app/session/[id]/(flow)/direction/page.tsx:187-188`, `:208-212`; selector write path `app/api/direction/select/route.ts:34-52` | High |
 | Work card generation | `/session/[id]/(flow)/work` | `POST /api/work-block/next` | selector/composer/safety/stop, `ensureAnchorsRanked`, latest/catalog/ledger repos | `dream_sessions`, `dream_entries`, `observation_*`, `latent_*`, `dream_anchor_*`, `direction_catalog`, `work_versions`, `work_latest`, `dream_answers`, `work_question_ledger` | `work_versions`, `work_latest` | KEEP | UI call `app/session/[id]/(flow)/work/page.tsx:226`; API table ops `app/api/work-block/next/route.ts:553`, `:298-309`, `:337-383`, `:827-930`; repo deps imported at `:4-28` | High |
 | Save answer | `/session/[id]/(flow)/work` | `POST /api/work/answer` | answer handler + `insertLedgerEntry` | `dream_sessions`, `work_versions`, `dream_answers` | `dream_answers`, `work_question_ledger` | KEEP | UI call `app/session/[id]/(flow)/work/page.tsx:377`; API ops `app/api/work/answer/route.ts:63-104`, ledger `src/db/repositories/workQuestionLedgerRepo.ts:23-36` | High |
 | Revisit session detail | `/session/[id]` | none (page reads directly) | page-side Supabase queries | `dream_sessions`, `dream_entries`, `frame_latest`, `frame_versions`, `work_versions`, `dream_answers` | none | KEEP | `app/session/[id]/page.tsx:46-97` | High |
 | Minimal archive/session list | `/archive` and `/sessions` redirect | none (page reads directly) | `ArchiveClient` + `src/lib/archive.ts` | `dream_sessions`, `dream_entries`, `frame_latest`, `frame_versions`, `work_versions`, `dream_answers`, `direction_catalog` | none | KEEP | redirect `app/sessions/page.tsx:3-4`; archive reads `src/lib/archive.ts:107-188` | High |
 | Summary API (currently used, not core happy-path) | `/session/[id]/summary` | `GET /api/session-summary` | summary aggregator + `CatalogService` + latest repos | `dream_sessions`, `dream_entries`, `frame_*`, `latent_*`, `work_versions`, `dream_answers`, `session_directions`, `direction_catalog` | none | SIMPLIFY | caller `app/session/[id]/summary/page.tsx:369`; API reads `app/api/session-summary/route.ts:57-90` | Medium |
-| Legacy wrapper endpoint | no active UI caller found | `POST /api/frame` | wrapper to `/api/frame/ensure` | none itself | none itself | SIMPLIFY | Wrapper comment + delegate `app/api/frame/route.ts:3`, `:35`; no caller found except route file (`rg /api/frame`) | High |
-| Legacy bootstrap endpoint | no active UI caller found | `POST /api/session/bootstrap` | wrapper to `/api/session/ensure` | none itself | none itself | SIMPLIFY | Delegate `app/api/session/bootstrap/route.ts:52`; no UI caller found (`rg /api/session/bootstrap`) | High |
+| Removed wrapper endpoints (historical) | no active runtime caller | `/api/frame`, `/api/frame/ensure`, `/api/session/bootstrap` | wrappers removed from runtime | none | none | DEFER | wrapper-collapse BUILD slices completed on 2026-05-13; frame page now calls `/api/session/ensure` directly (`app/session/[id]/(flow)/frame/page.tsx:146-156`) | High |
 | Dream map job inside core ensure | indirectly touched from core flow | transitively via `POST /api/session/ensure` | `jobBuildDreamMapV0` | `dream_entries`, `dream_entry_highlights`, `dream_session_highlights`, glossary/archetype sources, latest pointers | `dream_map_versions`, `dream_map_latest`, `archetype_term_queue` (best-effort enqueue) | DEFERRED BUT COUPLED | ensure invokes job `app/api/session/ensure/route.ts:308`; job DB usage `src/orchestration/jobs/jobBuildDreamMapV0.ts:105`, `:132`, `:161`, `:447-474` | High |
 | Glossary/highlight indexing inside observation path | indirectly touched from core flow | transitively via `POST /api/session/ensure` | `indexGlossaryFromObservation` from observation job | `glossary_terms` | `term_candidates`, `glossary_occurrences` (best-effort) | DEFERRED BUT COUPLED | call in `src/orchestration/jobs/jobExtractObservation.ts:8`, `:68-81`; table ops in `src/domain/glossary/indexGlossaryFromObservation.ts:31-33`, `:54-66` | High |
 | Guest flag branch in ensure | not user-visible in core flow UI, but active in orchestrator | `POST /api/session/ensure` | `user_flags` check controls run flags | `user_flags` | none in this route | UNCLEAR | `app/api/session/ensure/route.ts:78-81`, run toggles `:87-99`; migrations show policy for `user_flags` but no create-table in scanned set (`supabase/migrations/20260204_0001_admin_backfill_rls.sql:142-144`) | Medium |
@@ -51,9 +50,12 @@ Excluded unless coupled: dreammap product surfaces, glossary/highlights product 
 
 ## Wrapper / Duplicate Layers
 
-- `/api/frame` delegates to `/api/frame/ensure`; active caller not found in current UI; safe simplification candidate later because it is wrapper-only (`app/api/frame/route.ts:3`, `:35`).
-- `/api/frame/ensure` delegates to `/api/session/ensure` with run flags; active caller exists from frame page; likely keep for alpha then simplify when clients call ensure directly (`app/session/[id]/(flow)/frame/page.tsx:146`, `app/api/frame/ensure/route.ts:49-58`).
-- `/api/session/bootstrap` delegates to `/api/session/ensure`; active caller not found; safe simplification candidate later (`app/api/session/bootstrap/route.ts:52`).
+- Wrapper collapse is complete for runtime entrypoints:
+  - removed `/api/frame`
+  - removed `/api/frame/ensure`
+  - removed `/api/session/bootstrap`
+- Canonical orchestration endpoint is `/api/session/ensure`.
+- Frame page now calls `/api/session/ensure` directly with run flags (`app/session/[id]/(flow)/frame/page.tsx:146-156`).
 
 ## Deferred But Coupled Areas
 
@@ -89,7 +91,7 @@ Excluded unless coupled: dreammap product surfaces, glossary/highlights product 
 - `domain_events` (best-effort logging in ensure; does not gate response success)
 - `work_question_ledger` (used for novelty/duplication behavior; useful but could be simplified later)
 - `user_prefs` (read for material hash and model behavior; can fallback when missing)
-- `/api/frame` and `/api/session/bootstrap` wrappers indicate API-layer transitional duplication
+- wrapper-layer duplication removed from active runtime path (historical references remain in planning/audit docs)
 
 ## Tables Deferred For Alpha
 
@@ -110,7 +112,7 @@ Excluded unless coupled: dreammap product surfaces, glossary/highlights product 
 ## Risks
 
 - Core ensure currently over-couples to deferred domains (dream map + glossary indexing), increasing alpha fragility even if those features are not user-critical.
-- Wrapper endpoint duplication (`/api/frame`, `/api/frame/ensure`, `/api/session/bootstrap`) can hide true runtime entrypoints and raise cleanup risk.
+- Stale documentation that still treats removed wrappers as active can mislead cleanup and validation work.
 - Direct page-level Supabase reads plus API-based orchestration means truth is split across multiple layers; cleanup can accidentally remove a table still read directly by UI.
 - `user_flags` schema certainty gap is a migration/runtime consistency risk.
 
@@ -124,8 +126,10 @@ Excluded unless coupled: dreammap product surfaces, glossary/highlights product 
 
 ## Recommended Next Tickets
 
-1. `AUDIT/PLAN — Ensure De-coupling Contract`: define exact `session.ensure` run profile for alpha (core-required jobs only) and explicit deferred jobs.
-2. `AUDIT — Table Truth vs Migrations`: resolve `user_flags` and other runtime-vs-DDL mismatches with a table-by-table manifest (no schema change yet).
-3. `AUDIT/PLAN — Wrapper Collapse Sequence`: plan safe consolidation of `/api/frame`, `/api/frame/ensure`, `/api/session/bootstrap` onto one canonical entrypoint.
-4. `BUILD (controlled) — Alpha Ensure Run-Flag Gate`: implement owner-approved decoupling flags for dream-map/glossary sidecars without touching core flow contracts.
-5. `BUILD (controlled) — Alpha Manual Runtime Validation`: execute end-to-end manual checks for `session -> observe -> frame -> direction -> work -> answer -> revisit` after decoupling.
+1. `AUDIT/PLAN â€” Ensure De-coupling Contract`: define exact `session.ensure` run profile for alpha (core-required jobs only) and explicit deferred jobs.
+2. `AUDIT â€” Table Truth vs Migrations`: resolve `user_flags` and other runtime-vs-DDL mismatches with a table-by-table manifest (no schema change yet).
+3. `DOCS - Runtime Truth Refresh`: update active runtime docs when endpoint ownership changes to keep canonical caller maps current.
+4. `BUILD (controlled) - Alpha Ensure Run-Flag Gate`: implement owner-approved decoupling flags for dream-map/glossary sidecars without touching core flow contracts.
+5. `BUILD (controlled) - Alpha Manual Runtime Validation`: execute end-to-end manual checks for `session -> observe -> frame -> direction -> work -> answer -> revisit` after decoupling.
+
+

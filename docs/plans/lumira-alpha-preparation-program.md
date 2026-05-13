@@ -1,5 +1,13 @@
 # Lumira Alpha Preparation Program
 
+## Status
+
+Historical planning baseline. Runtime wrapper collapse is completed as of 2026-05-13:
+- removed `/api/frame`
+- removed `/api/session/bootstrap`
+- removed `/api/frame/ensure`
+- frame page now calls `/api/session/ensure` directly
+
 ## Purpose
 
 Define one phased, execution-safe program for preparing Lumira for public alpha using small, reviewable tickets with explicit dependencies, owner decisions, and validation gates.
@@ -11,7 +19,7 @@ Lumira has a strong evidence base across runtime audits, contract audits, and co
 Current known state:
 - Core flow is active and evidence-mapped (`session -> observe -> frame -> direction -> work -> answer -> revisit`).
 - Observation runtime truth for alpha remains ensure-based and v0-centric (D5).
-- Key contract and coupling risks are identified (answer contract drift, ensure over-coupling, wrapper duplication, table/runtime drift).
+- Key contract and coupling risks are identified (answer contract drift, ensure over-coupling, table/runtime drift).
 - Conceptual post-alpha direction is documented (`docs/specs/lumira-core-model-reframe.md`) but must not destabilize alpha cleanup.
 
 All required planning inputs were available at planning time; no required source file was missing.
@@ -46,7 +54,7 @@ All required planning inputs were available at planning time; no required source
 
 ### Transitional / needs cleanup
 
-- Wrapper/delegate API duplication (`/api/frame`, `/api/frame/ensure`, `/api/session/bootstrap`).
+- Wrapper/delegate API duplication cleanup is completed; `/api/session/ensure` is canonical orchestration.
 - Ensure-side coupling to deferred domains (dream map/glossary side-effects).
 - Runtime-vs-migration drift risk (`user_flags` and other potential gaps).
 - Answer naming transition (`work_id/content` vs canonical target naming).

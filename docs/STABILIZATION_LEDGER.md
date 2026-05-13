@@ -16,6 +16,158 @@ Prepare Lumira for public alpha by stabilizing:
 
 ## Completed Tickets
 
+### Runtime docs refresh after wrapper collapse (docs)
+Date: 2026-05-13
+Commit: N/A (working tree update)
+Summary:
+Refreshed active runtime/planning docs so removed wrapper endpoints are no longer presented as active runtime paths. Confirmed `/api/session/ensure` as canonical orchestration endpoint and direct frame-page caller path.
+Files touched:
+- `docs/plans/wrapper-collapse-sequence.md`
+- `docs/audits/alpha-runtime-truth-matrix.md`
+- `docs/plans/lumira-alpha-preparation-program.md`
+- `docs/STABILIZATION_LEDGER.md`
+Validation:
+- Docs search run before and after updates:
+  - `rg -n "/api/frame|api/frame|frame/ensure|session/bootstrap|bootstrap wrapper|frame wrapper" docs ROUTE_MAP.md README.md AGENTS.md --glob "!**/.next/**"`
+- Remaining references are historical ledger/audit/planning context or explicit removed-wrapper notes.
+- No runtime code changes and no DB/schema changes.
+Follow-up:
+- Optional next docs slice: annotate older audit docs (`runtime-current-flow-audit`, `observation-pathway-convergence-audit`, `target-v0-migration-plan`) with a short "historical snapshot" note to reduce future reader confusion.
+
+### Collapse `/api/frame/ensure` into `/api/session/ensure` caller (build)
+Date: 2026-05-13
+Commit: N/A (working tree update)
+Summary:
+Collapsed the final frame adapter layer by moving frame-page ensure calls directly to `/api/session/ensure` with equivalent run-flag intent, then removed `/api/frame/ensure`.
+Files touched:
+- Updated:
+  - `app/session/[id]/(flow)/frame/page.tsx`
+  - `docs/STABILIZATION_LEDGER.md`
+- Removed:
+  - `app/api/frame/ensure/route.ts`
+Validation:
+- Pre-change caller search:
+  - `rg -n "/api/frame/ensure|frame/ensure|runFrame|run_frame|session/ensure" app components src docs --glob "!**/.next/**"`
+  - Result: frame page was the only active runtime caller of `/api/frame/ensure`; canonical `/api/session/ensure` callers remained active.
+- Post-change caller search:
+  - `rg -n "/api/frame/ensure|frame/ensure|runFrame|run_frame|session/ensure" app components src docs --glob "!**/.next/**"`
+  - Result: no runtime code callers remained for `/api/frame/ensure`; frame page now calls `/api/session/ensure` directly.
+- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
+- `npm.cmd run typecheck` (escalated) passed.
+- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
+- `npm.cmd run lint` (escalated) failed due existing repo-wide lint backlog (`2841 problems: 2639 errors, 202 warnings`, many under `.worktrees` and unrelated files).
+Follow-up:
+- Wrapper collapse sequence for active runtime entrypoints is complete (`/api/frame`, `/api/session/bootstrap`, `/api/frame/ensure` removed).
+- Next stabilization slice should be a targeted docs/runtime-matrix refresh to remove now-stale wrapper references in audit/planning docs.
+
+### Remove /api/session/bootstrap wrapper endpoint (build)
+Date: 2026-05-13
+Commit: N/A (working tree update)
+Summary:
+Removed legacy wrapper route `/api/session/bootstrap` after caller audit confirmed no active in-repo runtime callers. Kept `/api/session/ensure` unchanged as canonical orchestration.
+Files touched:
+- Removed:
+  - `app/api/session/bootstrap/route.ts`
+- Updated:
+  - `docs/STABILIZATION_LEDGER.md`
+Validation:
+- Pre-delete caller search:
+  - `rg -n "/api/session/bootstrap|session/bootstrap|/api/session/ensure" app components src docs --glob "!**/.next/**"`
+  - Result: no active runtime caller for `/api/session/bootstrap`; active `/api/session/ensure` callers remained in `/new`, direction, work, and `/api/frame/ensure` delegation.
+- Post-delete caller search:
+  - `rg -n "/api/session/bootstrap|session/bootstrap|/api/session/ensure" app components src docs --glob "!**/.next/**"`
+  - Result: no runtime code references to `/api/session/bootstrap` remained; `/api/session/ensure` runtime callers remained active.
+- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
+- `npm.cmd run typecheck` (escalated) passed.
+- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
+- `npm.cmd run lint` (escalated) failed due existing repo-wide lint backlog (`2841 problems: 2639 errors, 202 warnings`, many under `.worktrees` and unrelated files).
+Follow-up:
+- Next wrapper-collapse slice: migrate frame page to `/api/session/ensure` run flags, then remove `/api/frame/ensure`.
+
+### Remove /api/frame wrapper endpoint (build)
+Date: 2026-05-13
+Commit: N/A (working tree update)
+Summary:
+Removed legacy wrapper route `/api/frame` after caller audit confirmed no active in-repo runtime callers. Kept `/api/frame/ensure` unchanged as the active frame-page adapter.
+Files touched:
+- Removed:
+  - `app/api/frame/route.ts`
+- Updated:
+  - `docs/STABILIZATION_LEDGER.md`
+Validation:
+- Pre-delete caller search:
+  - `rg -n "/api/frame|api/frame|frame/ensure" app components src docs --glob "!**/.next/**"`
+  - Result: no active runtime caller for `/api/frame`; active frame-page caller for `/api/frame/ensure` remained (`app/session/[id]/(flow)/frame/page.tsx:146`).
+- Post-delete caller search:
+  - `rg -n "/api/frame|api/frame|frame/ensure" app components src docs --glob "!**/.next/**"`
+  - Result: no runtime code references to `/api/frame` remained; `/api/frame/ensure` caller remained active.
+- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
+- First escalated typecheck failed due stale generated `.next/types/validator.ts` referencing deleted `app/api/frame/route.js`; removed only that generated validator file and reran.
+- `npm.cmd run typecheck` (escalated rerun) passed.
+- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
+- `npm.cmd run lint` (escalated) failed due existing repo-wide lint backlog (`2844 problems: 2642 errors, 202 warnings`, many under `.worktrees` and unrelated files).
+Follow-up:
+- Next wrapper-collapse slice: remove `/api/session/bootstrap` after the same caller-audit + validation pattern.
+
+### Wrapper collapse sequence plan (audit/plan)
+Date: 2026-05-13
+Commit: N/A (working tree update)
+Summary:
+Produced a phased wrapper-collapse plan for `/api/frame`, `/api/frame/ensure`, and `/api/session/bootstrap` with caller evidence, canonical endpoint ownership recommendation (`/api/session/ensure`), and slice-by-slice validation/rollback guidance.
+Files touched:
+- `docs/plans/wrapper-collapse-sequence.md`
+- `docs/STABILIZATION_LEDGER.md`
+Validation:
+- Plan-only ticket with caller/delegation evidence gathered from route files and `rg` caller searches.
+- No runtime code changes and no DB/schema changes.
+Follow-up:
+- First recommended build slice: remove `/api/frame` wrapper endpoint (no active in-repo callers), then validate core flow.
+
+### Minimal highlight/glossary schema contract patch (build)
+Date: 2026-05-12
+Commit: N/A (working tree update)
+Summary:
+Added one idempotent migration to close active alpha highlight/glossary schema-contract gaps: glossary compatibility columns selected by runtime, `glossary_notes.do_not_surface`, and owner-scoped update policy support for `dream_session_rejected_suggestions` upsert conflict path.
+Files touched:
+- `supabase/migrations/20260212_0001_highlight_glossary_schema_contract_patch.sql` (new)
+- `docs/STABILIZATION_LEDGER.md`
+Validation:
+- `npm.cmd run typecheck` attempted after migration patch.
+- No runtime code changes in this ticket; migration-only schema contract patch.
+Follow-up:
+- Broader DB rebuild/manifest cleanup remains separate.
+- This migration intentionally does not redesign or merge highlight tables.
+
+### Highlight DB schema gap audit (audit)
+Date: 2026-05-12
+Commit: N/A (working tree update)
+Summary:
+Audited highlight persistence schema readiness by mapping runtime usage against migrations for `dream_entry_highlights`, `dream_session_highlights`, `dream_session_rejected_suggestions`, and coupled glossary tables; identified concrete schema-contract gaps without changing runtime or DB.
+Files touched:
+- `docs/audits/highlight-db-schema-gap-audit.md`
+- `docs/STABILIZATION_LEDGER.md`
+Validation:
+- Audit-only ticket; evidence gathered via targeted runtime and migration searches.
+- No runtime code changes, no DB/schema changes, no migration changes.
+Follow-up:
+- Preferred next step: minimal schema-contract BUILD slice to close identified gaps (migration-chain glossary table availability, legacy glossary-term column contract vs runtime selects, and rejected-suggestion upsert policy sufficiency).
+
+### Session highlight API contract hardening (build)
+Date: 2026-05-12
+Commit: N/A (working tree update)
+Summary:
+Hardened `/api/sessions/[sessionId]/highlights` contract readability by centralizing normalized `dream_session_highlights` write payload construction, rejected-suggestion cleanup handling, and shared select field usage without changing GET/POST response shape or endpoint semantics.
+Files touched:
+- `app/api/sessions/[sessionId]/highlights/route.ts`
+- `docs/STABILIZATION_LEDGER.md`
+Validation:
+- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation and it passed.
+- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation and it failed due existing repo-wide lint backlog (`2845 problems: 2643 errors, 202 warnings`, many under `.worktrees` and unrelated files).
+- Manual runtime validation not completed in this environment.
+Follow-up:
+- Keep session-highlight UX and DB contract unchanged.
+- Next stabilization slice can focus on API helper reuse between highlight routes (`/highlights` and `/highlights/reject`) without behavior changes.
+
 ### Shared entry-highlight client mutation helper (build)
 Date: 2026-05-12
 Commit: N/A (working tree update)
