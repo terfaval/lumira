@@ -1,16 +1,24 @@
-// app/page.tsx
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
+import { createObservationRepository } from "@/src/infrastructure/supabase/repositories/create-observation-repository";
+import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
+import { composeHomepageOrientationPayload } from "@/src/reflective-space/composition/compose-homepage-orientation-payload";
+import { SessionControls } from "@/src/ui/auth/session-controls";
+import { HomepageOrientationHub } from "@/src/ui/homepage/homepage-orientation-hub";
+import { requireAuthenticatedUserId } from "@/src/ui/shared/require-authenticated-user";
 
-import { redirect } from "next/navigation";
-import { supabaseServer } from "@/src/lib/supabase/server";
-import { LandingPage } from "@/components/landing/LandingPage";
+export default async function HomePage() {
+  const userId = await requireAuthenticatedUserId();
+  const payload = await composeHomepageOrientationPayload({
+    userId,
+    reflectiveObjectRepository: createReflectiveObjectRepository(),
+    glossaryRepository: createGlossaryRepository(),
+    observationRepository: createObservationRepository(),
+  });
 
-export default async function Home() {
-  const supabase = await supabaseServer();
-  const { data } = await supabase.auth.getUser();
-
-  if (data.user) redirect("/new");
-
-  return <LandingPage />;
+  return (
+    <main>
+      <SessionControls />
+      <HomepageOrientationHub payload={payload} />
+    </main>
+  );
 }

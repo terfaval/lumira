@@ -1,9 +1,0 @@
-.wrap {
-  padding: var(--space-4);
-  display: flex;
-  justify-content: center;
-}
-
-.wrap > * {
-  width: min(520px, 100%);
-}

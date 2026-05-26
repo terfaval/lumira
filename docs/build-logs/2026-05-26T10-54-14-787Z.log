@@ -1,0 +1,36 @@
+# Build Run 2026-05-26T10-54-14-787Z
+timestamp: 2026-05-26T10:54:14.787Z
+command: C:\Program Files\nodejs\node.exe C:\mira\node_modules\next\dist\bin\next build
+status: failed
+exit_code: 1
+
+## stdout
+```txt
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 39.8s
+  Running TypeScript ...
+```
+
+## stderr
+```txt
+Failed to type check.
+
+./src/cognition/latent/latent-engine.ts:436:5
+Type error: Type '({ signalType: "recurrence_possibility"; label: string; description: string; confidenceBand: "low" | "tentative" | "moderate"; visibility: "reflective_space_optional"; provenance: LatentProvenance; } | { ...; } | { ...; } | { ...; })[]' is not assignable to type 'CreateLatentSignalInput[]'.
+  Type '{ signalType: "recurrence_possibility"; label: string; description: string; confidenceBand: "low" | "tentative" | "moderate"; visibility: "reflective_space_optional"; provenance: LatentProvenance; } | { ...; } | { ...; } | { ...; }' is not assignable to type 'CreateLatentSignalInput'.
+    Type '{ signalType: "dormant_thread_resurfacing_possibility"; label: string; description: string; confidenceBand: string; visibility: "reflective_space_optional"; provenance: LatentProvenance; }' is not assignable to type 'CreateLatentSignalInput'.
+      Types of property 'confidenceBand' are incompatible.
+        Type 'string' is not assignable to type '"low" | "tentative" | "moderate"'.
+
+  [90m434 |[0m [32m    visibility: "[0minternal_only[32m",[0m
+  [90m435 |[0m [32m    provenance,[0m
+[31m[1m>[0m [90m436 |[0m [32m    signals,[0m
+  [90m    |[0m     [31m[1m^[0m
+  [90m437 |[0m [32m    suggestions: safeSuggestions.map((suggestion) => ({[0m
+  [90m438 |[0m [32m      suggestionType: suggestion.suggestionType,[0m
+  [90m439 |[0m [32m      phrasing: suggestion.phrasing,[0m
+Next.js build worker exited with code: 1 and signal: null
+```

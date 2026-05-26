@@ -1,0 +1,15 @@
+# Build Run 2026-05-25T11-39-04-903Z
+timestamp: 2026-05-25T11:39:04.903Z
+command: npm.cmd run build:raw
+status: failed
+exit_code: 1
+
+## stdout
+```txt
+
+```
+
+## stderr
+```txt
+
+```

@@ -1,102 +1,52 @@
-# MIRA / Lumira
+# Lumira Clean-room Rebuild
 
-Lumira is a guided dream journaling and reflection app.
+Lumira is being rebuilt from first principles as a reflective-space-first system.
 
-It helps users capture dreams, revisit them over time, and explore them through calm, guided reflection flows.
+This repository is not a migration or legacy continuation.
+It is a new foundation around reflective continuity, bounded cognition, and thin routes.
 
-## Current Stage
+## Canonical Authority
 
-Lumira is currently in stabilization before public alpha.
+Use this order when making build decisions:
 
-The core experience is functional, but parts of the internal architecture are still being simplified and consolidated.
+1. `docs/canon/LUMIRA-CONSTITUTION-v1.md`
+2. `docs/canon/LUMIRA-MINIMAL-REFLECTIVE-RUNTIME-v1.md`
+3. `docs/canon/clean-room-technical-constitution.md`
+4. `docs/runtime/*`
+5. implementation files
 
-Current priority:
-- stabilize the core session flow
-- reduce legacy complexity
-- clarify canonical data ownership
-- prepare the system for early external testers
+If lower layers conflict with higher layers, higher layers win.
 
-## Product Principles
+## Repository Shape
 
-- Non-diagnostic
-- Non-interpretive
-- User-led reflection
+- `app/`: route delivery only, thin entrypoints
+- `src/domain/`: canonical domain entities and contracts
+- `src/runtime/`: orchestration boundaries and reflective movement scaffolding
+- `src/cognition/`: internal observation/latent/continuity/salience systems
+- `src/reflective-space/`: user-facing reflective composition assembly
+- `src/infrastructure/`: replaceable persistence and external boundaries
+- `src/ui/`: presentation-only surfaces
+- `src/shared/`: domain-neutral shared utilities
 
-## What Lumira Does
+## Auth + Ownership Boundary
 
-1. Capture dreams in session form
-2. Generate a reflective frame
-3. Offer optional reflection directions
-4. Continue through question-based work cards
-5. Allow revisiting sessions over time
+- Reflective Space requires authenticated identity (`/auth` for sign in/sign up).
+- API ownership is resolved server-side from Supabase session cookies.
+- `x-lumira-user-id` fallback is local/non-production only and never authoritative in production.
+- Admin bootstrap is minimal and operational (`user_admin_roles`), isolated from cognition/runtime meaning.
 
-## Safety & Design Principles
+## Forbidden Patterns
 
-Lumira is intentionally non-diagnostic and non-authoritative.
+- route-owned cognition
+- session-centric ontology
+- workflow/completion pressure systems
+- latent-to-UI direct truth surfacing
+- global "smart" orchestration managers
+- interpretation authority claims
 
-The system does not attempt to provide final dream interpretations or psychological conclusions.
+## Build Principle
 
-The AI acts as a reflective companion: it asks questions, helps maintain focus, and supports user-led meaning making.
+Build from ontology outward.
+Prefer calm, constrained, inspectable systems over complex behavior.
 
-## Core Flow
-
-`session -> observe -> frame -> direction -> work`
-
-## Architecture Direction
-
-Lumira uses a versioned, traceable pipeline model with a stable core flow and asynchronous support flows. Current architecture work focuses on core-flow reliability, canonical data ownership, and isolating legacy paths without broad refactors.
-
-## Tech Stack
-
-- Next.js `16.1.1` (App Router)
-- React `19.2.3`
-- TypeScript
-- Supabase
-- OpenAI SDK (`openai`)
-- Vitest
-
-## Local Setup
-
-Requirements:
-- Node.js 20+
-- npm
-
-Install:
-
-```bash
-npm install
-```
-
-Environment:
-- Fill `.env.local` with required keys (Supabase, OpenAI, and app-specific values).
-- Do not commit secrets.
-
-Run:
-
-```bash
-npm run dev
-```
-
-## Build / Test / Validate
-
-```bash
-npm run build
-npm run typecheck
-npm run lint
-npm test
-```
-
-## Agent-First Development
-
-This repo uses an agent-first workflow. Start with:
-- `AGENTS.md`
-- `docs/AGENT_START_HERE.md`
-- `docs/STABILIZATION_LEDGER.md`
-
-## Documentation Map
-
-- `docs/AGENT_START_HERE.md`
-- `docs/STABILIZATION_LEDGER.md`
-- `docs/DECISIONS.md`
-- `docs/SPEC_INDEX.md`
-- `ROUTE_MAP.md`
+Viewport entry is bounded by explicit section caps and read-only window contracts to prevent feed/dashboard drift.

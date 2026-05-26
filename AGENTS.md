@@ -50,4 +50,15 @@ Use repo scripts when available:
 - `npm run lint`
 - `npm run typecheck`
 
+## 7) Build logging (mandatory)
+- Always run builds via `npm run build` (never `next build` directly).
+- `npm run build` is wired to `scripts/run-build-with-log.mjs` and appends to:
+  - `docs/BUILD_LOG.md` (summary)
+  - `docs/build-logs/<timestamp>.log` (full output)
+- For every completed build ticket, add/update an entry in `docs/STABILIZATION_LEDGER.md` with:
+  - date (UTC)
+  - ticket/phase
+  - touched boundaries
+  - verification result references (build/test/typecheck as applicable)
+
 Owner timezone: Europe/Budapest.

@@ -1,41 +1,27 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import { NapszakInitializer } from "@/components/NapszakInitializer";
-import BackgroundLayerGate from "@/components/BackgroundLayerGate";
-import CosmicNeonLayerGate from "@/components/CosmicNeonLayerGate";
-import FractalLayerGate from "@/components/FractalLayerGate";
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import { Fraunces, Work_Sans } from "next/font/google";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const serif = Fraunces({
   subsets: ["latin"],
+  variable: "--font-reflective-serif",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sans = Work_Sans({
   subsets: ["latin"],
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  variable: "--font-reflective-sans",
 });
 
 export const metadata: Metadata = {
-  title: "Lumira",
-  description: "Lumira visual system",
+  title: "Lumira Reflective Space",
+  description: "Clean-room reflective substrate skeleton",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="hu">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased`}>
-        <NapszakInitializer />
-        <BackgroundLayerGate />
-        <main style={{ position: "relative", zIndex: 1 }}>{children}</main>
-
-      </body>
+    <html lang="en">
+      <body className={`${serif.variable} ${sans.variable}`}>{children}</body>
     </html>
   );
 }

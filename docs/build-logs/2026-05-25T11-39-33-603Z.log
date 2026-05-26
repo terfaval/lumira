@@ -1,0 +1,15 @@
+# Build Run 2026-05-25T11-39-33-603Z
+timestamp: 2026-05-25T11:39:33.603Z
+command: C:\mira\node_modules\.bin\next.cmd build
+status: failed
+exit_code: 1
+
+## stdout
+```txt
+
+```
+
+## stderr
+```txt
+spawn_error: spawnSync C:\mira\node_modules\.bin\next.cmd EINVAL
+```

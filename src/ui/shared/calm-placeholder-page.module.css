@@ -1,0 +1,54 @@
+.shell {
+  display: grid;
+  gap: 1rem;
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1.25rem 1.2rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(88, 100, 92, 0.24);
+  background:
+    radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.76), transparent 58%),
+    linear-gradient(160deg, rgba(226, 234, 220, 0.62), rgba(244, 239, 231, 0.72));
+}
+
+.overline {
+  margin: 0;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #546457;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.description {
+  margin: 0;
+  color: #314135;
+  max-width: 64ch;
+}
+
+.quiet {
+  margin: 0;
+  color: #4b5c4e;
+  font-size: 0.94rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(68, 90, 77, 0.4);
+  padding: 0.42rem 0.84rem;
+  color: #213328;
+  text-decoration: none;
+  background: rgba(244, 246, 240, 0.86);
+}

@@ -1,54 +1,37 @@
 # Decisions
 
-This file records accepted product, architecture, and workflow decisions.
+This file records accepted product, architecture, and workflow decisions for the clean-room rebuild era.
 
-## D1 — README is public-alpha oriented
+Last updated: 2026-05-24
 
-Status: Accepted
-Decision:
-README should explain product identity, setup, current stage, and high-level architecture.
-Detailed agent workflow belongs in `AGENTS.md` and `docs/AGENT_START_HERE.md`.
-
-## D2 — Stabilization Ledger is active development memory
+## D1 - Clean-room reboot is active
 
 Status: Accepted
 Decision:
-Ongoing stabilization work must be recorded in `docs/STABILIZATION_LEDGER.md`.
+Lumira is being rebuilt from clean-room foundations. Legacy runtime implementation details are not a default input for new build work.
 
-## D3 — Core flow is the public-alpha priority
-
-Status: Accepted
-Decision:
-The public-alpha priority is:
-
-`session -> observe -> frame -> direction -> work`
-
-Deferred areas include legacy dreammap paths, older adapters, low-priority cleanup, and non-core experiments.
-
-## D4 — Agents should not read everything by default
+## D2 - Documentation authority model
 
 Status: Accepted
 Decision:
-Agents should start from `docs/AGENT_START_HERE.md`, then use `docs/SPEC_INDEX.md` to choose relevant deeper docs.
+- `docs/canon/` is the primary product and behavior authority.
+- `docs/runtime/` defines target runtime architecture and contracts.
+- `docs/archive/legacy-transition/` is historical reference only.
 
-## D5 � Alpha keeps ensure-based v0 observation as runtime truth
+## D3 - Legacy compatibility is non-authoritative
 
 Status: Accepted
-
 Decision:
-During public-alpha stabilization, the active core-flow observation runtime remains ensure-based and v0-centric.
+Compatibility bridges, projection contracts, rollout plans, parity gates, and route/API migration plans are historical transition material and are not canonical truth.
 
-`/api/session/ensure` and `jobExtractObservation` remain the current runtime truth for observation-dependent core flow behavior.
+## D4 - No legacy carry-over by default
 
-Direct `/api/observe` and `dream_v1` observation paths remain active but transitional/internal during alpha stabilization.
+Status: Accepted
+Decision:
+New implementation work must not reintroduce legacy route/workflow assumptions unless explicitly requested by the owner for a specific migration or recovery task.
 
-Long-term direction:
-After alpha stabilization, the intended architecture direction is full observation convergence toward one unified `dream_v1`-based observation system.
+## D5 - Minimal repository baseline during reset
 
-Rationale:
-The current user-facing core flow is ensure-based, and downstream orchestration currently depends on v0 observation reads. Moving the core flow to `dream_v1` before alpha would increase migration risk and could destabilize observe/frame/direction/work behavior.
-
-This decision separates:
-- short-term runtime stabilization
-from
-- long-term architecture destination.
+Status: Accepted
+Decision:
+During reset, only foundational project/config files and clean-room docs are kept as active context. Runtime code, assets, legacy scripts, and old data/schema trees are removed before new scaffolding.

@@ -1,0 +1,218 @@
+.workspace {
+  display: grid;
+  gap: 1.75rem;
+}
+
+.hero {
+  padding: 1.5rem 1.6rem;
+  border-radius: 1.2rem;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.82), transparent 60%),
+    linear-gradient(160deg, rgba(214, 226, 213, 0.68), rgba(235, 231, 222, 0.72));
+  border: 1px solid rgba(88, 101, 92, 0.2);
+}
+
+.overline {
+  margin: 0;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: #5a6a5c;
+}
+
+.title {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+}
+
+.summary {
+  margin: 0.75rem 0 0;
+  max-width: 66ch;
+  color: #2d3a31;
+}
+
+.error {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.8rem;
+  background: rgba(164, 54, 54, 0.1);
+  border: 1px solid rgba(164, 54, 54, 0.35);
+  color: #6c1f1f;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.panel,
+.panelWide {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(90, 106, 92, 0.24);
+  border-radius: 1rem;
+  padding: 1rem;
+  backdrop-filter: blur(2px);
+}
+
+.panel {
+  grid-column: span 12;
+}
+
+.panelWide {
+  grid-column: span 12;
+}
+
+.form {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.form label,
+.openingBody label {
+  display: grid;
+  gap: 0.28rem;
+  font-size: 0.88rem;
+  color: #33473a;
+}
+
+.form input,
+.form select,
+.form textarea,
+.openingBody input,
+.openingBody textarea {
+  width: 100%;
+  border: 1px solid rgba(85, 101, 92, 0.35);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  background: rgba(251, 251, 248, 0.9);
+  color: #1e2922;
+}
+
+.workspace button {
+  border: 1px solid rgba(56, 73, 65, 0.5);
+  border-radius: 999px;
+  background: rgba(88, 113, 98, 0.14);
+  color: #1e3225;
+  font: inherit;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+}
+
+.workspace button:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.list,
+.inlineList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.listItem,
+.selectedItem {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  gap: 0.2rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(85, 100, 91, 0.3);
+  padding: 0.6rem 0.75rem;
+  background: rgba(251, 251, 248, 0.86);
+}
+
+.selectedItem {
+  border-color: rgba(64, 98, 74, 0.65);
+  background: rgba(228, 239, 229, 0.75);
+}
+
+.detailBlock {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.8rem;
+  background: rgba(239, 238, 231, 0.8);
+}
+
+.inlineList li {
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(90, 102, 94, 0.22);
+  background: rgba(251, 251, 248, 0.84);
+  display: grid;
+  gap: 0.18rem;
+}
+
+.inlineList li span {
+  font-size: 0.84rem;
+  color: #425444;
+}
+
+.quietNote {
+  margin: 0 0 0.8rem;
+  color: #4b5f4f;
+  font-size: 0.92rem;
+}
+
+.openingCard {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.openingBody {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ghostAction {
+  background: transparent;
+}
+
+.dialogueCard {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.dialogueCard header,
+.dialogueCard footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.84rem;
+  color: #415244;
+}
+
+.dialogueCard blockquote {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border-left: 2px solid rgba(89, 112, 96, 0.55);
+  background: rgba(237, 240, 234, 0.62);
+  border-radius: 0.4rem;
+}
+
+.dialogueStatus {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #3e5448;
+}
+
+@media (min-width: 900px) {
+  .panel {
+    grid-column: span 6;
+  }
+
+  .panelWide {
+    grid-column: span 12;
+  }
+}

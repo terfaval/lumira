@@ -1,570 +1,741 @@
 # Stabilization Ledger
 
-## Current Stabilization Goal
+## Purpose
 
-Prepare Lumira for public alpha by stabilizing:
+Append-only stabilization record for the clean-room rebuild.
+This ledger exists so later agents can quickly see what was built, in what order, and on which boundaries.
 
-`session -> observe -> frame -> direction -> work`
+## Logging Rule
 
-## Current Priorities
+For every completed build ticket:
 
-1. Core flow stability
-2. Canonical data sources
-3. Legacy path isolation
-4. Safety / non-interpretive behavior
-5. Agent-readable documentation
+1. Add/update an entry here with date, phase, and touched boundaries.
+2. Run build through `npm run build` so logs are written to:
+- `docs/BUILD_LOG.md` (summary)
+- `docs/build-logs/<timestamp>.log` (full output)
 
-## Completed Tickets
+## Current Program State
 
-### Runtime docs refresh after wrapper collapse (docs)
-Date: 2026-05-13
-Commit: N/A (working tree update)
-Summary:
-Refreshed active runtime/planning docs so removed wrapper endpoints are no longer presented as active runtime paths. Confirmed `/api/session/ensure` as canonical orchestration endpoint and direct frame-page caller path.
-Files touched:
-- `docs/plans/wrapper-collapse-sequence.md`
-- `docs/audits/alpha-runtime-truth-matrix.md`
-- `docs/plans/lumira-alpha-preparation-program.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Docs search run before and after updates:
-  - `rg -n "/api/frame|api/frame|frame/ensure|session/bootstrap|bootstrap wrapper|frame wrapper" docs ROUTE_MAP.md README.md AGENTS.md --glob "!**/.next/**"`
-- Remaining references are historical ledger/audit/planning context or explicit removed-wrapper notes.
-- No runtime code changes and no DB/schema changes.
-Follow-up:
-- Optional next docs slice: annotate older audit docs (`runtime-current-flow-audit`, `observation-pathway-convergence-audit`, `target-v0-migration-plan`) with a short "historical snapshot" note to reduce future reader confusion.
+Lumira runs on clean-room reflective-space foundations with:
+- ownership-scoped persistence + RLS
+- bounded cognition layers (observation/glossary/latent)
+- opening/suppression/cadence infrastructure
+- reflective dialogue bridge + viewport composition
+- minimal auth + admin bootstrap
 
-### Collapse `/api/frame/ensure` into `/api/session/ensure` caller (build)
-Date: 2026-05-13
-Commit: N/A (working tree update)
-Summary:
-Collapsed the final frame adapter layer by moving frame-page ensure calls directly to `/api/session/ensure` with equivalent run-flag intent, then removed `/api/frame/ensure`.
-Files touched:
-- Updated:
-  - `app/session/[id]/(flow)/frame/page.tsx`
-  - `docs/STABILIZATION_LEDGER.md`
-- Removed:
-  - `app/api/frame/ensure/route.ts`
-Validation:
-- Pre-change caller search:
-  - `rg -n "/api/frame/ensure|frame/ensure|runFrame|run_frame|session/ensure" app components src docs --glob "!**/.next/**"`
-  - Result: frame page was the only active runtime caller of `/api/frame/ensure`; canonical `/api/session/ensure` callers remained active.
-- Post-change caller search:
-  - `rg -n "/api/frame/ensure|frame/ensure|runFrame|run_frame|session/ensure" app components src docs --glob "!**/.next/**"`
-  - Result: no runtime code callers remained for `/api/frame/ensure`; frame page now calls `/api/session/ensure` directly.
-- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
-- `npm.cmd run typecheck` (escalated) passed.
-- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
-- `npm.cmd run lint` (escalated) failed due existing repo-wide lint backlog (`2841 problems: 2639 errors, 202 warnings`, many under `.worktrees` and unrelated files).
-Follow-up:
-- Wrapper collapse sequence for active runtime entrypoints is complete (`/api/frame`, `/api/session/bootstrap`, `/api/frame/ensure` removed).
-- Next stabilization slice should be a targeted docs/runtime-matrix refresh to remove now-stale wrapper references in audit/planning docs.
+## Historical Reset Baseline
 
-### Remove /api/session/bootstrap wrapper endpoint (build)
-Date: 2026-05-13
-Commit: N/A (working tree update)
-Summary:
-Removed legacy wrapper route `/api/session/bootstrap` after caller audit confirmed no active in-repo runtime callers. Kept `/api/session/ensure` unchanged as canonical orchestration.
-Files touched:
-- Removed:
-  - `app/api/session/bootstrap/route.ts`
-- Updated:
-  - `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Pre-delete caller search:
-  - `rg -n "/api/session/bootstrap|session/bootstrap|/api/session/ensure" app components src docs --glob "!**/.next/**"`
-  - Result: no active runtime caller for `/api/session/bootstrap`; active `/api/session/ensure` callers remained in `/new`, direction, work, and `/api/frame/ensure` delegation.
-- Post-delete caller search:
-  - `rg -n "/api/session/bootstrap|session/bootstrap|/api/session/ensure" app components src docs --glob "!**/.next/**"`
-  - Result: no runtime code references to `/api/session/bootstrap` remained; `/api/session/ensure` runtime callers remained active.
-- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
-- `npm.cmd run typecheck` (escalated) passed.
-- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
-- `npm.cmd run lint` (escalated) failed due existing repo-wide lint backlog (`2841 problems: 2639 errors, 202 warnings`, many under `.worktrees` and unrelated files).
-Follow-up:
-- Next wrapper-collapse slice: migrate frame page to `/api/session/ensure` run flags, then remove `/api/frame/ensure`.
+Date: 2026-05-24
 
-### Remove /api/frame wrapper endpoint (build)
-Date: 2026-05-13
-Commit: N/A (working tree update)
-Summary:
-Removed legacy wrapper route `/api/frame` after caller audit confirmed no active in-repo runtime callers. Kept `/api/frame/ensure` unchanged as the active frame-page adapter.
-Files touched:
-- Removed:
-  - `app/api/frame/route.ts`
-- Updated:
-  - `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Pre-delete caller search:
-  - `rg -n "/api/frame|api/frame|frame/ensure" app components src docs --glob "!**/.next/**"`
-  - Result: no active runtime caller for `/api/frame`; active frame-page caller for `/api/frame/ensure` remained (`app/session/[id]/(flow)/frame/page.tsx:146`).
-- Post-delete caller search:
-  - `rg -n "/api/frame|api/frame|frame/ensure" app components src docs --glob "!**/.next/**"`
-  - Result: no runtime code references to `/api/frame` remained; `/api/frame/ensure` caller remained active.
-- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
-- First escalated typecheck failed due stale generated `.next/types/validator.ts` referencing deleted `app/api/frame/route.js`; removed only that generated validator file and reran.
-- `npm.cmd run typecheck` (escalated rerun) passed.
-- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
-- `npm.cmd run lint` (escalated) failed due existing repo-wide lint backlog (`2844 problems: 2642 errors, 202 warnings`, many under `.worktrees` and unrelated files).
-Follow-up:
-- Next wrapper-collapse slice: remove `/api/session/bootstrap` after the same caller-audit + validation pattern.
+1. Documentation authority split completed:
+- `docs/canon/`
+- `docs/runtime/`
+- `docs/archive/legacy-transition/`
 
-### Wrapper collapse sequence plan (audit/plan)
-Date: 2026-05-13
-Commit: N/A (working tree update)
-Summary:
-Produced a phased wrapper-collapse plan for `/api/frame`, `/api/frame/ensure`, and `/api/session/bootstrap` with caller evidence, canonical endpoint ownership recommendation (`/api/session/ensure`), and slice-by-slice validation/rollback guidance.
-Files touched:
-- `docs/plans/wrapper-collapse-sequence.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Plan-only ticket with caller/delegation evidence gathered from route files and `rg` caller searches.
-- No runtime code changes and no DB/schema changes.
-Follow-up:
-- First recommended build slice: remove `/api/frame` wrapper endpoint (no active in-repo callers), then validate core flow.
+2. Legacy runtime/application trees removed (clean-room reset performed).
+3. Legacy artifacts/build leftovers removed.
+4. Remaining `.worktrees/` filesystem residue noted as non-canonical blocker.
 
-### Minimal highlight/glossary schema contract patch (build)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Added one idempotent migration to close active alpha highlight/glossary schema-contract gaps: glossary compatibility columns selected by runtime, `glossary_notes.do_not_surface`, and owner-scoped update policy support for `dream_session_rejected_suggestions` upsert conflict path.
-Files touched:
-- `supabase/migrations/20260212_0001_highlight_glossary_schema_contract_patch.sql` (new)
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- `npm.cmd run typecheck` attempted after migration patch.
-- No runtime code changes in this ticket; migration-only schema contract patch.
-Follow-up:
-- Broader DB rebuild/manifest cleanup remains separate.
-- This migration intentionally does not redesign or merge highlight tables.
+## Clean-room Build Backfill (retrospective)
 
-### Highlight DB schema gap audit (audit)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Audited highlight persistence schema readiness by mapping runtime usage against migrations for `dream_entry_highlights`, `dream_session_highlights`, `dream_session_rejected_suggestions`, and coupled glossary tables; identified concrete schema-contract gaps without changing runtime or DB.
-Files touched:
-- `docs/audits/highlight-db-schema-gap-audit.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Audit-only ticket; evidence gathered via targeted runtime and migration searches.
-- No runtime code changes, no DB/schema changes, no migration changes.
-Follow-up:
-- Preferred next step: minimal schema-contract BUILD slice to close identified gaps (migration-chain glossary table availability, legacy glossary-term column contract vs runtime selects, and rejected-suggestion upsert policy sufficiency).
+Date window: 2026-05-24 to 2026-05-25
+Source references: `supabase/migrations/20260524_0001` .. `20260525_0012`, runtime/UI/composition route code, and ticket outputs.
 
-### Session highlight API contract hardening (build)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Hardened `/api/sessions/[sessionId]/highlights` contract readability by centralizing normalized `dream_session_highlights` write payload construction, rejected-suggestion cleanup handling, and shared select field usage without changing GET/POST response shape or endpoint semantics.
-Files touched:
-- `app/api/sessions/[sessionId]/highlights/route.ts`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation and it passed.
-- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation and it failed due existing repo-wide lint backlog (`2845 problems: 2643 errors, 202 warnings`, many under `.worktrees` and unrelated files).
-- Manual runtime validation not completed in this environment.
-Follow-up:
-- Keep session-highlight UX and DB contract unchanged.
-- Next stabilization slice can focus on API helper reuse between highlight routes (`/highlights` and `/highlights/reject`) without behavior changes.
+### Phase 1 - Foundation Skeleton
+- Domain-first structure established: `app/`, `src/domain`, `src/runtime`, `src/cognition`, `src/reflective-space`, `src/infrastructure`, `src/ui`, `src/shared`.
+- Thin-route and reflective-space-first boundaries established.
 
-### Shared entry-highlight client mutation helper (build)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Extracted duplicated client-side `dream_entry_highlights` mutation behavior from summary and highlights flow pages into one shared helper, while preserving existing runtime semantics (direct Supabase page-side mutations, rejection clear on accept, and best-effort glossary indexing with `allowCreate: false`).
-Files touched:
-- `src/domain/highlights/entryHighlightClientMutations.ts` (new)
-- `app/session/[id]/summary/page.tsx`
-- `app/session/[id]/(flow)/highlights/page.tsx`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation and it passed.
-- `npm.cmd run lint` (escalated) failed due existing repo-wide lint backlog (`2848 problems: 2646 errors, 202 warnings`, many from `.worktrees` and unrelated files); no ticket-specific lint regression identified.
-- Manual runtime verification not completed in this environment.
-Follow-up:
-- Session-highlight API contract hardening remains separate.
-- Keep dual highlight-table contract and glossary candidate policy unchanged in this slice.
+### Phase 2 / 2b - Reflective Object Persistence + Ownership Hardening
+- Reflective object persistence model introduced.
+- User ownership + RLS hardening introduced.
+- References:
+  - `supabase/migrations/20260524_0001_reflective_objects.sql`
+  - `supabase/migrations/20260524_0002_reflective_objects_rls.sql`
 
-### Highlight data contract tightening (audit/plan)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Produced an evidence-based highlight runtime contract audit covering ownership boundaries, mutation-path duplication, coupling classification, and a smallest-safe stabilization BUILD recommendation without changing runtime behavior.
-Files touched:
-- `docs/audits/highlight-data-contract-tightening.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Audit/plan-only highlight contract ticket.
-- Runtime evidence collected via targeted `rg` searches across routes, APIs, components, and domain helpers.
-- No runtime code, DB schema, or migration changes were made.
-Follow-up:
-- Recommended smallest-safe BUILD slice:
-  - `BUILD (small) — Shared client mutation helper for entry-highlight add/edit/create + rejection-clear`
-- Keep highlight table dual-model and glossary couplings unchanged during this slice.
+### Phase 3 - Observation Layer Scaffold
+- Observation entities + persistence introduced.
+- Evidence-linked descriptive observation boundaries established.
+- Reference: `supabase/migrations/20260524_0003_observations.sql`
 
-### Open glossary pages to authenticated users (build)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Removed page-level glossary admin gating so `/glossary` and `/glossary/suggestions` are accessible to authenticated users, while preserving `useRequireAuth`, existing glossary threshold gate behavior, and current API boundaries.
-Files touched:
-- `app/glossary/page.tsx`
-- `app/glossary/suggestions/page.tsx`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation and it passed.
-- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation and it failed due existing repo-wide lint backlog (`2848 problems: 2646 errors, 202 warnings`, including `.worktrees` paths), not from this ticket scope.
-- Manual runtime validation not completed in this environment.
-Follow-up:
-- Highlight data contract tightening remains a separate ticket.
-- Glossary API admin gates are unchanged in this slice (`/api/glossary/backfill-candidates` remains admin-only; `/api/glossary/backfill-occurrences` remains authenticated + owner-scoped).
+### Phase 4 - Glossary Memory Scaffold
+- Glossary continuity memory + candidate/suppression persistence introduced.
+- Reference: `supabase/migrations/20260524_0004_glossary_memory.sql`
 
-### Highlight contract + glossary access gate (audit/plan)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Documented an implementation-ready alpha contract for dual highlight storage (`dream_entry_highlights` vs `dream_session_highlights`) and glossary access gating, including explicit route/API access classifications and a smallest safe next BUILD slice.
-Files touched:
-- `docs/plans/highlight-contract-glossary-access-gate.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Planning-only highlight contract + glossary access gate ticket.
-- No runtime code, DB schema, or migration changes were made.
-Follow-up:
-- Execute next small BUILD:
-  - `BUILD — Open Glossary Pages To Authenticated Users`
-  - Scope limited to removing admin-only page gating on `/glossary` and `/glossary/suggestions` while preserving authenticated access and existing glossary/highlight behavior.
+### Phase 5 - Reflective Thread Scaffold
+- Durable thread continuity structures + object/glossary associations introduced.
+- Reference: `supabase/migrations/20260524_0005_reflective_threads.sql`
 
-### Summary + highlights + glossary alpha boundary (audit/plan)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Defined the alpha boundary for summary, highlights, glossary, candidate policy, and glossary-in-work usage, with explicit KEEP/SIMPLIFY/DEFER/POST-ALPHA/UNCLEAR classification and file-level runtime evidence.
-Files touched:
-- `docs/plans/summary-highlights-glossary-alpha-boundary.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Planning-only summary/highlights/glossary boundary ticket.
-- No runtime code, DB schema, or migration changes were made.
-Follow-up:
-- Execute boundary follow-up tickets for glossary access gating decision, highlight data contract tightening, and summary/highlights mutation-path simplification.
+### Phase 5b - Reflective Response Scaffold
+- User-authored reflective response persistence + associations introduced.
+- Reference: `supabase/migrations/20260524_0006_reflective_responses.sql`
 
-### Remove remaining dream-map runtime APIs/jobs/repos/domain layers (cleanup/build)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Removed dream-map runtime surfaces (APIs, orchestration job, repos, and domain modules) after prior ensure decoupling and UI disablement, while preserving core flow boundaries and avoiding DB/schema changes.
-Files touched:
-- Removed APIs:
-  - `app/api/dreammap/aggregate/route.ts`
-  - `app/api/dreammap/v2/aggregate/route.ts`
-  - `app/api/dreammap/v2/build/route.ts`
-  - `app/api/admin/dreammap/backfill/route.ts`
-- Removed job:
-  - `src/orchestration/jobs/jobBuildDreamMapV0.ts`
-- Removed repos:
-  - `src/db/repositories/dreamMapRepo.ts`
-  - `src/db/repositories/dreamMapV2Repo.ts`
-- Removed domain tree:
-  - `src/domain/dreammap/*` (including `axis/*`, builders, and types)
-- Patched shared/runtime callers:
-  - `src/orchestration/jobs/jobBackfillArchetype.ts`
-  - `src/db/repositories/archetypeRepo.ts`
-  - `src/orchestration/idempotency/jobKey.ts`
-  - `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Pre-delete caller audit run:
-  - `rg -n "dreamMap|DreamMap|jobBuildDreamMapV0|dream_map" app src --glob "!**/*.md"`
-  - `rg -n "/api/dreammap|admin/dreammap/backfill|jobBuildDreamMapV0|dreamMapRepo|dreamMapV2Repo|domain/dreammap" app src --glob "!**/*.md"`
-- Post-delete caller check:
-  - `rg -n "jobBuildDreamMapV0|dreamMapRepo|dreamMapV2Repo|@/src/domain/dreammap|app/api/dreammap|admin/dreammap/backfill|build_dream_map_v0" app src --glob "!**/*.md"`
-  - Result: no active runtime imports remained for removed dream-map APIs/jobs/repos/domain modules.
-- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
-- First escalated typecheck failed due stale generated `.next/*/types/validator.ts` references to removed routes; removed only those generated validator files and reran.
-- `npm.cmd run typecheck` (escalated rerun) passed.
-- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; reran with escalation.
-- `npm.cmd run lint` (escalated) failed due existing repo-wide lint backlog (`2848 problems: 2646 errors, 202 warnings`, heavily including `.worktrees` paths).
-Follow-up:
-- Dream-map DB tables remain intentionally untouched in this slice.
-- Next phase can plan explicit DB/schema cleanup separately with owner approval.
+### Phase 6 - Latent Scaffold + Write Protection
+- Latent snapshots/signals/suggestions persistence introduced with bounded confidence/visibility.
+- Canonical-state non-mutation boundary maintained.
+- Reference: `supabase/migrations/20260524_0007_latent_scaffold.sql`
 
-### Split archetype backfill out of dream-map admin route (cleanup/build)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Split archetype maintenance out of `/api/admin/dreammap/backfill` into a dedicated archetype-owned route, while preserving admin protections and archetype backfill request/response behavior.
-Files touched:
-- `app/api/admin/dreammap/backfill/route.ts`
-- `app/api/admin/archetypes/backfill/route.ts` (new)
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Ownership/search check run:
-  - `rg "missing_archetype|jobBackfillArchetype" app src`
-  - Result:
-    - `jobBackfillArchetypeMissing` invocation moved to `app/api/admin/archetypes/backfill/route.ts`.
-    - `app/api/admin/dreammap/backfill/route.ts` now only references `missing_archetype` for explicit rejection/move guidance.
-- `npm run typecheck` failed in sandbox due to PowerShell execution policy (`npm.ps1` blocked); reran with escalation.
-- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; passed with escalation.
-- `npm run lint` failed in sandbox due to PowerShell execution policy (`npm.ps1` blocked); reran with escalation.
-- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; with escalation it failed due existing repo-wide lint backlog (`2892 problems: 2688 errors, 204 warnings`, including `.worktrees` files).
-Follow-up:
-- Next cleanup can remove dream-map admin route + dream-map runtime APIs/jobs/repos after bounded verification.
+### Phase 6b - Runtime Integrity Audit + Boundary Hardening
+- Cross-layer boundary checks and hardening applied (read-only composition, no latent authority leak, thin routes).
+- Verification culture established across typecheck/lint/test/build gates.
 
-### Remove orphan dream-map UI components and dream-map-only tests (cleanup)
-Date: 2026-05-12
-Commit: N/A (working tree update)
-Summary:
-Removed orphan `components/dreammap/*` UI files and dream-map-only tests after prior route/navigation disablement, with import search confirmation that no active code callers remained.
-Files touched:
-- `components/dreammap/*` (removed)
-- `src/orchestration/jobs/jobBuildDreamMapV0.test.ts` (removed)
-- `src/domain/dreammap/buildDreamMapV0.test.ts` (removed)
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Pre-delete search run:
-  - `rg \"components/dreammap|DreamMapLayout|DreamMapLayoutV2|jobBuildDreamMapV0.test|buildDreamMapV0.test\" app components src docs`
-  - Result: no active imports from non-disabled routes; matches were in docs plus dream-map component/test files.
-- Post-delete search run:
-  - `rg \"components/dreammap|DreamMapLayout|DreamMapLayoutV2|jobBuildDreamMapV0.test|buildDreamMapV0.test\" app components src docs`
-  - Result: matches remained only in docs references; no active code imports.
-- `npm run typecheck` failed in sandbox due to PowerShell execution policy (`npm.ps1` blocked); reran with escalation.
-- `npm.cmd run typecheck` failed in sandbox with `EPERM lstat C:\\Users\\matef`; passed with escalation.
-- `npm run lint` failed in sandbox due to PowerShell execution policy (`npm.ps1` blocked); reran with escalation.
-- `npm.cmd run lint` failed in sandbox with `EPERM lstat C:\\Users\\matef`; with escalation it failed due existing repo-wide lint backlog (`2687 errors`, `203 warnings`, including `.worktrees` files).
-Follow-up:
-- Next slice should split archetype backfill out of dream-map admin route before dream-map API/job/repo deletion.
+### Phase 7 / 7b / 7c - Openings + Cadence + Suppression Lifecycle
+- Opening infrastructure introduced with user-gating and optional surfacing.
+- Cadence/dedupe/silence-first behavior introduced.
+- Suppression lifecycle + revisit policy introduced.
+- References:
+  - `supabase/migrations/20260524_0008_openings.sql`
+  - `supabase/migrations/20260524_0009_opening_suppression_lifecycle.sql`
 
-### Dream map API/job/repo caller audit (audit)
-Date: 2026-05-11
-Commit: N/A (working tree update)
-Summary:
-Produced a bounded dependency audit of remaining dream-map runtime layers (APIs/jobs/repos/domain/tests), with explicit caller graph, shared-coupling analysis, safe-removal classification, and staged cleanup sequencing.
-Files touched:
-- `docs/audits/dream-map-api-job-repo-caller-audit.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Audit-only dream-map dependency audit.
-- No runtime code, DB schema, or migration changes were made.
-Follow-up:
-- Recommended next cleanup ticket:
-  - `CLEANUP (small) — Remove orphan dream-map UI component tree and dream-map-only tests`
+### Phase 8 / 8b - Opening-to-Response Bridge + Revisitable Dialogue Read Model
+- Opening activation events + opening-response associations introduced.
+- Activation-without-response legitimacy preserved.
+- Bridge FK issue fixed by adding `(id, user_id)` uniqueness for owner-safe composite references.
+- Reference: `supabase/migrations/20260524_0010_opening_response_bridge.sql`
 
-### Remove dream map user/admin surfaces (cleanup)
-Date: 2026-05-11
-Commit: N/A (working tree update)
-Summary:
-Disabled dream-map user/admin route pages and removed primary UI entry links so dream-map is no longer reachable from main app/admin navigation.
-Files touched:
-- `app/dreammap/page.tsx`
-- `app/admin/dreammap/backfill/page.tsx`
-- `app/admin/page.tsx`
-- `components/SidebarDrawer.tsx`
-- `ROUTE_MAP.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- `npm run typecheck` failed in sandbox due to PowerShell execution policy (`npm.ps1` blocked); reran with escalation.
-- `npm.cmd run typecheck` passed with escalation.
-- `npm run lint` failed in sandbox due to PowerShell execution policy (`npm.ps1` blocked); reran with escalation.
-- `npm.cmd run lint` failed with existing repository-wide lint backlog (`2699 errors`, `208 warnings`), including `.worktrees` files.
-- Manual runtime verification not completed in this environment.
-Follow-up:
-- Keep dream-map APIs/jobs/repos/tables intact for now.
-- Next cleanup slice should remove dream-map API and orchestration surfaces after import/caller audit.
+### Phase 9 / 9b / 9c - Reflective Space UI + Viewport API + Guardrails
+- Minimal contemplative Reflective Space UI integrated.
+- Backend-composed `/api/reflective-space/viewport` read path introduced.
+- Viewport guardrails, section windows, bounded dialogue windows, and anti-feed constraints hardened.
+- Read-path index hygiene added.
+- References:
+  - `supabase/migrations/20260525_0012_viewport_read_path_indexes.sql`
+  - `docs/runtime/reflective-space-viewport-guardrails-v1.md`
 
-### Decouple dream map from `session.ensure` default runtime (build/cleanup)
-Date: 2026-05-11
-Commit: N/A (working tree update)
-Summary:
-Removed dream-map execution from the default `/api/session/ensure` runtime path while preserving response compatibility for existing callers.
-Files touched:
-- `app/api/session/ensure/route.ts`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- `npm run typecheck` failed in sandbox due to PowerShell execution policy (`npm.ps1` blocked); reran with escalation.
-- `npm.cmd run typecheck` passed with escalation.
-- `npm run lint` failed in sandbox due to PowerShell execution policy (`npm.ps1` blocked); reran with escalation.
-- `npm.cmd run lint` failed with existing repository-wide lint backlog (`2701 errors`, `208 warnings`), including files under `.worktrees`.
-- Manual runtime validation not executed in this environment.
-Follow-up:
-- Next cleanup slice:
-  - remove user-facing `/dreammap` and related admin backfill surfaces after this decoupling step.
-- DB/schema cleanup remains a later, separately approved phase.
+### Phase 10 - User Auth + Admin Bootstrap
+- Supabase auth flow integrated for protected Reflective Space access.
+- Minimal admin bootstrap boundary introduced.
+- Reference: `supabase/migrations/20260525_0011_user_admin_bootstrap.sql`
 
-### Dream map removal plan (audit/plan)
-Date: 2026-05-11
-Commit: N/A (working tree update)
-Summary:
-Created an evidence-based staged dream-map removal plan covering runtime entrypoints, routes/APIs, jobs, repos, DB tables/migrations, UI links, tests, docs, and safe removal sequencing with validation gates.
-Files touched:
-- `docs/plans/dream-map-removal-plan.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Planning-only dream map removal ticket.
-- No runtime code, DB schema, or migration changes were made.
-Follow-up:
-- Recommended first cleanup ticket:
-  - `BUILD (controlled) — Decouple Dream Map From /api/session/ensure Default Runtime`
+## Known Ongoing Risks
 
-### Ensure de-coupling contract (audit/plan)
-Date: 2026-05-11
-Commit: N/A (working tree update)
-Summary:
-Created the alpha ensure contract plan that classifies `session.ensure` responsibilities into CORE/SIDECAR/DEFER/UNCLEAR, documents guest-mode impact and fallback semantics, and recommends the smallest safe first decoupling BUILD slice.
-Files touched:
-- `docs/plans/ensure-decoupling-contract.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Planning-only ensure contract ticket.
-- No runtime code, DB schema, or migration changes were made.
-Follow-up:
-- Recommended first BUILD slice:
-  - `BUILD (controlled) -- Alpha Ensure Run-Flag Gate (dream_map only)`
+- Large historical dirty-worktree residue can hide unrelated diffs during reviews.
+- Cursor stability and section caps should stay under regression tests as data volume grows.
+- Build logging discipline depends on consistent use of `npm run build` (now enforced by documented process + wrapper).
 
-### Alpha preparation program plan
-Date: 2026-05-11
-Commit: N/A (working tree update)
-Summary:
-Created a phased alpha-preparation program plan that sequences evidence-first AUDIT/PLAN tickets before risky BUILD/CLEANUP work, defines owner decision gates and validation gates, and preserves alpha-first stabilization boundaries.
-Files touched:
-- `docs/plans/lumira-alpha-preparation-program.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Planning-only ticket.
-- No runtime code, DB schema, or migration changes were made.
-Follow-up:
-- Execute immediate next ticket from the new program plan:
-  - `AUDIT/PLAN — Ensure De-coupling Contract`
+## New Entry (2026-05-25)
 
-### Core flow runtime contract checks
-Date: 2026-05-10
-Commit: N/A (working tree update)
-Summary:
-Added targeted runtime contract checks and structured fail-soft warnings across core flow API paths, without changing architecture decisions.
-Files touched:
-- `app/api/session/ensure/route.ts`
-- `app/api/frame/ensure/route.ts`
-- `app/api/frame/route.ts`
-- `app/api/work-block/next/route.ts`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- `npm run typecheck` failed: PowerShell policy blocked `npm.ps1` (`PSSecurityException`).
-- `npm run lint` failed: PowerShell policy blocked `npm.ps1` (`PSSecurityException`).
-- `npm.cmd run typecheck` failed: `EPERM lstat C:\\Users\\matef`.
-- `npm.cmd run lint` failed: `EPERM lstat C:\\Users\\matef`.
-- Manual runtime verification not completed in this environment.
-Follow-up:
-- Verify core flow behavior manually in a local environment where Node/npm can execute normally.
-- If warning volume is too high in production-like traffic, gate selected warnings behind a debug flag.
-- Keep ensure-based v0 observation runtime as alpha truth (D5) while monitoring fallback frequency.
+### Stabilization Observability + Process Hardening
 
-### Record observation stabilization strategy
-Date: 2026-05-09
-Commit: N/A (working tree update)
-Summary:
-Recorded the owner-approved observation strategy: public-alpha stabilization keeps the ensure-based v0 observation path as the active runtime truth, while long-term direction remains full convergence toward a unified dream_v1 observation system.
-Files touched:
-- `docs/DECISIONS.md`
-- `docs/STABILIZATION_LEDGER.md`
-Validation:
-- Docs-only change; no application code touched.
-Follow-up:
-- Future observation work must respect this decision.
-- Do not migrate core observation runtime to dream_v1 before an approved post-alpha observation convergence plan.
-- A later audit may still map latest-pointer ownership and adapter/fallback removal conditions.
+- Backfilled this ledger with clean-room Phase 1-10 + hardening sequence from repository evidence.
+- Added mandatory build logging wrapper:
+  - `scripts/run-build-with-log.mjs`
+  - `docs/BUILD_LOG.md`
+  - `docs/build-logs/`
+- Wired `npm run build` to always write summary + full-output build logs.
+- Added process guardrails in:
+  - `AGENTS.md`
+  - `docs/README.md`
 
-### Runtime align answer continuity read path
-Date: 2026-05-09
-Commit: N/A (working tree update)
-Summary:
-Aligned `/api/work-block/next` continuity reads with the currently persisted `dream_answers` runtime contract.
-Files touched:
-- `app/api/work-block/next/route.ts`
-Validation:
-- `npm run typecheck` and `npm run lint` attempted.
-- Both blocked by local environment issues:
-  - PowerShell policy blocked `npm`
-  - `npm.cmd` failed with `EPERM lstat C:\\Users\\matef`
-- Manual runtime verification not completed in this environment.
-Follow-up:
-- Keep `work_id/content` as transitional runtime fields until alpha answer schema cleanup.
-- Future schema cleanup should follow `docs/specs/alpha-answer-contract.md`.
-- Consider observation pathway convergence audit before broader DB cleanup.
+## New Entry (2026-05-25 UTC)
 
-### Documentation system setup
-Date: 2026-05-09
-Commit: N/A (working tree update)
-Summary:
-Created the documentation structure for agent-first stabilization: README for public overview, AGENTS for rules, AGENT_START_HERE for orientation, DECISIONS for accepted choices, SPEC_INDEX for navigable context.
-Files touched:
-- `README.md`
-- `AGENTS.md`
-- `docs/AGENT_START_HERE.md`
-- `docs/STABILIZATION_LEDGER.md`
-- `docs/DECISIONS.md`
-- `docs/SPEC_INDEX.md`
-Validation:
-- Docs-only change; no application code touched.
-Follow-up:
-- Keep this ledger updated after each stabilization ticket.
+### Phase 11 - Observation Semantic Boundary Guardrails v1 (Infrastructure Hardening)
 
-## Open Risks
+- Ticket type: BUILD / COGNITION-INFRASTRUCTURE / SAFETY-HARDENING.
+- Scope delivered:
+  - semantic boundary gate at Observation ingress,
+  - provenance + evidence-strength seam persistence,
+  - summary-to-fragment trace linkage seam,
+  - explicit latent backflow prevention on durable observation writes,
+  - recurrence candidate trust hardening,
+  - thin ontology-preparation extension seams.
 
-### Branch-only stabilization fixes remain unmerged
-Severity: Medium
-Description:
-Some first-response stabilization work exists on branch-only history and may be mixed with unrelated cleanup.
-Suggested next action:
-Run a focused audit ticket to classify merge-ready fixes vs. non-essential cleanup.
+Touched boundaries:
+- Domain contracts and policy:
+  - `src/domain/observation/types.ts`
+  - `src/domain/observation/http-contract.ts`
+  - `src/domain/observation/semantic-policy.ts`
+- Observation route boundary:
+  - `app/api/reflective-objects/[id]/observations/route.ts`
+- Observation persistence adapters/repository:
+  - `src/infrastructure/supabase/adapters/observation-row.ts`
+  - `src/infrastructure/supabase/repositories/observation-supabase-repository.ts`
+- Recurrence trust in latent scaffold:
+  - `src/cognition/latent/latent-engine.ts`
+- Schema hardening:
+  - `supabase/migrations/20260525_0013_observation_semantic_guardrails.sql`
+- Tests updated/added across observation + recurrence paths.
 
-### Canonical architecture references are spread across multiple docs
-Severity: Medium
-Description:
-Core architectural intent exists, but context is distributed across older audit/spec docs.
-Suggested next action:
-Maintain `docs/SPEC_INDEX.md` and keep it current when new canonical docs are accepted.
+Architectural impact:
+- Observation durability now requires descriptive semantic pass before persistence.
+- Interpretive and insufficient-evidence payloads are blocked from durable Observation state.
+- Observation records now carry explicit semantic/provenance/boundary metadata for future auditability.
 
-## Next Recommended Tickets
+Known limitations:
+- Guardrail evaluator is heuristic v1 and may require iterative tuning for edge phrasing.
+- Historical observations rely on migration defaults for new boundary columns.
+- B-level ontology dimensions (agency/metacognition/affect transitions) are still pending.
 
-### First-response branch triage
-Type: AUDIT
-Goal:
-Classify first-response branch-only commits into merge-ready, defer, or discard buckets.
-Scope:
-Branch history, affected core-flow files, and stabilization docs.
-Acceptance criteria:
-Clear commit-level classification and explicit recommendation per change group.
-Dependencies:
-- `docs/STABILIZATION_LEDGER.md`
-- `docs/DECISIONS.md`
-- `docs/superpowers/audits/2026-04-16-stabilization-control-audit.md`
-Owner decision needed:
-Yes, before merge/cherry-pick.
+Future-safe note:
+- This phase hardens infrastructure boundaries only; it does not complete ontology expansion or latent redesign.
 
-### Core flow contract checks
-Type: BUILD
-Goal:
-Strengthen validation for session/observe/frame/direction/work path behavior.
-Scope:
-Tests and small targeted fixes only in core flow paths.
-Acceptance criteria:
-Core flow checks run reliably and failures localize to clear contracts.
-Dependencies:
-- Ticket-defined route/component files
-- Existing test tooling
-Owner decision needed:
-No.
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-25T21-02-55-337Z.log`
 
-### Deferred path inventory refresh
-Type: CLEANUP
-Goal:
-Confirm which deferred legacy paths are still needed.
-Scope:
-Docs and references only unless explicitly approved for code removal.
-Acceptance criteria:
-Updated keep/defer/remove recommendations with evidence links.
-Dependencies:
-- `docs/superpowers/audits/2026-04-08-master-repo-stabilization-audit.md`
-- `docs/superpowers/audits/2026-04-16-stabilization-control-audit.md`
-Owner decision needed:
-Yes, before removals.
+## New Entry (2026-05-25 UTC)
+
+### Phase 12 - Observation Ontology Slice v1 (Agency States + Metacognitive Moments)
+
+- Ticket type: BUILD / ONTOLOGY / OBSERVATION-BLEVEL.
+- Scope delivered:
+  - first-class Observation categories added: `agency_state`, `metacognitive_moment`,
+  - bounded extraction support for explicit agency/metacognitive phenomenology cues,
+  - semantic policy coherence integration for new categories,
+  - evidence/provenance compatibility preserved for new dimensions,
+  - latent-safe consumption seam added without Observation backflow.
+
+Touched boundaries:
+- Observation domain and category contracts:
+  - `src/domain/observation/types.ts`
+  - `src/domain/observation/semantic-policy.ts`
+  - `src/domain/observation/README.md`
+- Extraction scaffold:
+  - `src/cognition/observation/descriptive-observation-scaffold.ts`
+- Latent seam calibration (downstream-only):
+  - `src/cognition/latent/latent-engine.ts`
+- Supabase row adapters:
+  - `src/infrastructure/supabase/adapters/observation-row.ts`
+  - `src/infrastructure/supabase/adapters/glossary-row.ts`
+- Minimal schema extension:
+  - `supabase/migrations/20260525_0014_observation_ontology_slice_agency_metacognition.sql`
+- Tests:
+  - `src/domain/observation/__tests__/semantic-policy.test.ts`
+  - `src/domain/observation/__tests__/http-contract.test.ts`
+  - `src/cognition/observation/__tests__/descriptive-observation-scaffold.test.ts`
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+
+Architectural impact:
+- Observation can now persist agency and metacognitive phenomenology as explicit substrate dimensions.
+- Semantic hardening remains active; interpretive and authoritative phrasing still rejected at ingress.
+- Latent can consume the new dimensions probabilistically (`internal_only` signal) without mutating durable Observation truth.
+
+Known limitations:
+- Category detection remains cue-based and intentionally conservative.
+- Agency/metacognitive transition granularity is partial (not full B-level ontology coverage yet).
+- No reflective-space surfacing expansion was introduced in this slice.
+
+Future-safe note:
+- This phase is a bounded ontology slice, not full ontology completion.
+- Next slices should follow the same pattern: semantic boundary first, thin category expansion second.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-25T21-30-29-868Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 13 - Observation Ontology Slice v2 (Affect Transitions + Contradiction + Atmosphere)
+
+- Ticket type: BUILD / ONTOLOGY / OBSERVATION-BLEVEL.
+- Scope delivered:
+  - first-class Observation categories added:
+    - `affect_transition`
+    - `emotional_contradiction`
+    - `affective_atmosphere`
+  - semantic boundary integration for new affect categories (coherence + anti-interpretive enforcement),
+  - bounded extraction cue support for affect transitions, contradiction, and atmospheric affect structure,
+  - additive schema/category-constraint extension for observation and glossary category lineage,
+  - latent-safe downstream seam extension without Observation backflow.
+
+Touched boundaries:
+- Observation domain and semantic policy:
+  - `src/domain/observation/types.ts`
+  - `src/domain/observation/semantic-policy.ts`
+  - `src/domain/observation/README.md`
+- Extraction scaffold:
+  - `src/cognition/observation/descriptive-observation-scaffold.ts`
+- Latent seam calibration (downstream-only):
+  - `src/cognition/latent/latent-engine.ts`
+- Supabase adapters:
+  - `src/infrastructure/supabase/adapters/observation-row.ts`
+  - `src/infrastructure/supabase/adapters/glossary-row.ts`
+- Schema extension:
+  - `supabase/migrations/20260526_0015_observation_ontology_slice_affect_structure.sql`
+- Canon spec:
+  - `docs/canon/observation-ontology-slice-spec-v2.md`
+- Tests:
+  - `src/domain/observation/__tests__/semantic-policy.test.ts`
+  - `src/domain/observation/__tests__/http-contract.test.ts`
+  - `src/cognition/observation/__tests__/descriptive-observation-scaffold.test.ts`
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+
+Architectural impact:
+- Observation can now persist affect movement, contradiction, and atmospheric affect as explicit descriptive substrate.
+- Semantic hardening remains primary gate; interpretive/diagnostic affect wording is rejected at ingress.
+- Latent continues to consume ontology slices probabilistically with `internal_only` seams and no durable backflow.
+
+Known limitations:
+- Affect classification remains cue-based and conservative.
+- Fine-grained affect intensity calibration is not implemented in this slice.
+- Reflective-space surfacing behavior remains intentionally unchanged (substrate-facing slice).
+
+Future-safe note:
+- This phase is a bounded ontology slice and not full affect ontology completion.
+- Further affect enrichment should keep the same sequence: semantic boundary integrity before representational breadth.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T04-15-28-421Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 14 - Observation B3 Completion + Runtime Alignment v1 (Spatial Instability + Dream-State Phenomenology)
+
+- Ticket type: BUILD / ONTOLOGY-ALIGNMENT / OBSERVATION.
+- Scope delivered:
+  - first-class Observation categories added:
+    - `spatial_instability`
+    - `dream_state_quality`
+    - `continuity_fragment`
+    - `altered_realism`
+  - semantic boundary expansion for metaphysical/spiritual authority rejection while preserving phenomenological dream wording,
+  - bounded extraction cue support for spatial/dream-state instability with lightweight flattening mitigation,
+  - additive schema/category-constraint extension for observation fragments and glossary source-category lineage,
+  - latent-safe downstream seam extension (`internal_only`, low-confidence) without Observation backflow,
+  - roadmap/runtime reconciliation plus canonical v3 slice spec creation.
+
+Touched boundaries:
+- Observation domain and semantic policy:
+  - `src/domain/observation/types.ts`
+  - `src/domain/observation/semantic-policy.ts`
+  - `src/domain/observation/README.md`
+- Extraction scaffold:
+  - `src/cognition/observation/descriptive-observation-scaffold.ts`
+- Latent seam calibration (downstream-only):
+  - `src/cognition/latent/latent-engine.ts`
+- Supabase adapters:
+  - `src/infrastructure/supabase/adapters/observation-row.ts`
+  - `src/infrastructure/supabase/adapters/glossary-row.ts`
+- Schema extension:
+  - `supabase/migrations/20260526_0016_observation_ontology_slice_spatial_dreamstate.sql`
+- Canon/roadmap docs:
+  - `docs/canon/Observation-Ontology-Slice-Spec-v3-Spatial-DreamState.md`
+  - `docs/superpowers/plans/2026-05-25-observation-architecture-completion-roadmap-v1.md`
+- Tests:
+  - `src/domain/observation/__tests__/semantic-policy.test.ts`
+  - `src/domain/observation/__tests__/http-contract.test.ts`
+  - `src/cognition/observation/__tests__/descriptive-observation-scaffold.test.ts`
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+
+Architectural impact:
+- Repo runtime now includes explicit B3 spatial/dream-state descriptive substrate categories end-to-end (types, validation, extraction, adapters, schema constraints, latent seam).
+- Semantic guardrails now block metaphysical authority drift cases identified in the 2026-05-26 drift audit while still allowing uncertain phenomenological dream language.
+- Extraction remains conservative and omission-friendly with reduced broad actor-regex dominance and reduced tiny-fragment context loss.
+
+Known limitations:
+- Category detection remains cue-based and intentionally bounded.
+- Dream-state/metaphysical phrasing coverage is heuristic and may need iterative edge-case tuning.
+- Reflective-space surfacing remains intentionally unchanged (substrate-facing completion ticket).
+
+Reconciliation note:
+- This phase resolves B3 alignment drift identified by audit:
+  - `docs/superpowers/audits/2026-05-26-observation-b-level-slice-drift-review-v1.md`
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T04-50-59-032Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 15 - Latent Recalibration v1 Governance Primitives Foundation
+
+- Ticket type: BUILD / COGNITION-GOVERNANCE / LATENT.
+- Scope delivered:
+  - provenance-aware and evidence-aware latent weighting,
+  - uncertainty propagation into confidence shaping and center eligibility,
+  - deterministic reflective-center candidate selection with no-center legitimacy,
+  - anti-amplification primitives (repetition saturation / weak recurrence suppression),
+  - scope discipline for dormant resurfacing (local-overlap gating),
+  - silence-preserving demotion behavior with optional-suggestion withholding,
+  - bounded processing-mode seam preparation (internal-only phrasing seam).
+
+Touched boundaries:
+- Latent governance runtime:
+  - `src/cognition/latent/latent-engine.ts`
+- Latent governance tests:
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+- Opening cadence anti-amplification tests:
+  - `src/cognition/openings/__tests__/opening-cadence-policy.test.ts`
+- Latent scaffold route/runtime call sites:
+  - `app/api/reflective-objects/[id]/latent-snapshots/route.ts`
+  - `src/reflective-space/composition/get-reflective-space-viewport.ts`
+- Runtime governance documentation:
+  - `docs/runtime/latent-governance-primitives-v1.md`
+  - `docs/runtime/README.md`
+
+Architectural impact:
+- Latent confidence is no longer static-by-signal; it is now weighted by provenance/evidence/uncertainty quality.
+- Weak repeated continuity no longer self-amplifies into recurrence importance.
+- Dormant global continuity no longer enters local attention without overlap evidence.
+- No-center outcome is now explicit and suggestion surfacing can remain intentionally silent.
+
+Known limitations:
+- Heuristic weighting model (not learned calibration).
+- Center stabilization is deterministic per invocation but not yet cross-snapshot memory-governed.
+- Processing mode behavior is seam-only and does not orchestrate dialogue/runtime modes yet.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T10-56-03-659Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 16 - Reflective Center Engine v1 (Lifecycle + Salience + Longitudinal Attenuation)
+
+- Ticket type: BUILD / LATENT / REFLECTIVE-CENTER.
+- Scope delivered:
+  - durable reflective-center lifecycle payload on latent snapshots,
+  - lifecycle states (`possible`, `emerging`, `stabilized`, `weakening`, `dormant`, `suppressed`),
+  - user-owned salience integration (highlight proxy, glossary note density, revisitation, explicit emphasis, writing persistence),
+  - cross-snapshot attenuation (repetition decay, refractory penalty, cooldown penalty),
+  - anti-thrashing hysteresis and bounded center switching,
+  - lifecycle-aware demotion + suppression-aware transitions,
+  - bounded continuity neighborhood persistence,
+  - preservation of no-center/silence legitimacy.
+
+Touched boundaries:
+- Latent runtime engine:
+  - `src/cognition/latent/latent-engine.ts`
+- Latent lifecycle/persistence domain and validation:
+  - `src/domain/latent/types.ts`
+  - `src/domain/latent/validation.ts`
+- Latent persistence adapters:
+  - `src/infrastructure/supabase/adapters/latent-row.ts`
+- Latent snapshot route integration (history + salience context):
+  - `app/api/reflective-objects/[id]/latent-snapshots/route.ts`
+- Route test harness updates:
+  - `app/api/reflective-objects/[id]/latent-snapshots/__tests__/route.test.ts`
+- Lifecycle-focused tests:
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+  - `src/domain/latent/__tests__/validation.test.ts`
+- Schema extension:
+  - `supabase/migrations/20260526_0017_reflective_center_lifecycle_memory.sql`
+- Runtime documentation:
+  - `docs/runtime/latent-reflective-center-lifecycle-engine-v1.md`
+  - `docs/runtime/latent-governance-primitives-v1.md`
+  - `docs/runtime/README.md`
+
+Architectural impact:
+- Latent center behavior is no longer snapshot-local only; lifecycle continuity is persisted per snapshot and influences subsequent center selection.
+- User-owned salience has explicit leverage against recurrence-only inflation while keeping interpretation boundaries internal and probabilistic.
+- Cross-snapshot anti-amplification now exists in latent scoring path before continuity expansion.
+- Quiet/no-center outcomes remain first-class and test-covered.
+
+Known limitations:
+- Highlight salience currently uses bounded proxy + metadata channels in this clean-room schema.
+- Lifecycle and attenuation heuristics remain deterministic and may require calibration against broader usage.
+- Neighborhood persistence remains intentionally capped/local-first to avoid narrative graph inflation.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T11-59-18-406Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 17 - Lifecycle Cooldown Enforcement Patch 1 (Active Governance Gate)
+
+- Ticket type: BUILD / LATENT / GOVERNANCE-PATCH.
+- Scope delivered:
+  - active cooldown enforcement in lifecycle eligibility and recurrence surfacing,
+  - cooldown-aware challenger damping with salience-based override to preserve revisability,
+  - cooldown-window extension under repeated challenge pressure during active cooldown,
+  - cooldown-aware no-center preservation (`cooldown_active` reason) without forced fallback center,
+  - lifecycle test expansion for cooldown reactivation, expiry, no-center coexistence, challenger interaction, extension persistence, and strong-user-salience fairness.
+
+Touched boundaries:
+- Latent runtime engine:
+  - `src/cognition/latent/latent-engine.ts`
+- Lifecycle governance tests:
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+- Runtime documentation:
+  - `docs/runtime/latent-reflective-center-lifecycle-engine-v1.md`
+  - `docs/runtime/latent-governance-primitives-v1.md`
+
+Architectural impact:
+- `cooldownUntil` now actively influences reflective cognition rather than persisting as inert metadata.
+- Rapid oscillation and weak repetition resurfacing are damped longitudinally while preserving non-locking user-owned salience override.
+- Silence legitimacy remains intact under active cooldown pressure.
+
+Known limitations:
+- Cooldown enforcement remains deterministic threshold logic and should be tuned with broader production distributions.
+- Salience override currently depends on bounded proxy channels (metadata/highlight proxies) until dedicated highlight infrastructure is canonical.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T12-34-48-687Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 18 - Center-Scoped Suppression Semantics Patch 2 (Local Reflective Quieting)
+
+- Ticket type: BUILD / LATENT / GOVERNANCE-PATCH.
+- Scope delivered:
+  - suppression evaluation narrowed from reflective-object scope to continuity-line locality,
+  - suppression overlap now requires bounded lineage overlap (center/neighborhood observations, glossary, thread/response, affect-adjacent observation),
+  - unrelated continuity lines remain eligible and are not auto-suppressed,
+  - suppression precedence over cooldown preserved for overlapping local continuity,
+  - no-center/silence legitimacy preserved without forced fallback-center substitution.
+
+Touched boundaries:
+- Latent runtime engine:
+  - `src/cognition/latent/latent-engine.ts`
+- Lifecycle governance tests:
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+- Runtime documentation:
+  - `docs/runtime/latent-reflective-center-lifecycle-engine-v1.md`
+  - `docs/runtime/latent-governance-primitives-v1.md`
+
+Architectural impact:
+- Suppression now behaves as local reflective quieting rather than global reflective shutdown at object boundary.
+- Continuity neighborhoods stay separable under suppression pressure while anti-thrashing/cooldown/attenuation remain active.
+
+Known limitations:
+- Lineage overlap remains heuristic and bounded; no graph-level continuity inference is introduced.
+- Locality checks depend on available provenance channels and may need tuning on broader distributions.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T13-01-21-643Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 19 - Lifecycle Payload Shape Hardening Patch 3 (Integrity Boundaries)
+
+- Ticket type: BUILD / LATENT / GOVERNANCE-PATCH.
+- Scope delivered:
+  - strict lifecycle payload validation + normalization introduced as canonical read/write boundary,
+  - empty payload (`{}`) treated as lifecycle-empty rather than lifecycle-valid,
+  - malformed/partial payloads degraded safely with bounded defaults or lifecycle-null fallback,
+  - legacy center columns preserved as bounded compatibility fallback when payload invalid,
+  - adapter contract hardened to normalize lifecycle payload before persistence.
+
+Touched boundaries:
+- Lifecycle validation primitives:
+  - `src/domain/latent/validation.ts`
+  - `src/domain/latent/__tests__/validation.test.ts`
+- Persistence adapters:
+  - `src/infrastructure/supabase/adapters/latent-row.ts`
+  - `src/infrastructure/supabase/adapters/__tests__/latent-row.test.ts`
+- Runtime documentation:
+  - `docs/runtime/latent-reflective-center-lifecycle-engine-v1.md`
+  - `docs/runtime/latent-governance-primitives-v1.md`
+
+Architectural impact:
+- Lifecycle payload is now a deterministic, normalized contract rather than implicitly trusted JSON.
+- Invalid lifecycle memory degrades toward lifecycle-null/quiet behavior instead of synthetic continuity execution.
+- Adapter read/write semantics align with one canonical lifecycle shape boundary.
+
+Known limitations:
+- Integrity hardening is currently adapter/validation-layer bounded (non-throwing), not DB-enforced JSON schema validation.
+- Legacy fallback remains intentionally minimal and should eventually be versioned when payload schema evolution begins.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T15-17-04-176Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 20 - Response Provenance Locality Hardening Patch 4 (Suppression Lineage Boundaries)
+
+- Ticket type: BUILD / LATENT / GOVERNANCE-PATCH.
+- Scope delivered:
+  - response provenance narrowed to continuity-local overlap before lifecycle/opening propagation,
+  - latent snapshot route switched from broad user-wide response loading to object-local response retrieval,
+  - suppression overlap tightened so response overlap cannot trigger suppression on its own,
+  - ambiguous locality now degrades toward non-suppression,
+  - opening lineage now inherits bounded local response provenance instead of broad carryover.
+
+Touched boundaries:
+- Latent runtime engine:
+  - `src/cognition/latent/latent-engine.ts`
+- Latent lifecycle tests:
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+- Latent snapshot route + route tests:
+  - `app/api/reflective-objects/[id]/latent-snapshots/route.ts`
+  - `app/api/reflective-objects/[id]/latent-snapshots/__tests__/route.test.ts`
+- Response repository contracts + implementation:
+  - `src/domain/responses/contracts.ts`
+  - `src/infrastructure/supabase/repositories/response-supabase-repository.ts`
+- Runtime governance docs:
+  - `docs/runtime/latent-reflective-center-lifecycle-engine-v1.md`
+  - `docs/runtime/latent-governance-primitives-v1.md`
+
+Architectural impact:
+- Suppression locality no longer relies on broad response-history inheritance.
+- Response lineage is now bounded by object association and local reflective-text overlap.
+- Continuity-line suppression requires stronger locality evidence and avoids accidental cross-line collapse.
+
+Known limitations:
+- Response locality remains lexical/object-association heuristic, not graph-level continuity reasoning.
+- Locality thresholds may still require tuning with broader real-user distributions.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T16-10-52-257Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 21 - Observation Provenance Locality Hardening Patch 5 (Continuity-Scoped Suppression Boundaries)
+
+- Ticket type: BUILD / LATENT / GOVERNANCE-PATCH.
+- Scope delivered:
+  - latent snapshot ingestion tightened to a bounded local-first observation window,
+  - observation provenance narrowed to continuity-local subsets via locality scoring,
+  - opening provenance now carries bounded observation lineage instead of full object observation history,
+  - suppression overlap tightened so broad observation overlap alone does not force strong suppression,
+  - ambiguous observation locality now degrades toward non-suppression.
+
+Touched boundaries:
+- Latent runtime engine:
+  - `src/cognition/latent/latent-engine.ts`
+- Latent snapshot route + route tests:
+  - `app/api/reflective-objects/[id]/latent-snapshots/route.ts`
+  - `app/api/reflective-objects/[id]/latent-snapshots/__tests__/route.test.ts`
+- Lifecycle governance tests:
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+- Runtime governance docs:
+  - `docs/runtime/latent-reflective-center-lifecycle-engine-v1.md`
+  - `docs/runtime/latent-governance-primitives-v1.md`
+
+Architectural impact:
+- Observation lineage now behaves as nearby reflective continuity memory instead of reflective-object-global carryover.
+- Suppression overlap remains center-scoped but now requires stronger locality semantics for observation-driven suppression.
+- Shared-object continuity lines remain separable under suppression pressure without weakening silence legitimacy or cooldown behavior.
+
+Known limitations:
+- Observation locality selection remains heuristic (category proximity + token lineage cues + bounded windows), not graph-level continuity inference.
+- Thresholds and lineage window sizes are deterministic and may need tuning against broader real-user distributions.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T16-39-32-854Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 22 - Processing-Mode Orchestration v1 (Bounded Internal Orientation Layer)
+
+- Ticket type: BUILD / LATENT / ORCHESTRATION.
+- Scope delivered:
+  - lifecycle payload extended with bounded processing-mode state,
+  - internal mode orchestration added for `exploratory`, `affective`, `agency_oriented`, `existential`, `continuity_oriented`,
+  - mode confidence/uncertainty and no-mode legitimacy implemented,
+  - nearby material prioritization seams added (`observations`, `glossary`, `notes`, `responses`, `neighborhood`),
+  - cooldown/suppression-compatible mode degradation behavior added,
+  - processing-mode state retained as internal-only non-authoritative runtime primitive.
+
+Touched boundaries:
+- Latent runtime engine:
+  - `src/cognition/latent/latent-engine.ts`
+- Latent domain model + validation:
+  - `src/domain/latent/types.ts`
+  - `src/domain/latent/validation.ts`
+  - `src/domain/latent/__tests__/validation.test.ts`
+- Latent persistence adapters:
+  - `src/infrastructure/supabase/adapters/latent-row.ts`
+  - `src/infrastructure/supabase/adapters/__tests__/latent-row.test.ts`
+- Latent orchestration tests:
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+- Runtime governance docs:
+  - `docs/runtime/latent-processing-modes-and-architecture-clarifications-v1.md`
+  - `docs/runtime/latent-governance-primitives-v1.md`
+  - `docs/runtime/latent-reflective-center-lifecycle-engine-v1.md`
+  - `docs/runtime/README.md`
+
+Architectural impact:
+- Latent now produces orientation-level processing tendencies without introducing interpretation-layer output.
+- Ambiguous or weak mode competition can degrade to no-mode instead of forcing synthetic certainty.
+- Lifecycle calmness controls continue to bound orchestration through suppression/cooldown-compatible confidence degradation.
+
+Known limitations:
+- Mode scoring remains deterministic heuristic logic and not learned calibration.
+- Conflict/no-mode thresholds are bounded constants that may need tuning on broader usage distributions.
+- Nearby material prioritization is a preparation seam and not yet connected to downstream dialogue/UX orchestration.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T17-44-03-376Z.log`
+
+## New Entry (2026-05-26 UTC)
+
+### Phase 23 - Homepage Orientation Hub v1 Scaffold (Routes + Payload + Responsive Composition)
+
+- Ticket type: BUILD / HOMEPAGE / ROUTES / PAYLOAD / RESPONSIVE-COMPOSITION.
+- Scope delivered:
+  - homepage shell replaced with Orientation Hub composition,
+  - bounded homepage aggregate composer added in reflective-space composition layer,
+  - explicit homepage route target registry added with `implemented` / `placeholder` / `missing` statuses,
+  - scaffold routes added for capture, glossary, journal, guide, object orientation, and deep reflection,
+  - mobile composition updated to capture-first + 2x2 tile threshold with preview suppression.
+
+Touched boundaries:
+- Homepage route + composition wiring:
+  - `app/page.tsx`
+  - `src/reflective-space/composition/compose-homepage-orientation-payload.ts`
+  - `src/reflective-space/composition/homepage-route-target-registry.ts`
+- Homepage UI composition:
+  - `src/ui/homepage/homepage-orientation-hub.tsx`
+  - `src/ui/homepage/homepage-orientation-hub.module.css`
+- Shared auth/placeholder scaffolding:
+  - `src/ui/shared/require-authenticated-user.ts`
+  - `src/ui/shared/calm-placeholder-page.tsx`
+  - `src/ui/shared/calm-placeholder-page.module.css`
+- New scaffold routes:
+  - `app/capture/page.tsx`
+  - `app/glossary/page.tsx`
+  - `app/journal/page.tsx`
+  - `app/guide/page.tsx`
+  - `app/objects/[objectId]/page.tsx`
+  - `app/objects/[objectId]/reflect/page.tsx`
+- Tests:
+  - `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`
+
+Architectural impact:
+- Homepage now consumes a bounded orientation payload and no longer renders as a broad dashboard-like workspace shell.
+- Route href/status decisions are centralized in composition registry rather than inferred in UI.
+- Mobile homepage uses entry-first tiles and suppresses dense desktop preview lists.
+
+Known limitations:
+- Route destinations are scaffold-level placeholders and intentionally minimal for v1 pass.
+- Glossary item-level detail route remains `missing` and non-blocking in this scaffold.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Tests: `npm.cmd test` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T17-58-59-778Z.log`

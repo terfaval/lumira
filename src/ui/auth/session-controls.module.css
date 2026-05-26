@@ -1,0 +1,30 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin: 0.8rem 0 0;
+}
+
+.button {
+  border: 1px solid #8b7c69;
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  background: #f3ede3;
+  color: #332c21;
+  cursor: pointer;
+}
+
+.buttonDanger {
+  border-color: #6e3e3e;
+  background: #f8eeee;
+}
+
+.message {
+  margin: 0.4rem 0 0;
+  color: #5a5348;
+}
+
+.error {
+  margin: 0.4rem 0 0;
+  color: #7c2424;
+}

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/run-build-with-log.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
@@ -13,7 +13,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
-    "next": "16.1.1",
+    "next": "16.2.6",
     "openai": "^6.15.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
@@ -24,7 +24,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.1",
+    "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.2.4"
