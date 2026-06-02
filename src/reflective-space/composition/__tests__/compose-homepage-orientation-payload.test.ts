@@ -187,6 +187,7 @@ describe("composeHomepageOrientationPayload", () => {
     expect(payload.recentObjectsPreview.maxSlots).toBe(3);
     expect(payload.recentObjectsPreview.items).toHaveLength(3);
     expect(payload.recentObjectsPreview.hasMore).toBe(true);
+    expect(payload.recentObjectsPreview.items[0].target.routeStatus).toBe("implemented");
 
     expect(payload.dreamJournalPreview.targetSlots).toBe(3);
     expect(payload.dreamJournalPreview.items).toHaveLength(3);
@@ -224,7 +225,7 @@ describe("composeHomepageOrientationPayload", () => {
       } as unknown as ObservationRepository,
     });
 
-    expect(payload.navigation.capture.routeStatus).toBe("placeholder");
+    expect(payload.navigation.capture.routeStatus).toBe("implemented");
     expect(payload.navigation.glossary.routeStatus).toBe("placeholder");
     expect(payload.navigation.dreamJournal.routeStatus).toBe("placeholder");
     expect(payload.navigation.guide.routeStatus).toBe("placeholder");

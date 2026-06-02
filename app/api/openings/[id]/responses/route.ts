@@ -50,16 +50,17 @@ export async function GET(request: Request, context: RouteParams) {
   if (!user.userId) {
     return unauthorizedResponse();
   }
+  const userId = user.userId;
 
   const { id: openingId } = await context.params;
   const openingRepository = createOpeningRepository();
-  const opening = await openingRepository.getOpeningById(openingId, user.userId);
+  const opening = await openingRepository.getOpeningById(openingId, userId);
   if (!opening) {
     return NextResponse.json({ error: "Opening not found." }, { status: 404 });
   }
 
   const responseRepository = createResponseRepository();
-  const associations = await responseRepository.listOpeningResponseAssociationsByOpening(openingId, user.userId);
+  const associations = await responseRepository.listOpeningResponseAssociationsByOpening(openingId, userId);
 
   return NextResponse.json({ associations });
 }
@@ -69,6 +70,7 @@ export async function POST(request: Request, context: RouteParams) {
   if (!user.userId) {
     return unauthorizedResponse();
   }
+  const userId = user.userId;
 
   const payload = await readRequestBody(request);
   if (payload === null) {
@@ -78,24 +80,24 @@ export async function POST(request: Request, context: RouteParams) {
   const { id: openingId } = await context.params;
 
   const openingRepository = createOpeningRepository();
-  const opening = await openingRepository.getOpeningById(openingId, user.userId);
+  const opening = await openingRepository.getOpeningById(openingId, userId);
   if (!opening) {
     return NextResponse.json({ error: "Opening not found." }, { status: 404 });
   }
 
-  const parsedResponse = parseCreateReflectiveResponseInput(payload, user.userId);
+  const parsedResponse = parseCreateReflectiveResponseInput(payload, userId);
   if (!parsedResponse.ok) {
     return NextResponse.json({ error: parsedResponse.error }, { status: 400 });
   }
 
-  const parsedAssociation = parseCreateOpeningResponseAssociationInput(payload, openingId, user.userId);
+  const parsedAssociation = parseCreateOpeningResponseAssociationInput(payload, openingId, userId);
   if (!parsedAssociation.ok) {
     return NextResponse.json({ error: parsedAssociation.error }, { status: 400 });
   }
 
   if (parsedAssociation.value.threadId) {
     const threadRepository = createThreadRepository();
-    const thread = await threadRepository.getThreadById(parsedAssociation.value.threadId, user.userId);
+    const thread = await threadRepository.getThreadById(parsedAssociation.value.threadId, userId);
     if (!thread) {
       return NextResponse.json({ error: "Reflective thread not found." }, { status: 404 });
     }
@@ -104,8 +106,18 @@ export async function POST(request: Request, context: RouteParams) {
   const responseRepository = createResponseRepository();
   const response = await responseRepository.createResponse(parsedResponse.value);
 
+  await Promise.all(
+    opening.provenance.sourceObjects.map((reflectiveObjectId) =>
+      responseRepository.createObjectAssociation({
+        userId,
+        responseId: response.id,
+        reflectiveObjectId,
+      }),
+    ),
+  );
+
   const activationEvent = await responseRepository.createOpeningActivationEvent({
-    userId: user.userId,
+    userId,
     openingId,
     activationSource: parsedAssociation.value.openingActivationContext,
     activationContext: parsedAssociation.value.openingActivationContext,
@@ -127,6 +139,7 @@ export async function DELETE(request: Request, context: RouteParams) {
   if (!user.userId) {
     return unauthorizedResponse();
   }
+  const userId = user.userId;
 
   const payload = await readRequestBody(request);
   if (payload === null) {
@@ -141,13 +154,13 @@ export async function DELETE(request: Request, context: RouteParams) {
   const { id: openingId } = await context.params;
 
   const openingRepository = createOpeningRepository();
-  const opening = await openingRepository.getOpeningById(openingId, user.userId);
+  const opening = await openingRepository.getOpeningById(openingId, userId);
   if (!opening) {
     return NextResponse.json({ error: "Opening not found." }, { status: 404 });
   }
 
   const responseRepository = createResponseRepository();
-  const removed = await responseRepository.removeOpeningResponseAssociation(openingId, parsedTarget.responseId, user.userId);
+  const removed = await responseRepository.removeOpeningResponseAssociation(openingId, parsedTarget.responseId, userId);
 
   if (!removed) {
     return NextResponse.json({ error: "Opening-response association not found." }, { status: 404 });

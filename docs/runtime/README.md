@@ -20,3 +20,7 @@ Latest latent runtime additions:
 - `docs/runtime/latent-governance-primitives-v1.md`
 - `docs/runtime/latent-reflective-center-lifecycle-engine-v1.md`
 - `docs/runtime/latent-processing-modes-and-architecture-clarifications-v1.md`
+
+Latest latent governance update:
+- Internal transport projection boundary is now enforced for latent snapshot APIs (Patch 6, 2026-05-31 UTC).
+- No-mode semantics now enforce true mode silence with exploratory/no-mode separation under ambiguity pressure (Patch 7, 2026-05-31 UTC).

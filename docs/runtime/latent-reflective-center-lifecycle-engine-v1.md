@@ -185,6 +185,18 @@ Compatibility rules:
 - no-center and silence remain valid with exploratory or no-mode outcomes,
 - orchestration remains internal-only and does not add interpretation-layer surfacing.
 
+## 7.1 Transport projection boundary
+
+Lifecycle payload is persistence/runtime infrastructure, not default downstream/public transport.
+
+Patch 6 enforces:
+- raw lifecycle orchestration internals stay server-side by default,
+- latent snapshot APIs return projection DTOs that keep only bounded continuity state needed for safe downstream use,
+- processing-mode internals remain available for orchestration/dialogue-preparation internals through intentional internal interfaces.
+
+Projection implication:
+- persistence artifacts are not direct dialogue semantics.
+
 ## Verification
 
 Validation commands executed:

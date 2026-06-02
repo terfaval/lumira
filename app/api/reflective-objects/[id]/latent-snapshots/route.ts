@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { buildLatentSnapshotScaffold } from "@/src/cognition/latent/latent-engine";
+import { toPublicLatentSnapshot } from "@/src/domain/latent/transport";
 import { DEV_FALLBACK_HEADER, resolveRequestUserContext } from "@/src/infrastructure/supabase/auth/resolve-request-user-context";
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
 import { createLatentRepository } from "@/src/infrastructure/supabase/repositories/create-latent-repository";
@@ -79,5 +80,5 @@ export async function POST(request: Request, context: RouteParams) {
 
   const latentSnapshot = await latentRepository.createSnapshot(snapshotScaffold);
 
-  return NextResponse.json({ latentSnapshot }, { status: 201 });
+  return NextResponse.json({ latentSnapshot: toPublicLatentSnapshot(latentSnapshot) }, { status: 201 });
 }

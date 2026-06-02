@@ -739,3 +739,469 @@ Verification references:
 - Tests: `npm.cmd test` (pass)
 - Build: `npm.cmd run build` (pass)
 - Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-26T17-58-59-778Z.log`
+
+## New Entry (2026-05-31 UTC)
+
+### Phase 24 - Internal Transport Boundary for Processing Modes (Governance Patch 6)
+
+- Ticket type: BUILD / LATENT / GOVERNANCE-PATCH.
+- Scope delivered:
+  - explicit internal vs public latent transport projection layer added,
+  - latent snapshot APIs now return public-safe projection payloads by default,
+  - internal orchestration internals (`processingMode`, candidates, rationale traces, material priorities, lifecycle weighting internals) removed from default route transport payloads,
+  - bounded public lifecycle state retained (`centerState`, `noCenterReason`),
+  - public summary transport language sanitized to avoid raw mode/category leakage.
+
+Touched boundaries:
+- Latent transport boundary contracts:
+  - `src/domain/latent/transport.ts`
+  - `src/domain/latent/types.ts`
+  - `src/domain/latent/README.md`
+- Latent snapshot route transport hardening:
+  - `app/api/latent/snapshots/route.ts`
+  - `app/api/latent/snapshots/[id]/route.ts`
+  - `app/api/reflective-objects/[id]/latent-snapshots/route.ts`
+- Boundary verification tests:
+  - `src/domain/latent/__tests__/transport.test.ts`
+  - `app/api/latent/snapshots/__tests__/route.test.ts`
+  - `app/api/latent/snapshots/[id]/__tests__/route.test.ts`
+  - `app/api/reflective-objects/[id]/latent-snapshots/__tests__/route.test.ts`
+- Runtime boundary documentation:
+  - `docs/runtime/latent-processing-modes-and-architecture-clarifications-v1.md`
+  - `docs/runtime/latent-governance-primitives-v1.md`
+  - `docs/runtime/latent-reflective-center-lifecycle-engine-v1.md`
+  - `docs/runtime/README.md`
+
+Architectural impact:
+- Internal latent orchestration richness is preserved server-side while default route transport contracts now enforce non-interpretive downstream boundaries.
+- Processing-mode outputs are explicitly infrastructural and no longer leaked as raw route payload artifacts.
+- Future dialogue-preparation can consume internal orchestration intentionally without relying on raw public snapshot payload exposure.
+
+Known limitations:
+- Public projection currently applies at route transport boundaries; repository/domain objects remain full-fidelity internal models by design.
+- Summary sanitization is deterministic and bounded; future dialogue contracts may replace this with dedicated public continuity summary fields.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-31T11-55-51-742Z.log`
+
+## New Entry (2026-05-31 UTC)
+
+### Phase 25 - True No-Mode Silence (Governance Patch 7)
+
+- Ticket type: BUILD / LATENT / GOVERNANCE-PATCH.
+- Scope delivered:
+  - removed derived-mode fallback wording when `selectedMode === null`,
+  - no-mode reflective-opportunity descriptions now remain mode-silent,
+  - no-mode opening phrasing now remains generic and non-orienting,
+  - high-uncertainty weak-gravity handling now degrades toward no-mode silence instead of weak exploratory substitution,
+  - exploratory/no-mode distinction hardened with explicit regression coverage.
+
+Touched boundaries:
+- Latent orchestration behavior:
+  - `src/cognition/latent/latent-engine.ts`
+- No-mode semantics tests:
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+  - `src/domain/latent/__tests__/transport.test.ts`
+  - `app/api/latent/snapshots/[id]/__tests__/route.test.ts`
+- Runtime documentation:
+  - `docs/runtime/latent-processing-modes-and-architecture-clarifications-v1.md`
+  - `docs/runtime/latent-governance-primitives-v1.md`
+  - `docs/runtime/README.md`
+
+Architectural impact:
+- No-mode is now treated as true orientation absence rather than fallback mode flavor.
+- Internal and public payload paths can no longer reconstruct implicit mode flavor from no-mode phrasing paths.
+- Exploratory remains available as an explicit mode only when reflective gravity is sufficient.
+
+Known limitations:
+- Exploratory/no-mode separation remains deterministic heuristic logic and may require distribution tuning as longitudinal production data grows.
+- No-mode semantics are enforced in latent orchestration and transport projection paths; downstream consumers must continue to treat internal payloads as non-authoritative orchestration artifacts.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-05-31T12-29-36-501Z.log`
+
+## New Entry (2026-06-01 UTC)
+
+### Phase 26 - Reflection Entry Activation v1 (Live Orientation -> Reflection Route)
+
+- Ticket type: BUILD / REFLECTION ENTRY / PHASE 1.
+- Scope delivered:
+  - mounted first live reflection entry route at `/objects/[objectId]/reflect`,
+  - replaced route placeholder with real `ReflectiveSpaceWorkspace` mount,
+  - added initial center-object hydration from route params into viewport bootstrap,
+  - promoted orientation route target `reflective_object_orientation` from `placeholder` to `implemented`,
+  - documented route/navigation/hydration/limitations in runtime docs.
+
+Touched boundaries:
+- Route activation:
+  - `app/objects/[objectId]/reflect/page.tsx`
+- Workspace hydration seam:
+  - `src/ui/reflective-space/reflective-space-workspace.tsx`
+- Orientation navigation target registry:
+  - `src/reflective-space/composition/homepage-route-target-registry.ts`
+- Regression coverage:
+  - `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`
+- Runtime delivery docs:
+  - `docs/runtime/reflection-entry-activation-v1.md`
+
+Architectural impact:
+- Users can now enter a live reflection workspace from Orientation Recent Objects without hitting placeholder reflection route walls.
+- Reflection viewport loading remains contract-stable and uses existing `centerObjectId` query wiring without payload redesign.
+- Refresh preserves entry context through route-param-driven hydration.
+
+Known limitations:
+- Capture redesign and automated `Capture -> Observation -> Latent -> Opening` chain are intentionally out of scope in this phase.
+- `/objects/[objectId]` and other non-reflection scaffold routes remain placeholders.
+- Reflection entry is currently provided through recent object links, not full orientation IA completion.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-01T11-11-02-287Z.log`
+
+## New Entry (2026-06-01 UTC)
+
+### Phase 27 - Capture -> Observation Operational Path v1 (First Real User Input Loop)
+
+- Ticket type: BUILD / CAPTURE / OBSERVATION / PHASE 2.
+- Scope delivered:
+  - replaced `/capture` placeholder with minimal operational dream capture form,
+  - persisted reflective object from user input (`title`, `dreamText`),
+  - generated and persisted descriptive observation scaffold from submitted dream text,
+  - redirected capture flow to live reflection route `/objects/[objectId]/reflect`,
+  - promoted orientation capture route target from `placeholder` to `implemented`.
+
+Touched boundaries:
+- Capture route and server action:
+  - `app/capture/page.tsx`
+  - `app/capture/page.module.css`
+- Observation scaffold ingestion path:
+  - `src/cognition/observation/descriptive-observation-scaffold.ts` (consumed)
+  - `src/infrastructure/supabase/repositories/create-observation-repository.ts` (consumed)
+- Reflective object creation path:
+  - `src/infrastructure/supabase/repositories/create-reflective-object-repository.ts` (consumed)
+- Orientation route status and regression coverage:
+  - `src/reflective-space/composition/homepage-route-target-registry.ts`
+  - `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`
+- Runtime delivery docs:
+  - `docs/runtime/capture-observation-operational-path-v1.md`
+
+Architectural impact:
+- First live user-authored capture loop now persists real input and immediately hands off into mounted reflection workspace.
+- No runtime contract redesign was introduced; flow composes existing reflective object + observation domain boundaries.
+- Refresh/re-entry behavior is persistence-backed and route-stable via existing reflection hydration seam.
+
+Known limitations:
+- Latent/opening generation remains intentionally out of scope for this phase.
+- Validation UX remains minimal and non-polished.
+- Journal/glossary continuity orchestration remains unchanged.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-01T11-42-09-721Z.log`
+
+## New Entry (2026-06-01 UTC)
+
+### Phase 28 - Latent -> Opening Operational Path v1 (Automatic Reflection Preparation)
+
+- Ticket type: BUILD / LATENT / OPENING / PHASE 3.
+- Scope delivered:
+  - added automatic reflection preparation trigger on reflection route entry,
+  - implemented route/service-level operational chain:
+    - `Observation -> Latent Snapshot -> Opening Evaluation`,
+  - reused existing latent/opening artifacts on re-entry to avoid duplicate generation,
+  - preserved no-opening legitimacy and reflection workspace silence fallback,
+  - preserved failure safety by keeping reflection workspace usable when preparation fails.
+
+Touched boundaries:
+- Reflection entry route integration:
+  - `app/objects/[objectId]/reflect/page.tsx`
+- Runtime orchestration service:
+  - `src/runtime/orchestration/prepare-latent-opening-for-reflection.ts`
+- Orchestration regression coverage:
+  - `src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts`
+- Runtime delivery docs:
+  - `docs/runtime/latent-opening-operational-path-v1.md`
+
+Architectural impact:
+- Reflection entry now performs automatic latent/opening preparation without changing schema or API contracts.
+- Existing cadence/suppression/cooldown/no-center semantics remain authoritative because the implementation reuses:
+  - `buildLatentSnapshotScaffold`
+  - `deriveOpeningCandidatesFromLatent`
+  - `applyOpeningCadencePolicy`
+- Route-level error handling prevents preparation failures from blocking workspace rendering.
+
+Known limitations:
+- Reuse detection for latent snapshots is provenance-based (`sourceReflectiveObjects` overlap), not direct object-keyed snapshot ownership.
+- No response, continuity, glossary, topology, or dialogue redesign is included in this phase.
+- No new opening types or latent cognition rules were introduced.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-01T12-14-41-981Z.log`
+
+## New Entry (2026-06-01 UTC)
+
+### Phase 29 - Response + Continuity Completion v1 (First Closed Reflection Loop)
+
+- Ticket type: BUILD / RESPONSE / CONTINUITY / PHASE 4.
+- Scope delivered:
+  - verified and kept mounted workspace response authoring path,
+  - persisted response-object associations during opening response save for object continuity lineage,
+  - scoped reflection viewport response and dialogue surfaces to current reflection object context,
+  - added explicit continuity cue in workspace when prior reflection exists for selected object,
+  - preserved fallback behavior for no-opening/no-response/no-dialogue and save failures.
+
+Touched boundaries:
+- Opening response API persistence path:
+  - `app/api/openings/[id]/responses/route.ts`
+- Route tests:
+  - `app/api/openings/[id]/responses/__tests__/route.test.ts`
+- Object-scoped viewport composition:
+  - `src/reflective-space/composition/compose-reflective-space-viewport.ts`
+- Workspace continuity cue:
+  - `src/ui/reflective-space/reflective-space-workspace.tsx`
+- Runtime delivery docs:
+  - `docs/runtime/response-continuity-completion-v1.md`
+
+Architectural impact:
+- Response saves now preserve object context explicitly through response-object associations.
+- Refresh/re-entry on `/objects/[objectId]/reflect` now uses object-scoped response/dialogue surfaces for clearer remembered-reflection continuity.
+- No schema/migration changes were required.
+
+Known limitations:
+- Continuity cue is intentionally MVP-level and does not include advanced thread navigation/topology views.
+- No glossary/highlight integration was added in this phase.
+- Dialogue UX model remains bounded archive view (no redesign).
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-01T15-57-40-035Z.log`
+
+## New Entry (2026-06-01 UTC)
+
+### Phase 30 - Homepage Orientation Hub P0 Experiential Convergence Pass
+
+- Ticket type: BUILD / UX / HOMEPAGE / EXPERIENTIAL-CONVERGENCE.
+- Scope delivered:
+  - removed homepage hero copy block so homepage opens directly into panel composition,
+  - restored Capture panel as immediate first visual entry by structure (no replacement hero/onboarding content),
+  - moved auth/session controls out of primary homepage hierarchy into a low-emphasis secondary utility disclosure.
+
+Touched boundaries:
+- Homepage route composition:
+  - `app/page.tsx`
+  - `app/page.module.css`
+- Homepage UI composition:
+  - `src/ui/homepage/homepage-orientation-hub.tsx`
+  - `src/ui/homepage/homepage-orientation-hub.module.css`
+
+Architectural impact:
+- No runtime, payload, orchestration, route-registry, preview-count, or mobile tile contract changes.
+- Homepage now starts with orientation panel structure itself, reducing launcher/app-shell first-fold pressure.
+- Session controls remain accessible while no longer competing with orientation panels in first-fold hierarchy.
+
+Known limitations:
+- This pass is intentionally P0-only and does not redesign panel visuals/copy system-wide.
+- Screenshots were not generated in this terminal-only execution context.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Tests: `npm.cmd test` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-01T20-25-18-322Z.log`
+
+## New Entry (2026-06-01 UTC)
+
+### Phase 31 - Homepage Orientation Hub P1 Visual Hierarchy Convergence Pass
+
+- Ticket type: BUILD / UX / HOMEPAGE / VISUAL-HIERARCHY.
+- Scope delivered:
+  - homepage copy switched to Hungarian-first at UI level for orientation panel labels and CTA language,
+  - Capture panel upgraded to distinct primary entry surface with atmospheric background image (`public/home/capture_day.png`) and readability-preserving overlay,
+  - glossary/journal/guide explicit "Open ..." CTA buttons removed; entry behavior moved to panel-surface linking,
+  - panel hierarchy rebalanced (primary/secondary/tertiary visual weighting) with reduced secondary competition and tighter viewport-fit spacing,
+  - homepage-specific vertical rhythm tightened to preserve one-surface orientation feel on common desktop heights.
+
+Touched boundaries:
+- Homepage route shell:
+  - `app/page.tsx`
+  - `app/page.module.css`
+- Homepage UI composition:
+  - `src/ui/homepage/homepage-orientation-hub.tsx`
+  - `src/ui/homepage/homepage-orientation-hub.module.css`
+
+Architectural impact:
+- No runtime, payload shape, orchestration, cognition, route registry, or preview count contract changes were introduced.
+- Capture now carries stronger entry gravity without introducing new homepage features.
+- Secondary panels are visually demoted while preserving bounded orientation composition behavior.
+
+Known limitations:
+- Automated screenshot generation could not be completed without adding local Playwright test dependency; dependency was not added to respect ticket constraints.
+- Dynamic user-generated preview text may still contain non-Hungarian content when source data is non-Hungarian.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Tests: `npm.cmd test` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-01T20-41-47-466Z.log`
+
+## New Entry (2026-06-02 UTC)
+
+### Phase 32 - Homepage Orientation Hub P1.1 Polish Pass
+
+- Ticket type: BUILD / UX / HOMEPAGE / POLISH.
+- Scope delivered:
+  - typography foundation switched to `Space Grotesk` (display) + `Source Sans 3` (text) through root layout font wiring,
+  - session/admin controls moved from in-flow accordion into a compact floating lower-left utility rail,
+  - Capture surface converted to full-surface entry interaction with single overlay link and non-interactive affordance chip,
+  - duplicate Capture CTA wording removed,
+  - Capture visual layering softened and hierarchy stabilized with calmer image treatment and hover/focus behavior,
+  - Hungarian-first homepage copy encoding repaired at component level.
+
+Touched boundaries:
+- Global font shell:
+  - `app/layout.tsx`
+- Homepage route shell:
+  - `app/page.tsx`
+  - `app/page.module.css`
+- Homepage UI composition:
+  - `src/ui/homepage/homepage-orientation-hub.tsx`
+  - `src/ui/homepage/homepage-orientation-hub.module.css`
+- Utility controls:
+  - `src/ui/auth/session-controls.tsx`
+  - `src/ui/auth/session-controls.module.css`
+
+Architectural impact:
+- No runtime, payload, route, or orchestration contract changes were introduced.
+- Homepage composition remains structurally identical while Capture now behaves as an entry surface rather than a peer card.
+- Utility controls remain accessible without consuming homepage orientation space.
+
+Known limitations:
+- Screenshot generation was not repeated in this pass.
+- Source-derived preview content can still reflect the language of stored user data.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Tests: `npm.cmd test` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-02T06-55-56-165Z.log`
+
+## New Entry (2026-06-02 UTC)
+
+### Phase 33 - Homepage Orientation Hub P1.2 Final Polish and Bugfix Pass
+
+- Ticket type: BUILD / UX / HOMEPAGE / BUGFIX / POLISH.
+- Scope delivered:
+  - replaced unicode escape sequences in homepage-facing strings with direct Hungarian text to prevent immersion-breaking literal escape rendering,
+  - tightened homepage vertical rhythm and reduced excess whitespace below the composition,
+  - softened Capture surface image treatment with stronger overlay and reduced visual lift,
+  - preserved full-surface Capture interaction while simplifying its affordance posture,
+  - normalized remaining homepage utility copy to proper Hungarian diacritics.
+
+Touched boundaries:
+- Homepage route shell:
+  - `app/page.tsx`
+  - `app/page.module.css`
+- Homepage UI composition:
+  - `src/ui/homepage/homepage-orientation-hub.tsx`
+  - `src/ui/homepage/homepage-orientation-hub.module.css`
+- Utility controls:
+  - `src/ui/auth/session-controls.tsx`
+
+Architectural impact:
+- No runtime, payload, route, or orchestration changes were introduced.
+- Homepage remains structurally identical while final text/rendering and compositional polish issues are resolved.
+
+Known limitations:
+- Screenshot capture was not rerun in this pass.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Tests: `npm.cmd test` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-02T07-15-05-654Z.log`
+
+## New Entry (2026-06-02 UTC)
+
+### Phase 34 - Homepage Capture Surface Correction Pass
+
+- Ticket type: BUILD / UX / HOMEPAGE / CAPTURE-CORRECTION.
+- Scope delivered:
+  - removed the unwanted `Belépési felület` eyebrow from the Capture panel,
+  - replaced the separate title and small affordance with a single large CTA row: `+ Új álom rögzítése`,
+  - kept the full Capture surface clickable while simplifying it to one visual action target,
+  - centered Capture content horizontally, increased vertical breathing room, and reduced awkward desktop line wrapping,
+  - lightened the daytime image treatment so the surface reads brighter and less heavy,
+  - added a homepage UI regression test to lock the new Capture markup in place.
+
+Touched boundaries:
+- Homepage UI composition:
+  - `src/ui/homepage/homepage-orientation-hub.tsx`
+  - `src/ui/homepage/homepage-orientation-hub.module.css`
+- Homepage UI regression tests:
+  - `src/ui/homepage/__tests__/homepage-orientation-hub.test.tsx`
+
+Architectural impact:
+- No runtime, payload, route, or orchestration changes were introduced.
+- The change is limited to homepage presentation and a targeted UI regression test.
+
+Known limitations:
+- Screenshot capture was not produced in this terminal pass.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Tests: `npm.cmd test` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-02T08-49-28-872Z.log`
+
+## New Entry (2026-06-02 UTC)
+
+### Phase 35 - Homepage Capture Typography and Centering Follow-up
+
+- Ticket type: BUILD / UX / HOMEPAGE / POLISH.
+- Scope delivered:
+  - forced the Capture CTA label onto the display font stack so it no longer falls back to body typography,
+  - increased Capture top and bottom padding and slightly expanded its minimum height,
+  - vertically centered the homepage panel composition within the desktop page shell while preserving mobile top-flow behavior.
+
+Touched boundaries:
+- Homepage route shell:
+  - `app/page.module.css`
+- Homepage UI composition:
+  - `src/ui/homepage/homepage-orientation-hub.module.css`
+
+Architectural impact:
+- No runtime, payload, route, or orchestration changes were introduced.
+- Changes are limited to homepage layout and typography presentation.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Tests: `npm.cmd test` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-02T08-55-23-599Z.log`

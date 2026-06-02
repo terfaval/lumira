@@ -5,6 +5,7 @@ import { composeHomepageOrientationPayload } from "@/src/reflective-space/compos
 import { SessionControls } from "@/src/ui/auth/session-controls";
 import { HomepageOrientationHub } from "@/src/ui/homepage/homepage-orientation-hub";
 import { requireAuthenticatedUserId } from "@/src/ui/shared/require-authenticated-user";
+import styles from "@/app/page.module.css";
 
 export default async function HomePage() {
   const userId = await requireAuthenticatedUserId();
@@ -16,9 +17,16 @@ export default async function HomePage() {
   });
 
   return (
-    <main>
-      <SessionControls />
+    <main className={styles.page}>
       <HomepageOrientationHub payload={payload} />
+      <details className={styles.sessionUtility}>
+        <summary aria-label="Munkamenet eszközök">
+          <span className={styles.utilityGlyph} aria-hidden="true" />
+        </summary>
+        <div className={styles.sessionPopover}>
+          <SessionControls />
+        </div>
+      </details>
     </main>
   );
 }

@@ -1193,13 +1193,58 @@ describe("buildLatentSnapshotScaffold", () => {
     expect(mode?.selectedMode).toBe("continuity_oriented");
   });
 
-  it("biases toward exploratory processing under weak uncertain evidence", () => {
+  it("keeps exploratory distinct from no-mode when moderate uncertainty has local reflective gravity", () => {
+    const exploratoryGravity: Observation = {
+      ...baseObservation(),
+      id: "obs-explore-mid",
+      summary: "A hallway and a figure were present, but details stayed partially unclear.",
+      semanticPolicyResult: "accept",
+      uncertaintyNotes: [],
+      fragments: [
+        {
+          ...baseObservation().fragments[0],
+          id: "frag-explore-mid-1",
+          observationId: "obs-explore-mid",
+          category: "scene",
+          fragmentText: "A hallway appeared.",
+          evidenceAdequacy: "snippet_only",
+          uncertaintyNote: "partial cue",
+        },
+        {
+          ...baseObservation().fragments[0],
+          id: "frag-explore-mid-2",
+          observationId: "obs-explore-mid",
+          category: "actor",
+          fragmentText: "A figure stood nearby.",
+          evidenceAdequacy: "snippet_only",
+          uncertaintyNote: null,
+          position: 1,
+        },
+      ],
+    };
+
+    const snapshot = buildLatentSnapshotScaffold({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      observations: [exploratoryGravity],
+      glossaryTerms: [],
+      threads: [],
+      responses: [],
+    });
+
+    const mode = snapshot.lifecycle?.processingMode;
+    expect(mode?.selectedMode).toBe("exploratory");
+    expect(mode?.noModeReason).toBeNull();
+    expect(mode?.uncertainty).toBeGreaterThan(0.4);
+  });
+
+  it("prefers no-mode silence over weak exploratory under extreme uncertainty", () => {
     const uncertainScene = observationWithWeakUncertainPhenomenology();
-    uncertainScene.id = "obs-explore";
+    uncertainScene.id = "obs-explore-high";
     uncertainScene.fragments = uncertainScene.fragments.map((fragment, index) => ({
       ...fragment,
-      id: `frag-explore-${index + 1}`,
-      observationId: "obs-explore",
+      id: `frag-explore-high-${index + 1}`,
+      observationId: "obs-explore-high",
       category: index % 2 === 0 ? "scene" : "actor",
     }));
 
@@ -1213,8 +1258,8 @@ describe("buildLatentSnapshotScaffold", () => {
     });
 
     const mode = snapshot.lifecycle?.processingMode;
-    expect(mode?.selectedMode).toBe("exploratory");
-    expect(mode?.uncertainty).toBeGreaterThan(0.5);
+    expect(mode?.selectedMode).toBeNull();
+    expect(mode?.noModeReason).toBe("high_uncertainty");
   });
 
   it("keeps no-mode legitimacy when mode competition remains ambiguous", () => {
@@ -1265,6 +1310,68 @@ describe("buildLatentSnapshotScaffold", () => {
     const mode = snapshot.lifecycle?.processingMode;
     expect(mode?.selectedMode).toBeNull();
     expect(typeof mode?.noModeReason).toBe("string");
+  });
+
+  it("keeps center-eligible no-mode phrasing mode-silent without derived fallback flavor", () => {
+    const affectiveCompetitive: Observation = {
+      ...baseObservation(),
+      id: "obs-no-mode-center-a",
+      provenanceTier: "reviewed",
+      summaryTrace: [{ fragmentPosition: 0, reason: "inferred_overlap", strength: "weak" }],
+      uncertaintyNotes: [],
+      semanticPolicyResult: "accept",
+      fragments: [
+        {
+          ...baseObservation().fragments[0],
+          id: "frag-no-mode-center-a",
+          observationId: "obs-no-mode-center-a",
+          category: "affect_transition",
+          fragmentText: "Fear shifted into relief.",
+          evidenceAdequacy: "strong_span",
+          uncertaintyNote: null,
+        },
+      ],
+    };
+    const agencyCompetitive: Observation = {
+      ...baseObservation(),
+      id: "obs-no-mode-center-b",
+      provenanceTier: "reviewed",
+      summaryTrace: [{ fragmentPosition: 0, reason: "inferred_overlap", strength: "weak" }],
+      uncertaintyNotes: [],
+      semanticPolicyResult: "accept",
+      fragments: [
+        {
+          ...baseObservation().fragments[0],
+          id: "frag-no-mode-center-b",
+          observationId: "obs-no-mode-center-b",
+          category: "agency_state",
+          fragmentText: "I tried to respond but paused.",
+          evidenceAdequacy: "strong_span",
+          uncertaintyNote: null,
+        },
+      ],
+    };
+
+    const snapshot = buildLatentSnapshotScaffold({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      observations: [affectiveCompetitive, agencyCompetitive],
+      glossaryTerms: [],
+      threads: [],
+      responses: [],
+    });
+
+    const mode = snapshot.lifecycle?.processingMode;
+    expect(mode?.selectedMode).toBeNull();
+    expect(snapshot.summary).toContain("(no_mode)");
+    const opening = snapshot.suggestions.find((suggestion) => suggestion.suggestionType === "possible_opening");
+    expect(opening?.phrasing).toBe("A gentle reflective opening might relate here.");
+    const reflectiveSignal = snapshot.signals.find((signal) => signal.signalType === "reflective_opportunity_possibility");
+    expect(reflectiveSignal?.description).not.toContain("(exploratory)");
+    expect(reflectiveSignal?.description).not.toContain("(affective)");
+    expect(reflectiveSignal?.description).not.toContain("(agency_oriented)");
+    expect(reflectiveSignal?.description).not.toContain("(existential)");
+    expect(reflectiveSignal?.description).not.toContain("(continuity_oriented)");
   });
 
   it("propagates cooldown/suppression calmness into processing-mode confidence", () => {

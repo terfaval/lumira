@@ -25,6 +25,10 @@ interface ReflectiveSpaceViewportPayload {
   viewport: ReflectiveSpaceViewportReadModel;
 }
 
+interface ReflectiveSpaceWorkspaceProps {
+  initialCenterObjectId?: string;
+}
+
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init,
@@ -62,7 +66,7 @@ function openingSurfaceLabel(surface: OpeningSurface): string {
   return surface.preview;
 }
 
-export function ReflectiveSpaceWorkspace() {
+export function ReflectiveSpaceWorkspace({ initialCenterObjectId }: ReflectiveSpaceWorkspaceProps) {
   const [summary, setSummary] = useState("Reflective space is loading.");
   const [reflectiveObjects, setReflectiveObjects] = useState<ReflectiveObject[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
@@ -90,6 +94,14 @@ export function ReflectiveSpaceWorkspace() {
     () => reflectiveObjects.find((item) => item.id === selectedObjectId) ?? null,
     [reflectiveObjects, selectedObjectId],
   );
+  const hasPriorReflectionForSelectedObject = useMemo(() => {
+    if (!selectedObjectId) {
+      return false;
+    }
+
+    const hasDialogue = dialogues.some((dialogue) => dialogue.context.reflectiveObjectIds.includes(selectedObjectId));
+    return hasDialogue || responseSurfaces.length > 0;
+  }, [dialogues, responseSurfaces.length, selectedObjectId]);
 
   const visibleOpenings = useMemo(() => filterOpeningSurfacesForCalmAvailability(openingSurfaces), [openingSurfaces]);
 
@@ -148,12 +160,12 @@ export function ReflectiveSpaceWorkspace() {
     setIsBootstrapping(true);
     setErrorMessage(null);
 
-    void loadViewport()
+    void loadViewport({ centerObjectId: initialCenterObjectId })
       .catch((error) => {
         setErrorMessage(error instanceof Error ? error.message : "Reflective space could not be loaded.");
       })
       .finally(() => setIsBootstrapping(false));
-  }, [loadViewport]);
+  }, [initialCenterObjectId, loadViewport]);
 
   async function handleCreateReflectiveObject(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -384,6 +396,9 @@ export function ReflectiveSpaceWorkspace() {
 
         <article className={styles.panel}>
           <h2>Continuity Memory</h2>
+          {hasPriorReflectionForSelectedObject ? (
+            <p className={styles.quietNote}>You reflected on this material before. Prior traces are available below.</p>
+          ) : null}
           <h3>Glossary Cues</h3>
           <ul className={styles.inlineList}>
             {glossaryCues.slice(0, 6).map((cue, index) => (

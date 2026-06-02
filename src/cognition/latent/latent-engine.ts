@@ -241,22 +241,6 @@ function traceMultiplierForFragment(observation: Observation, fragmentPosition: 
   return 0.75;
 }
 
-function deriveProcessingMode(category: string): LatentProcessingMode {
-  if (category === "affect_transition" || category === "emotional_contradiction" || category === "affective_atmosphere") {
-    return "affective";
-  }
-  if (category === "agency_state" || category === "metacognitive_moment") {
-    return "agency_oriented";
-  }
-  if (category === "spatial_instability" || category === "dream_state_quality" || category === "altered_realism") {
-    return "existential";
-  }
-  if (category === "continuity_fragment" || category === "recurrence_candidate") {
-    return "continuity_oriented";
-  }
-  return "exploratory";
-}
-
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -537,12 +521,15 @@ function buildProcessingModeState(input: {
 
   const topScore = top[1];
   const secondScore = second[1];
+  const exploratoryScore = modeScores.get("exploratory") ?? 0;
   const margin = topScore - secondScore;
   const conflictWeak = margin < MODE_SELECTION_MARGIN && topScore < 1.45;
   const nonExploratoryCompetitiveCount = ranked.filter(([mode, score]) => mode !== "exploratory" && score >= 0.3).length;
   const sparseWeak = !input.centerEligible && topScore < MODE_SELECTION_MIN_SCORE;
   const exploratoryWeakAmbiguous = top[0] === "exploratory" && !input.centerEligible && nonExploratoryCompetitiveCount >= 2 && topScore < 1.8;
   const uncertaintyBlocked = input.uncertaintyRatio >= MODE_SELECTION_MAX_UNCERTAINTY && top[0] !== "exploratory";
+  const exploratorySilencePreferred = top[0] === "exploratory" && input.uncertaintyRatio >= 0.82 && !input.centerEligible && topScore < 1.85;
+  const exploratoryOrientationSupported = input.centerEligible || exploratoryScore >= 1.25;
   const suppressedBlocked = input.centerSuppressed && topScore < 1.8;
 
   let selectedMode: LatentProcessingMode | null = top[0];
@@ -556,8 +543,11 @@ function buildProcessingModeState(input: {
   } else if (conflictWeak) {
     selectedMode = null;
     noModeReason = "competing_weak_modes";
+  } else if (exploratorySilencePreferred) {
+    selectedMode = null;
+    noModeReason = "high_uncertainty";
   } else if (uncertaintyBlocked) {
-    if ((modeScores.get("exploratory") ?? 0) >= topScore * 0.88) {
+    if (exploratoryScore >= topScore * 0.88 && exploratoryOrientationSupported) {
       selectedMode = "exploratory";
     } else {
       selectedMode = null;
@@ -942,7 +932,6 @@ export function buildLatentSnapshotScaffold(input: BuildLatentSnapshotScaffoldIn
     previousCooldownActive,
     strongUserSalienceOverride,
   });
-  const processingMode = processingModeState.selectedMode ?? (centerCategory ? deriveProcessingMode(centerCategory) : "exploratory");
 
   const provenance = buildProvenance({
     ...input,
@@ -1007,10 +996,14 @@ export function buildLatentSnapshotScaffold(input: BuildLatentSnapshotScaffoldIn
 
   if (centerEligible && centerCategory) {
     const centerConfidence = toConfidenceBand(centerScore);
+    const modeLabel = processingModeState.selectedMode ?? "no_mode";
     signals.push({
       signalType: "reflective_opportunity_possibility" as const,
       label: `Reflective center candidate: ${centerCategory}`,
-      description: `Weighted center remains provisional (${processingMode}); uncertainty and demotion remain active.`,
+      description:
+        processingModeState.selectedMode === null
+          ? "Weighted center remains provisional; no processing mode is selected under current ambiguity."
+          : `Weighted center remains provisional (${modeLabel}); uncertainty and demotion remain active.`,
       confidenceBand: centerConfidence,
       visibility: "internal_only" as const,
       provenance,
@@ -1019,7 +1012,7 @@ export function buildLatentSnapshotScaffold(input: BuildLatentSnapshotScaffoldIn
     suggestions.push({
       userId: input.userId,
       suggestionType: "possible_opening",
-      phrasing: buildSuggestionPhrase("possible_opening", processingMode),
+      phrasing: buildSuggestionPhrase("possible_opening", processingModeState.selectedMode ?? undefined),
       confidenceBand: centerConfidence,
       visibility: "reflective_space_optional",
       provenance,
@@ -1112,7 +1105,9 @@ export function buildLatentSnapshotScaffold(input: BuildLatentSnapshotScaffoldIn
     userId: input.userId,
     summary:
       centerEligible && centerCategory
-        ? `Center candidate selected: ${centerCategory} (${processingModeState.selectedMode ?? "no_mode"}) with lifecycle state ${centerState}.`
+        ? processingModeState.selectedMode === null
+          ? `Center candidate selected: ${centerCategory} (no_mode) with lifecycle state ${centerState}.`
+          : `Center candidate selected: ${centerCategory} (${processingModeState.selectedMode}) with lifecycle state ${centerState}.`
         : `No strong reflective center selected; continuity remains provisional (${centerState}).`,
     confidenceBand: centerEligible ? toConfidenceBand(centerScore) : recurrenceScore >= RECURRENCE_ELIGIBILITY_THRESHOLD ? "tentative" : "low",
     visibility: "internal_only",

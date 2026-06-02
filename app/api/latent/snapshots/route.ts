@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { toPublicLatentSnapshots } from "@/src/domain/latent/transport";
 import { DEV_FALLBACK_HEADER, resolveRequestUserContext } from "@/src/infrastructure/supabase/auth/resolve-request-user-context";
 import { createLatentRepository } from "@/src/infrastructure/supabase/repositories/create-latent-repository";
 
@@ -23,5 +24,5 @@ export async function GET(request: Request) {
   const repository = createLatentRepository();
   const snapshots = await repository.listSnapshotsByUser(user.userId);
 
-  return NextResponse.json({ snapshots });
+  return NextResponse.json({ snapshots: toPublicLatentSnapshots(snapshots) });
 }

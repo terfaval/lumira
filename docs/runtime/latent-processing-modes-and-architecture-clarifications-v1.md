@@ -643,6 +643,64 @@ WITHOUT drifting into:
 
 ---
 
+# 8. Internal Transport Boundary (Patch 6)
+
+Processing-mode orchestration remains internal cognition infrastructure.
+
+As of Patch 6, latent snapshot transport now uses explicit projection layers:
+
+- internal projection:
+  - full lifecycle payload,
+  - processing mode internals,
+  - candidate rankings,
+  - rationale traces,
+  - confidence/uncertainty internals,
+  - material preparation priorities.
+
+- public/downstream-safe projection:
+  - bounded continuity status metadata only,
+  - optional reflective suggestions/signals only,
+  - sanitized summary language without raw mode/category emission.
+
+Default route behavior:
+
+- `/api/latent/snapshots`
+- `/api/latent/snapshots/[id]`
+- `/api/reflective-objects/[id]/latent-snapshots`
+
+returns public-safe transport payloads and omits internal orchestration internals by default.
+
+Design rule:
+
+# internal latent state is not transport-safe by default.
+
+Future dialogue-preparation systems may still use full orchestration internals, but only through intentional server-side orchestration interfaces (not raw public payload exposure).
+
+---
+
+# 9. True No-Mode Silence (Patch 7)
+
+Patch 7 hardens no-mode semantics:
+
+- if `selectedMode === null`, no derived mode fallback is used for opening phrasing or reflective-opportunity descriptions,
+- no-mode summaries remain explicitly non-orienting,
+- uncertainty degradation now prefers no-mode silence over weak exploratory substitution under extreme ambiguity when coherent gravity is insufficient.
+
+Core distinction:
+
+- exploratory:
+  - orientation exists,
+  - openness is the chosen posture.
+
+- no-mode:
+  - orientation is not currently coherent enough to select.
+
+Design rule:
+
+# no-mode is reflective silence, not exploratory-in-disguise.
+
+---
+
 # Final Principle
 
 The latent should become:

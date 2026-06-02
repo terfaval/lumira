@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { toPublicLatentSnapshot } from "@/src/domain/latent/transport";
 import { DEV_FALLBACK_HEADER, resolveRequestUserContext } from "@/src/infrastructure/supabase/auth/resolve-request-user-context";
 import { createLatentRepository } from "@/src/infrastructure/supabase/repositories/create-latent-repository";
 
@@ -31,5 +32,5 @@ export async function GET(request: Request, context: RouteParams) {
     return NextResponse.json({ error: "Latent snapshot not found." }, { status: 404 });
   }
 
-  return NextResponse.json({ snapshot });
+  return NextResponse.json({ snapshot: toPublicLatentSnapshot(snapshot) });
 }

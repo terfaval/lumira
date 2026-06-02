@@ -154,6 +154,40 @@ Governance behavior:
 - exploratory bias remains available for high ambiguity without forcing interpretive closure,
 - mode state remains internal-only and non-authoritative.
 
+## 8.1) Internal transport boundary enforcement
+
+Patch 6 adds explicit transport projection boundaries for latent snapshot APIs.
+
+Boundary rule:
+- internal lifecycle + processing-mode payloads are valid for orchestration/runtime internals,
+- raw orchestration internals are not returned by default downstream/public route transport payloads.
+
+Default public route projection now omits:
+- `processingMode.selectedMode` and orchestration internals,
+- `processingMode.candidateModes`,
+- `processingMode.rationaleTrace`,
+- `processingMode.modeConfidence` and `processingMode.uncertainty`,
+- `processingMode.materialPriorities`,
+- lifecycle weighting internals (`centerScore`, salience, attenuation, neighborhood internals).
+
+Default public projection includes only bounded reflective continuity state:
+- lifecycle state (`centerState`, `noCenterReason`),
+- optional reflective-space suggestions/signals (visibility-scoped),
+- sanitized summary language.
+
+## 8.2) No-mode silence semantics
+
+Patch 7 enforces true no-mode behavior.
+
+When `selectedMode === null`:
+- no derived fallback mode is injected into suggestion phrasing,
+- no derived fallback mode is injected into reflective-opportunity descriptions,
+- summary/description behavior stays ambiguity-first and non-orienting.
+
+Exploratory vs no-mode governance:
+- exploratory remains valid only when sufficient reflective gravity supports an explicit open orientation,
+- weak/high-uncertainty gravity degrades toward no-mode silence rather than weak exploratory substitution.
+
 ## 9) Lifecycle payload integrity primitives
 
 Lifecycle payload persistence now follows one canonical adapter/validation contract:

@@ -180,11 +180,10 @@ export async function composeReflectiveSpaceViewport(
   const objectLimit = toBoundedLimit(input.objectLimit, DEFAULT_OBJECT_LIMIT, MAX_OBJECT_LIMIT);
   const dialogueLimit = toBoundedLimit(input.dialogueLimit, DEFAULT_DIALOGUE_LIMIT, MAX_DIALOGUE_LIMIT);
 
-  const [objectRows, threadRows, glossaryRows, responseRows, openingRows] = await Promise.all([
+  const [objectRows, threadRows, glossaryRows, openingRows] = await Promise.all([
     input.reflectiveObjectRepository.listByUser(input.userId, objectLimit + 1),
     input.threadRepository.listThreadsByUser(input.userId, THREAD_SURFACE_LIMIT + 1),
     input.glossaryRepository.listTerms(input.userId, GLOSSARY_LIMIT + 1),
-    input.responseRepository.listResponsesByUser(input.userId, RESPONSE_SURFACE_LIMIT + 1),
     input.openingRepository.listOpeningSurfacesByUser(input.userId, OPENING_SURFACE_LIMIT + 1),
   ]);
 
@@ -195,13 +194,27 @@ export async function composeReflectiveSpaceViewport(
     ? input.centerObjectId
     : (reflectiveObjects[0]?.id ?? null);
 
-  const observationRows = centerObjectId
-    ? await input.observationRepository.listByReflectiveObject({
-        userId: input.userId,
-        reflectiveObjectId: centerObjectId,
-        limit: OBSERVATION_LIMIT + 1,
-      })
-    : [];
+  const [observationRows, responseRows, dialogueWindow] = await Promise.all([
+    centerObjectId
+      ? input.observationRepository.listByReflectiveObject({
+          userId: input.userId,
+          reflectiveObjectId: centerObjectId,
+          limit: OBSERVATION_LIMIT + 1,
+        })
+      : Promise.resolve([]),
+    centerObjectId && input.responseRepository.listResponsesByReflectiveObject
+      ? input.responseRepository.listResponsesByReflectiveObject(input.userId, centerObjectId, RESPONSE_SURFACE_LIMIT + 1)
+      : input.responseRepository.listResponsesByUser(input.userId, RESPONSE_SURFACE_LIMIT + 1),
+    composeOpeningDialogueWindow({
+      userId: input.userId,
+      limit: dialogueLimit,
+      beforeCreatedAt: input.dialogueBeforeCreatedAt,
+      beforeCursor: input.dialogueBeforeCursor,
+      reflectiveObjectId: centerObjectId ?? undefined,
+      openingRepository: input.openingRepository,
+      responseRepository: input.responseRepository,
+    }),
+  ]);
   const hasMoreObservations = observationRows.length > OBSERVATION_LIMIT;
   const observations = observationRows.slice(0, OBSERVATION_LIMIT);
 
@@ -223,15 +236,6 @@ export async function composeReflectiveSpaceViewport(
   const glossaryCues = glossaryCuesAll.slice(0, GLOSSARY_LIMIT);
 
   const dormantThreadSurfaces = threadSurfaces.filter((surface) => surface.state === "dormant" || surface.state === "quiet");
-
-  const dialogueWindow = await composeOpeningDialogueWindow({
-    userId: input.userId,
-    limit: dialogueLimit,
-    beforeCreatedAt: input.dialogueBeforeCreatedAt,
-    beforeCursor: input.dialogueBeforeCursor,
-    openingRepository: input.openingRepository,
-    responseRepository: input.responseRepository,
-  });
 
   const summary = centerObjectId
     ? "Reflective space remains bounded and calm. Optional continuity surfaces are available."

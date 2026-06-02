@@ -25,7 +25,7 @@ const HOMEPAGE_ROUTE_TARGET_REGISTRY: Record<HomepageNavigationTargetKey, Homepa
   capture_home: {
     targetKey: "capture_home",
     href: "/capture",
-    routeStatus: "placeholder",
+    routeStatus: "implemented",
   },
   glossary_home: {
     targetKey: "glossary_home",
@@ -55,7 +55,7 @@ const HOMEPAGE_ROUTE_TARGET_REGISTRY: Record<HomepageNavigationTargetKey, Homepa
   reflective_object_orientation: {
     targetKey: "reflective_object_orientation",
     href: "/objects/[objectId]/reflect",
-    routeStatus: "placeholder",
+    routeStatus: "implemented",
   },
 };
 

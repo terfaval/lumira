@@ -1,4 +1,5 @@
-import { CalmPlaceholderPage } from "@/src/ui/shared/calm-placeholder-page";
+import { ReflectiveSpaceWorkspace } from "@/src/ui/reflective-space/reflective-space-workspace";
+import { prepareLatentOpeningForReflection } from "@/src/runtime/orchestration/prepare-latent-opening-for-reflection";
 import { requireAuthenticatedUserId } from "@/src/ui/shared/require-authenticated-user";
 
 interface ObjectReflectPageProps {
@@ -6,16 +7,21 @@ interface ObjectReflectPageProps {
 }
 
 export default async function ObjectReflectPage({ params }: ObjectReflectPageProps) {
-  await requireAuthenticatedUserId();
+  const userId = await requireAuthenticatedUserId();
   const { objectId } = await params;
+
+  try {
+    await prepareLatentOpeningForReflection({
+      userId,
+      reflectiveObjectId: objectId,
+    });
+  } catch (error) {
+    console.error("Reflection preparation failed; continuing with workspace fallback.", error);
+  }
 
   return (
     <main>
-      <CalmPlaceholderPage
-        title="Deep Reflection"
-        description={`Object ${objectId} can open a deeper reflection posture on this route.`}
-        quietNote="This placeholder keeps the route calm while deep reflection IA is prepared."
-      />
+      <ReflectiveSpaceWorkspace initialCenterObjectId={objectId} />
     </main>
   );
 }

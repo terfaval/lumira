@@ -100,12 +100,36 @@ export interface LatentProcessingMaterialPriorities {
 }
 
 export interface LatentProcessingModeState {
+  /**
+   * Internal-only orchestration selection.
+   * Not for direct user-facing interpretation or default transport exposure.
+   */
   selectedMode: LatentProcessingMode | null;
+  /**
+   * Internal-only orchestration candidates.
+   * Not for default downstream/public transport payloads.
+   */
   candidateModes: LatentProcessingModeCandidate[];
+  /**
+   * Internal-only orchestration confidence.
+   * Not for default downstream/public transport payloads.
+   */
   modeConfidence: number;
+  /**
+   * Internal-only orchestration uncertainty.
+   * Not for default downstream/public transport payloads.
+   */
   uncertainty: number;
+  /**
+   * Internal-only rationale trace.
+   * Not for default downstream/public transport payloads.
+   */
   rationaleTrace: string[];
   noModeReason: string | null;
+  /**
+   * Internal-only preparation priorities.
+   * Not for default downstream/public transport payloads.
+   */
   materialPriorities: LatentProcessingMaterialPriorities;
 }
 
@@ -119,6 +143,10 @@ export interface LatentCenterLifecycle {
   salience: LatentCenterSalience;
   attenuation: LatentCenterAttenuation;
   neighborhood: LatentCenterNeighborhood;
+  /**
+   * Internal-only orchestration state.
+   * Not for default downstream/public transport payloads.
+   */
   processingMode: LatentProcessingModeState;
 }
 

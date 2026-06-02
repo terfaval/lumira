@@ -96,7 +96,88 @@ describe("/api/reflective-objects/[id]/latent-snapshots route", () => {
     listResponsesByReflectiveObject.mockResolvedValue([]);
     listRecentOpeningsByUser.mockResolvedValue([]);
     listSnapshotsByUser.mockResolvedValue([]);
-    createSnapshot.mockResolvedValue({ id: "latent-1", suggestions: [] });
+    createSnapshot.mockResolvedValue({
+      id: "latent-1",
+      userId: "user-a",
+      summary: "Center candidate selected: agency_state (agency_oriented) with lifecycle state stabilized.",
+      confidenceBand: "moderate",
+      visibility: "internal_only",
+      provenance: {
+        sourceReflectiveObjects: ["obj-1"],
+        sourceObservations: ["obs-1"],
+        sourceGlossaryTerms: [],
+        sourceThreads: [],
+        sourceResponses: [],
+        generationContext: "ctx",
+      },
+      signals: [],
+      suggestions: [
+        {
+          id: "suggestion-1",
+          snapshotId: "latent-1",
+          userId: "user-a",
+          suggestionType: "possible_opening",
+          phrasing: "A gentle reflective opening might relate here.",
+          confidenceBand: "tentative",
+          visibility: "reflective_space_optional",
+          provenance: {
+            sourceReflectiveObjects: ["obj-1"],
+            sourceObservations: ["obs-1"],
+            sourceGlossaryTerms: [],
+            sourceThreads: [],
+            sourceResponses: [],
+            generationContext: "ctx",
+          },
+          createdAt: "2026-05-31T10:00:00.000Z",
+          updatedAt: "2026-05-31T10:00:00.000Z",
+        },
+      ],
+      lifecycle: {
+        centerCategory: "agency_state",
+        centerState: "stabilized",
+        centerScore: 1.8,
+        persistenceStreak: 4,
+        cooldownUntil: null,
+        noCenterReason: null,
+        salience: {
+          userOwnedScore: 1.2,
+          highlightScore: 0.4,
+          glossaryDensityScore: 0.3,
+          revisitationScore: 0.3,
+          explicitEmphasisScore: 0.2,
+          persistenceSignalScore: 0.2,
+        },
+        attenuation: {
+          repetitionDecay: 0.9,
+          refractoryPenalty: 1,
+          cooldownPenalty: 1,
+        },
+        neighborhood: {
+          relatedCategories: ["agency_state"],
+          glossaryAnchors: [],
+          affectAdjacency: [],
+          continuityCues: [],
+        },
+        processingMode: {
+          selectedMode: "agency_oriented",
+          candidateModes: [],
+          modeConfidence: 0.7,
+          uncertainty: 0.2,
+          rationaleTrace: ["internal"],
+          noModeReason: null,
+          materialPriorities: {
+            observations: 1,
+            glossary: 0.2,
+            notes: 0.1,
+            responses: 0.2,
+            neighborhood: 0.5,
+          },
+        },
+      },
+      archivedAt: null,
+      createdAt: "2026-05-31T10:00:00.000Z",
+      updatedAt: "2026-05-31T10:00:00.000Z",
+    });
 
     const { POST } = await import("@/app/api/reflective-objects/[id]/latent-snapshots/route");
     const response = await POST(
@@ -105,6 +186,11 @@ describe("/api/reflective-objects/[id]/latent-snapshots route", () => {
     );
 
     expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.latentSnapshot.summary.toLowerCase()).not.toContain("agency_oriented");
+    expect(body.latentSnapshot.lifecycle).toEqual({ centerState: "stabilized", noCenterReason: null });
+    expect(body.latentSnapshot.lifecycle).not.toHaveProperty("centerScore");
+    expect(body.latentSnapshot.lifecycle).not.toHaveProperty("processingMode");
     expect(createSnapshot).toHaveBeenCalledTimes(1);
     expect(listByReflectiveObject).toHaveBeenCalledWith({
       userId: "user-a",

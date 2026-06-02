@@ -13,7 +13,7 @@ interface SessionPayload {
 async function loadSession(): Promise<SessionPayload> {
   const response = await fetch("/api/auth/session");
   if (!response.ok) {
-    throw new Error("Failed to load auth session.");
+    throw new Error("A munkamenet betöltése sikertelen.");
   }
 
   return (await response.json()) as SessionPayload;
@@ -29,7 +29,7 @@ export function SessionControls() {
   useEffect(() => {
     void loadSession()
       .then((payload) => setSession(payload))
-      .catch((caught) => setError(caught instanceof Error ? caught.message : "Session request failed."))
+      .catch((caught) => setError(caught instanceof Error ? caught.message : "A munkamenet lekérése sikertelen."))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -40,7 +40,7 @@ export function SessionControls() {
     const response = await fetch("/api/auth/sign-out", { method: "POST" });
     if (!response.ok) {
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      setError(payload.error ?? "Sign out failed.");
+      setError(payload.error ?? "A kilépés sikertelen.");
       return;
     }
 
@@ -56,14 +56,14 @@ export function SessionControls() {
     const payload = (await response.json().catch(() => ({}))) as { error?: string; status?: string };
 
     if (!response.ok) {
-      setError(payload.error ?? "Admin bootstrap failed.");
+      setError(payload.error ?? "Az admin aktiválása sikertelen.");
       return;
     }
 
     if (payload.status === "bootstrapped") {
-      setMessage("Admin bootstrap completed for your account.");
+      setMessage("Az admin jogosultság aktiválva.");
     } else {
-      setMessage("Your account is already admin.");
+      setMessage("A fiók már admin jogosultsággal rendelkezik.");
     }
 
     const nextSession = await loadSession();
@@ -71,7 +71,7 @@ export function SessionControls() {
   }
 
   if (isLoading) {
-    return <p className={styles.message}>Loading session...</p>;
+    return <p className={styles.message}>Munkamenet betöltése...</p>;
   }
 
   if (!session?.user) {
@@ -83,7 +83,7 @@ export function SessionControls() {
       <div className={styles.row}>
         {!session.admin ? (
           <button type="button" className={styles.button} onClick={() => void handleBootstrapAdmin()}>
-            Bootstrap Admin
+            Admin aktiválása
           </button>
         ) : null}
         <button
@@ -91,7 +91,7 @@ export function SessionControls() {
           className={`${styles.button} ${styles.buttonDanger}`}
           onClick={() => void handleSignOut()}
         >
-          Sign out
+          Kilépés
         </button>
       </div>
       {message ? <p className={styles.message}>{message}</p> : null}

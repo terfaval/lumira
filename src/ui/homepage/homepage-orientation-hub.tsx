@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 import type {
+  HomepageDreamJournalPreviewItem,
   HomepageOrientationPayload,
   HomepageRecentObjectPreviewItem,
-  HomepageDreamJournalPreviewItem,
 } from "@/src/reflective-space/composition/compose-homepage-orientation-payload";
 import type { HomepageNavigationTargetRef } from "@/src/reflective-space/composition/homepage-route-target-registry";
 import styles from "@/src/ui/homepage/homepage-orientation-hub.module.css";
@@ -18,23 +18,21 @@ function shortDate(iso: string): string {
     return iso;
   }
 
-  return parsed.toLocaleString(undefined, { month: "short", day: "numeric" });
+  return parsed.toLocaleString("hu-HU", { month: "short", day: "numeric" });
 }
 
-function RouteAction({ target, label }: { target: HomepageNavigationTargetRef; label: string }) {
+function PanelEntryLink({
+  target,
+  label,
+}: {
+  target: HomepageNavigationTargetRef;
+  label: string;
+}) {
   if (target.routeStatus === "missing") {
-    return (
-      <span aria-disabled className={styles.statusLabel}>
-        {label}
-      </span>
-    );
+    return null;
   }
 
-  return (
-    <Link className={styles.actionLink} href={target.href}>
-      {label}
-    </Link>
-  );
+  return <Link className={styles.panelEntryLink} href={target.href} aria-label={label} />;
 }
 
 function mobileRecentHint(items: HomepageRecentObjectPreviewItem[], fallback: string): string {
@@ -53,56 +51,68 @@ function mobileDreamHint(items: HomepageDreamJournalPreviewItem[], fallback: str
   return `${items[0].title} - ${shortDate(items[0].recordedAt.iso)}`;
 }
 
+function toObjectTypeLabel(type: string): string {
+  switch (type) {
+    case "dream":
+      return "álom";
+    case "memory":
+      return "emlék";
+    case "journal_entry":
+      return "naplóbejegyzés";
+    case "reflective_note":
+      return "reflexiós jegyzet";
+    default:
+      return type.replace("_", " ");
+  }
+}
+
 export function HomepageOrientationHub({ payload }: HomepageOrientationHubProps) {
   const glossaryMobileHint = payload.glossaryPreview.items[0]
-    ? `${payload.glossaryPreview.items[0].label} and returning motifs`
-    : payload.emptyStates.noGlossaryTerms;
+    ? `${payload.glossaryPreview.items[0].label} és visszatérő motívumok`
+    : "A motívumok idővel térnek vissza.";
 
-  const guideMobileHint = payload.guidePreview.topics[0]?.descriptor ?? payload.emptyStates.guideUnavailable;
+  const guideMobileHint = payload.guidePreview.topics[0]?.descriptor ?? "A tartalom előkészítés alatt áll.";
+  const noDreamsHint = "Még nincs rögzített álom. Kezdheted néhány mondattal is.";
+  const noRecentObjectsHint = "Még nincs aktív elem.";
+  const noGlossaryHint = "A motívumok idővel térnek vissza.";
 
   return (
     <section className={styles.hub}>
-      <header className={styles.hero}>
-        <p className={styles.overline}>Orientation Hub</p>
-        <h1 className={styles.title}>A calm threshold into reflective space.</h1>
-        <p className={styles.subtitle}>Where you can gently enter now.</p>
-      </header>
-
       <section className={styles.grid}>
-        <article className={`${styles.tile} ${styles.capture}`}>
-          <h2>{payload.capture.title}</h2>
-          <p className={styles.panelLead}>{payload.capture.description}</p>
-          <div className={styles.actions}>
-            <RouteAction target={payload.capture.target} label="Open capture" />
+        <article className={`${styles.tile} ${styles.capture} ${styles.interactive}`}>
+          <PanelEntryLink target={payload.capture.target} label="Új álom rögzítése megnyitása" />
+          <div className={styles.captureContent}>
+            <div className={styles.captureCtaRow} aria-hidden="true">
+              <span className={styles.capturePlusBadge}>+</span>
+              <span className={styles.captureCtaLabel}>Új álom rögzítése</span>
+            </div>
+            <p className={`${styles.panelLead} ${styles.captureLead}`}>Rögzítsd az álmot, amíg még élénken jelen van.</p>
+            <p className={`${styles.panelLead} ${styles.captureLead}`}>Néhány mondat is elegendő a kezdéshez.</p>
           </div>
         </article>
 
-        <article className={`${styles.tile} ${styles.journal}`}>
-          <h2>{payload.dreamJournalPreview.title}</h2>
-          <p className={styles.mobileHint}>{mobileDreamHint(payload.dreamJournalPreview.items, payload.emptyStates.noDreams)}</p>
+        <article className={`${styles.tile} ${styles.journal} ${styles.secondary} ${styles.interactive}`}>
+          <PanelEntryLink target={payload.navigation.dreamJournal} label="Álomnapló megnyitása" />
+          <h2>Álomnapló</h2>
+          <p className={styles.mobileHint}>{mobileDreamHint(payload.dreamJournalPreview.items, noDreamsHint)}</p>
           <ul className={styles.previewList}>
             {payload.dreamJournalPreview.items.map((item) => (
               <li key={item.dreamObjectId}>
-                <Link className={styles.previewLabel} href={item.target.href}>
-                  {item.title}
-                </Link>
+                <span className={styles.previewLabel}>{item.title}</span>
                 <span className={styles.previewMeta}>{item.previewText}</span>
               </li>
             ))}
             {payload.dreamJournalPreview.items.length === 0 ? (
               <li>
-                <span className={styles.previewMeta}>{payload.emptyStates.noDreams}</span>
+                <span className={styles.previewMeta}>{noDreamsHint}</span>
               </li>
             ) : null}
           </ul>
-          <div className={styles.actions}>
-            <RouteAction target={payload.navigation.dreamJournal} label="Open journal" />
-          </div>
         </article>
 
-        <article className={`${styles.tile} ${styles.recents}`}>
-          <h2>{payload.recentObjectsPreview.title}</h2>
-          <p className={styles.mobileHint}>{mobileRecentHint(payload.recentObjectsPreview.items, payload.emptyStates.noRecentObjects)}</p>
+        <article className={`${styles.tile} ${styles.recents} ${styles.tertiary}`}>
+          <h2>Legutóbbi elemek</h2>
+          <p className={styles.mobileHint}>{mobileRecentHint(payload.recentObjectsPreview.items, noRecentObjectsHint)}</p>
           <ul className={styles.previewList}>
             {payload.recentObjectsPreview.items.map((item) => (
               <li key={item.objectId}>
@@ -110,60 +120,51 @@ export function HomepageOrientationHub({ payload }: HomepageOrientationHubProps)
                   {item.title}
                 </Link>
                 <span className={styles.previewMeta}>
-                  {item.objectType.replace("_", " ")} - {shortDate(item.timestamp.iso)}
+                  {toObjectTypeLabel(item.objectType)} - {shortDate(item.timestamp.iso)}
                 </span>
               </li>
             ))}
             {payload.recentObjectsPreview.items.length === 0 ? (
               <li>
-                <span className={styles.previewMeta}>{payload.emptyStates.noRecentObjects}</span>
+                <span className={styles.previewMeta}>{noRecentObjectsHint}</span>
               </li>
             ) : null}
           </ul>
         </article>
 
-        <article className={`${styles.tile} ${styles.glossary}`}>
-          <h2>{payload.glossaryPreview.title}</h2>
+        <article className={`${styles.tile} ${styles.glossary} ${styles.secondary} ${styles.interactive}`}>
+          <PanelEntryLink target={payload.navigation.glossary} label="Álomszótár megnyitása" />
+          <h2>Álomszótár</h2>
+          <p className={styles.panelSublead}>Visszatérő motívumok és kapcsolataik.</p>
           <p className={styles.mobileHint}>{glossaryMobileHint}</p>
           <ul className={styles.previewList}>
             {payload.glossaryPreview.items.map((item) => (
               <li key={item.termId}>
-                {item.target.routeStatus === "missing" ? (
-                  <span className={styles.previewLabel}>{item.label}</span>
-                ) : (
-                  <Link className={styles.previewLabel} href={item.target.href}>
-                    {item.label}
-                  </Link>
-                )}
-                <span className={styles.previewMeta}>{item.descriptor ?? "Personal motif memory."}</span>
+                <span className={styles.previewLabel}>{item.label}</span>
+                <span className={styles.previewMeta}>{item.descriptor ?? "Személyes motívumemlékezet."}</span>
               </li>
             ))}
             {payload.glossaryPreview.items.length === 0 ? (
               <li>
-                <span className={styles.previewMeta}>{payload.emptyStates.noGlossaryTerms}</span>
+                <span className={styles.previewMeta}>{noGlossaryHint}</span>
               </li>
             ) : null}
           </ul>
-          <div className={styles.actions}>
-            <RouteAction target={payload.navigation.glossary} label="Open glossary" />
-          </div>
         </article>
 
-        <article className={`${styles.tile} ${styles.guide}`}>
-          <h2>{payload.guidePreview.title}</h2>
+        <article className={`${styles.tile} ${styles.guide} ${styles.tertiary} ${styles.interactive}`}>
+          <PanelEntryLink target={payload.navigation.guide} label="Útmutató megnyitása" />
+          <h2>Útmutató</h2>
           <p className={styles.mobileHint}>{guideMobileHint}</p>
           <ul className={styles.topicList}>
-            {payload.guidePreview.topics.map((topic) => (
+            {payload.guidePreview.topics.slice(0, 2).map((topic) => (
               <li key={topic.key}>
                 <span className={styles.previewLabel}>{topic.label}</span>
-                <span className={styles.previewMeta}>{topic.descriptor ?? payload.emptyStates.guideUnavailable}</span>
+                <span className={styles.previewMeta}>{topic.descriptor ?? "A tartalom előkészítés alatt áll."}</span>
               </li>
             ))}
           </ul>
-          <p className={styles.quiet}>{payload.guidePreview.description}</p>
-          <div className={styles.actions}>
-            <RouteAction target={payload.navigation.guide} label="Open guide" />
-          </div>
+          <p className={styles.quiet}>Nyugodt, gyakorlati tájékozódás alvásról és álomfelidézésről.</p>
         </article>
       </section>
     </section>

@@ -1,14 +1,14 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Fraunces, Work_Sans } from "next/font/google";
+import { Space_Grotesk, Source_Sans_3 } from "next/font/google";
 
-const serif = Fraunces({
+const display = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-reflective-serif",
 });
 
-const sans = Work_Sans({
+const text = Source_Sans_3({
   subsets: ["latin"],
   variable: "--font-reflective-sans",
 });
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${serif.variable} ${sans.variable}`}>{children}</body>
+      <body className={`${display.variable} ${text.variable}`}>{children}</body>
     </html>
   );
 }
