@@ -23,16 +23,18 @@ The AI should support user-led reflection through questions, pacing, and non-dog
 ### Any task
 - `AGENTS.md`
 - this file
+- `docs/DOCS_INDEX.md`
+- `docs/CURRENT_STATE.md`
 - the assigned ticket
 
 ### Product / README / copy task
 - `README.md`
 - `docs/DECISIONS.md`
-- relevant product/spec docs listed in `docs/SPEC_INDEX.md`
+- `docs/SPEC_INDEX.md`
 
 ### Core flow task
-- `docs/STABILIZATION_LEDGER.md`
 - `docs/SPEC_INDEX.md`
+- recent relevant entries in `docs/STABILIZATION_LEDGER.md` when historical build context is needed
 - route/component files named in the ticket
 
 ### Database / architecture task
@@ -41,9 +43,16 @@ The AI should support user-led reflection through questions, pacing, and non-dog
 - affected repo files
 
 ### Cleanup / removal task
-- `docs/STABILIZATION_LEDGER.md`
 - `docs/DECISIONS.md`
+- recent relevant entries in `docs/STABILIZATION_LEDGER.md`
 - run audit before deleting anything unclear
+
+## Navigation Rules
+
+- `docs/DOCS_INDEX.md` is the primary documentation map.
+- `docs/CURRENT_STATE.md` is the operational re-entry snapshot.
+- `docs/SPEC_INDEX.md` is for task-context lookup, not general onboarding.
+- `docs/STABILIZATION_LEDGER.md` is historical/process context, not default first reading.
 
 ## Current Priority
 

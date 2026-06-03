@@ -12,7 +12,7 @@ Before starting any ticket, read:
 2. the ticket itself
 3. any files explicitly referenced by the ticket
 
-Do not read every document by default. Use `docs/AGENT_START_HERE.md` and `docs/SPEC_INDEX.md` to decide what is relevant.
+Do not read every document by default. Use `docs/AGENT_START_HERE.md` and `docs/DOCS_INDEX.md` to identify the right documentation layer, then use `docs/SPEC_INDEX.md` for task-specific lookup.
 
 ## 2) Working mode
 - Prefer small, reviewable changes per ticket.

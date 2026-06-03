@@ -1,0 +1,369 @@
+import { describe, expect, it } from "vitest";
+
+import { composeObjectOrientationPayload } from "@/src/reflective-space/composition/compose-object-orientation-payload";
+
+describe("composeObjectOrientationPayload", () => {
+  it("builds a dream-centered orientation payload from existing object, glossary, and opening runtime data", async () => {
+    const payload = await composeObjectOrientationPayload({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      reflectiveObjectRepository: {
+        create: async () => {
+          throw new Error("not used");
+        },
+        getById: async () => ({
+          id: "obj-1",
+          userId: "user-1",
+          objectType: "dream",
+          title: "Lantern House",
+          primaryContent: "I was inside a house with water under the floorboards.",
+          sourceContext: "manual",
+          state: "active",
+          metadata: {},
+          createdAt: "2026-06-03T08:00:00.000Z",
+          updatedAt: "2026-06-03T08:00:00.000Z",
+        }),
+        listByUser: async () => [],
+        update: async () => null,
+        archive: async () => null,
+      },
+      observationRepository: {
+        create: async () => {
+          throw new Error("not used");
+        },
+        listByReflectiveObject: async () => [
+          {
+            id: "obs-1",
+            userId: "user-1",
+            reflectiveObjectId: "obj-1",
+            source: "system_descriptive_extract",
+            summary: "A house, water, and a doorway remain central.",
+            uncertaintyNotes: [],
+            semanticPolicyResult: "accept",
+            semanticPolicyReasons: [],
+            provenanceTier: "system_extract",
+            summaryTrace: [],
+            latentBackflowGuard: "observation_only",
+            boundaryVersion: "v1",
+            status: "active",
+            fragments: [
+              {
+                id: "frag-1",
+                observationId: "obs-1",
+                reflectiveObjectId: "obj-1",
+                userId: "user-1",
+                category: "location",
+                fragmentText: "House",
+                evidenceAdequacy: "snippet_only",
+                evidence: {
+                  snippet: "house",
+                  spanStart: 0,
+                  spanEnd: 5,
+                  contextLabel: null,
+                },
+                uncertaintyNote: null,
+                position: 0,
+                createdAt: "2026-06-03T08:01:00.000Z",
+                updatedAt: "2026-06-03T08:01:00.000Z",
+              },
+              {
+                id: "frag-2",
+                observationId: "obs-1",
+                reflectiveObjectId: "obj-1",
+                userId: "user-1",
+                category: "object",
+                fragmentText: "Doorway",
+                evidenceAdequacy: "snippet_only",
+                evidence: {
+                  snippet: "doorway",
+                  spanStart: 0,
+                  spanEnd: 7,
+                  contextLabel: null,
+                },
+                uncertaintyNote: null,
+                position: 1,
+                createdAt: "2026-06-03T08:01:00.000Z",
+                updatedAt: "2026-06-03T08:01:00.000Z",
+              },
+            ],
+            createdAt: "2026-06-03T08:01:00.000Z",
+            updatedAt: "2026-06-03T08:01:00.000Z",
+          },
+        ],
+        getById: async () => null,
+      },
+      glossaryRepository: {
+        listTerms: async () => [],
+        getTermById: async () => null,
+        renameTerm: async () => null,
+        listCandidates: async () => [],
+        listCandidatesByReflectiveObject: async () => [
+          {
+            id: "cand-1",
+            userId: "user-1",
+            reflectiveObjectId: "obj-1",
+            normalizedKey: "house",
+            displayLabel: "House",
+            sourceCategory: "location",
+            sourceObservationId: "obs-1",
+            sourceObservationFragmentId: "frag-1",
+            recurrenceCount: 3,
+            state: "pinned",
+            suppression: { state: "none", suppressedAt: null, reason: null },
+            lastSeenAt: "2026-06-03T08:01:00.000Z",
+            createdAt: "2026-06-03T08:01:00.000Z",
+            updatedAt: "2026-06-03T08:01:00.000Z",
+          },
+        ],
+        getCandidateById: async () => null,
+        upsertCandidates: async () => [],
+        setCandidateLifecycle: async () => null,
+        createAssociation: async () => {
+          throw new Error("not used");
+        },
+      },
+      threadRepository: {
+        createThread: async () => {
+          throw new Error("not used");
+        },
+        getThreadById: async () => null,
+        listThreadsByUser: async () => [],
+        updateThread: async () => null,
+        setThreadState: async () => null,
+        archiveThread: async () => null,
+        createObjectAssociation: async () => {
+          throw new Error("not used");
+        },
+        createGlossaryAssociation: async () => {
+          throw new Error("not used");
+        },
+        listAssociationsByThread: async () => [],
+      },
+      openingRepository: {
+        createOpening: async () => {
+          throw new Error("not used");
+        },
+        getOpeningById: async () => null,
+        listOpeningSurfacesByUser: async () => [],
+        listDormantSuppressedOpeningsByUser: async () => [],
+        listRecentOpeningsByUser: async () => [
+          {
+            id: "opening-new",
+            userId: "user-1",
+            openingType: "continuity_noticing",
+            tone: "gentle",
+            utterance: "The doorway may matter here.",
+            state: "available",
+            visibility: "invitation_surface",
+            suppressionState: "none",
+            suppressionDuration: null,
+            suppressionReason: null,
+            suppressionExpiry: { at: null },
+            suppressionRevisitEligibility: "revisitable_dormant",
+            suppressionReactivatedAt: null,
+            provenance: {
+              sourceObjects: ["obj-1"],
+              sourceObservations: ["obs-1"],
+              sourceGlossaryTerms: [],
+              sourceThreads: [],
+              sourceResponses: [],
+              latentSnapshotReference: null,
+              confidenceBand: "tentative",
+              openingGenerationContext: "test",
+            },
+            activatedAt: null,
+            dismissedAt: null,
+            archivedAt: null,
+            createdAt: "2026-06-03T08:02:00.000Z",
+            updatedAt: "2026-06-03T08:02:00.000Z",
+          },
+          {
+            id: "opening-active",
+            userId: "user-1",
+            openingType: "reflective_question",
+            tone: "curious",
+            utterance: "What shifts when the water stays hidden?",
+            state: "activated",
+            visibility: "opened",
+            suppressionState: "none",
+            suppressionDuration: null,
+            suppressionReason: null,
+            suppressionExpiry: { at: null },
+            suppressionRevisitEligibility: "revisitable_dormant",
+            suppressionReactivatedAt: null,
+            provenance: {
+              sourceObjects: ["obj-1"],
+              sourceObservations: ["obs-1"],
+              sourceGlossaryTerms: [],
+              sourceThreads: [],
+              sourceResponses: [],
+              latentSnapshotReference: null,
+              confidenceBand: "moderate",
+              openingGenerationContext: "test",
+            },
+            activatedAt: "2026-06-03T08:03:00.000Z",
+            dismissedAt: null,
+            archivedAt: null,
+            createdAt: "2026-06-03T08:03:00.000Z",
+            updatedAt: "2026-06-03T08:03:00.000Z",
+          },
+          {
+            id: "opening-dormant",
+            userId: "user-1",
+            openingType: "reflective_recall",
+            tone: "calm",
+            utterance: "This dream may revisit an older threshold.",
+            state: "available",
+            visibility: "invitation_surface",
+            suppressionState: "suppressed",
+            suppressionDuration: "temporary",
+            suppressionReason: "quiet_for_now",
+            suppressionExpiry: { at: "2026-06-04T08:04:00.000Z" },
+            suppressionRevisitEligibility: "revisitable_dormant",
+            suppressionReactivatedAt: null,
+            provenance: {
+              sourceObjects: ["obj-1"],
+              sourceObservations: ["obs-1"],
+              sourceGlossaryTerms: [],
+              sourceThreads: [],
+              sourceResponses: [],
+              latentSnapshotReference: null,
+              confidenceBand: "tentative",
+              openingGenerationContext: "test",
+            },
+            activatedAt: null,
+            dismissedAt: null,
+            archivedAt: null,
+            createdAt: "2026-06-03T08:04:00.000Z",
+            updatedAt: "2026-06-03T08:04:00.000Z",
+          },
+          {
+            id: "opening-other-object",
+            userId: "user-1",
+            openingType: "juxtaposition",
+            tone: "spacious",
+            utterance: "This belongs elsewhere.",
+            state: "available",
+            visibility: "invitation_surface",
+            suppressionState: "none",
+            suppressionDuration: null,
+            suppressionReason: null,
+            suppressionExpiry: { at: null },
+            suppressionRevisitEligibility: "revisitable_dormant",
+            suppressionReactivatedAt: null,
+            provenance: {
+              sourceObjects: ["obj-2"],
+              sourceObservations: [],
+              sourceGlossaryTerms: [],
+              sourceThreads: [],
+              sourceResponses: [],
+              latentSnapshotReference: null,
+              confidenceBand: "tentative",
+              openingGenerationContext: "test",
+            },
+            activatedAt: null,
+            dismissedAt: null,
+            archivedAt: null,
+            createdAt: "2026-06-03T08:05:00.000Z",
+            updatedAt: "2026-06-03T08:05:00.000Z",
+          },
+        ],
+        listOpeningsByLatentSnapshot: async () => [],
+        activateOpening: async () => null,
+        reactivateOpening: async () => null,
+        dismissOpening: async () => null,
+        setSuppression: async () => null,
+        recordSurfaceEvent: async () => {
+          throw new Error("not used");
+        },
+      },
+    });
+
+    expect(payload?.dream.title).toBe("Lantern House");
+    expect(payload?.dream.editHref).toBe("/objects/obj-1/reflect");
+    expect(payload?.glossary.items.map((item) => item.label)).toEqual(["House", "Doorway"]);
+    expect(payload?.openingStack.counts).toEqual({ new: 1, active: 1, dormant: 1, all: 3 });
+    expect(payload?.threadOverview).toEqual([
+      { state: "new", count: 1 },
+      { state: "active", count: 1 },
+      { state: "dormant", count: 1 },
+    ]);
+    expect(payload?.openingStack.items.map((item) => item.id)).toEqual([
+      "opening-new",
+      "opening-active",
+      "opening-dormant",
+    ]);
+  });
+
+  it("returns null when the reflective object does not exist for the user", async () => {
+    const payload = await composeObjectOrientationPayload({
+      userId: "user-1",
+      reflectiveObjectId: "missing",
+      reflectiveObjectRepository: {
+        create: async () => {
+          throw new Error("not used");
+        },
+        getById: async () => null,
+        listByUser: async () => [],
+        update: async () => null,
+        archive: async () => null,
+      },
+      observationRepository: {
+        create: async () => {
+          throw new Error("not used");
+        },
+        listByReflectiveObject: async () => [],
+        getById: async () => null,
+      },
+      glossaryRepository: {
+        listTerms: async () => [],
+        getTermById: async () => null,
+        renameTerm: async () => null,
+        listCandidates: async () => [],
+        listCandidatesByReflectiveObject: async () => [],
+        getCandidateById: async () => null,
+        upsertCandidates: async () => [],
+        setCandidateLifecycle: async () => null,
+        createAssociation: async () => {
+          throw new Error("not used");
+        },
+      },
+      threadRepository: {
+        createThread: async () => {
+          throw new Error("not used");
+        },
+        getThreadById: async () => null,
+        listThreadsByUser: async () => [],
+        updateThread: async () => null,
+        setThreadState: async () => null,
+        archiveThread: async () => null,
+        createObjectAssociation: async () => {
+          throw new Error("not used");
+        },
+        createGlossaryAssociation: async () => {
+          throw new Error("not used");
+        },
+        listAssociationsByThread: async () => [],
+      },
+      openingRepository: {
+        createOpening: async () => {
+          throw new Error("not used");
+        },
+        getOpeningById: async () => null,
+        listOpeningSurfacesByUser: async () => [],
+        listDormantSuppressedOpeningsByUser: async () => [],
+        listRecentOpeningsByUser: async () => [],
+        listOpeningsByLatentSnapshot: async () => [],
+        activateOpening: async () => null,
+        reactivateOpening: async () => null,
+        dismissOpening: async () => null,
+        setSuppression: async () => null,
+        recordSurfaceEvent: async () => {
+          throw new Error("not used");
+        },
+      },
+    });
+
+    expect(payload).toBeNull();
+  });
+});

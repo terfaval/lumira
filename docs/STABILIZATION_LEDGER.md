@@ -2,8 +2,23 @@
 
 ## Purpose
 
-Append-only stabilization record for the clean-room rebuild.
-This ledger exists so later agents can quickly see what was built, in what order, and on which boundaries.
+Append-only historical stabilization record for the clean-room rebuild.
+
+This ledger exists to record:
+- what was completed
+- when it was completed
+- which boundaries were affected
+- how completion was validated
+
+Use this file to understand how Lumira reached its current state.
+
+Do not use this file as:
+- the primary onboarding document
+- the primary current-state summary
+- the coordinator workflow guide
+
+For present operational reality, use `docs/CURRENT_STATE.md`.
+For onboarding and navigation, use `docs/DOCS_INDEX.md` and `docs/AGENT_START_HERE.md`.
 
 ## Logging Rule
 
@@ -14,14 +29,48 @@ For every completed build ticket:
 - `docs/BUILD_LOG.md` (summary)
 - `docs/build-logs/<timestamp>.log` (full output)
 
-## Current Program State
+## Ledger Scope
 
-Lumira runs on clean-room reflective-space foundations with:
-- ownership-scoped persistence + RLS
-- bounded cognition layers (observation/glossary/latent)
-- opening/suppression/cadence infrastructure
-- reflective dialogue bridge + viewport composition
-- minimal auth + admin bootstrap
+This ledger should contain:
+- milestone chronology
+- completed work history
+- touched-boundary summaries
+- validation references
+- historically relevant limitations
+- stabilization history
+
+This ledger should not become:
+- a current-state tracker
+- an active-priority tracker
+- a roadmap
+- a plan
+- a general discussion log
+
+`docs/CURRENT_STATE.md` answers:
+- what is true now
+- what we are working on now
+- what changed recently enough to affect safe contribution
+
+`docs/STABILIZATION_LEDGER.md` answers:
+- how we got here
+- what completed stabilization work changed the repository
+- what validation supported those completions
+
+## Entry Guidance
+
+Ledger entries are appropriate for:
+- completed milestones
+- completed stabilization phases
+- meaningful boundary changes
+- historically significant implementation work
+- validation-backed completion records
+
+Ledger entries are not appropriate for:
+- every small documentation edit
+- every audit
+- every discussion
+- transient operational notes
+- routine current-state updates
 
 ## Historical Reset Baseline
 
@@ -1198,6 +1247,47 @@ Touched boundaries:
 Architectural impact:
 - No runtime, payload, route, or orchestration changes were introduced.
 - Changes are limited to homepage layout and typography presentation.
+
+## New Entry (2026-06-03 UTC)
+
+### Phase 36 - Reflective Space Orientation Layer v1
+
+- Ticket type: BUILD / REFLECTIVE SPACE / ORIENTATION.
+- Scope delivered:
+  - replaced the `/objects/[objectId]` calm placeholder with the first real Orientation Layer route,
+  - introduced a dream-first orientation composition with Dream Surface, Glossary Surface, Opening Stack, and Thread Overview,
+  - reused existing observation, glossary-candidate, opening, and latent-opening preparation flows instead of creating a parallel runtime,
+  - preserved `/objects/[objectId]/reflect` as the Deep Reflection route and used it as the handoff target for title editing and opening entry,
+  - added orientation payload, view-model, and UI tests to lock the smallest coherent build in place.
+
+Touched boundaries:
+- Object orientation route:
+  - `app/objects/[objectId]/page.tsx`
+- Reflective-space orientation composition:
+  - `src/reflective-space/composition/compose-object-orientation-payload.ts`
+  - `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`
+- Object orientation UI:
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `src/ui/object-orientation/object-orientation-layer.module.css`
+  - `src/ui/object-orientation/view-model.ts`
+  - `src/ui/object-orientation/__tests__/view-model.test.ts`
+  - `src/ui/object-orientation/__tests__/orientation-layer.test.tsx`
+
+Architectural impact:
+- Added a dedicated orientation read-model composition for a single reflective object without changing persistence contracts.
+- Reused existing latent opening preparation, opening lifecycle APIs, and glossary extraction/runtime semantics.
+- Deep Reflection route behavior remains intact and unchanged in purpose.
+
+Known limitations:
+- Opening and thread continuity remain the current runtime approximation; this pass does not add thread topology, emotion surfaces, notes, or deep-reflection redesign.
+- Screenshot capture for desktop, laptop, and mobile was not produced in this terminal pass.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Tests: `npm.cmd test` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-03T13-42-25-046Z.log`
 
 Verification references:
 - Typecheck: `npm.cmd run typecheck` (pass)

@@ -1,0 +1,73 @@
+import type { ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
+
+import { ObjectOrientationLayer } from "@/src/ui/object-orientation/object-orientation-layer";
+import type { ObjectOrientationPayload } from "@/src/reflective-space/composition/compose-object-orientation-payload";
+
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...props }: { children?: ReactNode; href: string }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
+const payload: ObjectOrientationPayload = {
+  dream: {
+    id: "obj-1",
+    title: "Lantern House",
+    preview: "I was inside a house with water under the floorboards.",
+    editHref: "/objects/obj-1/reflect",
+  },
+  glossary: {
+    items: [
+      {
+        label: "House",
+        category: "location",
+        detail: "location • 3 returns",
+      },
+    ],
+  },
+  openingStack: {
+    items: [
+      {
+        id: "opening-new",
+        title: "The doorway may matter here.",
+        tone: "gentle",
+        kind: "continuity_noticing",
+        state: "new",
+        ctaLabel: "Begin in Deep Reflection",
+        href: "/objects/obj-1/reflect",
+      },
+    ],
+    counts: {
+      new: 1,
+      active: 0,
+      dormant: 0,
+      all: 1,
+    },
+    defaultView: "new",
+  },
+  threadOverview: [
+    { state: "new", count: 1 },
+    { state: "active", count: 0 },
+    { state: "dormant", count: 0 },
+  ],
+};
+
+describe("ObjectOrientationLayer", () => {
+  it("renders the dream surface as the dominant orientation panel with glossary and opening views", () => {
+    const markup = renderToStaticMarkup(<ObjectOrientationLayer payload={payload} />);
+
+    expect(markup).toContain("Orientation Layer");
+    expect(markup).toContain("Lantern House");
+    expect(markup).toContain("Edit in Deep Reflection");
+    expect(markup).toContain("Glossary");
+    expect(markup).toContain("Opening Stack");
+    expect(markup).toContain("Thread Overview");
+    expect(markup).toContain("aria-pressed=\"true\">New");
+    expect(markup).toContain("The doorway may matter here.");
+    expect(markup).toContain("/objects/obj-1/reflect");
+  });
+});

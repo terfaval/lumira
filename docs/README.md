@@ -4,12 +4,17 @@
 
 This documentation set supports a clean-room rebuild anchored in Reflective Space ontology.
 
+Primary navigation map:
+- `docs/DOCS_INDEX.md`
+
 ## Authority Hierarchy
 
 1. `docs/canon/`
 2. `docs/runtime/`
-3. implementation docs created for active tickets
-4. `docs/archive/legacy-transition/` (historical reference only)
+3. architecture/process guidance in root `docs/`
+4. coordinator infrastructure in `docs/chatgpt coordinating/`
+5. implementation docs created for active tickets
+6. `docs/archive/legacy-transition/` (historical reference only)
 
 Legacy transition docs are never canonical truth.
 
@@ -17,6 +22,8 @@ Legacy transition docs are never canonical truth.
 
 - `docs/canon/`: constitutional and canonical design authority
 - `docs/runtime/`: runtime contracts, state/lifecycle boundaries
+- `docs/chatgpt coordinating/`: coordinator infrastructure for ChatGPT/Codex workflow and handoff
+- `docs/superpowers/`: audits, plans, and specs for active workstreams
 - `docs/archive/legacy-transition/`: historical material and compatibility context
 
 Current runtime guardrail references:
@@ -50,3 +57,9 @@ Prefer clarity over comprehensiveness and avoid speculative architecture narrati
 - Summary log: `docs/BUILD_LOG.md`
 - Full per-run logs: `docs/build-logs/`
 - Milestone/backfill history: `docs/STABILIZATION_LEDGER.md`
+
+## Navigation Notes
+
+- Use `docs/DOCS_INDEX.md` for onboarding and documentation-layer navigation.
+- Use `docs/SPEC_INDEX.md` for task-context lookup after you know the task type.
+- Use `docs/STABILIZATION_LEDGER.md` as historical/process context, not as default onboarding.
