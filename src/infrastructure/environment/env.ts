@@ -2,6 +2,7 @@ export interface RuntimeEnvironment {
   nodeEnv: string;
   supabaseUrl: string | null;
   supabaseAnonKey: string | null;
+  supabaseServiceRoleKey: string | null;
 }
 
 export function readRuntimeEnvironment(): RuntimeEnvironment {
@@ -17,9 +18,12 @@ export function readRuntimeEnvironment(): RuntimeEnvironment {
     process.env.SUPABASE_PUBLISHABLE_KEY ??
     null;
 
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? null;
+
   return {
     nodeEnv: process.env.NODE_ENV ?? "development",
     supabaseUrl,
     supabaseAnonKey,
+    supabaseServiceRoleKey,
   };
 }

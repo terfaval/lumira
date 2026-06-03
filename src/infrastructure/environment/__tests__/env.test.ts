@@ -12,6 +12,7 @@ function resetEnv() {
   delete process.env.SUPABASE_URL;
   delete process.env.SUPABASE_ANON_KEY;
   delete process.env.SUPABASE_PUBLISHABLE_KEY;
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 }
 
 describe("readRuntimeEnvironment", () => {
@@ -42,10 +43,12 @@ describe("readRuntimeEnvironment", () => {
   it("falls back to server-side Supabase variable names", () => {
     process.env.SUPABASE_URL = "https://server-example.supabase.co";
     process.env.SUPABASE_ANON_KEY = "server-anon";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "server-service-role";
 
     const env = readRuntimeEnvironment();
 
     expect(env.supabaseUrl).toBe("https://server-example.supabase.co");
     expect(env.supabaseAnonKey).toBe("server-anon");
+    expect(env.supabaseServiceRoleKey).toBe("server-service-role");
   });
 });

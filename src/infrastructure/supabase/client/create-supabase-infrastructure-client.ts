@@ -7,11 +7,13 @@ export type SupabaseInfrastructureClient = SupabaseClient;
 export function createSupabaseInfrastructureClient(
   env: RuntimeEnvironment = readRuntimeEnvironment(),
 ): SupabaseInfrastructureClient {
-  if (!env.supabaseUrl || !env.supabaseAnonKey) {
+  const accessKey = env.supabaseServiceRoleKey ?? env.supabaseAnonKey;
+
+  if (!env.supabaseUrl || !accessKey) {
     throw new Error("Supabase environment is not configured for infrastructure access.");
   }
 
-  return createClient(env.supabaseUrl, env.supabaseAnonKey, {
+  return createClient(env.supabaseUrl, accessKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

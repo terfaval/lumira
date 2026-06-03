@@ -1295,3 +1295,33 @@ Verification references:
 - Tests: `npm.cmd test` (pass)
 - Build: `npm.cmd run build` (pass)
 - Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-02T08-55-23-599Z.log`
+
+## New Entry (2026-06-03 UTC)
+
+### Phase 37 - Capture Save RLS Infrastructure Key Fix
+
+- Ticket type: BUILD / BUGFIX / CAPTURE / PERSISTENCE.
+- Scope delivered:
+  - traced the `capture` save failure to server-side Supabase infrastructure writes using the public anon key,
+  - verified the live failure mode as RLS rejection on `reflective_objects` writes with anon credentials,
+  - updated server-side infrastructure env loading to expose `SUPABASE_SERVICE_ROLE_KEY`,
+  - updated the infrastructure client to prefer the service-role key for trusted server persistence while preserving anon fallback,
+  - added regression coverage for both environment loading and infrastructure key selection.
+
+Touched boundaries:
+- Runtime environment loading:
+  - `src/infrastructure/environment/env.ts`
+  - `src/infrastructure/environment/__tests__/env.test.ts`
+- Server-side Supabase infrastructure client:
+  - `src/infrastructure/supabase/client/create-supabase-infrastructure-client.ts`
+  - `src/infrastructure/supabase/client/__tests__/create-supabase-infrastructure-client.test.ts`
+
+Architectural impact:
+- No schema or route contract changed.
+- Server-side repository writes now use the intended privileged server credential when available, which aligns persistence behavior with authenticated capture and reflective-object creation flows.
+
+Verification references:
+- Targeted tests: `npm.cmd test -- src/infrastructure/supabase/client/__tests__/create-supabase-infrastructure-client.test.ts src/infrastructure/environment/__tests__/env.test.ts` (pass)
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-03T15-03-38-891Z.log`
