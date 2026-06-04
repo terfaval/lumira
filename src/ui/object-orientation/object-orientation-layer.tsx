@@ -18,21 +18,21 @@ interface ObjectOrientationLayerProps {
 type GlossaryItem = ObjectOrientationPayload["glossary"]["items"][number];
 
 const STACK_TABS: Array<{ key: Exclude<OrientationStackView, "dormant">; label: string }> = [
-  { key: "new", label: "New" },
-  { key: "active", label: "Active" },
-  { key: "all", label: "All" },
+  { key: "new", label: "Új" },
+  { key: "active", label: "Aktív" },
+  { key: "all", label: "Mind" },
 ];
 
 function toStateLabel(view: OrientationStackView): string {
   switch (view) {
     case "new":
-      return "New";
+      return "Új";
     case "active":
-      return "Active";
+      return "Aktív";
     case "dormant":
-      return "Dormant";
+      return "Szunnyadó";
     default:
-      return "All";
+      return "Mind";
   }
 }
 
@@ -83,118 +83,142 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
   return (
     <main className={styles.shell}>
       <div className={styles.layout}>
-        <article className={styles.dreamSurface}>
-          <p className={styles.eyebrow}>Orientation Layer</p>
-          <div className={styles.dreamHeading}>
-            <h1>{payload.dream.title}</h1>
-            <Link className={styles.dreamLink} href={payload.dream.editHref}>
-              Edit in Deep Reflection
-            </Link>
-          </div>
-          <p className={styles.dreamText}>{payload.dream.preview}</p>
-          <p className={styles.dreamNote}>
-            Stay with the dream first. The openings and continuity surfaces remain nearby until you decide to deepen.
-          </p>
-        </article>
+        <section className={styles.topRow}>
+          <article className={styles.dreamSurface}>
+            <div className={styles.dreamFrame}>
+              <div className={styles.dreamHeader}>
+                <div className={styles.panelTitleBlock}>
+                  <p className={styles.panelLabel}>Álom</p>
+                  <h1>{payload.dream.title}</h1>
+                </div>
+                <Link className={styles.dreamLink} href={payload.dream.editHref}>
+                  Szerkesztés
+                </Link>
+              </div>
 
-        <section className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <h2>Glossary</h2>
-            <p>Recognized elements already present in this dream.</p>
+              <div className={styles.dreamBody}>
+                <p className={styles.dreamText}>{payload.dream.preview}</p>
+              </div>
+            </div>
+          </article>
+
+          <div className={styles.signalColumn}>
+            <section className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <p className={styles.panelLabel}>Jelzések</p>
+              </div>
+              <p className={styles.placeholderText}>Hamarosan.</p>
+            </section>
+
+            <section className={styles.panel}>
+              <div className={styles.panelHeader}>
+                <p className={styles.panelLabel}>Érzelmi tér</p>
+              </div>
+              <p className={styles.placeholderText}>Hamarosan.</p>
+            </section>
           </div>
-          {payload.glossary.items.length > 0 ? (
-            <ul className={styles.glossaryList}>
-              {payload.glossary.items.map((item) => (
-                <li key={`${item.category}-${item.label}`}>
-                  <button type="button" className={styles.glossaryButton} onClick={() => setSelectedGlossaryItem(item)}>
-                    <strong>{item.label}</strong>
-                    <span>{item.detail}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className={styles.emptyState}>Recognized elements will gather here as the dream is observed.</p>
-          )}
+
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <p className={styles.panelLabel}>Álomszótár</p>
+            </div>
+            {payload.glossary.items.length > 0 ? (
+              <ul className={styles.glossaryList}>
+                {payload.glossary.items.map((item) => (
+                  <li key={`${item.category}-${item.label}`}>
+                    <button type="button" className={styles.glossaryButton} onClick={() => setSelectedGlossaryItem(item)}>
+                      <strong>{item.label}</strong>
+                      <span>{item.detail}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={styles.emptyState}>Még nincs visszatérő motívum.</p>
+            )}
+          </section>
         </section>
 
-        <section className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <h2>Thread Overview</h2>
-            <p>Continuity state at a glance.</p>
-          </div>
-          <ul className={styles.stateList}>
-            {payload.threadOverview.map((item) => {
-              const active = selectedView === item.state;
+        <section className={styles.bottomRow}>
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <p className={styles.panelLabel}>Szálak</p>
+            </div>
+            <ul className={styles.stateList}>
+              {payload.threadOverview.map((item) => {
+                const active = selectedView === item.state;
 
-              return (
-                <li key={item.state}>
-                  <button
-                    type="button"
-                    className={`${styles.stateButton} ${active ? styles.stateButtonActive : ""}`}
-                    onClick={() => setSelectedView(item.state)}
-                  >
-                    <span>
-                      <strong>{toStateLabel(item.state)}</strong>
-                      <span>Filter openings through this continuity state.</span>
+                return (
+                  <li key={item.state}>
+                    <button
+                      type="button"
+                      className={`${styles.stateButton} ${active ? styles.stateButtonActive : ""}`}
+                      onClick={() => setSelectedView(item.state)}
+                    >
+                      <span className={styles.stateCopy}>
+                        <strong>{toStateLabel(item.state)}</strong>
+                      </span>
+                      <span className={styles.countBadge}>{item.count}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+
+          <section className={styles.panel}>
+            <div className={styles.stackHeader}>
+              <p className={styles.panelLabel}>Megnyitások</p>
+              <ul className={styles.tabList}>
+                {STACK_TABS.map((tab) => (
+                  <li key={tab.key}>
+                    <button
+                      type="button"
+                      className={`${styles.tabButton} ${selectedView === tab.key ? styles.tabButtonActive : ""}`}
+                      aria-pressed={selectedView === tab.key}
+                      onClick={() => setSelectedView(tab.key)}
+                    >
+                      {tab.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {feedback ? <p className={styles.feedback}>{feedback}</p> : null}
+
+            {visibleOpenings.length > 0 ? (
+              <ul className={styles.openingList}>
+                {visibleOpenings.map((item) => (
+                  <li key={item.id} className={styles.openingCard}>
+                    <strong>{item.title}</strong>
+                    <span className={styles.openingMeta}>
+                      {toStateLabel(item.state)} • {item.kind.replaceAll("_", " ")}
                     </span>
-                    <span className={styles.countBadge}>{item.count}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+                    <button
+                      type="button"
+                      className={styles.openingAction}
+                      disabled={pendingOpeningId === item.id}
+                      onClick={() => void handleEnterOpening(item.id, item.href, item.state)}
+                    >
+                      {pendingOpeningId === item.id ? "Előkészítés..." : item.ctaLabel}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={styles.emptyState}>
+                {selectedView === "dormant" ? "Nincs szunnyadó megnyitás." : "Ebben a nézetben nincs megnyitás."}
+              </p>
+            )}
+          </section>
 
-        <section className={styles.panel}>
-          <div className={styles.stackHeader}>
-            <h2>Opening Stack</h2>
-            <p>Available reflective directions before deeper work begins.</p>
-            <ul className={styles.tabList}>
-              {STACK_TABS.map((tab) => (
-                <li key={tab.key}>
-                  <button
-                    type="button"
-                    className={`${styles.tabButton} ${selectedView === tab.key ? styles.tabButtonActive : ""}`}
-                    aria-pressed={selectedView === tab.key}
-                    onClick={() => setSelectedView(tab.key)}
-                  >
-                    {tab.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {feedback ? <p className={styles.feedback}>{feedback}</p> : null}
-
-          {visibleOpenings.length > 0 ? (
-            <ul className={styles.openingList}>
-              {visibleOpenings.map((item) => (
-                <li key={item.id} className={styles.openingCard}>
-                  <strong>{item.title}</strong>
-                  <span className={styles.openingMeta}>
-                    {toStateLabel(item.state)} • {item.kind.replaceAll("_", " ")} • {item.tone} tone
-                  </span>
-                  <p className={styles.openingBody}>{item.title}</p>
-                  <button
-                    type="button"
-                    className={styles.openingAction}
-                    disabled={pendingOpeningId === item.id}
-                    onClick={() => void handleEnterOpening(item.id, item.href, item.state)}
-                  >
-                    {pendingOpeningId === item.id ? "Preparing..." : item.ctaLabel}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className={styles.emptyState}>
-              {selectedView === "dormant"
-                ? "No dormant openings are waiting right now."
-                : "No openings are visible in this view right now."}
-            </p>
-          )}
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <p className={styles.panelLabel}>Jegyzetek</p>
+            </div>
+            <p className={styles.placeholderText}>Hamarosan.</p>
+          </section>
         </section>
       </div>
 
@@ -209,11 +233,10 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
           >
             <h3 id="orientation-glossary-title">{selectedGlossaryItem.label}</h3>
             <p>{selectedGlossaryItem.detail}</p>
-            <p>This glossary surface is intentionally light here. Deeper editing remains in the broader glossary flow.</p>
             <div className={styles.modalActions}>
-              <Link href="/glossary">Open Glossary</Link>
+              <Link href="/glossary">Álomszótár megnyitása</Link>
               <button type="button" onClick={() => setSelectedGlossaryItem(null)}>
-                Close
+                Bezárás
               </button>
             </div>
           </div>
