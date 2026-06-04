@@ -67,10 +67,12 @@ Internal structure:
 - bounded dream text region below
 
 Rules:
+- dream panel height is fixed by the desktop layout and may not grow with content
 - title bar remains fixed within the dream panel
 - dream text is readable but not oversized
-- long dream text scrolls inside the text region
+- dream text always scrolls inside the text region when it exceeds available space
 - persistent helper copy is removed
+- the Orientation Layer must never become a document-reading view
 
 ### Jelzések
 
