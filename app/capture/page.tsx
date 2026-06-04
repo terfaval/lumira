@@ -43,7 +43,7 @@ async function submitCapture(formData: FormData) {
   const observationRepository = createObservationRepository();
   await observationRepository.create(observationInput);
 
-  redirect(`/objects/${encodeURIComponent(reflectiveObject.id)}/reflect`);
+  redirect(`/objects/${encodeURIComponent(reflectiveObject.id)}`);
 }
 
 export default async function CapturePage() {

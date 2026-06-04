@@ -1325,3 +1325,29 @@ Verification references:
 - Typecheck: `npm.cmd run typecheck` (pass)
 - Build: `npm.cmd run build` (pass)
 - Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-03T15-03-38-891Z.log`
+
+## New Entry (2026-06-04 UTC)
+
+### Phase 38 - Capture to Orientation Redirect Fix
+
+- Ticket type: BUILD / BUGFIX / ROUTING / CAPTURE.
+- Scope delivered:
+  - corrected the post-capture redirect target so a newly created reflective object lands on `/objects/[objectId]`,
+  - preserved the existing Deep Reflection destination at `/objects/[objectId]/reflect` for orientation-layer handoff and existing reflection links,
+  - added a capture-page regression test that exercises the server action and locks the first destination to the orientation route.
+
+Touched boundaries:
+- Capture route:
+  - `app/capture/page.tsx`
+  - `app/capture/page.test.tsx`
+
+Architectural impact:
+- No payload, runtime, persistence, or route-shape changes.
+- The fix is limited to the first navigation handoff after capture submission.
+
+Verification references:
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-04T06-45-09-904Z.log`
