@@ -57,16 +57,19 @@ const payload: ObjectOrientationPayload = {
 };
 
 describe("ObjectOrientationLayer", () => {
-  it("renders the dream surface as the dominant orientation panel with glossary and opening views", () => {
+  it("renders the bounded orientation landscape with compact Hungarian panel labels", () => {
     const markup = renderToStaticMarkup(<ObjectOrientationLayer payload={payload} />);
 
-    expect(markup).toContain("Orientation Layer");
+    expect(markup).toContain("Álom");
+    expect(markup).toContain("Álomszótár");
+    expect(markup).toContain("Jelzések");
+    expect(markup).toContain("Érzelmi tér");
+    expect(markup).toContain("Szálak");
+    expect(markup).toContain("Megnyitások");
+    expect(markup).toContain("Jegyzetek");
     expect(markup).toContain("Lantern House");
-    expect(markup).toContain("Edit in Deep Reflection");
-    expect(markup).toContain("Glossary");
-    expect(markup).toContain("Opening Stack");
-    expect(markup).toContain("Thread Overview");
-    expect(markup).toContain("aria-pressed=\"true\">New");
+    expect(markup).toContain("Szerkesztés");
+    expect(markup).toContain("aria-pressed=\"true\">Új");
     expect(markup).toContain("The doorway may matter here.");
     expect(markup).toContain("/objects/obj-1/reflect");
   });
