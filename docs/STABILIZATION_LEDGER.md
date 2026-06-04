@@ -72,6 +72,25 @@ Ledger entries are not appropriate for:
 - transient operational notes
 - routine current-state updates
 
+## 2026-06-04 - Orientation Layer Layout Convergence Pass
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `src/ui/object-orientation/object-orientation-layer.module.css`
+  - `src/ui/object-orientation/__tests__/orientation-layer.test.tsx`
+- Verification:
+  - `npm test` -> pass (`81` files, `279` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-04T19-45-48-974Z.log`
+  - Desktop screenshot to be captured manually by owner
+- Notes:
+  - A corrupted ignored `.next/dev/types` artifact blocked an intermediate `typecheck` / `build` run.
+  - Removing the stale generated `.next/dev/types` files restored clean `typecheck` and `build` results without source changes.
+
 ## Historical Reset Baseline
 
 Date: 2026-05-24

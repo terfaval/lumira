@@ -42,3 +42,5 @@ Append-only build run summary. Detailed logs are under `docs/build-logs/`.
 | 2026-06-03T13:42:25.046Z | success | 0 | `docs/build-logs/2026-06-03T13-42-25-046Z.log` |
 | 2026-06-03T15:03:38.891Z | success | 0 | `docs/build-logs/2026-06-03T15-03-38-891Z.log` |
 | 2026-06-04T06:45:09.904Z | success | 0 | `docs/build-logs/2026-06-04T06-45-09-904Z.log` |
+| 2026-06-04T19:41:20.158Z | failed | 1 | `docs/build-logs/2026-06-04T19-41-20-158Z.log` |
+| 2026-06-04T19:45:48.974Z | success | 0 | `docs/build-logs/2026-06-04T19-45-48-974Z.log` |
