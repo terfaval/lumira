@@ -32,6 +32,15 @@ The AI should support user-led reflection through questions, pacing, and non-dog
 - `docs/DECISIONS.md`
 - `docs/SPEC_INDEX.md`
 
+### UI implementation task
+- `docs/canon/lumira-visual-system-philosophy-v1.md`
+- `docs/canon/lumira-shared-primitive-redesign-v1.md`
+- route-specific contract(s)
+- the implementation ticket
+
+Do not begin UI implementation before completing this read path.
+Interpret route-level UI work through the visual philosophy and shared primitive philosophy first.
+
 ### Core flow task
 - `docs/SPEC_INDEX.md`
 - recent relevant entries in `docs/STABILIZATION_LEDGER.md` when historical build context is needed

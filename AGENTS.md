@@ -14,6 +14,17 @@ Before starting any ticket, read:
 
 Do not read every document by default. Use `docs/AGENT_START_HERE.md` and `docs/DOCS_INDEX.md` to identify the right documentation layer, then use `docs/SPEC_INDEX.md` for task-specific lookup.
 
+## UI implementation read path
+Before starting any UI implementation ticket, read in this order:
+1. `docs/canon/lumira-visual-system-philosophy-v1.md`
+2. `docs/canon/lumira-shared-primitive-redesign-v1.md`
+3. the route-specific contract(s)
+4. the implementation ticket
+
+UI work must not begin before this reading path is completed.
+
+Route contracts must be interpreted through the visual philosophy and shared primitive philosophy, not as isolated layout instructions.
+
 ## 2) Working mode
 - Prefer small, reviewable changes per ticket.
 - If scope is large, produce an AUDIT plan first, then BUILD.
