@@ -72,6 +72,26 @@ Ledger entries are not appropriate for:
 - transient operational notes
 - routine current-state updates
 
+## 2026-06-05 - Orientation + Homepage Visual Consistency Pass
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `src/ui/object-orientation/object-orientation-layer.module.css`
+  - `src/ui/object-orientation/__tests__/orientation-layer.test.tsx`
+  - `src/ui/homepage/homepage-orientation-hub.module.css`
+- Verification:
+  - `npm test` -> pass (`81` files, `279` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-05T06-29-16-142Z.log`
+- Notes:
+  - Orientation shell atmosphere was calmed toward Homepage.
+  - Dream header label was removed and the edit affordance was reduced to a pencil icon control.
+  - Hover/focus language was aligned across Orientation and Homepage interactive surfaces.
+
 ## 2026-06-04 - Orientation Layer Layout Convergence Pass
 
 - Phase: BUILD
