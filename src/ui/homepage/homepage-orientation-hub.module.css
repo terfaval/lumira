@@ -33,6 +33,9 @@
   cursor: pointer;
   border-color: rgba(73, 91, 80, 0.28);
   box-shadow: 0 10px 22px rgba(33, 48, 38, 0.06);
+  background:
+    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.72), transparent 40%),
+    rgba(251, 250, 245, 0.8);
 }
 
 .tile h2 {
@@ -213,7 +216,7 @@
 }
 
 .panelEntryLink:focus-visible {
-  outline: 2px solid rgba(59, 91, 72, 0.52);
+  outline: 2px solid rgba(59, 91, 72, 0.46);
   outline-offset: 3px;
 }
 
