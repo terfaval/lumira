@@ -3,9 +3,9 @@
   padding: 24px;
   overflow: hidden;
   background:
-    radial-gradient(circle at top left, rgba(210, 224, 246, 0.9), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(227, 236, 223, 0.9), transparent 30%),
-    linear-gradient(180deg, #f5f1e7 0%, #eef2ee 48%, #edf3f7 100%);
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.46), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.42), transparent 28%),
+    linear-gradient(180deg, #f7f4ec 0%, #f3f2ed 52%, #f4f5f1 100%);
   color: #20303a;
 }
 
@@ -74,21 +74,32 @@
 
 .dreamHeader h1 {
   margin: 0;
-  font-size: clamp(1.6rem, 2.8vw, 2.6rem);
-  line-height: 1;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.42rem, 2.4vw, 2.15rem);
+  line-height: 1.02;
+  letter-spacing: -0.028em;
   font-weight: 600;
 }
 
 .dreamLink {
+  display: inline-grid;
+  place-items: center;
   flex-shrink: 0;
-  padding: 9px 13px;
+  width: 2.45rem;
+  height: 2.45rem;
   border-radius: 999px;
   text-decoration: none;
-  color: #20303a;
-  background: rgba(228, 238, 244, 0.9);
-  border: 1px solid rgba(86, 109, 120, 0.2);
-  font-size: 0.85rem;
+  color: #324750;
+  background: rgba(243, 246, 245, 0.92);
+  border: 1px solid rgba(86, 109, 120, 0.16);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.dreamLink span {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .dreamBody {
@@ -302,6 +313,46 @@
 .openingAction:disabled {
   opacity: 0.65;
   cursor: wait;
+}
+
+.dreamLink:hover,
+.dreamLink:focus-visible,
+.glossaryButton:hover,
+.glossaryButton:focus-visible,
+.stateButton:hover,
+.stateButton:focus-visible,
+.tabButton:hover,
+.tabButton:focus-visible,
+.openingAction:hover,
+.openingAction:focus-visible {
+  border-color: rgba(73, 91, 80, 0.26);
+  box-shadow: 0 10px 22px rgba(33, 48, 38, 0.06);
+}
+
+.glossaryButton:hover,
+.glossaryButton:focus-visible,
+.stateButton:hover,
+.stateButton:focus-visible,
+.tabButton:hover,
+.tabButton:focus-visible,
+.dreamLink:hover,
+.dreamLink:focus-visible {
+  background: rgba(251, 252, 249, 0.96);
+}
+
+.openingCard:hover,
+.openingCard:focus-within {
+  border-color: rgba(73, 91, 80, 0.22);
+  box-shadow: 0 10px 22px rgba(33, 48, 38, 0.05);
+}
+
+.dreamLink:focus-visible,
+.glossaryButton:focus-visible,
+.stateButton:focus-visible,
+.tabButton:focus-visible,
+.openingAction:focus-visible {
+  outline: 2px solid rgba(59, 91, 72, 0.46);
+  outline-offset: 2px;
 }
 
 .modalBackdrop {
