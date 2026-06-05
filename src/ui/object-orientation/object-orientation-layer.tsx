@@ -88,11 +88,10 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
             <div className={styles.dreamFrame}>
               <div className={styles.dreamHeader}>
                 <div className={styles.panelTitleBlock}>
-                  <p className={styles.panelLabel}>Álom</p>
                   <h1>{payload.dream.title}</h1>
                 </div>
-                <Link className={styles.dreamLink} href={payload.dream.editHref}>
-                  Szerkesztés
+                <Link className={styles.dreamLink} href={payload.dream.editHref} aria-label="Álom szerkesztése">
+                  <span aria-hidden="true">✎</span>
                 </Link>
               </div>
 

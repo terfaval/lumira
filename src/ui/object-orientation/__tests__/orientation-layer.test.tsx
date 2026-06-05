@@ -60,7 +60,7 @@ describe("ObjectOrientationLayer", () => {
   it("renders the refined orientation landscape with a quieter dream header", () => {
     const markup = renderToStaticMarkup(<ObjectOrientationLayer payload={payload} />);
 
-    expect(markup).not.toContain("Álom");
+    expect(markup).not.toContain(">Álom<");
     expect(markup).toContain("Álomszótár");
     expect(markup).toContain("Jelzések");
     expect(markup).toContain("Érzelmi tér");
