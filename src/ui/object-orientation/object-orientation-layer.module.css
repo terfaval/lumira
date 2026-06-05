@@ -2,10 +2,7 @@
   min-height: 100vh;
   padding: 24px;
   overflow: hidden;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.46), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.42), transparent 28%),
-    linear-gradient(180deg, #f7f4ec 0%, #f3f2ed 52%, #f4f5f1 100%);
+  background: transparent;
   color: #20303a;
 }
 
