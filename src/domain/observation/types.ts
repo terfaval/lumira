@@ -30,7 +30,7 @@ export const OBSERVATION_CATEGORIES = [
 
 export type ObservationCategory = (typeof OBSERVATION_CATEGORIES)[number];
 
-export const OBSERVATION_SOURCES = ["system_descriptive_extract", "user_descriptive_note"] as const;
+export const OBSERVATION_SOURCES = ["system_descriptive_extract", "system_llm_extract", "user_descriptive_note"] as const;
 
 export type ObservationSource = (typeof OBSERVATION_SOURCES)[number];
 export type ObservationStatus = "active" | "archived";

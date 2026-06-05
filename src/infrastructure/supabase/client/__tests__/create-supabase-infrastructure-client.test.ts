@@ -23,6 +23,7 @@ describe("createSupabaseInfrastructureClient", () => {
       supabaseUrl: "https://example.supabase.co",
       supabaseAnonKey: "public-anon",
       supabaseServiceRoleKey: "service-role",
+      openAiApiKey: null,
     });
 
     expect(createClientMock).toHaveBeenCalledWith(
@@ -45,6 +46,7 @@ describe("createSupabaseInfrastructureClient", () => {
       supabaseUrl: "https://example.supabase.co",
       supabaseAnonKey: "public-anon",
       supabaseServiceRoleKey: null,
+      openAiApiKey: null,
     });
 
     expect(createClientMock).toHaveBeenCalledWith(

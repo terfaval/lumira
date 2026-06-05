@@ -3,6 +3,7 @@ export interface RuntimeEnvironment {
   supabaseUrl: string | null;
   supabaseAnonKey: string | null;
   supabaseServiceRoleKey: string | null;
+  openAiApiKey: string | null;
 }
 
 export function readRuntimeEnvironment(): RuntimeEnvironment {
@@ -19,11 +20,13 @@ export function readRuntimeEnvironment(): RuntimeEnvironment {
     null;
 
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? null;
+  const openAiApiKey = process.env.OPENAI_API_KEY ?? null;
 
   return {
     nodeEnv: process.env.NODE_ENV ?? "development",
     supabaseUrl,
     supabaseAnonKey,
     supabaseServiceRoleKey,
+    openAiApiKey,
   };
 }

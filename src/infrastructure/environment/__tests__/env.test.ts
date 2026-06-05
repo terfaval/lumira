@@ -13,6 +13,7 @@ function resetEnv() {
   delete process.env.SUPABASE_ANON_KEY;
   delete process.env.SUPABASE_PUBLISHABLE_KEY;
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  delete process.env.OPENAI_API_KEY;
 }
 
 describe("readRuntimeEnvironment", () => {
@@ -50,5 +51,13 @@ describe("readRuntimeEnvironment", () => {
     expect(env.supabaseUrl).toBe("https://server-example.supabase.co");
     expect(env.supabaseAnonKey).toBe("server-anon");
     expect(env.supabaseServiceRoleKey).toBe("server-service-role");
+  });
+
+  it("reads the OpenAI API key when present", () => {
+    process.env.OPENAI_API_KEY = "sk-test";
+
+    const env = readRuntimeEnvironment();
+
+    expect(env.openAiApiKey).toBe("sk-test");
   });
 });

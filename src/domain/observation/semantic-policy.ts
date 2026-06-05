@@ -253,7 +253,7 @@ function containsPattern(text: string, patterns: readonly RegExp[]): boolean {
 }
 
 function mapSourceToProvenanceTier(source: ObservationSource): ObservationProvenanceTier {
-  if (source === "system_descriptive_extract") {
+  if (source === "system_descriptive_extract" || source === "system_llm_extract") {
     return "system_extract";
   }
   return "manual_user";

@@ -8,7 +8,7 @@ describe("observation row adapters", () => {
       id: "obs-1",
       user_id: "user-1",
       reflective_object_id: "obj-1",
-      source: "system_descriptive_extract",
+      source: "system_llm_extract",
       summary: "summary",
       uncertainty_notes: ["uncertain"],
       provenance_tier: "system_extract",

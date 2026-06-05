@@ -92,6 +92,37 @@ Ledger entries are not appropriate for:
   - Dream header label was removed and the edit affordance was reduced to a pencil icon control.
   - Hover/focus language was aligned across Orientation and Homepage interactive surfaces.
 
+## 2026-06-05 - LLM Observation Extractor v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/capture/page.tsx`
+  - `app/capture/page.test.tsx`
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/observation-extraction-validation.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+  - `src/domain/observation/types.ts`
+  - `src/domain/observation/semantic-policy.ts`
+  - `src/domain/observation/__tests__/http-contract.test.ts`
+  - `src/domain/observation/__tests__/semantic-policy.test.ts`
+  - `src/infrastructure/environment/env.ts`
+  - `src/infrastructure/environment/__tests__/env.test.ts`
+  - `src/infrastructure/supabase/adapters/observation-row.ts`
+  - `src/infrastructure/supabase/adapters/__tests__/observation-row.test.ts`
+  - `src/infrastructure/supabase/client/__tests__/create-supabase-infrastructure-client.test.ts`
+  - `supabase/migrations/20260605_0018_observation_llm_source.sql`
+- Verification:
+  - `npm run typecheck` -> pass
+  - `npm test` -> pass (`82` files, `287` tests)
+  - `npm run lint` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-05T07-28-33-856Z.log`
+- Notes:
+  - Capture now prefers validated LLM observation extraction and falls back to the deterministic scaffold when extraction is unsafe, invalid, or unavailable.
+  - Observation persistence remains compatible with existing downstream Latent and reflection paths via the existing `CreateObservationInput` shape.
+  - A new explicit observation source `system_llm_extract` distinguishes LLM-generated observation provenance from deterministic scaffold output.
+
 ## 2026-06-04 - Orientation Layer Layout Convergence Pass
 
 - Phase: BUILD

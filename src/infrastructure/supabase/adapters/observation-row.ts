@@ -13,7 +13,7 @@ export interface ObservationRow {
   id: string;
   user_id: string;
   reflective_object_id: string;
-  source: "system_descriptive_extract" | "user_descriptive_note";
+  source: "system_descriptive_extract" | "system_llm_extract" | "user_descriptive_note";
   summary: string;
   uncertainty_notes: unknown;
   provenance_tier: ObservationProvenanceTier;
@@ -68,7 +68,7 @@ export interface ObservationFragmentRow {
 export interface ObservationInsertRow {
   user_id: string;
   reflective_object_id: string;
-  source: "system_descriptive_extract" | "user_descriptive_note";
+  source: "system_descriptive_extract" | "system_llm_extract" | "user_descriptive_note";
   summary: string;
   uncertainty_notes: string[];
   provenance_tier: ObservationProvenanceTier;

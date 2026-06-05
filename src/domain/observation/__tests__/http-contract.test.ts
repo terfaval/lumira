@@ -27,7 +27,7 @@ describe("parseCreateObservationInput", () => {
   it("preserves evidence fields when valid", () => {
     const parsed = parseCreateObservationInput(
       {
-        source: "system_descriptive_extract",
+        source: "system_llm_extract",
         summary: "I was in a room",
         fragments: [
           {

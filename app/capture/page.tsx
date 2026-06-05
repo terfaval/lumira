@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { buildDescriptiveObservationScaffold } from "@/src/cognition/observation/descriptive-observation-scaffold";
+import { buildLlmObservationExtraction } from "@/src/cognition/observation/llm-observation-extractor";
 import { createObservationRepository } from "@/src/infrastructure/supabase/repositories/create-observation-repository";
 import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
 import { requireAuthenticatedUserId } from "@/src/ui/shared/require-authenticated-user";
@@ -33,12 +34,32 @@ async function submitCapture(formData: FormData) {
     sourceContext: "manual",
   });
 
-  const observationInput = buildDescriptiveObservationScaffold({
+  const extraction = await buildLlmObservationExtraction({
     userId,
     reflectiveObjectId: reflectiveObject.id,
-    sourceText: dreamText,
-    source: "system_descriptive_extract",
+    dreamText,
   });
+
+  const observationInput =
+    extraction.mode === "validated_llm"
+      ? extraction.payload
+      : buildDescriptiveObservationScaffold({
+          userId,
+          reflectiveObjectId: reflectiveObject.id,
+          sourceText: dreamText,
+          source: "system_descriptive_extract",
+        });
+
+  if (!observationInput) {
+    throw new Error("Observation input could not be constructed.");
+  }
+
+  if (extraction.mode === "fallback") {
+    console.warn("llm_observation_extraction_fallback", {
+      reflectiveObjectId: reflectiveObject.id,
+      reason: extraction.reason,
+    });
+  }
 
   const observationRepository = createObservationRepository();
   await observationRepository.create(observationInput);

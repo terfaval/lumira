@@ -258,4 +258,26 @@ describe("evaluateObservationSemanticPolicy", () => {
 
     expect(decision.result).toBe("reject_interpretive");
   });
+
+  it("rejects personality and diagnosis claims in llm-style summaries", () => {
+    const decision = evaluateObservationSemanticPolicy({
+      source: "system_descriptive_extract",
+      summary: "The dreamer fears intimacy and this indicates trauma.",
+      fragments: [
+        {
+          category: "interaction",
+          fragmentText: "A threatening interaction occurs.",
+          position: 0,
+          evidence: {
+            snippet: "Someone moved close to me and I stepped back.",
+            spanStart: 0,
+            spanEnd: 42,
+            contextLabel: "raw_sentence",
+          },
+        },
+      ],
+    });
+
+    expect(decision.result).toBe("reject_interpretive");
+  });
 });
