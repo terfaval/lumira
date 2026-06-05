@@ -710,7 +710,137 @@ Recommended order:
 
 ---
 
-# 14. Final principle
+# 14. Route Composition Consistency
+
+Visual philosophy must remain enforceable at the route-composition level, not only at the aesthetic level.
+
+Different routes may serve different reflective functions.
+
+They may vary in:
+
+* composition
+* density
+* visible surface count
+* scroll posture
+* attentional narrowness
+
+But they must still feel like they belong to the same product.
+
+---
+
+## 14.1 Orientation-Class Routes
+
+Examples:
+
+* Homepage
+* Capture
+* Orientation Layer
+
+Orientation-class routes must be:
+
+* orientation-first
+* overview-oriented
+* multi-surface
+* context-visible
+* glance-legible
+
+On desktop, these routes should prefer a single-viewport composition where practical.
+
+Page-level scrolling should be avoided where practical.
+
+Multiple contextual surfaces should remain visible simultaneously when the route is serving orientation rather than deep work.
+
+These routes must not be optimized primarily for document-style reading.
+
+They should feel like:
+
+# reflective landscapes
+
+not:
+
+# documents
+
+---
+
+## 14.2 Reflection-Class Routes
+
+Examples:
+
+* Deep Reflection
+* Thread Reflection
+* long-form writing environments
+
+Reflection-class routes must be:
+
+* attentional-narrowing
+* depth-supporting
+* reading-capable
+* writing-capable
+* continuity-preserving
+
+They may use fewer simultaneously visible surfaces.
+
+Document-like reading is acceptable here.
+
+Scrolling is natural and expected where the route is designed for deeper staying, writing, or reading.
+
+These routes should feel like:
+
+# places to stay with a thought
+
+not:
+
+# orientation dashboards
+
+---
+
+## 14.3 Shared Interaction Language
+
+Different routes may have different compositions.
+
+Their interaction language must remain recognizably shared.
+
+Across routes, the following must remain consistent:
+
+* typography hierarchy
+* spacing rhythm
+* surface behavior
+* hover language
+* focus-state language
+* density budgeting principles
+
+Route-level variation must not create the feeling that interaction grammar changes from page to page.
+
+---
+
+## 14.4 Shared Visual Identity
+
+Different routes may have different compositions,
+but they should never feel like different products.
+
+A user moving between:
+
+* Homepage
+* Capture
+* Orientation
+* Journal
+* Glossary
+* Deep Reflection
+
+should still perceive:
+
+* a shared visual language
+* a shared material vocabulary
+* a shared typography hierarchy
+* a shared interaction energy
+
+Composition may vary by route class.
+
+Identity may not fragment by route.
+
+---
+
+# 15. Final principle
 
 The Lumira interface should not feel like:
 
