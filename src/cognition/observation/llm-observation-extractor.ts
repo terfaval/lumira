@@ -73,6 +73,7 @@ const OBSERVATION_EXTRACTION_JSON_SCHEMA = {
           salience: {
             type: "object",
             additionalProperties: false,
+            required: ["anomaly", "agencyTension", "metacognitivePresence"],
             properties: {
               anomaly: { type: ["string", "null"], enum: ["present", "strong", null] },
               agencyTension: { type: ["string", "null"], enum: ["present", "strong", null] },

@@ -1897,3 +1897,32 @@ Verification references:
 - Lint: `npm.cmd run lint` (pass)
 - Build: `npm.cmd run build` (pass)
 - Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-06T16-11-48-548Z.log`
+
+## New Entry (2026-06-06 UTC)
+
+### Observation LLM Structured Output Salience Schema Fix
+
+- Ticket type: BUILD / RUNTIME / OBSERVATION V2.
+- Scope delivered:
+  - fixed the OpenAI structured-output `salience` JSON schema so every declared nested property is listed in nested `required`,
+  - kept `anomaly`, `agencyTension`, and `metacognitivePresence` as nullable enums with values `present | strong | null`,
+  - preserved optional `salience` at the fragment level while making provided salience objects strict-schema compliant,
+  - added regression coverage for schema construction and parsing of `null` salience dimensions.
+
+Touched boundaries:
+- Observation extraction schema:
+  - `src/cognition/observation/llm-observation-extractor.ts`
+- Verification:
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+
+Architectural impact:
+- This change is limited to the OpenAI response-format contract and extractor regression coverage.
+- Discovery normalization still treats `null` salience dimensions as absent while preserving supported non-null dimensions.
+- Persistence, API, UI, latent, and glossary boundaries remain unchanged.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass: `88` files, `343` tests)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-06T19-36-34-135Z.log`

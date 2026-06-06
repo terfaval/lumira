@@ -402,6 +402,44 @@ describe("buildLlmObservationExtractionFromStructuredResult", () => {
     expect(result.discovery?.observations[0]?.salience).toBeUndefined();
   });
 
+  it("accepts null salience dimensions while preserving supported non-null values", async () => {
+    const result = await buildLlmObservationExtractionFromStructuredResult({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      dreamText: "I tried to escape but could not move.",
+      structured: {
+        summary: "Escape effort is blocked.",
+        uncertaintyNotes: [],
+        fragments: [
+          {
+            category: "agency_state",
+            fragmentText: "The dreamer tries to escape but cannot move.",
+            position: 0,
+            uncertaintyNote: null,
+            salience: {
+              anomaly: null,
+              agencyTension: "present",
+              metacognitivePresence: null,
+            },
+            evidence: {
+              snippet: "I tried to escape but could not move",
+              contextLabel: "local_quote",
+            },
+          },
+        ],
+      },
+    });
+
+    expect(result.mode).toBe("validated_llm");
+    if (result.mode !== "validated_llm") {
+      return;
+    }
+
+    expect(result.discovery?.observations[0]?.salience).toEqual({
+      agencyTension: "present",
+    });
+  });
+
   it("rebuilds summaryTrace when structured output omits it", async () => {
     const result = await buildLlmObservationExtractionFromStructuredResult({
       userId: "user-1",
@@ -982,6 +1020,11 @@ describe("buildLlmObservationExtractionFromStructuredResult", () => {
     ]);
     expect(requestBody.text.format.schema.properties.fragments.items.properties.uncertaintyNote.type).toEqual(["string", "null"]);
     expect(Object.keys(requestBody.text.format.schema.properties.fragments.items.properties.salience.properties)).toEqual([
+      "anomaly",
+      "agencyTension",
+      "metacognitivePresence",
+    ]);
+    expect(requestBody.text.format.schema.properties.fragments.items.properties.salience.required).toEqual([
       "anomaly",
       "agencyTension",
       "metacognitivePresence",
