@@ -1,5 +1,6 @@
 import type {
   CreateObservationInput,
+  ObservationCategory,
   ObservationEvidenceAdequacy,
   Observation,
   ObservationFragment,
@@ -33,26 +34,7 @@ export interface ObservationFragmentRow {
   observation_id: string;
   user_id: string;
   reflective_object_id: string;
-  category:
-    | "scene"
-    | "actor"
-    | "interaction"
-    | "emotion"
-    | "location"
-    | "transition"
-    | "object"
-    | "body_state"
-    | "dream_quality"
-    | "recurrence_candidate"
-    | "agency_state"
-    | "metacognitive_moment"
-    | "affect_transition"
-    | "emotional_contradiction"
-    | "affective_atmosphere"
-    | "spatial_instability"
-    | "dream_state_quality"
-    | "continuity_fragment"
-    | "altered_realism";
+  category: ObservationCategory;
   fragment_text: string;
   evidence_adequacy: ObservationEvidenceAdequacy;
   evidence_snippet: string;

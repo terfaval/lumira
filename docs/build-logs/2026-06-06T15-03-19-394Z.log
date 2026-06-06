@@ -1,0 +1,33 @@
+# Build Run 2026-06-06T15-03-19-394Z
+timestamp: 2026-06-06T15:03:19.394Z
+command: C:\Program Files\nodejs\node.exe C:\mira\node_modules\next\dist\bin\next build
+status: failed
+exit_code: 1
+
+## stdout
+```txt
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 85s
+  Running TypeScript ...
+```
+
+## stderr
+```txt
+Failed to type check.
+
+./src/cognition/observation/llm-observation-extractor.ts:493:5
+Type error: Type '{ text: string; position: number; }[]' is not assignable to type 'ObservationDiscoveryObservation[]'.
+  Type '{ text: string; position: number; }' is missing the following properties from type 'ObservationDiscoveryObservation': category, uncertaintyNote, evidence
+
+  [90m491 |[0m
+  [90m492 |[0m   [36mconst[0m finalSummary = rebuildSummaryFromDiscoveryResult({
+[31m[1m>[0m [90m493 |[0m     observations: mergedStructuredFragments.map((fragment) => ({
+  [90m    |[0m     [31m[1m^[0m
+  [90m494 |[0m       text: fragment.fragmentText,
+  [90m495 |[0m       position: fragment.position,
+  [90m496 |[0m     })),
+Next.js build worker exited with code: 1 and signal: null
+```

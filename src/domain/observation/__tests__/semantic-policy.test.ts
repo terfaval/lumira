@@ -94,6 +94,28 @@ describe("evaluateObservationSemanticPolicy", () => {
     expect(decision.result).toBe("accept");
   });
 
+  it("accepts explicit refusal, resistance, and escape pressure as agency-state phenomenology", () => {
+    const decision = evaluateObservationSemanticPolicy({
+      source: "system_llm_extract",
+      summary: "The dreamer refuses contact, resists being pulled forward, and tries to escape.",
+      fragments: [
+        {
+          category: "agency_state",
+          fragmentText: "The dreamer refuses contact, resists being pulled forward, and tries to escape.",
+          position: 0,
+          evidence: {
+            snippet: "nem akartam, hogy hozzám érjenek, ellenálltam, és el akartam menekülni.",
+            spanStart: 0,
+            spanEnd: 74,
+            contextLabel: "raw_sentence",
+          },
+        },
+      ],
+    });
+
+    expect(decision.result).toBe("accept");
+  });
+
   it("accepts descriptive metacognitive moment phenomenology", () => {
     const decision = evaluateObservationSemanticPolicy({
       source: "system_descriptive_extract",
@@ -151,6 +173,28 @@ describe("evaluateObservationSemanticPolicy", () => {
             snippet: "Unease gradually intensified into fear.",
             spanStart: 0,
             spanEnd: 38,
+            contextLabel: "raw_sentence",
+          },
+        },
+      ],
+    });
+
+    expect(decision.result).toBe("accept");
+  });
+
+  it("accepts explicit affect transition without the narrow existing transition verbs", () => {
+    const decision = evaluateObservationSemanticPolicy({
+      source: "system_llm_extract",
+      summary: "Curiosity was present at first, then fear began.",
+      fragments: [
+        {
+          category: "affect_transition",
+          fragmentText: "Curiosity was present at first, then fear began.",
+          position: 0,
+          evidence: {
+            snippet: "Először kíváncsi voltam, aztán félni kezdtem.",
+            spanStart: 0,
+            spanEnd: 45,
             contextLabel: "raw_sentence",
           },
         },
@@ -237,6 +281,50 @@ describe("evaluateObservationSemanticPolicy", () => {
     expect(["accept", "accept_with_uncertainty"]).toContain(decision.result);
   });
 
+  it("accepts missing reflection as altered realism when the evidence is explicit", () => {
+    const decision = evaluateObservationSemanticPolicy({
+      source: "system_llm_extract",
+      summary: "The mirror does not show the dreamer's reflection.",
+      fragments: [
+        {
+          category: "altered_realism",
+          fragmentText: "The mirror does not show the dreamer's reflection.",
+          position: 0,
+          evidence: {
+            snippet: "nem látszódtam a tükörben",
+            spanStart: 0,
+            spanEnd: 24,
+            contextLabel: "raw_sentence",
+          },
+        },
+      ],
+    });
+
+    expect(decision.result).toBe("accept");
+  });
+
+  it("accepts explicit scene-break discontinuity as continuity_fragment", () => {
+    const decision = evaluateObservationSemanticPolicy({
+      source: "system_llm_extract",
+      summary: "The scene abruptly shifts to a different place without a transition.",
+      fragments: [
+        {
+          category: "continuity_fragment",
+          fragmentText: "The scene abruptly shifts to a different place without a transition.",
+          position: 0,
+          evidence: {
+            snippet: "Hirtelen egy teljesen másik helyen voltam, átmenet nélkül.",
+            spanStart: 0,
+            spanEnd: 60,
+            contextLabel: "raw_sentence",
+          },
+        },
+      ],
+    });
+
+    expect(decision.result).toBe("accept");
+  });
+
   it("rejects metaphysical authority phrasing in dream-state summaries", () => {
     const decision = evaluateObservationSemanticPolicy({
       source: "user_descriptive_note",
@@ -279,5 +367,56 @@ describe("evaluateObservationSemanticPolicy", () => {
     });
 
     expect(decision.result).toBe("reject_interpretive");
+  });
+
+  it("flags stale requested summaryTrace positions and falls back to generated trace", () => {
+    const decision = evaluateObservationSemanticPolicy({
+      source: "system_llm_extract",
+      summary: "Speech became impossible during confrontation.",
+      fragments: [
+        {
+          category: "agency_state",
+          fragmentText: "Speech became impossible during confrontation.",
+          position: 0,
+          evidence: {
+            snippet: "Speech became impossible during confrontation.",
+            spanStart: 0,
+            spanEnd: 44,
+            contextLabel: "raw_sentence",
+          },
+        },
+      ],
+      requestedSummaryTrace: [{ fragmentPosition: 4, reason: "explicit_anchor", strength: "strong" }],
+    });
+
+    expect(decision.result).toBe("accept_with_uncertainty");
+    expect(decision.reasons).toContain("summary_trace_stale");
+    expect(decision.summaryTrace).toEqual([{ fragmentPosition: 0, reason: "inferred_overlap", strength: "strong" }]);
+  });
+
+  it("flags unsupported inferred-overlap summaryTrace entries and falls back to generated trace", () => {
+    const decision = evaluateObservationSemanticPolicy({
+      source: "system_llm_extract",
+      summary: "Blocked agency appears.",
+      fragments: [
+        {
+          category: "agency_state",
+          fragmentText: "Speech became impossible during confrontation.",
+          position: 0,
+          evidence: {
+            snippet: "Speech became impossible during confrontation.",
+            spanStart: 0,
+            spanEnd: 44,
+            contextLabel: "raw_sentence",
+          },
+        },
+      ],
+      requestedSummaryTrace: [{ fragmentPosition: 0, reason: "inferred_overlap", strength: "strong" }],
+    });
+
+    expect(decision.result).toBe("defer_insufficient_evidence");
+    expect(decision.reasons).toContain("summary_trace_unsupported");
+    expect(decision.reasons).toContain("summary_trace_missing");
+    expect(decision.summaryTrace).toEqual([]);
   });
 });

@@ -72,6 +72,46 @@ Ledger entries are not appropriate for:
 - transient operational notes
 - routine current-state updates
 
+## 2026-06-06 - Observation V2 Phase 1 Mapping Layer
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/observation/v2.ts`
+  - `src/domain/observation/__tests__/v2.test.ts`
+- Verification:
+  - `npm run typecheck` -> pass
+  - `npm test` -> pass (`86` files, `321` tests)
+  - `npm run lint` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-06T11-37-32-178Z.log`
+- Notes:
+  - Added a pure internal Observation V2 bridge in the observation domain layer without changing persistence, public API contracts, extraction behavior, UI behavior, glossary behavior, or latent behavior.
+  - The new module defines `DescriptiveObservation`, `ObservationBundleV2Like`, deterministic category-to-role mapping, fragment-to-descriptive-observation adaptation, and bundle projection from the existing V1 `Observation` shape.
+  - Projection remains additive and side-effect-free; current V1 fragments and bundles stay canonical for runtime, storage, and downstream consumers in this phase.
+
+## 2026-06-05 - Capture Space v1 Implementation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/capture/page.tsx`
+  - `app/capture/page.module.css`
+  - `app/capture/page.test.tsx`
+  - `app/capture/capture-space.tsx`
+  - `app/capture/capture-metrics.ts`
+  - `app/capture/capture-metrics.test.ts`
+- Verification:
+  - `npm test` -> pass (`84` files, `304` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-05T17-24-20-667Z.log`
+- Notes:
+  - `/capture` now renders as a single-purpose writing surface with one large textarea, Hungarian-only title copy, passive word/character metrics, and a single `Rögzítés` action.
+  - Capture no longer asks for a manual title; the persisted reflective object title is derived from the dream text so the existing save pipeline and post-save redirect remain intact.
+  - Successful capture still lands on `/objects/[objectId]`, preserving the orientation-first handoff instead of returning to reflection directly.
+
 ## 2026-06-05 - Orientation + Homepage Visual Consistency Pass
 
 - Phase: BUILD
@@ -91,6 +131,46 @@ Ledger entries are not appropriate for:
   - Orientation shell atmosphere was calmed toward Homepage.
   - Dream header label was removed and the edit affordance was reduced to a pencil icon control.
   - Hover/focus language was aligned across Orientation and Homepage interactive surfaces.
+
+## 2026-06-05 - Observation Evidence Diagnostics and Timeout Hardening
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/observation-extraction-validation.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+  - `src/cognition/observation/__tests__/observation-extraction-validation.test.ts`
+- Verification:
+  - `npm run typecheck` -> pass
+  - `npm test` -> pass (`83` files, `293` tests)
+  - `npm run lint` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-05T13-15-14-242Z.log`
+- Notes:
+  - Evidence-validation failures now emit bounded diagnostics with category, fragment text, received snippet, exact-match result, and a nearest source excerpt.
+  - OpenAI observation extraction now uses a 25-second request timeout and classifies timeout fallbacks separately from other provider failures.
+  - Validation remains strict exact-normalized substring matching; this pass adds observability and capture-time hardening only.
+
+## 2026-06-05 - LLM Observation Partial Evidence Repair v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/observation-extraction-validation.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+  - `src/cognition/observation/__tests__/observation-extraction-validation.test.ts`
+- Verification:
+  - `npm run typecheck` -> pass
+  - `npm test` -> pass (`83` files, `297` tests)
+  - `npm run lint` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-05T14-00-20-349Z.log`
+- Notes:
+  - Evidence validation now splits valid fragments from failing fragments instead of collapsing the whole extraction immediately.
+  - A one-shot repair-only LLM pass can replace unsupported evidence with exact local quotes or explicitly drop unsupported fragments, while preserving untouched valid fragments.
+  - Any repaired aggregate is rebuilt and then fully revalidated through the existing strict evidence validator and semantic policy before persistence.
 
 ## 2026-06-05 - LLM Observation Extractor v1
 
@@ -1421,3 +1501,399 @@ Verification references:
 - Typecheck: `npm.cmd run typecheck` (pass)
 - Build: `npm.cmd run build` (pass)
 - Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-04T06-45-09-904Z.log`
+
+## New Entry (2026-06-05 UTC)
+
+### Phase 39 - Observation Ontology Alignment and Schema Enforcement
+
+- Ticket type: BUILD / RUNTIME ALIGNMENT / OBSERVATION.
+- Scope delivered:
+  - identified live extractor category drift with repository evidence from the Hungarian regression dream probe: `Location`, `Social Interaction`, `Action`, `Response`, `Physical Sensation`, `Visual Perception`, `Overall Feeling`,
+  - constrained LLM observation extraction schema categories to the canonical runtime vocabulary via explicit enum enforcement,
+  - added deterministic normalization for safe ontology-adjacent aliases such as `affect_state` -> `emotion`, `continuity_candidate` -> `continuity_fragment`, and formatting-only variants,
+  - upgraded invalid-category validation diagnostics so fallback logs now include the offending category and the full allowed vocabulary,
+  - aligned observation runtime docs and Supabase adapter typing to the same canonical category set.
+
+Touched boundaries:
+- Observation extraction runtime:
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/observation-extraction-validation.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+  - `src/cognition/observation/__tests__/observation-extraction-validation.test.ts`
+- Observation domain and persistence typing:
+  - `src/domain/observation/README.md`
+  - `src/infrastructure/supabase/adapters/observation-row.ts`
+- Runtime documentation:
+  - `docs/runtime/lumira-observation-extraction-contract-v1.md`
+
+Architectural impact:
+- Observation extraction, validation, runtime typing, and persistence now share one explicit category vocabulary.
+- The LLM schema no longer permits category labels that cannot be persisted.
+- Validator fallback reasons now expose ontology drift immediately instead of collapsing to bare `invalid_category`.
+
+Verification references:
+- Targeted tests: `npm.cmd test -- src/cognition/observation/__tests__/llm-observation-extractor.test.ts src/cognition/observation/__tests__/observation-extraction-validation.test.ts src/infrastructure/supabase/adapters/__tests__/observation-row.test.ts` (pass)
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (fails: existing timeouts in `app/api/reflective-objects/[id]/latent-snapshots/__tests__/route.test.ts` and `app/api/reflective-objects/[id]/observations/__tests__/route.test.ts`)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-05T12-38-11-646Z.log`
+
+## New Entry (2026-06-05 UTC)
+
+### Phase 40 - Observation Phenomenological Category Emission Tuning
+
+- Ticket type: BUILD / OBSERVATION / LLM EXTRACTOR.
+- Scope delivered:
+  - strengthened the LLM observation extractor prompt so it explicitly prefers evidence-backed phenomenological categories over broad descriptive fallbacks,
+  - added regression coverage for Hungarian fragments that map to `agency_state`, `metacognitive_moment`, `altered_realism`, and `affect_transition`,
+  - added focused latent handoff coverage confirming those center-relevant categories surface as reflective-opportunity material without changing latent thresholds.
+
+Touched boundaries:
+- Observation extraction runtime:
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+- Latent handoff regression coverage:
+  - `src/cognition/latent/__tests__/latent-engine.test.ts`
+
+Architectural impact:
+- No schema, persistence, semantic-policy, or latent-threshold changes.
+- Category vocabulary remains aligned across extractor schema, validation, typing, persistence, and latent consumption.
+- Strict evidence validation and repair behavior remain unchanged.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-05T15-59-44-686Z.log`
+
+## New Entry (2026-06-05 UTC)
+
+### Phase 41 - Observation Phenomenology Policy Alignment v1
+
+- Ticket type: BUILD / OBSERVATION / SEMANTIC POLICY ALIGNMENT.
+- Scope delivered:
+  - aligned semantic-policy coherence cues with explicit phenomenological cases already encouraged by the LLM extractor,
+  - added bounded agency cues for refusal, resistance, coercion-adjacent force, escape pressure, slowed movement, and inability-to-reach style control loss,
+  - added bounded altered-reality cues for mirror anomaly, missing reflection, distorted reflection, impossible perceived image, and reality-behaving-strangely cases,
+  - expanded explicit affect-transition and discontinuity cue coverage without converting generic recurrence into continuity,
+  - clarified extractor prompt boundaries between `dream_state_quality`, `altered_realism`, `spatial_instability`, and `continuity_fragment`,
+  - added regression coverage for policy acceptance and prompt-boundary guidance without changing latent weights, thresholds, or downstream runtime behavior.
+
+Touched boundaries:
+- Observation semantic policy:
+  - `src/domain/observation/semantic-policy.ts`
+  - `src/domain/observation/__tests__/semantic-policy.test.ts`
+- Observation extractor prompt guidance:
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+
+Architectural impact:
+- Observation remains evidence-first and non-interpretive; this change only narrows false uncertainty for explicit phenomenological cases.
+- Category vocabulary, persistence constraints, repair validation, and latent scoring remain unchanged.
+- Broad recurrence is still kept separate from explicit discontinuity.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-05T17-59-36-011Z.log`
+
+## New Entry (2026-06-05 UTC)
+
+### Phase 42 - AI-Generated Editable Dream Title v0
+
+- Ticket type: BUILD / CAPTURE / ORIENTATION.
+- Scope delivered:
+  - added a dedicated AI dream-title helper separate from observation extraction,
+  - kept the deterministic capture-title fallback and updated the stored reflective object title only when the AI title succeeds,
+  - preserved capture route flow and observation extraction boundaries,
+  - added a minimal inline rename affordance on the orientation dream header using the existing reflective-object patch route.
+
+Touched boundaries:
+- Capture flow:
+  - `app/capture/page.tsx`
+  - `app/capture/page.test.tsx`
+  - `app/capture/capture-metrics.ts`
+- Dedicated dream title generation:
+  - `src/cognition/title/llm-dream-title-generator.ts`
+  - `src/cognition/title/__tests__/llm-dream-title-generator.test.ts`
+- Orientation title editing:
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `src/ui/object-orientation/object-orientation-layer.module.css`
+  - `src/ui/object-orientation/__tests__/orientation-layer.test.tsx`
+
+Architectural impact:
+- No schema changes.
+- Observation extractor schema and latent/opening/thread orchestration remain unchanged.
+- Title generation is isolated from descriptive observation extraction and remains non-interpretive by prompt contract.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-05T18-30-47-648Z.log`
+
+## New Entry (2026-06-05 UTC)
+
+### Phase 43 - LLM Observation SummaryTrace Alignment v1
+
+- Ticket type: BUILD / OBSERVATION / RUNTIME FIX.
+- Scope delivered:
+  - made `summaryTrace` explicit in the LLM extraction schema and prompt,
+  - added deterministic final `summaryTrace` rebuild from the surviving validated fragments after evidence repair/drop,
+  - ensured fragment drop cannot leave stale trace references in the final persisted observation payload,
+  - added semantic-policy diagnostics for invalid, stale, and unsupported caller-supplied summary traces without loosening evidence or category guardrails,
+  - added regression coverage for missing-trace rebuild, stale-trace survivor rebuild, and the Hungarian phenomenology case that previously risked `summary_trace_missing`.
+
+Touched boundaries:
+- Observation extraction:
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+- Observation semantic policy:
+  - `src/domain/observation/semantic-policy.ts`
+  - `src/domain/observation/__tests__/semantic-policy.test.ts`
+
+Architectural impact:
+- Final Observation runtime order now follows:
+  - LLM extraction
+  - schema/category validation
+  - evidence validation + repair/drop
+  - final surviving fragments
+  - deterministic `summaryTrace` rebuild
+  - semantic policy
+  - persist
+- Semantic policy remains authoritative; unsupported evidence and interpretive output are still rejected or deferred.
+- No latent, opening, thread, glossary, UI, or schema changes.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-05T18-52-27-528Z.log`
+
+## New Entry (2026-06-05 UTC)
+
+### Phase 44 - Orientation Inline Dream Title Editing Polish
+
+- Ticket type: BUILD / ORIENTATION / UI POLISH.
+- Scope delivered:
+  - reduced the orientation-layer dream title scale slightly,
+  - removed the separate rename button and helper copy,
+  - moved title editing onto the existing pencil affordance with inline single-line editing,
+  - added keyboard-safe save/cancel controls using the existing reflective-object patch route.
+
+Touched boundaries:
+- Orientation header title editing:
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `src/ui/object-orientation/object-orientation-layer.module.css`
+  - `src/ui/object-orientation/__tests__/orientation-layer.test.tsx`
+
+Architectural impact:
+- No schema, route-flow, or reflective-space architecture changes.
+- Title editing remains local to the orientation header and persists through the existing `PATCH /api/reflective-objects/[id]` boundary.
+- A stale generated `.next/dev/types` artifact had to be removed before final verification; no source behavior changed as part of that cleanup.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-05T20-13-28-670Z.log`
+
+## New Entry (2026-06-06 UTC)
+
+### Observation V2 Phase 2 - Separate Discovery Output From Persistence Shape
+
+- Ticket type: BUILD / RUNTIME / OBSERVATION V2.
+- Scope delivered:
+  - introduced `ObservationDiscoveryResult` as an explicit pre-persistence runtime concept,
+  - added a deterministic discovery-to-persistence projection boundary for `ObservationDiscoveryResult -> CreateObservationInput`,
+  - refactored scaffold and LLM extraction to produce discovery-oriented intermediates before V1 payload shaping,
+  - preserved V1 persistence shape, schema, API surface, UI behavior, glossary behavior, and latent behavior.
+
+Touched boundaries:
+- Observation discovery runtime:
+  - `src/cognition/observation/observation-discovery.ts`
+  - `src/cognition/observation/observation-discovery-projection.ts`
+- Observation extraction:
+  - `src/cognition/observation/descriptive-observation-scaffold.ts`
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/observation-engine.ts`
+- Observation discovery verification:
+  - `src/cognition/observation/__tests__/observation-discovery.test.ts`
+
+Architectural impact:
+- Observation discovery now exists as its own runtime stage inside cognition.
+- Persistence shaping is isolated to a single projection step that emits the unchanged V1 `CreateObservationInput`.
+- Semantic policy behavior remains intact with minimal breakage by being preserved at the compatibility boundary rather than forcing a broader runtime rewrite.
+- No schema, repository, API contract, UI, glossary, or latent contract changes were introduced.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-06T12-37-23-725Z.log`
+
+## New Entry (2026-06-06 UTC)
+
+### Observation V2 Phase 2.1 - Clean Discovery Boundary Before Derived Summary
+
+- Ticket type: BUILD / RUNTIME / OBSERVATION V2.
+- Scope delivered:
+  - demoted discovery-owned summary compatibility from top-level `summaryCandidate` to transitional `projectionCompatibility.summaryText`,
+  - reduced obvious V1 fragment-shaped coupling by constructing scaffold discovery observations directly and by remapping validated LLM fragments into discovery observations before projection,
+  - documented direct HTTP `CreateObservationInput` parsing as a manual/API compatibility ingress rather than the canonical cognition path,
+  - preserved cognition flow as `ObservationDiscoveryResult -> projection -> CreateObservationInput` for generation paths.
+
+Touched boundaries:
+- Observation discovery boundary:
+  - `src/cognition/observation/observation-discovery.ts`
+  - `src/cognition/observation/observation-discovery-projection.ts`
+- Observation cognition producers:
+  - `src/cognition/observation/descriptive-observation-scaffold.ts`
+  - `src/cognition/observation/llm-observation-extractor.ts`
+- Observation compatibility ingress:
+  - `src/domain/observation/http-contract.ts`
+  - `app/api/reflective-objects/[id]/observations/route.ts`
+- Verification:
+  - `src/cognition/observation/__tests__/observation-discovery.test.ts`
+  - `src/cognition/observation/__tests__/descriptive-observation-scaffold.test.ts`
+  - `src/cognition/observation/__tests__/observation-engine.test.ts`
+
+Architectural impact:
+- Discovery output is now more clearly observation-first and no longer implies top-level summary ownership.
+- V1 summary compatibility behavior remains available only as transitional projection metadata.
+- Manual POST creation remains intentionally parallel for compatibility, with explicit inline documentation.
+- No schema, API behavior, UI behavior, glossary behavior, latent behavior, or semantic-policy behavior changes were introduced.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-06T13-43-38-945Z.log`
+
+## New Entry (2026-06-06 UTC)
+
+### Observation V2 Phase 3 - Derive Summary From Discovery Output
+
+- Ticket type: BUILD / RUNTIME / OBSERVATION V2.
+- Scope delivered:
+  - moved V1 summary ownership fully into projection by deriving `CreateObservationInput.summary` from ordered `ObservationDiscoveryResult.observations`,
+  - kept `projectionCompatibility.summaryText` only as a transitional fallback when ordered discovery observations cannot produce a usable summary,
+  - added a safe generic summary fallback for preserve-defaults compatibility cases where neither discovery observations nor compatibility summary can produce text,
+  - removed scaffold-only summary-trace injection so scaffold projection now rebuilds `summaryTrace` from the same derived summary behavior used by the general projection path.
+
+Touched boundaries:
+- Observation discovery projection:
+  - `src/cognition/observation/observation-discovery-projection.ts`
+- Scaffold compatibility path:
+  - `src/cognition/observation/descriptive-observation-scaffold.ts`
+- Verification:
+  - `src/cognition/observation/__tests__/observation-discovery.test.ts`
+  - `src/cognition/observation/__tests__/descriptive-observation-scaffold.test.ts`
+
+Architectural impact:
+- Projection is now the canonical summary-shaping boundary for cognition-driven Observation V2 flow.
+- Summary precedence is now:
+  - ordered discovery observations
+  - transitional compatibility summary
+  - safe generic fallback
+- V1 persistence shape remains unchanged, including `summary`, `summaryTrace`, and fragment persistence contracts.
+- Manual HTTP `CreateObservationInput` ingress remains transitional and parallel by design; this phase does not remove it.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass: `88` files, `330` tests)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-06T14-11-34-104Z.log`
+
+## New Entry (2026-06-06 UTC)
+
+### Observation V2 Phase 4 - Native Multi-Observation Support In Discovery
+
+- Ticket type: BUILD / RUNTIME / OBSERVATION V2.
+- Scope delivered:
+  - introduced a discovery-level shared-evidence registry so multiple observations can reference one evidence span without duplicating discovery metadata,
+  - changed discovery observations from inline `spans[]` storage to `spanIds[]` references against bundle-local `evidenceSpans`,
+  - added internal discovery metrics for observation count and evidence span count,
+  - expanded scaffold fallback so one sentence can safely emit multiple clause observations while preserving one shared source-evidence span,
+  - preserved V1 persistence projection by resolving discovery evidence references back into the existing fragment payload shape.
+
+Touched boundaries:
+- Observation discovery runtime:
+  - `src/cognition/observation/observation-discovery.ts`
+  - `src/cognition/observation/observation-discovery-projection.ts`
+- Observation cognition producers:
+  - `src/cognition/observation/descriptive-observation-scaffold.ts`
+  - `src/cognition/observation/llm-observation-extractor.ts`
+- Verification:
+  - `src/cognition/observation/__tests__/observation-discovery.test.ts`
+  - `src/cognition/observation/__tests__/descriptive-observation-scaffold.test.ts`
+  - `src/cognition/observation/__tests__/observation-extraction-validation.test.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+
+Architectural impact:
+- Discovery now models shared evidence explicitly as bundle-local evidence spans plus observation references.
+- Projection remains the only V1 shaping boundary; schema, API contracts, UI behavior, and repository persistence stay unchanged.
+- Structured normalization and LLM validation continue accepting repeated evidence snippets, but discovery now preserves them as one shared span before projection.
+- Manual HTTP `CreateObservationInput` ingress remains a compatibility-era parallel path and is still outside the discovery-native model.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass: `88` files, `334` tests)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-06T15-06-09-195Z.log`
+
+## New Entry (2026-06-06 UTC)
+
+### Observation V2 Phase 5 - Internal Salience Profiles (Inline Hybrid)
+
+- Ticket type: BUILD / RUNTIME / OBSERVATION V2.
+- Scope delivered:
+  - introduced bounded internal salience profiles for discovery observations with Phase 5 v1 dimensions:
+    - `anomaly`
+    - `agencyTension`
+    - `metacognitivePresence`
+  - extended the existing single LLM extraction schema so fragments may propose inline salience without adding a second provider pass,
+  - normalized salience after discovery assembly by removing unknown dimensions, dropping unsupported values, and rejecting obviously unsupported metacognitive salience,
+  - added conservative scaffold salience generation for anomaly, agency tension, and explicit dream-awareness cues,
+  - kept projection, persistence, API, UI, latent, and glossary behavior unchanged by ignoring salience on the V1 bridge.
+
+Touched boundaries:
+- Observation salience runtime:
+  - `src/domain/observation/salience.ts`
+  - `src/cognition/observation/observation-salience.ts`
+- Observation discovery and extraction:
+  - `src/cognition/observation/observation-discovery.ts`
+  - `src/cognition/observation/observation-extraction-validation.ts`
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/descriptive-observation-scaffold.ts`
+- V2 observation projection surface:
+  - `src/domain/observation/v2.ts`
+- Verification:
+  - `src/cognition/observation/__tests__/observation-discovery.test.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+  - `src/cognition/observation/__tests__/descriptive-observation-scaffold.test.ts`
+  - `src/domain/observation/__tests__/v2.test.ts`
+
+Architectural impact:
+- Observation salience now exists as an internal Observation V2 concept attached to `ObservationDiscoveryObservation`.
+- The validated LLM path can propose salience inline, but deterministic normalization remains the final guardrail.
+- Scaffold fallback produces conservative salience only; it does not attempt parity with validated LLM nuance.
+- The V1 bridge still projects `ObservationDiscoveryResult` to `CreateObservationInput` without salience fields, preserving storage and downstream compatibility.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass: `88` files, `342` tests)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-06T16-11-48-548Z.log`

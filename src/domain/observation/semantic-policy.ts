@@ -1,6 +1,5 @@
 import type {
   CreateObservationFragmentInput,
-  ObservationCategory,
   ObservationEvidenceAdequacy,
   ObservationProvenanceTier,
   ObservationSemanticPolicyResult,
@@ -57,6 +56,32 @@ const METAPHYSICAL_AUTHORITY_PATTERNS = [
 const CERTAINTY_MARKERS = ["definitely", "certainly", "undeniably", "always", "proves"];
 const RECURRENCE_CUES = ["again", "repeated", "recurring", "similar", "previously", "before", "same pattern"];
 const AGENCY_CUES = [
+  "refuse",
+  "refused",
+  "refuses",
+  "refusal",
+  "resist",
+  "resisted",
+  "resists",
+  "resistance",
+  "coerc",
+  "forced to",
+  "made to",
+  "dragged",
+  "pulled forward",
+  "tried to escape",
+  "trying to escape",
+  "attempted escape",
+  "attempts escape",
+  "escape",
+  "pursuit",
+  "chased",
+  "had to run",
+  "unable to reach",
+  "could not reach",
+  "couldn't reach",
+  "too slow",
+  "slowed movement",
   "unable to move",
   "unable to speak",
   "could not move",
@@ -79,6 +104,11 @@ const AGENCY_CUES = [
   "lost control",
   "control returned",
   "involuntary",
+  "nem akartam",
+  "ellenálltam",
+  "el akartam menekülni",
+  "futnom kellett",
+  "nem tudtam elég gyorsan haladni",
 ];
 const METACOGNITIVE_CUES = [
   "noticed",
@@ -110,6 +140,13 @@ const AFFECT_FORBIDDEN_MARKERS = [
   "emotional pathology",
 ];
 const AFFECT_TRANSITION_CUES = [
+  "at first",
+  "then",
+  "began",
+  "began to",
+  "started to",
+  "gives way to",
+  "gave way to",
   "became",
   "becoming",
   "shifted into",
@@ -121,6 +158,10 @@ const AFFECT_TRANSITION_CUES = [
   "turned into",
   "gradually",
   "suddenly",
+  "először",
+  "aztán",
+  "majd",
+  "kezdtem",
 ];
 const EMOTIONAL_CONTRADICTION_CUES = [
   "simultaneously",
@@ -170,6 +211,14 @@ const DREAM_STATE_QUALITY_CUES = [
   "woke up but",
 ];
 const CONTINUITY_FRAGMENT_CUES = [
+  "abruptly shifted",
+  "abrupt shift",
+  "without a transition",
+  "without a bridge",
+  "without any bridge",
+  "jumped to a different place",
+  "different place without a transition",
+  "different place without a bridge",
   "without transition",
   "scene jumped",
   "abruptly elsewhere",
@@ -180,8 +229,21 @@ const CONTINUITY_FRAGMENT_CUES = [
   "still dreaming",
   "false awakening",
   "woke up in",
+  "átmenet nélkül",
+  "hirtelen",
 ];
 const ALTERED_REALISM_CUES = [
+  "mirror anomaly",
+  "missing reflection",
+  "no reflection",
+  "reflection was missing",
+  "did not show the dreamer's reflection",
+  "does not show the dreamer's reflection",
+  "mirror showed an impossible image",
+  "distorted reflection",
+  "strange reflection",
+  "reality behaved strangely",
+  "reality was behaving strangely",
   "felt unreal",
   "seemed unreal",
   "not real",
@@ -189,6 +251,10 @@ const ALTERED_REALISM_CUES = [
   "reality felt thin",
   "distorted reality",
   "altered realism",
+  "tükör",
+  "tükörkép",
+  "tükröződés",
+  "nem látszódtam a tükörben",
 ];
 const AFFECT_TONE_MARKERS = [
   "fear",
@@ -202,6 +268,11 @@ const AFFECT_TONE_MARKERS = [
   "dread",
   "warmth",
   "heaviness",
+  "kíváncsi",
+  "félelem",
+  "félni",
+  "szorong",
+  "megkönnyebbül",
 ];
 
 const LATENT_BACKFLOW_MARKERS = [
@@ -277,28 +348,32 @@ function isRecurrenceDescriptive(fragmentText: string): boolean {
   return RECURRENCE_CUES.some((cue) => lower.includes(cue));
 }
 
-function hasAgencyCue(fragmentText: string): boolean {
-  const lower = normalize(fragmentText);
+function buildCueText(fragment: CreateObservationFragmentInput): string {
+  return normalize(`${fragment.fragmentText} ${fragment.evidence.snippet}`);
+}
+
+function hasAgencyCue(fragment: CreateObservationFragmentInput): boolean {
+  const lower = buildCueText(fragment);
   return AGENCY_CUES.some((cue) => lower.includes(cue));
 }
 
-function hasMetacognitiveCue(fragmentText: string): boolean {
-  const lower = normalize(fragmentText);
+function hasMetacognitiveCue(fragment: CreateObservationFragmentInput): boolean {
+  const lower = buildCueText(fragment);
   return METACOGNITIVE_CUES.some((cue) => lower.includes(cue));
 }
 
-function hasAffectTone(fragmentText: string): boolean {
-  const lower = normalize(fragmentText);
+function hasAffectTone(text: string): boolean {
+  const lower = normalize(text);
   return AFFECT_TONE_MARKERS.some((cue) => lower.includes(cue));
 }
 
-function hasAffectTransitionCue(fragmentText: string): boolean {
-  const lower = normalize(fragmentText);
+function hasAffectTransitionCue(fragment: CreateObservationFragmentInput): boolean {
+  const lower = buildCueText(fragment);
   return hasAffectTone(lower) && AFFECT_TRANSITION_CUES.some((cue) => lower.includes(cue));
 }
 
-function hasEmotionalContradictionCue(fragmentText: string): boolean {
-  const lower = normalize(fragmentText);
+function hasEmotionalContradictionCue(fragment: CreateObservationFragmentInput): boolean {
+  const lower = buildCueText(fragment);
   const hasContradictionMarker = EMOTIONAL_CONTRADICTION_CUES.some((cue) => lower.includes(cue));
   if (hasContradictionMarker) {
     return true;
@@ -306,28 +381,28 @@ function hasEmotionalContradictionCue(fragmentText: string): boolean {
   return hasAffectTone(lower) && /\bboth\b.{0,32}\band\b/.test(lower);
 }
 
-function hasAffectiveAtmosphereCue(fragmentText: string): boolean {
-  const lower = normalize(fragmentText);
+function hasAffectiveAtmosphereCue(fragment: CreateObservationFragmentInput): boolean {
+  const lower = buildCueText(fragment);
   return AFFECTIVE_ATMOSPHERE_CUES.some((cue) => lower.includes(cue));
 }
 
-function hasSpatialInstabilityCue(fragmentText: string): boolean {
-  const lower = normalize(fragmentText);
+function hasSpatialInstabilityCue(fragment: CreateObservationFragmentInput): boolean {
+  const lower = buildCueText(fragment);
   return SPATIAL_INSTABILITY_CUES.some((cue) => lower.includes(cue));
 }
 
-function hasDreamStateQualityCue(fragmentText: string): boolean {
-  const lower = normalize(fragmentText);
+function hasDreamStateQualityCue(fragment: CreateObservationFragmentInput): boolean {
+  const lower = buildCueText(fragment);
   return DREAM_STATE_QUALITY_CUES.some((cue) => lower.includes(cue));
 }
 
-function hasContinuityFragmentCue(fragmentText: string): boolean {
-  const lower = normalize(fragmentText);
+function hasContinuityFragmentCue(fragment: CreateObservationFragmentInput): boolean {
+  const lower = buildCueText(fragment);
   return CONTINUITY_FRAGMENT_CUES.some((cue) => lower.includes(cue));
 }
 
-function hasAlteredRealismCue(fragmentText: string): boolean {
-  const lower = normalize(fragmentText);
+function hasAlteredRealismCue(fragment: CreateObservationFragmentInput): boolean {
+  const lower = buildCueText(fragment);
   return ALTERED_REALISM_CUES.some((cue) => lower.includes(cue));
 }
 
@@ -361,6 +436,62 @@ function buildSummaryTrace(summary: string, fragments: CreateObservationFragment
 
   traces.sort((a, b) => a.fragmentPosition - b.fragmentPosition);
   return traces.slice(0, 5);
+}
+
+function validateRequestedSummaryTrace(input: {
+  summary: string;
+  fragments: CreateObservationFragmentInput[];
+  requestedSummaryTrace: ObservationSummaryTrace[];
+}): {
+  ok: boolean;
+  reasons: string[];
+} {
+  const fragmentPositions = new Set(input.fragments.map((fragment) => fragment.position));
+  const seenPositions = new Set<number>();
+  const reasons = new Set<string>();
+
+  for (const trace of input.requestedSummaryTrace) {
+    if (!Number.isInteger(trace.fragmentPosition) || trace.fragmentPosition < 0) {
+      reasons.add("summary_trace_invalid");
+      continue;
+    }
+
+    if (trace.reason !== "explicit_anchor" && trace.reason !== "inferred_overlap") {
+      reasons.add("summary_trace_invalid");
+      continue;
+    }
+
+    if (trace.strength !== "strong" && trace.strength !== "weak") {
+      reasons.add("summary_trace_invalid");
+      continue;
+    }
+
+    if (seenPositions.has(trace.fragmentPosition)) {
+      reasons.add("summary_trace_invalid");
+      continue;
+    }
+    seenPositions.add(trace.fragmentPosition);
+
+    const fragment = input.fragments.find((candidate) => candidate.position === trace.fragmentPosition);
+    if (!fragment || !fragmentPositions.has(trace.fragmentPosition)) {
+      reasons.add("summary_trace_stale");
+      continue;
+    }
+
+    if (trace.reason === "inferred_overlap") {
+      const summaryTokens = new Set(tokenize(input.summary));
+      const fragmentTokens = new Set(tokenize(fragment.fragmentText));
+      const overlap = Array.from(summaryTokens).filter((token) => fragmentTokens.has(token)).length;
+      if (overlap === 0) {
+        reasons.add("summary_trace_unsupported");
+      }
+    }
+  }
+
+  return {
+    ok: reasons.size === 0,
+    reasons: Array.from(reasons),
+  };
 }
 
 function hasInterpretiveLanguage(summary: string, fragments: CreateObservationFragmentInput[]): boolean {
@@ -442,46 +573,47 @@ function hardenRecurrenceSemantics(
   return { fragments: hardenedFragments, shouldDefer };
 }
 
-function hasCategoryCoherenceRisk(category: ObservationCategory, fragmentText: string): boolean {
+function hasCategoryCoherenceRisk(fragment: CreateObservationFragmentInput): boolean {
+  const { category, fragmentText } = fragment;
   if (category === "emotion") {
     // Guard against symbolic/diagnostic spillover inside emotional descriptions.
     return containsAny(fragmentText, ["therefore", "so it means", "proves"]);
   }
 
   if (category === "agency_state") {
-    return !hasAgencyCue(fragmentText);
+    return !hasAgencyCue(fragment);
   }
 
   if (category === "metacognitive_moment") {
-    return !hasMetacognitiveCue(fragmentText);
+    return !hasMetacognitiveCue(fragment);
   }
 
   if (category === "affect_transition") {
-    return !hasAffectTransitionCue(fragmentText);
+    return !hasAffectTransitionCue(fragment);
   }
 
   if (category === "emotional_contradiction") {
-    return !hasEmotionalContradictionCue(fragmentText);
+    return !hasEmotionalContradictionCue(fragment);
   }
 
   if (category === "affective_atmosphere") {
-    return !hasAffectiveAtmosphereCue(fragmentText);
+    return !hasAffectiveAtmosphereCue(fragment);
   }
 
   if (category === "spatial_instability") {
-    return !hasSpatialInstabilityCue(fragmentText);
+    return !hasSpatialInstabilityCue(fragment);
   }
 
   if (category === "dream_state_quality") {
-    return !hasDreamStateQualityCue(fragmentText);
+    return !hasDreamStateQualityCue(fragment);
   }
 
   if (category === "continuity_fragment") {
-    return !hasContinuityFragmentCue(fragmentText);
+    return !hasContinuityFragmentCue(fragment);
   }
 
   if (category === "altered_realism") {
-    return !hasAlteredRealismCue(fragmentText);
+    return !hasAlteredRealismCue(fragment);
   }
 
   return false;
@@ -541,7 +673,7 @@ export function evaluateObservationSemanticPolicy(input: {
   }
 
   for (const fragment of recurrence.fragments) {
-    if (hasCategoryCoherenceRisk(fragment.category, fragment.fragmentText)) {
+    if (hasCategoryCoherenceRisk(fragment)) {
       reasons.push(`category_coherence_risk:${fragment.category}`);
       uncertaintyNotes.push(`Category coherence risk detected for ${fragment.category} fragment.`);
     }
@@ -549,9 +681,21 @@ export function evaluateObservationSemanticPolicy(input: {
 
   const weakEvidenceCount = recurrence.fragments.filter((fragment) => fragment.evidenceAdequacy === "weak_fallback").length;
   const generatedTrace = buildSummaryTrace(normalizedSummary, recurrence.fragments);
-  const summaryTrace = input.requestedSummaryTrace && input.requestedSummaryTrace.length > 0
-    ? input.requestedSummaryTrace
-    : generatedTrace;
+  let summaryTrace = generatedTrace;
+
+  if (input.requestedSummaryTrace && input.requestedSummaryTrace.length > 0) {
+    const requestedTraceValidation = validateRequestedSummaryTrace({
+      summary: normalizedSummary,
+      fragments: recurrence.fragments,
+      requestedSummaryTrace: input.requestedSummaryTrace,
+    });
+
+    if (requestedTraceValidation.ok) {
+      summaryTrace = input.requestedSummaryTrace;
+    } else {
+      reasons.push(...requestedTraceValidation.reasons);
+    }
+  }
 
   if (summaryTrace.length === 0) {
     reasons.push("summary_trace_missing");

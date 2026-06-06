@@ -179,6 +179,73 @@ function observationWithSpatialDreamStatePhenomenology(): Observation {
   };
 }
 
+function observationWithHungarianPhenomenologicalCenter(): Observation {
+  return {
+    ...baseObservation(),
+    id: "obs-hu-phenom",
+    summary: "Movement difficulty, dream awareness, and mirror anomaly appear together.",
+    fragments: [
+      {
+        id: "frag-hu-1",
+        observationId: "obs-hu-phenom",
+        userId: "user-1",
+        reflectiveObjectId: "obj-1",
+        category: "agency_state",
+        fragmentText: "The dreamer must run down the stairs but cannot move quickly enough.",
+        evidenceAdequacy: "strong_span",
+        evidence: {
+          snippet: "Futnom kellett le a l\\u00e9pcs\\u0151n, de nem tudtam volna el\\u00e9g gyorsan haladni.",
+          spanStart: 0,
+          spanEnd: 69,
+          contextLabel: "raw_sentence",
+        },
+        uncertaintyNote: null,
+        position: 0,
+        createdAt: "2026-05-24T00:00:00.000Z",
+        updatedAt: "2026-05-24T00:00:00.000Z",
+      },
+      {
+        id: "frag-hu-2",
+        observationId: "obs-hu-phenom",
+        userId: "user-1",
+        reflectiveObjectId: "obj-1",
+        category: "metacognitive_moment",
+        fragmentText: "The dreamer realizes this is a dream.",
+        evidenceAdequacy: "strong_span",
+        evidence: {
+          snippet: "K\\u00e9s\\u0151bb r\\u00e1j\\u00f6ttem, hogy \\u00e1lmodom.",
+          spanStart: 70,
+          spanEnd: 106,
+          contextLabel: "raw_sentence",
+        },
+        uncertaintyNote: null,
+        position: 1,
+        createdAt: "2026-05-24T00:00:00.000Z",
+        updatedAt: "2026-05-24T00:00:00.000Z",
+      },
+      {
+        id: "frag-hu-3",
+        observationId: "obs-hu-phenom",
+        userId: "user-1",
+        reflectiveObjectId: "obj-1",
+        category: "altered_realism",
+        fragmentText: "The mirror does not show the dreamer's reflection.",
+        evidenceAdequacy: "strong_span",
+        evidence: {
+          snippet: "A t\\u00fck\\u00f6rben nem l\\u00e1tsz\\u00f3dtam.",
+          spanStart: 107,
+          spanEnd: 138,
+          contextLabel: "raw_sentence",
+        },
+        uncertaintyNote: null,
+        position: 2,
+        createdAt: "2026-05-24T00:00:00.000Z",
+        updatedAt: "2026-05-24T00:00:00.000Z",
+      },
+    ],
+  };
+}
+
 function observationWithWeakUncertainPhenomenology(): Observation {
   const observation = observationWithAffectStructure();
   observation.id = "obs-5";
@@ -584,6 +651,20 @@ describe("buildLatentSnapshotScaffold", () => {
 
     const signalTypes = snapshot.signals.map((signal) => signal.signalType);
     expect(signalTypes).toContain("reflective_opportunity_possibility");
+  });
+
+  it("treats combined agency, metacognition, and altered-realism fragments as center-relevant latent material", () => {
+    const snapshot = buildLatentSnapshotScaffold({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      observations: [observationWithHungarianPhenomenologicalCenter()],
+      glossaryTerms: [],
+      threads: [],
+      responses: [],
+    });
+
+    expect(snapshot.signals.map((signal) => signal.signalType)).toContain("reflective_opportunity_possibility");
+    expect(snapshot.lifecycle?.centerState).not.toBe("dormant");
   });
 
   it("keeps no-center silence path when evidence is weak and uncertain", () => {

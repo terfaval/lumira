@@ -57,8 +57,9 @@
 
 .panelTitleBlock {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
+  flex: 1;
 }
 
 .panelLabel {
@@ -71,30 +72,64 @@
 
 .dreamHeader h1 {
   margin: 0;
-  font-size: clamp(1.42rem, 2.4vw, 2.15rem);
-  line-height: 1.02;
-  letter-spacing: -0.028em;
+  font-size: clamp(1.16rem, 1.95vw, 1.64rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
   font-weight: 600;
 }
 
-.dreamLink {
+.titleInput {
+  width: min(100%, 28rem);
+  padding: 8px 0;
+  border: none;
+  border-bottom: 1px solid rgba(86, 109, 120, 0.24);
+  border-radius: 0;
+  background: transparent;
+  color: #20303a;
+  font-size: clamp(1.16rem, 1.95vw, 1.64rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.titleInput:focus {
+  outline: none;
+  border-bottom-color: rgba(49, 76, 92, 0.5);
+}
+
+.titleFeedback {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #8a4334;
+}
+
+.titleActions {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.iconButton {
   display: inline-grid;
   place-items: center;
-  flex-shrink: 0;
   width: 2.45rem;
   height: 2.45rem;
+  padding: 0;
   border-radius: 999px;
-  text-decoration: none;
-  color: #324750;
-  background: rgba(243, 246, 245, 0.92);
   border: 1px solid rgba(86, 109, 120, 0.16);
+  background: rgba(243, 246, 245, 0.92);
+  color: #324750;
+  cursor: pointer;
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
     box-shadow 160ms ease;
 }
 
-.dreamLink span {
+.iconButton span {
   font-size: 1rem;
   line-height: 1;
 }
@@ -312,8 +347,8 @@
   cursor: wait;
 }
 
-.dreamLink:hover,
-.dreamLink:focus-visible,
+.iconButton:hover,
+.iconButton:focus-visible,
 .glossaryButton:hover,
 .glossaryButton:focus-visible,
 .stateButton:hover,
@@ -332,8 +367,8 @@
 .stateButton:focus-visible,
 .tabButton:hover,
 .tabButton:focus-visible,
-.dreamLink:hover,
-.dreamLink:focus-visible {
+.iconButton:hover,
+.iconButton:focus-visible {
   background: rgba(251, 252, 249, 0.96);
 }
 
@@ -343,7 +378,7 @@
   box-shadow: 0 10px 22px rgba(33, 48, 38, 0.05);
 }
 
-.dreamLink:focus-visible,
+.iconButton:focus-visible,
 .glossaryButton:focus-visible,
 .stateButton:focus-visible,
 .tabButton:focus-visible,
@@ -426,6 +461,14 @@
   .stackHeader {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .titleInput {
+    width: 100%;
+  }
+
+  .titleActions {
+    align-self: flex-end;
   }
 
   .tabList {

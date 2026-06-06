@@ -73,6 +73,9 @@ export async function POST(request: Request, context: RouteParams) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
+  // Manual/API compatibility ingress: this route still accepts the legacy
+  // CreateObservationInput write shape directly. Cognition generation paths
+  // should continue to use discovery plus projection before persistence.
   const parsed = parseCreateObservationInput(payload, user.userId, reflectiveObjectId);
 
   if (!parsed.ok) {

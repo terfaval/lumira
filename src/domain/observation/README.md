@@ -27,3 +27,24 @@ Current B-level slice dimensions (first-class additions):
 - `dream_state_quality`
 - `continuity_fragment`
 - `altered_realism`
+
+Canonical runtime category vocabulary:
+- `scene`
+- `actor`
+- `interaction`
+- `emotion`
+- `location`
+- `transition`
+- `object`
+- `body_state`
+- `dream_quality`
+- `recurrence_candidate`
+- `agency_state`
+- `metacognitive_moment`
+- `affect_transition`
+- `emotional_contradiction`
+- `affective_atmosphere`
+- `spatial_instability`
+- `dream_state_quality`
+- `continuity_fragment`
+- `altered_realism`

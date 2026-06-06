@@ -1,17 +1,8 @@
-import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { ObjectOrientationLayer } from "@/src/ui/object-orientation/object-orientation-layer";
 import type { ObjectOrientationPayload } from "@/src/reflective-space/composition/compose-object-orientation-payload";
-
-vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: { children?: ReactNode; href: string }) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
-}));
 
 const payload: ObjectOrientationPayload = {
   dream: {
@@ -57,7 +48,7 @@ const payload: ObjectOrientationPayload = {
 };
 
 describe("ObjectOrientationLayer", () => {
-  it("renders the refined orientation landscape with a quieter dream header", () => {
+  it("renders a smaller quiet dream header with only the inline edit icon affordance", () => {
     const markup = renderToStaticMarkup(<ObjectOrientationLayer payload={payload} />);
 
     expect(markup).not.toContain(">Álom<");
@@ -68,10 +59,11 @@ describe("ObjectOrientationLayer", () => {
     expect(markup).toContain("Megnyitások");
     expect(markup).toContain("Jegyzetek");
     expect(markup).toContain("Lantern House");
-    expect(markup).toContain("aria-label=\"Álom szerkesztése\"");
+    expect(markup).toContain("aria-label=\"Cím szerkesztése\"");
     expect(markup).toContain("aria-hidden=\"true\"");
+    expect(markup).not.toContain("Átnevezés");
+    expect(markup).not.toContain("Bármikor átnevezheted.");
     expect(markup).toContain("aria-pressed=\"true\">Új");
     expect(markup).toContain("The doorway may matter here.");
-    expect(markup).toContain("/objects/obj-1/reflect");
   });
 });

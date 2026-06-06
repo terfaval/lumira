@@ -2,9 +2,12 @@ import { redirect } from "next/navigation";
 
 import { buildDescriptiveObservationScaffold } from "@/src/cognition/observation/descriptive-observation-scaffold";
 import { buildLlmObservationExtraction } from "@/src/cognition/observation/llm-observation-extractor";
+import { generateDreamTitleSuggestion } from "@/src/cognition/title/llm-dream-title-generator";
 import { createObservationRepository } from "@/src/infrastructure/supabase/repositories/create-observation-repository";
 import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
 import { requireAuthenticatedUserId } from "@/src/ui/shared/require-authenticated-user";
+import { deriveCaptureTitle } from "@/app/capture/capture-metrics";
+import { CaptureSpace } from "@/app/capture/capture-space";
 import styles from "@/app/capture/page.module.css";
 
 const MIN_CONTENT_LENGTH = 1;
@@ -18,10 +21,10 @@ async function submitCapture(formData: FormData) {
   "use server";
 
   const userId = await requireAuthenticatedUserId();
-  const title = readField(formData, "title");
   const dreamText = readField(formData, "dreamText");
+  const title = deriveCaptureTitle(dreamText);
 
-  if (!title || dreamText.length < MIN_CONTENT_LENGTH) {
+  if (dreamText.length < MIN_CONTENT_LENGTH) {
     redirect("/capture?error=validation");
   }
 
@@ -33,6 +36,22 @@ async function submitCapture(formData: FormData) {
     primaryContent: dreamText,
     sourceContext: "manual",
   });
+
+  try {
+    const titleSuggestion = await generateDreamTitleSuggestion({ dreamText });
+    if (titleSuggestion.mode === "generated") {
+      await reflectiveObjectRepository.update({
+        id: reflectiveObject.id,
+        userId,
+        title: titleSuggestion.title,
+      });
+    }
+  } catch (error) {
+    console.warn("dream_title_generation_fallback", {
+      reflectiveObjectId: reflectiveObject.id,
+      error: error instanceof Error ? error.message : "unknown_error",
+    });
+  }
 
   const extraction = await buildLlmObservationExtraction({
     userId,
@@ -71,42 +90,13 @@ export default async function CapturePage() {
   await requireAuthenticatedUserId();
 
   return (
-    <main>
+    <main className={styles.page}>
       <section className={styles.container}>
         <header className={styles.header}>
-          <p className={styles.overline}>Capture</p>
-          <h1 className={styles.title}>Write one dream to begin reflection.</h1>
-          <p className={styles.subtitle}>A minimal entry path: dream text, observation scaffold, then reflection workspace.</p>
+          <h1 className={styles.title}>Új álom rögzítése</h1>
         </header>
 
-        <form action={submitCapture} className={styles.form}>
-          <label className={styles.label}>
-            Title
-            <input
-              name="title"
-              className={styles.input}
-              type="text"
-              placeholder="A short dream title"
-              required
-              maxLength={120}
-            />
-          </label>
-
-          <label className={styles.label}>
-            Dream text
-            <textarea
-              name="dreamText"
-              className={styles.textarea}
-              rows={10}
-              placeholder="Write the dream as you remember it."
-              required
-            />
-          </label>
-
-          <button type="submit" className={styles.button}>
-            Save and continue
-          </button>
-        </form>
+        <CaptureSpace action={submitCapture} />
       </section>
     </main>
   );

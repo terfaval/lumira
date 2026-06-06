@@ -172,6 +172,8 @@ export function parseCreateObservationInput(
   userId: UserId,
   reflectiveObjectId: ReflectiveObjectId,
 ): ParseResult<CreateObservationInput> {
+  // Compatibility/manual ingress only. Cognition-driven writes should arrive
+  // through ObservationDiscoveryResult -> projection -> CreateObservationInput.
   const record = asRecord(payload);
 
   if (!record) {

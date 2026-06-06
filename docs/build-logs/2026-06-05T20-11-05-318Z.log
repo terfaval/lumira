@@ -1,0 +1,32 @@
+# Build Run 2026-06-05T20-11-05-318Z
+timestamp: 2026-06-05T20:11:05.318Z
+command: C:\Program Files\nodejs\node.exe C:\mira\node_modules\next\dist\bin\next build
+status: failed
+exit_code: 1
+
+## stdout
+```txt
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 28.4s
+  Running TypeScript ...
+```
+
+## stderr
+```txt
+Failed to type check.
+
+.next/dev/types/routes.d.ts:114:1
+Type error: Unexpected keyword or identifier.
+
+  [90m112 |[0m   }
+  [90m113 |[0m }
+[31m[1m>[0m [90m114 |[0m erRoute [36mextends[0m [33mAppRouteHandlerRoutes[0m> {
+  [90m    |[0m [31m[1m^[0m
+  [90m115 |[0m     params: [33mPromise[0m<[33mParamMap[0m[[33mAppRouteHandlerRoute[0m]>
+  [90m116 |[0m   }
+  [90m117 |[0m }
+Next.js build worker exited with code: 1 and signal: null
+```

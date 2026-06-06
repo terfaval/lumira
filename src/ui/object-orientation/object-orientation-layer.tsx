@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import type { ObjectOrientationPayload } from "@/src/reflective-space/composition/compose-object-orientation-payload";
 import {
@@ -41,8 +41,20 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
   const [selectedGlossaryItem, setSelectedGlossaryItem] = useState<GlossaryItem | null>(null);
   const [pendingOpeningId, setPendingOpeningId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [dreamTitle, setDreamTitle] = useState(payload.dream.title);
+  const [titleDraft, setTitleDraft] = useState(payload.dream.title);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleFeedback, setTitleFeedback] = useState<string | null>(null);
+  const [isSavingTitle, startSavingTitle] = useTransition();
 
   const visibleOpenings = filterOrientationOpenings(payload.openingStack.items, selectedView);
+
+  useEffect(() => {
+    setDreamTitle(payload.dream.title);
+    setTitleDraft(payload.dream.title);
+    setIsEditingTitle(false);
+    setTitleFeedback(null);
+  }, [payload.dream.title]);
 
   async function handleEnterOpening(openingId: string, href: string, state: OrientationStackView) {
     setPendingOpeningId(openingId);
@@ -80,6 +92,62 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
     }
   }
 
+  function handleStartTitleEdit() {
+    setTitleDraft(dreamTitle);
+    setTitleFeedback(null);
+    setIsEditingTitle(true);
+  }
+
+  function handleCancelTitleEdit() {
+    setTitleDraft(dreamTitle);
+    setTitleFeedback(null);
+    setIsEditingTitle(false);
+  }
+
+  async function handleSaveTitle() {
+    const nextTitle = titleDraft.trim();
+    if (!nextTitle) {
+      setTitleFeedback("Adj egy rövid címet az álomnak.");
+      return;
+    }
+
+    setTitleFeedback(null);
+    startSavingTitle(async () => {
+      try {
+        const response = await fetch(`/api/reflective-objects/${payload.dream.id}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ title: nextTitle }),
+        });
+
+        const body = (await response.json()) as { error?: string; reflectiveObject?: { title?: string } };
+        if (!response.ok) {
+          throw new Error(body.error ?? "A cím mentése nem sikerült.");
+        }
+
+        const savedTitle = body.reflectiveObject?.title?.trim() || nextTitle;
+        setDreamTitle(savedTitle);
+        setTitleDraft(savedTitle);
+        setIsEditingTitle(false);
+      } catch (error) {
+        setTitleFeedback(error instanceof Error ? error.message : "A cím mentése nem sikerült.");
+      }
+    });
+  }
+
+  function handleTitleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      handleCancelTitleEdit();
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void handleSaveTitle();
+    }
+  }
+
   return (
     <main className={styles.shell}>
       <div className={styles.layout}>
@@ -88,11 +156,57 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
             <div className={styles.dreamFrame}>
               <div className={styles.dreamHeader}>
                 <div className={styles.panelTitleBlock}>
-                  <h1>{payload.dream.title}</h1>
+                  {isEditingTitle ? (
+                    <>
+                      <input
+                        aria-label="Álom címének szerkesztése"
+                        className={styles.titleInput}
+                        value={titleDraft}
+                        onChange={(event) => setTitleDraft(event.target.value)}
+                        onKeyDown={handleTitleKeyDown}
+                        autoFocus
+                        maxLength={80}
+                      />
+                      {titleFeedback ? <p className={styles.titleFeedback}>{titleFeedback}</p> : null}
+                    </>
+                  ) : (
+                    <h1>{dreamTitle}</h1>
+                  )}
                 </div>
-                <Link className={styles.dreamLink} href={payload.dream.editHref} aria-label="Álom szerkesztése">
-                  <span aria-hidden="true">✎</span>
-                </Link>
+
+                <div className={styles.titleActions}>
+                  {isEditingTitle ? (
+                    <>
+                      <button
+                        type="button"
+                        className={styles.iconButton}
+                        aria-label="Cím mentése"
+                        onClick={() => void handleSaveTitle()}
+                        disabled={isSavingTitle}
+                      >
+                        <span aria-hidden="true">✓</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.iconButton}
+                        aria-label="Cím szerkesztésének megszakítása"
+                        onClick={handleCancelTitleEdit}
+                        disabled={isSavingTitle}
+                      >
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.iconButton}
+                      aria-label="Cím szerkesztése"
+                      onClick={handleStartTitleEdit}
+                    >
+                      <span aria-hidden="true">✎</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className={styles.dreamBody}>

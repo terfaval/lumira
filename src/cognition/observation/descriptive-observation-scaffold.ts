@@ -1,11 +1,11 @@
+import type { CreateObservationInput, ObservationEvidenceAdequacy, ObservationCategory, ObservationSource } from "@/src/domain/observation/types";
 import type {
-  CreateObservationFragmentInput,
-  CreateObservationInput,
-  ObservationEvidenceAdequacy,
-  ObservationCategory,
-  ObservationSummaryTrace,
-  ObservationSource,
-} from "@/src/domain/observation/types";
+  ObservationDiscoveryObservationDraft,
+  ObservationDiscoveryResult,
+} from "@/src/cognition/observation/observation-discovery";
+import { createObservationDiscoveryResult } from "@/src/cognition/observation/observation-discovery";
+import { projectObservationDiscoveryResultToCreateObservationInput } from "@/src/cognition/observation/observation-discovery-projection";
+import { buildConservativeScaffoldSalienceProfile } from "@/src/cognition/observation/observation-salience";
 import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
 
 const INTERPRETIVE_MARKERS = [
@@ -154,79 +154,119 @@ function splitSentences(sourceText: string): string[] {
   return merged;
 }
 
-function classifyEvidenceAdequacy(fragment: CreateObservationFragmentInput): ObservationEvidenceAdequacy {
-  if (fragment.evidence.spanStart !== null && fragment.evidence.spanEnd !== null) {
+function splitObservationClauses(sentence: string): string[] {
+  const clauses = sentence
+    .split(/\b(?:while|miközben)\b/giu)
+    .map((segment) => segment.trim().replace(/^[,;:\s]+|[,;:\s]+$/g, ""))
+    .filter((segment) => segment.length > 0);
+
+  return clauses.length > 1 ? clauses : [sentence.trim()];
+}
+
+function classifyEvidenceAdequacy(observation: Pick<ObservationDiscoveryObservationDraft, "text" | "evidence">): ObservationEvidenceAdequacy {
+  const primarySpan = observation.evidence.spans[0];
+
+  if (primarySpan?.spanStart !== null && primarySpan?.spanEnd !== null) {
     return "strong_span";
   }
 
-  if (fragment.evidence.snippet.trim().length >= 24) {
+  if ((primarySpan?.snippet ?? observation.text).trim().length >= 24) {
     return "snippet_only";
   }
 
   return "weak_fallback";
 }
 
-function buildSummaryTrace(fragments: CreateObservationFragmentInput[]): ObservationSummaryTrace[] {
-  return fragments.slice(0, 3).map((fragment) => ({
-    fragmentPosition: fragment.position,
-    reason: "explicit_anchor",
-    strength: "weak",
-  }));
-}
-
-export function buildDescriptiveObservationScaffold(input: BuildScaffoldInput): CreateObservationInput {
+export function buildDescriptiveObservationDiscoveryScaffold(input: BuildScaffoldInput): ObservationDiscoveryResult {
   const sentences = splitSentences(input.sourceText).filter((sentence) => !isInterpretiveSentence(sentence));
 
-  const fragments: CreateObservationFragmentInput[] = sentences.map((sentence, index) => ({
-    category: classifyCategory(sentence),
-    fragmentText: sentence,
-    position: index,
-    evidenceAdequacy: "snippet_only",
-    evidence: {
-      snippet: sentence,
-      spanStart: null,
-      spanEnd: null,
-      contextLabel: "raw_sentence",
-    },
-    uncertaintyNote: null,
-  }));
+  const observations: ObservationDiscoveryObservationDraft[] = [];
+  let nextPosition = 0;
 
-  const safeFragments: CreateObservationFragmentInput[] =
-    fragments.length > 0
-      ? fragments
+  for (const sentence of sentences) {
+    for (const clause of splitObservationClauses(sentence)) {
+      const category = classifyCategory(clause);
+      observations.push({
+        category,
+        text: clause,
+        position: nextPosition,
+        uncertaintyNote: null,
+        salience: buildConservativeScaffoldSalienceProfile({
+          category,
+          text: clause,
+        }),
+        evidence: {
+          adequacy: "snippet_only",
+          spans: [
+            {
+              snippet: sentence,
+              spanStart: null,
+              spanEnd: null,
+              contextLabel: "raw_sentence",
+            },
+          ],
+        },
+      });
+      nextPosition += 1;
+    }
+  }
+
+  const safeObservations: ObservationDiscoveryObservationDraft[] =
+    observations.length > 0
+      ? observations
       : [
           {
             category: "scene",
-            fragmentText: "No stable descriptive fragment detected.",
+            text: "No stable descriptive fragment detected.",
             position: 0,
-            evidenceAdequacy: "weak_fallback",
-            evidence: {
-              snippet: input.sourceText.trim().slice(0, 160) || "No source text available.",
-              spanStart: null,
-              spanEnd: null,
-              contextLabel: "fallback",
-            },
             uncertaintyNote: "Descriptive extraction remained minimal due to low explicit detail.",
+            salience: undefined,
+            evidence: {
+              adequacy: "weak_fallback",
+              spans: [
+                {
+                  snippet: input.sourceText.trim().slice(0, 160) || "No source text available.",
+                  spanStart: null,
+                  spanEnd: null,
+                  contextLabel: "fallback",
+                },
+              ],
+            },
           },
         ];
 
-  const enrichedFragments = safeFragments.map((fragment) => ({
-    ...fragment,
-    evidenceAdequacy: classifyEvidenceAdequacy(fragment),
+  const enrichedObservations = safeObservations.map((observation) => ({
+    ...observation,
+    evidence: {
+      ...observation.evidence,
+      adequacy: classifyEvidenceAdequacy(observation),
+    },
   }));
 
-  return {
-    userId: input.userId,
+  return createObservationDiscoveryResult({
     reflectiveObjectId: input.reflectiveObjectId,
+    userId: input.userId,
     source: input.source ?? "system_descriptive_extract",
-    provenanceTier: "system_extract",
-    semanticPolicyResult: "accept_with_uncertainty",
-    semanticPolicyReasons: ["scaffold_mode_descriptive_only"],
-    summaryTrace: buildSummaryTrace(enrichedFragments),
-    latentBackflowGuard: "observation_only",
-    boundaryVersion: "observation_semantic_guardrails_v1",
-    summary: "Descriptive orientation scaffold extracted from reflective material.",
     uncertaintyNotes: ["Descriptive scaffold only; interpretation intentionally omitted."],
-    fragments: enrichedFragments,
-  };
+    projectionCompatibility: {
+      summaryText: "Descriptive orientation scaffold extracted from reflective material.",
+    },
+    observations: enrichedObservations,
+  });
+}
+
+export function buildDescriptiveObservationScaffold(input: BuildScaffoldInput): CreateObservationInput {
+  const discovery = buildDescriptiveObservationDiscoveryScaffold(input);
+
+  return projectObservationDiscoveryResultToCreateObservationInput(discovery, {
+    semanticPolicyMode: "preserve_defaults",
+    defaultPersistence: {
+      provenanceTier: "system_extract",
+      semanticPolicyResult: "accept_with_uncertainty",
+      semanticPolicyReasons: ["scaffold_mode_descriptive_only"],
+      uncertaintyNotes: [],
+      latentBackflowGuard: "observation_only",
+      boundaryVersion: "observation_semantic_guardrails_v1",
+    },
+  });
 }

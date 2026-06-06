@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { OBSERVATION_CATEGORIES } from "@/src/domain/observation/types";
-import { buildDescriptiveObservationScaffold } from "@/src/cognition/observation/descriptive-observation-scaffold";
+import {
+  buildDescriptiveObservationDiscoveryScaffold,
+  buildDescriptiveObservationScaffold,
+} from "@/src/cognition/observation/descriptive-observation-scaffold";
+import { getObservationDiscoveryMetrics } from "@/src/cognition/observation/observation-discovery";
+import { projectObservationDiscoveryResultToCreateObservationInput } from "@/src/cognition/observation/observation-discovery-projection";
 
 describe("buildDescriptiveObservationScaffold", () => {
   it("preserves evidence linkage for each fragment", () => {
@@ -79,5 +84,120 @@ describe("buildDescriptiveObservationScaffold", () => {
     expect(categories).toContain("continuity_fragment");
     expect(categories).toContain("dream_state_quality");
     expect(categories).toContain("altered_realism");
+  });
+
+  it("allows one sentence to yield multiple discovery observations that share evidence", () => {
+    const discovery = buildDescriptiveObservationDiscoveryScaffold({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      sourceText: "I run through an endless hallway while searching for an exit.",
+    });
+
+    expect(discovery.observations).toHaveLength(2);
+    expect(getObservationDiscoveryMetrics(discovery)).toEqual({
+      observationCount: 2,
+      evidenceSpanCount: 1,
+    });
+
+    const projected = projectObservationDiscoveryResultToCreateObservationInput(discovery, {
+      semanticPolicyMode: "preserve_defaults",
+      defaultPersistence: {
+        provenanceTier: "system_extract",
+        semanticPolicyResult: "accept_with_uncertainty",
+        semanticPolicyReasons: ["scaffold_mode_descriptive_only"],
+        uncertaintyNotes: [],
+        latentBackflowGuard: "observation_only",
+        boundaryVersion: "observation_semantic_guardrails_v1",
+      },
+    });
+
+    expect(projected.fragments).toHaveLength(2);
+    expect(new Set(projected.fragments.map((fragment) => fragment.evidence.snippet))).toEqual(
+      new Set(["I run through an endless hallway while searching for an exit"]),
+    );
+  });
+
+  it("adds conservative anomaly salience for impossible or unreal spatial observations", () => {
+    const discovery = buildDescriptiveObservationDiscoveryScaffold({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      sourceText: "The hallway looped back on itself. Everything felt unreal.",
+    });
+
+    const anomalous = discovery.observations.filter((observation) => observation.salience?.anomaly);
+    expect(anomalous.map((observation) => observation.salience?.anomaly)).toEqual(["present", "present"]);
+  });
+
+  it("adds conservative agency salience for pursuit, escape, or blocked movement observations", () => {
+    const discovery = buildDescriptiveObservationDiscoveryScaffold({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      sourceText: "I could not move. I tried to escape.",
+    });
+
+    expect(discovery.observations.some((observation) => observation.salience?.agencyTension === "present")).toBe(true);
+    expect(
+      discovery.observations
+        .map((observation) => observation.salience?.agencyTension)
+        .filter((value): value is "present" | "strong" => value !== undefined),
+    ).toEqual(["present"]);
+  });
+
+  it("adds strong metacognitive salience when explicit dream-awareness cues exist", () => {
+    const discovery = buildDescriptiveObservationDiscoveryScaffold({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      sourceText: "I realized I was dreaming.",
+    });
+
+    expect(discovery.observations[0]?.salience).toEqual({
+      metacognitivePresence: "strong",
+    });
+  });
+
+  it("keeps cognition scaffold payload creation owned by the discovery projection layer", () => {
+    const input = {
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      sourceText: "I was in a room. Then I walked outside.",
+    };
+
+    const discovery = buildDescriptiveObservationDiscoveryScaffold(input);
+    const projected = projectObservationDiscoveryResultToCreateObservationInput(discovery, {
+      semanticPolicyMode: "preserve_defaults",
+      defaultPersistence: {
+        provenanceTier: "system_extract",
+        semanticPolicyResult: "accept_with_uncertainty",
+        semanticPolicyReasons: ["scaffold_mode_descriptive_only"],
+        uncertaintyNotes: [],
+        latentBackflowGuard: "observation_only",
+        boundaryVersion: "observation_semantic_guardrails_v1",
+      },
+    });
+    const scaffold = buildDescriptiveObservationScaffold(input);
+
+    expect(scaffold).toEqual(projected);
+  });
+
+  it("derives scaffold summary from ordered discovery observations and keeps summaryTrace aligned", () => {
+    const scaffold = buildDescriptiveObservationScaffold({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      sourceText: "I was in a room. Then I walked outside.",
+    });
+
+    expect(scaffold.summary).toBe("I was in a room. Then I walked outside.");
+    expect(scaffold.summaryTrace).toEqual([
+      {
+        fragmentPosition: 0,
+        reason: "inferred_overlap",
+        strength: "weak",
+      },
+      {
+        fragmentPosition: 1,
+        reason: "inferred_overlap",
+        strength: "strong",
+      },
+    ]);
   });
 });

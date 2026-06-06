@@ -343,6 +343,53 @@ Later systems evaluate.
 
 ---
 
+# 4.14 Current Runtime Category Vocabulary
+
+The current runtime category ids are:
+
+* `scene`
+* `actor`
+* `interaction`
+* `emotion`
+* `location`
+* `transition`
+* `object`
+* `body_state`
+* `dream_quality`
+* `recurrence_candidate`
+* `agency_state`
+* `metacognitive_moment`
+* `affect_transition`
+* `emotional_contradiction`
+* `affective_atmosphere`
+* `spatial_instability`
+* `dream_state_quality`
+* `continuity_fragment`
+* `altered_realism`
+
+Domain-to-runtime mapping:
+
+* Scenes -> `scene`
+* Actors -> `actor`
+* Objects -> `object`
+* Interactions -> `interaction`
+* Agency States -> `agency_state`
+* Affect States -> `emotion`
+* Affect Transitions -> `affect_transition`
+* Bodily States -> `body_state`
+* Spatial Phenomenology -> `spatial_instability`
+* Dream-State Phenomenology -> `dream_state_quality` or `altered_realism`
+* Metacognitive Moments -> `metacognitive_moment`
+* Continuity Candidates -> `continuity_fragment`
+* Recurrence Candidates -> `recurrence_candidate`
+
+Implementation note:
+
+* extraction schema, validation, runtime typing, and persistence must use this same vocabulary
+* LLM extraction should not emit alternate labels such as `affect_state`, `spatial_phenomenology`, or freeform headings like `Social Interaction`
+
+---
+
 # 5. Evidence Requirement
 
 Every extracted observation should contain evidence.
