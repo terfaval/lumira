@@ -440,6 +440,38 @@ describe("buildLlmObservationExtractionFromStructuredResult", () => {
     });
   });
 
+  it("accepts a null salience object and treats it as absent", async () => {
+    const result = await buildLlmObservationExtractionFromStructuredResult({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      dreamText: "I walked through a hallway.",
+      structured: {
+        summary: "A hallway appears.",
+        uncertaintyNotes: [],
+        fragments: [
+          {
+            category: "scene",
+            fragmentText: "A hallway appears.",
+            position: 0,
+            uncertaintyNote: null,
+            salience: null,
+            evidence: {
+              snippet: "I walked through a hallway",
+              contextLabel: "local_quote",
+            },
+          },
+        ],
+      },
+    });
+
+    expect(result.mode).toBe("validated_llm");
+    if (result.mode !== "validated_llm") {
+      return;
+    }
+
+    expect(result.discovery?.observations[0]?.salience).toBeUndefined();
+  });
+
   it("rebuilds summaryTrace when structured output omits it", async () => {
     const result = await buildLlmObservationExtractionFromStructuredResult({
       userId: "user-1",
@@ -970,12 +1002,12 @@ describe("buildLlmObservationExtractionFromStructuredResult", () => {
         reflectiveObjectId: "obj-1",
         errorName: "AbortError",
         errorCode: "ABORT_ERR",
-        timeoutMs: 25000,
+        timeoutMs: 40000,
       }),
     );
   });
 
-  it("sends a strict schema where declared optional fields are nullable and required", async () => {
+  it("sends a provider-safe nullable salience schema with explicit required nested keys", async () => {
     responsesCreateMock.mockResolvedValue({
       output_text: JSON.stringify({
         summary: "A hallway appears.",
@@ -986,6 +1018,7 @@ describe("buildLlmObservationExtractionFromStructuredResult", () => {
             fragmentText: "A hallway appears.",
             position: 0,
             uncertaintyNote: null,
+            salience: null,
             evidence: {
               snippet: "I was in a long hallway",
               contextLabel: null,
@@ -1016,23 +1049,28 @@ describe("buildLlmObservationExtractionFromStructuredResult", () => {
       "fragmentText",
       "position",
       "uncertaintyNote",
+      "salience",
       "evidence",
     ]);
     expect(requestBody.text.format.schema.properties.fragments.items.properties.uncertaintyNote.type).toEqual(["string", "null"]);
-    expect(Object.keys(requestBody.text.format.schema.properties.fragments.items.properties.salience.properties)).toEqual([
+    expect(requestBody.text.format.schema.properties.fragments.items.properties.salience.anyOf).toHaveLength(2);
+    expect(requestBody.text.format.schema.properties.fragments.items.properties.salience.anyOf[0]).toMatchObject({
+      type: "object",
+      additionalProperties: false,
+      required: ["anomaly", "agencyTension", "metacognitivePresence"],
+    });
+    expect(Object.keys(requestBody.text.format.schema.properties.fragments.items.properties.salience.anyOf[0].properties)).toEqual([
       "anomaly",
       "agencyTension",
       "metacognitivePresence",
     ]);
-    expect(requestBody.text.format.schema.properties.fragments.items.properties.salience.required).toEqual([
-      "anomaly",
-      "agencyTension",
-      "metacognitivePresence",
-    ]);
-    expect(requestBody.text.format.schema.properties.fragments.items.properties.salience.properties.anomaly.type).toEqual([
+    expect(requestBody.text.format.schema.properties.fragments.items.properties.salience.anyOf[0].properties.anomaly.type).toEqual([
       "string",
       "null",
     ]);
+    expect(requestBody.text.format.schema.properties.fragments.items.properties.salience.anyOf[1]).toEqual({
+      type: "null",
+    });
     expect(requestBody.text.format.schema.properties.fragments.items.properties.evidence.required).toEqual([
       "snippet",
       "contextLabel",

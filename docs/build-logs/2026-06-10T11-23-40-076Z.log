@@ -1,0 +1,80 @@
+# Build Run 2026-06-10T11-23-40-076Z
+timestamp: 2026-06-10T11:23:40.076Z
+command: C:\Program Files\nodejs\node.exe C:\mira\node_modules\next\dist\bin\next build
+status: success
+exit_code: 0
+
+## stdout
+```txt
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 10.4s
+  Running TypeScript ...
+  Finished TypeScript in 14.0s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/24) ...
+  Generating static pages using 3 workers (6/24) 
+  Generating static pages using 3 workers (12/24) 
+  Generating static pages using 3 workers (18/24) 
+✓ Generating static pages using 3 workers (24/24) in 465ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /api/admin/bootstrap
+├ ƒ /api/admin/me
+├ ƒ /api/auth/session
+├ ƒ /api/auth/sign-in
+├ ƒ /api/auth/sign-out
+├ ƒ /api/auth/sign-up
+├ ƒ /api/glossary/candidates/[id]
+├ ƒ /api/glossary/terms
+├ ƒ /api/glossary/terms/[id]
+├ ƒ /api/health
+├ ƒ /api/latent/snapshots
+├ ƒ /api/latent/snapshots/[id]
+├ ƒ /api/latent/snapshots/[id]/openings
+├ ƒ /api/openings/[id]/activate
+├ ƒ /api/openings/[id]/dismiss
+├ ƒ /api/openings/[id]/reactivate
+├ ƒ /api/openings/[id]/responses
+├ ƒ /api/openings/[id]/suppress
+├ ƒ /api/openings/dialogues
+├ ƒ /api/openings/dormant
+├ ƒ /api/openings/surfaces
+├ ƒ /api/reflective-objects
+├ ƒ /api/reflective-objects/[id]
+├ ƒ /api/reflective-objects/[id]/glossary-candidates
+├ ƒ /api/reflective-objects/[id]/latent-snapshots
+├ ƒ /api/reflective-objects/[id]/observations
+├ ƒ /api/reflective-space/viewport
+├ ƒ /api/responses
+├ ƒ /api/responses/[id]
+├ ƒ /api/responses/[id]/objects
+├ ƒ /api/responses/[id]/threads
+├ ƒ /api/threads
+├ ƒ /api/threads/[id]
+├ ƒ /api/threads/[id]/glossary-terms
+├ ƒ /api/threads/[id]/objects
+├ ƒ /auth
+├ ƒ /capture
+├ ƒ /glossary
+├ ○ /guide
+├ ƒ /journal
+├ ƒ /objects/[objectId]
+└ ƒ /objects/[objectId]/reflect
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+```
+
+## stderr
+```txt
+
+```

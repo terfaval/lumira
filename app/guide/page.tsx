@@ -1,16 +1,17 @@
-import { CalmPlaceholderPage } from "@/src/ui/shared/calm-placeholder-page";
-import { requireAuthenticatedUserId } from "@/src/ui/shared/require-authenticated-user";
+import { GuideWorkspace } from "@/src/ui/guide/guide-workspace";
 
-export default async function GuidePage() {
-  await requireAuthenticatedUserId();
+interface GuidePageProps {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}
+
+export default async function GuidePage({ searchParams }: GuidePageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const cardParam = resolvedSearchParams.card;
+  const initialCardSlug = Array.isArray(cardParam) ? cardParam[0] ?? null : cardParam ?? null;
 
   return (
     <main>
-      <CalmPlaceholderPage
-        title="Guide"
-        description="Guide space will provide quiet references for sleep and dream practice."
-        quietNote="This first route stays lightweight and non-urgent."
-      />
+      <GuideWorkspace initialCardSlug={initialCardSlug} />
     </main>
   );
 }

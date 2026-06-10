@@ -18,6 +18,7 @@ export interface ReflectiveObject extends VersionedTimestamps {
 }
 
 export interface CreateReflectiveObjectInput {
+  id?: ReflectiveObjectId;
   userId: UserId;
   objectType: ReflectiveObjectType;
   title: string;

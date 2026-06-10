@@ -228,7 +228,7 @@ describe("composeHomepageOrientationPayload", () => {
     expect(payload.navigation.capture.routeStatus).toBe("implemented");
     expect(payload.navigation.glossary.routeStatus).toBe("placeholder");
     expect(payload.navigation.dreamJournal.routeStatus).toBe("placeholder");
-    expect(payload.navigation.guide.routeStatus).toBe("placeholder");
+    expect(payload.navigation.guide.routeStatus).toBe("implemented");
     expect(payload.emptyStates.noDreams).toContain("No dreams are stored yet.");
   });
 });

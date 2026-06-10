@@ -58,6 +58,37 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-06-09 - Observation V2 Foundation Phase 1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/observation/v2-runtime.ts`
+  - `src/domain/observation/__tests__/v2-runtime.test.ts`
+  - `src/cognition/observation/scene-discovery.ts`
+  - `src/cognition/observation/scene-observation-scaffold.ts`
+  - `src/cognition/observation/scene-discovery-projection.ts`
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `src/cognition/observation/observation-engine.ts`
+  - `src/cognition/observation/__tests__/scene-discovery.test.ts`
+  - `src/cognition/observation/__tests__/scene-observation-scaffold.test.ts`
+  - `src/cognition/observation/__tests__/scene-discovery-projection.test.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts`
+  - `src/cognition/observation/__tests__/observation-engine.test.ts`
+  - `docs/backend-v2-migration/Observation-V2-Fallout-Ledger.md`
+- Verification:
+  - `npm test` -> pass (`94` files, `353` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-09T07-11-09-266Z.log`
+- Notes:
+  - Added the first additive scene-first Observation V2 runtime foundation.
+  - Defined first-class Scene, scene-contained Observation, boundary reasoning, evidence context, and minimal derived structures.
+  - Added a scene-first compatibility projection so V1 persistence and API remain temporary targets rather than design drivers.
+  - Added a provider-backed scene-first LLM extraction entrypoint and embedded the approved observation granularity rule in its prompt.
+  - Kept downstream layers, live routes, and UI surfaces uncut over in this phase, and documented the resulting fallout and likely future removals in the Observation V2 Fallout Ledger.
+
 Ledger entries are appropriate for:
 - completed milestones
 - completed stabilization phases
@@ -1926,3 +1957,152 @@ Verification references:
 - Lint: `npm.cmd run lint` (pass)
 - Build: `npm.cmd run build` (pass)
 - Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-06T19-36-34-135Z.log`
+
+## New Entry (2026-06-06 UTC)
+
+### Capture Path Hard-Fail On Observation LLM Failure
+
+- Ticket type: BUILD / RUNTIME / CAPTURE.
+- Scope delivered:
+  - removed the capture-route scaffold fallback for observation generation,
+  - changed capture to require validated LLM observation extraction before any dream object or observation is persisted,
+  - redirected failed observation analysis back to `/capture?error=analysis` instead of saving partial capture state,
+  - preserved title generation as best-effort metadata enrichment after validated observation success,
+  - added repository support for caller-supplied reflective object ids so capture can generate the object id before persistence and still keep the flow all-or-nothing.
+
+Touched boundaries:
+- Capture route:
+  - `app/capture/page.tsx`
+  - `app/capture/page.test.tsx`
+- Reflective object creation contract:
+  - `src/domain/reflective-objects/types.ts`
+  - `src/infrastructure/supabase/adapters/reflective-object-row.ts`
+- Observation extraction runtime:
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+
+Architectural impact:
+- Capture no longer treats deterministic scaffold observation output as an acceptable success path.
+- Observation LLM success is now a hard prerequisite for persistence in the manual dream capture flow.
+- Partial persistence is prevented by generating the reflective object id before save and writing only after validated extraction returns.
+- This hard-fail policy is currently scoped to capture and does not remove scaffold behavior from unrelated observation runtime surfaces.
+
+Verification references:
+- Typecheck: `npm.cmd run typecheck` (pass)
+- Tests: `npm.cmd test` (pass: `88` files, `345` tests)
+- Lint: `npm.cmd run lint` (pass)
+- Build: `npm.cmd run build` (pass)
+- Build log: `docs/BUILD_LOG.md` -> `docs/build-logs/2026-06-06T20-06-31-296Z.log`
+
+## 2026-06-07 - Observation Extraction Schema + Timeout Stabilization
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation/llm-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-observation-extractor.test.ts`
+  - `src/cognition/observation/__tests__/observation-salience.test.ts`
+- Verification:
+  - `npm run typecheck` -> pass
+  - `npm test` -> pass (`89` files, `346` tests)
+  - `npm run lint` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-07T06-08-18-959Z.log`
+- Notes:
+  - Re-encoded the nullable observation `salience` response-format field as an `anyOf` object-or-null schema so the nested object branch keeps explicit required keys for `anomaly`, `agencyTension`, and `metacognitivePresence`.
+  - Raised the observation extraction OpenAI timeout to `40_000ms`; the inspected runtime source previously used `25_000ms`.
+  - Existing fallback diagnostics remained sufficient: capture still logs `llm_observation_extraction_failed` with the extractor reason, and extractor-level provider/repair/evidence failures remain logged with bounded detail.
+
+## 2026-06-10 - Sleep & Dream Guide Route v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/guide/page.tsx`
+  - `src/ui/guide/view-model.ts`
+  - `src/ui/guide/guide-workspace.tsx`
+  - `src/ui/guide/guide-card.tsx`
+  - `src/ui/guide/guide-modal.tsx`
+  - `src/ui/guide/guide-tips.tsx`
+  - `src/ui/guide/guide-safety-note.tsx`
+  - `src/ui/guide/guide-related-cards.tsx`
+  - `src/ui/guide/guide-workspace.module.css`
+  - `src/reflective-space/composition/homepage-route-target-registry.ts`
+  - `app/guide/page.test.tsx`
+  - `src/ui/guide/__tests__/view-model.test.ts`
+  - `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`
+- Verification:
+  - `npm.cmd test -- app/guide/page.test.tsx src/ui/guide/__tests__/view-model.test.ts src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts` -> pass (`3` files, `9` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-10T10-37-42-510Z.log`
+- Notes:
+  - Replaced the `/guide` placeholder with a public Sleep & Dream Guide route backed by the existing guide card content and search helpers.
+  - Added guide-specific filtering, responsive card grid, modal detail flow, related-card switching, and route-scoped semantic guide tokens for category, safety, and surface treatments.
+  - Updated the homepage route target registry so `guide_home` now resolves as an implemented route.
+
+## 2026-06-10 - Sleep & Dream Guide Polish v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/guide/page.test.tsx`
+  - `src/ui/guide/__tests__/guide-modal.test.tsx`
+  - `src/ui/guide/__tests__/view-model.test.ts`
+  - `src/ui/guide/view-model.ts`
+  - `src/ui/guide/guide-workspace.tsx`
+  - `src/ui/guide/guide-modal.tsx`
+  - `src/ui/guide/guide-workspace.module.css`
+- Verification:
+  - `npm.cmd test -- app/guide/page.test.tsx src/ui/guide/__tests__/view-model.test.ts src/ui/guide/__tests__/guide-modal.test.tsx` -> pass (`3` files, `6` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-10T11-39-57-376Z.log`
+- Notes:
+  - Replaced the large guide hero with a lighter page header and subtle home back control.
+  - Removed secondary filtering from both UI and guide filtering logic, leaving search plus primary category only.
+  - Reduced preview density on cards and related cards, demoted the secondary pill visually, and changed the modal close control to an icon-style affordance.
+  - Smoothed the modal reading flow by rendering the main content as one continuous reading block and moved the home back control into an overlaid left-side position so the title and subtitle keep their original alignment.
+
+## 2026-06-10 - Guide Homepage Entry Panel v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/guide/page.tsx`
+  - `app/guide/page.test.tsx`
+  - `src/ui/guide/guide-workspace.tsx`
+  - `src/ui/guide/guide-modal-state.ts`
+  - `src/ui/guide/__tests__/guide-modal-state.test.ts`
+  - `src/ui/homepage/homepage-orientation-hub.tsx`
+  - `src/ui/homepage/homepage-orientation-hub.module.css`
+  - `src/ui/homepage/__tests__/homepage-orientation-hub.test.tsx`
+- Verification:
+  - `.\node_modules\.bin\vitest.cmd run src/ui/homepage/__tests__/homepage-orientation-hub.test.tsx app/guide/page.test.tsx src/ui/guide/__tests__/guide-modal-state.test.ts src/ui/guide/__tests__/guide-modal.test.tsx src/ui/guide/__tests__/view-model.test.ts src/content/sleep-dream-guide/__tests__/search.test.ts` -> pass (`6` files, `23` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-10T13-59-01-335Z.log`
+- Notes:
+  - Replaced the homepage `Útmutató` placeholder content with a compact guide-entry panel containing three fixed featured links and a subtle `/guide` chevron action.
+  - Added minimal `/guide?card=<slug>` support by resolving a valid slug on page load, opening the existing modal, and removing only the `card` param on close.
+  - Left homepage search, guide card content, and the broader guide page layout unchanged outside this URL-entry behavior.
+
+## 2026-06-10 - Homepage Panel Polish After Guide Entry
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/ui/homepage/homepage-orientation-hub.module.css`
+- Verification:
+  - `.\node_modules\.bin\vitest.cmd run src/ui/homepage/__tests__/homepage-orientation-hub.test.tsx app/guide/page.test.tsx src/ui/guide/__tests__/guide-modal-state.test.ts src/ui/guide/__tests__/guide-modal.test.tsx src/ui/guide/__tests__/view-model.test.ts src/content/sleep-dream-guide/__tests__/search.test.ts` -> pass (`6` files, `23` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-10T14-20-20-646Z.log`
+- Notes:
+  - Clamped Dream Journal preview copy to two lines so long summaries stop overgrowing the shared dashboard row.
+  - Moved the Guide panel chevron into reserved layout flow at the bottom-right instead of absolute overlap, while keeping featured-row chevrons untouched.
+  - Visual verification of the polished homepage was confirmed by the user after the local changes; an attempted automated Playwright screenshot path was blocked because browser installation was declined.

@@ -1,0 +1,628 @@
+.workspace {
+  --guide-shell-border: rgba(71, 89, 86, 0.18);
+  --guide-shell-bg:
+    radial-gradient(circle at 14% 14%, rgba(255, 255, 255, 0.74), transparent 48%),
+    linear-gradient(150deg, rgba(239, 243, 238, 0.92), rgba(246, 241, 234, 0.94));
+  --guide-card-bg: rgba(252, 251, 247, 0.88);
+  --guide-card-border: rgba(82, 98, 95, 0.16);
+  --guide-card-shadow: 0 16px 38px rgba(44, 55, 50, 0.08);
+  --guide-card-hover-shadow: 0 18px 42px rgba(42, 53, 49, 0.1);
+  --guide-modal-bg: rgba(251, 249, 244, 0.98);
+  --guide-modal-border: rgba(87, 104, 98, 0.2);
+  --guide-modal-shadow: 0 26px 64px rgba(27, 34, 36, 0.2);
+  --guide-tip-bg: rgba(242, 239, 231, 0.9);
+  --guide-tip-border: rgba(170, 151, 102, 0.28);
+  --guide-related-bg: rgba(247, 245, 239, 0.94);
+  --guide-related-border: rgba(83, 100, 94, 0.16);
+  --guide-ink-strong: #20312a;
+  --guide-ink: #30433b;
+  --guide-ink-muted: #53655b;
+  --guide-overlay: rgba(25, 33, 35, 0.38);
+  --guide-scrollbar-thumb: rgba(70, 90, 83, 0.26);
+  --guide-neutral-pill-bg: rgba(240, 236, 227, 0.92);
+  --guide-neutral-pill-border: rgba(120, 130, 123, 0.22);
+  --guide-neutral-pill-ink: #44564d;
+  --guide-category-sleep-bg: #dce6f7;
+  --guide-category-sleep-border: #90a8ce;
+  --guide-category-sleep-ink: #274164;
+  --guide-category-recall-bg: #e8def3;
+  --guide-category-recall-border: #ac93c6;
+  --guide-category-recall-ink: #5b3f7f;
+  --guide-category-lucid-bg: #efe3bf;
+  --guide-category-lucid-border: #baa061;
+  --guide-category-lucid-ink: #6d5621;
+  --guide-category-difficult-bg: #efd8dc;
+  --guide-category-difficult-border: #bf8992;
+  --guide-category-difficult-ink: #743a45;
+  --guide-category-phenomena-bg: #d7ebe9;
+  --guide-category-phenomena-border: #7ca9a4;
+  --guide-category-phenomena-ink: #245b5c;
+  --guide-safety-gentle-bg: #f5ecd4;
+  --guide-safety-gentle-border: #d8b97a;
+  --guide-safety-gentle-ink: #6f5621;
+  --guide-safety-important-bg: #f1dfdf;
+  --guide-safety-important-border: #c78b8b;
+  --guide-safety-important-ink: #7a3f41;
+  display: grid;
+  gap: 1rem;
+}
+
+.pageHeader {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0.28rem;
+}
+
+.headingBlock {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.backLink {
+  position: absolute;
+  top: 0.02rem;
+  left: -0.2rem;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 999px;
+  color: var(--guide-ink-muted);
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.backLink:hover,
+.backLink:focus-visible {
+  background: rgba(246, 242, 234, 0.9);
+  color: var(--guide-ink-strong);
+  box-shadow: 0 8px 18px rgba(34, 43, 40, 0.06);
+  text-decoration: none;
+}
+
+.backLink:focus-visible,
+.searchInput:focus-visible,
+.filterButton:focus-visible,
+.card:focus-visible,
+.relatedCard:focus-visible,
+.closeButton:focus-visible {
+  outline: 2px solid rgba(60, 92, 76, 0.34);
+  outline-offset: 3px;
+}
+
+.backIcon {
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.controls,
+.emptyState {
+  padding: 1.15rem 1.15rem 1.2rem;
+  border-radius: 1.35rem;
+  border: 1px solid var(--guide-shell-border);
+  background: var(--guide-shell-bg);
+  box-shadow: 0 14px 34px rgba(53, 62, 56, 0.05);
+}
+
+.filterLabel,
+.searchLabel {
+  margin: 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--guide-ink-muted);
+}
+
+.title {
+  margin: 0;
+  color: var(--guide-ink-strong);
+  font-size: clamp(1.55rem, 2.8vw, 2rem);
+  line-height: 1.08;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--guide-ink);
+  font-size: 0.96rem;
+}
+
+.controls {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.searchBlock,
+.filterSection {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.searchInput {
+  width: 100%;
+  border: 1px solid var(--guide-card-border);
+  border-radius: 999px;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  color: var(--guide-ink-strong);
+  background: rgba(252, 251, 247, 0.92);
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: rgba(83, 101, 92, 0.72);
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.filterButton {
+  border-radius: 999px;
+  border: 1px solid var(--guide-neutral-pill-border);
+  background: var(--guide-neutral-pill-bg);
+  color: var(--guide-neutral-pill-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.92rem;
+  padding: 0.48rem 0.86rem;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.filterButton:hover,
+.card:hover,
+.relatedCard:hover,
+.closeButton:hover {
+  border-color: rgba(70, 89, 82, 0.26);
+  box-shadow: 0 10px 22px rgba(34, 43, 40, 0.06);
+}
+
+.filterButton[data-active="true"] {
+  color: var(--guide-ink-strong);
+  border-color: rgba(68, 87, 81, 0.28);
+  background: rgba(251, 250, 245, 0.98);
+}
+
+.filterButton[data-guide-category="Alvás"][data-active="true"] {
+  background: var(--guide-category-sleep-bg);
+  border-color: var(--guide-category-sleep-border);
+  color: var(--guide-category-sleep-ink);
+}
+
+.filterButton[data-guide-category="Álomemlékezés"][data-active="true"] {
+  background: var(--guide-category-recall-bg);
+  border-color: var(--guide-category-recall-border);
+  color: var(--guide-category-recall-ink);
+}
+
+.filterButton[data-guide-category="Tudatos álmodás"][data-active="true"] {
+  background: var(--guide-category-lucid-bg);
+  border-color: var(--guide-category-lucid-border);
+  color: var(--guide-category-lucid-ink);
+}
+
+.filterButton[data-guide-category="Nehéz álmok"][data-active="true"] {
+  background: var(--guide-category-difficult-bg);
+  border-color: var(--guide-category-difficult-border);
+  color: var(--guide-category-difficult-ink);
+}
+
+.filterButton[data-guide-category="Különleges élmények"][data-active="true"] {
+  background: var(--guide-category-phenomena-bg);
+  border-color: var(--guide-category-phenomena-border);
+  color: var(--guide-category-phenomena-ink);
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.card,
+.relatedCard {
+  width: 100%;
+  text-align: left;
+  padding: 1rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--guide-card-border);
+  background: var(--guide-card-bg);
+  box-shadow: var(--guide-card-shadow);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.card:hover,
+.relatedCard:hover {
+  box-shadow: var(--guide-card-hover-shadow);
+  transform: translateY(-2px);
+}
+
+.cardPills,
+.modalPills,
+.relatedPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.pill,
+.pillSecondary,
+.relatedSecondary {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 0.38rem 0.65rem;
+}
+
+.pill {
+  border: 1px solid transparent;
+}
+
+.pillSecondary,
+.relatedSecondary {
+  border: 1px solid var(--guide-neutral-pill-border);
+  background: rgba(245, 242, 235, 0.72);
+  color: rgba(68, 86, 77, 0.82);
+}
+
+.pill[data-guide-category="Alvás"] {
+  background: var(--guide-category-sleep-bg);
+  border-color: var(--guide-category-sleep-border);
+  color: var(--guide-category-sleep-ink);
+}
+
+.pill[data-guide-category="Álomemlékezés"] {
+  background: var(--guide-category-recall-bg);
+  border-color: var(--guide-category-recall-border);
+  color: var(--guide-category-recall-ink);
+}
+
+.pill[data-guide-category="Tudatos álmodás"] {
+  background: var(--guide-category-lucid-bg);
+  border-color: var(--guide-category-lucid-border);
+  color: var(--guide-category-lucid-ink);
+}
+
+.pill[data-guide-category="Nehéz álmok"] {
+  background: var(--guide-category-difficult-bg);
+  border-color: var(--guide-category-difficult-border);
+  color: var(--guide-category-difficult-ink);
+}
+
+.pill[data-guide-category="Különleges élmények"] {
+  background: var(--guide-category-phenomena-bg);
+  border-color: var(--guide-category-phenomena-border);
+  color: var(--guide-category-phenomena-ink);
+}
+
+.cardTitle,
+.modalTitle {
+  margin: 0;
+  color: var(--guide-ink-strong);
+}
+
+.cardTitle {
+  font-size: 1.28rem;
+  line-height: 1.14;
+}
+
+.cardSummary,
+.modalIntro,
+.relatedSummary,
+.tipSingle p,
+.tipListItem p,
+.safetyNote p {
+  margin: 0;
+  color: var(--guide-ink);
+}
+
+.cardSummary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.card {
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+}
+
+.emptyState p {
+  margin: 0;
+  color: var(--guide-ink);
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--guide-overlay);
+  z-index: 30;
+}
+
+.modalShell {
+  position: relative;
+  width: min(46rem, 100%);
+  max-height: min(52rem, calc(100vh - 2rem));
+  border-radius: 1.6rem;
+  border: 1px solid var(--guide-modal-border);
+  background: var(--guide-modal-bg);
+  box-shadow: var(--guide-modal-shadow);
+}
+
+.closeButton {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  z-index: 2;
+  display: inline-grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 1px solid rgba(120, 130, 123, 0.18);
+  border-radius: 999px;
+  background: rgba(248, 246, 239, 0.96);
+  color: var(--guide-ink-strong);
+  cursor: pointer;
+  font: inherit;
+}
+
+.closeButton span {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.modalScroll {
+  display: grid;
+  gap: 1.25rem;
+  max-height: min(52rem, calc(100vh - 2rem));
+  overflow: auto;
+  padding: 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--guide-scrollbar-thumb) transparent;
+}
+
+.modalScroll::-webkit-scrollbar {
+  width: 0.8rem;
+}
+
+.modalScroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modalScroll::-webkit-scrollbar-thumb {
+  border: 0.22rem solid transparent;
+  border-radius: 999px;
+  background: var(--guide-scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+.modalHeader,
+.section {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.modalHeader {
+  padding-top: 1rem;
+}
+
+.modalTitle {
+  font-size: clamp(1.7rem, 3vw, 2.25rem);
+  line-height: 1.05;
+}
+
+.modalIntro {
+  font-size: 1.02rem;
+  line-height: 1.65;
+  font-weight: 600;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--guide-ink-strong);
+  font-size: 1rem;
+}
+
+.modalBody {
+  color: var(--guide-ink);
+}
+
+.modalBody p {
+  margin: 0;
+  line-height: 1.72;
+}
+
+.tipSingle,
+.tipListItem,
+.safetyNote,
+.relatedCard {
+  border-radius: 1rem;
+}
+
+.tipSingle {
+  padding: 1rem;
+  border: 1px solid var(--guide-tip-border);
+  background: var(--guide-tip-bg);
+}
+
+.tipList {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tipListItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.8rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--guide-tip-border);
+  background: rgba(244, 240, 232, 0.84);
+}
+
+.tipNumber,
+.safetyIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.tipNumber {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--guide-ink-strong);
+}
+
+.safetyNote {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.safetyNote[data-guide-safety="gentle"] {
+  border: 1px solid var(--guide-safety-gentle-border);
+  background: var(--guide-safety-gentle-bg);
+}
+
+.safetyNote[data-guide-safety="gentle"] .safetyIcon {
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--guide-safety-gentle-ink);
+}
+
+.safetyNote[data-guide-safety="gentle"] p {
+  color: var(--guide-safety-gentle-ink);
+}
+
+.safetyNote[data-guide-safety="important"] {
+  border: 1px solid var(--guide-safety-important-border);
+  background: var(--guide-safety-important-bg);
+}
+
+.safetyNote[data-guide-safety="important"] .safetyIcon {
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--guide-safety-important-ink);
+}
+
+.safetyNote[data-guide-safety="important"] p {
+  color: var(--guide-safety-important-ink);
+}
+
+.relatedGrid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.relatedCard {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.95rem;
+  border: 1px solid var(--guide-related-border);
+  background: var(--guide-related-bg);
+  box-shadow: none;
+}
+
+.relatedTitle {
+  color: var(--guide-ink-strong);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.relatedSummary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 760px) {
+  .grid,
+  .relatedGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1080px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .pageHeader {
+    gap: 0.18rem;
+  }
+
+  .headingBlock {
+    gap: 0.18rem;
+  }
+
+  .backLink {
+    left: -0.15rem;
+  }
+
+  .controls,
+  .emptyState {
+    padding: 1rem;
+  }
+
+  .modalBackdrop {
+    padding: 0.65rem;
+  }
+
+  .modalShell {
+    width: 100%;
+    max-height: calc(100vh - 1.3rem);
+    border-radius: 1.2rem;
+  }
+
+  .modalScroll {
+    max-height: calc(100vh - 1.3rem);
+    padding: 1rem;
+  }
+
+  .closeButton {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+}
+
+@media (min-width: 721px) {
+  .backLink {
+    left: 0;
+    transform: translateX(calc(-100% - 0.8rem));
+  }
+}

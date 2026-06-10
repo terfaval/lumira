@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 
-import { buildDescriptiveObservationScaffold } from "@/src/cognition/observation/descriptive-observation-scaffold";
 import { buildLlmObservationExtraction } from "@/src/cognition/observation/llm-observation-extractor";
 import { generateDreamTitleSuggestion } from "@/src/cognition/title/llm-dream-title-generator";
 import { createObservationRepository } from "@/src/infrastructure/supabase/repositories/create-observation-repository";
@@ -28,8 +27,27 @@ async function submitCapture(formData: FormData) {
     redirect("/capture?error=validation");
   }
 
+  const reflectiveObjectId = crypto.randomUUID();
+
+  const titleSuggestionPromise = generateDreamTitleSuggestion({ dreamText });
+  const extractionPromise = buildLlmObservationExtraction({
+    userId,
+    reflectiveObjectId,
+    dreamText,
+  });
+  const extraction = await extractionPromise;
+
+  if (extraction.mode !== "validated_llm" || !extraction.payload) {
+    console.warn("llm_observation_extraction_failed", {
+      reflectiveObjectId,
+      reason: extraction.reason,
+    });
+    return redirect("/capture?error=analysis");
+  }
+
   const reflectiveObjectRepository = createReflectiveObjectRepository();
   const reflectiveObject = await reflectiveObjectRepository.create({
+    id: reflectiveObjectId,
     userId,
     objectType: "dream",
     title,
@@ -38,7 +56,7 @@ async function submitCapture(formData: FormData) {
   });
 
   try {
-    const titleSuggestion = await generateDreamTitleSuggestion({ dreamText });
+    const titleSuggestion = await titleSuggestionPromise;
     if (titleSuggestion.mode === "generated") {
       await reflectiveObjectRepository.update({
         id: reflectiveObject.id,
@@ -48,40 +66,13 @@ async function submitCapture(formData: FormData) {
     }
   } catch (error) {
     console.warn("dream_title_generation_fallback", {
-      reflectiveObjectId: reflectiveObject.id,
+      reflectiveObjectId,
       error: error instanceof Error ? error.message : "unknown_error",
     });
   }
 
-  const extraction = await buildLlmObservationExtraction({
-    userId,
-    reflectiveObjectId: reflectiveObject.id,
-    dreamText,
-  });
-
-  const observationInput =
-    extraction.mode === "validated_llm"
-      ? extraction.payload
-      : buildDescriptiveObservationScaffold({
-          userId,
-          reflectiveObjectId: reflectiveObject.id,
-          sourceText: dreamText,
-          source: "system_descriptive_extract",
-        });
-
-  if (!observationInput) {
-    throw new Error("Observation input could not be constructed.");
-  }
-
-  if (extraction.mode === "fallback") {
-    console.warn("llm_observation_extraction_fallback", {
-      reflectiveObjectId: reflectiveObject.id,
-      reason: extraction.reason,
-    });
-  }
-
   const observationRepository = createObservationRepository();
-  await observationRepository.create(observationInput);
+  await observationRepository.create(extraction.payload);
 
   redirect(`/objects/${encodeURIComponent(reflectiveObject.id)}`);
 }

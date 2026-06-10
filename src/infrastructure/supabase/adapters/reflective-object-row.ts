@@ -27,6 +27,7 @@ export interface ReflectiveObjectRow {
 }
 
 export interface ReflectiveObjectInsertRow {
+  id?: string;
   user_id: string;
   object_type: ReflectiveObjectType;
   title: string;
@@ -91,6 +92,7 @@ export function fromReflectiveObjectRow(row: ReflectiveObjectRow): ReflectiveObj
 
 export function toReflectiveObjectInsertRow(input: CreateReflectiveObjectInput): ReflectiveObjectInsertRow {
   return {
+    id: input.id,
     user_id: input.userId,
     object_type: input.objectType,
     title: input.title,

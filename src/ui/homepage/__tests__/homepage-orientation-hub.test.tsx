@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-import { HomepageOrientationHub } from "@/src/ui/homepage/homepage-orientation-hub";
 import type { HomepageOrientationPayload } from "@/src/reflective-space/composition/compose-homepage-orientation-payload";
+import { HomepageOrientationHub } from "@/src/ui/homepage/homepage-orientation-hub";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...props }: { children?: ReactNode; href: string }) => (
@@ -82,5 +82,22 @@ describe("HomepageOrientationHub capture surface", () => {
     expect(markup).toContain("Rögzítsd az álmot, amíg még élénken jelen van.");
     expect(markup).toContain("Néhány mondat is elegendő a kezdéshez.");
     expect(markup).not.toContain("<h2>Új álom rögzítése</h2>");
+  });
+
+  it("renders the guide panel as a compact entry surface with three fixed featured links", () => {
+    const markup = renderToStaticMarkup(<HomepageOrientationHub payload={payload} />);
+
+    expect(markup).toContain("<h2>Útmutató</h2>");
+    expect(markup).toContain("Gyakori alvási és álomhelyzetek.");
+    expect(markup).toContain("Nem tudok elaludni");
+    expect(markup).toContain("Rémálmom volt");
+    expect(markup).toContain("Nem emlékszem az álmaimra");
+    expect(markup).toContain('href="/guide?card=nem-tudok-elaludni"');
+    expect(markup).toContain('href="/guide?card=remalom"');
+    expect(markup).toContain('href="/guide?card=nem-emlekszem-az-almaimra"');
+    expect(markup).toContain('aria-label="Teljes Útmutató megnyitása"');
+    expect(markup).toContain('href="/guide"');
+    expect(markup).not.toContain("Wind-down");
+    expect(markup).not.toContain("Recall");
   });
 });

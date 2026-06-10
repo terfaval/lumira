@@ -8,9 +8,9 @@ const requireAuthenticatedUserIdMock = vi.fn();
 const createReflectiveObjectMock = vi.fn();
 const updateReflectiveObjectMock = vi.fn();
 const createObservationMock = vi.fn();
-const buildDescriptiveObservationScaffoldMock = vi.fn();
 const buildLlmObservationExtractionMock = vi.fn();
 const generateDreamTitleSuggestionMock = vi.fn();
+const randomUuidMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
@@ -31,10 +31,6 @@ vi.mock("@/src/infrastructure/supabase/repositories/create-observation-repositor
   createObservationRepository: () => ({
     create: createObservationMock,
   }),
-}));
-
-vi.mock("@/src/cognition/observation/descriptive-observation-scaffold", () => ({
-  buildDescriptiveObservationScaffold: buildDescriptiveObservationScaffoldMock,
 }));
 
 vi.mock("@/src/cognition/observation/llm-observation-extractor", () => ({
@@ -92,6 +88,18 @@ function findElement(
   return null;
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+
+  const promise = new Promise<T>((innerResolve, innerReject) => {
+    resolve = innerResolve;
+    reject = innerReject;
+  });
+
+  return { promise, resolve, reject };
+}
+
 describe("CapturePage", () => {
   beforeEach(() => {
     redirectMock.mockReset();
@@ -99,14 +107,13 @@ describe("CapturePage", () => {
     createReflectiveObjectMock.mockReset();
     updateReflectiveObjectMock.mockReset();
     createObservationMock.mockReset();
-    buildDescriptiveObservationScaffoldMock.mockReset();
     buildLlmObservationExtractionMock.mockReset();
     generateDreamTitleSuggestionMock.mockReset();
+    randomUuidMock.mockReset();
 
     requireAuthenticatedUserIdMock.mockResolvedValue("user-1");
     createReflectiveObjectMock.mockResolvedValue({ id: "obj-123" });
     updateReflectiveObjectMock.mockResolvedValue({ id: "obj-123", title: "The Lantern House" });
-    buildDescriptiveObservationScaffoldMock.mockReturnValue({ summary: "scaffolded" });
     buildLlmObservationExtractionMock.mockResolvedValue({
       mode: "validated_llm",
       payload: { summary: "validated", source: "system_llm_extract", fragments: [] },
@@ -116,6 +123,8 @@ describe("CapturePage", () => {
       title: "The Lantern House",
     });
     createObservationMock.mockResolvedValue({ id: "obs-1" });
+    vi.stubGlobal("crypto", { randomUUID: randomUuidMock });
+    randomUuidMock.mockReturnValue("obj-123");
   });
 
   it("redirects a successful capture submit to the object orientation route first", async () => {
@@ -192,21 +201,20 @@ describe("CapturePage", () => {
       reflectiveObjectId: "obj-123",
       userId: "user-1",
     });
-    expect(buildDescriptiveObservationScaffoldMock).not.toHaveBeenCalled();
+    expect(createReflectiveObjectMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "obj-123",
+      }),
+    );
     expect(createObservationMock).toHaveBeenCalledWith(
       expect.objectContaining({ source: "system_llm_extract", summary: "validated" }),
     );
   });
 
-  it("falls back to the deterministic scaffold when llm extraction is unsafe", async () => {
+  it("fails capture without saving when llm extraction is unsafe", async () => {
     buildLlmObservationExtractionMock.mockResolvedValue({
       mode: "fallback",
       reason: "invalid_json",
-    });
-    buildDescriptiveObservationScaffoldMock.mockReturnValue({
-      summary: "fallback scaffold",
-      source: "system_descriptive_extract",
-      fragments: [],
     });
 
     const pageModule = await import("./page");
@@ -219,11 +227,40 @@ describe("CapturePage", () => {
 
     await submitCapture?.(formData);
 
-    expect(buildDescriptiveObservationScaffoldMock).toHaveBeenCalled();
-    expect(createObservationMock).toHaveBeenCalledWith(
-      expect.objectContaining({ source: "system_descriptive_extract", summary: "fallback scaffold" }),
-    );
-    expect(redirectMock).toHaveBeenCalledWith("/objects/obj-123");
+    expect(createReflectiveObjectMock).not.toHaveBeenCalled();
+    expect(createObservationMock).not.toHaveBeenCalled();
+    expect(redirectMock).toHaveBeenCalledWith("/capture?error=analysis");
+  });
+
+  it("starts observation extraction before title generation finishes", async () => {
+    const titleDeferred = createDeferred<{ mode: "generated"; title: string }>();
+    generateDreamTitleSuggestionMock.mockReturnValue(titleDeferred.promise);
+
+    const pageModule = await import("./page");
+    const page = await pageModule.default();
+    const submitCapture = findFormAction(page);
+
+    const formData = new FormData();
+    formData.set("dreamText", "I was inside a house with water under the floorboards.");
+
+    const submissionPromise = submitCapture?.(formData);
+
+    await vi.waitFor(() => {
+      expect(buildLlmObservationExtractionMock).toHaveBeenCalledWith({
+        dreamText: "I was inside a house with water under the floorboards.",
+        reflectiveObjectId: "obj-123",
+        userId: "user-1",
+      });
+    });
+
+    expect(createObservationMock).not.toHaveBeenCalled();
+
+    titleDeferred.resolve({
+      mode: "generated",
+      title: "The Lantern House",
+    });
+
+    await submissionPromise;
   });
 
   it("renders the minimal capture space contract", async () => {

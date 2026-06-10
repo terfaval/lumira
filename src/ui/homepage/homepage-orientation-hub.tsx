@@ -6,11 +6,18 @@ import type {
   HomepageRecentObjectPreviewItem,
 } from "@/src/reflective-space/composition/compose-homepage-orientation-payload";
 import type { HomepageNavigationTargetRef } from "@/src/reflective-space/composition/homepage-route-target-registry";
+import { buildGuideCardHref } from "@/src/ui/guide/guide-modal-state";
 import styles from "@/src/ui/homepage/homepage-orientation-hub.module.css";
 
 interface HomepageOrientationHubProps {
   payload: HomepageOrientationPayload;
 }
+
+const FEATURED_GUIDE_ENTRIES = [
+  { slug: "nem-tudok-elaludni", label: "Nem tudok elaludni" },
+  { slug: "remalom", label: "Rémálmom volt" },
+  { slug: "nem-emlekszem-az-almaimra", label: "Nem emlékszem az álmaimra" },
+] as const;
 
 function shortDate(iso: string): string {
   const parsed = new Date(iso);
@@ -71,7 +78,6 @@ export function HomepageOrientationHub({ payload }: HomepageOrientationHubProps)
     ? `${payload.glossaryPreview.items[0].label} és visszatérő motívumok`
     : "A motívumok idővel térnek vissza.";
 
-  const guideMobileHint = payload.guidePreview.topics[0]?.descriptor ?? "A tartalom előkészítés alatt áll.";
   const noDreamsHint = "Még nincs rögzített álom. Kezdheted néhány mondattal is.";
   const noRecentObjectsHint = "Még nincs aktív elem.";
   const noGlossaryHint = "A motívumok idővel térnek vissza.";
@@ -152,19 +158,24 @@ export function HomepageOrientationHub({ payload }: HomepageOrientationHubProps)
           </ul>
         </article>
 
-        <article className={`${styles.tile} ${styles.guide} ${styles.tertiary} ${styles.interactive}`}>
-          <PanelEntryLink target={payload.navigation.guide} label="Útmutató megnyitása" />
+        <article className={`${styles.tile} ${styles.guide} ${styles.tertiary}`}>
           <h2>Útmutató</h2>
-          <p className={styles.mobileHint}>{guideMobileHint}</p>
-          <ul className={styles.topicList}>
-            {payload.guidePreview.topics.slice(0, 2).map((topic) => (
-              <li key={topic.key}>
-                <span className={styles.previewLabel}>{topic.label}</span>
-                <span className={styles.previewMeta}>{topic.descriptor ?? "A tartalom előkészítés alatt áll."}</span>
+          <p className={styles.guideDescription}>Gyakori alvási és álomhelyzetek.</p>
+          <ul className={styles.guideFeaturedList}>
+            {FEATURED_GUIDE_ENTRIES.map((entry) => (
+              <li key={entry.slug}>
+                <Link className={styles.guideFeaturedLink} href={buildGuideCardHref("/guide", "", entry.slug)}>
+                  <span>{entry.label}</span>
+                  <span className={styles.guideFeaturedArrow} aria-hidden="true">
+                    ›
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>
-          <p className={styles.quiet}>Nyugodt, gyakorlati tájékozódás alvásról és álomfelidézésről.</p>
+          <Link className={styles.guideChevronLink} href="/guide" aria-label="Teljes Útmutató megnyitása">
+            <span aria-hidden="true">›</span>
+          </Link>
         </article>
       </section>
     </section>

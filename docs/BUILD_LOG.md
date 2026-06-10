@@ -66,3 +66,13 @@ Append-only build run summary. Detailed logs are under `docs/build-logs/`.
 | 2026-06-06T15:06:09.195Z | success | 0 | `docs/build-logs/2026-06-06T15-06-09-195Z.log` |
 | 2026-06-06T16:11:48.548Z | success | 0 | `docs/build-logs/2026-06-06T16-11-48-548Z.log` |
 | 2026-06-06T19:36:34.135Z | success | 0 | `docs/build-logs/2026-06-06T19-36-34-135Z.log` |
+| 2026-06-06T20:06:31.296Z | success | 0 | `docs/build-logs/2026-06-06T20-06-31-296Z.log` |
+| 2026-06-07T06:08:18.959Z | success | 0 | `docs/build-logs/2026-06-07T06-08-18-959Z.log` |
+| 2026-06-09T07:07:07.140Z | success | 0 | `docs/build-logs/2026-06-09T07-07-07-140Z.log` |
+| 2026-06-09T07:11:09.266Z | success | 0 | `docs/build-logs/2026-06-09T07-11-09-266Z.log` |
+| 2026-06-10T10:37:42.510Z | success | 0 | `docs/build-logs/2026-06-10T10-37-42-510Z.log` |
+| 2026-06-10T11:23:40.076Z | success | 0 | `docs/build-logs/2026-06-10T11-23-40-076Z.log` |
+| 2026-06-10T11:36:14.279Z | success | 0 | `docs/build-logs/2026-06-10T11-36-14-279Z.log` |
+| 2026-06-10T11:39:57.376Z | success | 0 | `docs/build-logs/2026-06-10T11-39-57-376Z.log` |
+| 2026-06-10T13:59:01.335Z | success | 0 | `docs/build-logs/2026-06-10T13-59-01-335Z.log` |
+| 2026-06-10T14:20:20.646Z | success | 0 | `docs/build-logs/2026-06-10T14-20-20-646Z.log` |

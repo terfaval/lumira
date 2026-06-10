@@ -40,7 +40,7 @@ const HOMEPAGE_ROUTE_TARGET_REGISTRY: Record<HomepageNavigationTargetKey, Homepa
   guide_home: {
     targetKey: "guide_home",
     href: "/guide",
-    routeStatus: "placeholder",
+    routeStatus: "implemented",
   },
   glossary_term_detail: {
     targetKey: "glossary_term_detail",

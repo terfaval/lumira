@@ -33,8 +33,26 @@ interface BuildExtractionInput {
   dreamText: string;
 }
 
-const OPENAI_REQUEST_TIMEOUT_MS = 25_000;
+const OPENAI_REQUEST_TIMEOUT_MS = 40_000;
 const OBSERVATION_EXTRACTION_MODEL = "gpt-4.1-mini";
+
+const OBSERVATION_SALIENCE_JSON_SCHEMA = {
+  anyOf: [
+    {
+      type: "object",
+      additionalProperties: false,
+      required: ["anomaly", "agencyTension", "metacognitivePresence"],
+      properties: {
+        anomaly: { type: ["string", "null"], enum: ["present", "strong", null] },
+        agencyTension: { type: ["string", "null"], enum: ["present", "strong", null] },
+        metacognitivePresence: { type: ["string", "null"], enum: ["present", "strong", null] },
+      },
+    },
+    {
+      type: "null",
+    },
+  ],
+} as const;
 
 const OBSERVATION_EXTRACTION_JSON_SCHEMA = {
   type: "object",
@@ -64,22 +82,13 @@ const OBSERVATION_EXTRACTION_JSON_SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["category", "fragmentText", "position", "uncertaintyNote", "evidence"],
+        required: ["category", "fragmentText", "position", "uncertaintyNote", "salience", "evidence"],
         properties: {
           category: { type: "string", enum: OBSERVATION_CATEGORIES },
           fragmentText: { type: "string" },
           position: { type: "integer", minimum: 0 },
           uncertaintyNote: { type: ["string", "null"] },
-          salience: {
-            type: "object",
-            additionalProperties: false,
-            required: ["anomaly", "agencyTension", "metacognitivePresence"],
-            properties: {
-              anomaly: { type: ["string", "null"], enum: ["present", "strong", null] },
-              agencyTension: { type: ["string", "null"], enum: ["present", "strong", null] },
-              metacognitivePresence: { type: ["string", "null"], enum: ["present", "strong", null] },
-            },
-          },
+          salience: OBSERVATION_SALIENCE_JSON_SCHEMA,
           evidence: {
             type: "object",
             additionalProperties: false,

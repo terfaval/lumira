@@ -1,0 +1,2587 @@
+[
+  {
+    "type": "situation",
+    "slug": "nem-tudok-elaludni",
+    "title": "Nem tudok elaludni",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Elalvás"
+      ]
+    },
+    "summary": "Sokaknál előfordul, hogy lefekvés után hosszabb ideig ébren maradnak. Az alkalmi elalvási nehézség önmagában nem szokatlan, és gyakran segít, ha nem az elalvás kikényszerítésére figyelsz.",
+    "content": [
+      "Az elalvást megnehezítheti a stressz, egy közelgő vizsga, utazás, fontos esemény vagy egyszerűen egy nyugtalanabb időszak.",
+      "Ilyenkor előfordulhat, hogy fáradt vagy, mégsem tudsz átbillenni az alvásba. Minél erősebben próbálod elérni az alvást, annál éberebbnek érezheted magad.",
+      "Sokaknál hasznosabb, ha a cél nem az azonnali elalvás, hanem a test és a figyelem lassú pihentetése."
+    ],
+    "practicalTips": [
+      "Kipróbálhatod, hogy az alvás helyett a pihenésre figyelsz.",
+      "Érdemes lehet kerülni az erős fényt és az élénkítő tartalmakat lefekvés előtt.",
+      "Ha hosszabb ideje ébren vagy, segíthet egy rövid, nyugodt tevékenység gyenge fény mellett."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha az elalvási nehézség hetekig fennáll, rendszeresen zavarja a nappali működésedet vagy jelentős megterhelést okoz, érdemes lehet szakemberrel is beszélni róla."
+    },
+    "searchAliases": [
+      "nem tudok elaludni",
+      "elalvási nehézség",
+      "álmatlanság",
+      "inszomnia",
+      "nem jön álom a szememre"
+    ],
+    "symptomPhrases": [
+      "órák óta forgolódom",
+      "lefekszem és csak ébren fekszem",
+      "fáradt vagyok de nem alszom el",
+      "nem tudok átbillenni az alvásba"
+    ],
+    "everydayPhrases": [
+      "csak nézem a plafont",
+      "hiába vagyok álmos",
+      "egész este forgolódom",
+      "nem jön az alvás"
+    ],
+    "hiddenSearchTerms": [
+      "vizsga előtt nem alszom",
+      "utazás előtt nem alszom",
+      "fontos esemény előtt nem alszom",
+      "izgatottság miatt nem alszom",
+      "esti ébrenlét",
+      "forgolódás",
+      "alvás előtti feszültség",
+      "can't fall asleep"
+    ],
+    "relatedCardSlugs": [
+      "tul-sokat-gondolkodom-lefekveskor",
+      "stressz-es-alvas",
+      "telefon-es-kepernyohasznalat",
+      "etkezes-koffein-alkohol-es-alvas"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "Az elalvási nehézségekkel és az alváshigiénével kapcsolatos alapelveket széles körű alváskutatási eredmények és szakmai ajánlások támogatják."
+  },
+  {
+    "type": "situation",
+    "slug": "tul-sokat-gondolkodom-lefekveskor",
+    "title": "Túl sokat gondolkodom lefekvéskor",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Elalvás"
+      ]
+    },
+    "summary": "Sokan tapasztalják, hogy lefekvéskor felerősödnek a gondolatok. Ilyenkor nem feltétlenül az alvással van baj; gyakran a figyelem nehezen lassul le.",
+    "content": [
+      "Az esti csendben könnyebben előtérbe kerülhetnek a teendők, aggodalmak, beszélgetések vagy másnapra vonatkozó gondolatok.",
+      "Minél jobban próbálod elnyomni ezeket, annál inkább visszatérhetnek. Ez sokaknál ismerős, főleg terheltebb időszakokban.",
+      "Gyakran segít, ha lefekvés előtt van egy rövid átmeneti idő, amikor nem megoldani próbálod a gondolatokat, csak letenni őket egy időre."
+    ],
+    "practicalTips": [
+      "Kipróbálhatod, hogy néhány kulcsszóban leírod, ami visszatérően jár a fejedben.",
+      "Hasznos lehet egy egyszerű, ismétlődő esti rutin.",
+      "Érdemes lehet a figyelmet finoman a légzésre vagy a testérzetekre visszaterelni."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a gondolatpörgés tartósan megnehezíti az alvást, erős szorongással jár vagy jelentősen kimerít, érdemes lehet támogatást kérni."
+    },
+    "searchAliases": [
+      "túl sokat gondolkodom",
+      "gondolatpörgés",
+      "esti agyalás",
+      "nem tudom kikapcsolni az agyam",
+      "lefekvés előtti gondolatok"
+    ],
+    "symptomPhrases": [
+      "jár az agyam",
+      "nem tudom leállítani a gondolataimat",
+      "folyamatosan gondolkodom az ágyban",
+      "minden eszembe jut lefekvéskor"
+    ],
+    "everydayPhrases": [
+      "az agyam nem akar leállni",
+      "túl sok minden jár a fejemben",
+      "nem tudok kikapcsolni",
+      "csak agyalok az ágyban"
+    ],
+    "hiddenSearchTerms": [
+      "esti gondolatpörgés",
+      "agyalás",
+      "aggódás lefekvéskor",
+      "sok teendő",
+      "másnapi feladatok",
+      "lefekvés előtti stressz",
+      "racing thoughts",
+      "overthinking at night"
+    ],
+    "relatedCardSlugs": [
+      "nem-tudok-elaludni",
+      "stressz-es-alvas",
+      "telefon-es-kepernyohasznalat"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "Az esti kognitív aktiváció és az elalvási nehézségek kapcsolata szakmailag jól ismert, de az egyéni kiváltó okok eltérhetnek."
+  },
+  {
+    "type": "situation",
+    "slug": "stressz-es-alvas",
+    "title": "Stressz és alvás",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Stressz"
+      ]
+    },
+    "summary": "Stresszesebb időszakokban gyakori, hogy az alvás felszínesebbnek, rövidebbnek vagy nehezebben elérhetőnek tűnik. Ez nem jelenti azt, hogy valamit rosszul csinálsz.",
+    "content": [
+      "A stressz éberebb állapotban tarthatja a testet és a figyelmet, még akkor is, ha közben fáradtnak érzed magad.",
+      "Munkahelyi túlterhelés, kiégésközeli állapot, szorongás vagy sok párhuzamos teendő mellett az elalvás és a visszaalvás is nehezebb lehet.",
+      "Sokaknál az segít, ha az alvást nem teljesítményként kezelik, hanem fokozatos lelassulásként, amelynek néha több idő kell."
+    ],
+    "practicalTips": [
+      "Érdemes lehet lefekvés előtt röviden lezárni a napot: mi maradhat holnapra, mi nem sürgős most.",
+      "Kipróbálhatsz egy nyugodt, ismétlődő levezető rutint.",
+      "Ha felébredsz éjszaka, segíthet, ha nem kezdesz azonnal problémamegoldásba."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a stressz tartósan kimerít, rendszeresen rontja az alvásodat vagy a nappali működésedet, érdemes lehet szakemberrel vagy megbízható támogató személlyel beszélni róla."
+    },
+    "searchAliases": [
+      "stressz és alvás",
+      "stressz miatt nem alszom",
+      "szorongás miatt nem alszom",
+      "munkahelyi stressz",
+      "kiégés és alvás"
+    ],
+    "symptomPhrases": [
+      "stresszes vagyok és nem tudok aludni",
+      "fáradt vagyok de feszült maradok",
+      "munka miatt nem alszom jól",
+      "ideges vagyok lefekvéskor"
+    ],
+    "everydayPhrases": [
+      "nem tudok leállni fejben",
+      "minden rajtam van",
+      "túl sok a nyomás",
+      "kimerült vagyok de nem tudok pihenni"
+    ],
+    "hiddenSearchTerms": [
+      "szorongás",
+      "túlterhelés",
+      "kiégés",
+      "burnout",
+      "munkahelyi túlterhelés",
+      "feszültség lefekvéskor",
+      "stress insomnia",
+      "rosszul alszom stressz miatt",
+      "aggódás és alvás"
+    ],
+    "relatedCardSlugs": [
+      "nem-tudok-elaludni",
+      "tul-sokat-gondolkodom-lefekveskor",
+      "hajnalban-felebredek",
+      "ejjel-tobbszor-felebredek"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A stressz, az éberségi szint és az alvásminőség kapcsolata jól alátámasztott alvás- és stresszkutatási terület."
+  },
+  {
+    "type": "situation",
+    "slug": "hajnalban-felebredek",
+    "title": "Hajnalban felébredek és nem tudok visszaaludni",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Éjszakai ébredés"
+      ]
+    },
+    "summary": "A hajnali felébredés sokaknál előfordul. Gyakran nem maga az ébredés a legnehezebb, hanem az aggodalom, hogy már nem lesz elég alvás.",
+    "content": [
+      "Az éjszakai rövid ébredések az alvás természetes részei is lehetnek. Akkor válhatnak megterhelővé, ha hosszabb ideig ébren maradsz, vagy elkezdesz aggódni a következő nap miatt.",
+      "Az óra figyelése, a hátralévő alvás számolgatása vagy a visszaalvás erőltetése sokaknál fokozhatja az éberséget.",
+      "A visszaalvás gyakran könnyebben megtörténik, ha a figyelem lassan el tud távolodni a teljesítménykényszertől."
+    ],
+    "practicalTips": [
+      "Érdemes lehet nem ellenőrizni újra és újra az időt.",
+      "Kipróbálhatod, hogy csendesen a légzésre vagy a testérzetekre figyelsz.",
+      "Ha hosszabb ideje ébren vagy, segíthet egy rövid, nyugodt tevékenység gyenge fény mellett."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a hajnali ébredés rendszeresen jelentkezik, tartós fáradtságot okoz vagy jelentősen zavarja a nappalaidat, érdemes lehet szakemberrel konzultálni."
+    },
+    "searchAliases": [
+      "hajnalban felébredek",
+      "nem tudok visszaaludni",
+      "korán felébredek",
+      "hajnali ébredés",
+      "korai ébredés"
+    ],
+    "symptomPhrases": [
+      "hajnali háromkor felébredek",
+      "felébredek és ébren maradok",
+      "túl korán ébredek",
+      "nem alszom vissza hajnalban"
+    ],
+    "everydayPhrases": [
+      "kidob az ágy hajnalban",
+      "utána már nem alszom vissza",
+      "csak fekszem hajnalban",
+      "felébredek és elindulnak a gondolatok"
+    ],
+    "hiddenSearchTerms": [
+      "visszaalvás",
+      "hajnali felébredés",
+      "korai ébredés",
+      "éjszaka felébredek",
+      "nem tudok újra elaludni",
+      "óra nézegetése",
+      "early morning awakening",
+      "wake up at 3am"
+    ],
+    "relatedCardSlugs": [
+      "ejjel-tobbszor-felebredek",
+      "tul-sokat-gondolkodom-lefekveskor",
+      "stressz-es-alvas",
+      "nem-tudok-elaludni"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "Az éjszakai ébredések, a visszaalvás és az alváshigiénés megközelítések jól illeszkednek a szakmai alvásajánlásokhoz."
+  },
+  {
+    "type": "situation",
+    "slug": "ejjel-tobbszor-felebredek",
+    "title": "Éjjel többször felébredek",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Éjszakai ébredés"
+      ]
+    },
+    "summary": "Az éjszakai rövid ébredések gyakoriak, és nem mindig jelentenek problémát. Akkor lehetnek zavaróak, ha sokszor ismétlődnek, hosszabb ébrenléttel járnak, vagy nappal is kimerültnek érzed magad.",
+    "content": [
+      "Az alvás természetesen ciklusokból áll, ezért rövid megébredések előfordulhatnak akkor is, ha reggel alig emlékszel rájuk.",
+      "A többszöri ébredést erősítheti stressz, zaj, fény, hőmérséklet, késői étkezés, alkohol, koffein vagy rendszertelen napirend.",
+      "Sokaknál segít, ha nem minden ébredést próbálnak azonnal megmagyarázni, hanem finoman megfigyelik, van-e ismétlődő környezeti vagy esti mintázat."
+    ],
+    "practicalTips": [
+      "Érdemes lehet megnézni, zavar-e fény, zaj vagy túl meleg szoba.",
+      "Kipróbálhatod, hogy este csökkented az élénkítő ingereket és a képernyőhasználatot.",
+      "Ha felébredsz, segíthet, ha nem nézed meg rögtön az időt vagy a telefonodat."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a többszöri ébredés tartós, nappali fáradtsággal jár, vagy fájdalom, légzési nehézség, erős szorongás vagy más testi panasz is kapcsolódik hozzá, érdemes lehet szakemberrel beszélni róla."
+    },
+    "searchAliases": [
+      "éjjel többször felébredek",
+      "sokszor felébredek éjszaka",
+      "megszakadt alvás",
+      "rossz alvásminőség",
+      "éjszakai ébredések"
+    ],
+    "symptomPhrases": [
+      "óránként felébredek",
+      "többször megébredek éjjel",
+      "nem alszom végig az éjszakát",
+      "mindig felriadok éjszaka"
+    ],
+    "everydayPhrases": [
+      "darabokban alszom",
+      "szétesik az alvásom",
+      "egész éjjel fel-felébredek",
+      "nem pihentető az éjszaka"
+    ],
+    "hiddenSearchTerms": [
+      "fragmentált alvás",
+      "éjszakai megébredés",
+      "alvás megszakad",
+      "felriadás",
+      "nyugtalan alvás",
+      "zaj miatt felébredek",
+      "fény miatt felébredek",
+      "alkohol után felébredek",
+      "wake up multiple times"
+    ],
+    "relatedCardSlugs": [
+      "hajnalban-felebredek",
+      "kornyezet-miatti-alvaszavar",
+      "etkezes-koffein-alkohol-es-alvas",
+      "faradtan-ebredek"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "Az alvásciklusok, rövid éjszakai ébredések és alváshigiénés tényezők szerepe jól dokumentált alvástudományi terület."
+  },
+  {
+    "type": "situation",
+    "slug": "faradtan-ebredek",
+    "title": "Fáradtan ébredek",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Reggeli fáradtság"
+      ]
+    },
+    "summary": "Előfordulhat, hogy elegendőnek tűnő alvás után is fáradtan ébredsz. Egy-egy ilyen reggel önmagában nem feltétlenül jelent problémát.",
+    "content": [
+      "A reggeli fáradtságot sok tényező befolyásolhatja, például a stressz, a megszakított alvás, a rendszertelen napirend vagy egy terheltebb időszak.",
+      "Néha az alvás mennyisége és az alvás minősége nem ugyanaz. Előfordulhat, hogy hosszabb ideig aludtál, mégsem érzed magad kipihentnek.",
+      "Érdemes lehet inkább több nap vagy hét mintázatát figyelni, mint egyetlen rosszabb reggelt."
+    ],
+    "practicalTips": [
+      "Hasznos lehet nagyjából azonos időben lefeküdni és felkelni.",
+      "Kipróbálhatod, hogy néhány napig megfigyeled az esti szokásaid és a reggeli közérzeted kapcsolatát.",
+      "Sokaknál segít, ha ébredés után természetes fényhez jutnak és fokozatosan indul a nap."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a reggeli fáradtság tartósan fennáll, jelentősen zavarja a nappali működésedet vagy más panaszokkal is együtt jár, érdemes lehet szakemberrel beszélni róla."
+    },
+    "searchAliases": [
+      "fáradtan ébredek",
+      "nem vagyok kipihent",
+      "reggeli fáradtság",
+      "nem pihentető az alvás",
+      "kimerülten ébredek"
+    ],
+    "symptomPhrases": [
+      "egész éjjel aludtam mégis fáradt vagyok",
+      "nehezen kelek ki az ágyból",
+      "úgy érzem nem aludtam semmit",
+      "reggel kimerültnek érzem magam"
+    ],
+    "everydayPhrases": [
+      "mintha átment volna rajtam egy úthenger",
+      "nem töltött fel az alvás",
+      "reggel sincs energiám",
+      "nem érzem magam kipihentnek"
+    ],
+    "hiddenSearchTerms": [
+      "reggeli kimerültség",
+      "alvás után is fáradt",
+      "nem pihentető alvás",
+      "rossz alvásminőség",
+      "kialvatlanság érzése",
+      "daytime fatigue",
+      "wake up tired",
+      "reggeli energiahiány"
+    ],
+    "relatedCardSlugs": [
+      "ejjel-tobbszor-felebredek",
+      "hajnalban-felebredek",
+      "stressz-es-alvas",
+      "kornyezet-miatti-alvaszavar"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A nappali fáradtság és az alvás minősége közötti kapcsolat jól dokumentált alvástudományi terület."
+  },
+  {
+    "type": "situation",
+    "slug": "rossz-alom-utan-nehez-visszaaludni",
+    "title": "Rossz álom után nehéz visszaaludni",
+    "displayTags": {
+      "primary": "Nehéz álmok",
+      "secondary": [
+        "Rémálmok"
+      ]
+    },
+    "summary": "Egy felkavaró vagy kellemetlen álom után sokaknál nehezebb a visszaalvás. Az élmény gyakran még ébredés után is érzelmileg jelen maradhat egy ideig.",
+    "content": [
+      "Egy rossz álom után előfordulhat, hogy a tested és a figyelmed éberebb állapotba kerül. Ilyenkor természetes lehet, hogy nem alszol vissza azonnal.",
+      "Az álom részletei vagy az utána megmaradó érzések egy ideig tovább kísérhetnek, még akkor is, ha tudod, hogy álom volt.",
+      "Sokaknál segít, ha nem próbálják azonnal elemezni vagy megoldani az élményt, hanem hagynak időt a megnyugvásra."
+    ],
+    "practicalTips": [
+      "Kipróbálhatod, hogy néhány lassú légvételre vagy a környezeted érzékelésére figyelsz.",
+      "Hasznos lehet felkapcsolás helyett gyenge fényt használni, ha szükséged van rá.",
+      "Ha szeretnéd, röviden lejegyezheted az álmot, hogy ne kelljen fejben tartanod."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a felkavaró álmok gyakran ismétlődnek, jelentős megterhelést okoznak vagy tartósan rontják az alvásodat, érdemes lehet további támogatást keresni."
+    },
+    "searchAliases": [
+      "rossz álom után nem tudok visszaaludni",
+      "felébredtem egy rossz álom után",
+      "felkavaró álom",
+      "ijesztő álom után ébren maradok",
+      "rossz álom után nehéz visszaaludni"
+    ],
+    "symptomPhrases": [
+      "rossz álomra ébredtem",
+      "felriadtam és nem alszom vissza",
+      "még mindig bennem van az álom",
+      "az álom után ébren maradtam"
+    ],
+    "everydayPhrases": [
+      "nem tudom kiverni a fejemből",
+      "teljesen felébresztett az álom",
+      "utána már nem jött vissza az álom",
+      "még mindig zaklatott vagyok"
+    ],
+    "hiddenSearchTerms": [
+      "rossz álom",
+      "felriadás",
+      "ijesztő álom",
+      "felkavaró álomélmény",
+      "éjszakai felébredés álom miatt",
+      "nightmare wake up",
+      "visszaalvási nehézség",
+      "érzelmileg intenzív álom"
+    ],
+    "relatedCardSlugs": [
+      "remalom",
+      "felkavaro-alom-utan-nehez-megnyugodni",
+      "hajnalban-felebredek",
+      "ejjel-tobbszor-felebredek"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "A felkavaró álmok utáni fokozott éberség és visszaalvási nehézség szakmailag ismert jelenség, de az élmény intenzitása egyénenként eltérő lehet."
+  },
+  {
+    "type": "situation",
+    "slug": "telefon-es-kepernyohasznalat",
+    "title": "Telefon és képernyőhasználat lefekvés előtt",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Esti rutin"
+      ]
+    },
+    "summary": "Sokaknál nehezebb a lelassulás, ha közvetlenül lefekvés előtt is aktív képernyőhasználat történik. Nem mindenkinél ugyanúgy jelentkezik, de érdemes lehet megfigyelni a saját mintázatodat.",
+    "content": [
+      "A telefon, a közösségi média, a videók vagy az intenzív tartalmak könnyen fenntarthatják a figyelmet és az éberséget az esti órákban.",
+      "Néha nem maga a képernyő a fő tényező, hanem az, hogy nehezebb megszakítani az aktivitást és átállni a pihenésre.",
+      "Sokaknál hasznos, ha lefekvés előtt fokozatosan csökkennek az ingerek és több hely marad a lelassulásnak."
+    ],
+    "practicalTips": [
+      "Érdemes lehet egy képernyőmentesebb időszakot kialakítani lefekvés előtt.",
+      "Kipróbálhatod, hogy az esti tartalmak közül nyugodtabbakat választasz.",
+      "Hasznos lehet a telefont nem közvetlenül az ágy mellett tartani."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "telefon miatt nem alszom",
+      "képernyőhasználat",
+      "mobilozás lefekvés előtt",
+      "telefonozás este",
+      "képernyő és alvás"
+    ],
+    "symptomPhrases": [
+      "nem tudom letenni a telefonom",
+      "sokat görgetek este",
+      "telefonozás után nem alszom el",
+      "mindig elhúzódik a lefekvés"
+    ],
+    "everydayPhrases": [
+      "még csak ezt az egy videót",
+      "észre sem veszem mennyi az idő",
+      "elvisz a görgetés",
+      "mindig a telefonnal alszom el"
+    ],
+    "hiddenSearchTerms": [
+      "scrollozás",
+      "social media este",
+      "kék fény",
+      "telefonfüggés este",
+      "lefekvés előtti képernyő",
+      "doomscrolling",
+      "late night screen use",
+      "nem tudok kikapcsolni"
+    ],
+    "relatedCardSlugs": [
+      "nem-tudok-elaludni",
+      "tul-sokat-gondolkodom-lefekveskor",
+      "stressz-es-alvas"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "Az esti képernyőhasználat és az alvás közötti kapcsolatot számos alváskutatási eredmény és szakmai ajánlás vizsgálta."
+  },
+  {
+    "type": "situation",
+    "slug": "etkezes-koffein-alkohol-es-alvas",
+    "title": "Étkezés, koffein, alkohol és alvás",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Esti rutin"
+      ]
+    },
+    "summary": "Az esti étkezés, a koffein vagy az alkohol egyeseknél befolyásolhatja az alvást. A hatások egyénenként eltérhetnek, ezért gyakran a saját mintázatok megfigyelése a leghasznosabb.",
+    "content": [
+      "A koffein hatása sokáig fennmaradhat, ezért egy késő délutáni vagy esti ital is hatással lehet az alvásra egyes embereknél.",
+      "Az alkohol néha segíthet álmosabbnak érezni magad, ugyanakkor előfordulhat, hogy az éjszaka későbbi részében gyakoribb ébredésekhez kapcsolódik.",
+      "A nagyon késői vagy nehéz étkezések egyeseknél kényelmetlenséget vagy nyugtalanabb alvást okozhatnak."
+    ],
+    "practicalTips": [
+      "Érdemes lehet megfigyelni, hogyan hat rád a késői koffeinfogyasztás.",
+      "Kipróbálhatod, hogy néhány napig figyeled az esti étkezések és az alvás kapcsolatát.",
+      "Hasznos lehet fokozatosan kialakítani olyan esti szokásokat, amelyek támogatják a lelassulást."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "koffein és alvás",
+      "alkohol és alvás",
+      "késői étkezés",
+      "evés lefekvés előtt",
+      "kávé miatt nem alszom"
+    ],
+    "symptomPhrases": [
+      "kávé után nem tudok aludni",
+      "alkohol után felébredek",
+      "tele hassal nehezen alszom",
+      "este ettem és rosszul aludtam"
+    ],
+    "everydayPhrases": [
+      "túl későn ittam kávét",
+      "lefekvés előtt ettem",
+      "egy pohár ital után rosszabbul aludtam",
+      "mintha nyugtalanabb lenne az éjszaka"
+    ],
+    "hiddenSearchTerms": [
+      "késői vacsora",
+      "energiaital",
+      "kávé",
+      "tea",
+      "koffeinfogyasztás",
+      "alkoholfogyasztás",
+      "nighttime awakenings",
+      "food and sleep",
+      "stimulánsok"
+    ],
+    "relatedCardSlugs": [
+      "nem-tudok-elaludni",
+      "ejjel-tobbszor-felebredek",
+      "faradtan-ebredek"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A koffein, az alkohol és bizonyos étkezési szokások alvásra gyakorolt hatásait széles körben vizsgálják az alvástudományban."
+  },
+  {
+    "type": "situation",
+    "slug": "kornyezet-miatti-alvaszavar",
+    "title": "Környezet miatti rossz alvás",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Alvási környezet"
+      ]
+    },
+    "summary": "A zaj, a fény, a hőmérséklet vagy más környezeti tényezők befolyásolhatják az alvást. Néha egy apró változás is észrevehető különbséget jelenthet.",
+    "content": [
+      "Az alvási környezet nem mindenkinél ugyanolyan fontos, de egyesek érzékenyebbek lehetnek a külső ingerekre.",
+      "A túl erős fény, a visszatérő zajok vagy a kényelmetlen hőmérséklet hozzájárulhatnak a gyakoribb ébredésekhez vagy a felszínesebb alváshoz.",
+      "Sokaknál hasznos a környezet fokozatos finomhangolása ahelyett, hogy egyszerre próbálnának mindent megváltoztatni."
+    ],
+    "practicalTips": [
+      "Érdemes lehet megfigyelni, mikor és milyen körülmények között alszol jobban vagy rosszabbul.",
+      "Kipróbálhatod a fény és a zaj csökkentését az alvótérben.",
+      "Hasznos lehet olyan hőmérsékletet keresni, amely számodra kényelmesebb az éjszaka során."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "zaj miatt nem alszom",
+      "fény miatt nem alszom",
+      "rossz alvási környezet",
+      "hőmérséklet és alvás",
+      "környezet miatti alvászavar"
+    ],
+    "symptomPhrases": [
+      "minden zajra felébredek",
+      "a fény felébreszt",
+      "túl meleg van aludni",
+      "a környezet miatt rosszul alszom"
+    ],
+    "everydayPhrases": [
+      "a legkisebb zaj is felkelt",
+      "nem tudok nyugodtan aludni itt",
+      "túl világos a szoba",
+      "egész éjjel forgolódom a meleg miatt"
+    ],
+    "hiddenSearchTerms": [
+      "utcazaj",
+      "szomszéd zaj",
+      "közvilágítás",
+      "szobahőmérséklet",
+      "alvószoba",
+      "sleep environment",
+      "light pollution",
+      "night noise",
+      "hőmérséklet és alvás"
+    ],
+    "relatedCardSlugs": [
+      "ejjel-tobbszor-felebredek",
+      "faradtan-ebredek",
+      "nem-tudok-elaludni"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A zaj, a fény és a hőmérséklet szerepe az alvás minőségében jól dokumentált és széles körben elfogadott alvástudományi terület."
+  },
+  {
+    "type": "situation",
+    "slug": "gyasz-es-veszteseg-miatti-alvaszavar",
+    "title": "Gyász vagy veszteség mellett rosszul alszom",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Érzelmi terhelés"
+      ]
+    },
+    "summary": "Gyász, veszteség vagy szakítás után gyakori, hogy az alvás megváltozik. Előfordulhat nehezebb elalvás, hajnali ébredés, nyugtalanabb alvás vagy fáradtabb reggel.",
+    "content": [
+      "Erős érzelmi időszakokban a test és a figyelem nehezebben tud lelassulni. Ez nem jelenti azt, hogy rosszul reagálsz, vagy hogy gyorsan túl kellene lenned rajta.",
+      "A veszteséghez kapcsolódó gondolatok, emlékek vagy hullámzó érzések este és éjszaka könnyebben előtérbe kerülhetnek.",
+      "Sokaknál segít, ha az alvást ilyenkor nem teljesítményként kezelik, hanem egy óvatosan támogatható pihenési lehetőségként."
+    ],
+    "practicalTips": [
+      "Érdemes lehet egy egyszerű, kímélő esti rutint tartani, akkor is, ha nem tökéletes.",
+      "Kipróbálhatod, hogy lefekvés előtt röviden leírod, ami nagyon benned maradt.",
+      "Ha éjjel felébredsz, segíthet, ha nem sürgeted magad az azonnali visszaalvásra."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a veszteség miatti alvásromlás tartósan fennáll, nagyon megterhelő, vagy úgy érzed, nehéz egyedül hordozni, érdemes lehet megbízható emberrel vagy szakemberrel beszélni róla."
+    },
+    "searchAliases": [
+      "gyász és alvás",
+      "veszteség miatt nem alszom",
+      "szakítás után nem alszom",
+      "gyász miatti alvászavar",
+      "érzelmi veszteség és alvás"
+    ],
+    "symptomPhrases": [
+      "gyász óta rosszul alszom",
+      "veszteség után nem tudok elaludni",
+      "szakítás után felébredek éjjel",
+      "este rám törnek az emlékek"
+    ],
+    "everydayPhrases": [
+      "nem tudok megnyugodni este",
+      "minden éjjel eszembe jut",
+      "hiányzik és nem tudok aludni",
+      "üresnek érzem az éjszakát"
+    ],
+    "hiddenSearchTerms": [
+      "gyász",
+      "veszteség",
+      "szakítás",
+      "haláleset",
+      "elválás",
+      "hiányérzet",
+      "érzelmi fájdalom",
+      "bereavement sleep",
+      "breakup insomnia"
+    ],
+    "relatedCardSlugs": [
+      "nem-tudok-elaludni",
+      "tul-sokat-gondolkodom-lefekveskor",
+      "hajnalban-felebredek",
+      "rossz-alom-utan-nehez-visszaaludni"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "A gyász, veszteség és alvásromlás kapcsolata szakmailag ismert, de az egyéni reakciók és időbeli lefolyás jelentősen eltérhetnek."
+  },
+  {
+    "type": "situation",
+    "slug": "betegseg-fajdalom-es-alvas",
+    "title": "Betegség, fájdalom és alvás",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Testi panaszok"
+      ]
+    },
+    "summary": "Betegség, lábadozás vagy fájdalom mellett az alvás könnyen felszínesebbé vagy megszakítottabbá válhat. Ilyenkor a pihenés támogatása gyakran fontosabb, mint a tökéletes alvás elérése.",
+    "content": [
+      "Testi kellemetlenség, fájdalom, köhögés, láz, gyógyszerek vagy gyógyulási időszak mind befolyásolhatják, hogyan alszol.",
+      "Előfordulhat, hogy többször felébredsz, nehezebben találsz kényelmes testhelyzetet, vagy reggel kevésbé érzed magad kipihentnek.",
+      "Sokaknál segít, ha ilyenkor a cél a lehető legkímélőbb pihenés, nem pedig az alvás erőltetése."
+    ],
+    "practicalTips": [
+      "Érdemes lehet olyan testhelyzetet és környezetet keresni, amely a lehető legkényelmesebb.",
+      "Kipróbálhatod, hogy napközben is beiktatsz rövid, nyugodt pihenőket, ha szükséged van rá.",
+      "Ha éjjel felébredsz, segíthet, ha gyenge fény mellett, lassan térsz vissza a pihenéshez."
+    ],
+    "safetyNote": {
+      "level": "important",
+      "text": "Ha a fájdalom, légzési nehézség, láz, betegség vagy gyógyszerhatás jelentősen zavarja az alvásodat, vagy bizonytalan vagy a tüneteiddel kapcsolatban, érdemes orvossal egyeztetni."
+    },
+    "searchAliases": [
+      "betegség és alvás",
+      "fájdalom miatt nem alszom",
+      "lábadozás és alvás",
+      "testi panaszok és alvás",
+      "rosszul alszom betegen"
+    ],
+    "symptomPhrases": [
+      "fájdalomra ébredek",
+      "betegen nem tudok aludni",
+      "nem találok kényelmes pózt",
+      "lábadozás közben fáradtan ébredek"
+    ],
+    "everydayPhrases": [
+      "mindenem fáj és nem alszom",
+      "nem tudok kényelmesen feküdni",
+      "a testem nem hagy aludni",
+      "betegen szétesik az alvásom"
+    ],
+    "hiddenSearchTerms": [
+      "fájdalom",
+      "betegség",
+      "lábadozás",
+      "krónikus fájdalom",
+      "köhögés",
+      "láz",
+      "gyógyszer és alvás",
+      "pain and sleep",
+      "illness sleep disruption"
+    ],
+    "relatedCardSlugs": [
+      "ejjel-tobbszor-felebredek",
+      "faradtan-ebredek",
+      "hajnalban-felebredek",
+      "kornyezet-miatti-alvaszavar"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A fájdalom, betegség és alvásminőség kapcsolata jól dokumentált egészség- és alvástudományi terület."
+  },
+  {
+    "type": "situation",
+    "slug": "muszakos-munka-jetlag-es-rendszertelen-napirend",
+    "title": "Műszakos munka, jetlag és rendszertelen napirend",
+    "displayTags": {
+      "primary": "Alvás",
+      "secondary": [
+        "Alvásritmus"
+      ]
+    },
+    "summary": "Ha az alvásidőd gyakran változik, a tested nehezebben talál stabil ritmust. Műszakos munka, jetlag vagy rendszertelen napirend mellett az alvás átmenetileg könnyen felborulhat.",
+    "content": [
+      "Az alvás nem csak fáradtságtól függ, hanem attól is, hogy a belső ritmusod mikor számít nappalra és éjszakára.",
+      "Utazás, időzónaváltás, váltott műszak vagy rendszertelen lefekvés mellett előfordulhat, hogy álmos vagy, mégsem akkor tudsz aludni, amikor szeretnél.",
+      "Sokaknál segít, ha nem egyszerre próbálnak mindent helyreállítani, hanem fokozatosan keresnek egy ismételhetőbb ritmust."
+    ],
+    "practicalTips": [
+      "Érdemes lehet a fényt tudatosan használni: reggel vagy ébredés után világosabb környezet, pihenés előtt tompább fény.",
+      "Kipróbálhatod, hogy az alvás előtti rutin akkor is hasonló marad, ha az időpont változik.",
+      "Ha jetlagről van szó, sokaknál hasznos a fokozatos alkalmazkodás és a napközbeni természetes fény."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a rendszertelen alvás tartósan kimerít, balesetveszélyes álmosságot okoz, vagy jelentősen zavarja a mindennapi működésedet, érdemes lehet szakemberrel egyeztetni."
+    },
+    "searchAliases": [
+      "műszakos munka és alvás",
+      "jetlag",
+      "rendszertelen napirend",
+      "felborult alvásritmus",
+      "váltott műszak"
+    ],
+    "symptomPhrases": [
+      "éjszakai műszak után nem tudok aludni",
+      "utazás után rosszul alszom",
+      "összevissza alszom",
+      "nem tudom mikor kellene aludnom"
+    ],
+    "everydayPhrases": [
+      "teljesen felborult a ritmusom",
+      "nem tudom visszaállítani az alvásom",
+      "éjjel dolgozom nappal aludnék",
+      "utazás után nem találom a ritmust"
+    ],
+    "hiddenSearchTerms": [
+      "cirkadián ritmus",
+      "alvásritmus",
+      "műszak",
+      "éjszakai munka",
+      "időzóna",
+      "jet lag",
+      "shift work",
+      "irregular sleep schedule",
+      "napirend felborulása"
+    ],
+    "relatedCardSlugs": [
+      "nem-tudok-elaludni",
+      "faradtan-ebredek",
+      "ejjel-tobbszor-felebredek",
+      "telefon-es-kepernyohasznalat"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A cirkadián ritmus, a fényhatás, a műszakos munka és a jetlag alvásra gyakorolt hatása jól alátámasztott alvástudományi terület."
+  },
+  {
+    "type": "situation",
+    "slug": "nem-emlekszem-az-almaimra",
+    "title": "Nem emlékszem az álmaimra",
+    "displayTags": {
+      "primary": "Álomemlékezés",
+      "secondary": [
+        "Álomemlékezés"
+      ]
+    },
+    "summary": "Sokan csak ritkán vagy egyáltalán nem emlékeznek az álmaikra. Ez önmagában nem szokatlan, és nem jelenti azt, hogy nincsenek álmaid.",
+    "content": [
+      "Az álomemlékek gyakran gyorsan halványulnak ébredés után. Ha rögtön másra figyelsz, könnyen eltűnhetnek a részletek.",
+      "Az emlékezésre hatással lehet az ébredés módja, az alvásritmus, a reggeli sietség és az is, mennyi figyelmet kapnak az álmok ébredéskor.",
+      "A Lumira szemléletében az álomemlékezés nem teljesítmény. Már egy hangulat, kép, érzés vagy töredék is elég lehet a finomabb kapcsolódáshoz."
+    ],
+    "practicalTips": [
+      "Ébredés után kipróbálhatod, hogy néhány pillanatig mozdulatlanul maradsz.",
+      "Hasznos lehet egyetlen szót vagy érzést is lejegyezni, ha csak ennyi maradt meg.",
+      "Érdemes lehet nem erőltetni: a rendszeres, gyengéd figyelem sokaknál többet segít."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "nem emlékszem az álmaimra",
+      "álomemlékezés",
+      "nem maradnak meg az álmok",
+      "elfelejtem az álmaimat",
+      "dream recall"
+    ],
+    "symptomPhrases": [
+      "reggelre semmi nem marad meg",
+      "tudom hogy álmodtam de nem emlékszem",
+      "mindig elfelejtem az álmaimat",
+      "nem tudom felidézni az álmaimat"
+    ],
+    "everydayPhrases": [
+      "mintha nem is álmodnék",
+      "üres fejjel ébredek",
+      "semmi nem jut eszembe",
+      "eltűnik minden reggelre"
+    ],
+    "hiddenSearchTerms": [
+      "álomfelidézés",
+      "álomemlék",
+      "reggeli emlékezés",
+      "nem álmodom",
+      "álmok elfelejtése",
+      "dream recall problem",
+      "álomnapló",
+      "ébredés utáni figyelem",
+      "álomtöredék"
+    ],
+    "relatedCardSlugs": [
+      "csak-toredekek-maradnak",
+      "hogyan-keszuljek-az-alomemlekezesre",
+      "mit-erdemes-rogziteni",
+      "alomnaplo"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "Az álomemlékezés változékonysága és az ébredés utáni gyors halványulás szakmailag ismert, de az egyéni különbségek jelentősek."
+  },
+  {
+    "type": "situation",
+    "slug": "csak-toredekek-maradnak",
+    "title": "Csak töredékek maradnak meg",
+    "displayTags": {
+      "primary": "Álomemlékezés",
+      "secondary": [
+        "Álomtöredékek"
+      ]
+    },
+    "summary": "Gyakori, hogy egy álomból csak képek, érzések, mondatok vagy elszórt részletek maradnak meg. Ezek a töredékek is értékesek lehetnek, nem kell teljes történetre emlékezned.",
+    "content": [
+      "Az álomemlékek sokszor nem rendezett történetként maradnak meg. Lehet, hogy csak egy helyszín, szín, személy, hangulat vagy testérzet bukkan fel.",
+      "Ha megpróbálod azonnal teljes egésszé formálni, előfordulhat, hogy a kevés megmaradt részlet is gyorsabban elhalványul.",
+      "Sokaknál hasznosabb először azt rögzíteni, ami biztosan megvan, még akkor is, ha töredékes vagy furcsa."
+    ],
+    "practicalTips": [
+      "Írhatsz csak kulcsszavakat, nem kell teljes mondatokat.",
+      "Kipróbálhatod, hogy először az érzést, helyszínt vagy képet jegyzed le.",
+      "Ha mire írnád, eltűnik, elég lehet annyit rögzíteni: „volt valami, de elhalványult”."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "csak töredékek maradnak",
+      "álomtöredékek",
+      "mire leírnám eltűnik",
+      "részletekre emlékszem csak",
+      "álomrészletek"
+    ],
+    "symptomPhrases": [
+      "csak egy kép maradt meg",
+      "csak érzésre emlékszem",
+      "mire leírnám eltűnik az álom",
+      "nem áll össze az álom története"
+    ],
+    "everydayPhrases": [
+      "csak foszlányok vannak",
+      "valami megvolt de elveszett",
+      "nem tudom összerakni",
+      "csak a hangulata maradt meg"
+    ],
+    "hiddenSearchTerms": [
+      "álomfoszlány",
+      "álomkép",
+      "álom hangulata",
+      "részleges álomemlék",
+      "fragmented dream recall",
+      "dream fragments",
+      "álomnapló kulcsszavak",
+      "reggeli jegyzetelés",
+      "eltűnő álom"
+    ],
+    "relatedCardSlugs": [
+      "nem-emlekszem-az-almaimra",
+      "mit-erdemes-rogziteni",
+      "hogyan-keszuljek-az-alomemlekezesre",
+      "alomnaplo"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "Az álomemlékek gyors halványulása és töredékes felidézése szakmailag ismert jelenség, míg a rögzítési gyakorlatok támogatása részben gyakorlati konszenzuson alapul."
+  },
+  {
+    "type": "situation",
+    "slug": "tobb-alom-osszekeveredik",
+    "title": "Több álom összekeveredik",
+    "displayTags": {
+      "primary": "Álomemlékezés",
+      "secondary": [
+        "Álomtöredékek"
+      ]
+    },
+    "summary": "Előfordulhat, hogy ébredés után több álom részletei összefolynak. Nem szükséges azonnal eldönteni, mi melyik álomhoz tartozott.",
+    "content": [
+      "Az álomemlékek gyakran nem időrendben vagy tiszta történetként maradnak meg. Képek, helyszínek, szereplők és érzések keveredhetnek egymással.",
+      "Ha túl gyorsan próbálod összerakni a teljes történetet, könnyen elveszhetnek a finomabb részletek.",
+      "Sokaknál hasznosabb először különálló darabokat rögzíteni, majd csak később megnézni, kirajzolódik-e bármilyen sorrend."
+    ],
+    "practicalTips": [
+      "Írhatsz külön sorokba minden részletet, ami eszedbe jut.",
+      "Hasznos lehet jelölni, ha valamiben bizonytalan vagy.",
+      "Nem kell teljes történetet alkotni; a töredékes jegyzet is elég lehet."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "több álom összekeveredik",
+      "összefolynak az álmaim",
+      "nem tudom melyik álom melyik",
+      "álmok keveredése",
+      "álomemlékek összekeverednek"
+    ],
+    "symptomPhrases": [
+      "nem tudom mi volt az első álom",
+      "összekeveredtek a részletek",
+      "több álomra emlékszem de nem sorrendben",
+      "nem áll össze melyik rész hova tartozik"
+    ],
+    "everydayPhrases": [
+      "minden összefolyt",
+      "összevissza vannak a képek",
+      "nem tudom összerakni",
+      "mintha több álom darabjai lennének"
+    ],
+    "hiddenSearchTerms": [
+      "álomkeveredés",
+      "álomtöredékek",
+      "álom sorrend",
+      "több álom egy éjszaka",
+      "összefolyó álomemlékek",
+      "fragmented dream recall",
+      "dream sequence",
+      "álomnapló",
+      "részletek rögzítése"
+    ],
+    "relatedCardSlugs": [
+      "csak-toredekek-maradnak",
+      "mit-erdemes-rogziteni",
+      "nem-emlekszem-az-almaimra",
+      "alomnaplo"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "Az álomemlékek töredékes és gyorsan változó természete szakmailag ismert, míg a rögzítési javaslatok gyakorlati konszenzuson alapulnak."
+  },
+  {
+    "type": "situation",
+    "slug": "hogyan-keszuljek-az-alomemlekezesre",
+    "title": "Hogyan készüljek az álomemlékezésre?",
+    "displayTags": {
+      "primary": "Álomemlékezés",
+      "secondary": [
+        "Álomemlékezés"
+      ]
+    },
+    "summary": "Az álomemlékezés gyakran könnyebb, ha este és reggel is marad egy kis nyugodt tér a figyelemnek. Nem kell erőltetni; elég lehet néhány egyszerű előkészítő lépés.",
+    "content": [
+      "Az álmok felidézése sokszor azon múlik, mi történik az ébredés első pillanataiban. Ha rögtön sietség vagy telefonozás indul, a részletek gyorsan elhalványulhatnak.",
+      "Este segíthet egy finom szándék: nem az, hogy biztosan emlékezned kell, hanem hogy reggel nyitottan figyelsz arra, maradt-e valami.",
+      "A Lumira szemléletében az álomemlékezés nem teljesítmény. A cél inkább az, hogy legyen helye annak, ami magától megmarad."
+    ],
+    "practicalTips": [
+      "Készíts elő jegyzetfüzetet vagy telefonos jegyzetet az ágy közelében.",
+      "Elalvás előtt finoman megfogalmazhatod: „Reggel figyelek arra, maradt-e valami.”",
+      "Ébredés után próbálj néhány pillanatig csendben maradni, mielőtt mással foglalkoznál."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "hogyan emlékezzek az álmaimra",
+      "álomemlékezés előkészítése",
+      "esti felkészülés álomemlékezésre",
+      "álmok felidézése reggel",
+      "dream recall preparation"
+    ],
+    "symptomPhrases": [
+      "szeretnék jobban emlékezni az álmaimra",
+      "mit tegyek este hogy emlékezzek",
+      "reggel mindig eltűnik az álom",
+      "nem tudom hogyan kezdjem az álomnaplót"
+    ],
+    "everydayPhrases": [
+      "jó lenne emlékezni valamire",
+      "mindig lemaradok az álmaimról",
+      "reggel már semmi nincs meg",
+      "szeretnék ráhangolódni"
+    ],
+    "hiddenSearchTerms": [
+      "álomfelidézés",
+      "reggeli emlékezés",
+      "esti szándék",
+      "álomnapló előkészítése",
+      "dream recall",
+      "dream journal setup",
+      "álomemlék megőrzése",
+      "ébredés utáni csend",
+      "álomrögzítés"
+    ],
+    "relatedCardSlugs": [
+      "nem-emlekszem-az-almaimra",
+      "csak-toredekek-maradnak",
+      "mit-erdemes-rogziteni",
+      "alomnaplo"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "Az álomemlékezés támogatására használt előkészítő és rögzítési szokások szakmailag elterjedtek, de hatásuk egyénenként eltérhet."
+  },
+  {
+    "type": "situation",
+    "slug": "mit-erdemes-rogziteni",
+    "title": "Mit érdemes rögzíteni, ha kevés maradt meg?",
+    "displayTags": {
+      "primary": "Álomemlékezés",
+      "secondary": [
+        "Álomnapló"
+      ]
+    },
+    "summary": "Ha csak kevés maradt meg egy álomból, az is elég lehet a rögzítéshez. Nem kell teljes történetet írnod; egy kép, érzés vagy kulcsszó is hasznos lehet.",
+    "content": [
+      "Az álomemlékek gyakran töredékesen jelennek meg: egy helyszín, szín, személy, mozdulat, hangulat vagy testi érzés formájában.",
+      "A rögzítés célja nem az álom megfejtése, hanem az emlék megőrzése. Érdemes azt leírni, ami tényleg megmaradt, nem azt, amit utólag kitalálnál hozzá.",
+      "Ha rendszeresen jegyzetelsz röviden, idővel könnyebb lehet észrevenni, milyen típusú részletek maradnak meg nálad."
+    ],
+    "practicalTips": [
+      "Leírhatsz kulcsszavakat: hely, személy, érzés, szín, mondat, mozdulat.",
+      "Jelölheted külön, ha valamiben nem vagy biztos.",
+      "Ha semmi konkrét nincs meg, rögzítheted a reggeli hangulatot vagy azt, hogy „nem maradt meg részlet”."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "mit írjak le az álomból",
+      "álomrögzítés",
+      "kevés maradt meg az álomból",
+      "álomnapló mit írjak",
+      "álomtöredék rögzítése"
+    ],
+    "symptomPhrases": [
+      "csak egy érzés maradt meg",
+      "nem tudom mit írjak az álomnaplóba",
+      "csak pár részletre emlékszem",
+      "nincs meg a teljes álom"
+    ],
+    "everydayPhrases": [
+      "alig van mit leírni",
+      "csak egy foszlány maradt",
+      "nem tudom elég-e ennyi",
+      "csak a hangulata van meg"
+    ],
+    "hiddenSearchTerms": [
+      "álomjegyzet",
+      "álomnapló",
+      "kulcsszavak",
+      "álom hangulata",
+      "részleges álomemlék",
+      "dream journal prompts",
+      "dream fragments",
+      "álomfelidézés",
+      "nem értelmezés"
+    ],
+    "relatedCardSlugs": [
+      "csak-toredekek-maradnak",
+      "tobb-alom-osszekeveredik",
+      "nem-emlekszem-az-almaimra",
+      "alomnaplo"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "Az álomrögzítés gyakorlati módszerei széles körben használatosak az álomemlékezés támogatására, bár az egyéni hatás változó lehet."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "remalom",
+    "title": "Rémálom",
+    "displayTags": {
+      "primary": "Nehéz álmok",
+      "secondary": [
+        "Rémálmok"
+      ]
+    },
+    "summary": "A rémálom erősen kellemetlen vagy ijesztő álomélmény, amelyből gyakran felébredünk. Bár megterhelő lehet, alkalomszerűen sokaknál előfordul.",
+    "content": [
+      "Rémálom után előfordulhat, hogy a szíved gyorsabban ver, éberebbnek érzed magad, vagy az álom hangulata még egy ideig veled marad.",
+      "Nem szükséges azonnal megfejteni, mit jelentett az álom. A legfontosabb sokszor először az, hogy visszatalálj a jelenhez és biztonságosabbnak érezd magad.",
+      "Egy-egy rémálom önmagában nem szokatlan. Akkor érdemes jobban odafigyelni rá, ha gyakran ismétlődik vagy tartósan megterhel."
+    ],
+    "practicalTips": [
+      "Ébredés után segíthet körbenézni és megnevezni néhány dolgot a szobában.",
+      "Kipróbálhatod a lassabb légzést vagy egy pohár vizet, ha jól esik.",
+      "Ha szeretnéd, röviden lejegyezheted az álmot anélkül, hogy értelmezned kellene."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a rémálmok gyakran ismétlődnek, erősen megterhelők, vagy tartósan rontják az alvásodat, érdemes lehet szakemberrel beszélni róla."
+    },
+    "searchAliases": [
+      "rémálom",
+      "rossz álom",
+      "ijesztő álom",
+      "felkavaró álom",
+      "nightmare"
+    ],
+    "symptomPhrases": [
+      "rémálomból ébredtem",
+      "ijesztő álmom volt",
+      "felriadtam egy álomból",
+      "az álom után zaklatott maradtam"
+    ],
+    "everydayPhrases": [
+      "nagyon rosszat álmodtam",
+      "nem tudom kiverni a fejemből",
+      "megijesztett az álom",
+      "még mindig bennem van"
+    ],
+    "hiddenSearchTerms": [
+      "nightmare",
+      "rossz álom",
+      "felriadás",
+      "ijesztő álomélmény",
+      "éjszakai félelem",
+      "rossz álom után ébren",
+      "álom utáni szorongás",
+      "felkavaró álom",
+      "rossz-alom-utan-nehez-visszaaludni"
+    ],
+    "relatedCardSlugs": [
+      "rossz-alom-utan-nehez-visszaaludni",
+      "gyakori-remalmok",
+      "visszatero-remalmok",
+      "felkavaro-alom-utan-nehez-megnyugodni"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A rémálmok jól dokumentált álomélmények, és az alkalmi előfordulásuk gyakori a normál alvás során is."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "gyakori-remalmok",
+    "title": "Gyakori rémálmok",
+    "displayTags": {
+      "primary": "Nehéz álmok",
+      "secondary": [
+        "Rémálmok"
+      ]
+    },
+    "summary": "Ha rémálmok gyakran jelentkeznek, az alvás kevésbé pihentetővé válhat, és már lefekvés előtt is feszültséget okozhat. Ilyenkor érdemes kíméletesen támogatni az éjszakai megnyugvást.",
+    "content": [
+      "A gyakori rémálmok különösen megterhelők lehetnek, mert nemcsak az adott éjszakát, hanem a lefekvéshez való viszonyt is befolyásolhatják.",
+      "Nem szükséges minden álmot azonnal értelmezni vagy megoldani. Sokszor első lépésként az számít, hogy az ébredés utáni megnyugvás és a nappali teher csökkenjen.",
+      "Ha a rémálmok visszatérően jelen vannak, hasznos lehet megfigyelni az alvásritmust, stresszterhelést és esti ingereket, de önhibáztatás nélkül."
+    ],
+    "practicalTips": [
+      "Érdemes lehet lefekvés előtt nyugodtabb, kiszámítható rutint kialakítani.",
+      "Rémálom után segíthet egy rövid földelő lépés, például a szoba tárgyainak megfigyelése.",
+      "Ha jegyzetelsz, elég lehet az érzést vagy néhány kulcsszót rögzíteni, értelmezés nélkül."
+    ],
+    "safetyNote": {
+      "level": "important",
+      "text": "Ha a rémálmok gyakran ismétlődnek, erős félelmet okoznak, traumatikus élményekhez kapcsolódnak, vagy tartósan rontják az alvásodat és a nappali működésedet, érdemes szakemberrel beszélni."
+    },
+    "searchAliases": [
+      "gyakori rémálmok",
+      "sok rémálmom van",
+      "visszatérő rossz álmok",
+      "rendszeres rémálmok",
+      "frequent nightmares"
+    ],
+    "symptomPhrases": [
+      "minden héten rémálmaim vannak",
+      "sokszor ébredek rossz álomból",
+      "félek lefeküdni a rémálmok miatt",
+      "gyakran felriadok álmok miatt"
+    ],
+    "everydayPhrases": [
+      "már megint rosszat álmodtam",
+      "nem merek elaludni",
+      "elegem van a rémálmokból",
+      "mindig felkavaró álmaim vannak"
+    ],
+    "hiddenSearchTerms": [
+      "gyakori rossz álmok",
+      "rendszeres felriadás",
+      "nightmares often",
+      "félelem lefekvés előtt",
+      "alvás kerülése",
+      "traumatikus álom",
+      "rossz-alom-utan-nehez-visszaaludni",
+      "visszatero-remalmok",
+      "felkavaró álmok"
+    ],
+    "relatedCardSlugs": [
+      "remalom",
+      "visszatero-remalmok",
+      "felkavaro-alom-utan-nehez-megnyugodni",
+      "traumatikus-jellegu-alomelmeny"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A gyakori rémálmok és az alvásminőség, distressz, illetve nappali működés kapcsolata jól ismert klinikai és alvástudományi terület."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "visszatero-remalmok",
+    "title": "Visszatérő rémálmok",
+    "displayTags": {
+      "primary": "Nehéz álmok",
+      "secondary": [
+        "Visszatérő álmok"
+      ]
+    },
+    "summary": "Visszatérő rémálom esetén hasonló álomélmény, hangulat vagy motívum ismétlődhet. Ez megterhelő lehet, különösen akkor, ha már lefekvés előtt tartasz tőle.",
+    "content": [
+      "A visszatérés nem jelenti azt, hogy az álomnak egyetlen biztos jelentése lenne. A Lumira szemléletében az álom jelentése a te saját kontextusodhoz tartozik.",
+      "Első lépésként gyakran az a legfontosabb, hogy az ébredés utáni feszültség csökkenjen, és az alvás ne váljon teljesítményhelyzetté.",
+      "Hasznos lehet finoman megfigyelni, mi ismétlődik: érzés, helyzet, hangulat vagy ébredés utáni testi állapot, értelmezési kényszer nélkül."
+    ],
+    "practicalTips": [
+      "Rögzíthetsz néhány kulcsszót az ismétlődő elemekről, de nem kell megfejtened őket.",
+      "Ébredés után segíthet a jelenre figyelni: hol vagy, mit látsz, mit hallasz.",
+      "Lefekvés előtt érdemes lehet nyugodt, kiszámítható levezető rutint tartani."
+    ],
+    "safetyNote": {
+      "level": "important",
+      "text": "Ha a visszatérő rémálmok erős félelmet okoznak, traumatikus élményekhez kapcsolódnak, vagy tartósan rontják az alvásodat és a nappali működésedet, érdemes szakemberrel beszélni."
+    },
+    "searchAliases": [
+      "visszatérő rémálmok",
+      "ugyanaz a rémálom",
+      "ismétlődő rossz álom",
+      "visszatérő rossz álmok",
+      "recurring nightmares"
+    ],
+    "symptomPhrases": [
+      "mindig ugyanazt a rossz álmot látom",
+      "újra és újra visszatér a rémálom",
+      "hasonló rémálmaim vannak",
+      "félek hogy megint ugyanazt álmodom"
+    ],
+    "everydayPhrases": [
+      "már megint ugyanaz volt",
+      "nem tudok szabadulni ettől az álomtól",
+      "visszajön éjszaka",
+      "mindig ugyanoda jut az álom"
+    ],
+    "hiddenSearchTerms": [
+      "ismétlődő rémálom",
+      "recurring nightmare",
+      "visszatérő álom",
+      "félelem lefekvés előtt",
+      "rossz álom ismétlődik",
+      "álom motívum ismétlődik",
+      "nightmare pattern",
+      "gyakori-remalmok",
+      "traumatikus álom"
+    ],
+    "relatedCardSlugs": [
+      "gyakori-remalmok",
+      "remalom",
+      "visszatero-alom",
+      "traumatikus-jellegu-alomelmeny",
+      "felkavaro-alom-utan-nehez-megnyugodni"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A visszatérő rémálmok és a hozzájuk kapcsolódó distressz szakmailag jól ismert jelenségek, különösen ha gyakorisággal vagy nappali megterheléssel társulnak."
+  },
+  {
+    "type": "situation",
+    "slug": "felkavaro-alom-utan-nehez-megnyugodni",
+    "title": "Felkavaró álom után nehéz megnyugodni",
+    "displayTags": {
+      "primary": "Nehéz álmok",
+      "secondary": [
+        "Rémálmok"
+      ]
+    },
+    "summary": "Egy intenzív vagy felkavaró álom után előfordulhat, hogy a tested még éber, feszült vagy zaklatott marad. Ilyenkor gyakran nem az álom értelmezése az első lépés, hanem a visszatérés a jelenhez.",
+    "content": [
+      "Az álom érzelmi lenyomata ébredés után is megmaradhat egy ideig. Ez akkor is megtörténhet, ha közben tudod, hogy álom volt.",
+      "Nem szükséges azonnal megérteni vagy megfejteni, mi történt. Sokszor először a biztonságosabb, nyugodtabb testi állapot visszanyerése segít.",
+      "Ha szeretnéd rögzíteni az álmot, elég lehet néhány kulcsszó vagy érzés. Nem kell hosszan benne maradnod az élményben."
+    ],
+    "practicalTips": [
+      "Nézz körül, és nevezz meg néhány tárgyat a szobában.",
+      "Kipróbálhatod a lassabb légzést vagy egy korty vizet.",
+      "Ha jegyzetelsz, röviden írd le, ami megmaradt, majd térj vissza valami nyugtatóhoz."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a felkavaró álmok gyakran ismétlődnek, erős szorongást okoznak, vagy tartósan megnehezítik az alvást, érdemes lehet támogatást kérni."
+    },
+    "searchAliases": [
+      "felkavaró álom után nehéz megnyugodni",
+      "zaklatott vagyok álom után",
+      "rossz álom után szorongok",
+      "ijesztő álom után nem nyugszom meg",
+      "álom utáni feszültség"
+    ],
+    "symptomPhrases": [
+      "felébredtem és még mindig félek",
+      "az álom után zaklatott maradtam",
+      "nem tudok megnyugodni rossz álom után",
+      "még mindig érzem az álom hangulatát"
+    ],
+    "everydayPhrases": [
+      "nagyon bennem maradt",
+      "nem tudom lerázni magamról",
+      "teljesen felkavart",
+      "még mindig ott vagyok fejben"
+    ],
+    "hiddenSearchTerms": [
+      "álom utáni szorongás",
+      "felriadás",
+      "földelés",
+      "megnyugvás ébredés után",
+      "rossz álom után",
+      "nightmare distress",
+      "emotional dream",
+      "visszaalvás rossz álom után",
+      "rémálom utáni nyugtalanság"
+    ],
+    "relatedCardSlugs": [
+      "remalom",
+      "rossz-alom-utan-nehez-visszaaludni",
+      "gyakori-remalmok",
+      "tul-intenziv-almok",
+      "traumatikus-jellegu-alomelmeny"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "A felkavaró álmok utáni érzelmi és testi éberség szakmailag ismert, a megnyugvást támogató javaslatok pedig óvatos gyakorlati konszenzuson alapulnak."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "tul-intenziv-almok",
+    "title": "Túl intenzív vagy túl élénk álmok",
+    "displayTags": {
+      "primary": "Nehéz álmok",
+      "secondary": [
+        "Intenzív álmok"
+      ]
+    },
+    "summary": "Néha az álmok szokatlanul élénknek, részletesnek vagy érzelmileg erősnek tűnhetnek. Ez lehet érdekes, de akár fárasztó vagy zavaró is.",
+    "content": [
+      "Az élénk álmok nem feltétlenül jelentenek problémát. Sok tényező befolyásolhatja, mennyire részletesen vagy erősen maradnak meg az álomélmények.",
+      "Stresszesebb időszak, változó alvásritmus, gyakori ébredés vagy fokozott álomfigyelem mellett egyesek több és intenzívebb álomra emlékezhetnek.",
+      "Nem szükséges minden intenzív álmot elemezni. Érdemes lehet inkább azt figyelni, hogyan hat rád: feltölt, megterhel, vagy csak szokatlanul erősen marad meg."
+    ],
+    "practicalTips": [
+      "Rögzíthetsz csak néhány kulcsszót, ha nem szeretnél hosszan benne maradni az álomban.",
+      "Érdemes lehet figyelni, hogy az intenzív álmok kapcsolódnak-e stresszesebb napokhoz vagy megszakított alváshoz.",
+      "Ha túl soknak érzed, kipróbálhatsz nyugodtabb esti rutint és kevesebb álomfókuszt lefekvés előtt."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha az intenzív álmok gyakran megterhelők, rontják az alvásodat, vagy erős szorongással járnak, érdemes lehet szakemberrel beszélni róla."
+    },
+    "searchAliases": [
+      "túl intenzív álmok",
+      "nagyon élénk álmok",
+      "erős álmok",
+      "vivid dreams",
+      "túl sok álom"
+    ],
+    "symptomPhrases": [
+      "nagyon valóságosnak tűntek az álmaim",
+      "túl élénken emlékszem az álmaimra",
+      "elfárasztanak az álmaim",
+      "mintha egész éjjel álmodtam volna"
+    ],
+    "everydayPhrases": [
+      "túl sok volt az álom",
+      "mintha film ment volna egész éjjel",
+      "reggelre elfáradok az álmaimtól",
+      "nagyon erősen bennem maradnak"
+    ],
+    "hiddenSearchTerms": [
+      "élénk álmok",
+      "vivid dreams",
+      "intense dreams",
+      "álom intenzitás",
+      "érzelmes álom",
+      "furcsa álomélmény",
+      "túl sok álomemlék",
+      "álom után fáradt",
+      "stressz és álmok"
+    ],
+    "relatedCardSlugs": [
+      "furcsa-vagy-szokatlan-alomelmeny",
+      "felkavaro-alom-utan-nehez-megnyugodni",
+      "nem-emlekszem-az-almaimra",
+      "csak-toredekek-maradnak",
+      "alomnaplo"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "Az álomélénkség és álomemlékezés változékonysága ismert jelenség, de az intenzitás okai és jelentősége egyénenként eltérhetnek."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "traumatikus-jellegu-alomelmeny",
+    "title": "Traumatikus jellegű álomélmény",
+    "displayTags": {
+      "primary": "Nehéz álmok",
+      "secondary": [
+        "Megterhelő álmok"
+      ]
+    },
+    "summary": "Egy álomélmény néha traumatikus jellegűnek tűnhet: nagyon valóságos, fenyegető vagy mélyen felkavaró lehet. Ilyenkor fontos, hogy ne maradj egyedül a megterheléssel, ha túl soknak érzed.",
+    "content": [
+      "Az ilyen álmok után előfordulhat erős félelem, testi feszültség, szégyen, zavartság vagy elkerülés. Nem kell azonnal megértened vagy elmagyaráznod az élményt.",
+      "A Lumira szemlélete nem értelmezi helyetted az álmot, és nem állítja, hogy az álom bizonyítana valamit. A jelentés és a személyes kontextus a tiéd.",
+      "Első lépésként gyakran a jelenbe való visszatérés, a biztonságérzet támogatása és a megfelelő segítség elérhetősége a legfontosabb."
+    ],
+    "practicalTips": [
+      "Ébredés után segíthet megnevezni, hol vagy, milyen nap van, és mi vesz körül.",
+      "Ha túl intenzív, nem szükséges részletesen leírnod az álmot.",
+      "Kereshetsz egy megbízható embert vagy szakembert, akivel biztonságosan beszélhetsz róla."
+    ],
+    "safetyNote": {
+      "level": "important",
+      "text": "Ha az álom traumatikus emlékekhez kapcsolódik, erős félelmet vagy szétesettségérzést okoz, gyakran ismétlődik, vagy jelentősen zavarja az alvásodat és a nappali működésedet, érdemes szakember támogatását kérni."
+    },
+    "searchAliases": [
+      "traumatikus álom",
+      "traumatikus jellegű álomélmény",
+      "nagyon felkavaró álom",
+      "trauma álomban",
+      "traumatic dream"
+    ],
+    "symptomPhrases": [
+      "olyan volt mintha újra megtörténne",
+      "nagyon valóságos és ijesztő álom volt",
+      "felébredtem és nem éreztem magam biztonságban",
+      "az álom után teljesen szétestem"
+    ],
+    "everydayPhrases": [
+      "túl sok volt",
+      "nem bírom kiverni a fejemből",
+      "mintha visszarántott volna",
+      "nem tudom mit kezdjek ezzel az álommal"
+    ],
+    "hiddenSearchTerms": [
+      "trauma",
+      "traumatikus rémálom",
+      "flashback jellegű álom",
+      "nightmare trauma",
+      "ptsd dreams",
+      "felkavaró álom",
+      "biztonságérzet",
+      "erős félelem ébredés után",
+      "gyakori-remalmok"
+    ],
+    "relatedCardSlugs": [
+      "gyakori-remalmok",
+      "visszatero-remalmok",
+      "felkavaro-alom-utan-nehez-megnyugodni",
+      "remalom"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A traumatikus jellegű álomélmények, ismétlődő rémálmok és alvásromlás kapcsolata jól ismert klinikai és alvástudományi terület; a kártya nem diagnosztikus célú."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "alvasi-benulas",
+    "title": "Alvási bénulás",
+    "displayTags": {
+      "primary": "Különleges élmények",
+      "secondary": [
+        "Alvási bénulás"
+      ]
+    },
+    "summary": "Alvási bénulás során az ember részben ébernek érzi magát, de átmenetileg nem tud mozogni vagy megszólalni. Bár nagyon ijesztő lehet, önmagában gyakran ártalmatlan és rövid ideig tartó jelenség.",
+    "content": [
+      "Az élmény többnyire elalváskor vagy ébredéskor jelentkezik. Előfordulhat, hogy a tudatod már éberebb, miközben a tested még nem mozdul úgy, ahogy szeretnéd.",
+      "Sokan számolnak be mellkasi nyomásról, jelenlétérzésről, furcsa hangokról vagy látványokról. Ezek az átmeneti alvás-ébrenlét állapot részei lehetnek.",
+      "A jelenség általában magától elmúlik. Stressz, alváshiány vagy rendszertelen alvás mellett egyeseknél gyakrabban fordulhat elő."
+    ],
+    "practicalTips": [
+      "Segíthet emlékeztetni magad arra, hogy az élmény átmeneti.",
+      "Kipróbálhatod, hogy a lassú légzésre vagy egy apró mozdulatra figyelsz.",
+      "Érdemes lehet figyelni a rendszeresebb alvásritmusra és az alváshiány csökkentésére."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha az alvási bénulás gyakran ismétlődik, jelentős félelmet okoz, vagy más alvási panaszokkal együtt jelentkezik, érdemes lehet szakemberrel beszélni róla."
+    },
+    "searchAliases": [
+      "alvási bénulás",
+      "sleep paralysis",
+      "nem tudtam mozogni ébredéskor",
+      "lebénultam alvás közben",
+      "nem tudtam megszólalni"
+    ],
+    "symptomPhrases": [
+      "felébredtem de nem tudtam mozogni",
+      "ébren voltam de a testem nem mozdult",
+      "nem tudtam megszólalni az ágyban",
+      "nyomást éreztem a mellkasomon"
+    ],
+    "everydayPhrases": [
+      "meg voltam bénulva",
+      "mintha valaki lett volna a szobában",
+      "nem tudtam felkelni",
+      "nagyon ijesztő volt ébredéskor"
+    ],
+    "hiddenSearchTerms": [
+      "sleep paralysis",
+      "ébren voltam de nem tudtam mozogni",
+      "mellkasi nyomás",
+      "jelenlétérzés",
+      "árnyalak",
+      "ijesztő ébredés",
+      "alvás-ébrenlét átmenet",
+      "hipnagóg élmény",
+      "hipnopomp élmény"
+    ],
+    "relatedCardSlugs": [
+      "hipnagog-kepek-es-hangok",
+      "hamis-ebredes",
+      "zuhanaserzes-elalvaskor",
+      "furcsa-vagy-szokatlan-alomelmeny"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "Az alvási bénulás jól dokumentált alvásélettani jelenség, amely gyakran az alvás és ébrenlét közötti átmeneti állapotokhoz kapcsolódik."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "hamis-ebredes",
+    "title": "Hamis ébredés",
+    "displayTags": {
+      "primary": "Különleges élmények",
+      "secondary": [
+        "Hamis ébredés"
+      ]
+    },
+    "summary": "Hamis ébredéskor úgy tűnhet, mintha felébredtél volna, de később kiderül, hogy még álmodtál. Ez furcsa vagy zavaró élmény lehet, de sokaknál előfordul.",
+    "content": [
+      "Hamis ébredésben gyakran a megszokott reggeli jelenet jelenik meg: az ágy, a szoba, a felkelés vagy a napi rutin.",
+      "Az élmény azért lehet különös, mert nagyon valóságosnak tűnhet, és csak később veszed észre, hogy nem valódi ébredés volt.",
+      "Nem szükséges külön jelentést keresni benne. Érdemes lehet egyszerűen álom-ébrenlét közeli jelenségként kezelni."
+    ],
+    "practicalTips": [
+      "Ha zavaró volt, ébredés után segíthet körülnézni és megnevezni, hol vagy.",
+      "Leírhatod röviden, mi alapján jöttél rá, hogy hamis ébredés volt.",
+      "Ha gyakran ismétlődik, érdemes lehet figyelni az alvásritmusra és a stresszre."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a hamis ébredések gyakran ismétlődnek, erős szorongást okoznak, vagy jelentősen megzavarják az alvásodat, érdemes lehet szakemberrel beszélni róla."
+    },
+    "searchAliases": [
+      "hamis ébredés",
+      "álmodtam hogy felébredtem",
+      "false awakening",
+      "álomban felébredtem",
+      "nem igazi ébredés"
+    ],
+    "symptomPhrases": [
+      "azt hittem felébredtem de még álmodtam",
+      "felkeltem az álomban de nem volt valós",
+      "álomban kezdtem a reggelt",
+      "többször is azt hittem felébredtem"
+    ],
+    "everydayPhrases": [
+      "nagyon valóságos ébredés volt",
+      "összezavarodtam hogy ébren vagyok-e",
+      "mintha felkeltem volna de mégsem",
+      "furcsa volt mert a szobámban voltam"
+    ],
+    "hiddenSearchTerms": [
+      "false awakening",
+      "álom az ébredésről",
+      "álombeli reggel",
+      "valóságos álom",
+      "ébredésnek tűnő álom",
+      "lucid dream overlap",
+      "alvás-ébrenlét átmenet",
+      "furcsa álomélmény",
+      "reality check"
+    ],
+    "relatedCardSlugs": [
+      "alvasi-benulas",
+      "hipnagog-kepek-es-hangok",
+      "furcsa-vagy-szokatlan-alomelmeny",
+      "tudatos-almodas-alapok"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "A hamis ébredés ismert álomjelenség, de előfordulásának és személyes jelentőségének értelmezése egyénenként eltérhet."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "hipnagog-kepek-es-hangok",
+    "title": "Hipnagóg képek vagy hangok",
+    "displayTags": {
+      "primary": "Különleges élmények",
+      "secondary": [
+        "Hipnagóg élmények"
+      ]
+    },
+    "summary": "Elalváskor vagy ébredés közelében előfordulhatnak rövid képek, hangok, szavak vagy furcsa érzékletek. Ezek sokaknál az alvás és ébrenlét közötti átmenet részei lehetnek.",
+    "content": [
+      "Hipnagóg élmények gyakran elalváskor jelennek meg: villanó képek, foszlányos jelenetek, hangok, nevek vagy rövid mondatok formájában.",
+      "Az élmény néha meglepő vagy ijesztő lehet, főleg ha nagyon valóságosnak tűnik. Ettől még nem kell automatikusan veszélyesnek tekinteni.",
+      "Sokszor segít tudni, hogy az elalvás közeli állapotban az érzékelés és az álomszerű képek átmenetileg összemosódhatnak."
+    ],
+    "practicalTips": [
+      "Ha megijedtél, segíthet emlékeztetni magad arra, hogy átmeneti alvásközeli élmény lehetett.",
+      "Érdemes lehet figyelni, hogy alváshiány vagy stressz mellett gyakoribb-e.",
+      "Ha szeretnéd, röviden rögzítheted az élményt anélkül, hogy értelmezned kellene."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha az élmények gyakran ismétlődnek, nappal is jelentkeznek, jelentős félelmet okoznak, vagy bizonytalanná tesznek, érdemes lehet szakemberrel beszélni róla."
+    },
+    "searchAliases": [
+      "hipnagóg képek",
+      "hipnagóg hangok",
+      "elalvás előtti képek",
+      "hangokat hallok elalváskor",
+      "hypnagogic imagery"
+    ],
+    "symptomPhrases": [
+      "elalváskor képeket látok",
+      "mintha valaki szólt volna amikor elaludtam",
+      "furcsa hangot hallottam elalvás előtt",
+      "villanó jelenetek jelentek meg"
+    ],
+    "everydayPhrases": [
+      "már majdnem aludtam és láttam valamit",
+      "félálomban hangokat hallottam",
+      "nem tudom álom volt-e vagy valóság",
+      "furcsa képek jöttek lefekvéskor"
+    ],
+    "hiddenSearchTerms": [
+      "hypnagogic hallucination",
+      "hipnopomp élmény",
+      "félálom",
+      "elalvás közeli állapot",
+      "alvás-ébrenlét átmenet",
+      "hang elalváskor",
+      "képek elalváskor",
+      "furcsa érzéklet",
+      "alvási bénulás"
+    ],
+    "relatedCardSlugs": [
+      "alvasi-benulas",
+      "zuhanaserzes-elalvaskor",
+      "hamis-ebredes",
+      "furcsa-vagy-szokatlan-alomelmeny"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A hipnagóg és hipnopomp érzékleti élmények jól ismert alvás-ébrenlét átmeneti jelenségek."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "zuhanaserzes-elalvaskor",
+    "title": "Zuhanásérzés elalváskor",
+    "displayTags": {
+      "primary": "Különleges élmények",
+      "secondary": [
+        "Hipnagóg élmények"
+      ]
+    },
+    "summary": "Elalvás közben sokaknál előfordul hirtelen zuhanásérzés vagy izomrándulás. Bár ijesztő lehet, gyakran ártalmatlan, rövid átmeneti jelenség.",
+    "content": [
+      "A zuhanásérzés gyakran akkor jelenik meg, amikor a test és a figyelem éppen átcsúszik az alvásba.",
+      "Előfordulhat, hogy egy hirtelen rándulással, megijedéssel vagy rövid felébredéssel jár. Ez sok ember számára ismerős élmény.",
+      "Fáradtság, stressz, rendszertelen alvás vagy fokozott éberség mellett egyeseknél gyakrabban jelentkezhet."
+    ],
+    "practicalTips": [
+      "Segíthet emlékeztetni magad arra, hogy ez sokaknál előforduló alvásközeli jelenség.",
+      "Érdemes lehet lefekvés előtt nyugodtabb levezetést választani.",
+      "Ha gyakran jelentkezik, figyelheted, kapcsolódik-e alváshiányhoz, stresszhez vagy koffeinhez."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a rándulások nagyon gyakoriak, fájdalmasak, sérülésveszélyesek, vagy más testi panaszokkal járnak, érdemes lehet orvossal egyeztetni."
+    },
+    "searchAliases": [
+      "zuhanásérzés elalváskor",
+      "elalváskor összerándulok",
+      "hipnikus rándulás",
+      "hypnic jerk",
+      "elalvási rándulás"
+    ],
+    "symptomPhrases": [
+      "elalváskor úgy érzem lezuhanok",
+      "hirtelen összerándulok amikor elalszom",
+      "mintha leestem volna",
+      "elalvás előtt megrándul a testem"
+    ],
+    "everydayPhrases": [
+      "mintha zuhannék",
+      "felránt az elalvásból",
+      "megijedek amikor majdnem elalszom",
+      "ugrok egyet az ágyban"
+    ],
+    "hiddenSearchTerms": [
+      "hypnic jerk",
+      "sleep start",
+      "elalvási izomrándulás",
+      "zuhanás álom",
+      "félálom",
+      "testi rándulás",
+      "stressz és elalvás",
+      "koffein és alvás",
+      "hipnagóg élmény"
+    ],
+    "relatedCardSlugs": [
+      "hipnagog-kepek-es-hangok",
+      "alvasi-benulas",
+      "nem-tudok-elaludni",
+      "etkezes-koffein-alkohol-es-alvas"
+    ],
+    "evidenceLevel": "strong",
+    "evidenceNote": "A hipnikus rándulás és az elalvás közbeni zuhanásérzés jól ismert, gyakran előforduló alvásközeli testi jelenség."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "elhunyt-szemellyel-almodtam",
+    "title": "Elhunyt személlyel álmodtam",
+    "displayTags": {
+      "primary": "Nehéz álmok",
+      "secondary": [
+        "Veszteség"
+      ]
+    },
+    "summary": "Elhunyt személlyel álmodni sokféle érzést hozhat: megnyugvást, szomorúságot, zavart vagy hiányérzetet. A Lumira nem ad kész jelentést az ilyen álmokhoz; a személyes jelentés a tiéd.",
+    "content": [
+      "Egy ilyen álom különösen erős lehet, mert személyes emlékekhez, gyászhoz vagy kapcsolatélményhez kapcsolódhat.",
+      "Nem szükséges eldönteni, hogy az álom mit „jelent”. Lehet elég annyit megfigyelni, milyen érzés maradt benned ébredés után.",
+      "Ha az élmény megnyugtató volt, megengedheted, hogy egyszerűen megnyugtató legyen. Ha fájdalmas volt, érdemes kíméletesen bánni magaddal utána."
+    ],
+    "practicalTips": [
+      "Leírhatod röviden, milyen érzés maradt meg, értelmezés nélkül.",
+      "Ha felkavart, segíthet egy nyugodt reggeli vagy esti visszarendező lépés.",
+      "Ha gyászhoz kapcsolódik, beszélhetsz róla egy megbízható emberrel."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha az álom erősen megterhelő, gyakran ismétlődik, vagy a veszteség érzése tartósan nagyon nehezen hordozható, érdemes lehet támogatást kérni."
+    },
+    "searchAliases": [
+      "elhunyt személlyel álmodtam",
+      "halottal álmodtam",
+      "meghalt hozzátartozóval álmodtam",
+      "gyász álom",
+      "deceased loved one dream"
+    ],
+    "symptomPhrases": [
+      "álmodtam valakivel aki meghalt",
+      "elhunyt családtagommal álmodtam",
+      "meghalt ember jelent meg az álmomban",
+      "álmomban újra láttam őt"
+    ],
+    "everydayPhrases": [
+      "nagyon felkavart hogy vele álmodtam",
+      "jó volt újra látni",
+      "nem tudom mit kezdjek ezzel",
+      "reggel nagyon hiányzott"
+    ],
+    "hiddenSearchTerms": [
+      "gyász álom",
+      "veszteség",
+      "elhunyt hozzátartozó",
+      "haláleset után álom",
+      "látogatás álom",
+      "grief dream",
+      "bereavement dream",
+      "nem álomértelmezés",
+      "személyes jelentés"
+    ],
+    "relatedCardSlugs": [
+      "gyasz-es-veszteseg-miatti-alvaszavar",
+      "felkavaro-alom-utan-nehez-megnyugodni",
+      "visszatero-alom",
+      "furcsa-vagy-szokatlan-alomelmeny"
+    ],
+    "evidenceLevel": "experiential",
+    "evidenceNote": "Az elhunyt személyekkel kapcsolatos álmok gyakori személyes élmények lehetnek, de jelentésük nem állapítható meg általános szabályként."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "visszatero-alom",
+    "title": "Visszatérő álom",
+    "displayTags": {
+      "primary": "Nehéz álmok",
+      "secondary": [
+        "Visszatérő álmok"
+      ]
+    },
+    "summary": "Visszatérő álom esetén hasonló téma, helyzet, érzés vagy jelenet ismétlődhet. Ez lehet érdekes, zavaró vagy felkavaró is, de nem kell kész jelentést rendelni hozzá.",
+    "content": [
+      "Az ismétlődés nem bizonyítja, hogy az álomnak egyetlen biztos üzenete lenne. A Lumira szemlélete szerint a személyes kontextus fontosabb, mint bármilyen általános magyarázat.",
+      "Hasznos lehet különválasztani, mi tér vissza pontosan: a helyzet, a hangulat, egy szereplő, egy érzés vagy az ébredés utáni állapot.",
+      "Ha az álom nem megterhelő, elég lehet megfigyelni. Ha viszont félelmet vagy alváskerülést okoz, érdemes kíméletesebben foglalkozni vele."
+    ],
+    "practicalTips": [
+      "Rögzíthetsz néhány ismétlődő elemet kulcsszavakban.",
+      "Jelölheted, milyen érzéssel ébredtél, értelmezés nélkül.",
+      "Ha az álom rémálomszerű vagy erősen megterhelő, keresd a kapcsolódó rémálom-kártyákat is."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a visszatérő álom erős félelmet okoz, rémálomszerű, vagy tartósan rontja az alvásodat, érdemes lehet támogatást kérni."
+    },
+    "searchAliases": [
+      "visszatérő álom",
+      "ismétlődő álom",
+      "ugyanazt álmodom",
+      "recurring dream",
+      "visszatérő álomélmény"
+    ],
+    "symptomPhrases": [
+      "mindig ugyanaz az álom jön vissza",
+      "hasonló álmaim vannak újra és újra",
+      "ugyanaz a helyzet ismétlődik az álomban",
+      "nem pontosan ugyanaz de nagyon hasonló"
+    ],
+    "everydayPhrases": [
+      "már megint ezt álmodtam",
+      "visszajön ugyanaz a történet",
+      "nem tudom miért ismétlődik",
+      "mintha mindig ugyanoda jutnék"
+    ],
+    "hiddenSearchTerms": [
+      "recurring dream",
+      "ismétlődő álom",
+      "álomminta",
+      "visszatérő motívum",
+      "álomnapló",
+      "nem álomfejtés",
+      "személyes kontextus",
+      "visszatérő rémálom",
+      "gyakori álom"
+    ],
+    "relatedCardSlugs": [
+      "visszatero-remalmok",
+      "remalom",
+      "mit-erdemes-rogziteni",
+      "alomnaplo",
+      "furcsa-vagy-szokatlan-alomelmeny"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "A visszatérő álmok ismert álomjelenségek, de tartalmuk általános jelentése nem határozható meg személyes kontextus nélkül."
+  },
+  {
+    "type": "phenomenon",
+    "slug": "furcsa-vagy-szokatlan-alomelmeny",
+    "title": "Furcsa vagy szokatlan álomélmény",
+    "displayTags": {
+      "primary": "Különleges élmények",
+      "secondary": [
+        "Szokatlan élmények"
+      ]
+    },
+    "summary": "Néha az álomélmények nagyon furcsák, valószerűtlenek vagy nehezen megfogalmazhatók. Ez önmagában nem jelenti azt, hogy baj van, és nem kell azonnal értelmezni.",
+    "content": [
+      "Az álmok gyakran nem a nappali logika szerint épülnek fel. Helyszínek, idők, szereplők és érzések szokatlan módon kapcsolódhatnak össze.",
+      "Egy furcsa álom lehet érdekes, vicces, zavaró vagy nyugtalanító. Az első kérdés gyakran nem az, hogy mit jelent, hanem hogy hogyan hatott rád.",
+      "Ha az élmény nagyon erősen megmaradt, elég lehet néhány részletet rögzíteni, anélkül hogy biztos magyarázatot keresnél."
+    ],
+    "practicalTips": [
+      "Leírhatod, mi volt benne a legszokatlanabb.",
+      "Érdemes lehet az ébredés utáni érzést is rögzíteni.",
+      "Ha felkavart, először a megnyugvásra figyelj, ne az értelmezésre."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a szokatlan álomélmények gyakran erősen megterhelők, félelmet okoznak, vagy tartósan zavarják az alvásodat, érdemes lehet támogatást kérni."
+    },
+    "searchAliases": [
+      "furcsa álom",
+      "szokatlan álomélmény",
+      "nagyon bizarr álom",
+      "különös álom",
+      "weird dream"
+    ],
+    "symptomPhrases": [
+      "nagyon furcsát álmodtam",
+      "nem tudom elmagyarázni az álmot",
+      "teljesen szokatlan álom volt",
+      "összevissza volt minden az álomban"
+    ],
+    "everydayPhrases": [
+      "mi volt ez az álom",
+      "nagyon random volt",
+      "semmi értelme nem volt",
+      "még mindig gondolkodom rajta"
+    ],
+    "hiddenSearchTerms": [
+      "weird dream",
+      "bizarr álom",
+      "szokatlan álom",
+      "álomlogika",
+      "furcsa álomélmény",
+      "túl intenzív álmok",
+      "hamis ébredés",
+      "hipnagóg élmény",
+      "nem álomértelmezés"
+    ],
+    "relatedCardSlugs": [
+      "tul-intenziv-almok",
+      "hamis-ebredes",
+      "hipnagog-kepek-es-hangok",
+      "visszatero-alom",
+      "mit-erdemes-rogziteni"
+    ],
+    "evidenceLevel": "experiential",
+    "evidenceNote": "A szokatlan álomélmények gyakoriak és személyesen változatosak; a kártya orientációt ad, nem tartalmi értelmezést."
+  },
+  {
+    "type": "technique",
+    "slug": "tudatos-almodas-alapok",
+    "title": "Tudatos álmodás alapok",
+    "displayTags": {
+      "primary": "Tudatos álmodás",
+      "secondary": [
+        "Alapok"
+      ]
+    },
+    "summary": "Tudatos álmodáskor az álmodó felismeri, hogy álmodik. Ez érdekes élmény lehet, de érdemes nyugodtan, túlzott erőltetés nélkül közelíteni hozzá.",
+    "content": [
+      "A tudatos álmodás nem azt jelenti, hogy mindig teljesen irányítani lehet az álmot. Gyakran inkább arról szól, hogy álom közben megjelenik a felismerés: „ez álom”.",
+      "A gyakorlásnál fontos, hogy az alvás minősége ne váljon másodlagossá. Ha túl sok figyelmet vagy nyomást kap, egyeseknél zavarhatja a pihenést.",
+      "Kezdésként sokaknál elég az álomemlékezés támogatása és néhány kíméletes megfigyelési szokás, nem intenzív technikázás."
+    ],
+    "practicalTips": [
+      "Érdemes lehet először álomnaplóval vagy rövid reggeli jegyzetekkel kezdeni.",
+      "Kipróbálhatsz egyszerű reality checket napközben, nyomás nélkül.",
+      "Ha romlik az alvásod vagy túl sokat foglalkozol vele, tarts szünetet."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a tudatos álmodás gyakorlása rontja az alvásodat, növeli a szorongást, vagy zavaró alvásélményekkel jár, érdemes szünetet tartani és szükség esetén szakemberrel beszélni."
+    },
+    "searchAliases": [
+      "tudatos álmodás",
+      "lucid dreaming",
+      "szeretnék tudatosan álmodni",
+      "lucid dream alapok",
+      "álomban tudni hogy álmodom"
+    ],
+    "symptomPhrases": [
+      "szeretném felismerni hogy álmodom",
+      "hogyan lehet tudatosan álmodni",
+      "álom közben rá akarok jönni hogy álmodom",
+      "érdekel a lucid dreaming"
+    ],
+    "everydayPhrases": [
+      "jó lenne irányítani az álmot",
+      "rá szeretnék ébredni álomban",
+      "ki akarom próbálni a tudatos álmodást",
+      "nem akarom túlerőltetni"
+    ],
+    "hiddenSearchTerms": [
+      "lucid dreaming beginners",
+      "tudatos álom",
+      "álomkontroll",
+      "reality check",
+      "álomnapló",
+      "MILD",
+      "WBTB",
+      "tudatos álmodás erőltetés nélkül",
+      "dream awareness"
+    ],
+    "relatedCardSlugs": [
+      "alomnaplo",
+      "reality-check",
+      "mild",
+      "wbtb",
+      "tudatos-almodas-eroltetes-nelkul"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "A tudatos álmodás kutatott jelenség, de a gyakorlati módszerek hatékonysága és alvásra gyakorolt hatása egyénenként eltérhet."
+  },
+  {
+    "type": "technique",
+    "slug": "majdnem-tudatos-lettem",
+    "title": "Majdnem tudatos lettem, de elvesztettem",
+    "displayTags": {
+      "primary": "Tudatos álmodás",
+      "secondary": [
+        "Álomstabilizálás"
+      ]
+    },
+    "summary": "Előfordulhat, hogy álom közben majdnem felismered, hogy álmodsz, de az élmény gyorsan elhalványul vagy visszacsúszik a szokásos álomba. Ez gyakori része lehet a tanulási folyamatnak.",
+    "content": [
+      "A tudatosság álom közben sokszor nem kapcsol be teljesen vagy tartósan. Lehet, hogy csak egy pillanatra merül fel a felismerés.",
+      "Az is előfordulhat, hogy az izgatottság, a túl erős kontrolligény vagy az álom gyors változása miatt a tudatosság hamar eltűnik.",
+      "Nem érdemes kudarcként kezelni. A részleges felismerés is jelzés lehet arra, hogy egyre jobban észreveszed az álom sajátosságait."
+    ],
+    "practicalTips": [
+      "Ébredés után jegyezd le, mi váltotta ki a majdnem-felismerést.",
+      "Legközelebb kipróbálhatod, hogy nem irányítani próbálsz azonnal, csak nyugodtan körülnézel.",
+      "Ha frusztrálóvá válik, érdemes pár napra lazítani a gyakorláson."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "majdnem tudatos lettem",
+      "elvesztettem a tudatos álmot",
+      "majdnem lucid dream",
+      "részleges tudatos álom",
+      "lucid dream elhalványult"
+    ],
+    "symptomPhrases": [
+      "rájöttem volna hogy álmodom de eltűnt",
+      "majdnem tudtam hogy álom",
+      "egy pillanatra tudatos lettem",
+      "visszacsúsztam az álomba"
+    ],
+    "everydayPhrases": [
+      "majdnem sikerült",
+      "kicsúszott a kezemből",
+      "felismertem de aztán elveszett",
+      "nem tudtam megtartani"
+    ],
+    "hiddenSearchTerms": [
+      "lucid dream failed",
+      "dream awareness",
+      "részleges lucidity",
+      "álomtudatosság",
+      "stabilizálás",
+      "reality check",
+      "álomnapló",
+      "tudatos álmodás gyakorlás",
+      "nem tudom stabilizálni"
+    ],
+    "relatedCardSlugs": [
+      "tudatos-almodas-alapok",
+      "nem-tudom-stabilizalni-a-tudatos-almot",
+      "reality-check",
+      "alomnaplo",
+      "tudatos-almodas-eroltetes-nelkul"
+    ],
+    "evidenceLevel": "experiential",
+    "evidenceNote": "A részleges vagy rövid tudatosság gyakori gyakorlói beszámoló, de a stabilizálási tanácsok főként tapasztalati és közösségi alapúak."
+  },
+  {
+    "type": "technique",
+    "slug": "felebredek-amikor-tudatos-leszek",
+    "title": "Felébredek, amikor tudatos leszek",
+    "displayTags": {
+      "primary": "Tudatos álmodás",
+      "secondary": [
+        "Álomstabilizálás"
+      ]
+    },
+    "summary": "Előfordulhat, hogy amint felismered, hogy álmodsz, az izgalom vagy a fokozott figyelem felébreszt. Ez gyakori élmény lehet a tudatos álmodás gyakorlása közben.",
+    "content": [
+      "A tudatosság megjelenése álomban néha erős élmény: hirtelen izgatottságot, meglepetést vagy kontrollvágyat hozhat.",
+      "Ez az éberségi szint elég lehet ahhoz, hogy az álom elhalványuljon vagy felébredj. Ez nem kudarc, inkább a tanulási folyamat része lehet.",
+      "Sokaknál segít, ha a cél nem az azonnali irányítás, hanem az álomban maradás nyugodt megfigyeléssel."
+    ],
+    "practicalTips": [
+      "Amikor tudatos leszel, próbálj először csak körülnézni az álomban.",
+      "Érdemes lehet kerülni az azonnali erős irányítási kísérletet.",
+      "Ébredés után röviden jegyezd le, mi történt, majd engedd el a teljesítménykényszert."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "felébredek amikor tudatos leszek",
+      "lucid dream után felébredek",
+      "tudatos álomból felébredek",
+      "nem maradok benne a tudatos álomban",
+      "lucid dream wake up"
+    ],
+    "symptomPhrases": [
+      "amint rájövök hogy álmodom felébredek",
+      "túl izgatott leszek és felébredek",
+      "nem tudom megtartani a tudatos álmot",
+      "a felismerés után eltűnik az álom"
+    ],
+    "everydayPhrases": [
+      "mindig pont akkor ébredek fel",
+      "sikerülne de kicsúszik",
+      "túl nagy izgalom lesz",
+      "nem tudok benne maradni"
+    ],
+    "hiddenSearchTerms": [
+      "lucid dream excitement",
+      "felébredés tudatos álomból",
+      "álom stabilizálás",
+      "lucid dream stabilization",
+      "tudatos álmodás gyakorlás",
+      "majdnem tudatos lettem",
+      "álom elhalványul",
+      "túlzott kontroll",
+      "álomban maradás"
+    ],
+    "relatedCardSlugs": [
+      "majdnem-tudatos-lettem",
+      "nem-tudom-stabilizalni-a-tudatos-almot",
+      "tudatos-almodas-alapok",
+      "tudatos-almodas-eroltetes-nelkul"
+    ],
+    "evidenceLevel": "experiential",
+    "evidenceNote": "A tudatos álomból való gyors felébredés gyakori gyakorlói beszámoló, de a stabilizálási javaslatok főként tapasztalati alapúak."
+  },
+  {
+    "type": "technique",
+    "slug": "nem-mukodik-a-reality-check",
+    "title": "Nem működik a reality check",
+    "displayTags": {
+      "primary": "Tudatos álmodás",
+      "secondary": [
+        "Reality Check"
+      ]
+    },
+    "summary": "Előfordulhat, hogy a reality check nem vált ki tudatos álmot, vagy álomban sem veszed észre a különbséget. Ez nem jelenti azt, hogy rosszul csinálod.",
+    "content": [
+      "A reality check nem varázstrükk, hanem egy figyelmi szokás. Időbe telhet, mire álomban is megjelenik.",
+      "Ha napközben túl automatikussá válik, álomban is könnyen automatikus maradhat, valódi rákérdezés nélkül.",
+      "Sokaknál hasznosabb a ritkább, de figyelmesebb ellenőrzés, mint a sok ismétlés valódi jelenlét nélkül."
+    ],
+    "practicalTips": [
+      "Reality check közben tényleg kérdezd meg magadtól: „Lehet, hogy álmodom?”",
+      "Kösd olyan helyzetekhez, amelyek gyakran megjelennek az álmaidban.",
+      "Ha frusztrálóvá válik, tarts szünetet vagy válts kíméletesebb gyakorlásra."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "nem működik a reality check",
+      "reality check nem segít",
+      "valóságteszt",
+      "tudatos álmodás reality check",
+      "reality check lucid dreaming"
+    ],
+    "symptomPhrases": [
+      "álomban nem jövök rá hogy álmodom",
+      "hiába csinálok reality checket",
+      "nem veszem észre az álomban",
+      "a valóságteszt nem vált be"
+    ],
+    "everydayPhrases": [
+      "semmi nem történik",
+      "csinálom de nem működik",
+      "nem jön át álomba",
+      "csak megszokássá vált"
+    ],
+    "hiddenSearchTerms": [
+      "reality test",
+      "valóságellenőrzés",
+      "lucid dreaming practice",
+      "álomjelek",
+      "dream signs",
+      "tudatos álom technika",
+      "automatikus gyakorlás",
+      "álomnapló",
+      "MILD"
+    ],
+    "relatedCardSlugs": [
+      "reality-check",
+      "tudatos-almodas-alapok",
+      "alomnaplo",
+      "mild",
+      "tudatos-almodas-eroltetes-nelkul"
+    ],
+    "evidenceLevel": "limited",
+    "evidenceNote": "A reality check széles körben használt tudatosálom-gyakorlat, de önálló hatékonyságára korlátozott és vegyes bizonyíték áll rendelkezésre."
+  },
+  {
+    "type": "technique",
+    "slug": "nem-tudom-stabilizalni-a-tudatos-almot",
+    "title": "Nem tudom stabilizálni a tudatos álmot",
+    "displayTags": {
+      "primary": "Tudatos álmodás",
+      "secondary": [
+        "Álomstabilizálás"
+      ]
+    },
+    "summary": "Tudatos álomban előfordulhat, hogy az álom gyorsan elhalványul, szétesik vagy felébredsz. Ez gyakori, különösen a gyakorlás elején.",
+    "content": [
+      "A tudatos álom sokszor instabilnak tűnhet, mert a felismerés fokozza az izgalmat és az éberséget.",
+      "Nem mindig lehet vagy érdemes teljes kontrollt várni. A stabilizálás inkább finom jelenlétet jelenthet, nem erős irányítást.",
+      "Ha a gyakorlás frusztrálóvá válik, érdemes lehet visszalépni az álomemlékezéshez és a pihentető alvás támogatásához."
+    ],
+    "practicalTips": [
+      "Próbálj az álom egy részletére figyelni: a talajra, a kezedre vagy a környezetre.",
+      "Érdemes lehet lassítani, mielőtt bármit irányítani próbálsz.",
+      "Ha felébredsz, jegyezz le pár kulcsszót, majd ne erőltesd az azonnali visszatérést."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "nem tudom stabilizálni a tudatos álmot",
+      "lucid dream stabilizálás",
+      "szétesik a tudatos álom",
+      "elhalványul az álom",
+      "lucid dream stabilization"
+    ],
+    "symptomPhrases": [
+      "tudatos leszek de eltűnik az álom",
+      "nem marad stabil a lucid dream",
+      "felébredek amikor irányítani próbálom",
+      "szétesik minden az álomban"
+    ],
+    "everydayPhrases": [
+      "kicsúszik alólam az álom",
+      "nem tudom megtartani",
+      "elmosódik az egész",
+      "túl gyorsan vége lesz"
+    ],
+    "hiddenSearchTerms": [
+      "lucid dream fades",
+      "álom stabilizálás",
+      "tudatos álom megtartása",
+      "dream grounding",
+      "felébredek amikor tudatos leszek",
+      "majdnem tudatos lettem",
+      "túlzott izgalom",
+      "álomkontroll",
+      "lucid dreaming practice"
+    ],
+    "relatedCardSlugs": [
+      "felebredek-amikor-tudatos-leszek",
+      "majdnem-tudatos-lettem",
+      "tudatos-almodas-alapok",
+      "tudatos-almodas-eroltetes-nelkul"
+    ],
+    "evidenceLevel": "experiential",
+    "evidenceNote": "A tudatos álom stabilizálására vonatkozó javaslatok főként gyakorlói tapasztalatokon és közösségi beszámolókon alapulnak."
+  },
+  {
+    "type": "technique",
+    "slug": "alomnaplo",
+    "title": "Álomnapló",
+    "displayTags": {
+      "primary": "Álomemlékezés",
+      "secondary": [
+        "Álomnapló"
+      ]
+    },
+    "summary": "Az álomnapló egyszerű módszer az álomemlékezés támogatására. Nem az álmok megfejtéséről szól, hanem arról, hogy megőrizd, ami reggel még elérhető.",
+    "content": [
+      "Az álomemlékek gyakran gyorsan halványulnak. Néhány kulcsszó vagy rövid mondat is segíthet, hogy ne vesszen el minden.",
+      "Nem kell hosszú, kerek történetet írnod. Egy érzés, helyszín, szereplő, szín vagy furcsa részlet is elég lehet.",
+      "A Lumira szemléletében az álomnapló megfigyelésre és emlékezésre való, nem kényszeres értelmezésre vagy szimbólumvadászatra."
+    ],
+    "practicalTips": [
+      "Tarts jegyzetet vagy telefont az ágy közelében, ha ez kényelmes.",
+      "Ébredés után írj le 1–3 kulcsszót, mielőtt mással foglalkoznál.",
+      "Ha semmi nem maradt meg, azt is rögzítheted: „nem emlékszem”."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "álomnapló",
+      "dream journal",
+      "álomjegyzet",
+      "álomrögzítés",
+      "álomemlékezés"
+    ],
+    "symptomPhrases": [
+      "szeretném leírni az álmaimat",
+      "mindig elfelejtem az álmaimat",
+      "nem tudom mit írjak az álomnaplóba",
+      "reggel gyorsan eltűnik az álom"
+    ],
+    "everydayPhrases": [
+      "jó lenne megőrizni az álmaimat",
+      "csak pár szó jut eszembe",
+      "nem akarom elveszíteni az álmot",
+      "szeretnék jobban emlékezni"
+    ],
+    "hiddenSearchTerms": [
+      "dream journal",
+      "álomfelidézés",
+      "álomemlék",
+      "reggeli jegyzetelés",
+      "álomtöredék",
+      "tudatos álmodás alapok",
+      "nem álomértelmezés",
+      "álomnapló kezdőknek",
+      "dream recall"
+    ],
+    "relatedCardSlugs": [
+      "nem-emlekszem-az-almaimra",
+      "csak-toredekek-maradnak",
+      "mit-erdemes-rogziteni",
+      "hogyan-keszuljek-az-alomemlekezesre",
+      "tudatos-almodas-alapok"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "Az álomnapló széles körben használt módszer az álomemlékezés támogatására, de hatása egyénenként eltérhet."
+  },
+  {
+    "type": "technique",
+    "slug": "reality-check",
+    "title": "Reality check",
+    "displayTags": {
+      "primary": "Tudatos álmodás",
+      "secondary": [
+        "Reality Check"
+      ]
+    },
+    "summary": "A reality check egy rövid valóságellenőrzés, amely segíthet tudatosabbá válni az álomban. Akkor hasznosabb, ha figyelmes kérdésként jelenik meg, nem automatikus szokásként.",
+    "content": [
+      "A gyakorlat lényege, hogy napközben röviden megkérdezed: „Lehet, hogy álmodom?” Ez a figyelmi szokás idővel álomban is felbukkanhat.",
+      "A konkrét ellenőrzés lehet például a kezed megfigyelése, egy szöveg újraolvasása vagy a környezet furcsaságainak észrevétele.",
+      "Nem kell túl sokszor ismételni. A minőség sokszor fontosabb, mint a mennyiség: legyen benne valódi kíváncsiság."
+    ],
+    "practicalTips": [
+      "Válassz napi néhány helyzetet, amikor figyelmesen elvégzed.",
+      "Kérdezd meg magadtól őszintén, honnan tudod, hogy ébren vagy.",
+      "Ha teljesítménynyomássá válik, csökkentsd a gyakoriságot."
+    ],
+    "safetyNote": null,
+    "searchAliases": [
+      "reality check",
+      "valóságellenőrzés",
+      "valóságteszt",
+      "tudatos álmodás technika",
+      "lucid dreaming reality check"
+    ],
+    "symptomPhrases": [
+      "hogyan csináljak reality checket",
+      "szeretném felismerni hogy álmodom",
+      "napközben mit gyakoroljak tudatos álmodáshoz",
+      "milyen valóságtesztet használjak"
+    ],
+    "everydayPhrases": [
+      "honnan tudom hogy álmodom-e",
+      "rá akarok jönni álomban",
+      "kéne valami egyszerű gyakorlat",
+      "nem akarom túlbonyolítani"
+    ],
+    "hiddenSearchTerms": [
+      "reality test",
+      "lucid dreaming technique",
+      "álomjelek",
+      "dream signs",
+      "tudatos álom",
+      "MILD",
+      "álomnapló",
+      "nem működik a reality check",
+      "valóság teszt"
+    ],
+    "relatedCardSlugs": [
+      "nem-mukodik-a-reality-check",
+      "tudatos-almodas-alapok",
+      "mild",
+      "alomnaplo",
+      "tudatos-almodas-eroltetes-nelkul"
+    ],
+    "evidenceLevel": "limited",
+    "evidenceNote": "A reality check ismert és gyakran használt tudatosálom-technika, de önálló hatékonyságára korlátozott bizonyíték áll rendelkezésre."
+  },
+  {
+    "type": "technique",
+    "slug": "mild",
+    "title": "MILD",
+    "displayTags": {
+      "primary": "Tudatos álmodás",
+      "secondary": [
+        "MILD"
+      ]
+    },
+    "summary": "A MILD egy tudatosálom-technika, amely emlékezeti szándékra épít: arra, hogy álom közben felismerd, hogy álmodsz. Érdemes kíméletesen, túlzott nyomás nélkül gyakorolni.",
+    "content": [
+      "A MILD lényege, hogy elalvás előtt vagy éjszakai ébredés után finoman felidézed a szándékot: legközelebb, amikor álmodsz, észreveszed, hogy álmodsz.",
+      "Gyakran álomemlékkel együtt használják: felidézel egy álmot, és elképzeled, hogy egy ponton felismered benne az álomjellegét.",
+      "Nem szükséges hosszasan ismételgetni vagy erőltetni. Ha a gyakorlat éberebbé, feszültebbé tesz, érdemes rövidíteni vagy szünetet tartani."
+    ],
+    "practicalTips": [
+      "Fogalmazz meg egy rövid, nyugodt szándékot, például: „Észreveszem, ha álmodom.”",
+      "Használhatsz egy friss álomrészletet, amelyben elképzeled a felismerést.",
+      "Tartsd röviden, és ne áldozd fel érte a pihentető alvást."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a MILD gyakorlása rontja az elalvást, növeli a feszültséget vagy túlzott ráfeszülést okoz, érdemes szünetet tartani."
+    },
+    "searchAliases": [
+      "MILD",
+      "mnemonic induction of lucid dreams",
+      "tudatos álmodás MILD",
+      "lucid dreaming MILD",
+      "álomfelismerési szándék"
+    ],
+    "symptomPhrases": [
+      "hogyan csináljam a MILD technikát",
+      "elalvás előtt szeretnék tudatos álmot",
+      "szeretném álomban felismerni hogy álmodom",
+      "milyen mondatot ismételjek tudatos álmodáshoz"
+    ],
+    "everydayPhrases": [
+      "rá szeretnék hangolódni a tudatos álomra",
+      "nem akarom túlerőltetni",
+      "csak egy egyszerű esti gyakorlat kell",
+      "jó lenne emlékezni hogy álmodom"
+    ],
+    "hiddenSearchTerms": [
+      "mnemonic induction",
+      "lucid dream induction",
+      "álom szándék",
+      "prospective memory",
+      "tudatos álom technika",
+      "reality check",
+      "álomnapló",
+      "WBTB",
+      "lucid dreaming beginners"
+    ],
+    "relatedCardSlugs": [
+      "tudatos-almodas-alapok",
+      "reality-check",
+      "wbtb",
+      "alomnaplo",
+      "tudatos-almodas-eroltetes-nelkul"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "A MILD kutatott tudatosálom-indukciós módszer, de hatékonysága egyénenként változó, és az alvásminőség védelme fontos szempont."
+  },
+  {
+    "type": "technique",
+    "slug": "wbtb",
+    "title": "WBTB",
+    "displayTags": {
+      "primary": "Tudatos álmodás",
+      "secondary": [
+        "WBTB"
+      ]
+    },
+    "summary": "A WBTB olyan tudatosálom-technika, amely rövid éjszakai vagy hajnali ébredést használ. Mivel megszakíthatja az alvást, különösen fontos óvatosan és ritkán alkalmazni.",
+    "content": [
+      "A WBTB lényege, hogy alvás után rövid időre felébredsz, majd visszafekszel azzal a szándékkal, hogy álom közben tudatosabb legyél.",
+      "A módszer egyeseknél növelheti a tudatos álom esélyét, de közben könnyen ronthatja a pihenést, főleg ha túl gyakran vagy túl hosszan használod.",
+      "A Lumira szemléletében a pihentető alvás fontosabb, mint a technika sikeressége. Ha fáradtabbá tesz, érdemes abbahagyni vagy ritkítani."
+    ],
+    "practicalTips": [
+      "Csak akkor próbáld, ha másnap nem fontos a maximális kipihentség.",
+      "Tartsd röviden és kíméletesen; ne alakíts belőle erőltetett éjszakai projektet.",
+      "Ha nehezen alszol vissza vagy fáradtabb leszel, inkább szünetelj vele."
+    ],
+    "safetyNote": {
+      "level": "important",
+      "text": "Ha alvásproblémáid vannak, nappal erősen fáradt vagy, vagy a WBTB rontja az alvásodat, ezt a technikát érdemes kerülni vagy szakemberrel egyeztetni."
+    },
+    "searchAliases": [
+      "WBTB",
+      "wake back to bed",
+      "tudatos álmodás WBTB",
+      "éjszakai ébredés technika",
+      "lucid dreaming WBTB"
+    ],
+    "symptomPhrases": [
+      "fel kell kelni tudatos álmodáshoz",
+      "hogyan működik a WBTB",
+      "hajnali ébredéssel próbálnék lucid dreamet",
+      "visszafekvés után tudatos álom"
+    ],
+    "everydayPhrases": [
+      "felébreszteném magam éjjel",
+      "nem akarom elrontani az alvásom",
+      "érdemes-e hajnalban felkelni",
+      "fárasztó ez a technika"
+    ],
+    "hiddenSearchTerms": [
+      "wake back to bed",
+      "sleep interruption",
+      "lucid dream induction",
+      "MILD",
+      "REM sleep",
+      "hajnali ébredés",
+      "alvásmegszakítás",
+      "tudatos álmodás technika",
+      "alvásminőség"
+    ],
+    "relatedCardSlugs": [
+      "mild",
+      "tudatos-almodas-alapok",
+      "hajnalban-felebredek",
+      "nem-tudok-elaludni",
+      "tudatos-almodas-eroltetes-nelkul"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "A WBTB kutatott és gyakran használt tudatosálom-indukciós módszer, de az alvásmegszakítás miatt kockázatosabb lehet az alvásminőség szempontjából."
+  },
+  {
+    "type": "technique",
+    "slug": "tudatos-almodas-eroltetes-nelkul",
+    "title": "Tudatos álmodás erőltetés nélkül",
+    "displayTags": {
+      "primary": "Tudatos álmodás",
+      "secondary": [
+        "Álomstabilizálás"
+      ]
+    },
+    "summary": "A tudatos álmodás érdekes gyakorlat lehet, de nem érdemes teljesítménycéllá tenni. A pihentető alvás fontosabb, mint az, hogy mindenáron sikerüljön tudatos álmot elérni.",
+    "content": [
+      "Túl sok technika, éjszakai ébresztés vagy állandó ellenőrzés könnyen feszültté teheti az alváshoz való viszonyt.",
+      "A kíméletes megközelítésben az álomemlékezés, a kíváncsiság és a rövid gyakorlatok kapnak helyet, nem a kényszeres próbálkozás.",
+      "Ha egy időszakban rosszabbul alszol, stresszesebb vagy, vagy a gyakorlás szorongást kelt, teljesen rendben van szünetet tartani."
+    ],
+    "practicalTips": [
+      "Válassz legfeljebb egy egyszerű gyakorlatot egyszerre.",
+      "Figyeld, hogy a gyakorlás javítja vagy rontja-e a pihenésedet.",
+      "Tarts szünetet, ha frusztrációt, alvásromlást vagy túlzott ráfeszülést veszel észre."
+    ],
+    "safetyNote": {
+      "level": "gentle",
+      "text": "Ha a tudatos álmodás gyakorlása tartósan rontja az alvásodat, fokozza a szorongást, vagy zavaró alvásélményekhez kapcsolódik, érdemes szünetet tartani és szükség esetén szakemberrel beszélni."
+    },
+    "searchAliases": [
+      "tudatos álmodás erőltetés nélkül",
+      "lucid dreaming túlzás nélkül",
+      "óvatos tudatos álmodás",
+      "tudatos álmodás pihenés mellett",
+      "lucid dreaming safely"
+    ],
+    "symptomPhrases": [
+      "túl sokat próbálkozom tudatos álmodással",
+      "romlik az alvásom a lucid dream miatt",
+      "ráfeszültem a tudatos álmodásra",
+      "frusztrál hogy nem sikerül"
+    ],
+    "everydayPhrases": [
+      "nem akarom túltolni",
+      "már stresszelek rajta",
+      "jó lenne lazábban csinálni",
+      "fontosabb hogy aludjak"
+    ],
+    "hiddenSearchTerms": [
+      "lucid dreaming burnout",
+      "overeffort",
+      "túlzott gyakorlás",
+      "alvásminőség",
+      "WBTB óvatosan",
+      "reality check túl sok",
+      "álomnapló nyomás nélkül",
+      "tudatos álom szünet",
+      "safe lucid dreaming"
+    ],
+    "relatedCardSlugs": [
+      "tudatos-almodas-alapok",
+      "alomnaplo",
+      "reality-check",
+      "mild",
+      "wbtb"
+    ],
+    "evidenceLevel": "moderate",
+    "evidenceNote": "A visszafogott gyakorlás és az alvásminőség előtérbe helyezése szakmailag óvatos megközelítés, különösen az alvást megszakító technikák esetén."
+  }
+]
