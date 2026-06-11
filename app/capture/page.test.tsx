@@ -7,8 +7,8 @@ const redirectMock = vi.fn();
 const requireAuthenticatedUserIdMock = vi.fn();
 const createReflectiveObjectMock = vi.fn();
 const updateReflectiveObjectMock = vi.fn();
-const createObservationMock = vi.fn();
-const buildLlmObservationExtractionMock = vi.fn();
+const createObservationFromBundleMock = vi.fn();
+const buildLlmSceneObservationExtractionMock = vi.fn();
 const generateDreamTitleSuggestionMock = vi.fn();
 const randomUuidMock = vi.fn();
 
@@ -27,14 +27,14 @@ vi.mock("@/src/infrastructure/supabase/repositories/create-reflective-object-rep
   }),
 }));
 
-vi.mock("@/src/infrastructure/supabase/repositories/create-observation-repository", () => ({
-  createObservationRepository: () => ({
-    create: createObservationMock,
+vi.mock("@/src/infrastructure/persistence/observation-v2-write-store", () => ({
+  createObservationV2WriteStore: () => ({
+    createFromBundle: createObservationFromBundleMock,
   }),
 }));
 
-vi.mock("@/src/cognition/observation/llm-observation-extractor", () => ({
-  buildLlmObservationExtraction: buildLlmObservationExtractionMock,
+vi.mock("@/src/cognition/observation/llm-scene-observation-extractor", () => ({
+  buildLlmSceneObservationExtraction: buildLlmSceneObservationExtractionMock,
 }));
 
 vi.mock("@/src/cognition/title/llm-dream-title-generator", () => ({
@@ -106,23 +106,28 @@ describe("CapturePage", () => {
     requireAuthenticatedUserIdMock.mockReset();
     createReflectiveObjectMock.mockReset();
     updateReflectiveObjectMock.mockReset();
-    createObservationMock.mockReset();
-    buildLlmObservationExtractionMock.mockReset();
+    createObservationFromBundleMock.mockReset();
+    buildLlmSceneObservationExtractionMock.mockReset();
     generateDreamTitleSuggestionMock.mockReset();
     randomUuidMock.mockReset();
 
     requireAuthenticatedUserIdMock.mockResolvedValue("user-1");
     createReflectiveObjectMock.mockResolvedValue({ id: "obj-123" });
     updateReflectiveObjectMock.mockResolvedValue({ id: "obj-123", title: "The Lantern House" });
-    buildLlmObservationExtractionMock.mockResolvedValue({
+    buildLlmSceneObservationExtractionMock.mockResolvedValue({
       mode: "validated_llm",
-      payload: { summary: "validated", source: "system_llm_extract", fragments: [] },
+      bundle: {
+        reflectiveObjectId: "obj-123",
+        userId: "user-1",
+        source: "system_llm_extract",
+        scenes: [],
+      },
     });
     generateDreamTitleSuggestionMock.mockResolvedValue({
       mode: "generated",
       title: "The Lantern House",
     });
-    createObservationMock.mockResolvedValue({ id: "obs-1" });
+    createObservationFromBundleMock.mockResolvedValue({ id: "obs-1" });
     vi.stubGlobal("crypto", { randomUUID: randomUuidMock });
     randomUuidMock.mockReturnValue("obj-123");
   });
@@ -185,7 +190,7 @@ describe("CapturePage", () => {
     expect(redirectMock).toHaveBeenCalledWith("/objects/obj-123");
   });
 
-  it("prefers llm extraction during capture when validation succeeds", async () => {
+  it("routes validated capture generation through the scene-first extractor and V2 write seam", async () => {
     const pageModule = await import("./page");
     const page = await pageModule.default();
     const submitCapture = findFormAction(page);
@@ -196,7 +201,7 @@ describe("CapturePage", () => {
 
     await submitCapture?.(formData);
 
-    expect(buildLlmObservationExtractionMock).toHaveBeenCalledWith({
+    expect(buildLlmSceneObservationExtractionMock).toHaveBeenCalledWith({
       dreamText: "I was inside a house with water under the floorboards.",
       reflectiveObjectId: "obj-123",
       userId: "user-1",
@@ -206,13 +211,16 @@ describe("CapturePage", () => {
         id: "obj-123",
       }),
     );
-    expect(createObservationMock).toHaveBeenCalledWith(
-      expect.objectContaining({ source: "system_llm_extract", summary: "validated" }),
-    );
+    expect(createObservationFromBundleMock).toHaveBeenCalledWith({
+      reflectiveObjectId: "obj-123",
+      userId: "user-1",
+      source: "system_llm_extract",
+      scenes: [],
+    });
   });
 
   it("fails capture without saving when llm extraction is unsafe", async () => {
-    buildLlmObservationExtractionMock.mockResolvedValue({
+    buildLlmSceneObservationExtractionMock.mockResolvedValue({
       mode: "fallback",
       reason: "invalid_json",
     });
@@ -228,7 +236,7 @@ describe("CapturePage", () => {
     await submitCapture?.(formData);
 
     expect(createReflectiveObjectMock).not.toHaveBeenCalled();
-    expect(createObservationMock).not.toHaveBeenCalled();
+    expect(createObservationFromBundleMock).not.toHaveBeenCalled();
     expect(redirectMock).toHaveBeenCalledWith("/capture?error=analysis");
   });
 
@@ -246,14 +254,14 @@ describe("CapturePage", () => {
     const submissionPromise = submitCapture?.(formData);
 
     await vi.waitFor(() => {
-      expect(buildLlmObservationExtractionMock).toHaveBeenCalledWith({
+      expect(buildLlmSceneObservationExtractionMock).toHaveBeenCalledWith({
         dreamText: "I was inside a house with water under the floorboards.",
         reflectiveObjectId: "obj-123",
         userId: "user-1",
       });
     });
 
-    expect(createObservationMock).not.toHaveBeenCalled();
+    expect(createObservationFromBundleMock).not.toHaveBeenCalled();
 
     titleDeferred.resolve({
       mode: "generated",

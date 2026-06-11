@@ -1,9 +1,3 @@
-export * from "@/src/domain/reflective-objects/types";
-export * from "@/src/domain/dreams/types";
-export * from "@/src/domain/observation/types";
-export * from "@/src/domain/latent/types";
-export * from "@/src/domain/threads/types";
-export * from "@/src/domain/responses/types";
-export * from "@/src/domain/glossary/types";
-export * from "@/src/domain/openings/types";
-export * from "@/src/domain/continuity/types";
+// Legacy backend quarantine note:
+// Do not use this barrel as an authority source for Backend V2 work.
+// Import canonical domains directly from their explicit module paths.

@@ -1,5 +1,11 @@
 # Glossary Domain
 
+## Legacy Backend V1 Quarantine
+
+The current glossary backend/domain shape is quarantined legacy scaffolding.
+
+It remains only for protected surface compatibility and must not be treated as the clean-room Backend V2 glossary authority.
+
 Glossary memory is autobiographical continuity memory.
 
 It preserves recurring motifs as user-steerable memory anchors.

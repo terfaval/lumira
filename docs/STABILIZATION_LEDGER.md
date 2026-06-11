@@ -58,6 +58,29 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-06-11 - Observation V2 Ownership Cutover Phase 1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/capture/page.tsx`
+  - `app/capture/page.test.tsx`
+  - `src/cognition/observation/observation-engine.ts`
+  - `src/cognition/observation/__tests__/observation-engine.test.ts`
+  - `src/infrastructure/persistence/observation-v2-write-store.ts`
+  - `src/infrastructure/persistence/__tests__/observation-v2-write-store.test.ts`
+  - `docs/backend-v2-migration/Observation-V2-Fallout-Ledger.md`
+- Verification:
+  - `npm test` -> pass (`100` files, `376` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-11T08-06-13-010Z.log`
+- Notes:
+  - Cut the live capture-generated Observation path over to the scene-first extractor and a V2-owned write seam.
+  - Moved `CreateObservationInput` projection behind a temporary storage adapter so callers no longer own the V1 write payload on the generated path.
+  - Left manual/API ingress and durable read contracts explicitly V1-shaped, and recorded those remaining blockers in the Fallout Ledger.
+
 ## 2026-06-09 - Observation V2 Foundation Phase 1
 
 - Phase: BUILD
@@ -2106,3 +2129,44 @@ Verification references:
   - Clamped Dream Journal preview copy to two lines so long summaries stop overgrowing the shared dashboard row.
   - Moved the Guide panel chevron into reserved layout flow at the bottom-right instead of absolute overlap, while keeping featured-row chevrons untouched.
   - Visual verification of the polished homepage was confirmed by the user after the local changes; an attempted automated Playwright screenshot path was blocked because browser installation was declined.
+
+## 2026-06-11 - Backend V2 Clean-Room Severance Pass v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/index.ts`
+  - `src/runtime/types.ts`
+  - `src/domain/reflective-objects/README.md`
+  - `src/domain/observation/README.md`
+  - `src/domain/glossary/README.md`
+  - `src/domain/latent/README.md`
+  - `src/domain/openings/README.md`
+  - `src/domain/threads/README.md`
+  - `src/domain/responses/README.md`
+  - `src/cognition/README.md`
+  - `src/cognition/observation/README.md`
+  - `src/cognition/glossary/README.md`
+  - `src/cognition/latent/README.md`
+  - `src/cognition/openings/README.md`
+  - `src/infrastructure/persistence/README.md`
+  - `src/infrastructure/persistence/observation-v2-write-store.ts`
+  - `src/infrastructure/supabase/repositories/README.md`
+  - `src/reflective-space/README.md`
+  - `docs/canon/backend-v2/BACKEND_V2_CONSTRUCTION_SITE.md`
+  - `docs/backend-v2-migration/README.md`
+  - `docs/audits/backend-v2-protected-dependency-ledger-v1.md`
+  - `docs/AGENT_START_HERE.md`
+  - `docs/DOCS_INDEX.md`
+  - `docs/SPEC_INDEX.md`
+- Verification:
+  - `npm.cmd test -- src/shared/__tests__/backend-v2-quarantine-docs.test.ts` -> pass (`1` file, `5` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`101` files, `381` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-11T09-23-19-420Z.log`
+- Notes:
+  - Quarantined the current backend-only observation/glossary/latent/openings/threads/responses substrate with explicit legacy status notes while leaving pages, routes, and UI intact.
+  - Removed the generic `reflective-objects` default barrel export so new Backend V2 work does not inherit it as a default domain root.
+  - Added a clean-room Backend V2 construction-site note and a protected dependency ledger for surfaces that still rely on quarantined backend modules.

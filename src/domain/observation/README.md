@@ -1,5 +1,13 @@
 # Observation Domain
 
+## Legacy Backend V1 Quarantine
+
+The current Observation backend/domain shape remains present only so protected surfaces continue to compile.
+
+It is not active Backend V2 authority.
+
+In particular, any path that flattens scene-first Observation V2 output into the current summary/fragment persistence substrate is legacy-only and disposable.
+
 Observation is descriptive orientation only.
 
 It answers:

@@ -1,5 +1,11 @@
 # Cognition Layer
 
+## Legacy Backend V1 Quarantine
+
+The current observation/glossary/latent/openings cognition modules remain in place only for protected compatibility surfaces.
+
+They are not active authority for clean-room Backend V2 construction. New Backend V2 work must start from canon, not from these cognition implementations.
+
 Cognition is internal infrastructure for observation, latent modeling,
 continuity inference, and salience estimation.
 

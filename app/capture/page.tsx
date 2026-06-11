@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 
-import { buildLlmObservationExtraction } from "@/src/cognition/observation/llm-observation-extractor";
+import { buildLlmSceneObservationExtraction } from "@/src/cognition/observation/llm-scene-observation-extractor";
 import { generateDreamTitleSuggestion } from "@/src/cognition/title/llm-dream-title-generator";
-import { createObservationRepository } from "@/src/infrastructure/supabase/repositories/create-observation-repository";
+import { createObservationV2WriteStore } from "@/src/infrastructure/persistence/observation-v2-write-store";
 import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
 import { requireAuthenticatedUserId } from "@/src/ui/shared/require-authenticated-user";
 import { deriveCaptureTitle } from "@/app/capture/capture-metrics";
@@ -30,14 +30,14 @@ async function submitCapture(formData: FormData) {
   const reflectiveObjectId = crypto.randomUUID();
 
   const titleSuggestionPromise = generateDreamTitleSuggestion({ dreamText });
-  const extractionPromise = buildLlmObservationExtraction({
+  const extractionPromise = buildLlmSceneObservationExtraction({
     userId,
     reflectiveObjectId,
     dreamText,
   });
   const extraction = await extractionPromise;
 
-  if (extraction.mode !== "validated_llm" || !extraction.payload) {
+  if (extraction.mode !== "validated_llm" || !extraction.bundle) {
     console.warn("llm_observation_extraction_failed", {
       reflectiveObjectId,
       reason: extraction.reason,
@@ -71,8 +71,8 @@ async function submitCapture(formData: FormData) {
     });
   }
 
-  const observationRepository = createObservationRepository();
-  await observationRepository.create(extraction.payload);
+  const observationWriteStore = createObservationV2WriteStore();
+  await observationWriteStore.createFromBundle(extraction.bundle);
 
   redirect(`/objects/${encodeURIComponent(reflectiveObject.id)}`);
 }

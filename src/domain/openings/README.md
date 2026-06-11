@@ -1,5 +1,11 @@
 # Openings Domain
 
+## Legacy Backend V1 Quarantine
+
+The current openings backend/domain shape is legacy scaffolding retained for protected surface compatibility.
+
+Do not extend the current source-array/provenance model as Backend V2 authority.
+
 Openings are optional reflective invitations.
 
 This domain preserves:

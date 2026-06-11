@@ -63,6 +63,7 @@ Use for:
 
 Start with:
 - `docs/canon/clean-room-technical-constitution.md`
+- `docs/canon/backend-v2/BACKEND_V2_CONSTRUCTION_SITE.md`
 - `docs/DECISIONS.md`
 - `docs/runtime/lumira-reflective-schema-target-v0.md`
 
@@ -91,6 +92,7 @@ Start with:
 - `docs/superpowers/plans/`
 - `docs/superpowers/specs/`
 - `docs/archive/legacy-transition/README.md`
+- `docs/backend-v2-migration/README.md` when you need historical Backend V2 transition context only
 
 ## Process Context
 

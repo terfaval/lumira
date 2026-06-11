@@ -50,6 +50,7 @@ Use for technical governance, implementation boundary decisions, and repository-
 
 Start with:
 - `docs/canon/clean-room-technical-constitution.md`
+- `docs/canon/backend-v2/BACKEND_V2_CONSTRUCTION_SITE.md`
 - `docs/DECISIONS.md`
 
 ### Coordinator Infrastructure
@@ -91,6 +92,7 @@ Primary locations:
 - `docs/archive/legacy-transition/`
 - `docs/archive/legacy/`
 - `docs/archive/audits/`
+- `docs/backend-v2-migration/` (historical only; not active Backend V2 authority)
 
 ## Role-Based Onboarding
 

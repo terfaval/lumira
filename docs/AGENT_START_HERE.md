@@ -48,6 +48,7 @@ Interpret route-level UI work through the visual philosophy and shared primitive
 
 ### Database / architecture task
 - `docs/SPEC_INDEX.md`
+- `docs/canon/backend-v2/BACKEND_V2_CONSTRUCTION_SITE.md` when Backend V2 or clean-room severance is involved
 - latest relevant migration files
 - affected repo files
 
@@ -77,3 +78,4 @@ Interpret route-level UI work through the visual philosophy and shared primitive
 - Do not make the AI sound diagnostic or authoritative.
 - Do not remove legacy code without audit or explicit instruction.
 - Do not create broad refactors inside small tickets.
+- Do not treat `docs/backend-v2-migration/` as active Backend V2 authority.

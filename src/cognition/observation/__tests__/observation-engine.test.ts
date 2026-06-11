@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { DescriptiveObservationEngine } from "@/src/cognition/observation/observation-engine";
-import { projectObservationV2BundleToCreateObservationInput } from "@/src/cognition/observation/scene-discovery-projection";
 import { buildSceneObservationScaffold } from "@/src/cognition/observation/scene-observation-scaffold";
 
 describe("DescriptiveObservationEngine", () => {
-  it("routes descriptive observation creation through the scene-first scaffold and projection bridge", async () => {
+  it("returns a scene-first V2 bundle instead of a caller-owned V1 write payload", async () => {
     const object = {
       id: "obj-1",
       userId: "user-1",
@@ -18,16 +17,9 @@ describe("DescriptiveObservationEngine", () => {
       sourceText: object.primaryContent,
       source: "system_descriptive_extract",
     });
-    const projected = projectObservationV2BundleToCreateObservationInput(bundle, {
-      provenanceTier: "system_extract",
-      semanticPolicyResult: "accept_with_uncertainty",
-      semanticPolicyReasons: ["scene_first_scaffold_projection"],
-      latentBackflowGuard: "observation_only",
-      boundaryVersion: "observation_v2_phase1",
-    });
 
     const engine = new DescriptiveObservationEngine();
 
-    await expect(engine.describe(object as never)).resolves.toEqual(projected);
+    await expect(engine.describe(object as never)).resolves.toEqual(bundle);
   });
 });

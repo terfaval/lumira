@@ -23,8 +23,8 @@ It does not authorize automatic migration or cleanup.
 
 ## Current Phase
 
-- Phase: Observation V2 Foundation (Phase 1)
-- Mode: additive runtime only
+- Phase: Observation V2 Ownership Cutover (Phase 1)
+- Mode: V2-owned generated write path with temporary V1 storage adapter
 - V1 status: transitional compatibility layer
 
 ## Active Fallout Items
@@ -59,29 +59,44 @@ It does not authorize automatic migration or cleanup.
 - Future work: audit each downstream layer for V2 cutover strategy.
 - Cleanup/removal potential: fragment-centric downstream parsing may become removable later.
 
-### 4. Observation engine is now scene-first internally but still returns V1 persistence payloads
+### 4. Observation engine now returns a V2 bundle, but durable reads remain V1-owned
 
 - Boundary: `src/cognition/observation/observation-engine.ts`
-- Current state: the engine now builds a scene-first V2 bundle internally, then projects it into `CreateObservationInput`.
-- V2 impact: the canonical runtime shape advances without cutting over callers or persistence.
-- Future work: switch engine consumers to native V2 bundle usage before removing the compatibility projection.
-- Cleanup/removal potential: direct engine ownership of V1 payload shaping may become removable later.
+- Current state: the engine now returns a scene-first `ObservationV2Bundle` directly instead of projecting `CreateObservationInput`.
+- V2 impact: internal generation callers no longer need to own the V1 write shape.
+- Future work: move durable read seams and downstream consumers onto V2-aware intake before claiming full operational ownership.
+- Cleanup/removal potential: any remaining engine-side V1 write assumptions are now removable.
 
-### 5. Compatibility projection still flattens scene semantics into fragment-shaped outputs
+### 5. Temporary storage adapter still flattens scene semantics into fragment-shaped outputs
 
-- Boundary: `src/cognition/observation/scene-discovery-projection.ts`
-- Current state: scene-first observations are compressed into a flat fragment array for temporary V1 persistence compatibility.
-- V2 impact: some scene-local structure is preserved only in the V2 bundle, not in the projected V1 write shape.
-- Future work: replace projection-only durability with V2-native storage and route contracts.
-- Cleanup/removal potential: fragment-position summary tracing and flat fragment projection may become removable later.
+- Boundaries:
+  - `src/infrastructure/persistence/observation-v2-write-store.ts`
+  - `src/cognition/observation/scene-discovery-projection.ts`
+- Current state: capture generation now writes through a V2-owned seam, but that seam still projects the bundle into `CreateObservationInput` for temporary row/fragment persistence.
+- V2 impact: callers no longer own the projection, but durable storage still loses native scene semantics.
+- Future work: replace the temporary storage adapter with V2-native persistence and durable rehydration.
+- Cleanup/removal potential: fragment-position summary tracing and flat fragment projection may become removable once persistence is scene-first.
 
-### 6. Scene-first LLM extraction exists but is not yet the live route owner
+### 6. Scene-first LLM extraction is now the live capture owner, but manual/API ingress remains V1-owned
 
-- Boundary: `src/cognition/observation/llm-scene-observation-extractor.ts`
-- Current state: a scene-first provider-backed extraction path exists, but existing routes and downstream consumers are not cut over to it in Phase 1.
-- V2 impact: the new canonical extraction foundation is available without forcing immediate repo-wide migration.
-- Future work: choose and execute cutover points for capture, persistence, and downstream read models.
-- Cleanup/removal potential: legacy fragment-first extraction entrypoints may become removable later once route ownership shifts.
+- Boundaries:
+  - `app/capture/page.tsx`
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `app/api/reflective-objects/[id]/observations/route.ts`
+- Current state: capture-generated Observation now originates from the scene-first extractor and writes through the V2 seam, while manual/API POST still validates `summary + fragments[]`.
+- V2 impact: the main live generated path is cut over, but the public/manual ingress still advertises the V1 shape.
+- Future work: isolate or replace manual/API ingress with a V2-native route when persistence/read-side work is ready.
+- Cleanup/removal potential: legacy `buildLlmObservationExtraction()` ownership on the live generated path is now removable once no explicit compatibility caller remains.
+
+### 7. Repository contract remains the durable V1 chokepoint
+
+- Boundaries:
+  - `src/domain/observation/contracts.ts`
+  - `src/infrastructure/supabase/repositories/observation-supabase-repository.ts`
+- Current state: the only durable Observation repository still accepts and returns V1 `CreateObservationInput` / `Observation`.
+- V2 impact: write ownership is now above the repository, but full durable Observation ownership is still blocked by V1-only repository contracts.
+- Future work: add a V2-native persistence/read seam that can durably rehydrate scenes, summaries, boundary signals, and scene-local derived structures.
+- Cleanup/removal potential: V1-first repository contracts can become compatibility-only once V2 durable reads exist.
 
 ## Notes
 

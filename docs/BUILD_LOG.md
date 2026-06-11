@@ -76,3 +76,5 @@ Append-only build run summary. Detailed logs are under `docs/build-logs/`.
 | 2026-06-10T11:39:57.376Z | success | 0 | `docs/build-logs/2026-06-10T11-39-57-376Z.log` |
 | 2026-06-10T13:59:01.335Z | success | 0 | `docs/build-logs/2026-06-10T13-59-01-335Z.log` |
 | 2026-06-10T14:20:20.646Z | success | 0 | `docs/build-logs/2026-06-10T14-20-20-646Z.log` |
+| 2026-06-11T08:06:13.010Z | success | 0 | `docs/build-logs/2026-06-11T08-06-13-010Z.log` |
+| 2026-06-11T09:23:19.420Z | success | 0 | `docs/build-logs/2026-06-11T09-23-19-420Z.log` |

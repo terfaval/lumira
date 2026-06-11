@@ -1,4 +1,6 @@
-import type { ReflectiveObject, ReflectiveThread, ReflectiveOpening } from "@/src/domain";
+import type { ReflectiveObject } from "@/src/domain/reflective-objects/types";
+import type { ReflectiveOpening } from "@/src/domain/openings/types";
+import type { ReflectiveThread } from "@/src/domain/threads/types";
 
 export interface ReflectiveRuntimeSnapshot {
   center: ReflectiveObject;
