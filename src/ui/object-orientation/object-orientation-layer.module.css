@@ -62,7 +62,9 @@
   flex: 1;
 }
 
-.panelLabel {
+.panelLabel,
+.filterLabel,
+.modalSectionLabel {
   margin: 0;
   font-size: 0.72rem;
   letter-spacing: 0.14em;
@@ -93,9 +95,12 @@
   font-family: inherit;
 }
 
-.titleInput:focus {
+.titleInput:focus,
+.fieldInput:focus,
+.fieldSelect:focus,
+.textArea:focus {
   outline: none;
-  border-bottom-color: rgba(49, 76, 92, 0.5);
+  border-color: rgba(49, 76, 92, 0.5);
 }
 
 .titleFeedback {
@@ -105,18 +110,21 @@
   color: #8a4334;
 }
 
-.titleActions {
+.titleActions,
+.glossaryRowActions {
   display: inline-flex;
-  flex-shrink: 0;
   align-items: center;
   gap: 8px;
 }
 
-.iconButton {
+.titleActions {
+  flex-shrink: 0;
+}
+
+.iconButton,
+.rowIconButton {
   display: inline-grid;
   place-items: center;
-  width: 2.45rem;
-  height: 2.45rem;
   padding: 0;
   border-radius: 999px;
   border: 1px solid rgba(86, 109, 120, 0.16);
@@ -127,6 +135,16 @@
     border-color 160ms ease,
     background-color 160ms ease,
     box-shadow 160ms ease;
+}
+
+.iconButton {
+  width: 2.45rem;
+  height: 2.45rem;
+}
+
+.rowIconButton {
+  width: 2rem;
+  height: 2rem;
 }
 
 .iconButton span {
@@ -156,6 +174,15 @@
 }
 
 .panel {
+  --glossary-type-person: #6ea8fe;
+  --glossary-type-place: #7ee787;
+  --glossary-type-object: #f2cc60;
+  --glossary-type-role: #d2a8ff;
+  --glossary-type-concept: #ff9bce;
+  --glossary-status-match: #3fb950;
+  --glossary-status-ambiguous: #d29922;
+  --glossary-status-new: #58a6ff;
+  --glossary-status-saved: #8b949e;
   min-height: 0;
   padding: 18px;
   border-radius: 22px;
@@ -163,12 +190,13 @@
   border: 1px solid rgba(86, 109, 120, 0.14);
   box-shadow: 0 14px 38px rgba(50, 62, 65, 0.07);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 12px;
 }
 
 .panelHeader,
-.stackHeader {
+.stackHeader,
+.modalHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -178,7 +206,8 @@
 
 .placeholderText,
 .emptyState,
-.feedback {
+.feedback,
+.modalType {
   margin: 0;
   font-size: 0.84rem;
   line-height: 1.45;
@@ -192,7 +221,8 @@
 .glossaryList,
 .stateList,
 .openingList,
-.tabList {
+.tabList,
+.filterList {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -206,15 +236,12 @@
 }
 
 .glossaryList,
-.stateList {
+.stateList,
+.openingList,
+.filterList,
+.selectionList {
   display: grid;
   gap: 10px;
-}
-
-.openingList {
-  display: grid;
-  gap: 10px;
-  align-content: start;
 }
 
 .tabList {
@@ -222,6 +249,10 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.filterList {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .dreamBody,
@@ -254,19 +285,74 @@
   border-radius: 999px;
 }
 
-.glossaryButton,
+.glossaryRow,
 .stateButton,
-.openingCard {
+.openingCard,
+.selectionOption {
   border: 1px solid rgba(86, 109, 120, 0.14);
   background: rgba(248, 250, 249, 0.9);
 }
 
-.glossaryButton {
-  width: 100%;
-  padding: 12px 14px;
+.glossaryRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
   border-radius: 16px;
-  text-align: left;
-  cursor: pointer;
+  border-right-width: 4px;
+}
+
+.glossaryRowLabel {
+  min-width: 0;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.typeIndicator {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  background: var(--glossary-type-concept);
+}
+
+.typePerson {
+  background: var(--glossary-type-person);
+}
+
+.typePlace {
+  background: var(--glossary-type-place);
+}
+
+.typeObject {
+  background: var(--glossary-type-object);
+}
+
+.typeRole {
+  background: var(--glossary-type-role);
+}
+
+.typeConcept {
+  background: var(--glossary-type-concept);
+}
+
+.statusMatch {
+  border-right-color: var(--glossary-status-match);
+}
+
+.statusAmbiguous {
+  border-right-color: var(--glossary-status-ambiguous);
+}
+
+.statusNew {
+  border-right-color: var(--glossary-status-new);
+}
+
+.statusSaved {
+  border-right-color: var(--glossary-status-saved);
 }
 
 .stateButton {
@@ -287,8 +373,8 @@
 }
 
 .stateCopy strong,
-.glossaryButton strong,
-.openingCard strong {
+.openingCard strong,
+.selectionOption strong {
   display: block;
   margin-bottom: 4px;
   font-size: 0.92rem;
@@ -296,7 +382,7 @@
 
 .countBadge,
 .openingMeta,
-.glossaryButton span {
+.selectionOption span span {
   font-size: 0.82rem;
   color: #60737b;
 }
@@ -309,7 +395,8 @@
   text-align: center;
 }
 
-.tabButton {
+.tabButton,
+.filterButton {
   padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid rgba(86, 109, 120, 0.16);
@@ -318,12 +405,14 @@
   cursor: pointer;
 }
 
-.tabButtonActive {
+.tabButtonActive,
+.filterButtonActive {
   background: rgba(224, 237, 244, 0.96);
   border-color: rgba(75, 103, 122, 0.26);
 }
 
-.openingCard {
+.openingCard,
+.selectionOption {
   padding: 14px;
   border-radius: 18px;
 }
@@ -333,7 +422,8 @@
   margin-bottom: 12px;
 }
 
-.openingAction {
+.openingAction,
+.modalPrimaryAction {
   padding: 9px 12px;
   border-radius: 999px;
   border: none;
@@ -342,49 +432,78 @@
   cursor: pointer;
 }
 
-.openingAction:disabled {
+.openingAction:disabled,
+.modalPrimaryAction:disabled,
+.rowIconButton:disabled {
   opacity: 0.65;
-  cursor: wait;
+  cursor: not-allowed;
 }
 
 .iconButton:hover,
 .iconButton:focus-visible,
-.glossaryButton:hover,
-.glossaryButton:focus-visible,
+.rowIconButton:hover,
+.rowIconButton:focus-visible,
 .stateButton:hover,
 .stateButton:focus-visible,
 .tabButton:hover,
 .tabButton:focus-visible,
+.filterButton:hover,
+.filterButton:focus-visible,
 .openingAction:hover,
-.openingAction:focus-visible {
+.openingAction:focus-visible,
+.selectionOption:hover,
+.selectionOption:focus-within {
   border-color: rgba(73, 91, 80, 0.26);
   box-shadow: 0 10px 22px rgba(33, 48, 38, 0.06);
 }
 
-.glossaryButton:hover,
-.glossaryButton:focus-visible,
 .stateButton:hover,
 .stateButton:focus-visible,
 .tabButton:hover,
 .tabButton:focus-visible,
+.filterButton:hover,
+.filterButton:focus-visible,
 .iconButton:hover,
-.iconButton:focus-visible {
+.iconButton:focus-visible,
+.rowIconButton:hover,
+.rowIconButton:focus-visible {
   background: rgba(251, 252, 249, 0.96);
 }
 
 .openingCard:hover,
-.openingCard:focus-within {
+.openingCard:focus-within,
+.glossaryRow:hover,
+.glossaryRow:focus-within {
   border-color: rgba(73, 91, 80, 0.22);
   box-shadow: 0 10px 22px rgba(33, 48, 38, 0.05);
 }
 
 .iconButton:focus-visible,
-.glossaryButton:focus-visible,
+.rowIconButton:focus-visible,
 .stateButton:focus-visible,
 .tabButton:focus-visible,
-.openingAction:focus-visible {
+.filterButton:focus-visible,
+.openingAction:focus-visible,
+.modalPrimaryAction:focus-visible {
   outline: 2px solid rgba(59, 91, 72, 0.46);
   outline-offset: 2px;
+}
+
+.filterBlock,
+.modalSection {
+  display: grid;
+  gap: 10px;
+}
+
+.selectionOption {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+}
+
+.selectionOption input {
+  margin-top: 4px;
 }
 
 .modalBackdrop {
@@ -398,32 +517,70 @@
 }
 
 .modal {
-  width: min(30rem, 100%);
+  width: min(34rem, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
   padding: 24px;
   border-radius: 24px;
   background: #fbfaf6;
   box-shadow: 0 22px 60px rgba(29, 35, 40, 0.2);
+  display: grid;
+  gap: 16px;
 }
 
-.modal h3,
-.modal p {
-  margin-top: 0;
+.modal h3 {
+  margin: 0 0 4px;
+}
+
+.entityMetaList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.entityMetaList dt {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5a6f7a;
+}
+
+.entityMetaList dd {
+  margin: 2px 0 0;
+  color: #2d3e48;
+}
+
+.fieldLabel {
+  display: grid;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: #324750;
+}
+
+.fieldInput,
+.fieldSelect,
+.textArea {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(86, 109, 120, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  color: #20303a;
+  font: inherit;
+}
+
+.fieldInput,
+.fieldSelect {
+  padding: 10px 12px;
+}
+
+.textArea {
+  padding: 12px;
+  resize: vertical;
 }
 
 .modalActions {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.modalActions a,
-.modalActions button {
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(86, 109, 120, 0.16);
-  background: rgba(243, 247, 248, 0.92);
-  color: #20303a;
-  text-decoration: none;
+  justify-content: flex-end;
 }
 
 @media (max-width: 980px) {
@@ -458,7 +615,8 @@
   }
 
   .dreamHeader,
-  .stackHeader {
+  .stackHeader,
+  .modalHeader {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -473,5 +631,9 @@
 
   .tabList {
     justify-content: flex-start;
+  }
+
+  .filterList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

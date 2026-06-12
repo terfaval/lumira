@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   countOpeningsByState,
+  filterGlossaryPanelItems,
   filterOrientationOpenings,
+  orderGlossaryPanelItems,
+  type GlossaryPanelItem,
   type OrientationOpeningCard,
 } from "@/src/ui/object-orientation/view-model";
 
@@ -55,5 +58,132 @@ describe("object orientation view model", () => {
       "opening-active",
       "opening-dormant",
     ]);
+  });
+
+  it("orders glossary panel items into the required unified sequence", () => {
+    const items: GlossaryPanelItem[] = [
+      {
+        id: "saved-1",
+        kind: "saved",
+        label: "Bridge",
+        canonicalLabel: "Bridge",
+        entityType: "place",
+        sourceCategory: "location",
+        recurrenceCount: null,
+        status: "saved",
+        proposedEntities: [],
+        href: null,
+      },
+      {
+        id: "new-1",
+        kind: "candidate",
+        candidateId: "cand-new-1",
+        candidateClass: "new_candidate",
+        candidateState: "candidate",
+        label: "Mammut",
+        canonicalLabel: "Mammut",
+        entityType: "object",
+        sourceCategory: "object",
+        recurrenceCount: 1,
+        status: "new",
+        proposedEntities: [],
+        href: null,
+      },
+      {
+        id: "ambiguous-1",
+        kind: "candidate",
+        candidateId: "cand-ambiguous-1",
+        candidateClass: "ambiguous_match_candidate",
+        candidateState: "candidate",
+        label: "Exem",
+        canonicalLabel: "Exem",
+        entityType: "role",
+        sourceCategory: "actor",
+        recurrenceCount: 1,
+        status: "ambiguous",
+        proposedEntities: [],
+        href: null,
+      },
+      {
+        id: "match-1",
+        kind: "candidate",
+        candidateId: "cand-match-1",
+        candidateClass: "match_candidate",
+        candidateState: "candidate",
+        label: "Apa",
+        canonicalLabel: "Apa",
+        entityType: "person",
+        sourceCategory: "actor",
+        recurrenceCount: 2,
+        status: "match",
+        proposedEntities: [],
+        href: null,
+      },
+    ];
+
+    expect(orderGlossaryPanelItems(items).map((item) => item.id)).toEqual([
+      "match-1",
+      "ambiguous-1",
+      "new-1",
+      "saved-1",
+    ]);
+  });
+
+  it("filters glossary panel items by visibility only", () => {
+    const items: GlossaryPanelItem[] = [
+      {
+        id: "match-1",
+        kind: "candidate",
+        candidateId: "cand-match-1",
+        candidateClass: "match_candidate",
+        candidateState: "candidate",
+        label: "Apa",
+        canonicalLabel: "Apa",
+        entityType: "person",
+        sourceCategory: "actor",
+        recurrenceCount: 2,
+        status: "match",
+        proposedEntities: [],
+        href: null,
+      },
+      {
+        id: "ignored-new-1",
+        kind: "candidate",
+        candidateId: "cand-ignored-1",
+        candidateClass: "new_candidate",
+        candidateState: "ignored",
+        label: "Mammut",
+        canonicalLabel: "Mammut",
+        entityType: "object",
+        sourceCategory: "object",
+        recurrenceCount: 1,
+        status: "new",
+        proposedEntities: [],
+        href: null,
+      },
+      {
+        id: "saved-1",
+        kind: "saved",
+        label: "Bridge",
+        canonicalLabel: "Bridge",
+        entityType: "place",
+        sourceCategory: "location",
+        recurrenceCount: null,
+        status: "saved",
+        proposedEntities: [],
+        href: null,
+      },
+    ];
+
+    expect(filterGlossaryPanelItems(items, "all").map((item) => item.id)).toEqual([
+      "match-1",
+      "ignored-new-1",
+      "saved-1",
+    ]);
+    expect(filterGlossaryPanelItems(items, "pending").map((item) => item.id)).toEqual(["match-1"]);
+    expect(filterGlossaryPanelItems(items, "matches").map((item) => item.id)).toEqual(["match-1"]);
+    expect(filterGlossaryPanelItems(items, "ambiguous")).toEqual([]);
+    expect(filterGlossaryPanelItems(items, "new")).toEqual([]);
+    expect(filterGlossaryPanelItems(items, "saved").map((item) => item.id)).toEqual(["saved-1"]);
   });
 });

@@ -1,11 +1,16 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { Check, ChevronRight, GitBranch, Plus, X } from "lucide-react";
 
+import type { GlossaryEntityType } from "@/src/domain/glossary/types";
 import type { ObjectOrientationPayload } from "@/src/reflective-space/composition/compose-object-orientation-payload";
 import {
+  filterGlossaryPanelItems,
   filterOrientationOpenings,
+  orderGlossaryPanelItems,
+  type GlossaryPanelFilter,
+  type GlossaryPanelItem,
   type OrientationStackView,
 } from "@/src/ui/object-orientation/view-model";
 
@@ -15,13 +20,39 @@ interface ObjectOrientationLayerProps {
   payload: ObjectOrientationPayload;
 }
 
-type GlossaryItem = ObjectOrientationPayload["glossary"]["items"][number];
-
 const STACK_TABS: Array<{ key: Exclude<OrientationStackView, "dormant">; label: string }> = [
   { key: "new", label: "Új" },
   { key: "active", label: "Aktív" },
   { key: "all", label: "Mind" },
 ];
+
+const GLOSSARY_FILTERS: Array<{ key: GlossaryPanelFilter; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "pending", label: "Pending" },
+  { key: "matches", label: "Matches" },
+  { key: "ambiguous", label: "Ambiguous" },
+  { key: "new", label: "New" },
+  { key: "saved", label: "Saved" },
+];
+
+const ENTITY_TYPE_OPTIONS: Array<{ value: GlossaryEntityType; label: string }> = [
+  { value: "person", label: "Person" },
+  { value: "place", label: "Place" },
+  { value: "object", label: "Object" },
+  { value: "role", label: "Role" },
+  { value: "concept", label: "Concept" },
+  { value: "animal_or_creature", label: "Object" },
+  { value: "setting_or_space", label: "Place" },
+];
+
+interface GlossaryModalState {
+  item: Extract<GlossaryPanelItem, { kind: "candidate" }>;
+  selectedEntityId: string | "new" | null;
+  canonicalLabel: string;
+  entityType: GlossaryEntityType;
+  generalNote: string;
+  appearanceNote: string;
+}
 
 function toStateLabel(view: OrientationStackView): string {
   switch (view) {
@@ -36,9 +67,110 @@ function toStateLabel(view: OrientationStackView): string {
   }
 }
 
+function toEntityTypeLabel(type: GlossaryEntityType): string {
+  return ENTITY_TYPE_OPTIONS.find((option) => option.value === type)?.label ?? "Concept";
+}
+
+function toTypeClass(type: GlossaryEntityType): string {
+  switch (type) {
+    case "person":
+      return styles.typePerson;
+    case "place":
+    case "setting_or_space":
+      return styles.typePlace;
+    case "object":
+    case "animal_or_creature":
+      return styles.typeObject;
+    case "role":
+      return styles.typeRole;
+    default:
+      return styles.typeConcept;
+  }
+}
+
+function toStatusClass(status: GlossaryPanelItem["status"]): string {
+  switch (status) {
+    case "match":
+      return styles.statusMatch;
+    case "ambiguous":
+      return styles.statusAmbiguous;
+    case "new":
+      return styles.statusNew;
+    default:
+      return styles.statusSaved;
+  }
+}
+
+function toPrimaryActionLabel(item: Extract<GlossaryPanelItem, { kind: "candidate" }>): string {
+  switch (item.candidateClass) {
+    case "match_candidate":
+      return "Confirm";
+    case "ambiguous_match_candidate":
+      return "Choose";
+    default:
+      return "Create";
+  }
+}
+
+function toPrimaryActionTooltip(item: Extract<GlossaryPanelItem, { kind: "candidate" }>): string {
+  switch (item.candidateClass) {
+    case "match_candidate":
+      return "Megerősítés";
+    case "ambiguous_match_candidate":
+      return "Feloldás több lehetőség közül";
+    default:
+      return "Új entitás létrehozása";
+  }
+}
+
+function toPrimaryActionIcon(item: Extract<GlossaryPanelItem, { kind: "candidate" }>) {
+  switch (item.candidateClass) {
+    case "match_candidate":
+      return Check;
+    case "ambiguous_match_candidate":
+      return GitBranch;
+    default:
+      return Plus;
+  }
+}
+
+function buildInitialModalState(item: Extract<GlossaryPanelItem, { kind: "candidate" }>): GlossaryModalState {
+  return {
+    item,
+    selectedEntityId: item.candidateClass === "match_candidate" ? item.proposedEntities[0]?.id ?? null : null,
+    canonicalLabel: item.candidateClass === "match_candidate" ? item.proposedEntities[0]?.canonicalLabel ?? item.label : item.label,
+    entityType: item.candidateClass === "match_candidate" ? item.proposedEntities[0]?.type ?? item.entityType : item.entityType,
+    generalNote: "",
+    appearanceNote: "",
+  };
+}
+
+function toSavedItem(term: {
+  id: string;
+  canonicalLabel: string;
+  type: GlossaryEntityType;
+}): Extract<GlossaryPanelItem, { kind: "saved" }> {
+  return {
+    id: `saved-${term.id}`,
+    kind: "saved",
+    label: term.canonicalLabel,
+    canonicalLabel: term.canonicalLabel,
+    entityType: term.type,
+    sourceCategory: "saved_entity",
+    recurrenceCount: null,
+    status: "saved",
+    proposedEntities: [],
+    href: null,
+  };
+}
+
 export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps) {
   const [selectedView, setSelectedView] = useState<OrientationStackView>(payload.openingStack.defaultView);
-  const [selectedGlossaryItem, setSelectedGlossaryItem] = useState<GlossaryItem | null>(null);
+  const [glossaryFilter, setGlossaryFilter] = useState<GlossaryPanelFilter>("all");
+  const [glossaryItems, setGlossaryItems] = useState<GlossaryPanelItem[]>(payload.glossary.items);
+  const [modalState, setModalState] = useState<GlossaryModalState | null>(null);
+  const [pendingGlossaryId, setPendingGlossaryId] = useState<string | null>(null);
+  const [glossaryFeedback, setGlossaryFeedback] = useState<string | null>(null);
   const [pendingOpeningId, setPendingOpeningId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [dreamTitle, setDreamTitle] = useState(payload.dream.title);
@@ -48,6 +180,11 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
   const [isSavingTitle, startSavingTitle] = useTransition();
 
   const visibleOpenings = filterOrientationOpenings(payload.openingStack.items, selectedView);
+  const orderedGlossaryItems = useMemo(() => orderGlossaryPanelItems(glossaryItems), [glossaryItems]);
+  const visibleGlossaryItems = useMemo(
+    () => filterGlossaryPanelItems(orderedGlossaryItems, glossaryFilter),
+    [glossaryFilter, orderedGlossaryItems],
+  );
 
   useEffect(() => {
     setDreamTitle(payload.dream.title);
@@ -55,6 +192,13 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
     setIsEditingTitle(false);
     setTitleFeedback(null);
   }, [payload.dream.title]);
+
+  useEffect(() => {
+    setGlossaryItems(payload.glossary.items);
+    setGlossaryFilter("all");
+    setModalState(null);
+    setGlossaryFeedback(null);
+  }, [payload.glossary.items]);
 
   async function handleEnterOpening(openingId: string, href: string, state: OrientationStackView) {
     setPendingOpeningId(openingId);
@@ -148,6 +292,154 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
     }
   }
 
+  function openCandidateModal(item: Extract<GlossaryPanelItem, { kind: "candidate" }>) {
+    setGlossaryFeedback(null);
+    setModalState(buildInitialModalState(item));
+  }
+
+  async function handleDismissCandidate(item: Extract<GlossaryPanelItem, { kind: "candidate" }>) {
+    setPendingGlossaryId(item.id);
+    setGlossaryFeedback(null);
+
+    try {
+      const response = await fetch(`/api/glossary/candidates/${item.candidateId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ nextState: "ignored" }),
+      });
+
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(body.error ?? "A jelölt most nem zárható le.");
+      }
+
+      setGlossaryItems((current) => current.filter((entry) => entry.id !== item.id));
+      if (modalState?.item.id === item.id) {
+        setModalState(null);
+      }
+    } catch (error) {
+      setGlossaryFeedback(error instanceof Error ? error.message : "A jelölt most nem zárható le.");
+    } finally {
+      setPendingGlossaryId(null);
+    }
+  }
+
+  async function handleResolveCandidate() {
+    if (!modalState) {
+      return;
+    }
+
+    const { item } = modalState;
+    let payloadBody: Record<string, unknown>;
+
+    if (item.candidateClass === "match_candidate") {
+      const entityId = modalState.selectedEntityId ?? item.proposedEntities[0]?.id;
+      if (!entityId || entityId === "new") {
+        setGlossaryFeedback("Ehhez a megerősítéshez hiányzik a meglévő entitás.");
+        return;
+      }
+
+      payloadBody = {
+        resolutionType: "confirm_existing_entity",
+        entityId,
+        appearanceNote: modalState.appearanceNote.trim() || null,
+      };
+    } else if (item.candidateClass === "ambiguous_match_candidate" && modalState.selectedEntityId && modalState.selectedEntityId !== "new") {
+      payloadBody = {
+        resolutionType: "select_existing_entity",
+        entityId: modalState.selectedEntityId,
+        appearanceNote: modalState.appearanceNote.trim() || null,
+      };
+    } else {
+      const canonicalLabel = modalState.canonicalLabel.trim();
+      if (!canonicalLabel) {
+        setGlossaryFeedback("Adj meg egy címkét az új entitáshoz.");
+        return;
+      }
+
+      payloadBody = {
+        resolutionType: "create_new_entity",
+        canonicalLabel,
+        type: modalState.entityType,
+        generalNote: modalState.generalNote.trim() || null,
+        appearanceNote: modalState.appearanceNote.trim() || null,
+      };
+    }
+
+    setPendingGlossaryId(item.id);
+    setGlossaryFeedback(null);
+
+    try {
+      const response = await fetch(`/api/glossary/candidates/${item.candidateId}/resolve`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payloadBody),
+      });
+
+      const body = (await response.json()) as {
+        error?: string;
+        term?: { id: string; canonicalLabel: string; type: GlossaryEntityType };
+      };
+      if (!response.ok || !body.term) {
+        throw new Error(body.error ?? "A feloldás most nem sikerült.");
+      }
+
+      const resolvedTerm = body.term;
+
+      setGlossaryItems((current) => {
+        const next = current.filter((entry) => entry.id !== item.id);
+        const savedItem = toSavedItem(resolvedTerm);
+        if (next.some((entry) => entry.kind === "saved" && entry.canonicalLabel === savedItem.canonicalLabel)) {
+          return next;
+        }
+
+        return [...next, savedItem];
+      });
+      setModalState(null);
+    } catch (error) {
+      setGlossaryFeedback(error instanceof Error ? error.message : "A feloldás most nem sikerült.");
+    } finally {
+      setPendingGlossaryId(null);
+    }
+  }
+
+  function renderExistingEntitySummary(item: Extract<GlossaryPanelItem, { kind: "candidate" }>) {
+    const selectedEntity =
+      modalState?.selectedEntityId && modalState.selectedEntityId !== "new"
+        ? item.proposedEntities.find((entity) => entity.id === modalState.selectedEntityId) ?? null
+        : item.proposedEntities[0] ?? null;
+
+    if (!selectedEntity) {
+      return null;
+    }
+
+    return (
+      <div className={styles.modalSection}>
+        <p className={styles.modalSectionLabel}>Existing Entity</p>
+        <dl className={styles.entityMetaList}>
+          <div>
+            <dt>Canonical Label</dt>
+            <dd>{selectedEntity.canonicalLabel}</dd>
+          </div>
+          <div>
+            <dt>Type</dt>
+            <dd>{toEntityTypeLabel(selectedEntity.type)}</dd>
+          </div>
+          <div>
+            <dt>Appearance Count</dt>
+            <dd>{selectedEntity.appearanceCount}</dd>
+          </div>
+          {selectedEntity.generalNote ? (
+            <div>
+              <dt>General Note</dt>
+              <dd>{selectedEntity.generalNote}</dd>
+            </div>
+          ) : null}
+        </dl>
+      </div>
+    );
+  }
+
   return (
     <main className={styles.shell}>
       <div className={styles.layout}>
@@ -235,20 +527,85 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
             <div className={styles.panelHeader}>
               <p className={styles.panelLabel}>Álomszótár</p>
             </div>
-            {payload.glossary.items.length > 0 ? (
+            {glossaryFeedback ? <p className={styles.feedback}>{glossaryFeedback}</p> : null}
+            {visibleGlossaryItems.length > 0 ? (
               <ul className={styles.glossaryList}>
-                {payload.glossary.items.map((item) => (
-                  <li key={`${item.category}-${item.label}`}>
-                    <button type="button" className={styles.glossaryButton} onClick={() => setSelectedGlossaryItem(item)}>
-                      <strong>{item.label}</strong>
-                      <span>{item.detail}</span>
+                {visibleGlossaryItems.map((item) => {
+                  const isPending = pendingGlossaryId === item.id;
+
+                  return (
+                    <li key={item.id} className={`${styles.glossaryRow} ${toStatusClass(item.status)}`}>
+                      <span className={`${styles.typeIndicator} ${toTypeClass(item.entityType)}`} aria-hidden="true" />
+                      <span className={styles.glossaryRowLabel}>{item.label}</span>
+                      <div className={styles.glossaryRowActions}>
+                        {item.kind === "candidate" ? (
+                          <>
+                            <button
+                              type="button"
+                              className={styles.rowIconButton}
+                              onClick={() => openCandidateModal(item)}
+                              title={toPrimaryActionTooltip(item)}
+                              aria-label={toPrimaryActionTooltip(item)}
+                              disabled={isPending}
+                            >
+                              {(() => {
+                                const Icon = toPrimaryActionIcon(item);
+                                return <Icon size={16} strokeWidth={2} aria-hidden="true" />;
+                              })()}
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.rowIconButton}
+                              onClick={() => void handleDismissCandidate(item)}
+                              title="Lezárás most nélkül"
+                              aria-label="Lezárás most nélkül"
+                              disabled={isPending}
+                            >
+                              <X size={16} strokeWidth={2} aria-hidden="true" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.rowIconButton}
+                            title={item.href ? "Részletes nézet megnyitása" : "Még nincs stabil részletes nézet"}
+                            aria-label={item.href ? "Részletes nézet megnyitása" : "Még nincs stabil részletes nézet"}
+                            disabled={!item.href}
+                            onClick={() => {
+                              if (item.href) {
+                                window.location.assign(item.href);
+                              }
+                            }}
+                          >
+                            <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className={styles.emptyState}>Ebben a szűrőben nincs megjeleníthető tétel.</p>
+            )}
+
+            <div className={styles.filterBlock}>
+              <p className={styles.filterLabel}>Szűrő</p>
+              <ul className={styles.filterList}>
+                {GLOSSARY_FILTERS.map((filter) => (
+                  <li key={filter.key}>
+                    <button
+                      type="button"
+                      className={`${styles.filterButton} ${glossaryFilter === filter.key ? styles.filterButtonActive : ""}`}
+                      aria-pressed={glossaryFilter === filter.key}
+                      onClick={() => setGlossaryFilter(filter.key)}
+                    >
+                      {filter.label}
                     </button>
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className={styles.emptyState}>Még nincs visszatérő motívum.</p>
-            )}
+            </div>
           </section>
         </section>
 
@@ -335,8 +692,8 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
         </section>
       </div>
 
-      {selectedGlossaryItem ? (
-        <div className={styles.modalBackdrop} role="presentation" onClick={() => setSelectedGlossaryItem(null)}>
+      {modalState ? (
+        <div className={styles.modalBackdrop} role="presentation" onClick={() => setModalState(null)}>
           <div
             className={styles.modal}
             role="dialog"
@@ -344,12 +701,147 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
             aria-labelledby="orientation-glossary-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 id="orientation-glossary-title">{selectedGlossaryItem.label}</h3>
-            <p>{selectedGlossaryItem.detail}</p>
+            <div className={styles.modalHeader}>
+              <div>
+                <h3 id="orientation-glossary-title">{modalState.item.label}</h3>
+                <p className={styles.modalType}>{toEntityTypeLabel(modalState.entityType)}</p>
+              </div>
+              <button
+                type="button"
+                className={styles.rowIconButton}
+                aria-label="Bezárás"
+                onClick={() => setModalState(null)}
+              >
+                <X size={16} strokeWidth={2} aria-hidden="true" />
+              </button>
+            </div>
+
+            {modalState.item.candidateClass === "ambiguous_match_candidate" ? (
+              <div className={styles.modalSection}>
+                <p className={styles.modalSectionLabel}>Existing Entity</p>
+                <div className={styles.selectionList}>
+                  {modalState.item.proposedEntities.map((entity) => (
+                    <label key={entity.id} className={styles.selectionOption}>
+                      <input
+                        type="radio"
+                        name="glossary-resolution"
+                        checked={modalState.selectedEntityId === entity.id}
+                        onChange={() =>
+                          setModalState((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  selectedEntityId: entity.id,
+                                  canonicalLabel: entity.canonicalLabel,
+                                  entityType: entity.type,
+                                }
+                              : current,
+                          )
+                        }
+                      />
+                      <span>
+                        <strong>{entity.canonicalLabel}</strong>
+                        <span>{toEntityTypeLabel(entity.type)}</span>
+                      </span>
+                    </label>
+                  ))}
+                  <label className={styles.selectionOption}>
+                    <input
+                      type="radio"
+                      name="glossary-resolution"
+                      checked={modalState.selectedEntityId === "new"}
+                      onChange={() => setModalState((current) => (current ? { ...current, selectedEntityId: "new" } : current))}
+                    />
+                    <span>
+                      <strong>Create New</strong>
+                      <span>Új entitás létrehozása ebből a jelöltből.</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            ) : null}
+
+            {modalState.item.candidateClass !== "new_candidate" &&
+            modalState.item.candidateClass !== "ambiguous_match_candidate"
+              ? renderExistingEntitySummary(modalState.item)
+              : null}
+            {modalState.item.candidateClass === "ambiguous_match_candidate" && modalState.selectedEntityId && modalState.selectedEntityId !== "new"
+              ? renderExistingEntitySummary(modalState.item)
+              : null}
+
+            {(modalState.item.candidateClass === "new_candidate" ||
+              modalState.selectedEntityId === "new" ||
+              modalState.item.candidateClass === "ambiguous_match_candidate") ? (
+              <div className={styles.modalSection}>
+                <label className={styles.fieldLabel}>
+                  <span>Canonical Label</span>
+                  <input
+                    className={styles.fieldInput}
+                    value={modalState.canonicalLabel}
+                    onChange={(event) =>
+                      setModalState((current) => (current ? { ...current, canonicalLabel: event.target.value } : current))
+                    }
+                    disabled={modalState.item.candidateClass === "ambiguous_match_candidate" && modalState.selectedEntityId !== "new"}
+                  />
+                </label>
+
+                <label className={styles.fieldLabel}>
+                  <span>Type</span>
+                  <select
+                    className={styles.fieldSelect}
+                    value={modalState.entityType}
+                    onChange={(event) =>
+                      setModalState((current) =>
+                        current ? { ...current, entityType: event.target.value as GlossaryEntityType } : current,
+                      )
+                    }
+                    disabled={modalState.item.candidateClass === "ambiguous_match_candidate" && modalState.selectedEntityId !== "new"}
+                  >
+                    {ENTITY_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className={styles.fieldLabel}>
+                  <span>General Note</span>
+                  <textarea
+                    className={styles.textArea}
+                    rows={3}
+                    value={modalState.generalNote}
+                    onChange={(event) =>
+                      setModalState((current) => (current ? { ...current, generalNote: event.target.value } : current))
+                    }
+                    disabled={modalState.item.candidateClass === "ambiguous_match_candidate" && modalState.selectedEntityId !== "new"}
+                  />
+                </label>
+              </div>
+            ) : null}
+
+            <div className={styles.modalSection}>
+              <label className={styles.fieldLabel}>
+                <span>Appearance Note</span>
+                <textarea
+                  className={styles.textArea}
+                  rows={4}
+                  value={modalState.appearanceNote}
+                  onChange={(event) =>
+                    setModalState((current) => (current ? { ...current, appearanceNote: event.target.value } : current))
+                  }
+                />
+              </label>
+            </div>
+
             <div className={styles.modalActions}>
-              <Link href="/glossary">Álomszótár megnyitása</Link>
-              <button type="button" onClick={() => setSelectedGlossaryItem(null)}>
-                Bezárás
+              <button
+                type="button"
+                className={styles.modalPrimaryAction}
+                onClick={() => void handleResolveCandidate()}
+                disabled={pendingGlossaryId === modalState.item.id}
+              >
+                {pendingGlossaryId === modalState.item.id ? "Saving..." : toPrimaryActionLabel(modalState.item)}
               </button>
             </div>
           </div>

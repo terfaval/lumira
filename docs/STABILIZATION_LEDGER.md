@@ -2419,3 +2419,32 @@ Verification references:
   - Introduced a unified `resolveCandidate(...)` authority covering existing-entity confirmation, ambiguous existing-entity selection, and new-entity creation.
   - Moved appearance creation behind candidate resolution instead of generic lifecycle patching, while preserving `pinned` as the existing resolved lifecycle state.
   - Added a dedicated candidate resolution API route and blocked `PATCH nextState="pinned"` so public resolution flows through the single resolution seam.
+
+## 2026-06-12 - Glossary Orientation Panel UI Integration v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `package.json`
+  - `package-lock.json`
+  - `src/domain/glossary/contracts.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `src/reflective-space/composition/compose-object-orientation-payload.ts`
+  - `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`
+  - `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`
+  - `src/ui/object-orientation/view-model.ts`
+  - `src/ui/object-orientation/__tests__/view-model.test.ts`
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `src/ui/object-orientation/object-orientation-layer.module.css`
+  - `src/ui/object-orientation/__tests__/orientation-layer.test.tsx`
+- Verification:
+  - `npm.cmd test` -> pass (`107` files, `431` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-12T14-24-11-348Z.log`
+- Notes:
+  - Replaced the legacy glossary cue list in object orientation with a unified Glossary V2 panel covering match, ambiguous, new, and saved rows in contract order.
+  - Added Lucide-based row actions, bottom filter controls, and a single candidate resolution modal wired to the existing candidate lifecycle and resolution endpoints.
+  - Added repository support for loading saved glossary entities associated with the current reflective object without inventing a new detail route.
+  - Saved entity detail navigation remains intentionally unresolved because the only current glossary route is the placeholder `/glossary` page and no stable entity detail view exists yet.

@@ -15,6 +15,7 @@ import type { GlossaryCandidateId, GlossaryTermId, ReflectiveObjectId, UserId } 
 
 export interface GlossaryRepository {
   listTerms(userId: UserId, limit?: number): Promise<GlossaryTerm[]>;
+  listTermsByReflectiveObject(userId: UserId, reflectiveObjectId: ReflectiveObjectId): Promise<GlossaryTerm[]>;
   getTermById(termId: GlossaryTermId, userId: UserId): Promise<GlossaryTerm | null>;
   listAppearanceRecordsByTerm(termId: GlossaryTermId, userId: UserId): Promise<GlossaryAppearanceRecord[]>;
   updateTerm(input: GlossaryTermUpdateInput): Promise<GlossaryTerm | null>;

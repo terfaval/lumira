@@ -61,6 +61,48 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
     return (data ?? []).map((row) => fromGlossaryTermRow(row as GlossaryTermRow));
   }
 
+  async listTermsByReflectiveObject(userId: UserId, reflectiveObjectId: ReflectiveObjectId): Promise<GlossaryTerm[]> {
+    const { data: associations, error: associationError } = await this.client
+      .from(ASSOCIATIONS_TABLE)
+      .select("glossary_term_id, created_at")
+      .eq("user_id", userId)
+      .eq("reflective_object_id", reflectiveObjectId);
+
+    if (associationError) {
+      throw new Error(`Failed to list glossary associations for reflective object: ${associationError.message}`);
+    }
+
+    const orderedIds = Array.from(
+      new Set(
+        (associations ?? [])
+          .sort((left, right) => left.created_at.localeCompare(right.created_at))
+          .map((row) => row.glossary_term_id)
+          .filter((value): value is string => typeof value === "string" && value.length > 0),
+      ),
+    );
+
+    if (orderedIds.length === 0) {
+      return [];
+    }
+
+    const { data, error } = await this.client
+      .from(TERMS_TABLE)
+      .select("*")
+      .eq("user_id", userId)
+      .is("archived_at", null)
+      .in("id", orderedIds);
+
+    if (error) {
+      throw new Error(`Failed to load glossary terms for reflective object: ${error.message}`);
+    }
+
+    const termsById = new Map((data ?? []).map((row) => [row.id, fromGlossaryTermRow(row as GlossaryTermRow)]));
+
+    return orderedIds
+      .map((termId) => termsById.get(termId))
+      .filter((term): term is GlossaryTerm => term !== undefined);
+  }
+
   async getTermById(termId: GlossaryTermId, userId: UserId): Promise<GlossaryTerm | null> {
     const { data, error } = await this.client
       .from(TERMS_TABLE)

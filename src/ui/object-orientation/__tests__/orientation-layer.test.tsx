@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { ObjectOrientationLayer } from "@/src/ui/object-orientation/object-orientation-layer";
 import type { ObjectOrientationPayload } from "@/src/reflective-space/composition/compose-object-orientation-payload";
+import { ObjectOrientationLayer } from "@/src/ui/object-orientation/object-orientation-layer";
 
 const payload: ObjectOrientationPayload = {
   dream: {
@@ -14,9 +14,77 @@ const payload: ObjectOrientationPayload = {
   glossary: {
     items: [
       {
-        label: "House",
-        category: "location",
-        detail: "location • 3 returns",
+        id: "cand-match-1",
+        kind: "candidate",
+        candidateId: "cand-match-1",
+        candidateClass: "match_candidate",
+        candidateState: "candidate",
+        label: "Apa",
+        canonicalLabel: "Apa",
+        entityType: "person",
+        sourceCategory: "actor",
+        recurrenceCount: 3,
+        status: "match",
+        proposedEntities: [
+          {
+            id: "term-1",
+            canonicalLabel: "Apa",
+            type: "person",
+            appearanceCount: 4,
+            generalNote: "Recurring father figure.",
+          },
+        ],
+        href: null,
+      },
+      {
+        id: "cand-ambiguous-1",
+        kind: "candidate",
+        candidateId: "cand-ambiguous-1",
+        candidateClass: "ambiguous_match_candidate",
+        candidateState: "candidate",
+        label: "Exem",
+        canonicalLabel: "Exem",
+        entityType: "role",
+        sourceCategory: "actor",
+        recurrenceCount: 1,
+        status: "ambiguous",
+        proposedEntities: [
+          {
+            id: "term-2",
+            canonicalLabel: "Dori",
+            type: "person",
+            appearanceCount: 1,
+            generalNote: null,
+          },
+        ],
+        href: null,
+      },
+      {
+        id: "cand-new-1",
+        kind: "candidate",
+        candidateId: "cand-new-1",
+        candidateClass: "new_candidate",
+        candidateState: "candidate",
+        label: "Mammut",
+        canonicalLabel: "Mammut",
+        entityType: "object",
+        sourceCategory: "object",
+        recurrenceCount: 1,
+        status: "new",
+        proposedEntities: [],
+        href: null,
+      },
+      {
+        id: "saved-1",
+        kind: "saved",
+        label: "Bridge",
+        canonicalLabel: "Bridge",
+        entityType: "place",
+        sourceCategory: "location",
+        recurrenceCount: null,
+        status: "saved",
+        proposedEntities: [],
+        href: null,
       },
     ],
   },
@@ -48,11 +116,16 @@ const payload: ObjectOrientationPayload = {
 };
 
 describe("ObjectOrientationLayer", () => {
-  it("renders a smaller quiet dream header with only the inline edit icon affordance", () => {
+  it("renders the glossary orientation panel within the existing quiet layout", () => {
     const markup = renderToStaticMarkup(<ObjectOrientationLayer payload={payload} />);
 
     expect(markup).not.toContain(">Álom<");
     expect(markup).toContain("Álomszótár");
+    expect(markup).toContain("Apa");
+    expect(markup).toContain("Exem");
+    expect(markup).toContain("Mammut");
+    expect(markup).toContain("Bridge");
+    expect(markup).toContain("Szűrő");
     expect(markup).toContain("Jelzések");
     expect(markup).toContain("Érzelmi tér");
     expect(markup).toContain("Szálak");

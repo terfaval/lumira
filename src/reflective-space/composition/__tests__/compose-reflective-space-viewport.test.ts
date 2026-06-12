@@ -52,6 +52,7 @@ describe("composeReflectiveSpaceViewport", () => {
       },
       glossaryRepository: {
         listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [],
         getTermById: async () => null,
         listAppearanceRecordsByTerm: async () => [],
         updateTerm: async () => null,
@@ -208,6 +209,7 @@ describe("composeReflectiveSpaceViewport", () => {
       },
       glossaryRepository: {
         listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [],
         getTermById: async () => null,
         listAppearanceRecordsByTerm: async () => [],
         updateTerm: async () => null,

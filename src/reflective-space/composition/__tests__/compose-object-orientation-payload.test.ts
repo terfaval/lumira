@@ -140,6 +140,24 @@ describe("composeObjectOrientationPayload", () => {
       },
       glossaryRepository: {
         listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [
+          {
+            id: "term-bridge",
+            userId: "user-1",
+            normalizedKey: "bridge",
+            displayLabel: "Bridge",
+            canonicalLabel: "Bridge",
+            type: "place",
+            aliases: [],
+            generalNote: "Recurring crossing point.",
+            appearanceCount: 2,
+            notes: "Recurring crossing point.",
+            state: "active",
+            suppression: { state: "none", suppressedAt: null, reason: null },
+            createdAt: "2026-06-03T08:01:00.000Z",
+            updatedAt: "2026-06-03T08:01:00.000Z",
+          },
+        ],
         getTermById: async () => null,
         listAppearanceRecordsByTerm: async () => [],
         updateTerm: async () => null,
@@ -332,7 +350,18 @@ describe("composeObjectOrientationPayload", () => {
 
     expect(payload?.dream.title).toBe("Lantern House");
     expect(payload?.dream.editHref).toBe("/objects/obj-1/reflect");
-    expect(payload?.glossary.items.map((item) => item.label)).toEqual(["House", "Doorway"]);
+    expect(payload?.glossary.items.map((item) => item.label)).toEqual(["House", "Bridge"]);
+    expect(payload?.glossary.items.map((item) => item.status)).toEqual(["new", "saved"]);
+    expect(payload?.glossary.items[0]).toMatchObject({
+      candidateClass: "new_candidate",
+      status: "new",
+    });
+    expect(payload?.glossary.items[1]).toMatchObject({
+      label: "Bridge",
+      canonicalLabel: "Bridge",
+      status: "saved",
+      href: null,
+    });
     expect(payload?.openingStack.counts).toEqual({ new: 1, active: 1, dormant: 1, all: 3 });
     expect(payload?.threadOverview).toEqual([
       { state: "new", count: 1 },
@@ -375,6 +404,7 @@ describe("composeObjectOrientationPayload", () => {
       },
       glossaryRepository: {
         listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [],
         getTermById: async () => null,
         listAppearanceRecordsByTerm: async () => [],
         updateTerm: async () => null,
