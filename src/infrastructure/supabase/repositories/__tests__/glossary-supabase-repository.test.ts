@@ -142,7 +142,8 @@ describe("SupabaseGlossaryRepository isolation", () => {
     const eq = vi.fn((column: string) => {
       if (column === "user_id") return { eq };
       if (column === "reflective_object_id") return { eq };
-      if (column === "normalized_key") return { is: candidateIs };
+      if (column === "normalized_key") return { eq };
+      if (column === "source_category") return { is: candidateIs };
       return { is: candidateIs };
     });
     const select = vi.fn().mockReturnValue({ eq });
@@ -165,6 +166,103 @@ describe("SupabaseGlossaryRepository isolation", () => {
         proposed_entity_ids: [],
       }),
     );
+  });
+
+  it("preserves distinct candidate identities for the same normalized key across source categories", async () => {
+    const maybeSingle = vi
+      .fn()
+      .mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({ data: null, error: null });
+    const candidateIs = vi.fn().mockReturnValue({ maybeSingle });
+    const eq = vi.fn((column: string) => {
+      if (column === "user_id") return { eq };
+      if (column === "reflective_object_id") return { eq };
+      if (column === "normalized_key") return { eq };
+      if (column === "source_category") return { is: candidateIs };
+      return { is: candidateIs };
+    });
+    const select = vi.fn().mockReturnValue({ eq });
+
+    const single = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          id: "cand-actor",
+          user_id: "user-a",
+          reflective_object_id: "obj-1",
+          normalized_key: "apa",
+          display_label: "Apa",
+          source_category: "actor",
+          source_observation_id: "obs-1",
+          source_observation_fragment_id: "frag-1",
+          recurrence_count: 1,
+          candidate_class: "new_candidate",
+          proposed_entity_ids: [],
+          state: "candidate",
+          suppression_state: "none",
+          suppression_reason: null,
+          suppressed_at: null,
+          last_seen_at: "2026-06-12T10:00:00.000Z",
+          archived_at: null,
+          created_at: "2026-06-12T10:00:00.000Z",
+          updated_at: "2026-06-12T10:00:00.000Z",
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          id: "cand-location",
+          user_id: "user-a",
+          reflective_object_id: "obj-1",
+          normalized_key: "apa",
+          display_label: "Apa",
+          source_category: "location",
+          source_observation_id: "obs-2",
+          source_observation_fragment_id: "frag-2",
+          recurrence_count: 1,
+          candidate_class: "new_candidate",
+          proposed_entity_ids: [],
+          state: "candidate",
+          suppression_state: "none",
+          suppression_reason: null,
+          suppressed_at: null,
+          last_seen_at: "2026-06-12T10:01:00.000Z",
+          archived_at: null,
+          created_at: "2026-06-12T10:01:00.000Z",
+          updated_at: "2026-06-12T10:01:00.000Z",
+        },
+        error: null,
+      });
+
+    const insert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single }) });
+    const from = vi.fn().mockReturnValue({ select, insert });
+
+    const repository = new SupabaseGlossaryRepository({ from } as never);
+    const candidates = await repository.upsertCandidates([
+      {
+        userId: "user-a",
+        reflectiveObjectId: "obj-1",
+        normalizedKey: "apa",
+        displayLabel: "Apa",
+        sourceCategory: "actor",
+        sourceObservationId: "obs-1",
+        sourceObservationFragmentId: "frag-1",
+      },
+      {
+        userId: "user-a",
+        reflectiveObjectId: "obj-1",
+        normalizedKey: "apa",
+        displayLabel: "Apa",
+        sourceCategory: "location",
+        sourceObservationId: "obs-2",
+        sourceObservationFragmentId: "frag-2",
+      },
+    ]);
+
+    expect(candidates.map((candidate) => candidate.id)).toEqual(["cand-actor", "cand-location"]);
+    expect(insert).toHaveBeenCalledTimes(2);
+    expect(eq).toHaveBeenCalledWith("source_category", "actor");
+    expect(eq).toHaveBeenCalledWith("source_category", "location");
   });
 
   it("resolves a candidate to an existing continuity entity and creates an appearance", async () => {
@@ -512,5 +610,181 @@ describe("SupabaseGlossaryRepository isolation", () => {
     );
     expect(resolved?.candidate.state).toBe("pinned");
     expect(resolved?.term.id).toBe("term-new");
+  });
+
+  it("allows ambiguous candidates to create a new continuity entity during resolution", async () => {
+    const candidateRow = {
+      id: "cand-3",
+      user_id: "user-a",
+      reflective_object_id: "obj-1",
+      normalized_key: "ex partner",
+      display_label: "Ex-partner",
+      source_category: "actor",
+      source_observation_id: "obs-5",
+      source_observation_fragment_id: "frag-5",
+      recurrence_count: 1,
+      candidate_class: "ambiguous_match_candidate",
+      proposed_entity_ids: ["term-1", "term-2"],
+      state: "candidate",
+      suppression_state: "none",
+      suppression_reason: null,
+      suppressed_at: null,
+      last_seen_at: "2026-06-12T00:00:00.000Z",
+      archived_at: null,
+      created_at: "2026-06-12T00:00:00.000Z",
+      updated_at: "2026-06-12T00:00:00.000Z",
+    };
+
+    const createdTermRow = {
+      id: "term-unknown-ex",
+      user_id: "user-a",
+      normalized_key: "unknown ex partner",
+      display_label: "Unknown Ex-partner",
+      canonical_label: "Unknown Ex-partner",
+      type: "role",
+      aliases: [],
+      general_note: null,
+      appearance_count: 1,
+      notes: null,
+      state: "active",
+      suppression_state: "none",
+      suppression_reason: null,
+      suppressed_at: null,
+      archived_at: null,
+      created_at: "2026-06-12T01:00:00.000Z",
+      updated_at: "2026-06-12T01:00:00.000Z",
+    };
+
+    const appearanceRow = {
+      id: "appearance-unknown-ex",
+      user_id: "user-a",
+      entity_id: "term-unknown-ex",
+      dream_id: "obj-1",
+      appearance_note: "The same role returned, but not a known identity.",
+      confirmed_at: "2026-06-12T01:00:00.000Z",
+      created_at: "2026-06-12T01:00:00.000Z",
+      updated_at: "2026-06-12T01:00:00.000Z",
+    };
+
+    const resolvedCandidateRow = {
+      ...candidateRow,
+      state: "pinned",
+      updated_at: "2026-06-12T01:00:00.000Z",
+    };
+
+    const candidateMaybeSingle = vi.fn().mockResolvedValue({ data: candidateRow, error: null });
+    const candidateIsForLoad = vi.fn().mockReturnValue({ maybeSingle: candidateMaybeSingle });
+    const candidateEqForLoad = vi.fn((column: string) => {
+      if (column === "id") return { eq: candidateEqForLoad };
+      return { is: candidateIsForLoad };
+    });
+    const candidateSelectForLoad = vi.fn().mockReturnValue({ eq: candidateEqForLoad });
+
+    const candidateMaybeSingleForPin = vi.fn().mockResolvedValue({ data: resolvedCandidateRow, error: null });
+    const candidateSelectForPin = vi.fn().mockReturnValue({ maybeSingle: candidateMaybeSingleForPin });
+    const candidateIsForPin = vi.fn().mockReturnValue({ select: candidateSelectForPin });
+    const candidateEqForPin = vi.fn((column: string) => {
+      if (column === "id") return { eq: candidateEqForPin };
+      return { is: candidateIsForPin };
+    });
+    const candidateUpdate = vi.fn().mockReturnValue({ eq: candidateEqForPin });
+
+    const termInsertSingle = vi.fn().mockResolvedValue({ data: createdTermRow, error: null });
+    const termInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: termInsertSingle }) });
+    const termMaybeSingle = vi.fn().mockResolvedValue({ data: createdTermRow, error: null });
+    const termIs = vi.fn().mockReturnValue({ maybeSingle: termMaybeSingle });
+    const termEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: termEq };
+      return { is: termIs };
+    });
+    const termSelect = vi.fn().mockReturnValue({ eq: termEq });
+    const termUpdateIs = vi.fn().mockResolvedValue({ error: null });
+    const termUpdateEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: termUpdateEq };
+      return { is: termUpdateIs };
+    });
+    const termUpdate = vi.fn().mockReturnValue({ eq: termUpdateEq });
+
+    const appearanceMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const appearanceEq = vi.fn((column: string) => {
+      if (column === "entity_id") return { eq: appearanceEq };
+      if (column === "dream_id") return { eq: appearanceEq };
+      return { maybeSingle: appearanceMaybeSingle };
+    });
+    const appearanceInsertSingle = vi.fn().mockResolvedValue({ data: appearanceRow, error: null });
+    const appearanceInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: appearanceInsertSingle }) });
+    const appearanceCountEq = vi.fn((column: string) => {
+      if (column === "entity_id") return { eq: vi.fn().mockResolvedValue({ count: 1, error: null }) };
+      return { eq: vi.fn().mockResolvedValue({ count: 1, error: null }) };
+    });
+    const appearanceSelect = vi
+      .fn()
+      .mockReturnValueOnce({ eq: appearanceEq })
+      .mockReturnValueOnce({ eq: appearanceCountEq });
+
+    const associationInsertSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: "assoc-unknown-ex",
+        user_id: "user-a",
+        glossary_term_id: "term-unknown-ex",
+        reflective_object_id: "obj-1",
+        observation_id: "obs-5",
+        observation_fragment_id: "frag-5",
+        association_label: "Created continuity entity from glossary candidate resolution.",
+        created_at: "2026-06-12T01:00:00.000Z",
+        updated_at: "2026-06-12T01:00:00.000Z",
+      },
+      error: null,
+    });
+    const associationInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: associationInsertSingle }) });
+
+    const objectMaybeSingle = vi.fn().mockResolvedValue({ data: { id: "obj-1" }, error: null });
+    const objectIs = vi.fn().mockReturnValue({ maybeSingle: objectMaybeSingle });
+    const objectEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: objectEq };
+      if (column === "user_id") return { eq: objectEq };
+      if (column === "object_type") return { is: objectIs };
+      return { is: objectIs };
+    });
+    const objectSelect = vi.fn().mockReturnValue({ eq: objectEq });
+
+    const from = vi.fn((table: string) => {
+      if (table === "glossary_candidate_states") {
+        return { select: candidateSelectForLoad, update: candidateUpdate };
+      }
+      if (table === "glossary_terms") {
+        return { insert: termInsert, select: termSelect, update: termUpdate };
+      }
+      if (table === "glossary_appearance_records") {
+        return { select: appearanceSelect, insert: appearanceInsert };
+      }
+      if (table === "glossary_associations") {
+        return { insert: associationInsert };
+      }
+      if (table === "reflective_objects") {
+        return { select: objectSelect };
+      }
+      throw new Error(`Unexpected table ${table}`);
+    });
+
+    const repository = new SupabaseGlossaryRepository({ from } as never);
+    const resolved = await repository.resolveCandidate({
+      candidateId: "cand-3",
+      userId: "user-a",
+      resolutionType: "create_new_entity",
+      canonicalLabel: "Unknown Ex-partner",
+      type: "role",
+      appearanceNote: "The same role returned, but not a known identity.",
+    });
+
+    expect(termInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canonical_label: "Unknown Ex-partner",
+        type: "role",
+      }),
+    );
+    expect(resolved?.candidate.state).toBe("pinned");
+    expect(resolved?.term.id).toBe("term-unknown-ex");
+    expect(resolved?.appearanceRecord?.entityId).toBe("term-unknown-ex");
   });
 });

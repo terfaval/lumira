@@ -45,8 +45,11 @@ function validateResolutionAgainstCandidate(
       }
       return null;
     case "create_new_entity":
-      if (candidate.candidateClass !== "new_candidate") {
-        return "create_new_entity requires a new_candidate.";
+      if (
+        candidate.candidateClass !== "new_candidate" &&
+        candidate.candidateClass !== "ambiguous_match_candidate"
+      ) {
+        return "create_new_entity requires a new_candidate or ambiguous_match_candidate.";
       }
       return null;
   }

@@ -395,6 +395,7 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
       .eq("user_id", input.userId)
       .eq("reflective_object_id", input.reflectiveObjectId)
       .eq("normalized_key", input.normalizedKey)
+      .eq("source_category", input.sourceCategory)
       .is("archived_at", null)
       .maybeSingle<GlossaryCandidateRow>();
 

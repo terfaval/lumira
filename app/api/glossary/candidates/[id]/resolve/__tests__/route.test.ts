@@ -101,4 +101,43 @@ describe("/api/glossary/candidates/[id]/resolve route", () => {
 
     expect(response.status).toBe(404);
   });
+
+  it("allows ambiguous candidates to create a new continuity entity", async () => {
+    resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
+    getCandidateById.mockResolvedValue({
+      id: "cand-1",
+      candidateClass: "ambiguous_match_candidate",
+      proposedEntityIds: ["term-1", "term-2"],
+    });
+    resolveCandidate.mockResolvedValue({
+      candidate: { id: "cand-1", state: "pinned" },
+      term: { id: "term-new", canonicalLabel: "Unknown Ex-partner", type: "role" },
+      appearanceRecord: { id: "appearance-1", entityId: "term-new" },
+    });
+
+    const { POST } = await import("@/app/api/glossary/candidates/[id]/resolve/route");
+    const response = await POST(
+      new Request("http://localhost/api/glossary/candidates/cand-1/resolve", {
+        method: "POST",
+        body: JSON.stringify({
+          resolutionType: "create_new_entity",
+          canonicalLabel: "Unknown Ex-partner",
+          type: "role",
+          appearanceNote: "This felt like the same role, but not a known person.",
+        }),
+      }),
+      { params: Promise.resolve({ id: "cand-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(resolveCandidate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        candidateId: "cand-1",
+        userId: "user-a",
+        resolutionType: "create_new_entity",
+        canonicalLabel: "Unknown Ex-partner",
+        type: "role",
+      }),
+    );
+  });
 });

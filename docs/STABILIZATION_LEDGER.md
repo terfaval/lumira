@@ -58,6 +58,26 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-06-12 - Ambiguous Resolution Completion Slice
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/api/glossary/candidates/[id]/resolve/route.ts`
+  - `app/api/glossary/candidates/[id]/resolve/__tests__/route.test.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts`
+  - `supabase/migrations/20260612_0023_glossary_candidate_identity_scope.sql`
+- Verification:
+  - `npm test` -> pass (`107` files, `429` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-12T12-53-43-041Z.log`
+- Notes:
+  - Ambiguous glossary candidates may now resolve by creating a new continuity entity, including role-shaped labels such as unknown-role continuity entries.
+  - Candidate persistence identity now preserves `source_category` alongside the existing per-dream normalized key so same-label actor/location/object candidates remain distinct.
+
 ## 2026-06-11 - Glossary Recognition Normalization Slice
 
 - Phase: BUILD
