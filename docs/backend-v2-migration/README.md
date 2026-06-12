@@ -1,14 +1,9 @@
-# Backend V2 Migration Docs
+# Backend V2 Migration Archive
 
-Status: Historical
-
-This folder is historical legacy transition material.
+This directory is historical.
 
 It is not active implementation authority.
 
 It is not a migration execution authority for new Backend V2 work.
 
-Use the clean-room Backend V2 canon and construction-site guidance instead:
-
-- `docs/canon/backend-v2/LUMIRA_BACKEND_V2_CANON.md`
-- `docs/canon/backend-v2/BACKEND_V2_CONSTRUCTION_SITE.md`
+Use `docs/canon/backend-v2/BACKEND_V2_CONSTRUCTION_SITE.md` for active clean-room Backend V2 guidance.

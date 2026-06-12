@@ -365,6 +365,11 @@ const glossaryTermWithUserNote: GlossaryTerm = {
   userId: "user-1",
   normalizedKey: "hallway",
   displayLabel: "Hallway",
+  canonicalLabel: "Hallway",
+  type: "place",
+  aliases: [],
+  generalNote: "This feels central whenever it appears.",
+  appearanceCount: 1,
   notes: "This feels central whenever it appears.",
   state: "active",
   suppression: {
@@ -381,7 +386,9 @@ const glossaryTermWithoutContext: GlossaryTerm = {
   id: "term-2",
   normalizedKey: "bridge",
   displayLabel: "Bridge",
+  canonicalLabel: "Bridge",
   notes: null,
+  generalNote: null,
 };
 
 function lifecycleSnapshot(

@@ -1,5 +1,19 @@
-import type { ObservationSource } from "@/src/domain/observation/types";
+import type {
+  ObservationProvenanceTier,
+  ObservationSemanticPolicyResult,
+  ObservationSource,
+} from "@/src/domain/observation/types";
 import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
+
+const DEFAULT_RUNTIME_VERSION = "observation_v2_phase1";
+
+export interface ObservationV2BundleProvenance {
+  provenanceTier: ObservationProvenanceTier;
+  semanticPolicyResult: ObservationSemanticPolicyResult;
+  semanticPolicyReasons: string[];
+  latentBackflowGuard: "observation_only";
+  boundaryVersion: string;
+}
 
 export type SceneBoundarySignalKind =
   | "spatial_change"
@@ -57,9 +71,13 @@ export interface ObservationV2Scene {
 }
 
 export interface ObservationV2Bundle {
+  bundleId?: string;
   reflectiveObjectId: ReflectiveObjectId;
   userId: UserId;
   source: ObservationSource;
+  provenance?: ObservationV2BundleProvenance;
+  uncertaintyNotes?: string[];
+  runtimeVersion?: string;
   scenes: ObservationV2Scene[];
 }
 
@@ -72,8 +90,20 @@ function compareScenes(left: ObservationV2Scene, right: ObservationV2Scene): num
 }
 
 export function buildObservationV2Bundle(input: ObservationV2Bundle): ObservationV2Bundle {
+  const runtimeVersion = input.runtimeVersion ?? DEFAULT_RUNTIME_VERSION;
+
   return {
     ...input,
+    bundleId: input.bundleId ?? `observation-bundle-${input.reflectiveObjectId}-${runtimeVersion}`,
+    provenance: input.provenance ?? {
+      provenanceTier: "system_extract",
+      semanticPolicyResult: "accept_with_uncertainty",
+      semanticPolicyReasons: [],
+      latentBackflowGuard: "observation_only",
+      boundaryVersion: runtimeVersion,
+    },
+    uncertaintyNotes: input.uncertaintyNotes ?? [],
+    runtimeVersion,
     scenes: [...input.scenes].sort(compareScenes),
   };
 }

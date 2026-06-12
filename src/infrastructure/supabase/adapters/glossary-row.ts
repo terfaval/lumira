@@ -1,7 +1,9 @@
 import type {
+  CreateGlossaryAppearanceRecordInput,
   CreateGlossaryAssociationInput,
   CreateGlossaryCandidateInput,
   CreateGlossaryTermInput,
+  GlossaryAppearanceRecord,
   GlossaryAssociation,
   GlossaryCandidate,
   GlossaryCandidateLifecycleUpdate,
@@ -11,6 +13,7 @@ import type {
 
 type GlossaryTermStateRow = "active" | "archived";
 type GlossaryCandidateStateRow = "candidate" | "pinned" | "suppressed" | "ignored";
+type GlossaryCandidateClassRow = "match_candidate" | "ambiguous_match_candidate" | "new_candidate";
 type GlossarySuppressionStateRow = "none" | "suppressed";
 
 export interface GlossaryTermRow {
@@ -18,6 +21,11 @@ export interface GlossaryTermRow {
   user_id: string;
   normalized_key: string;
   display_label: string;
+  canonical_label: string;
+  type: CreateGlossaryTermInput["type"];
+  aliases: string[];
+  general_note: string | null;
+  appearance_count: number;
   notes: string | null;
   state: GlossaryTermStateRow;
   suppression_state: GlossarySuppressionStateRow;
@@ -57,6 +65,8 @@ export interface GlossaryCandidateRow {
   source_observation_id: string | null;
   source_observation_fragment_id: string | null;
   recurrence_count: number;
+  candidate_class: GlossaryCandidateClassRow;
+  proposed_entity_ids: string[];
   state: GlossaryCandidateStateRow;
   suppression_state: GlossarySuppressionStateRow;
   suppression_reason: string | null;
@@ -79,10 +89,26 @@ export interface GlossaryAssociationRow {
   updated_at: string;
 }
 
+export interface GlossaryAppearanceRecordRow {
+  id: string;
+  user_id: string;
+  entity_id: string;
+  dream_id: string;
+  appearance_note: string | null;
+  confirmed_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface GlossaryTermInsertRow {
   user_id: string;
   normalized_key: string;
   display_label: string;
+  canonical_label: string;
+  type: CreateGlossaryTermInput["type"];
+  aliases: string[];
+  general_note: string | null;
+  appearance_count: number;
   notes: string | null;
   state: "active";
   suppression_state: "none";
@@ -97,6 +123,8 @@ export interface GlossaryCandidateInsertRow {
   source_observation_id: string | null;
   source_observation_fragment_id: string | null;
   recurrence_count: number;
+  candidate_class: GlossaryCandidateClassRow;
+  proposed_entity_ids: string[];
   state: "candidate";
   suppression_state: "none";
   suppression_reason: null;
@@ -113,9 +141,19 @@ export interface GlossaryAssociationInsertRow {
   association_label: string | null;
 }
 
+export interface GlossaryAppearanceRecordInsertRow {
+  user_id: string;
+  entity_id: string;
+  dream_id: string;
+  appearance_note: string | null;
+  confirmed_at: string;
+}
+
 export interface GlossaryCandidateLifecycleUpdateRow {
   state: GlossaryCandidateStateRow;
   display_label?: string;
+  candidate_class?: GlossaryCandidateClassRow;
+  proposed_entity_ids?: string[];
   suppression_state: GlossarySuppressionStateRow;
   suppression_reason: string | null;
   suppressed_at: string | null;
@@ -139,6 +177,11 @@ export function fromGlossaryTermRow(row: GlossaryTermRow): GlossaryTerm {
     userId: row.user_id,
     normalizedKey: row.normalized_key,
     displayLabel: row.display_label,
+    canonicalLabel: row.canonical_label,
+    type: row.type,
+    aliases: row.aliases,
+    generalNote: row.general_note,
+    appearanceCount: row.appearance_count,
     notes: row.notes,
     state: row.state,
     suppression: toSuppression(row.suppression_state, row.suppressed_at, row.suppression_reason),
@@ -158,6 +201,8 @@ export function fromGlossaryCandidateRow(row: GlossaryCandidateRow): GlossaryCan
     sourceObservationId: row.source_observation_id,
     sourceObservationFragmentId: row.source_observation_fragment_id,
     recurrenceCount: row.recurrence_count,
+    candidateClass: row.candidate_class,
+    proposedEntityIds: row.proposed_entity_ids,
     state: row.state,
     suppression: toSuppression(row.suppression_state, row.suppressed_at, row.suppression_reason),
     lastSeenAt: row.last_seen_at,
@@ -180,11 +225,29 @@ export function fromGlossaryAssociationRow(row: GlossaryAssociationRow): Glossar
   };
 }
 
+export function fromGlossaryAppearanceRecordRow(row: GlossaryAppearanceRecordRow): GlossaryAppearanceRecord {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    entityId: row.entity_id,
+    dreamId: row.dream_id,
+    appearanceNote: row.appearance_note,
+    confirmedAt: row.confirmed_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export function toGlossaryTermInsertRow(input: CreateGlossaryTermInput): GlossaryTermInsertRow {
   return {
     user_id: input.userId,
     normalized_key: input.normalizedKey,
     display_label: input.displayLabel,
+    canonical_label: input.canonicalLabel,
+    type: input.type,
+    aliases: input.aliases ?? [],
+    general_note: input.generalNote ?? null,
+    appearance_count: input.appearanceCount ?? 0,
     notes: input.notes ?? null,
     state: "active",
     suppression_state: "none",
@@ -204,6 +267,8 @@ export function toGlossaryCandidateInsertRow(
     source_observation_id: input.sourceObservationId ?? null,
     source_observation_fragment_id: input.sourceObservationFragmentId ?? null,
     recurrence_count: input.recurrenceCount ?? 1,
+    candidate_class: input.candidateClass ?? "new_candidate",
+    proposed_entity_ids: input.proposedEntityIds ?? [],
     state: "candidate",
     suppression_state: "none",
     suppression_reason: null,
@@ -223,6 +288,18 @@ export function toGlossaryAssociationInsertRow(input: CreateGlossaryAssociationI
   };
 }
 
+export function toGlossaryAppearanceRecordInsertRow(
+  input: CreateGlossaryAppearanceRecordInput,
+): GlossaryAppearanceRecordInsertRow {
+  return {
+    user_id: input.userId,
+    entity_id: input.entityId,
+    dream_id: input.dreamId,
+    appearance_note: input.appearanceNote ?? null,
+    confirmed_at: input.confirmedAt,
+  };
+}
+
 export function toGlossaryCandidateLifecycleUpdateRow(
   input: GlossaryCandidateLifecycleUpdate,
   now: string,
@@ -232,6 +309,8 @@ export function toGlossaryCandidateLifecycleUpdateRow(
   return {
     state: input.nextState,
     display_label: input.displayLabel,
+    candidate_class: input.candidateClass,
+    proposed_entity_ids: input.proposedEntityIds,
     suppression_state: isSuppressed ? "suppressed" : "none",
     suppression_reason: isSuppressed ? input.suppressionReason ?? null : null,
     suppressed_at: isSuppressed ? now : null,

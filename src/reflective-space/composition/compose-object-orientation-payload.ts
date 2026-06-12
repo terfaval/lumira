@@ -1,12 +1,15 @@
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { GlossaryCandidate } from "@/src/domain/glossary/types";
-import type { ObservationRepository } from "@/src/domain/observation/contracts";
+import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
 import type { OpeningRepository } from "@/src/domain/openings/contracts";
 import type { Opening } from "@/src/domain/openings/types";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 import type { ThreadRepository } from "@/src/domain/threads/contracts";
 import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
-import { deriveGlossaryCuesFromObservations } from "@/src/reflective-space/composition/derive-glossary-cues";
+import {
+  deriveGlossaryCuesFromObservationV2Bundle,
+  deriveGlossaryCuesFromObservations,
+} from "@/src/reflective-space/composition/derive-glossary-cues";
 import { countOpeningsByState, type OrientationOpeningCard } from "@/src/ui/object-orientation/view-model";
 
 const OBSERVATION_LIMIT = 3;
@@ -44,6 +47,7 @@ export interface ComposeObjectOrientationPayloadInput {
   reflectiveObjectId: ReflectiveObjectId;
   reflectiveObjectRepository: ReflectiveObjectRepository;
   observationRepository: ObservationRepository;
+  observationV2Repository: ObservationV2Repository;
   glossaryRepository: GlossaryRepository;
   threadRepository: ThreadRepository;
   openingRepository: OpeningRepository;
@@ -119,7 +123,8 @@ export async function composeObjectOrientationPayload(
     return null;
   }
 
-  const [observations, glossaryCandidates, recentOpenings] = await Promise.all([
+  const [observationBundle, observations, glossaryCandidates, recentOpenings] = await Promise.all([
+    input.observationV2Repository.getByReflectiveObjectId(input.reflectiveObjectId, input.userId),
     input.observationRepository.listByReflectiveObject({
       userId: input.userId,
       reflectiveObjectId: input.reflectiveObjectId,
@@ -129,7 +134,9 @@ export async function composeObjectOrientationPayload(
     input.openingRepository.listRecentOpeningsByUser(input.userId, RECENT_OPENINGS_LIMIT),
   ]);
 
-  const glossaryCues = deriveGlossaryCuesFromObservations(observations);
+  const glossaryCues = observationBundle
+    ? deriveGlossaryCuesFromObservationV2Bundle(observationBundle)
+    : deriveGlossaryCuesFromObservations(observations);
   const glossaryItems = uniqueByLabel([
     ...glossaryCandidates.map((candidate) => ({
       label: candidate.displayLabel,

@@ -24,7 +24,7 @@ It does not authorize automatic migration or cleanup.
 ## Current Phase
 
 - Phase: Observation V2 Ownership Cutover (Phase 1)
-- Mode: V2-owned generated write path with temporary V1 storage adapter
+- Mode: V2-owned generated write path with native V2 persistence and native V2 rehydration
 - V1 status: transitional compatibility layer
 
 ## Active Fallout Items
@@ -41,9 +41,9 @@ It does not authorize automatic migration or cleanup.
 
 - Boundary: observation repository and adapters
 - Current state: storage is centered on `observations` plus `observation_fragments`.
-- V2 impact: scene-first runtime cannot persist natively in Phase 1.
-- Future work: evaluate V2-native persistence boundary after runtime stabilizes.
-- Cleanup/removal potential: fragment-first storage assumptions may become removable later.
+- V2 impact: this is no longer the live generated durability owner, but it still remains the compatibility durability path for manual/API ingress and historical V1-shaped reads.
+- Future work: isolate V1 persistence more explicitly as compatibility-only and remove it when no ingress or read path still depends on it.
+- Cleanup/removal potential: fragment-first storage assumptions may become removable once compatibility ingress and historical read dependencies are retired.
 
 ### 3. Downstream consumers remain V1-shaped
 
@@ -67,15 +67,16 @@ It does not authorize automatic migration or cleanup.
 - Future work: move durable read seams and downstream consumers onto V2-aware intake before claiming full operational ownership.
 - Cleanup/removal potential: any remaining engine-side V1 write assumptions are now removable.
 
-### 5. Temporary storage adapter still flattens scene semantics into fragment-shaped outputs
+### 5. Native V2 storage now owns live generated durability, but V1 durability still exists beside it
 
 - Boundaries:
   - `src/infrastructure/persistence/observation-v2-write-store.ts`
-  - `src/cognition/observation/scene-discovery-projection.ts`
-- Current state: capture generation now writes through a V2-owned seam, but that seam still projects the bundle into `CreateObservationInput` for temporary row/fragment persistence.
-- V2 impact: callers no longer own the projection, but durable storage still loses native scene semantics.
-- Future work: replace the temporary storage adapter with V2-native persistence and durable rehydration.
-- Cleanup/removal potential: fragment-position summary tracing and flat fragment projection may become removable once persistence is scene-first.
+  - `src/infrastructure/supabase/repositories/observation-v2-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/observation-supabase-repository.ts`
+- Current state: capture generation now writes bundles through the native V2 repository, while V1 row/fragment durability remains available for compatibility-only callers.
+- V2 impact: live generated writes preserve scene order, scene summaries, boundary signals, evidence, and derived structures without flattening them into fragment-era storage.
+- Future work: prevent compatibility callers from silently being treated as equivalent to native V2 bundles and retire the V1 durability path when no longer needed.
+- Cleanup/removal potential: fragment-position summary tracing and flat fragment projection are now removable from the live generated path and become full retirement candidates once compatibility callers are cut over or removed.
 
 ### 6. Scene-first LLM extraction is now the live capture owner, but manual/API ingress remains V1-owned
 
@@ -93,10 +94,21 @@ It does not authorize automatic migration or cleanup.
 - Boundaries:
   - `src/domain/observation/contracts.ts`
   - `src/infrastructure/supabase/repositories/observation-supabase-repository.ts`
-- Current state: the only durable Observation repository still accepts and returns V1 `CreateObservationInput` / `Observation`.
-- V2 impact: write ownership is now above the repository, but full durable Observation ownership is still blocked by V1-only repository contracts.
-- Future work: add a V2-native persistence/read seam that can durably rehydrate scenes, summaries, boundary signals, and scene-local derived structures.
-- Cleanup/removal potential: V1-first repository contracts can become compatibility-only once V2 durable reads exist.
+  - `src/infrastructure/supabase/repositories/observation-v2-supabase-repository.ts`
+- Current state: a V2-native repository now exists for bundle durability and rehydration, but the older V1 repository still exists and still defines the manual/API compatibility path.
+- V2 impact: durable Observation ownership is real for the live generated path, but repository ownership is still split by ingress and historical storage model.
+- Future work: cut read-side consumers and compatibility ingress away from the V1 repository before claiming full Observation ownership.
+- Cleanup/removal potential: V1-first repository contracts can now be narrowed to explicit compatibility-only status and later retired.
+
+### 8. Native V2 and historical V1 observations are not semantically equivalent
+
+- Boundaries:
+  - `supabase/migrations/20260611_0019_observation_v2_native_persistence.sql`
+  - `supabase/migrations/20260524_0003_observations.sql`
+- Current state: native V2 bundles preserve canonical scene-first semantics, while historical V1 rows preserve summary/fragment-era semantics only.
+- V2 impact: mixed-history systems must not silently pretend both durability models are interchangeable Observation truth.
+- Future work: define read-selection and migration posture for mixed historical records.
+- Cleanup/removal potential: historical V1-only reconstruction logic may become removable after an explicit migration or archive strategy exists.
 
 ## Notes
 

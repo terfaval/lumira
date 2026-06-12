@@ -58,6 +58,88 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-06-11 - Glossary Recognition Normalization Slice
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/glossary/recognition-normalization.ts`
+  - `src/domain/glossary/http-contract.ts`
+  - `src/domain/glossary/__tests__/recognition-normalization.test.ts`
+  - `src/domain/glossary/__tests__/http-contract.test.ts`
+  - `src/cognition/glossary/extract-glossary-candidates-from-observations.ts`
+  - `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`
+- Verification:
+  - `npm test` -> pass (`105` files, `405` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-11T16-57-13-516Z.log`
+- Notes:
+  - Added a shared glossary recognition normalization utility and removed the separate ASCII-biased candidate extractor normalization path.
+  - Recognition normalization now performs deterministic whitespace cleanup, Unicode accent folding, case folding, and simple punctuation collapse for glossary keys and future matching preparation.
+  - Alias parsing now preserves the first user-facing alias string while deduping by the same shared recognition fingerprint used for candidate `normalizedKey` generation.
+  - An initial `npm run typecheck` invocation failed against a transient pre-build `.next/types/validator.ts` artifact; rerunning after the successful logged build passed without source changes.
+
+## 2026-06-11 - Glossary Appearance Record Slice
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/glossary/types.ts`
+  - `src/domain/glossary/contracts.ts`
+  - `src/domain/glossary/http-contract.ts`
+  - `src/infrastructure/supabase/adapters/glossary-row.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `app/api/glossary/terms/[id]/appearances/route.ts`
+  - `app/api/glossary/terms/[id]/appearances/__tests__/route.test.ts`
+  - `src/domain/glossary/__tests__/http-contract.test.ts`
+  - `src/infrastructure/supabase/adapters/__tests__/glossary-row.test.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts`
+  - `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`
+  - `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`
+  - `supabase/migrations/20260611_0021_glossary_appearance_records.sql`
+  - `docs/backend-v2-migration/README.md`
+- Verification:
+  - `npm test` -> pass (`104` files, `399` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-11T15-46-37-550Z.log`
+- Notes:
+  - Added a dedicated canonical `glossary_appearance_records` persistence seam with legacy backfill from dream-scoped `glossary_associations`.
+  - Candidate confirmation now writes dream-linked appearance records with optional appearance notes and explicit `confirmed_at`, then syncs `glossary_terms.appearance_count` from canonical appearance ownership.
+  - Added the first entity-to-appearances API read path at `/api/glossary/terms/[id]/appearances`.
+  - Restored the historical `docs/backend-v2-migration/README.md` file so the existing clean-room quarantine documentation test remains valid during repo-wide verification.
+
+## 2026-06-11 - Observation V2 Native Persistence Phase 1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/observation/v2-runtime.ts`
+  - `src/domain/observation/contracts.ts`
+  - `src/infrastructure/persistence/observation-v2-write-store.ts`
+  - `src/infrastructure/persistence/observation-store.ts`
+  - `src/infrastructure/persistence/__tests__/observation-v2-write-store.test.ts`
+  - `src/infrastructure/supabase/adapters/observation-v2-row.ts`
+  - `src/infrastructure/supabase/adapters/__tests__/observation-v2-row.test.ts`
+  - `src/infrastructure/supabase/repositories/create-observation-v2-repository.ts`
+  - `src/infrastructure/supabase/repositories/observation-v2-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/observation-v2-supabase-repository.test.ts`
+  - `supabase/migrations/20260611_0019_observation_v2_native_persistence.sql`
+  - `docs/backend-v2-migration/Observation-V2-Fallout-Ledger.md`
+- Verification:
+  - `npm test` -> pass (`103` files, `386` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-11T10-10-01-415Z.log`
+- Notes:
+  - Added the first native Observation V2 bundle durability path for the live generated capture flow.
+  - Added native V2 bundle, scene, and scene-observation storage plus bundle rehydration back into `ObservationV2Bundle`.
+  - Kept manual/API Observation ingress and V1 row/fragment durability intact as explicit compatibility seams, and updated the fallout ledger with the remaining split-ownership risks.
+
 ## 2026-06-11 - Observation V2 Ownership Cutover Phase 1
 
 - Phase: BUILD
@@ -2170,3 +2252,85 @@ Verification references:
   - Quarantined the current backend-only observation/glossary/latent/openings/threads/responses substrate with explicit legacy status notes while leaving pages, routes, and UI intact.
   - Removed the generic `reflective-objects` default barrel export so new Backend V2 work does not inherit it as a default domain root.
   - Added a clean-room Backend V2 construction-site note and a protected dependency ledger for surfaces that still rely on quarantined backend modules.
+
+## 2026-06-11 - Glossary Observation Reconnection
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/glossary/extract-glossary-candidates-from-observations.ts`
+  - `src/reflective-space/composition/derive-glossary-cues.ts`
+  - `app/api/reflective-objects/[id]/glossary-candidates/route.ts`
+  - `src/reflective-space/composition/compose-object-orientation-payload.ts`
+  - `src/reflective-space/composition/compose-reflective-space-viewport.ts`
+  - `app/objects/[objectId]/page.tsx`
+  - `app/api/reflective-space/viewport/route.ts`
+  - `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`
+  - `src/reflective-space/composition/__tests__/derive-glossary-cues.test.ts`
+  - `app/api/reflective-objects/[id]/glossary-candidates/__tests__/route.test.ts`
+  - `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`
+  - `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`
+  - `app/api/reflective-space/viewport/__tests__/route.test.ts`
+- Verification:
+  - `npm.cmd test` -> pass (`103` files, `390` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-11T11-20-42-705Z.log`
+- Notes:
+  - Reconnected glossary candidate extraction to native Observation V2 bundles by reading scene-derived actors, locations, objects, affect, and recurrence-oriented observation text before falling back to legacy observation fragments.
+  - Reconnected glossary cue derivation in object orientation and reflective-space viewport composition to Observation V2 bundles, while preserving narrow legacy fallback for mixed-history objects.
+  - Kept glossary candidate schema, lifecycle states, repository shape, and term creation behavior unchanged.
+
+## 2026-06-11 - Glossary Entity Ownership Slice
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/glossary`
+  - `src/infrastructure/supabase/adapters/glossary-row.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `app/api/glossary/terms/[id]/route.ts`
+  - `supabase/migrations/20260611_0020_glossary_entity_ownership_slice.sql`
+  - `docs/superpowers/specs/2026-06-11-glossary-entity-ownership-slice-design.md`
+  - `docs/superpowers/plans/2026-06-11-glossary-entity-ownership-slice.md`
+- Verification:
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - `npm.cmd test` -> fail due pre-existing unrelated workspace state in `src/shared/__tests__/backend-v2-quarantine-docs.test.ts` expecting deleted `docs/backend-v2-migration/*` files
+  - Focused glossary validation:
+    - `npm.cmd test -- src/domain/glossary/__tests__/http-contract.test.ts` -> pass
+    - `npm.cmd test -- src/infrastructure/supabase/adapters/__tests__/glossary-row.test.ts` -> pass
+    - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts` -> pass
+    - `npm.cmd test -- app/api/glossary/terms/[id]/__tests__/route.test.ts` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-11T15-10-03-101Z.log`
+- Notes:
+  - Evolved the existing `glossary_terms` seam into a continuity-entity-shaped authority model instead of introducing a second persisted owner.
+  - Added typed continuity fields, alias storage, general-note storage, and appearance counts while preserving `normalized_key`, `display_label`, and `notes` as compatibility mirrors.
+  - Updated the glossary PATCH path to edit continuity-entity fields and updated candidate pinning so new rows are created as valid entity-shaped entries with a safe default type of `concept`.
+
+## 2026-06-12 - Match Candidate Foundation Slice
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/glossary/types.ts`
+  - `src/domain/glossary/http-contract.ts`
+  - `src/infrastructure/supabase/adapters/glossary-row.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `app/api/glossary/candidates/[id]/__tests__/route.test.ts`
+  - `app/api/reflective-objects/[id]/glossary-candidates/__tests__/route.test.ts`
+  - `supabase/migrations/20260612_0022_glossary_match_candidate_foundation.sql`
+  - `docs/superpowers/specs/2026-06-12-match-candidate-foundation-slice-design.md`
+  - `docs/superpowers/plans/2026-06-12-match-candidate-foundation-slice.md`
+- Verification:
+  - `npm.cmd test` -> pass (`105` files, `409` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-12T08-26-31-731Z.log`
+- Notes:
+  - Added the canonical candidate classes `match_candidate`, `ambiguous_match_candidate`, and `new_candidate` to glossary candidate domain contracts.
+  - Persisted candidate class and proposed entity references in the glossary candidate state store without adding matching, ambiguity generation, or appearance creation logic.
+  - Exposed candidate class metadata through existing candidate read/update seams so later Match Candidate generation can attach ownership-safe proposals.

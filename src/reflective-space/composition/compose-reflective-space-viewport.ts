@@ -1,12 +1,15 @@
 import type { OpeningActivationEventCursor } from "@/src/domain/responses/contracts";
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
-import type { ObservationRepository } from "@/src/domain/observation/contracts";
+import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
 import type { OpeningRepository } from "@/src/domain/openings/contracts";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 import type { ReflectiveResponseRepository } from "@/src/domain/responses/contracts";
 import type { ThreadRepository } from "@/src/domain/threads/contracts";
 import { composeOpeningDialogueWindow } from "@/src/reflective-space/composition/compose-opening-dialogue-window";
-import { deriveGlossaryCuesFromObservations } from "@/src/reflective-space/composition/derive-glossary-cues";
+import {
+  deriveGlossaryCuesFromObservationV2Bundle,
+  deriveGlossaryCuesFromObservations,
+} from "@/src/reflective-space/composition/derive-glossary-cues";
 import { deriveResponseSurfaces } from "@/src/reflective-space/composition/derive-response-surfaces";
 import { deriveThreadSurfaces } from "@/src/reflective-space/composition/derive-thread-surfaces";
 import type { ReflectiveSpaceViewportReadModel, ReflectiveSpaceViewportWindow } from "@/src/reflective-space/types";
@@ -32,6 +35,7 @@ export interface ComposeReflectiveSpaceViewportInput {
   dialogueBeforeCursor?: OpeningActivationEventCursor;
   reflectiveObjectRepository: ReflectiveObjectRepository;
   observationRepository: ObservationRepository;
+  observationV2Repository: ObservationV2Repository;
   glossaryRepository: GlossaryRepository;
   threadRepository: ThreadRepository;
   openingRepository: OpeningRepository;
@@ -194,7 +198,10 @@ export async function composeReflectiveSpaceViewport(
     ? input.centerObjectId
     : (reflectiveObjects[0]?.id ?? null);
 
-  const [observationRows, responseRows, dialogueWindow] = await Promise.all([
+  const [observationBundle, observationRows, responseRows, dialogueWindow] = await Promise.all([
+    centerObjectId
+      ? input.observationV2Repository.getByReflectiveObjectId(centerObjectId, input.userId)
+      : Promise.resolve(null),
     centerObjectId
       ? input.observationRepository.listByReflectiveObject({
           userId: input.userId,
@@ -231,7 +238,9 @@ export async function composeReflectiveSpaceViewport(
 
   const glossaryTerms = glossaryRows.slice(0, GLOSSARY_LIMIT);
   const hasMoreGlossaryTerms = glossaryRows.length > GLOSSARY_LIMIT;
-  const glossaryCuesAll = deriveGlossaryCuesFromObservations(observations);
+  const glossaryCuesAll = observationBundle
+    ? deriveGlossaryCuesFromObservationV2Bundle(observationBundle)
+    : deriveGlossaryCuesFromObservations(observations);
   const hasMoreGlossaryCues = glossaryCuesAll.length > GLOSSARY_LIMIT;
   const glossaryCues = glossaryCuesAll.slice(0, GLOSSARY_LIMIT);
 

@@ -1,18 +1,22 @@
 import type {
   CreateGlossaryAssociationInput,
+  CreateGlossaryAppearanceRecordInput,
   CreateGlossaryCandidateInput,
+  GlossaryAppearanceRecord,
   GlossaryAssociation,
   GlossaryCandidate,
   GlossaryCandidateLifecycleUpdate,
   GlossaryTerm,
-  GlossaryTermRenameInput,
+  GlossaryTermUpdateInput,
 } from "@/src/domain/glossary/types";
 import type { GlossaryCandidateId, GlossaryTermId, ReflectiveObjectId, UserId } from "@/src/shared/types";
 
 export interface GlossaryRepository {
   listTerms(userId: UserId, limit?: number): Promise<GlossaryTerm[]>;
   getTermById(termId: GlossaryTermId, userId: UserId): Promise<GlossaryTerm | null>;
-  renameTerm(input: GlossaryTermRenameInput): Promise<GlossaryTerm | null>;
+  listAppearanceRecordsByTerm(termId: GlossaryTermId, userId: UserId): Promise<GlossaryAppearanceRecord[]>;
+  updateTerm(input: GlossaryTermUpdateInput): Promise<GlossaryTerm | null>;
+  renameTerm?(input: GlossaryTermUpdateInput): Promise<GlossaryTerm | null>;
 
   listCandidates(userId: UserId): Promise<GlossaryCandidate[]>;
   listCandidatesByReflectiveObject(userId: UserId, reflectiveObjectId: ReflectiveObjectId): Promise<GlossaryCandidate[]>;
@@ -21,4 +25,5 @@ export interface GlossaryRepository {
   setCandidateLifecycle(input: GlossaryCandidateLifecycleUpdate): Promise<GlossaryCandidate | null>;
 
   createAssociation(input: CreateGlossaryAssociationInput): Promise<GlossaryAssociation>;
+  createAppearanceRecord(input: CreateGlossaryAppearanceRecordInput): Promise<GlossaryAppearanceRecord | null>;
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { parseGlossaryTermRename } from "@/src/domain/glossary/http-contract";
+import { parseGlossaryTermUpdate } from "@/src/domain/glossary/http-contract";
 import { DEV_FALLBACK_HEADER, resolveRequestUserContext } from "@/src/infrastructure/supabase/auth/resolve-request-user-context";
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
 
@@ -40,14 +40,14 @@ export async function PATCH(request: Request, context: RouteParams) {
   }
 
   const { id: termId } = await context.params;
-  const parsed = parseGlossaryTermRename(payload, termId, user.userId);
+  const parsed = parseGlossaryTermUpdate(payload, termId, user.userId);
 
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
   const repository = createGlossaryRepository();
-  const term = await repository.renameTerm(parsed.value);
+  const term = await repository.updateTerm(parsed.value);
 
   if (!term) {
     return NextResponse.json({ error: "Glossary term not found." }, { status: 404 });

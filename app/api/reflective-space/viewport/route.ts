@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { DEV_FALLBACK_HEADER, resolveRequestUserContext } from "@/src/infrastructure/supabase/auth/resolve-request-user-context";
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
 import { createObservationRepository } from "@/src/infrastructure/supabase/repositories/create-observation-repository";
+import { createObservationV2Repository } from "@/src/infrastructure/supabase/repositories/create-observation-v2-repository";
 import { createOpeningRepository } from "@/src/infrastructure/supabase/repositories/create-opening-repository";
 import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
 import { createResponseRepository } from "@/src/infrastructure/supabase/repositories/create-response-repository";
@@ -50,6 +51,7 @@ export async function GET(request: Request) {
     dialogueBeforeCursor: parseOpeningActivationEventCursor(url.searchParams.get("dialogueCursor")),
     reflectiveObjectRepository: createReflectiveObjectRepository(),
     observationRepository: createObservationRepository(),
+    observationV2Repository: createObservationV2Repository(),
     glossaryRepository: createGlossaryRepository(),
     threadRepository: createThreadRepository(),
     openingRepository: createOpeningRepository(),

@@ -128,4 +128,24 @@ describe("buildObservationV2Bundle", () => {
 
     expect(getSceneBoundarySignalKinds(scene)).toEqual(["actor_change", "narrative_change"]);
   });
+
+  it("adds durable bundle identity and provenance defaults when missing", () => {
+    const bundle = buildObservationV2Bundle({
+      reflectiveObjectId: "object-1",
+      userId: "user-1",
+      source: "system_llm_extract",
+      scenes: [],
+    });
+
+    expect(bundle.bundleId).toMatch(/^observation-bundle-object-1-/);
+    expect(bundle.runtimeVersion).toBe("observation_v2_phase1");
+    expect(bundle.uncertaintyNotes).toEqual([]);
+    expect(bundle.provenance).toEqual({
+      provenanceTier: "system_extract",
+      semanticPolicyResult: "accept_with_uncertainty",
+      semanticPolicyReasons: [],
+      latentBackflowGuard: "observation_only",
+      boundaryVersion: "observation_v2_phase1",
+    });
+  });
 });

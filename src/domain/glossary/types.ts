@@ -13,8 +13,26 @@ import type { ObservationCategory } from "@/src/domain/observation/types";
 export const GLOSSARY_CANDIDATE_STATES = ["candidate", "pinned", "suppressed", "ignored"] as const;
 export type GlossaryCandidateState = (typeof GLOSSARY_CANDIDATE_STATES)[number];
 
+export const GLOSSARY_CANDIDATE_CLASSES = [
+  "match_candidate",
+  "ambiguous_match_candidate",
+  "new_candidate",
+] as const;
+export type GlossaryCandidateClass = (typeof GLOSSARY_CANDIDATE_CLASSES)[number];
+
 export const GLOSSARY_TERM_STATES = ["active", "archived"] as const;
 export type GlossaryTermState = (typeof GLOSSARY_TERM_STATES)[number];
+
+export const GLOSSARY_ENTITY_TYPES = [
+  "person",
+  "place",
+  "animal_or_creature",
+  "object",
+  "setting_or_space",
+  "role",
+  "concept",
+] as const;
+export type GlossaryEntityType = (typeof GLOSSARY_ENTITY_TYPES)[number];
 
 export interface GlossarySuppressionState {
   state: "none" | "suppressed";
@@ -27,9 +45,23 @@ export interface GlossaryTerm extends VersionedTimestamps {
   userId: UserId;
   normalizedKey: string;
   displayLabel: string;
+  canonicalLabel: string;
+  type: GlossaryEntityType;
+  aliases: string[];
+  generalNote: string | null;
+  appearanceCount: number;
   notes: string | null;
   state: GlossaryTermState;
   suppression: GlossarySuppressionState;
+}
+
+export interface GlossaryAppearanceRecord extends VersionedTimestamps {
+  id: GlossaryAssociationId;
+  userId: UserId;
+  entityId: GlossaryTermId;
+  dreamId: ReflectiveObjectId;
+  appearanceNote: string | null;
+  confirmedAt: string;
 }
 
 export interface GlossaryCandidate extends VersionedTimestamps {
@@ -42,6 +74,8 @@ export interface GlossaryCandidate extends VersionedTimestamps {
   sourceObservationId: ObservationId | null;
   sourceObservationFragmentId: ObservationFragmentId | null;
   recurrenceCount: number;
+  candidateClass: GlossaryCandidateClass;
+  proposedEntityIds: GlossaryTermId[];
   state: GlossaryCandidateState;
   suppression: GlossarySuppressionState;
   lastSeenAt: string;
@@ -61,6 +95,11 @@ export interface CreateGlossaryTermInput {
   userId: UserId;
   normalizedKey: string;
   displayLabel: string;
+  canonicalLabel: string;
+  type: GlossaryEntityType;
+  aliases?: string[];
+  generalNote?: string | null;
+  appearanceCount?: number;
   notes?: string | null;
 }
 
@@ -73,6 +112,14 @@ export interface CreateGlossaryAssociationInput {
   associationLabel?: string | null;
 }
 
+export interface CreateGlossaryAppearanceRecordInput {
+  userId: UserId;
+  entityId: GlossaryTermId;
+  dreamId: ReflectiveObjectId;
+  appearanceNote?: string | null;
+  confirmedAt: string;
+}
+
 export interface CreateGlossaryCandidateInput {
   userId: UserId;
   reflectiveObjectId: ReflectiveObjectId;
@@ -82,6 +129,8 @@ export interface CreateGlossaryCandidateInput {
   sourceObservationId?: ObservationId | null;
   sourceObservationFragmentId?: ObservationFragmentId | null;
   recurrenceCount?: number;
+  candidateClass?: GlossaryCandidateClass;
+  proposedEntityIds?: GlossaryTermId[];
 }
 
 export interface GlossaryCandidateLifecycleUpdate {
@@ -90,10 +139,16 @@ export interface GlossaryCandidateLifecycleUpdate {
   nextState: GlossaryCandidateState;
   displayLabel?: string;
   suppressionReason?: string | null;
+  appearanceNote?: string | null;
+  candidateClass?: GlossaryCandidateClass;
+  proposedEntityIds?: GlossaryTermId[];
 }
 
-export interface GlossaryTermRenameInput {
+export interface GlossaryTermUpdateInput {
   termId: GlossaryTermId;
   userId: UserId;
-  nextDisplayLabel: string;
+  canonicalLabel: string;
+  type?: GlossaryEntityType;
+  aliases?: string[];
+  generalNote?: string | null;
 }

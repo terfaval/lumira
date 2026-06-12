@@ -92,10 +92,57 @@ describe("composeObjectOrientationPayload", () => {
         ],
         getById: async () => null,
       },
+      observationV2Repository: {
+        create: async () => {
+          throw new Error("not used");
+        },
+        getByBundleId: async () => null,
+        getByReflectiveObjectId: async () => ({
+          bundleId: "bundle-1",
+          userId: "user-1",
+          reflectiveObjectId: "obj-1",
+          source: "system_llm_extract",
+          runtimeVersion: "observation_v2_phase1",
+          uncertaintyNotes: [],
+          provenance: {
+            provenanceTier: "system_extract",
+            semanticPolicyResult: "accept_with_uncertainty",
+            semanticPolicyReasons: [],
+            latentBackflowGuard: "observation_only",
+            boundaryVersion: "observation_v2_phase1",
+          },
+          scenes: [
+            {
+              sceneId: "scene-1",
+              position: 0,
+              summary: "A house and doorway remain central.",
+              boundaryReasoning: [],
+              evidenceContext: {
+                snippet: "house and doorway",
+                spanStart: 0,
+                spanEnd: 17,
+                contextLabel: "scene",
+              },
+              observations: [],
+              derived: {
+                actors: [],
+                locations: [{ label: "House", observationIds: ["obsv2-1"] }],
+                objects: [{ label: "Doorway", observationIds: ["obsv2-1"] }],
+                interactions: [],
+                affect: [],
+                agency: [],
+                phenomenology: [],
+                metacognition: [],
+              },
+            },
+          ],
+        }),
+      },
       glossaryRepository: {
         listTerms: async () => [],
         getTermById: async () => null,
-        renameTerm: async () => null,
+        listAppearanceRecordsByTerm: async () => [],
+        updateTerm: async () => null,
         listCandidates: async () => [],
         listCandidatesByReflectiveObject: async () => [
           {
@@ -108,6 +155,8 @@ describe("composeObjectOrientationPayload", () => {
             sourceObservationId: "obs-1",
             sourceObservationFragmentId: "frag-1",
             recurrenceCount: 3,
+            candidateClass: "new_candidate",
+            proposedEntityIds: [],
             state: "pinned",
             suppression: { state: "none", suppressedAt: null, reason: null },
             lastSeenAt: "2026-06-03T08:01:00.000Z",
@@ -121,6 +170,7 @@ describe("composeObjectOrientationPayload", () => {
         createAssociation: async () => {
           throw new Error("not used");
         },
+        createAppearanceRecord: async () => null,
       },
       threadRepository: {
         createThread: async () => {
@@ -315,10 +365,18 @@ describe("composeObjectOrientationPayload", () => {
         listByReflectiveObject: async () => [],
         getById: async () => null,
       },
+      observationV2Repository: {
+        create: async () => {
+          throw new Error("not used");
+        },
+        getByBundleId: async () => null,
+        getByReflectiveObjectId: async () => null,
+      },
       glossaryRepository: {
         listTerms: async () => [],
         getTermById: async () => null,
-        renameTerm: async () => null,
+        listAppearanceRecordsByTerm: async () => [],
+        updateTerm: async () => null,
         listCandidates: async () => [],
         listCandidatesByReflectiveObject: async () => [],
         getCandidateById: async () => null,
@@ -327,6 +385,7 @@ describe("composeObjectOrientationPayload", () => {
         createAssociation: async () => {
           throw new Error("not used");
         },
+        createAppearanceRecord: async () => null,
       },
       threadRepository: {
         createThread: async () => {

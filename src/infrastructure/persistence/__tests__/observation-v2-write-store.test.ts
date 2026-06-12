@@ -2,20 +2,20 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
 
-const createObservationMock = vi.fn();
+const createObservationV2Mock = vi.fn();
 
-vi.mock("@/src/infrastructure/supabase/repositories/create-observation-repository", () => ({
-  createObservationRepository: () => ({
-    create: createObservationMock,
+vi.mock("@/src/infrastructure/supabase/repositories/create-observation-v2-repository", () => ({
+  createObservationV2Repository: () => ({
+    create: createObservationV2Mock,
   }),
 }));
 
 import { createObservationV2WriteStore } from "@/src/infrastructure/persistence/observation-v2-write-store";
 
 describe("ObservationV2WriteStore", () => {
-  it("keeps V1 projection behind the temporary storage adapter", async () => {
-    createObservationMock.mockReset();
-    createObservationMock.mockResolvedValue({ id: "obs-1" });
+  it("writes the live generated path through native observation v2 persistence", async () => {
+    createObservationV2Mock.mockReset();
+    createObservationV2Mock.mockImplementation(async (bundle: ObservationV2Bundle) => bundle);
 
     const store = createObservationV2WriteStore();
     const bundle: ObservationV2Bundle = {
@@ -64,17 +64,21 @@ describe("ObservationV2WriteStore", () => {
       ],
     };
 
-    await store.createFromBundle(bundle);
+    const stored = await store.createFromBundle(bundle);
 
-    expect(createObservationMock).toHaveBeenCalledWith(
+    expect(createObservationV2Mock).toHaveBeenCalledWith(
       expect.objectContaining({
+        bundleId: expect.stringMatching(/^observation-bundle-obj-1-/),
         reflectiveObjectId: "obj-1",
         userId: "user-1",
         source: "system_llm_extract",
-        provenanceTier: "system_extract",
-        semanticPolicyResult: "accept_with_uncertainty",
-        semanticPolicyReasons: ["observation_v2_temporary_storage_adapter"],
+        provenance: expect.objectContaining({
+          provenanceTier: "system_extract",
+          semanticPolicyResult: "accept_with_uncertainty",
+          semanticPolicyReasons: [],
+        }),
       }),
     );
+    expect(stored.bundleId).toMatch(/^observation-bundle-obj-1-/);
   });
 });

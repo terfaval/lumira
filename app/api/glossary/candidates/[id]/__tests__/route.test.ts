@@ -28,7 +28,11 @@ describe("/api/glossary/candidates/[id] route", () => {
     const response = await PATCH(
       new Request("http://localhost/api/glossary/candidates/cand-1", {
         method: "PATCH",
-        body: JSON.stringify({ nextState: "suppressed", suppressionReason: "too intense" }),
+        body: JSON.stringify({
+          nextState: "candidate",
+          candidateClass: "match_candidate",
+          proposedEntityIds: ["term-1"],
+        }),
       }),
       { params: Promise.resolve({ id: "cand-1" }) },
     );
@@ -38,6 +42,8 @@ describe("/api/glossary/candidates/[id] route", () => {
       expect.objectContaining({
         candidateId: "cand-1",
         userId: "user-a",
+        candidateClass: "match_candidate",
+        proposedEntityIds: ["term-1"],
       }),
     );
   });
