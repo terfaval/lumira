@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  parseGlossaryCandidateResolution,
   parseGlossaryCandidateLifecycleUpdate,
   parseGlossaryTermUpdate,
 } from "@/src/domain/glossary/http-contract";
@@ -53,6 +54,57 @@ describe("glossary http contracts", () => {
         nextState: "candidate",
         candidateClass: "ambiguous_match_candidate",
         proposedEntityIds: ["term-1"],
+      },
+      "cand-1",
+      "user-1",
+    );
+
+    expect(parsed.ok).toBe(false);
+  });
+
+  it("parses candidate resolution requests for existing entities", () => {
+    const parsed = parseGlossaryCandidateResolution(
+      {
+        resolutionType: "select_existing_entity",
+        entityId: "term-2",
+        appearanceNote: "This was definitely the same person.",
+      },
+      "cand-1",
+      "user-1",
+    );
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.resolutionType).toBe("select_existing_entity");
+    expect(parsed.value.entityId).toBe("term-2");
+    expect(parsed.value.appearanceNote).toBe("This was definitely the same person.");
+  });
+
+  it("parses candidate resolution requests for new entities with normalized aliases", () => {
+    const parsed = parseGlossaryCandidateResolution(
+      {
+        resolutionType: "create_new_entity",
+        canonicalLabel: "Apa",
+        type: "person",
+        aliases: ["apu", " APU ", "apám"],
+        generalNote: "Recurring father figure.",
+      },
+      "cand-1",
+      "user-1",
+    );
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.canonicalLabel).toBe("Apa");
+    expect(parsed.value.type).toBe("person");
+    expect(parsed.value.aliases).toEqual(["apu", "apám"]);
+    expect(parsed.value.generalNote).toBe("Recurring father figure.");
+  });
+
+  it("rejects existing-entity resolution without an entity id", () => {
+    const parsed = parseGlossaryCandidateResolution(
+      {
+        resolutionType: "confirm_existing_entity",
       },
       "cand-1",
       "user-1",

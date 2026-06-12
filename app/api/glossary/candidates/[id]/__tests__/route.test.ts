@@ -63,4 +63,20 @@ describe("/api/glossary/candidates/[id] route", () => {
 
     expect(response.status).toBe(404);
   });
+
+  it("rejects pinned lifecycle updates because resolution must use the resolve route", async () => {
+    resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
+
+    const { PATCH } = await import("@/app/api/glossary/candidates/[id]/route");
+    const response = await PATCH(
+      new Request("http://localhost/api/glossary/candidates/cand-1", {
+        method: "PATCH",
+        body: JSON.stringify({ nextState: "pinned" }),
+      }),
+      { params: Promise.resolve({ id: "cand-1" }) },
+    );
+
+    expect(response.status).toBe(400);
+    expect(setCandidateLifecycle).not.toHaveBeenCalled();
+  });
 });

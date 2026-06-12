@@ -2,10 +2,12 @@ import type {
   CreateGlossaryAssociationInput,
   CreateGlossaryAppearanceRecordInput,
   CreateGlossaryCandidateInput,
+  GlossaryCandidateResolution,
   GlossaryAppearanceRecord,
   GlossaryAssociation,
   GlossaryCandidate,
   GlossaryCandidateLifecycleUpdate,
+  ResolveGlossaryCandidateInput,
   GlossaryTerm,
   GlossaryTermUpdateInput,
 } from "@/src/domain/glossary/types";
@@ -23,6 +25,7 @@ export interface GlossaryRepository {
   getCandidateById(candidateId: GlossaryCandidateId, userId: UserId): Promise<GlossaryCandidate | null>;
   upsertCandidates(inputs: CreateGlossaryCandidateInput[]): Promise<GlossaryCandidate[]>;
   setCandidateLifecycle(input: GlossaryCandidateLifecycleUpdate): Promise<GlossaryCandidate | null>;
+  resolveCandidate(input: ResolveGlossaryCandidateInput): Promise<GlossaryCandidateResolution | null>;
 
   createAssociation(input: CreateGlossaryAssociationInput): Promise<GlossaryAssociation>;
   createAppearanceRecord(input: CreateGlossaryAppearanceRecordInput): Promise<GlossaryAppearanceRecord | null>;

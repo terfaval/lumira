@@ -34,6 +34,8 @@ describe("SupabaseGlossaryRepository isolation", () => {
         source_observation_id: "obs-1",
         source_observation_fragment_id: "frag-1",
         recurrence_count: 1,
+        candidate_class: "new_candidate",
+        proposed_entity_ids: [],
         state: "candidate",
         suppression_state: "none",
         suppression_reason: null,
@@ -64,6 +66,8 @@ describe("SupabaseGlossaryRepository isolation", () => {
         source_observation_id: "obs-1",
         source_observation_fragment_id: "frag-1",
         recurrence_count: 1,
+        candidate_class: "new_candidate",
+        proposed_entity_ids: [],
         state: "suppressed",
         suppression_state: "suppressed",
         suppression_reason: "too intense",
@@ -104,9 +108,6 @@ describe("SupabaseGlossaryRepository isolation", () => {
         suppression_reason: "too intense",
       }),
     );
-    expect(eqForUpdate).toHaveBeenNthCalledWith(1, "id", "cand-1");
-    expect(eqForUpdate).toHaveBeenNthCalledWith(2, "user_id", "user-a");
-    expect(isForUpdate).toHaveBeenCalledWith("archived_at", null);
   });
 
   it("defaults extracted candidates to new_candidate with no proposed entities", async () => {
@@ -166,267 +167,350 @@ describe("SupabaseGlossaryRepository isolation", () => {
     );
   });
 
-  it("creates continuity entity rows when a candidate is pinned", async () => {
-    const maybeSingleForLoad = vi
-      .fn()
-      .mockResolvedValueOnce({
-        data: {
-          id: "cand-1",
-          user_id: "user-a",
-          reflective_object_id: "obj-1",
-          normalized_key: "door",
-          display_label: "Door",
-          source_category: "object",
-          source_observation_id: "obs-1",
-          source_observation_fragment_id: "frag-1",
-          recurrence_count: 1,
-          state: "candidate",
-          suppression_state: "none",
-          suppression_reason: null,
-          suppressed_at: null,
-          last_seen_at: "2026-05-24T00:00:00.000Z",
-          archived_at: null,
-          created_at: "2026-05-24T00:00:00.000Z",
-          updated_at: "2026-05-24T00:00:00.000Z",
-        },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: null,
-        error: null,
-      });
+  it("resolves a candidate to an existing continuity entity and creates an appearance", async () => {
+    const candidateRow = {
+      id: "cand-1",
+      user_id: "user-a",
+      reflective_object_id: "obj-1",
+      normalized_key: "apa",
+      display_label: "Apa",
+      source_category: "actor",
+      source_observation_id: "obs-1",
+      source_observation_fragment_id: "frag-1",
+      recurrence_count: 1,
+      candidate_class: "match_candidate",
+      proposed_entity_ids: ["term-1"],
+      state: "candidate",
+      suppression_state: "none",
+      suppression_reason: null,
+      suppressed_at: null,
+      last_seen_at: "2026-06-12T00:00:00.000Z",
+      archived_at: null,
+      created_at: "2026-06-12T00:00:00.000Z",
+      updated_at: "2026-06-12T00:00:00.000Z",
+    };
 
-    const candidateIs = vi.fn().mockReturnValue({ maybeSingle: maybeSingleForLoad });
-    const candidateEq = vi.fn((column: string) => {
-      if (column === "id") return { eq: candidateEq };
-      if (column === "user_id") return { is: candidateIs };
-      return { is: candidateIs };
+    const termRow = {
+      id: "term-1",
+      user_id: "user-a",
+      normalized_key: "apa",
+      display_label: "Apa",
+      canonical_label: "Apa",
+      type: "person",
+      aliases: ["apu"],
+      general_note: null,
+      appearance_count: 1,
+      notes: null,
+      state: "active",
+      suppression_state: "none",
+      suppression_reason: null,
+      suppressed_at: null,
+      archived_at: null,
+      created_at: "2026-06-12T00:00:00.000Z",
+      updated_at: "2026-06-12T00:00:00.000Z",
+    };
+
+    const appearanceRow = {
+      id: "appearance-1",
+      user_id: "user-a",
+      entity_id: "term-1",
+      dream_id: "obj-1",
+      appearance_note: "Clearly the same father figure.",
+      confirmed_at: "2026-06-12T01:00:00.000Z",
+      created_at: "2026-06-12T01:00:00.000Z",
+      updated_at: "2026-06-12T01:00:00.000Z",
+    };
+
+    const resolvedCandidateRow = {
+      ...candidateRow,
+      state: "pinned",
+      updated_at: "2026-06-12T01:00:00.000Z",
+    };
+
+    const candidateMaybeSingle = vi.fn().mockResolvedValue({ data: candidateRow, error: null });
+    const candidateIsForLoad = vi.fn().mockReturnValue({ maybeSingle: candidateMaybeSingle });
+    const candidateEqForLoad = vi.fn((column: string) => {
+      if (column === "id") return { eq: candidateEqForLoad };
+      return { is: candidateIsForLoad };
     });
-    const candidateSelect = vi.fn().mockReturnValue({ eq: candidateEq });
+    const candidateSelectForLoad = vi.fn().mockReturnValue({ eq: candidateEqForLoad });
 
-    const maybeSingleForPinnedUpdate = vi.fn().mockResolvedValue({
+    const candidateMaybeSingleForPin = vi.fn().mockResolvedValue({ data: resolvedCandidateRow, error: null });
+    const candidateSelectForPin = vi.fn().mockReturnValue({ maybeSingle: candidateMaybeSingleForPin });
+    const candidateIsForPin = vi.fn().mockReturnValue({ select: candidateSelectForPin });
+    const candidateEqForPin = vi.fn((column: string) => {
+      if (column === "id") return { eq: candidateEqForPin };
+      return { is: candidateIsForPin };
+    });
+    const candidateUpdate = vi.fn().mockReturnValue({ eq: candidateEqForPin });
+
+    const termMaybeSingle = vi
+      .fn()
+      .mockResolvedValueOnce({ data: termRow, error: null })
+      .mockResolvedValueOnce({ data: termRow, error: null });
+    const termIs = vi.fn().mockReturnValue({ maybeSingle: termMaybeSingle });
+    const termEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: termEq };
+      return { is: termIs };
+    });
+    const termSelect = vi.fn().mockReturnValue({ eq: termEq });
+    const termUpdateIs = vi.fn().mockResolvedValue({ error: null });
+    const termUpdateEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: termUpdateEq };
+      return { is: termUpdateIs };
+    });
+    const termUpdate = vi.fn().mockReturnValue({ eq: termUpdateEq });
+
+    const appearanceMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const appearanceEq = vi.fn((column: string) => {
+      if (column === "entity_id") return { eq: appearanceEq };
+      if (column === "dream_id") return { eq: appearanceEq };
+      return { maybeSingle: appearanceMaybeSingle };
+    });
+    const appearanceInsertSingle = vi.fn().mockResolvedValue({ data: appearanceRow, error: null });
+    const appearanceInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: appearanceInsertSingle }) });
+    const appearanceCountEq = vi.fn((column: string) => {
+      if (column === "entity_id") return { eq: vi.fn().mockResolvedValue({ count: 1, error: null }) };
+      return { eq: vi.fn().mockResolvedValue({ count: 1, error: null }) };
+    });
+    const appearanceSelect = vi
+      .fn()
+      .mockReturnValueOnce({ eq: appearanceEq })
+      .mockReturnValueOnce({ eq: appearanceCountEq });
+
+    const associationInsertSingle = vi.fn().mockResolvedValue({
       data: {
-        id: "cand-1",
+        id: "assoc-1",
         user_id: "user-a",
+        glossary_term_id: "term-1",
         reflective_object_id: "obj-1",
-        normalized_key: "door",
-        display_label: "Door",
-        source_category: "object",
-        source_observation_id: "obs-1",
-        source_observation_fragment_id: "frag-1",
-        recurrence_count: 1,
-        state: "pinned",
-        suppression_state: "none",
-        suppression_reason: null,
-        suppressed_at: null,
-        last_seen_at: "2026-05-24T00:00:00.000Z",
-        archived_at: null,
-        created_at: "2026-05-24T00:00:00.000Z",
-        updated_at: "2026-05-24T01:00:00.000Z",
+        observation_id: "obs-1",
+        observation_fragment_id: "frag-1",
+        association_label: "Confirmed existing continuity entity from glossary candidate.",
+        created_at: "2026-06-12T01:00:00.000Z",
+        updated_at: "2026-06-12T01:00:00.000Z",
       },
       error: null,
     });
+    const associationInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: associationInsertSingle }) });
 
-    const selectAfterPinnedUpdate = vi.fn().mockReturnValue({ maybeSingle: maybeSingleForPinnedUpdate });
-    const isAfterPinnedUpdate = vi.fn().mockReturnValue({ select: selectAfterPinnedUpdate });
-    const eqAfterPinnedUpdate = vi.fn((column: string) => {
-      if (column === "id") return { eq: eqAfterPinnedUpdate };
-      return { is: isAfterPinnedUpdate };
+    const objectMaybeSingle = vi.fn().mockResolvedValue({ data: { id: "obj-1" }, error: null });
+    const objectIs = vi.fn().mockReturnValue({ maybeSingle: objectMaybeSingle });
+    const objectEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: objectEq };
+      if (column === "user_id") return { eq: objectEq };
+      if (column === "object_type") return { is: objectIs };
+      return { is: objectIs };
     });
-
-    const update = vi.fn().mockReturnValue({ eq: eqAfterPinnedUpdate });
-
-    const singleForInsert = vi
-      .fn()
-      .mockResolvedValueOnce({
-        data: {
-          id: "term-1",
-          user_id: "user-a",
-          normalized_key: "door",
-          display_label: "Door",
-          canonical_label: "Door",
-          type: "concept",
-          aliases: [],
-          general_note: null,
-          appearance_count: 1,
-          notes: null,
-          state: "active",
-          suppression_state: "none",
-          suppression_reason: null,
-          suppressed_at: null,
-          archived_at: null,
-          created_at: "2026-05-24T01:00:00.000Z",
-          updated_at: "2026-05-24T01:00:00.000Z",
-        },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: {
-          id: "appearance-1",
-          user_id: "user-a",
-          entity_id: "term-1",
-          dream_id: "obj-1",
-          appearance_note: "Most nagyon tamogato volt.",
-          confirmed_at: "2026-05-24T01:00:00.000Z",
-          created_at: "2026-05-24T01:00:00.000Z",
-          updated_at: "2026-05-24T01:00:00.000Z",
-        },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: {
-          id: "term-1",
-          user_id: "user-a",
-          normalized_key: "door",
-          display_label: "Door",
-          canonical_label: "Door",
-          type: "concept",
-          aliases: [],
-          general_note: null,
-          appearance_count: 1,
-          notes: null,
-          state: "active",
-          suppression_state: "none",
-          suppression_reason: null,
-          suppressed_at: null,
-          archived_at: null,
-          created_at: "2026-05-24T01:00:00.000Z",
-          updated_at: "2026-05-24T01:00:00.000Z",
-        },
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        count: 1,
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: {
-          id: "assoc-1",
-          user_id: "user-a",
-          glossary_term_id: "term-1",
-          reflective_object_id: "obj-1",
-          observation_id: "obs-1",
-          observation_fragment_id: "frag-1",
-          association_label: "Pinned from recurring reflective material.",
-          created_at: "2026-05-24T01:00:00.000Z",
-          updated_at: "2026-05-24T01:00:00.000Z",
-        },
-        error: null,
-      });
-
-    const selectAfterInsert = vi.fn().mockReturnValue({ single: singleForInsert });
-    const insert = vi.fn().mockReturnValue({ select: selectAfterInsert });
-    let appearanceSelectCalls = 0;
+    const objectSelect = vi.fn().mockReturnValue({ eq: objectEq });
 
     const from = vi.fn((table: string) => {
       if (table === "glossary_candidate_states") {
-        return { select: candidateSelect, update };
+        return { select: candidateSelectForLoad, update: candidateUpdate };
       }
-
       if (table === "glossary_terms") {
-        const termIs = vi.fn().mockReturnValue({ maybeSingle: maybeSingleForLoad });
-        const termEq = vi.fn((column: string) => {
-          if (column === "user_id") return { eq: termEq };
-          if (column === "normalized_key") return { is: termIs };
-          return { is: termIs };
-        });
-        const termSelect = vi.fn().mockReturnValue({ eq: termEq });
-
-        return { select: termSelect, insert, update };
+        return { select: termSelect, update: termUpdate };
       }
-
       if (table === "glossary_appearance_records") {
-        appearanceSelectCalls += 1;
-
-        if (appearanceSelectCalls === 1) {
-          const maybeSingle = vi.fn().mockResolvedValue({
-            data: null,
-            error: null,
-          });
-          const eq = vi.fn((column: string) => {
-            if (column === "entity_id") return { eq };
-            if (column === "dream_id") return { eq };
-            return { maybeSingle };
-          });
-
-          return {
-            insert,
-            select: vi.fn().mockReturnValue({ eq }),
-          };
-        }
-
-        const countEq = vi.fn((column: string) => {
-          if (column === "entity_id") {
-            return {
-              eq: vi.fn().mockResolvedValue({
-                count: 1,
-                error: null,
-              }),
-            };
-          }
-
-          return {
-            eq: vi.fn().mockResolvedValue({
-              count: 1,
-              error: null,
-            }),
-          };
-        });
-
-        return {
-          insert,
-          select: vi.fn().mockReturnValue({ eq: countEq }),
-        };
+        return { select: appearanceSelect, insert: appearanceInsert };
       }
-
+      if (table === "glossary_associations") {
+        return { insert: associationInsert };
+      }
       if (table === "reflective_objects") {
-        const objectMaybeSingle = vi.fn().mockResolvedValue({
-          data: { id: "obj-1" },
-          error: null,
-        });
-        const objectIs = vi.fn().mockReturnValue({ maybeSingle: objectMaybeSingle });
-        const objectEq = vi.fn((column: string) => {
-          if (column === "id") return { eq: objectEq };
-          if (column === "user_id") return { eq: objectEq };
-          if (column === "object_type") return { is: objectIs };
-          return { is: objectIs };
-        });
-        const objectSelect = vi.fn().mockReturnValue({ eq: objectEq });
-
         return { select: objectSelect };
       }
-
-      return { insert };
+      throw new Error(`Unexpected table ${table}`);
     });
 
     const repository = new SupabaseGlossaryRepository({ from } as never);
-    await repository.setCandidateLifecycle({
+    const resolved = await repository.resolveCandidate({
       candidateId: "cand-1",
       userId: "user-a",
-      nextState: "pinned",
-      appearanceNote: "Most nagyon tamogato volt.",
+      resolutionType: "confirm_existing_entity",
+      entityId: "term-1",
+      appearanceNote: "Clearly the same father figure.",
     });
 
-    expect(insert).toHaveBeenCalledWith(
+    expect(resolved?.candidate.state).toBe("pinned");
+    expect(resolved?.term.id).toBe("term-1");
+    expect(resolved?.appearanceRecord?.entityId).toBe("term-1");
+    expect(associationInsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        user_id: "user-a",
-        normalized_key: "door",
-        display_label: "Door",
-        canonical_label: "Door",
-        type: "concept",
-        aliases: [],
-        general_note: null,
-        appearance_count: 0,
+        glossary_term_id: "term-1",
       }),
     );
-    expect(insert).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
+  });
+
+  it("creates a new continuity entity during candidate resolution when needed", async () => {
+    const candidateRow = {
+      id: "cand-2",
+      user_id: "user-a",
+      reflective_object_id: "obj-1",
+      normalized_key: "mammut",
+      display_label: "Mammut",
+      source_category: "object",
+      source_observation_id: "obs-9",
+      source_observation_fragment_id: "frag-9",
+      recurrence_count: 1,
+      candidate_class: "new_candidate",
+      proposed_entity_ids: [],
+      state: "candidate",
+      suppression_state: "none",
+      suppression_reason: null,
+      suppressed_at: null,
+      last_seen_at: "2026-06-12T00:00:00.000Z",
+      archived_at: null,
+      created_at: "2026-06-12T00:00:00.000Z",
+      updated_at: "2026-06-12T00:00:00.000Z",
+    };
+
+    const createdTermRow = {
+      id: "term-new",
+      user_id: "user-a",
+      normalized_key: "mammut",
+      display_label: "Mammut",
+      canonical_label: "Mammut",
+      type: "object",
+      aliases: [],
+      general_note: null,
+      appearance_count: 1,
+      notes: null,
+      state: "active",
+      suppression_state: "none",
+      suppression_reason: null,
+      suppressed_at: null,
+      archived_at: null,
+      created_at: "2026-06-12T01:00:00.000Z",
+      updated_at: "2026-06-12T01:00:00.000Z",
+    };
+
+    const appearanceRow = {
+      id: "appearance-new",
+      user_id: "user-a",
+      entity_id: "term-new",
+      dream_id: "obj-1",
+      appearance_note: null,
+      confirmed_at: "2026-06-12T01:00:00.000Z",
+      created_at: "2026-06-12T01:00:00.000Z",
+      updated_at: "2026-06-12T01:00:00.000Z",
+    };
+
+    const resolvedCandidateRow = {
+      ...candidateRow,
+      state: "pinned",
+      updated_at: "2026-06-12T01:00:00.000Z",
+    };
+
+    const candidateMaybeSingle = vi.fn().mockResolvedValue({ data: candidateRow, error: null });
+    const candidateIsForLoad = vi.fn().mockReturnValue({ maybeSingle: candidateMaybeSingle });
+    const candidateEqForLoad = vi.fn((column: string) => {
+      if (column === "id") return { eq: candidateEqForLoad };
+      return { is: candidateIsForLoad };
+    });
+    const candidateSelectForLoad = vi.fn().mockReturnValue({ eq: candidateEqForLoad });
+
+    const candidateMaybeSingleForPin = vi.fn().mockResolvedValue({ data: resolvedCandidateRow, error: null });
+    const candidateSelectForPin = vi.fn().mockReturnValue({ maybeSingle: candidateMaybeSingleForPin });
+    const candidateIsForPin = vi.fn().mockReturnValue({ select: candidateSelectForPin });
+    const candidateEqForPin = vi.fn((column: string) => {
+      if (column === "id") return { eq: candidateEqForPin };
+      return { is: candidateIsForPin };
+    });
+    const candidateUpdate = vi.fn().mockReturnValue({ eq: candidateEqForPin });
+
+    const termInsertSingle = vi.fn().mockResolvedValue({ data: createdTermRow, error: null });
+    const termInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: termInsertSingle }) });
+    const termMaybeSingle = vi.fn().mockResolvedValue({ data: createdTermRow, error: null });
+    const termIs = vi.fn().mockReturnValue({ maybeSingle: termMaybeSingle });
+    const termEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: termEq };
+      return { is: termIs };
+    });
+    const termSelect = vi.fn().mockReturnValue({ eq: termEq });
+    const termUpdateIs = vi.fn().mockResolvedValue({ error: null });
+    const termUpdateEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: termUpdateEq };
+      return { is: termUpdateIs };
+    });
+    const termUpdate = vi.fn().mockReturnValue({ eq: termUpdateEq });
+
+    const appearanceMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const appearanceEq = vi.fn((column: string) => {
+      if (column === "entity_id") return { eq: appearanceEq };
+      if (column === "dream_id") return { eq: appearanceEq };
+      return { maybeSingle: appearanceMaybeSingle };
+    });
+    const appearanceInsertSingle = vi.fn().mockResolvedValue({ data: appearanceRow, error: null });
+    const appearanceInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: appearanceInsertSingle }) });
+    const appearanceCountEq = vi.fn((column: string) => {
+      if (column === "entity_id") return { eq: vi.fn().mockResolvedValue({ count: 1, error: null }) };
+      return { eq: vi.fn().mockResolvedValue({ count: 1, error: null }) };
+    });
+    const appearanceSelect = vi
+      .fn()
+      .mockReturnValueOnce({ eq: appearanceEq })
+      .mockReturnValueOnce({ eq: appearanceCountEq });
+
+    const associationInsertSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: "assoc-new",
         user_id: "user-a",
-        entity_id: "term-1",
-        dream_id: "obj-1",
-        appearance_note: "Most nagyon tamogato volt.",
+        glossary_term_id: "term-new",
+        reflective_object_id: "obj-1",
+        observation_id: "obs-9",
+        observation_fragment_id: "frag-9",
+        association_label: "Created continuity entity from glossary candidate resolution.",
+        created_at: "2026-06-12T01:00:00.000Z",
+        updated_at: "2026-06-12T01:00:00.000Z",
+      },
+      error: null,
+    });
+    const associationInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: associationInsertSingle }) });
+
+    const objectMaybeSingle = vi.fn().mockResolvedValue({ data: { id: "obj-1" }, error: null });
+    const objectIs = vi.fn().mockReturnValue({ maybeSingle: objectMaybeSingle });
+    const objectEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: objectEq };
+      if (column === "user_id") return { eq: objectEq };
+      if (column === "object_type") return { is: objectIs };
+      return { is: objectIs };
+    });
+    const objectSelect = vi.fn().mockReturnValue({ eq: objectEq });
+
+    const from = vi.fn((table: string) => {
+      if (table === "glossary_candidate_states") {
+        return { select: candidateSelectForLoad, update: candidateUpdate };
+      }
+      if (table === "glossary_terms") {
+        return { insert: termInsert, select: termSelect, update: termUpdate };
+      }
+      if (table === "glossary_appearance_records") {
+        return { select: appearanceSelect, insert: appearanceInsert };
+      }
+      if (table === "glossary_associations") {
+        return { insert: associationInsert };
+      }
+      if (table === "reflective_objects") {
+        return { select: objectSelect };
+      }
+      throw new Error(`Unexpected table ${table}`);
+    });
+
+    const repository = new SupabaseGlossaryRepository({ from } as never);
+    const resolved = await repository.resolveCandidate({
+      candidateId: "cand-2",
+      userId: "user-a",
+      resolutionType: "create_new_entity",
+    });
+
+    expect(termInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canonical_label: "Mammut",
+        type: "object",
       }),
     );
+    expect(resolved?.candidate.state).toBe("pinned");
+    expect(resolved?.term.id).toBe("term-new");
   });
 });

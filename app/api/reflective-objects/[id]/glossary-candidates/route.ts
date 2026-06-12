@@ -4,6 +4,7 @@ import {
   extractGlossaryCandidatesFromObservationV2Bundle,
   extractGlossaryCandidatesFromObservations,
 } from "@/src/cognition/glossary/extract-glossary-candidates-from-observations";
+import { classifyGlossaryCandidates } from "@/src/cognition/glossary/classify-glossary-candidates";
 import { DEV_FALLBACK_HEADER, resolveRequestUserContext } from "@/src/infrastructure/supabase/auth/resolve-request-user-context";
 import { createObservationRepository } from "@/src/infrastructure/supabase/repositories/create-observation-repository";
 import { createObservationV2Repository } from "@/src/infrastructure/supabase/repositories/create-observation-v2-repository";
@@ -83,7 +84,13 @@ export async function POST(request: Request, context: RouteParams) {
   }
 
   const glossaryRepository = createGlossaryRepository();
-  const candidates = await glossaryRepository.upsertCandidates(candidateInputs);
+  const terms = await glossaryRepository.listTerms(user.userId);
+  const candidates = await glossaryRepository.upsertCandidates(
+    classifyGlossaryCandidates({
+      candidates: candidateInputs,
+      terms,
+    }),
+  );
 
   return NextResponse.json({ candidates }, { status: 201 });
 }

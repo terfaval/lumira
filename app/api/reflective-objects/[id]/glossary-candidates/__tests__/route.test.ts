@@ -6,6 +6,7 @@ const listByReflectiveObject = vi.fn();
 const getByReflectiveObjectId = vi.fn();
 const listCandidatesByReflectiveObject = vi.fn();
 const upsertCandidates = vi.fn();
+const listTerms = vi.fn();
 
 vi.mock("@/src/infrastructure/supabase/auth/resolve-request-user-context", () => ({
   DEV_FALLBACK_HEADER: "x-lumira-user-id",
@@ -33,6 +34,7 @@ vi.mock("@/src/infrastructure/supabase/repositories/create-observation-v2-reposi
 vi.mock("@/src/infrastructure/supabase/repositories/create-glossary-repository", () => ({
   createGlossaryRepository: () => ({
     listCandidatesByReflectiveObject,
+    listTerms,
     upsertCandidates,
   }),
 }));
@@ -44,6 +46,7 @@ describe("/api/reflective-objects/[id]/glossary-candidates route", () => {
     listByReflectiveObject.mockReset();
     getByReflectiveObjectId.mockReset();
     listCandidatesByReflectiveObject.mockReset();
+    listTerms.mockReset();
     upsertCandidates.mockReset();
   });
 
@@ -88,6 +91,7 @@ describe("/api/reflective-objects/[id]/glossary-candidates route", () => {
     resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
     getById.mockResolvedValue({ id: "obj-1" });
     getByReflectiveObjectId.mockResolvedValue(null);
+    listTerms.mockResolvedValue([]);
     listByReflectiveObject.mockResolvedValue([
       {
         id: "obs-1",
@@ -139,6 +143,178 @@ describe("/api/reflective-objects/[id]/glossary-candidates route", () => {
           reflectiveObjectId: "obj-1",
           sourceObservationId: "obs-1",
           sourceObservationFragmentId: "frag-1",
+          candidateClass: "new_candidate",
+          proposedEntityIds: [],
+        }),
+      ]),
+    );
+  });
+
+  it("classifies deterministic normalized matches before persistence", async () => {
+    resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
+    getById.mockResolvedValue({ id: "obj-1" });
+    getByReflectiveObjectId.mockResolvedValue(null);
+    listTerms.mockResolvedValue([
+      {
+        id: "term-1",
+        userId: "user-a",
+        normalizedKey: "dori",
+        displayLabel: "Dóri",
+        canonicalLabel: "Dóri",
+        type: "person",
+        aliases: [],
+        generalNote: null,
+        appearanceCount: 2,
+        notes: null,
+        state: "active",
+        suppression: { state: "none", suppressedAt: null, reason: null },
+        createdAt: "2026-06-12T00:00:00.000Z",
+        updatedAt: "2026-06-12T00:00:00.000Z",
+      },
+    ]);
+    listByReflectiveObject.mockResolvedValue([
+      {
+        id: "obs-1",
+        userId: "user-a",
+        reflectiveObjectId: "obj-1",
+        source: "system_descriptive_extract",
+        summary: "summary",
+        uncertaintyNotes: [],
+        semanticPolicyResult: "accept",
+        semanticPolicyReasons: [],
+        provenanceTier: "system_extract",
+        summaryTrace: [{ fragmentPosition: 0, reason: "explicit_anchor", strength: "strong" }],
+        latentBackflowGuard: "observation_only",
+        boundaryVersion: "observation_semantic_guardrails_v1",
+        status: "active",
+        createdAt: "2026-05-24T00:00:00.000Z",
+        updatedAt: "2026-05-24T00:00:00.000Z",
+        fragments: [
+          {
+            id: "frag-1",
+            observationId: "obs-1",
+            userId: "user-a",
+            reflectiveObjectId: "obj-1",
+            category: "actor",
+            fragmentText: "Dóri",
+            evidenceAdequacy: "strong_span",
+            evidence: { snippet: "Dóri", spanStart: 0, spanEnd: 4, contextLabel: "raw_sentence" },
+            uncertaintyNote: null,
+            position: 0,
+            createdAt: "2026-05-24T00:00:00.000Z",
+            updatedAt: "2026-05-24T00:00:00.000Z",
+          },
+        ],
+      },
+    ]);
+    upsertCandidates.mockResolvedValue([{ id: "cand-1" }]);
+
+    const { POST } = await import("@/app/api/reflective-objects/[id]/glossary-candidates/route");
+    const response = await POST(
+      new Request("http://localhost/api/reflective-objects/obj-1/glossary-candidates", { method: "POST" }),
+      { params: Promise.resolve({ id: "obj-1" }) },
+    );
+
+    expect(response.status).toBe(201);
+    expect(upsertCandidates).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          normalizedKey: "dori",
+          candidateClass: "match_candidate",
+          proposedEntityIds: ["term-1"],
+        }),
+      ]),
+    );
+  });
+
+  it("classifies multiple deterministic matches as ambiguous before persistence", async () => {
+    resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
+    getById.mockResolvedValue({ id: "obj-1" });
+    getByReflectiveObjectId.mockResolvedValue(null);
+    listTerms.mockResolvedValue([
+      {
+        id: "term-2",
+        userId: "user-a",
+        normalizedKey: "dori",
+        displayLabel: "Dori",
+        canonicalLabel: "Dori",
+        type: "person",
+        aliases: [],
+        generalNote: null,
+        appearanceCount: 1,
+        notes: null,
+        state: "active",
+        suppression: { state: "none", suppressedAt: null, reason: null },
+        createdAt: "2026-06-12T00:00:00.000Z",
+        updatedAt: "2026-06-12T00:00:00.000Z",
+      },
+      {
+        id: "term-1",
+        userId: "user-a",
+        normalizedKey: "dori",
+        displayLabel: "Dori Prime",
+        canonicalLabel: "Dori Prime",
+        type: "person",
+        aliases: [],
+        generalNote: null,
+        appearanceCount: 2,
+        notes: null,
+        state: "active",
+        suppression: { state: "none", suppressedAt: null, reason: null },
+        createdAt: "2026-06-12T00:00:00.000Z",
+        updatedAt: "2026-06-12T00:00:00.000Z",
+      },
+    ]);
+    listByReflectiveObject.mockResolvedValue([
+      {
+        id: "obs-1",
+        userId: "user-a",
+        reflectiveObjectId: "obj-1",
+        source: "system_descriptive_extract",
+        summary: "summary",
+        uncertaintyNotes: [],
+        semanticPolicyResult: "accept",
+        semanticPolicyReasons: [],
+        provenanceTier: "system_extract",
+        summaryTrace: [{ fragmentPosition: 0, reason: "explicit_anchor", strength: "strong" }],
+        latentBackflowGuard: "observation_only",
+        boundaryVersion: "observation_semantic_guardrails_v1",
+        status: "active",
+        createdAt: "2026-05-24T00:00:00.000Z",
+        updatedAt: "2026-05-24T00:00:00.000Z",
+        fragments: [
+          {
+            id: "frag-1",
+            observationId: "obs-1",
+            userId: "user-a",
+            reflectiveObjectId: "obj-1",
+            category: "actor",
+            fragmentText: "Dori",
+            evidenceAdequacy: "strong_span",
+            evidence: { snippet: "Dori", spanStart: 0, spanEnd: 4, contextLabel: "raw_sentence" },
+            uncertaintyNote: null,
+            position: 0,
+            createdAt: "2026-05-24T00:00:00.000Z",
+            updatedAt: "2026-05-24T00:00:00.000Z",
+          },
+        ],
+      },
+    ]);
+    upsertCandidates.mockResolvedValue([{ id: "cand-1" }]);
+
+    const { POST } = await import("@/app/api/reflective-objects/[id]/glossary-candidates/route");
+    const response = await POST(
+      new Request("http://localhost/api/reflective-objects/obj-1/glossary-candidates", { method: "POST" }),
+      { params: Promise.resolve({ id: "obj-1" }) },
+    );
+
+    expect(response.status).toBe(201);
+    expect(upsertCandidates).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          normalizedKey: "dori",
+          candidateClass: "ambiguous_match_candidate",
+          proposedEntityIds: ["term-1", "term-2"],
         }),
       ]),
     );
@@ -147,6 +323,7 @@ describe("/api/reflective-objects/[id]/glossary-candidates route", () => {
   it("prefers observation v2 bundles for candidate extraction when available", async () => {
     resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
     getById.mockResolvedValue({ id: "obj-1" });
+    listTerms.mockResolvedValue([]);
     getByReflectiveObjectId.mockResolvedValue({
       bundleId: "bundle-1",
       userId: "user-a",
@@ -218,6 +395,8 @@ describe("/api/reflective-objects/[id]/glossary-candidates route", () => {
           reflectiveObjectId: "obj-1",
           sourceObservationId: "scene-1",
           sourceObservationFragmentId: "obsv2-1",
+          candidateClass: "new_candidate",
+          proposedEntityIds: [],
         }),
       ]),
     );

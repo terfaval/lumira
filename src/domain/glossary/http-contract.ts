@@ -1,9 +1,12 @@
 import {
   GLOSSARY_CANDIDATE_CLASSES,
+  GLOSSARY_CANDIDATE_RESOLUTION_TYPES,
   GLOSSARY_ENTITY_TYPES,
   type GlossaryCandidateClass,
+  type GlossaryCandidateResolutionType,
   type GlossaryCandidateState,
   type GlossaryCandidateLifecycleUpdate,
+  type ResolveGlossaryCandidateInput,
   type GlossaryEntityType,
   type GlossaryTermUpdateInput,
 } from "@/src/domain/glossary/types";
@@ -12,6 +15,7 @@ import type { GlossaryCandidateId, GlossaryTermId, UserId } from "@/src/shared/t
 
 const VALID_STATES: GlossaryCandidateState[] = ["candidate", "pinned", "suppressed", "ignored"];
 const VALID_CANDIDATE_CLASSES = new Set<GlossaryCandidateClass>(GLOSSARY_CANDIDATE_CLASSES);
+const VALID_RESOLUTION_TYPES = new Set<GlossaryCandidateResolutionType>(GLOSSARY_CANDIDATE_RESOLUTION_TYPES);
 const VALID_ENTITY_TYPES = new Set<GlossaryEntityType>(GLOSSARY_ENTITY_TYPES);
 
 type ParseResult<T> =
@@ -106,6 +110,74 @@ export function parseGlossaryCandidateLifecycleUpdate(
       appearanceNote,
       candidateClass: candidateShape.candidateClass,
       proposedEntityIds: candidateShape.proposedEntityIds,
+    },
+  };
+}
+
+export function parseGlossaryCandidateResolution(
+  payload: unknown,
+  candidateId: GlossaryCandidateId,
+  userId: UserId,
+): ParseResult<ResolveGlossaryCandidateInput> {
+  const record = asRecord(payload);
+
+  if (!record) {
+    return { ok: false, error: "Request body must be an object." };
+  }
+
+  const resolutionType =
+    typeof record.resolutionType === "string"
+      ? (record.resolutionType as GlossaryCandidateResolutionType)
+      : null;
+
+  if (!resolutionType || !VALID_RESOLUTION_TYPES.has(resolutionType)) {
+    return { ok: false, error: "Invalid glossary candidate resolution type." };
+  }
+
+  const entityId =
+    typeof record.entityId === "string" && record.entityId.trim().length > 0 ? record.entityId.trim() : undefined;
+  const canonicalLabel =
+    typeof record.canonicalLabel === "string" && record.canonicalLabel.trim().length > 0
+      ? record.canonicalLabel.trim()
+      : undefined;
+  const type = typeof record.type === "string" ? (record.type as GlossaryEntityType) : undefined;
+  const aliases = normalizeAliases(record.aliases);
+  const generalNote =
+    typeof record.generalNote === "string" ? record.generalNote.trim() || null : record.generalNote === null ? null : undefined;
+  const appearanceNote =
+    typeof record.appearanceNote === "string"
+      ? record.appearanceNote.trim() || null
+      : record.appearanceNote === null
+        ? null
+        : undefined;
+
+  if (type && !VALID_ENTITY_TYPES.has(type)) {
+    return { ok: false, error: "Unsupported glossary entity type." };
+  }
+
+  if (record.aliases !== undefined && aliases === undefined) {
+    return { ok: false, error: "aliases must be an array of strings." };
+  }
+
+  if (
+    (resolutionType === "confirm_existing_entity" || resolutionType === "select_existing_entity") &&
+    !entityId
+  ) {
+    return { ok: false, error: "entityId is required for existing-entity candidate resolution." };
+  }
+
+  return {
+    ok: true,
+    value: {
+      candidateId,
+      userId,
+      resolutionType,
+      entityId,
+      canonicalLabel,
+      type,
+      aliases,
+      generalNote,
+      appearanceNote,
     },
   };
 }

@@ -1,12 +1,15 @@
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
+import { normalizeGlossaryRecognitionText } from "@/src/domain/glossary/recognition-normalization";
 import type {
   CreateGlossaryAppearanceRecordInput,
   CreateGlossaryAssociationInput,
   CreateGlossaryCandidateInput,
+  GlossaryCandidateResolution,
   GlossaryAppearanceRecord,
   GlossaryAssociation,
   GlossaryCandidate,
   GlossaryCandidateLifecycleUpdate,
+  ResolveGlossaryCandidateInput,
   GlossaryTerm,
   GlossaryTermUpdateInput,
 } from "@/src/domain/glossary/types";
@@ -253,27 +256,60 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
       return null;
     }
 
-    if (input.nextState === "pinned") {
-      const term = await this.ensureGlossaryTermForPinnedCandidate(data);
-      await this.createAppearanceRecord({
-        userId: input.userId,
-        entityId: term.id,
-        dreamId: data.reflective_object_id,
-        appearanceNote: input.appearanceNote ?? null,
-        confirmedAt: now,
-      });
-      await this.syncAppearanceCount(term.id, input.userId);
-      await this.createAssociation({
-        userId: input.userId,
-        glossaryTermId: term.id,
-        reflectiveObjectId: data.reflective_object_id,
-        observationId: data.source_observation_id,
-        observationFragmentId: data.source_observation_fragment_id,
-        associationLabel: "Pinned from recurring reflective material.",
-      });
+    return fromGlossaryCandidateRow(data);
+  }
+
+  async resolveCandidate(input: ResolveGlossaryCandidateInput): Promise<GlossaryCandidateResolution | null> {
+    const candidate = await this.getCandidateRowById(input.candidateId, input.userId);
+
+    if (!candidate) {
+      return null;
     }
 
-    return fromGlossaryCandidateRow(data);
+    const now = new Date().toISOString();
+    const term =
+      input.resolutionType === "create_new_entity"
+        ? await this.createGlossaryTermFromResolution(candidate, input)
+        : await this.getResolvedExistingTerm(input.entityId ?? null, input.userId);
+
+    if (!term) {
+      return null;
+    }
+
+    const appearanceRecord = await this.createAppearanceRecord({
+      userId: input.userId,
+      entityId: term.id,
+      dreamId: candidate.reflective_object_id,
+      appearanceNote: input.appearanceNote ?? null,
+      confirmedAt: now,
+    });
+
+    if (!appearanceRecord) {
+      return null;
+    }
+
+    await this.syncAppearanceCount(term.id, input.userId);
+    await this.createAssociation({
+      userId: input.userId,
+      glossaryTermId: term.id,
+      reflectiveObjectId: candidate.reflective_object_id,
+      observationId: candidate.source_observation_id,
+      observationFragmentId: candidate.source_observation_fragment_id,
+      associationLabel: this.buildResolutionAssociationLabel(input.resolutionType),
+    });
+
+    const resolvedCandidate = await this.markCandidatePinned(candidate.id, input.userId, now);
+    const refreshedTerm = await this.getTermById(term.id, input.userId);
+
+    if (!resolvedCandidate || !refreshedTerm) {
+      return null;
+    }
+
+    return {
+      candidate: resolvedCandidate,
+      term: refreshedTerm,
+      appearanceRecord,
+    };
   }
 
   async createAppearanceRecord(input: CreateGlossaryAppearanceRecordInput): Promise<GlossaryAppearanceRecord | null> {
@@ -441,6 +477,105 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
     if (updateError) {
       throw new Error(`Failed to sync glossary appearance count: ${updateError.message}`);
     }
+  }
+
+  private async getResolvedExistingTerm(termId: GlossaryTermId | null, userId: UserId): Promise<GlossaryTerm | null> {
+    if (!termId) {
+      return null;
+    }
+
+    return this.getTermById(termId, userId);
+  }
+
+  private async createGlossaryTermFromResolution(
+    candidate: GlossaryCandidateRow,
+    input: ResolveGlossaryCandidateInput,
+  ): Promise<GlossaryTerm> {
+    const canonicalLabel = input.canonicalLabel ?? candidate.display_label;
+    const type = input.type ?? this.mapCandidateSourceToEntityType(candidate.source_category);
+    const normalizedKey = normalizeGlossaryRecognitionText(canonicalLabel);
+
+    const { data, error } = await this.client
+      .from(TERMS_TABLE)
+      .insert(
+        toGlossaryTermInsertRow({
+          userId: input.userId,
+          normalizedKey,
+          displayLabel: canonicalLabel,
+          canonicalLabel,
+          type,
+          aliases: input.aliases ?? [],
+          generalNote: input.generalNote ?? null,
+          appearanceCount: 0,
+          notes: input.generalNote ?? null,
+        }),
+      )
+      .select("*")
+      .single<GlossaryTermRow>();
+
+    if (error) {
+      throw new Error(`Failed to create glossary term from candidate resolution: ${error.message}`);
+    }
+
+    return fromGlossaryTermRow(data);
+  }
+
+  private mapCandidateSourceToEntityType(
+    sourceCategory: GlossaryCandidateRow["source_category"],
+  ): GlossaryTerm["type"] {
+    switch (sourceCategory) {
+      case "actor":
+        return "person";
+      case "location":
+        return "place";
+      case "object":
+        return "object";
+      default:
+        return "concept";
+    }
+  }
+
+  private buildResolutionAssociationLabel(
+    resolutionType: ResolveGlossaryCandidateInput["resolutionType"],
+  ): string {
+    switch (resolutionType) {
+      case "confirm_existing_entity":
+        return "Confirmed existing continuity entity from glossary candidate.";
+      case "select_existing_entity":
+        return "Resolved ambiguous glossary candidate to an existing continuity entity.";
+      case "create_new_entity":
+        return "Created continuity entity from glossary candidate resolution.";
+    }
+  }
+
+  private async markCandidatePinned(
+    candidateId: GlossaryCandidateId,
+    userId: UserId,
+    now: string,
+  ): Promise<GlossaryCandidate | null> {
+    const patch = toGlossaryCandidateLifecycleUpdateRow(
+      {
+        candidateId,
+        userId,
+        nextState: "pinned",
+      },
+      now,
+    );
+
+    const { data, error } = await this.client
+      .from(CANDIDATES_TABLE)
+      .update(patch)
+      .eq("id", candidateId)
+      .eq("user_id", userId)
+      .is("archived_at", null)
+      .select("*")
+      .maybeSingle<GlossaryCandidateRow>();
+
+    if (error) {
+      throw new Error(`Failed to mark glossary candidate resolved: ${error.message}`);
+    }
+
+    return data ? fromGlossaryCandidateRow(data) : null;
   }
 
   private async ensureGlossaryTermForPinnedCandidate(candidate: GlossaryCandidateRow): Promise<GlossaryTerm> {

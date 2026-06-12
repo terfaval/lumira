@@ -167,6 +167,7 @@ describe("composeObjectOrientationPayload", () => {
         getCandidateById: async () => null,
         upsertCandidates: async () => [],
         setCandidateLifecycle: async () => null,
+        resolveCandidate: async () => null,
         createAssociation: async () => {
           throw new Error("not used");
         },
@@ -382,6 +383,7 @@ describe("composeObjectOrientationPayload", () => {
         getCandidateById: async () => null,
         upsertCandidates: async () => [],
         setCandidateLifecycle: async () => null,
+        resolveCandidate: async () => null,
         createAssociation: async () => {
           throw new Error("not used");
         },

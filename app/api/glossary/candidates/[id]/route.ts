@@ -46,6 +46,10 @@ export async function PATCH(request: Request, context: RouteParams) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
+  if (parsed.value.nextState === "pinned") {
+    return NextResponse.json({ error: "Use the candidate resolution route for pinned transitions." }, { status: 400 });
+  }
+
   const repository = createGlossaryRepository();
   const candidate = await repository.setCandidateLifecycle(parsed.value);
 

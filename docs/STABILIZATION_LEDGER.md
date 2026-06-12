@@ -2334,3 +2334,68 @@ Verification references:
   - Added the canonical candidate classes `match_candidate`, `ambiguous_match_candidate`, and `new_candidate` to glossary candidate domain contracts.
   - Persisted candidate class and proposed entity references in the glossary candidate state store without adding matching, ambiguity generation, or appearance creation logic.
   - Exposed candidate class metadata through existing candidate read/update seams so later Match Candidate generation can attach ownership-safe proposals.
+
+## 2026-06-12 - Match Candidate Generation Slice v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/glossary/classify-glossary-candidates.ts`
+  - `src/cognition/glossary/__tests__/classify-glossary-candidates.test.ts`
+  - `app/api/reflective-objects/[id]/glossary-candidates/route.ts`
+  - `app/api/reflective-objects/[id]/glossary-candidates/__tests__/route.test.ts`
+- Verification:
+  - `npm.cmd test` -> pass (`106` files, `415` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-12T08-55-11-307Z.log`
+- Notes:
+  - Added deterministic-first candidate classification over extracted glossary candidates using normalized exact-match first, then alias matching.
+  - Classified unique deterministic matches as `match_candidate` with one proposed entity id and forced all zero-match or multi-match cases to `new_candidate` with no proposed entities.
+  - Kept ambiguity generation, appearance creation changes, morphology handling, and LLM matching out of scope.
+
+## 2026-06-12 - Ambiguous Match Generation Slice v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/glossary/classify-glossary-candidates.ts`
+  - `src/cognition/glossary/__tests__/classify-glossary-candidates.test.ts`
+  - `app/api/reflective-objects/[id]/glossary-candidates/__tests__/route.test.ts`
+- Verification:
+  - `npm.cmd test` -> pass (`106` files, `418` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-12T09-18-15-497Z.log`
+- Notes:
+  - Extended deterministic candidate classification so multi-entity exact matches and multi-entity alias matches now produce `ambiguous_match_candidate`.
+  - Kept exact matches authoritative over alias matches, deduped repeated entity ids, and sorted proposed entity ids deterministically before persistence.
+  - Left user resolution flow, appearance creation from ambiguity, morphology, and LLM fallback out of scope.
+
+## 2026-06-12 - Match Candidate Resolution Slice v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/glossary/types.ts`
+  - `src/domain/glossary/contracts.ts`
+  - `src/domain/glossary/http-contract.ts`
+  - `src/domain/glossary/__tests__/http-contract.test.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts`
+  - `app/api/glossary/candidates/[id]/route.ts`
+  - `app/api/glossary/candidates/[id]/__tests__/route.test.ts`
+  - `app/api/glossary/candidates/[id]/resolve/route.ts`
+  - `app/api/glossary/candidates/[id]/resolve/__tests__/route.test.ts`
+- Verification:
+  - `npm.cmd test` -> pass (`107` files, `426` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-12T10-20-35-994Z.log`
+- Notes:
+  - Introduced a unified `resolveCandidate(...)` authority covering existing-entity confirmation, ambiguous existing-entity selection, and new-entity creation.
+  - Moved appearance creation behind candidate resolution instead of generic lifecycle patching, while preserving `pinned` as the existing resolved lifecycle state.
+  - Added a dedicated candidate resolution API route and blocked `PATCH nextState="pinned"` so public resolution flows through the single resolution seam.

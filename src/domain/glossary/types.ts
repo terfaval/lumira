@@ -144,6 +144,31 @@ export interface GlossaryCandidateLifecycleUpdate {
   proposedEntityIds?: GlossaryTermId[];
 }
 
+export const GLOSSARY_CANDIDATE_RESOLUTION_TYPES = [
+  "confirm_existing_entity",
+  "select_existing_entity",
+  "create_new_entity",
+] as const;
+export type GlossaryCandidateResolutionType = (typeof GLOSSARY_CANDIDATE_RESOLUTION_TYPES)[number];
+
+export interface ResolveGlossaryCandidateInput {
+  candidateId: GlossaryCandidateId;
+  userId: UserId;
+  resolutionType: GlossaryCandidateResolutionType;
+  entityId?: GlossaryTermId;
+  canonicalLabel?: string;
+  type?: GlossaryEntityType;
+  aliases?: string[];
+  generalNote?: string | null;
+  appearanceNote?: string | null;
+}
+
+export interface GlossaryCandidateResolution {
+  candidate: GlossaryCandidate;
+  term: GlossaryTerm;
+  appearanceRecord: GlossaryAppearanceRecord | null;
+}
+
 export interface GlossaryTermUpdateInput {
   termId: GlossaryTermId;
   userId: UserId;
