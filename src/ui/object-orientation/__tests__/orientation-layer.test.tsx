@@ -116,27 +116,32 @@ const payload: ObjectOrientationPayload = {
 };
 
 describe("ObjectOrientationLayer", () => {
-  it("renders the glossary orientation panel within the existing quiet layout", () => {
+  it("renders the glossary orientation panel with a bottom dropdown filter", () => {
     const markup = renderToStaticMarkup(<ObjectOrientationLayer payload={payload} />);
 
-    expect(markup).not.toContain(">Álom<");
-    expect(markup).toContain("Álomszótár");
+    expect(markup).toContain("Lantern House");
     expect(markup).toContain("Apa");
     expect(markup).toContain("Exem");
     expect(markup).toContain("Mammut");
     expect(markup).toContain("Bridge");
-    expect(markup).toContain("Szűrő");
+    expect(markup).toContain("<select");
+    expect(markup).toContain(">Mind<");
+    expect(markup).toContain(">Függőben<");
+    expect(markup).toContain(">Egyező<");
+    expect(markup).toContain(">Többértelmű<");
+    expect(markup).toContain(">Új<");
+    expect(markup).toContain(">Rögzített<");
+    expect(markup).toContain('aria-label="Szótárszűrő"');
     expect(markup).toContain("Jelzések");
     expect(markup).toContain("Érzelmi tér");
     expect(markup).toContain("Szálak");
     expect(markup).toContain("Megnyitások");
     expect(markup).toContain("Jegyzetek");
-    expect(markup).toContain("Lantern House");
-    expect(markup).toContain("aria-label=\"Cím szerkesztése\"");
+    expect(markup).toContain('aria-label="Cím szerkesztése"');
     expect(markup).toContain("aria-hidden=\"true\"");
     expect(markup).not.toContain("Átnevezés");
     expect(markup).not.toContain("Bármikor átnevezheted.");
-    expect(markup).toContain("aria-pressed=\"true\">Új");
+    expect(markup).toContain('aria-pressed="true">Új');
     expect(markup).toContain("The doorway may matter here.");
   });
 });

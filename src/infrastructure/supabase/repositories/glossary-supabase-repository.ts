@@ -19,6 +19,7 @@ import {
   fromGlossaryAssociationRow,
   fromGlossaryCandidateRow,
   fromGlossaryTermRow,
+  normalizeGlossaryCandidateMetadata,
   toGlossaryAppearanceRecordInsertRow,
   toGlossaryAssociationInsertRow,
   toGlossaryCandidateInsertRow,
@@ -38,6 +39,8 @@ const APPEARANCES_TABLE = "glossary_appearance_records";
 const REFLECTIVE_OBJECTS_TABLE = "reflective_objects";
 
 export class SupabaseGlossaryRepository implements GlossaryRepository {
+  private candidateMetadataColumnsAvailable: boolean | null = null;
+
   constructor(private readonly client: SupabaseInfrastructureClient) {}
 
   async listTerms(userId: UserId, limit?: number): Promise<GlossaryTerm[]> {
@@ -228,47 +231,136 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
       const increment = input.recurrenceCount ?? 1;
 
       if (!existing) {
-        const { data, error } = await this.client
-          .from(CANDIDATES_TABLE)
-          .insert(toGlossaryCandidateInsertRow(input, now))
-          .select("*")
-          .single<GlossaryCandidateRow>();
+        const created = await this.insertCandidateRow(input, now);
 
-        if (error) {
-          throw new Error(`Failed to create glossary candidate: ${error.message}`);
-        }
-
-        results.push(fromGlossaryCandidateRow(data));
+        results.push(fromGlossaryCandidateRow(created));
         continue;
       }
 
+      const updated = await this.updateCandidateRow(input, existing, increment, now);
+      results.push(fromGlossaryCandidateRow(updated));
+    }
+
+    return results;
+  }
+
+  private async insertCandidateRow(input: CreateGlossaryCandidateInput, now: string): Promise<GlossaryCandidateRow> {
+    const attempts = this.candidateMetadataColumnsAvailable === false ? [false] : [true, false];
+
+    for (const includeMetadata of attempts) {
       const { data, error } = await this.client
         .from(CANDIDATES_TABLE)
-        .update({
-          display_label: input.displayLabel,
-          source_category: input.sourceCategory,
-          source_observation_id: input.sourceObservationId ?? existing.source_observation_id,
-          source_observation_fragment_id:
-            input.sourceObservationFragmentId ?? existing.source_observation_fragment_id,
-          recurrence_count: existing.recurrence_count + increment,
-          candidate_class: input.candidateClass ?? existing.candidate_class,
-          proposed_entity_ids: input.proposedEntityIds ?? existing.proposed_entity_ids,
-          last_seen_at: now,
-        })
+        .insert(this.toCandidateInsertPatch(input, now, includeMetadata))
+        .select("*")
+        .single<GlossaryCandidateRow>();
+
+      if (!error && data) {
+        this.candidateMetadataColumnsAvailable = includeMetadata;
+        return data;
+      }
+
+      if (!this.isMissingCandidateMetadataColumnError(error) || !includeMetadata) {
+        throw new Error(`Failed to create glossary candidate: ${error?.message ?? "unknown_error"}`);
+      }
+
+      this.candidateMetadataColumnsAvailable = false;
+    }
+
+    throw new Error("Failed to create glossary candidate: unknown_error");
+  }
+
+  private async updateCandidateRow(
+    input: CreateGlossaryCandidateInput,
+    existing: GlossaryCandidateRow,
+    increment: number,
+    now: string,
+  ): Promise<GlossaryCandidateRow> {
+    const attempts = this.candidateMetadataColumnsAvailable === false ? [false] : [true, false];
+
+    for (const includeMetadata of attempts) {
+      const { data, error } = await this.client
+        .from(CANDIDATES_TABLE)
+        .update(this.toCandidateUpdatePatch(input, existing, increment, now, includeMetadata))
         .eq("id", existing.id)
         .eq("user_id", input.userId)
         .is("archived_at", null)
         .select("*")
         .single<GlossaryCandidateRow>();
 
-      if (error) {
-        throw new Error(`Failed to update glossary candidate: ${error.message}`);
+      if (!error && data) {
+        this.candidateMetadataColumnsAvailable = includeMetadata;
+        return data;
       }
 
-      results.push(fromGlossaryCandidateRow(data));
+      if (!this.isMissingCandidateMetadataColumnError(error) || !includeMetadata) {
+        throw new Error(`Failed to update glossary candidate: ${error?.message ?? "unknown_error"}`);
+      }
+
+      this.candidateMetadataColumnsAvailable = false;
     }
 
-    return results;
+    throw new Error("Failed to update glossary candidate: unknown_error");
+  }
+
+  private toCandidateInsertPatch(
+    input: CreateGlossaryCandidateInput,
+    now: string,
+    includeMetadata: boolean,
+  ): Record<string, unknown> {
+    const row = toGlossaryCandidateInsertRow(input, now) as unknown as Record<string, unknown>;
+
+    if (!includeMetadata) {
+      delete row.candidate_class;
+      delete row.proposed_entity_ids;
+    }
+
+    return row;
+  }
+
+  private toCandidateUpdatePatch(
+    input: CreateGlossaryCandidateInput,
+    existing: GlossaryCandidateRow,
+    increment: number,
+    now: string,
+    includeMetadata: boolean,
+  ): Record<string, unknown> {
+    const patch: Record<string, unknown> = {
+      display_label: input.displayLabel,
+      source_category: input.sourceCategory,
+      source_observation_id: input.sourceObservationId ?? existing.source_observation_id,
+      source_observation_fragment_id: input.sourceObservationFragmentId ?? existing.source_observation_fragment_id,
+      recurrence_count: existing.recurrence_count + increment,
+      last_seen_at: now,
+    };
+
+    if (includeMetadata) {
+      const metadata =
+        input.candidateClass === undefined && input.proposedEntityIds === undefined
+          ? normalizeGlossaryCandidateMetadata({
+              candidateClass: existing.candidate_class ?? "new_candidate",
+              proposedEntityIds: existing.proposed_entity_ids ?? [],
+            })
+          : normalizeGlossaryCandidateMetadata({
+              candidateClass: input.candidateClass,
+              proposedEntityIds: input.proposedEntityIds,
+            });
+
+      patch.candidate_class = metadata.candidateClass;
+      patch.proposed_entity_ids = metadata.proposedEntityIds;
+    }
+
+    return patch;
+  }
+
+  private isMissingCandidateMetadataColumnError(error: { code?: string; message?: string } | null): boolean {
+    const message = error?.message?.toLowerCase() ?? "";
+    const referencesCandidateMetadata =
+      message.includes("candidate_class") || message.includes("proposed_entity_ids");
+
+    return (
+      referencesCandidateMetadata &&
+      (error?.code === "42703" || error?.code === "PGRST204")
+    );
   }
 
   async setCandidateLifecycle(input: GlossaryCandidateLifecycleUpdate): Promise<GlossaryCandidate | null> {
@@ -318,9 +410,18 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
       return null;
     }
 
+    const resolvedTerm =
+      input.resolutionType === "create_new_entity"
+        ? term
+        : await this.applyOptionalCanonicalRename(term, input);
+
+    if (!resolvedTerm) {
+      return null;
+    }
+
     const appearanceRecord = await this.createAppearanceRecord({
       userId: input.userId,
-      entityId: term.id,
+      entityId: resolvedTerm.id,
       dreamId: candidate.reflective_object_id,
       appearanceNote: input.appearanceNote ?? null,
       confirmedAt: now,
@@ -330,10 +431,10 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
       return null;
     }
 
-    await this.syncAppearanceCount(term.id, input.userId);
+    await this.syncAppearanceCount(resolvedTerm.id, input.userId);
     await this.createAssociation({
       userId: input.userId,
-      glossaryTermId: term.id,
+      glossaryTermId: resolvedTerm.id,
       reflectiveObjectId: candidate.reflective_object_id,
       observationId: candidate.source_observation_id,
       observationFragmentId: candidate.source_observation_fragment_id,
@@ -341,7 +442,7 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
     });
 
     const resolvedCandidate = await this.markCandidatePinned(candidate.id, input.userId, now);
-    const refreshedTerm = await this.getTermById(term.id, input.userId);
+    const refreshedTerm = await this.getTermById(resolvedTerm.id, input.userId);
 
     if (!resolvedCandidate || !refreshedTerm) {
       return null;
@@ -528,6 +629,25 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
     }
 
     return this.getTermById(termId, userId);
+  }
+
+  private async applyOptionalCanonicalRename(
+    term: GlossaryTerm,
+    input: ResolveGlossaryCandidateInput,
+  ): Promise<GlossaryTerm | null> {
+    const nextCanonicalLabel = input.canonicalLabel?.trim();
+    if (!nextCanonicalLabel || nextCanonicalLabel === term.canonicalLabel) {
+      return term;
+    }
+
+    return this.updateTerm({
+      termId: term.id,
+      userId: input.userId,
+      canonicalLabel: nextCanonicalLabel,
+      type: term.type,
+      aliases: term.aliases,
+      generalNote: term.generalNote,
+    });
   }
 
   private async createGlossaryTermFromResolution(

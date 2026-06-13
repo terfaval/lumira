@@ -6,6 +6,7 @@ import type {
 import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
 
 const DEFAULT_RUNTIME_VERSION = "observation_v2_phase1";
+export type ObservationLanguage = "hu" | "en" | "unknown";
 
 export interface ObservationV2BundleProvenance {
   provenanceTier: ObservationProvenanceTier;
@@ -13,6 +14,7 @@ export interface ObservationV2BundleProvenance {
   semanticPolicyReasons: string[];
   latentBackflowGuard: "observation_only";
   boundaryVersion: string;
+  dreamLanguage?: ObservationLanguage;
 }
 
 export type SceneBoundarySignalKind =
@@ -45,7 +47,10 @@ export interface ObservationV2Observation {
 }
 
 export interface ObservationV2DerivedItem {
-  label: string;
+  identityKey?: string;
+  displayLabel?: string;
+  sourceLanguage?: ObservationLanguage;
+  label?: string;
   observationIds: string[];
 }
 
@@ -81,6 +86,69 @@ export interface ObservationV2Bundle {
   scenes: ObservationV2Scene[];
 }
 
+function normalizeObservationLanguage(value: string | undefined | null): ObservationLanguage {
+  return value === "hu" || value === "en" ? value : "unknown";
+}
+
+export function normalizeObservationIdentityKey(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/\p{M}+/gu, "")
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_+/g, "_");
+}
+
+export function getObservationV2DerivedItemDisplayLabel(item: ObservationV2DerivedItem): string {
+  return (item.displayLabel ?? item.label ?? "").trim();
+}
+
+export function getObservationV2DerivedItemIdentityKey(item: ObservationV2DerivedItem): string {
+  const explicit = item.identityKey?.trim() ?? "";
+  if (explicit) {
+    return normalizeObservationIdentityKey(explicit);
+  }
+
+  return normalizeObservationIdentityKey(getObservationV2DerivedItemDisplayLabel(item));
+}
+
+export function getObservationV2DerivedItemSourceLanguage(item: ObservationV2DerivedItem): ObservationLanguage {
+  return normalizeObservationLanguage(item.sourceLanguage);
+}
+
+export function buildObservationV2DerivedItem(input: ObservationV2DerivedItem): ObservationV2DerivedItem {
+  const displayLabel = getObservationV2DerivedItemDisplayLabel(input);
+  const identityKey = getObservationV2DerivedItemIdentityKey(input);
+  const sourceLanguage = getObservationV2DerivedItemSourceLanguage(input);
+
+  return {
+    identityKey: identityKey || undefined,
+    displayLabel: displayLabel || undefined,
+    sourceLanguage,
+    // Legacy compatibility for existing readers.
+    label: displayLabel || undefined,
+    observationIds: [...input.observationIds],
+  };
+}
+
+function normalizeDerivedItems(items: ObservationV2DerivedItem[]): ObservationV2DerivedItem[] {
+  return items.map(buildObservationV2DerivedItem);
+}
+
+function normalizeDerivedStructures(derived: ObservationV2DerivedStructures): ObservationV2DerivedStructures {
+  return {
+    actors: normalizeDerivedItems(derived.actors),
+    locations: normalizeDerivedItems(derived.locations),
+    objects: normalizeDerivedItems(derived.objects),
+    interactions: normalizeDerivedItems(derived.interactions),
+    affect: normalizeDerivedItems(derived.affect),
+    agency: normalizeDerivedItems(derived.agency),
+    phenomenology: normalizeDerivedItems(derived.phenomenology),
+    metacognition: normalizeDerivedItems(derived.metacognition),
+  };
+}
+
 function compareScenes(left: ObservationV2Scene, right: ObservationV2Scene): number {
   if (left.position !== right.position) {
     return left.position - right.position;
@@ -91,20 +159,32 @@ function compareScenes(left: ObservationV2Scene, right: ObservationV2Scene): num
 
 export function buildObservationV2Bundle(input: ObservationV2Bundle): ObservationV2Bundle {
   const runtimeVersion = input.runtimeVersion ?? DEFAULT_RUNTIME_VERSION;
+  const provenance: ObservationV2BundleProvenance = input.provenance
+    ? {
+        ...input.provenance,
+        dreamLanguage: normalizeObservationLanguage(input.provenance.dreamLanguage),
+      }
+    : {
+        provenanceTier: "system_extract",
+        semanticPolicyResult: "accept_with_uncertainty" as const,
+        semanticPolicyReasons: [],
+        latentBackflowGuard: "observation_only" as const,
+        boundaryVersion: runtimeVersion,
+        dreamLanguage: "unknown" as const,
+      };
 
   return {
     ...input,
     bundleId: input.bundleId ?? `observation-bundle-${input.reflectiveObjectId}-${runtimeVersion}`,
-    provenance: input.provenance ?? {
-      provenanceTier: "system_extract",
-      semanticPolicyResult: "accept_with_uncertainty",
-      semanticPolicyReasons: [],
-      latentBackflowGuard: "observation_only",
-      boundaryVersion: runtimeVersion,
-    },
+    provenance,
+    scenes: [...input.scenes]
+      .sort(compareScenes)
+      .map((scene) => ({
+        ...scene,
+        derived: normalizeDerivedStructures(scene.derived),
+      })),
     uncertaintyNotes: input.uncertaintyNotes ?? [],
     runtimeVersion,
-    scenes: [...input.scenes].sort(compareScenes),
   };
 }
 

@@ -1,5 +1,9 @@
 import type { Observation } from "@/src/domain/observation/types";
-import type { ObservationV2Bundle, ObservationV2DerivedItem } from "@/src/domain/observation/v2-runtime";
+import {
+  getObservationV2DerivedItemDisplayLabel,
+  type ObservationV2Bundle,
+  type ObservationV2DerivedItem,
+} from "@/src/domain/observation/v2-runtime";
 import type { ReflectiveGlossaryCue } from "@/src/reflective-space/types";
 
 const CUE_CATEGORIES = new Set(["actor", "location", "object", "emotion", "recurrence_candidate"] as const);
@@ -102,7 +106,7 @@ function addDerivedItemCues(
   category: Exclude<GlossaryCueCategory, "recurrence_candidate">,
 ): void {
   for (const item of items) {
-    addCue(counts, category, item.label, Math.max(1, new Set(item.observationIds).size));
+    addCue(counts, category, getObservationV2DerivedItemDisplayLabel(item), Math.max(1, new Set(item.observationIds).size));
   }
 }
 

@@ -63,7 +63,6 @@
 }
 
 .panelLabel,
-.filterLabel,
 .modalSectionLabel {
   margin: 0;
   font-size: 0.72rem;
@@ -221,14 +220,13 @@
 .glossaryList,
 .stateList,
 .openingList,
-.tabList,
-.filterList {
+.tabList {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.glossaryList,
+.glossaryListViewport,
 .stateList,
 .openingList {
   min-height: 0;
@@ -238,7 +236,6 @@
 .glossaryList,
 .stateList,
 .openingList,
-.filterList,
 .selectionList {
   display: grid;
   gap: 10px;
@@ -251,12 +248,8 @@
   gap: 8px;
 }
 
-.filterList {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 .dreamBody,
-.glossaryList,
+.glossaryListViewport,
 .stateList,
 .openingList {
   scrollbar-width: thin;
@@ -264,21 +257,21 @@
 }
 
 .dreamBody::-webkit-scrollbar,
-.glossaryList::-webkit-scrollbar,
+.glossaryListViewport::-webkit-scrollbar,
 .stateList::-webkit-scrollbar,
 .openingList::-webkit-scrollbar {
   width: 8px;
 }
 
 .dreamBody::-webkit-scrollbar-track,
-.glossaryList::-webkit-scrollbar-track,
+.glossaryListViewport::-webkit-scrollbar-track,
 .stateList::-webkit-scrollbar-track,
 .openingList::-webkit-scrollbar-track {
   background: transparent;
 }
 
 .dreamBody::-webkit-scrollbar-thumb,
-.glossaryList::-webkit-scrollbar-thumb,
+.glossaryListViewport::-webkit-scrollbar-thumb,
 .stateList::-webkit-scrollbar-thumb,
 .openingList::-webkit-scrollbar-thumb {
   background: rgba(86, 109, 120, 0.16);
@@ -303,6 +296,11 @@
   border-right-width: 4px;
 }
 
+.glossaryListViewport {
+  max-height: clamp(13.5rem, 34vh, 18rem);
+  padding-right: 6px;
+}
+
 .glossaryRowLabel {
   min-width: 0;
   font-size: 0.9rem;
@@ -316,43 +314,43 @@
   width: 0.72rem;
   height: 0.72rem;
   border-radius: 999px;
-  background: var(--glossary-type-concept);
+  background: var(--glossary-status-saved);
 }
 
 .typePerson {
-  background: var(--glossary-type-person);
+  border-right-color: var(--glossary-type-person);
 }
 
 .typePlace {
-  background: var(--glossary-type-place);
+  border-right-color: var(--glossary-type-place);
 }
 
 .typeObject {
-  background: var(--glossary-type-object);
+  border-right-color: var(--glossary-type-object);
 }
 
 .typeRole {
-  background: var(--glossary-type-role);
+  border-right-color: var(--glossary-type-role);
 }
 
 .typeConcept {
-  background: var(--glossary-type-concept);
+  border-right-color: var(--glossary-type-concept);
 }
 
 .statusMatch {
-  border-right-color: var(--glossary-status-match);
+  background: var(--glossary-status-match);
 }
 
 .statusAmbiguous {
-  border-right-color: var(--glossary-status-ambiguous);
+  background: var(--glossary-status-ambiguous);
 }
 
 .statusNew {
-  border-right-color: var(--glossary-status-new);
+  background: var(--glossary-status-new);
 }
 
 .statusSaved {
-  border-right-color: var(--glossary-status-saved);
+  background: var(--glossary-status-saved);
 }
 
 .stateButton {
@@ -396,19 +394,33 @@
 }
 
 .tabButton,
-.filterButton {
-  padding: 8px 12px;
-  border-radius: 999px;
+.filterSelect {
+  padding: 6px 10px;
+  border-radius: 14px;
   border: 1px solid rgba(86, 109, 120, 0.16);
   background: rgba(247, 249, 248, 0.92);
-  font-size: 0.82rem;
+  font-size: 0.56rem;
+}
+
+.tabButton {
+  border-radius: 999px;
   cursor: pointer;
 }
 
-.tabButtonActive,
-.filterButtonActive {
+.tabButtonActive {
   background: rgba(224, 237, 244, 0.96);
   border-color: rgba(75, 103, 122, 0.26);
+}
+
+.filterLabel {
+  display: none;
+}
+
+.filterSelect {
+  width: 100%;
+  color: #324750;
+  cursor: pointer;
+  font: inherit;
 }
 
 .openingCard,
@@ -447,8 +459,6 @@
 .stateButton:focus-visible,
 .tabButton:hover,
 .tabButton:focus-visible,
-.filterButton:hover,
-.filterButton:focus-visible,
 .openingAction:hover,
 .openingAction:focus-visible,
 .selectionOption:hover,
@@ -461,8 +471,6 @@
 .stateButton:focus-visible,
 .tabButton:hover,
 .tabButton:focus-visible,
-.filterButton:hover,
-.filterButton:focus-visible,
 .iconButton:hover,
 .iconButton:focus-visible,
 .rowIconButton:hover,
@@ -482,7 +490,7 @@
 .rowIconButton:focus-visible,
 .stateButton:focus-visible,
 .tabButton:focus-visible,
-.filterButton:focus-visible,
+.filterSelect:focus-visible,
 .openingAction:focus-visible,
 .modalPrimaryAction:focus-visible {
   outline: 2px solid rgba(59, 91, 72, 0.46);
@@ -493,6 +501,11 @@
 .modalSection {
   display: grid;
   gap: 10px;
+}
+
+.filterBlock {
+  align-self: end;
+  margin-top: auto;
 }
 
 .selectionOption {
@@ -608,7 +621,7 @@
   }
 
   .dreamBody,
-  .glossaryList,
+  .glossaryListViewport,
   .stateList,
   .openingList {
     overflow: visible;
@@ -633,7 +646,8 @@
     justify-content: flex-start;
   }
 
-  .filterList {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .glossaryListViewport {
+    max-height: none;
+    padding-right: 0;
   }
 }

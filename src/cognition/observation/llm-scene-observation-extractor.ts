@@ -1,12 +1,15 @@
 import OpenAI from "openai";
 
+import { inferDreamLanguage } from "@/src/cognition/language/infer-dream-language";
 import { createSceneDiscoveryBundle } from "@/src/cognition/observation/scene-discovery";
 import { projectObservationV2BundleToCreateObservationInput } from "@/src/cognition/observation/scene-discovery-projection";
 import type { CreateObservationInput } from "@/src/domain/observation/types";
 import type {
+  ObservationLanguage,
   ObservationV2BoundaryReason,
   ObservationV2Bundle,
   ObservationV2DerivedStructures,
+  ObservationV2DerivedItem,
   ObservationV2EvidenceRef,
   ObservationV2Observation,
   ObservationV2Scene,
@@ -19,8 +22,9 @@ const OBSERVATION_SCENE_EXTRACTION_MODEL = "gpt-4.1-mini";
 const SCENE_EXTRACTION_JSON_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["scenes"],
+  required: ["dreamLanguage", "scenes"],
   properties: {
+    dreamLanguage: { type: "string", enum: ["hu", "en", "unknown"] },
     scenes: {
       type: "array",
       items: {
@@ -116,8 +120,11 @@ const SCENE_EXTRACTION_JSON_SCHEMA = {
     derivedItem: {
       type: "object",
       additionalProperties: false,
-      required: ["label", "observationIds"],
+      required: ["identityKey", "displayLabel", "sourceLanguage", "observationIds"],
       properties: {
+        identityKey: { type: "string" },
+        displayLabel: { type: "string" },
+        sourceLanguage: { type: "string", enum: ["hu", "en", "unknown"] },
         label: { type: "string" },
         observationIds: {
           type: "array",
@@ -136,16 +143,23 @@ export interface LlmSceneObservationExtractionResult {
 }
 
 function buildPrompt(dreamText: string): string {
+  const inferredDreamLanguage = inferDreamLanguage(dreamText);
+
   return [
     "Extract scene-first dream observations only.",
     "Do not interpret, diagnose, explain, symbolize, or infer hidden meaning.",
     "Return JSON matching the provided schema.",
+    "Set dreamLanguage to hu, en, or unknown.",
+    `Use this inferred dream-language hint unless the dream text clearly contradicts it: ${inferredDreamLanguage}.`,
     "Organize the dream into Scenes first, then Observations inside each Scene, then Derived Structures.",
     "Scene = coherent situation.",
     "Observation = the smallest evidence-linked descriptive unit that preserves one coherent appearance, relation, change, or lived experience.",
     "Observation boundaries are based on distinct observable units, not sentence boundaries.",
     "Multiple Observations may exist inside one Scene.",
     "Derived structures remain secondary and are generated from Observations.",
+    "Every derived item must include a stable identityKey, a language-appropriate displayLabel, and sourceLanguage.",
+    "identityKey must stay stable across languages as a short normalized concept key.",
+    "displayLabel should be in the dream's language when that language is clear.",
     "Each observation must stay close to the dream material and include evidence quotes.",
     "Each scene should preserve boundary reasoning only when a situational shift is evident.",
     "Dream text:",
@@ -189,15 +203,25 @@ function normalizeBoundaryReason(value: Partial<ObservationV2BoundaryReason> | u
 }
 
 function normalizeDerived(value: Partial<ObservationV2DerivedStructures> | undefined): ObservationV2DerivedStructures {
+  const normalizeDerivedItem = (item: Partial<ObservationV2DerivedItem> | undefined): ObservationV2DerivedItem => ({
+    identityKey: item?.identityKey?.trim() ?? undefined,
+    displayLabel: item?.displayLabel?.trim() ?? item?.label?.trim() ?? undefined,
+    sourceLanguage: item?.sourceLanguage ?? undefined,
+    label: item?.label?.trim() ?? item?.displayLabel?.trim() ?? undefined,
+    observationIds: Array.isArray(item?.observationIds)
+      ? item!.observationIds.filter((value): value is string => typeof value === "string")
+      : [],
+  });
+
   return {
-    actors: value?.actors ?? [],
-    locations: value?.locations ?? [],
-    objects: value?.objects ?? [],
-    interactions: value?.interactions ?? [],
-    affect: value?.affect ?? [],
-    agency: value?.agency ?? [],
-    phenomenology: value?.phenomenology ?? [],
-    metacognition: value?.metacognition ?? [],
+    actors: value?.actors?.map((item) => normalizeDerivedItem(item)) ?? [],
+    locations: value?.locations?.map((item) => normalizeDerivedItem(item)) ?? [],
+    objects: value?.objects?.map((item) => normalizeDerivedItem(item)) ?? [],
+    interactions: value?.interactions?.map((item) => normalizeDerivedItem(item)) ?? [],
+    affect: value?.affect?.map((item) => normalizeDerivedItem(item)) ?? [],
+    agency: value?.agency?.map((item) => normalizeDerivedItem(item)) ?? [],
+    phenomenology: value?.phenomenology?.map((item) => normalizeDerivedItem(item)) ?? [],
+    metacognition: value?.metacognition?.map((item) => normalizeDerivedItem(item)) ?? [],
   };
 }
 
@@ -224,6 +248,7 @@ export async function buildSceneObservationExtractionFromStructuredResult(input:
   structured: unknown;
 }): Promise<LlmSceneObservationExtractionResult> {
   const structured = input.structured as {
+    dreamLanguage?: ObservationLanguage;
     scenes?: Array<Partial<ObservationV2Scene>>;
   };
 
@@ -238,6 +263,14 @@ export async function buildSceneObservationExtractionFromStructuredResult(input:
     reflectiveObjectId: input.reflectiveObjectId,
     userId: input.userId,
     source: "system_llm_extract",
+    provenance: {
+      provenanceTier: "system_extract",
+      semanticPolicyResult: "accept_with_uncertainty",
+      semanticPolicyReasons: ["scene_first_projection"],
+      latentBackflowGuard: "observation_only",
+      boundaryVersion: "observation_v2_phase1",
+      dreamLanguage: structured.dreamLanguage ?? inferDreamLanguage(input.dreamText),
+    },
     scenes: structured.scenes.map((scene, index) => normalizeScene(scene, index)),
   });
 

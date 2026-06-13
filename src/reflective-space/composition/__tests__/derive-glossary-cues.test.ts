@@ -85,6 +85,7 @@ function makeObservationV2Bundle(): ObservationV2Bundle {
       semanticPolicyReasons: [],
       latentBackflowGuard: "observation_only",
       boundaryVersion: "observation_v2_phase1",
+      dreamLanguage: "en",
     },
     scenes: [
       {
@@ -116,10 +117,10 @@ function makeObservationV2Bundle(): ObservationV2Bundle {
         ],
         derived: {
           actors: [
-            { label: "My friend", observationIds: ["obsv2-1"] },
-            { label: "My friend", observationIds: ["obsv2-1"] },
+            { identityKey: "friend", displayLabel: "My friend", sourceLanguage: "en", label: "My friend", observationIds: ["obsv2-1"] },
+            { identityKey: "friend", displayLabel: "My friend", sourceLanguage: "en", label: "My friend", observationIds: ["obsv2-1"] },
           ],
-          locations: [{ label: "Hallway", observationIds: ["obsv2-1"] }],
+          locations: [{ identityKey: "hallway", displayLabel: "Hallway", sourceLanguage: "en", label: "Hallway", observationIds: ["obsv2-1"] }],
           objects: [],
           interactions: [],
           affect: [],

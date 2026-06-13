@@ -41,6 +41,35 @@ describe("generateDreamTitleSuggestion", () => {
     expect(responsesCreateMock).toHaveBeenCalledTimes(1);
   });
 
+  it("adds a Hungarian language hint for Hungarian dream text", async () => {
+    responsesCreateMock.mockResolvedValue({
+      output_text: '{"title":"Régi ház folyosója"}',
+    });
+
+    const { generateDreamTitleSuggestion } = await import("@/src/cognition/title/llm-dream-title-generator");
+    await generateDreamTitleSuggestion({
+      dreamText: "Apám a régi ház folyosóján állt, és minden ajtó nyitva volt.",
+    });
+
+    const requestBody = responsesCreateMock.mock.calls[0]?.[0];
+    expect(requestBody.input).toContain("Keep the title in the same language as the dream when that language is clear.");
+    expect(requestBody.input).toContain("Use this inferred dream-language hint unless the dream text clearly contradicts it: hu.");
+  });
+
+  it("adds an English language hint for English dream text", async () => {
+    responsesCreateMock.mockResolvedValue({
+      output_text: '{"title":"The Flooded House"}',
+    });
+
+    const { generateDreamTitleSuggestion } = await import("@/src/cognition/title/llm-dream-title-generator");
+    await generateDreamTitleSuggestion({
+      dreamText: "My father stood inside the old house while water moved under the floorboards.",
+    });
+
+    const requestBody = responsesCreateMock.mock.calls[0]?.[0];
+    expect(requestBody.input).toContain("Use this inferred dream-language hint unless the dream text clearly contradicts it: en.");
+  });
+
   it("falls back cleanly when no OpenAI key is configured", async () => {
     readRuntimeEnvironmentMock.mockReturnValue({
       openAiApiKey: null,

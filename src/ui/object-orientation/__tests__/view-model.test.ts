@@ -63,6 +63,21 @@ describe("object orientation view model", () => {
   it("orders glossary panel items into the required unified sequence", () => {
     const items: GlossaryPanelItem[] = [
       {
+        id: "match-role-1",
+        kind: "candidate",
+        candidateId: "cand-match-role-1",
+        candidateClass: "match_candidate",
+        candidateState: "candidate",
+        label: "Aardvark Role",
+        canonicalLabel: "Aardvark Role",
+        entityType: "role",
+        sourceCategory: "actor",
+        recurrenceCount: 1,
+        status: "match",
+        proposedEntities: [],
+        href: null,
+      },
+      {
         id: "saved-1",
         kind: "saved",
         label: "Bridge",
@@ -84,6 +99,21 @@ describe("object orientation view model", () => {
         canonicalLabel: "Mammut",
         entityType: "object",
         sourceCategory: "object",
+        recurrenceCount: 1,
+        status: "new",
+        proposedEntities: [],
+        href: null,
+      },
+      {
+        id: "new-concept-1",
+        kind: "candidate",
+        candidateId: "cand-new-concept-1",
+        candidateClass: "new_candidate",
+        candidateState: "candidate",
+        label: "Artifact",
+        canonicalLabel: "Artifact",
+        entityType: "concept",
+        sourceCategory: "emotion",
         recurrenceCount: 1,
         status: "new",
         proposedEntities: [],
@@ -123,8 +153,10 @@ describe("object orientation view model", () => {
 
     expect(orderGlossaryPanelItems(items).map((item) => item.id)).toEqual([
       "match-1",
+      "match-role-1",
       "ambiguous-1",
       "new-1",
+      "new-concept-1",
       "saved-1",
     ]);
   });

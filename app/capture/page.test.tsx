@@ -8,6 +8,7 @@ const requireAuthenticatedUserIdMock = vi.fn();
 const createReflectiveObjectMock = vi.fn();
 const updateReflectiveObjectMock = vi.fn();
 const createObservationFromBundleMock = vi.fn();
+const generateGlossaryCandidatesForReflectiveObjectMock = vi.fn();
 const buildLlmSceneObservationExtractionMock = vi.fn();
 const generateDreamTitleSuggestionMock = vi.fn();
 const randomUuidMock = vi.fn();
@@ -31,6 +32,10 @@ vi.mock("@/src/infrastructure/persistence/observation-v2-write-store", () => ({
   createObservationV2WriteStore: () => ({
     createFromBundle: createObservationFromBundleMock,
   }),
+}));
+
+vi.mock("@/src/runtime/orchestration/generate-glossary-candidates-for-reflective-object", () => ({
+  generateGlossaryCandidatesForReflectiveObject: generateGlossaryCandidatesForReflectiveObjectMock,
 }));
 
 vi.mock("@/src/cognition/observation/llm-scene-observation-extractor", () => ({
@@ -107,6 +112,7 @@ describe("CapturePage", () => {
     createReflectiveObjectMock.mockReset();
     updateReflectiveObjectMock.mockReset();
     createObservationFromBundleMock.mockReset();
+    generateGlossaryCandidatesForReflectiveObjectMock.mockReset();
     buildLlmSceneObservationExtractionMock.mockReset();
     generateDreamTitleSuggestionMock.mockReset();
     randomUuidMock.mockReset();
@@ -128,6 +134,7 @@ describe("CapturePage", () => {
       title: "The Lantern House",
     });
     createObservationFromBundleMock.mockResolvedValue({ id: "obs-1" });
+    generateGlossaryCandidatesForReflectiveObjectMock.mockResolvedValue([]);
     vi.stubGlobal("crypto", { randomUUID: randomUuidMock });
     randomUuidMock.mockReturnValue("obj-123");
   });
@@ -217,6 +224,28 @@ describe("CapturePage", () => {
       source: "system_llm_extract",
       scenes: [],
     });
+    expect(generateGlossaryCandidatesForReflectiveObjectMock).toHaveBeenCalledWith({
+      reflectiveObjectId: "obj-123",
+      userId: "user-1",
+    });
+  });
+
+  it("generates glossary candidates after observation persistence and before redirect", async () => {
+    const pageModule = await import("./page");
+    const page = await pageModule.default();
+    const submitCapture = findFormAction(page);
+
+    const formData = new FormData();
+    formData.set("dreamText", "My father pressed a button and slurry came through a door.");
+
+    await submitCapture?.(formData);
+
+    expect(createObservationFromBundleMock.mock.invocationCallOrder[0]).toBeLessThan(
+      generateGlossaryCandidatesForReflectiveObjectMock.mock.invocationCallOrder[0],
+    );
+    expect(generateGlossaryCandidatesForReflectiveObjectMock.mock.invocationCallOrder[0]).toBeLessThan(
+      redirectMock.mock.invocationCallOrder[0],
+    );
   });
 
   it("fails capture without saving when llm extraction is unsafe", async () => {

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 
+import { inferDreamLanguage } from "@/src/cognition/language/infer-dream-language";
 import { readRuntimeEnvironment } from "@/src/infrastructure/environment/env";
 
 const DREAM_TITLE_MODEL = "gpt-4.1-mini";
@@ -63,6 +64,8 @@ function isProviderTimeoutError(error: unknown): boolean {
 }
 
 function buildPrompt(dreamText: string): string {
+  const inferredDreamLanguage = inferDreamLanguage(dreamText);
+
   return [
     "Generate one short dream title.",
     "Use only concrete imagery, setting, action, atmosphere, or scene language from the dream.",
@@ -70,6 +73,8 @@ function buildPrompt(dreamText: string): string {
     "Do not mention subconscious meaning, conflict, trauma, fear of, desire for, or other explanatory framing.",
     "Keep it editable, plain, and human-readable.",
     "Prefer 3 to 8 words.",
+    "Keep the title in the same language as the dream when that language is clear.",
+    `Use this inferred dream-language hint unless the dream text clearly contradicts it: ${inferredDreamLanguage}.`,
     "Return JSON only.",
     "Dream text:",
     dreamText,

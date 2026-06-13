@@ -1,4 +1,11 @@
-import type { ObservationV2Bundle, ObservationV2BundleProvenance, ObservationV2DerivedStructures, ObservationV2EvidenceRef } from "@/src/domain/observation/v2-runtime";
+import {
+  buildObservationV2DerivedItem,
+  type ObservationLanguage,
+  type ObservationV2Bundle,
+  type ObservationV2BundleProvenance,
+  type ObservationV2DerivedStructures,
+  type ObservationV2EvidenceRef,
+} from "@/src/domain/observation/v2-runtime";
 
 export interface ObservationV2BundleRow {
   id: string;
@@ -127,10 +134,14 @@ function parseProvenance(input: unknown): ObservationV2BundleProvenance {
       semanticPolicyReasons: [],
       latentBackflowGuard: "observation_only",
       boundaryVersion: "observation_v2_phase1",
+      dreamLanguage: "unknown",
     };
   }
 
   const record = input as Record<string, unknown>;
+  const dreamLanguage = record.dreamLanguage === "hu" || record.dreamLanguage === "en"
+    ? record.dreamLanguage
+    : "unknown";
 
   return {
     provenanceTier: record.provenanceTier === "manual_user" || record.provenanceTier === "imported_transform" || record.provenanceTier === "reviewed"
@@ -145,6 +156,7 @@ function parseProvenance(input: unknown): ObservationV2BundleProvenance {
     semanticPolicyReasons: parseStringArray(record.semanticPolicyReasons),
     latentBackflowGuard: "observation_only",
     boundaryVersion: typeof record.boundaryVersion === "string" ? record.boundaryVersion : "observation_v2_phase1",
+    dreamLanguage,
   };
 }
 
@@ -169,16 +181,32 @@ function parseDerivedStructures(input: unknown): ObservationV2DerivedStructures 
   }
 
   const record = input as Record<string, unknown>;
+  const parseItems = (value: unknown): ObservationV2DerivedStructures["actors"] =>
+    Array.isArray(value)
+      ? value
+          .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null && !Array.isArray(item))
+          .map((item) =>
+            buildObservationV2DerivedItem({
+              identityKey: typeof item.identityKey === "string" ? item.identityKey : undefined,
+              displayLabel: typeof item.displayLabel === "string" ? item.displayLabel : undefined,
+              sourceLanguage: (typeof item.sourceLanguage === "string" ? item.sourceLanguage : undefined) as ObservationLanguage | undefined,
+              label: typeof item.label === "string" ? item.label : undefined,
+              observationIds: Array.isArray(item.observationIds)
+                ? item.observationIds.filter((id): id is string => typeof id === "string")
+                : [],
+            }),
+          )
+      : [];
 
   return {
-    actors: Array.isArray(record.actors) ? (record.actors as ObservationV2DerivedStructures["actors"]) : [],
-    locations: Array.isArray(record.locations) ? (record.locations as ObservationV2DerivedStructures["locations"]) : [],
-    objects: Array.isArray(record.objects) ? (record.objects as ObservationV2DerivedStructures["objects"]) : [],
-    interactions: Array.isArray(record.interactions) ? (record.interactions as ObservationV2DerivedStructures["interactions"]) : [],
-    affect: Array.isArray(record.affect) ? (record.affect as ObservationV2DerivedStructures["affect"]) : [],
-    agency: Array.isArray(record.agency) ? (record.agency as ObservationV2DerivedStructures["agency"]) : [],
-    phenomenology: Array.isArray(record.phenomenology) ? (record.phenomenology as ObservationV2DerivedStructures["phenomenology"]) : [],
-    metacognition: Array.isArray(record.metacognition) ? (record.metacognition as ObservationV2DerivedStructures["metacognition"]) : [],
+    actors: parseItems(record.actors),
+    locations: parseItems(record.locations),
+    objects: parseItems(record.objects),
+    interactions: parseItems(record.interactions),
+    affect: parseItems(record.affect),
+    agency: parseItems(record.agency),
+    phenomenology: parseItems(record.phenomenology),
+    metacognition: parseItems(record.metacognition),
   };
 }
 

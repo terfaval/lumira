@@ -79,12 +79,12 @@ describe("buildObservationV2Bundle", () => {
             },
           ],
           derived: {
-            actors: [{ label: "young male", observationIds: ["obs-1"] }],
-            locations: [{ label: "spiral staircase", observationIds: ["obs-1"] }],
+            actors: [{ identityKey: "young_male", displayLabel: "fiatal férfi", sourceLanguage: "hu", label: "fiatal férfi", observationIds: ["obs-1"] }],
+            locations: [{ identityKey: "spiral_staircase", displayLabel: "csigalépcső", sourceLanguage: "hu", label: "csigalépcső", observationIds: ["obs-1"] }],
             objects: [],
-            interactions: [{ label: "guidance", observationIds: ["obs-1"] }],
+            interactions: [{ identityKey: "guidance", displayLabel: "irányítás", sourceLanguage: "hu", label: "irányítás", observationIds: ["obs-1"] }],
             affect: [],
-            agency: [{ label: "following", observationIds: ["obs-1"] }],
+            agency: [{ identityKey: "following", displayLabel: "követés", sourceLanguage: "hu", label: "követés", observationIds: ["obs-1"] }],
             phenomenology: [],
             metacognition: [],
           },
@@ -95,7 +95,8 @@ describe("buildObservationV2Bundle", () => {
     expect(bundle.scenes).toHaveLength(2);
     expect(bundle.scenes[0].sceneId).toBe("scene-1");
     expect(bundle.scenes[0].observations[0].text).toContain("follows");
-    expect(bundle.scenes[0].derived.agency[0].label).toBe("following");
+    expect(bundle.scenes[0].derived.agency[0].displayLabel).toBe("követés");
+    expect(bundle.scenes[0].derived.agency[0].identityKey).toBe("following");
   });
 
   it("keeps scene boundary reasoning as explicit situational signals", () => {
@@ -146,6 +147,56 @@ describe("buildObservationV2Bundle", () => {
       semanticPolicyReasons: [],
       latentBackflowGuard: "observation_only",
       boundaryVersion: "observation_v2_phase1",
+      dreamLanguage: "unknown",
+    });
+  });
+
+  it("preserves explicit dream language and legacy derived label compatibility", () => {
+    const bundle = buildObservationV2Bundle({
+      reflectiveObjectId: "object-1",
+      userId: "user-1",
+      source: "system_llm_extract",
+      provenance: {
+        provenanceTier: "system_extract",
+        semanticPolicyResult: "accept_with_uncertainty",
+        semanticPolicyReasons: [],
+        latentBackflowGuard: "observation_only",
+        boundaryVersion: "observation_v2_phase1",
+        dreamLanguage: "hu",
+      },
+      scenes: [
+        {
+          sceneId: "scene-1",
+          position: 0,
+          summary: "Az apa megjelenik.",
+          boundaryReasoning: [],
+          evidenceContext: {
+            snippet: "Apám ott állt az ajtóban.",
+            spanStart: 0,
+            spanEnd: 24,
+            contextLabel: "scene_opening",
+          },
+          observations: [],
+          derived: {
+            actors: [{ identityKey: "father", displayLabel: "Apa", sourceLanguage: "hu", observationIds: ["obs-1"] }],
+            locations: [],
+            objects: [],
+            interactions: [],
+            affect: [],
+            agency: [],
+            phenomenology: [],
+            metacognition: [],
+          },
+        },
+      ],
+    });
+
+    expect(bundle.provenance?.dreamLanguage).toBe("hu");
+    expect(bundle.scenes[0].derived.actors[0]).toMatchObject({
+      identityKey: "father",
+      displayLabel: "Apa",
+      sourceLanguage: "hu",
+      label: "Apa",
     });
   });
 });

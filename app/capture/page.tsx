@@ -4,6 +4,7 @@ import { buildLlmSceneObservationExtraction } from "@/src/cognition/observation/
 import { generateDreamTitleSuggestion } from "@/src/cognition/title/llm-dream-title-generator";
 import { createObservationV2WriteStore } from "@/src/infrastructure/persistence/observation-v2-write-store";
 import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
+import { generateGlossaryCandidatesForReflectiveObject } from "@/src/runtime/orchestration/generate-glossary-candidates-for-reflective-object";
 import { requireAuthenticatedUserId } from "@/src/ui/shared/require-authenticated-user";
 import { deriveCaptureTitle } from "@/app/capture/capture-metrics";
 import { CaptureSpace } from "@/app/capture/capture-space";
@@ -73,6 +74,10 @@ async function submitCapture(formData: FormData) {
 
   const observationWriteStore = createObservationV2WriteStore();
   await observationWriteStore.createFromBundle(extraction.bundle);
+  await generateGlossaryCandidatesForReflectiveObject({
+    userId,
+    reflectiveObjectId: reflectiveObject.id,
+  });
 
   redirect(`/objects/${encodeURIComponent(reflectiveObject.id)}`);
 }

@@ -99,6 +99,7 @@ function makeObservationV2Bundle(): ObservationV2Bundle {
       semanticPolicyReasons: ["scene_first_projection"],
       latentBackflowGuard: "observation_only",
       boundaryVersion: "observation_v2_phase1",
+      dreamLanguage: "en",
     },
     scenes: [
       {
@@ -129,11 +130,11 @@ function makeObservationV2Bundle(): ObservationV2Bundle {
           },
         ],
         derived: {
-          actors: [{ label: "My friend", observationIds: ["obsv2-1"] }],
-          locations: [{ label: "Hallway", observationIds: ["obsv2-1"] }],
-          objects: [{ label: "Doorway", observationIds: ["obsv2-1"] }],
+          actors: [{ identityKey: "friend", displayLabel: "My friend", sourceLanguage: "en", label: "My friend", observationIds: ["obsv2-1"] }],
+          locations: [{ identityKey: "hallway", displayLabel: "Hallway", sourceLanguage: "en", label: "Hallway", observationIds: ["obsv2-1"] }],
+          objects: [{ identityKey: "doorway", displayLabel: "Doorway", sourceLanguage: "en", label: "Doorway", observationIds: ["obsv2-1"] }],
           interactions: [],
-          affect: [{ label: "Fear", observationIds: ["obsv2-1"] }],
+          affect: [{ identityKey: "fear", displayLabel: "Fear", sourceLanguage: "en", label: "Fear", observationIds: ["obsv2-1"] }],
           agency: [],
           phenomenology: [],
           metacognition: [],
@@ -167,7 +168,7 @@ function makeObservationV2Bundle(): ObservationV2Bundle {
           },
         ],
         derived: {
-          actors: [{ label: "My friend", observationIds: ["obsv2-2"] }],
+          actors: [{ identityKey: "friend", displayLabel: "My friend", sourceLanguage: "en", label: "My friend", observationIds: ["obsv2-2"] }],
           locations: [],
           objects: [],
           interactions: [],
@@ -213,7 +214,7 @@ describe("extractGlossaryCandidatesFromObservations", () => {
     observation.fragments = [
       {
         ...observation.fragments[0],
-        fragmentText: "Kozmó",
+        fragmentText: "Kozm\u00F3",
       },
       {
         ...observation.fragments[1],
@@ -230,7 +231,7 @@ describe("extractGlossaryCandidatesFromObservations", () => {
 
     expect(candidates).toHaveLength(1);
     expect(candidates[0]).toMatchObject({
-      displayLabel: "Kozmó",
+      displayLabel: "Kozm\u00F3",
       normalizedKey: "kozmo",
       recurrenceCount: 2,
     });
@@ -279,6 +280,9 @@ describe("extractGlossaryCandidatesFromObservationV2Bundle", () => {
   it("filters interpretive V2 labels and recurrence text from candidate extraction", () => {
     const bundle = makeObservationV2Bundle();
     bundle.scenes[0].derived.objects.push({
+      identityKey: "doorway_symbolizes_change",
+      displayLabel: "Doorway symbolizes change",
+      sourceLanguage: "en",
       label: "Doorway symbolizes change",
       observationIds: ["obsv2-1"],
     });
@@ -309,8 +313,8 @@ describe("extractGlossaryCandidatesFromObservationV2Bundle", () => {
 
   it("normalizes derived labels with accent-safe recognition keys", () => {
     const bundle = makeObservationV2Bundle();
-    bundle.scenes[0].derived.actors = [{ label: "Dóri", observationIds: ["obsv2-1"] }];
-    bundle.scenes[1].derived.actors = [{ label: "dori.", observationIds: ["obsv2-2"] }];
+    bundle.scenes[0].derived.actors = [{ identityKey: "dori", displayLabel: "D\u00F3ri", sourceLanguage: "hu", label: "D\u00F3ri", observationIds: ["obsv2-1"] }];
+    bundle.scenes[1].derived.actors = [{ identityKey: "dori", displayLabel: "dori.", sourceLanguage: "en", label: "dori.", observationIds: ["obsv2-2"] }];
 
     const candidates = extractGlossaryCandidatesFromObservationV2Bundle({
       userId: "user-1",
@@ -321,8 +325,39 @@ describe("extractGlossaryCandidatesFromObservationV2Bundle", () => {
     expect(candidates).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          displayLabel: "Dóri",
+          displayLabel: "D\u00F3ri",
           normalizedKey: "dori",
+          sourceCategory: "actor",
+          recurrenceCount: 2,
+        }),
+      ]),
+    );
+  });
+
+  it("uses identity keys for normalized matching while preserving Hungarian display labels", () => {
+    const bundle = makeObservationV2Bundle();
+    bundle.provenance = {
+      ...bundle.provenance!,
+      dreamLanguage: "hu",
+    };
+    bundle.scenes[0].derived.actors = [
+      { identityKey: "father", displayLabel: "Apa", sourceLanguage: "hu", label: "Apa", observationIds: ["obsv2-1"] },
+    ];
+    bundle.scenes[1].derived.actors = [
+      { identityKey: "father", displayLabel: "Apa", sourceLanguage: "hu", label: "Apa", observationIds: ["obsv2-2"] },
+    ];
+
+    const candidates = extractGlossaryCandidatesFromObservationV2Bundle({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      bundle,
+    });
+
+    expect(candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          displayLabel: "Apa",
+          normalizedKey: "father",
           sourceCategory: "actor",
           recurrenceCount: 2,
         }),

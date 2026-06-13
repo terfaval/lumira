@@ -90,3 +90,11 @@ Append-only build run summary. Detailed logs are under `docs/build-logs/`.
 | 2026-06-12T10:20:35.994Z | success | 0 | `docs/build-logs/2026-06-12T10-20-35-994Z.log` |
 | 2026-06-12T12:53:43.041Z | success | 0 | `docs/build-logs/2026-06-12T12-53-43-041Z.log` |
 | 2026-06-12T14:24:11.348Z | success | 0 | `docs/build-logs/2026-06-12T14-24-11-348Z.log` |
+| 2026-06-12T15:40:50.154Z | success | 0 | `docs/build-logs/2026-06-12T15-40-50-154Z.log` |
+| 2026-06-12T15:49:24.581Z | success | 0 | `docs/build-logs/2026-06-12T15-49-24-581Z.log` |
+| 2026-06-12T16:03:02.761Z | success | 0 | `docs/build-logs/2026-06-12T16-03-02-761Z.log` |
+| 2026-06-12T16:34:51.836Z | success | 0 | `docs/build-logs/2026-06-12T16-34-51-836Z.log` |
+| 2026-06-13T04:45:07.450Z | success | 0 | `docs/build-logs/2026-06-13T04-45-07-450Z.log` |
+| 2026-06-13T05:21:31.136Z | success | 0 | `docs/build-logs/2026-06-13T05-21-31-136Z.log` |
+| 2026-06-13T06:37:06.130Z | success | 0 | `docs/build-logs/2026-06-13T06-37-06-130Z.log` |
+| 2026-06-13T07:12:05.801Z | success | 0 | `docs/build-logs/2026-06-13T07-12-05-801Z.log` |

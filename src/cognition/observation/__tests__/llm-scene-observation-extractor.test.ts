@@ -36,6 +36,7 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
       reflectiveObjectId: "object-1",
       dreamText: "A guide leads the dreamer up a staircase, then the interaction becomes unwanted.",
       structured: {
+        dreamLanguage: "en",
         scenes: [
           {
             sceneId: "scene-1",
@@ -53,12 +54,12 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
               },
             ],
             derived: {
-              actors: [{ label: "young male", observationIds: ["obs-1"] }],
-              locations: [{ label: "spiral staircase", observationIds: ["obs-1"] }],
+              actors: [{ identityKey: "young_male", displayLabel: "young male", sourceLanguage: "en", label: "young male", observationIds: ["obs-1"] }],
+              locations: [{ identityKey: "spiral_staircase", displayLabel: "spiral staircase", sourceLanguage: "en", label: "spiral staircase", observationIds: ["obs-1"] }],
               objects: [],
-              interactions: [{ label: "guidance", observationIds: ["obs-1"] }],
+              interactions: [{ identityKey: "guidance", displayLabel: "guidance", sourceLanguage: "en", label: "guidance", observationIds: ["obs-1"] }],
               affect: [],
-              agency: [{ label: "following", observationIds: ["obs-1"] }],
+              agency: [{ identityKey: "following", displayLabel: "following", sourceLanguage: "en", label: "following", observationIds: ["obs-1"] }],
               phenomenology: [],
               metacognition: [],
             },
@@ -68,6 +69,13 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
     });
 
     expect(result.mode).toBe("validated_llm");
+    expect(result.bundle?.provenance?.dreamLanguage).toBe("en");
+    expect(result.bundle?.scenes[0].derived.actors[0]).toMatchObject({
+      identityKey: "young_male",
+      displayLabel: "young male",
+      sourceLanguage: "en",
+      label: "young male",
+    });
     expect(result.bundle?.scenes[0].observations[0].text).toContain("spiral staircase");
     expect(result.payload?.fragments.length).toBeGreaterThan(0);
   });
@@ -75,6 +83,7 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
   it("calls the provider with a scene-first schema and returns a validated scene bundle", async () => {
     responsesCreateMock.mockResolvedValue({
       output_text: JSON.stringify({
+        dreamLanguage: "en",
         scenes: [
           {
             sceneId: "scene-1",
@@ -104,12 +113,12 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
               },
             ],
             derived: {
-              actors: [{ label: "young male", observationIds: ["obs-1"] }],
-              locations: [{ label: "spiral staircase", observationIds: ["obs-1"] }],
+              actors: [{ identityKey: "young_male", displayLabel: "young male", sourceLanguage: "en", label: "young male", observationIds: ["obs-1"] }],
+              locations: [{ identityKey: "spiral_staircase", displayLabel: "spiral staircase", sourceLanguage: "en", label: "spiral staircase", observationIds: ["obs-1"] }],
               objects: [],
-              interactions: [{ label: "guidance", observationIds: ["obs-1"] }],
+              interactions: [{ identityKey: "guidance", displayLabel: "guidance", sourceLanguage: "en", label: "guidance", observationIds: ["obs-1"] }],
               affect: [],
-              agency: [{ label: "following", observationIds: ["obs-1"] }],
+              agency: [{ identityKey: "following", displayLabel: "following", sourceLanguage: "en", label: "following", observationIds: ["obs-1"] }],
               phenomenology: [],
               metacognition: [],
             },
@@ -128,8 +137,59 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
     expect(result.bundle?.scenes).toHaveLength(1);
 
     const requestBody = responsesCreateMock.mock.calls[0]?.[0];
-    expect(requestBody.text.format.schema.required).toEqual(["scenes"]);
+    expect(requestBody.text.format.schema.required).toEqual(["dreamLanguage", "scenes"]);
     expect(requestBody.input).toContain("Extract scene-first dream observations only.");
     expect(requestBody.input).toContain("Observation boundaries are based on distinct observable units, not sentence boundaries.");
+    expect(requestBody.input).toContain("Set dreamLanguage to hu, en, or unknown.");
+  });
+
+  it("preserves Hungarian display labels while keeping stable identity keys", async () => {
+    const result = await buildSceneObservationExtractionFromStructuredResult({
+      userId: "user-1",
+      reflectiveObjectId: "object-1",
+      dreamText: "Apám állt az ajtóban, és egy segítő intett nekem.",
+      structured: {
+        dreamLanguage: "hu",
+        scenes: [
+          {
+            sceneId: "scene-1",
+            position: 0,
+            summary: "Az apa és egy segítő jelenik meg.",
+            boundaryReasoning: [],
+            evidenceContext: { snippet: "Apám állt az ajtóban", contextLabel: "scene" },
+            observations: [
+              {
+                observationId: "obs-1",
+                position: 0,
+                text: "Az apa az ajtóban áll.",
+                evidence: [{ snippet: "Apám állt az ajtóban", contextLabel: "quoted_support" }],
+                uncertaintyNote: null,
+              },
+            ],
+            derived: {
+              actors: [
+                { identityKey: "father", displayLabel: "Apa", sourceLanguage: "hu", label: "Apa", observationIds: ["obs-1"] },
+                { identityKey: "helper", displayLabel: "Segítő", sourceLanguage: "hu", label: "Segítő", observationIds: ["obs-1"] },
+              ],
+              locations: [{ identityKey: "doorway", displayLabel: "Ajtó", sourceLanguage: "hu", label: "Ajtó", observationIds: ["obs-1"] }],
+              objects: [],
+              interactions: [],
+              affect: [],
+              agency: [],
+              phenomenology: [],
+              metacognition: [],
+            },
+          },
+        ],
+      },
+    });
+
+    expect(result.bundle?.provenance?.dreamLanguage).toBe("hu");
+    expect(result.bundle?.scenes[0].derived.actors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ identityKey: "father", displayLabel: "Apa", sourceLanguage: "hu" }),
+        expect.objectContaining({ identityKey: "helper", displayLabel: "Segítő", sourceLanguage: "hu" }),
+      ]),
+    );
   });
 });

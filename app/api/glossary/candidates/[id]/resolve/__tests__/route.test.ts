@@ -43,6 +43,7 @@ describe("/api/glossary/candidates/[id]/resolve route", () => {
         body: JSON.stringify({
           resolutionType: "confirm_existing_entity",
           entityId: "term-1",
+          canonicalLabel: "Apu",
           appearanceNote: "This was clearly the same person.",
         }),
       }),
@@ -56,6 +57,7 @@ describe("/api/glossary/candidates/[id]/resolve route", () => {
         userId: "user-a",
         resolutionType: "confirm_existing_entity",
         entityId: "term-1",
+        canonicalLabel: "Apu",
       }),
     );
   });
@@ -137,6 +139,45 @@ describe("/api/glossary/candidates/[id]/resolve route", () => {
         resolutionType: "create_new_entity",
         canonicalLabel: "Unknown Ex-partner",
         type: "role",
+      }),
+    );
+  });
+
+  it("allows ambiguous candidates to rename an existing continuity entity while selecting it", async () => {
+    resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
+    getCandidateById.mockResolvedValue({
+      id: "cand-1",
+      candidateClass: "ambiguous_match_candidate",
+      proposedEntityIds: ["term-1", "term-2"],
+    });
+    resolveCandidate.mockResolvedValue({
+      candidate: { id: "cand-1", state: "pinned" },
+      term: { id: "term-2", canonicalLabel: "Apu", type: "person" },
+      appearanceRecord: { id: "appearance-1", entityId: "term-2" },
+    });
+
+    const { POST } = await import("@/app/api/glossary/candidates/[id]/resolve/route");
+    const response = await POST(
+      new Request("http://localhost/api/glossary/candidates/cand-1/resolve", {
+        method: "POST",
+        body: JSON.stringify({
+          resolutionType: "select_existing_entity",
+          entityId: "term-2",
+          canonicalLabel: "Apu",
+          appearanceNote: "Same person, different name.",
+        }),
+      }),
+      { params: Promise.resolve({ id: "cand-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(resolveCandidate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        candidateId: "cand-1",
+        userId: "user-a",
+        resolutionType: "select_existing_entity",
+        entityId: "term-2",
+        canonicalLabel: "Apu",
       }),
     );
   });

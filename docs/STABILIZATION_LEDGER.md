@@ -58,6 +58,74 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-06-13 - Observation Display Language And Identity v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/observation/v2-runtime.ts`
+  - `src/infrastructure/supabase/adapters/observation-v2-row.ts`
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `src/cognition/glossary/extract-glossary-candidates-from-observations.ts`
+  - `src/reflective-space/composition/derive-glossary-cues.ts`
+  - `src/domain/observation/__tests__/v2-runtime.test.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts`
+  - `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`
+  - `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+  - `src/reflective-space/composition/__tests__/derive-glossary-cues.test.ts`
+  - `src/ui/object-orientation/__tests__/orientation-layer.test.tsx`
+- Verification:
+  - `npm test` -> pass (`109` files, `450` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-13T06-37-06-130Z.log`
+- Notes:
+  - Observation V2 derived items now separate stable identity from language-aware display text through `identityKey`, `displayLabel`, and `sourceLanguage`, while preserving legacy `label` compatibility for existing readers.
+  - Dream language is carried in Observation V2 provenance as `hu`, `en`, or `unknown` without requiring schema changes or historical migrations.
+  - Glossary candidate extraction now propagates Observation display labels while deriving matching keys from stable Observation identity, preserving existing glossary classification and continuity-admission behavior.
+
+## 2026-06-12 - Capture Glossary Schema Drift Emergency Fix
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts`
+- Verification:
+  - Live Supabase probe: `node --env-file=.env.local -e "<glossary candidate select/insert probes>"` -> confirmed hosted DB rejects `candidate_class` with `42703` on select and `PGRST204` on insert, while metadata-free insert succeeds
+  - `npm test` -> pass (`108` files, `437` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-12T16-03-02-761Z.log`
+- Notes:
+  - Confirmed the configured Supabase project is missing the `20260612_0022_glossary_match_candidate_foundation.sql` columns even though later identity-scope behavior is present.
+  - Fixed the repository-side backward-compatibility matcher so capture retries candidate writes without metadata columns when PostgREST returns `PGRST204` schema-cache misses, not just raw Postgres `42703`.
+  - This restores capture safety against the currently drifted database while leaving the intended Glossary V2 schema behavior unchanged once `0022` is actually applied.
+
+## 2026-06-12 - Capture Glossary Candidate Invocation Slice
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/capture/page.tsx`
+  - `app/capture/page.test.tsx`
+  - `app/api/reflective-objects/[id]/glossary-candidates/route.ts`
+  - `src/runtime/orchestration/generate-glossary-candidates-for-reflective-object.ts`
+  - `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+- Verification:
+  - `npm test` -> pass (`108` files, `436` tests)
+  - `npm run lint` -> pass
+  - `npm run typecheck` -> pass
+  - `npm run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-12T15-49-24-581Z.log`
+- Notes:
+  - Wired the live capture success path to invoke the existing glossary extraction, classification, and persistence flow immediately after Observation V2 durability and before the orientation redirect.
+  - Extracted the generation flow into a shared orchestration seam so capture and `POST /api/reflective-objects/[id]/glossary-candidates` now reuse one authority instead of duplicating extraction logic.
+  - Added automated coverage proving capture invokes the seam after Observation persistence, preserves redirect behavior, classifies no-term outputs as `new_candidate`, and reuses repository upsert semantics on repeated invocation.
+  - Added backward-compatible candidate persistence fallback so pre-migration `glossary_candidate_states` tables without `candidate_class` / `proposed_entity_ids` no longer break capture or candidate upsert.
+
 ## 2026-06-12 - Ambiguous Resolution Completion Slice
 
 - Phase: BUILD
@@ -2448,3 +2516,89 @@ Verification references:
   - Added Lucide-based row actions, bottom filter controls, and a single candidate resolution modal wired to the existing candidate lifecycle and resolution endpoints.
   - Added repository support for loading saved glossary entities associated with the current reflective object without inventing a new detail route.
   - Saved entity detail navigation remains intentionally unresolved because the only current glossary route is the placeholder `/glossary` page and no stable entity detail view exists yet.
+
+## 2026-06-12 - Glossary Candidate UUID Guard and V2 Provenance Fix
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations/20260612_0023_glossary_candidate_provenance_text.sql`
+  - `src/infrastructure/supabase/adapters/glossary-row.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts`
+  - `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+- Verification:
+  - `npm.cmd test` -> pass (`108` files, `440` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-12T16-34-51-836Z.log`
+- Notes:
+  - Added a repository/adapter guard that strips non-UUID values from `proposedEntityIds` before persistence and reclassifies zero-valid-id candidates to `new_candidate`.
+  - Kept Observation V2 synthetic identifiers in provenance-only fields by converting glossary candidate and association observation provenance columns from `uuid` to `text`.
+  - Added regression coverage for fresh-user V2 extraction, UUID-only existing-entity matches, and the specific `obs1_1` candidate insert failure mode.
+
+## 2026-06-13 - Glossary Continuity Admission Layer v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/glossary/continuity-admission.ts`
+  - `src/cognition/glossary/__tests__/continuity-admission.test.ts`
+  - `src/cognition/glossary/extract-glossary-candidates-from-observations.ts`
+  - `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`
+  - `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test` -> pass (`109` files, `447` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-13T04-45-07-450Z.log`
+- Notes:
+  - Inserted a deterministic continuity admission layer between observation extraction and glossary candidate persistence.
+  - Rejected system-perspective labels, emotional labels, composite scene/event phrases, and first-appearance generic motifs before classification.
+  - Preserved existing match/new/ambiguous glossary classification for admitted candidates only, without changing UI, language handling, or persistence schema.
+
+## 2026-06-13 - Glossary Orientation Panel UI Polish
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/ui/object-orientation/view-model.ts`
+  - `src/ui/object-orientation/__tests__/view-model.test.ts`
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `src/ui/object-orientation/object-orientation-layer.module.css`
+  - `src/ui/object-orientation/__tests__/orientation-layer.test.tsx`
+- Verification:
+  - `npm.cmd test` -> pass (`109` files, `447` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-13T05-21-31-136Z.log`
+- Notes:
+  - Swapped glossary row semantics so the left lamp now signals candidate status and the right border now signals entity type.
+  - Replaced the pill filter row with a bottom-anchored dropdown that only changes row visibility and leaves candidate state untouched.
+  - Kept the unified list order but added deterministic secondary entity-type ordering and a bounded scroll viewport sized for roughly three rows on desktop.
+
+## 2026-06-13 - Glossary Entity Rename Flow v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/api/glossary/candidates/[id]/resolve/__tests__/route.test.ts`
+  - `src/domain/glossary/__tests__/http-contract.test.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts`
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test` -> pass (`109` files, `454` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-13T07-12-05-801Z.log`
+- Notes:
+  - Kept the glossary candidate modal one-step while making `canonicalLabel` editable for new candidates, match confirmations, and ambiguous existing-entity selections.
+  - Routed existing-entity renames through Glossary candidate resolution so the selected continuity entity is renamed before the appearance record is created.
+  - Preserved ownership boundaries by leaving Observation data untouched and keeping `appearanceNote` on the appearance record while `generalNote` remains limited to create-new entity flow.

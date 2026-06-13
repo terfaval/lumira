@@ -67,6 +67,7 @@ describe("glossary http contracts", () => {
       {
         resolutionType: "select_existing_entity",
         entityId: "term-2",
+        canonicalLabel: "Apu",
         appearanceNote: "This was definitely the same person.",
       },
       "cand-1",
@@ -77,6 +78,7 @@ describe("glossary http contracts", () => {
     if (!parsed.ok) return;
     expect(parsed.value.resolutionType).toBe("select_existing_entity");
     expect(parsed.value.entityId).toBe("term-2");
+    expect(parsed.value.canonicalLabel).toBe("Apu");
     expect(parsed.value.appearanceNote).toBe("This was definitely the same person.");
   });
 

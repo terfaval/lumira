@@ -27,12 +27,12 @@ const STACK_TABS: Array<{ key: Exclude<OrientationStackView, "dormant">; label: 
 ];
 
 const GLOSSARY_FILTERS: Array<{ key: GlossaryPanelFilter; label: string }> = [
-  { key: "all", label: "All" },
-  { key: "pending", label: "Pending" },
-  { key: "matches", label: "Matches" },
-  { key: "ambiguous", label: "Ambiguous" },
-  { key: "new", label: "New" },
-  { key: "saved", label: "Saved" },
+  { key: "all", label: "Mind" },
+  { key: "pending", label: "Függőben" },
+  { key: "matches", label: "Egyező" },
+  { key: "ambiguous", label: "Többértelmű" },
+  { key: "new", label: "Új" },
+  { key: "saved", label: "Rögzített" },
 ];
 
 const ENTITY_TYPE_OPTIONS: Array<{ value: GlossaryEntityType; label: string }> = [
@@ -41,7 +41,7 @@ const ENTITY_TYPE_OPTIONS: Array<{ value: GlossaryEntityType; label: string }> =
   { value: "object", label: "Object" },
   { value: "role", label: "Role" },
   { value: "concept", label: "Concept" },
-  { value: "animal_or_creature", label: "Object" },
+  { value: "animal_or_creature", label: "Person" },
   { value: "setting_or_space", label: "Place" },
 ];
 
@@ -143,6 +143,17 @@ function buildInitialModalState(item: Extract<GlossaryPanelItem, { kind: "candid
     generalNote: "",
     appearanceNote: "",
   };
+}
+
+function getSelectedProposedEntity(
+  item: Extract<GlossaryPanelItem, { kind: "candidate" }>,
+  selectedEntityId: GlossaryModalState["selectedEntityId"],
+) {
+  if (selectedEntityId && selectedEntityId !== "new") {
+    return item.proposedEntities.find((entity) => entity.id === selectedEntityId) ?? null;
+  }
+
+  return item.proposedEntities[0] ?? null;
 }
 
 function toSavedItem(term: {
@@ -330,6 +341,8 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
     }
 
     const { item } = modalState;
+    const canonicalLabel = modalState.canonicalLabel.trim();
+    const selectedEntity = getSelectedProposedEntity(item, modalState.selectedEntityId);
     let payloadBody: Record<string, unknown>;
 
     if (item.candidateClass === "match_candidate") {
@@ -342,16 +355,19 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
       payloadBody = {
         resolutionType: "confirm_existing_entity",
         entityId,
+        canonicalLabel:
+          canonicalLabel && selectedEntity && canonicalLabel !== selectedEntity.canonicalLabel ? canonicalLabel : undefined,
         appearanceNote: modalState.appearanceNote.trim() || null,
       };
     } else if (item.candidateClass === "ambiguous_match_candidate" && modalState.selectedEntityId && modalState.selectedEntityId !== "new") {
       payloadBody = {
         resolutionType: "select_existing_entity",
         entityId: modalState.selectedEntityId,
+        canonicalLabel:
+          canonicalLabel && selectedEntity && canonicalLabel !== selectedEntity.canonicalLabel ? canonicalLabel : undefined,
         appearanceNote: modalState.appearanceNote.trim() || null,
       };
     } else {
-      const canonicalLabel = modalState.canonicalLabel.trim();
       if (!canonicalLabel) {
         setGlossaryFeedback("Adj meg egy címkét az új entitáshoz.");
         return;
@@ -404,10 +420,7 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
   }
 
   function renderExistingEntitySummary(item: Extract<GlossaryPanelItem, { kind: "candidate" }>) {
-    const selectedEntity =
-      modalState?.selectedEntityId && modalState.selectedEntityId !== "new"
-        ? item.proposedEntities.find((entity) => entity.id === modalState.selectedEntityId) ?? null
-        : item.proposedEntities[0] ?? null;
+    const selectedEntity = modalState ? getSelectedProposedEntity(item, modalState.selectedEntityId) : null;
 
     if (!selectedEntity) {
       return null;
@@ -529,13 +542,14 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
             </div>
             {glossaryFeedback ? <p className={styles.feedback}>{glossaryFeedback}</p> : null}
             {visibleGlossaryItems.length > 0 ? (
-              <ul className={styles.glossaryList}>
+              <div className={styles.glossaryListViewport}>
+                <ul className={styles.glossaryList}>
                 {visibleGlossaryItems.map((item) => {
                   const isPending = pendingGlossaryId === item.id;
 
                   return (
-                    <li key={item.id} className={`${styles.glossaryRow} ${toStatusClass(item.status)}`}>
-                      <span className={`${styles.typeIndicator} ${toTypeClass(item.entityType)}`} aria-hidden="true" />
+                    <li key={item.id} className={`${styles.glossaryRow} ${toTypeClass(item.entityType)}`}>
+                      <span className={`${styles.typeIndicator} ${toStatusClass(item.status)}`} aria-hidden="true" />
                       <span className={styles.glossaryRowLabel}>{item.label}</span>
                       <div className={styles.glossaryRowActions}>
                         {item.kind === "candidate" ? (
@@ -584,27 +598,26 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
                     </li>
                   );
                 })}
-              </ul>
+                </ul>
+              </div>
             ) : (
               <p className={styles.emptyState}>Ebben a szűrőben nincs megjeleníthető tétel.</p>
             )}
 
             <div className={styles.filterBlock}>
               <p className={styles.filterLabel}>Szűrő</p>
-              <ul className={styles.filterList}>
+              <select
+                className={styles.filterSelect}
+                aria-label="Szótárszűrő"
+                value={glossaryFilter}
+                onChange={(event) => setGlossaryFilter(event.target.value as GlossaryPanelFilter)}
+              >
                 {GLOSSARY_FILTERS.map((filter) => (
-                  <li key={filter.key}>
-                    <button
-                      type="button"
-                      className={`${styles.filterButton} ${glossaryFilter === filter.key ? styles.filterButtonActive : ""}`}
-                      aria-pressed={glossaryFilter === filter.key}
-                      onClick={() => setGlossaryFilter(filter.key)}
-                    >
-                      {filter.label}
-                    </button>
-                  </li>
+                  <option key={filter.key} value={filter.key}>
+                    {filter.label}
+                  </option>
                 ))}
-              </ul>
+              </select>
             </div>
           </section>
         </section>
@@ -750,7 +763,18 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
                       type="radio"
                       name="glossary-resolution"
                       checked={modalState.selectedEntityId === "new"}
-                      onChange={() => setModalState((current) => (current ? { ...current, selectedEntityId: "new" } : current))}
+                      onChange={() =>
+                        setModalState((current) =>
+                          current
+                            ? {
+                                ...current,
+                                selectedEntityId: "new",
+                                canonicalLabel: current.item.label,
+                                entityType: current.item.entityType,
+                              }
+                            : current,
+                        )
+                      }
                     />
                     <span>
                       <strong>Create New</strong>
@@ -769,22 +793,21 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
               ? renderExistingEntitySummary(modalState.item)
               : null}
 
-            {(modalState.item.candidateClass === "new_candidate" ||
-              modalState.selectedEntityId === "new" ||
-              modalState.item.candidateClass === "ambiguous_match_candidate") ? (
-              <div className={styles.modalSection}>
-                <label className={styles.fieldLabel}>
-                  <span>Canonical Label</span>
-                  <input
-                    className={styles.fieldInput}
-                    value={modalState.canonicalLabel}
-                    onChange={(event) =>
-                      setModalState((current) => (current ? { ...current, canonicalLabel: event.target.value } : current))
-                    }
-                    disabled={modalState.item.candidateClass === "ambiguous_match_candidate" && modalState.selectedEntityId !== "new"}
-                  />
-                </label>
+            <div className={styles.modalSection}>
+              <label className={styles.fieldLabel}>
+                <span>Canonical Label</span>
+                <input
+                  className={styles.fieldInput}
+                  value={modalState.canonicalLabel}
+                  onChange={(event) =>
+                    setModalState((current) => (current ? { ...current, canonicalLabel: event.target.value } : current))
+                  }
+                />
+              </label>
+            </div>
 
+            {(modalState.item.candidateClass === "new_candidate" || modalState.selectedEntityId === "new") ? (
+              <div className={styles.modalSection}>
                 <label className={styles.fieldLabel}>
                   <span>Type</span>
                   <select
@@ -795,7 +818,6 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
                         current ? { ...current, entityType: event.target.value as GlossaryEntityType } : current,
                       )
                     }
-                    disabled={modalState.item.candidateClass === "ambiguous_match_candidate" && modalState.selectedEntityId !== "new"}
                   >
                     {ENTITY_TYPE_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -814,7 +836,6 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
                     onChange={(event) =>
                       setModalState((current) => (current ? { ...current, generalNote: event.target.value } : current))
                     }
-                    disabled={modalState.item.candidateClass === "ambiguous_match_candidate" && modalState.selectedEntityId !== "new"}
                   />
                 </label>
               </div>

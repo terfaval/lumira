@@ -10,6 +10,10 @@ import type {
   ObservationV2Observation,
   ObservationV2Scene,
 } from "@/src/domain/observation/v2-runtime";
+import {
+  getObservationV2DerivedItemDisplayLabel,
+  getObservationV2DerivedItemIdentityKey,
+} from "@/src/domain/observation/v2-runtime";
 import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
 
 const INTERPRETIVE_MARKERS = ["means", "symbolizes", "represents", "reveals", "proves", "must be"];
@@ -139,8 +143,8 @@ function buildCandidateFromDerivedItem(input: {
   userId: UserId;
   reflectiveObjectId: ReflectiveObjectId;
 }): CandidateAccumulator | null {
-  const displayLabel = cleanGlossaryDisplayText(input.item.label);
-  const normalizedKey = normalizeGlossaryRecognitionText(displayLabel);
+  const displayLabel = cleanGlossaryDisplayText(getObservationV2DerivedItemDisplayLabel(input.item));
+  const normalizedKey = normalizeGlossaryRecognitionText(getObservationV2DerivedItemIdentityKey(input.item));
 
   if (!displayLabel || !normalizedKey || containsInterpretiveLanguage(displayLabel)) {
     return null;

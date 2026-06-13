@@ -159,6 +159,62 @@ export interface GlossaryCandidateLifecycleUpdateRow {
   suppressed_at: string | null;
 }
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuidLike(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}
+
+function toUniqueUuidList(values: string[] | undefined): string[] {
+  if (!values) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const value of values) {
+    if (!isUuidLike(value) || seen.has(value)) {
+      continue;
+    }
+
+    seen.add(value);
+    result.push(value);
+  }
+
+  return result;
+}
+
+export function normalizeGlossaryCandidateMetadata(input: {
+  candidateClass?: GlossaryCandidate["candidateClass"];
+  proposedEntityIds?: string[];
+}): {
+  candidateClass: GlossaryCandidate["candidateClass"];
+  proposedEntityIds: string[];
+} {
+  const proposedEntityIds = toUniqueUuidList(input.proposedEntityIds);
+
+  if (proposedEntityIds.length === 0) {
+    return {
+      candidateClass: "new_candidate",
+      proposedEntityIds: [],
+    };
+  }
+
+  if (proposedEntityIds.length === 1) {
+    return {
+      candidateClass: "match_candidate",
+      proposedEntityIds,
+    };
+  }
+
+  return {
+    candidateClass: "ambiguous_match_candidate",
+    proposedEntityIds,
+  };
+}
+
 function toSuppression(
   suppressionState: GlossarySuppressionStateRow,
   suppressedAt: string | null,
@@ -201,8 +257,8 @@ export function fromGlossaryCandidateRow(row: GlossaryCandidateRow): GlossaryCan
     sourceObservationId: row.source_observation_id,
     sourceObservationFragmentId: row.source_observation_fragment_id,
     recurrenceCount: row.recurrence_count,
-    candidateClass: row.candidate_class,
-    proposedEntityIds: row.proposed_entity_ids,
+    candidateClass: row.candidate_class ?? "new_candidate",
+    proposedEntityIds: row.proposed_entity_ids ?? [],
     state: row.state,
     suppression: toSuppression(row.suppression_state, row.suppressed_at, row.suppression_reason),
     lastSeenAt: row.last_seen_at,
@@ -258,6 +314,11 @@ export function toGlossaryCandidateInsertRow(
   input: CreateGlossaryCandidateInput,
   now: string,
 ): GlossaryCandidateInsertRow {
+  const metadata = normalizeGlossaryCandidateMetadata({
+    candidateClass: input.candidateClass,
+    proposedEntityIds: input.proposedEntityIds,
+  });
+
   return {
     user_id: input.userId,
     reflective_object_id: input.reflectiveObjectId,
@@ -267,8 +328,8 @@ export function toGlossaryCandidateInsertRow(
     source_observation_id: input.sourceObservationId ?? null,
     source_observation_fragment_id: input.sourceObservationFragmentId ?? null,
     recurrence_count: input.recurrenceCount ?? 1,
-    candidate_class: input.candidateClass ?? "new_candidate",
-    proposed_entity_ids: input.proposedEntityIds ?? [],
+    candidate_class: metadata.candidateClass,
+    proposed_entity_ids: metadata.proposedEntityIds,
     state: "candidate",
     suppression_state: "none",
     suppression_reason: null,

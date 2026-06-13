@@ -88,11 +88,26 @@ const STATUS_ORDER: Record<GlossaryPanelStatus, number> = {
   saved: 3,
 };
 
+const ENTITY_TYPE_ORDER: Record<GlossaryEntityType, number> = {
+  person: 0,
+  place: 1,
+  setting_or_space: 1,
+  role: 2,
+  object: 3,
+  animal_or_creature: 3,
+  concept: 4,
+};
+
 export function orderGlossaryPanelItems(items: GlossaryPanelItem[]): GlossaryPanelItem[] {
   return [...items].sort((left, right) => {
     const byStatus = STATUS_ORDER[left.status] - STATUS_ORDER[right.status];
     if (byStatus !== 0) {
       return byStatus;
+    }
+
+    const byEntityType = ENTITY_TYPE_ORDER[left.entityType] - ENTITY_TYPE_ORDER[right.entityType];
+    if (byEntityType !== 0) {
+      return byEntityType;
     }
 
     return left.label.localeCompare(right.label, "hu");
