@@ -61,6 +61,11 @@ const GENERIC_ACTOR_TOKENS = new Set([
   "stranger",
   "unknown",
   "nobody",
+  "valaki",
+  "ember",
+  "emberek",
+  "csoport",
+  "tomeg",
 ]);
 const GENERIC_MOTIF_TOKENS = new Set([
   "stairs",
@@ -89,7 +94,14 @@ const GENERIC_MOTIF_TOKENS = new Set([
   "bridge",
   "gate",
   "wall",
-  "slurry",
+  "lepcso",
+  "lepcsok",
+  "ajto",
+  "ajtoszeruseg",
+  "epulet",
+  "szoba",
+  "videk",
+  "videken",
 ]);
 const COMPOSITE_SIGNAL_TOKENS = new Set([
   "pressed",

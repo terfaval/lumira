@@ -6,6 +6,7 @@ import {
   type GlossaryCandidateResolutionType,
   type GlossaryCandidateState,
   type GlossaryCandidateLifecycleUpdate,
+  type CreateGlossaryTermInput,
   type ResolveGlossaryCandidateInput,
   type GlossaryEntityType,
   type GlossaryTermUpdateInput,
@@ -255,6 +256,48 @@ export function parseGlossaryTermUpdate(
       type,
       aliases,
       generalNote,
+    },
+  };
+}
+
+export function parseGlossaryTermCreate(payload: unknown, userId: UserId): ParseResult<CreateGlossaryTermInput> {
+  const record = asRecord(payload);
+
+  if (!record) {
+    return { ok: false, error: "Request body must be an object." };
+  }
+
+  const canonicalLabel = typeof record.canonicalLabel === "string" ? record.canonicalLabel.trim() : "";
+
+  if (!canonicalLabel) {
+    return { ok: false, error: "canonicalLabel is required." };
+  }
+
+  const type = typeof record.type === "string" ? (record.type as GlossaryEntityType) : "concept";
+  if (!VALID_ENTITY_TYPES.has(type)) {
+    return { ok: false, error: "Unsupported glossary entity type." };
+  }
+
+  const aliases = normalizeAliases(record.aliases);
+  if (record.aliases !== undefined && aliases === undefined) {
+    return { ok: false, error: "aliases must be an array of strings." };
+  }
+
+  const generalNote =
+    typeof record.generalNote === "string" ? record.generalNote.trim() || null : record.generalNote === null ? null : undefined;
+
+  return {
+    ok: true,
+    value: {
+      userId,
+      normalizedKey: normalizeGlossaryRecognitionText(canonicalLabel),
+      displayLabel: canonicalLabel,
+      canonicalLabel,
+      type,
+      aliases: aliases ?? [],
+      generalNote,
+      appearanceCount: 0,
+      notes: generalNote ?? null,
     },
   };
 }

@@ -54,6 +54,17 @@ describe("assessGlossaryContinuityAdmission", () => {
     });
   });
 
+  it("rejects Hungarian emotional labels", () => {
+    expect(assessGlossaryContinuityAdmission({
+      label: "feszültség",
+      sourceCategory: "emotion",
+      recurrenceCount: 1,
+    })).toEqual({
+      admitted: false,
+      reason: "emotional_label",
+    });
+  });
+
   it("holds back recurrence-gated generic spatial motifs on first appearance", () => {
     expect(assessGlossaryContinuityAdmission({
       label: "Door",
@@ -102,6 +113,62 @@ describe("assessGlossaryContinuityAdmission", () => {
     })).toEqual({
       admitted: false,
       reason: "composite_or_narrative_phrase",
+    });
+  });
+
+  it("rejects Hungarian generic actor and scene-like labels", () => {
+    expect(assessGlossaryContinuityAdmission({
+      label: "sok ember",
+      sourceCategory: "actor",
+      recurrenceCount: 5,
+    })).toEqual({
+      admitted: false,
+      reason: "generic_non_identity_label",
+    });
+
+    expect(assessGlossaryContinuityAdmission({
+      label: "valaki, aki tud segíteni",
+      sourceCategory: "actor",
+      recurrenceCount: 1,
+    })).toEqual({
+      admitted: false,
+      reason: "composite_or_narrative_phrase",
+    });
+
+    expect(assessGlossaryContinuityAdmission({
+      label: "nagy szoba",
+      sourceCategory: "location",
+      recurrenceCount: 1,
+    })).toEqual({
+      admitted: false,
+      reason: "recurrence_gated_generic_motif",
+    });
+
+    expect(assessGlossaryContinuityAdmission({
+      label: "zárt épület",
+      sourceCategory: "location",
+      recurrenceCount: 1,
+    })).toEqual({
+      admitted: false,
+      reason: "recurrence_gated_generic_motif",
+    });
+
+    expect(assessGlossaryContinuityAdmission({
+      label: "dombos vidéken",
+      sourceCategory: "location",
+      recurrenceCount: 1,
+    })).toEqual({
+      admitted: false,
+      reason: "recurrence_gated_generic_motif",
+    });
+
+    expect(assessGlossaryContinuityAdmission({
+      label: "ajtószerűség",
+      sourceCategory: "location",
+      recurrenceCount: 1,
+    })).toEqual({
+      admitted: false,
+      reason: "recurrence_gated_generic_motif",
     });
   });
 });

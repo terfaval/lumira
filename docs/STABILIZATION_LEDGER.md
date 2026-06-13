@@ -58,6 +58,54 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-06-13 - Glossary Live Admission Enforcement Slice
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/runtime/orchestration/generate-glossary-candidates-for-reflective-object.ts`
+  - `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+  - `src/cognition/glossary/continuity-admission.ts`
+  - `src/cognition/glossary/__tests__/continuity-admission.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/glossary/__tests__/continuity-admission.test.ts src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts` -> pass
+  - `npm.cmd test` -> pass (`109` files, `461` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-13T16-31-32-476Z.log`
+- Notes:
+  - Enforced the existing continuity admission gate in the live glossary candidate orchestration path between extraction and classification/persistence.
+  - Rejected candidates now short-circuit before glossary term lookup and before candidate persistence.
+  - Added localized Hungarian admission heuristics for generic actor and generic location/motif phrases needed by the current runtime examples, while leaving Observation extraction, identity generation, UI payload shape, and persistence schema unchanged.
+
+## 2026-06-13 - Glossary Entity Create Route And Modal Rename Alignment
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/api/glossary/terms/route.ts`
+  - `app/api/glossary/terms/__tests__/route.test.ts`
+  - `src/domain/glossary/contracts.ts`
+  - `src/domain/glossary/http-contract.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `src/ui/object-orientation/__tests__/orientation-layer.test.tsx`
+  - `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`
+  - `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`
+- Verification:
+  - `npm.cmd test -- app/api/glossary/terms/__tests__/route.test.ts` -> pass
+  - `npm.cmd test -- src/ui/object-orientation/__tests__/orientation-layer.test.tsx` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-13T15-24-09-183Z.log`
+- Notes:
+  - Added the missing `POST /api/glossary/terms` path so glossary entity creation returns JSON instead of falling through to an HTML error response.
+  - Aligned the glossary candidate modal labels to Hungarian and moved entity renaming into the modal header with the same edit/save/cancel icon pattern used for dream-title editing in Orientation.
+  - Existing-entity header renames now persist through `PATCH /api/glossary/terms/[id]`, while create-new candidate flows use the same inline header editing pattern before resolution.
+
 ## 2026-06-13 - Observation Display Language And Identity v1
 
 - Phase: BUILD

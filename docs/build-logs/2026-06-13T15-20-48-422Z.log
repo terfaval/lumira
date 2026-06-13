@@ -1,0 +1,32 @@
+# Build Run 2026-06-13T15-20-48-422Z
+timestamp: 2026-06-13T15:20:48.422Z
+command: C:\Program Files\nodejs\node.exe C:\mira\node_modules\next\dist\bin\next build
+status: failed
+exit_code: 1
+
+## stdout
+```txt
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 51s
+  Running TypeScript ...
+```
+
+## stderr
+```txt
+Failed to type check.
+
+./src/ui/object-orientation/object-orientation-layer.tsx:416:29
+Type error: 'body.term' is possibly 'undefined'.
+
+  [90m414 |[0m                 label: savedLabel,
+  [90m415 |[0m                 canonicalLabel: savedLabel,
+[31m[1m>[0m [90m416 |[0m                 entityType: body.term.[36mtype[0m,
+  [90m    |[0m                             [31m[1m^[0m
+  [90m417 |[0m               };
+  [90m418 |[0m             }
+  [90m419 |[0m
+Next.js build worker exited with code: 1 and signal: null
+```

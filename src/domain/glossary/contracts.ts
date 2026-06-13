@@ -2,6 +2,7 @@ import type {
   CreateGlossaryAssociationInput,
   CreateGlossaryAppearanceRecordInput,
   CreateGlossaryCandidateInput,
+  CreateGlossaryTermInput,
   GlossaryCandidateResolution,
   GlossaryAppearanceRecord,
   GlossaryAssociation,
@@ -18,6 +19,7 @@ export interface GlossaryRepository {
   listTermsByReflectiveObject(userId: UserId, reflectiveObjectId: ReflectiveObjectId): Promise<GlossaryTerm[]>;
   getTermById(termId: GlossaryTermId, userId: UserId): Promise<GlossaryTerm | null>;
   listAppearanceRecordsByTerm(termId: GlossaryTermId, userId: UserId): Promise<GlossaryAppearanceRecord[]>;
+  createTerm(input: CreateGlossaryTermInput): Promise<GlossaryTerm>;
   updateTerm(input: GlossaryTermUpdateInput): Promise<GlossaryTerm | null>;
   renameTerm?(input: GlossaryTermUpdateInput): Promise<GlossaryTerm | null>;
 

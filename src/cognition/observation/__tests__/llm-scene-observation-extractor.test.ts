@@ -138,6 +138,13 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
 
     const requestBody = responsesCreateMock.mock.calls[0]?.[0];
     expect(requestBody.text.format.schema.required).toEqual(["dreamLanguage", "scenes"]);
+    expect(requestBody.text.format.schema.$defs.derivedItem.required).toEqual([
+      "identityKey",
+      "displayLabel",
+      "sourceLanguage",
+      "label",
+      "observationIds",
+    ]);
     expect(requestBody.input).toContain("Extract scene-first dream observations only.");
     expect(requestBody.input).toContain("Observation boundaries are based on distinct observable units, not sentence boundaries.");
     expect(requestBody.input).toContain("Set dreamLanguage to hu, en, or unknown.");
@@ -190,6 +197,66 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
         expect.objectContaining({ identityKey: "father", displayLabel: "Apa", sourceLanguage: "hu" }),
         expect.objectContaining({ identityKey: "helper", displayLabel: "Segítő", sourceLanguage: "hu" }),
       ]),
+    );
+  });
+  it("logs provider diagnostics and falls back when the OpenAI request fails", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const providerError = Object.assign(new Error("Rate limit exceeded"), {
+      name: "RateLimitError",
+      status: 429,
+      code: "rate_limit_exceeded",
+    });
+    responsesCreateMock.mockRejectedValue(providerError);
+
+    const result = await buildLlmSceneObservationExtraction({
+      userId: "user-1",
+      reflectiveObjectId: "object-1",
+      dreamText: "A guide leads the dreamer up a staircase.",
+    });
+
+    expect(result).toEqual({
+      mode: "fallback",
+      reason: "provider_error",
+    });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "llm_scene_observation_extraction_provider_error",
+      expect.objectContaining({
+        reflectiveObjectId: "object-1",
+        errorName: "RateLimitError",
+        errorMessage: "Rate limit exceeded",
+        errorStatus: 429,
+        errorCode: "rate_limit_exceeded",
+      }),
+    );
+  });
+
+  it("logs timeout diagnostics and classifies aborted requests as provider timeouts", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    responsesCreateMock.mockRejectedValue(
+      Object.assign(new Error("The operation was aborted."), {
+        name: "AbortError",
+        code: "ABORT_ERR",
+      }),
+    );
+
+    const result = await buildLlmSceneObservationExtraction({
+      userId: "user-1",
+      reflectiveObjectId: "object-1",
+      dreamText: "A guide leads the dreamer up a staircase.",
+    });
+
+    expect(result).toEqual({
+      mode: "fallback",
+      reason: "provider_timeout",
+    });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "llm_scene_observation_extraction_provider_error",
+      expect.objectContaining({
+        reflectiveObjectId: "object-1",
+        errorName: "AbortError",
+        errorCode: "ABORT_ERR",
+        timeoutMs: 40000,
+      }),
     );
   });
 });

@@ -4,6 +4,7 @@ import type {
   CreateGlossaryAppearanceRecordInput,
   CreateGlossaryAssociationInput,
   CreateGlossaryCandidateInput,
+  CreateGlossaryTermInput,
   GlossaryCandidateResolution,
   GlossaryAppearanceRecord,
   GlossaryAssociation,
@@ -135,6 +136,20 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
     }
 
     return (data ?? []).map((row) => fromGlossaryAppearanceRecordRow(row as GlossaryAppearanceRecordRow));
+  }
+
+  async createTerm(input: CreateGlossaryTermInput): Promise<GlossaryTerm> {
+    const { data, error } = await this.client
+      .from(TERMS_TABLE)
+      .insert(toGlossaryTermInsertRow(input))
+      .select("*")
+      .single<GlossaryTermRow>();
+
+    if (error) {
+      throw new Error(`Failed to create glossary term: ${error.message}`);
+    }
+
+    return fromGlossaryTermRow(data);
   }
 
   async updateTerm(input: GlossaryTermUpdateInput): Promise<GlossaryTerm | null> {

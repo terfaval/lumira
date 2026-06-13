@@ -1,10 +1,11 @@
+import { assessGlossaryContinuityAdmission } from "@/src/cognition/glossary/continuity-admission";
 import { classifyGlossaryCandidates } from "@/src/cognition/glossary/classify-glossary-candidates";
 import {
   extractGlossaryCandidatesFromObservationV2Bundle,
   extractGlossaryCandidatesFromObservations,
 } from "@/src/cognition/glossary/extract-glossary-candidates-from-observations";
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
-import type { GlossaryCandidate } from "@/src/domain/glossary/types";
+import type { CreateGlossaryCandidateInput, GlossaryCandidate } from "@/src/domain/glossary/types";
 import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
 import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
@@ -31,6 +32,16 @@ function defaultRepositories(): GenerateGlossaryCandidatesRepositories {
   };
 }
 
+function filterAdmittedCandidates(candidateInputs: CreateGlossaryCandidateInput[]): CreateGlossaryCandidateInput[] {
+  return candidateInputs.filter((candidate) =>
+    assessGlossaryContinuityAdmission({
+      label: candidate.displayLabel,
+      sourceCategory: candidate.sourceCategory,
+      recurrenceCount: candidate.recurrenceCount ?? 1,
+    }).admitted,
+  );
+}
+
 export async function generateGlossaryCandidatesForReflectiveObject(
   input: GenerateGlossaryCandidatesForReflectiveObjectInput,
 ): Promise<GlossaryCandidate[]> {
@@ -55,14 +66,16 @@ export async function generateGlossaryCandidatesForReflectiveObject(
         }),
       });
 
-  if (candidateInputs.length === 0) {
+  const admittedCandidateInputs = filterAdmittedCandidates(candidateInputs);
+
+  if (admittedCandidateInputs.length === 0) {
     return [];
   }
 
   const terms = await repositories.glossaryRepository.listTerms(input.userId);
   return repositories.glossaryRepository.upsertCandidates(
     classifyGlossaryCandidates({
-      candidates: candidateInputs,
+      candidates: admittedCandidateInputs,
       terms,
     }),
   );

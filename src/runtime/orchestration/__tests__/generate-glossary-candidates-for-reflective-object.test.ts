@@ -114,7 +114,18 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
         }),
       ]),
     );
-    expect(candidates).toHaveLength(4);
+    expect(repositories.glossaryRepository.upsertCandidates).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          displayLabel: "Slurry",
+          normalizedKey: "slurry",
+          candidateClass: "new_candidate",
+          proposedEntityIds: [],
+          sourceObservationFragmentId: "obs-1",
+        }),
+      ]),
+    );
+    expect(candidates).toHaveLength(2);
   });
 
   it("keeps observation v2 ids in provenance only and out of proposedEntityIds for fresh users", async () => {
@@ -509,5 +520,161 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
         }),
       ]),
     );
+  });
+
+  it("filters rejected Hungarian observation v2 candidates before classification and persistence", async () => {
+    const repositories = makeRepositories();
+    vi.mocked(repositories.observationV2Repository.getByReflectiveObjectId).mockResolvedValue({
+      bundleId: "bundle-hu-admission",
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      source: "system_llm_extract",
+      runtimeVersion: "observation_v2_phase1",
+      uncertaintyNotes: [],
+      provenance: {
+        provenanceTier: "system_extract",
+        semanticPolicyResult: "accept_with_uncertainty",
+        semanticPolicyReasons: [],
+        latentBackflowGuard: "observation_only",
+        boundaryVersion: "observation_v2_phase1",
+        dreamLanguage: "hu",
+      },
+      scenes: [
+        {
+          sceneId: "scene-1",
+          position: 1,
+          summary: "Hungarian candidate filtering.",
+          boundaryReasoning: [],
+          evidenceContext: {
+            snippet: "Hungarian candidate filtering.",
+            spanStart: 0,
+            spanEnd: 29,
+            contextLabel: "dreamText",
+          },
+          observations: [],
+          derived: {
+            actors: [
+              { identityKey: "apas", displayLabel: "apám", sourceLanguage: "hu", label: "apám", observationIds: ["obs-1"] },
+              {
+                identityKey: "ismeretlen_emberek",
+                displayLabel: "sok ember",
+                sourceLanguage: "hu",
+                label: "sok ember",
+                observationIds: ["obs-2", "obs-3"],
+              },
+              {
+                identityKey: "segito_valaki",
+                displayLabel: "valaki, aki tud segíteni",
+                sourceLanguage: "hu",
+                label: "valaki, aki tud segíteni",
+                observationIds: ["obs-4"],
+              },
+            ],
+            locations: [
+              { identityKey: "pest", displayLabel: "Pest", sourceLanguage: "hu", label: "Pest", observationIds: ["obs-5"] },
+              { identityKey: "gyapai_tura", displayLabel: "gyapai túra", sourceLanguage: "hu", label: "gyapai túra", observationIds: ["obs-6"] },
+              { identityKey: "nagy_szoba", displayLabel: "nagy szoba", sourceLanguage: "hu", label: "nagy szoba", observationIds: ["obs-7"] },
+              { identityKey: "zart_epulet", displayLabel: "zárt épület", sourceLanguage: "hu", label: "zárt épület", observationIds: ["obs-8"] },
+              { identityKey: "dombos_videk", displayLabel: "dombos vidéken", sourceLanguage: "hu", label: "dombos vidéken", observationIds: ["obs-9"] },
+              {
+                identityKey: "ajtoszeruseg",
+                displayLabel: "ajtószerűség",
+                sourceLanguage: "hu",
+                label: "ajtószerűség",
+                observationIds: ["obs-10"],
+              },
+            ],
+            objects: [{ identityKey: "moslek", displayLabel: "moslék", sourceLanguage: "hu", label: "moslék", observationIds: ["obs-11"] }],
+            interactions: [],
+            affect: [{ identityKey: "feszultseg", displayLabel: "feszültség", sourceLanguage: "hu", label: "feszültség", observationIds: ["obs-12"] }],
+            agency: [],
+            phenomenology: [],
+            metacognition: [],
+          },
+        },
+      ],
+    });
+
+    const candidates = await generateGlossaryCandidatesForReflectiveObject({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      repositories,
+    });
+
+    expect(repositories.glossaryRepository.upsertCandidates).toHaveBeenCalledTimes(1);
+    expect(repositories.glossaryRepository.upsertCandidates).toHaveBeenCalledWith([
+      expect.objectContaining({
+        displayLabel: "apám",
+        normalizedKey: "apas",
+      }),
+      expect.objectContaining({
+        displayLabel: "Pest",
+        normalizedKey: "pest",
+      }),
+      expect.objectContaining({
+        displayLabel: "gyapai túra",
+        normalizedKey: "gyapai tura",
+      }),
+      expect.objectContaining({
+        displayLabel: "moslék",
+        normalizedKey: "moslek",
+      }),
+    ]);
+    expect(candidates).toHaveLength(4);
+  });
+
+  it("skips classification and persistence when admission rejects every extracted candidate", async () => {
+    const repositories = makeRepositories();
+    vi.mocked(repositories.observationV2Repository.getByReflectiveObjectId).mockResolvedValue({
+      bundleId: "bundle-hu-rejected",
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      source: "system_llm_extract",
+      runtimeVersion: "observation_v2_phase1",
+      uncertaintyNotes: [],
+      provenance: {
+        provenanceTier: "system_extract",
+        semanticPolicyResult: "accept_with_uncertainty",
+        semanticPolicyReasons: [],
+        latentBackflowGuard: "observation_only",
+        boundaryVersion: "observation_v2_phase1",
+        dreamLanguage: "hu",
+      },
+      scenes: [
+        {
+          sceneId: "scene-1",
+          position: 1,
+          summary: "Rejected only.",
+          boundaryReasoning: [],
+          evidenceContext: {
+            snippet: "Rejected only.",
+            spanStart: 0,
+            spanEnd: 14,
+            contextLabel: "dreamText",
+          },
+          observations: [],
+          derived: {
+            actors: [{ identityKey: "segito_valaki", displayLabel: "valaki, aki tud segíteni", sourceLanguage: "hu", label: "valaki, aki tud segíteni", observationIds: ["obs-1"] }],
+            locations: [],
+            objects: [],
+            interactions: [],
+            affect: [{ identityKey: "feszultseg", displayLabel: "feszültség", sourceLanguage: "hu", label: "feszültség", observationIds: ["obs-2"] }],
+            agency: [],
+            phenomenology: [],
+            metacognition: [],
+          },
+        },
+      ],
+    });
+
+    const candidates = await generateGlossaryCandidatesForReflectiveObject({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      repositories,
+    });
+
+    expect(candidates).toEqual([]);
+    expect(repositories.glossaryRepository.listTerms).not.toHaveBeenCalled();
+    expect(repositories.glossaryRepository.upsertCandidates).not.toHaveBeenCalled();
   });
 });

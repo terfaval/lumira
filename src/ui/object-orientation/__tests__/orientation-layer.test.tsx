@@ -143,5 +143,11 @@ describe("ObjectOrientationLayer", () => {
     expect(markup).not.toContain("Bármikor átnevezheted.");
     expect(markup).toContain('aria-pressed="true">Új');
     expect(markup).toContain("The doorway may matter here.");
+    expect(markup).not.toContain("Existing Entity");
+    expect(markup).not.toContain("Canonical Label");
+    expect(markup).not.toContain("General Note");
+    expect(markup).not.toContain("Appearance Note");
+    expect(markup).not.toContain("Create New");
+    expect(markup).not.toContain("Saving...");
   });
 });

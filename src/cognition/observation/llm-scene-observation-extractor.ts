@@ -120,7 +120,7 @@ const SCENE_EXTRACTION_JSON_SCHEMA = {
     derivedItem: {
       type: "object",
       additionalProperties: false,
-      required: ["identityKey", "displayLabel", "sourceLanguage", "observationIds"],
+      required: ["identityKey", "displayLabel", "sourceLanguage", "label", "observationIds"],
       properties: {
         identityKey: { type: "string" },
         displayLabel: { type: "string" },
@@ -171,6 +171,51 @@ function buildFallback(reason: string): LlmSceneObservationExtractionResult {
   return {
     mode: "fallback",
     reason,
+  };
+}
+
+function isProviderTimeoutError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const errorWithMetadata = error as Error & {
+    code?: string;
+  };
+
+  return (
+    error.name === "AbortError" ||
+    error.name === "APIConnectionTimeoutError" ||
+    errorWithMetadata.code === "ABORT_ERR" ||
+    /timeout|timed out|aborted/i.test(error.message)
+  );
+}
+
+function readProviderErrorDiagnostics(error: unknown): {
+  errorName: string;
+  errorMessage: string;
+  errorStatus?: number;
+  errorCode?: string;
+  timeoutMs?: number;
+} {
+  if (!(error instanceof Error)) {
+    return {
+      errorName: "UnknownError",
+      errorMessage: "Non-Error value thrown during scene observation extraction.",
+    };
+  }
+
+  const errorWithMetadata = error as Error & {
+    status?: number;
+    code?: string;
+  };
+
+  return {
+    errorName: error.name,
+    errorMessage: error.message,
+    errorStatus: typeof errorWithMetadata.status === "number" ? errorWithMetadata.status : undefined,
+    errorCode: typeof errorWithMetadata.code === "string" ? errorWithMetadata.code : undefined,
+    timeoutMs: isProviderTimeoutError(error) ? OPENAI_REQUEST_TIMEOUT_MS : undefined,
   };
 }
 
@@ -331,6 +376,11 @@ export async function buildLlmSceneObservationExtraction(input: {
       return buildFallback("invalid_json");
     }
 
-    return buildFallback("provider_error");
+    console.error("llm_scene_observation_extraction_provider_error", {
+      reflectiveObjectId: input.reflectiveObjectId,
+      ...readProviderErrorDiagnostics(error),
+    });
+
+    return buildFallback(isProviderTimeoutError(error) ? "provider_timeout" : "provider_error");
   }
 }

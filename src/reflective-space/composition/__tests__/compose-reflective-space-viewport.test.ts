@@ -55,6 +55,9 @@ describe("composeReflectiveSpaceViewport", () => {
         listTermsByReflectiveObject: async () => [],
         getTermById: async () => null,
         listAppearanceRecordsByTerm: async () => [],
+        createTerm: async () => {
+          throw new Error("not used");
+        },
         updateTerm: async () => null,
         listCandidates: async () => [],
         listCandidatesByReflectiveObject: async () => [],
@@ -212,6 +215,9 @@ describe("composeReflectiveSpaceViewport", () => {
         listTermsByReflectiveObject: async () => [],
         getTermById: async () => null,
         listAppearanceRecordsByTerm: async () => [],
+        createTerm: async () => {
+          throw new Error("not used");
+        },
         updateTerm: async () => null,
         listCandidates: async () => [],
         listCandidatesByReflectiveObject: async () => [],

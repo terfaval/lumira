@@ -36,19 +36,22 @@ const GLOSSARY_FILTERS: Array<{ key: GlossaryPanelFilter; label: string }> = [
 ];
 
 const ENTITY_TYPE_OPTIONS: Array<{ value: GlossaryEntityType; label: string }> = [
-  { value: "person", label: "Person" },
-  { value: "place", label: "Place" },
-  { value: "object", label: "Object" },
-  { value: "role", label: "Role" },
-  { value: "concept", label: "Concept" },
-  { value: "animal_or_creature", label: "Person" },
-  { value: "setting_or_space", label: "Place" },
+  { value: "person", label: "Személy" },
+  { value: "place", label: "Hely" },
+  { value: "object", label: "Tárgy" },
+  { value: "role", label: "Szerep" },
+  { value: "concept", label: "Fogalom" },
+  { value: "animal_or_creature", label: "Állat vagy lény" },
+  { value: "setting_or_space", label: "Tér vagy közeg" },
 ];
 
 interface GlossaryModalState {
   item: Extract<GlossaryPanelItem, { kind: "candidate" }>;
   selectedEntityId: string | "new" | null;
   canonicalLabel: string;
+  labelDraft: string;
+  isEditingLabel: boolean;
+  labelFeedback: string | null;
   entityType: GlossaryEntityType;
   generalNote: string;
   appearanceNote: string;
@@ -68,7 +71,7 @@ function toStateLabel(view: OrientationStackView): string {
 }
 
 function toEntityTypeLabel(type: GlossaryEntityType): string {
-  return ENTITY_TYPE_OPTIONS.find((option) => option.value === type)?.label ?? "Concept";
+  return ENTITY_TYPE_OPTIONS.find((option) => option.value === type)?.label ?? "Fogalom";
 }
 
 function toTypeClass(type: GlossaryEntityType): string {
@@ -104,11 +107,11 @@ function toStatusClass(status: GlossaryPanelItem["status"]): string {
 function toPrimaryActionLabel(item: Extract<GlossaryPanelItem, { kind: "candidate" }>): string {
   switch (item.candidateClass) {
     case "match_candidate":
-      return "Confirm";
+      return "Megerősítés";
     case "ambiguous_match_candidate":
-      return "Choose";
+      return "Kiválasztás";
     default:
-      return "Create";
+      return "Létrehozás";
   }
 }
 
@@ -139,6 +142,9 @@ function buildInitialModalState(item: Extract<GlossaryPanelItem, { kind: "candid
     item,
     selectedEntityId: item.candidateClass === "match_candidate" ? item.proposedEntities[0]?.id ?? null : null,
     canonicalLabel: item.candidateClass === "match_candidate" ? item.proposedEntities[0]?.canonicalLabel ?? item.label : item.label,
+    labelDraft: item.candidateClass === "match_candidate" ? item.proposedEntities[0]?.canonicalLabel ?? item.label : item.label,
+    isEditingLabel: false,
+    labelFeedback: null,
     entityType: item.candidateClass === "match_candidate" ? item.proposedEntities[0]?.type ?? item.entityType : item.entityType,
     generalNote: "",
     appearanceNote: "",
@@ -189,6 +195,7 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleFeedback, setTitleFeedback] = useState<string | null>(null);
   const [isSavingTitle, startSavingTitle] = useTransition();
+  const [isSavingGlossaryLabel, startSavingGlossaryLabel] = useTransition();
 
   const visibleOpenings = filterOrientationOpenings(payload.openingStack.items, selectedView);
   const orderedGlossaryItems = useMemo(() => orderGlossaryPanelItems(glossaryItems), [glossaryItems]);
@@ -306,6 +313,182 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
   function openCandidateModal(item: Extract<GlossaryPanelItem, { kind: "candidate" }>) {
     setGlossaryFeedback(null);
     setModalState(buildInitialModalState(item));
+  }
+
+  function handleStartGlossaryLabelEdit() {
+    setGlossaryFeedback(null);
+    setModalState((current) =>
+      current
+        ? {
+            ...current,
+            isEditingLabel: true,
+            labelDraft: current.canonicalLabel,
+            labelFeedback: null,
+          }
+        : current,
+    );
+  }
+
+  function handleCancelGlossaryLabelEdit() {
+    setModalState((current) =>
+      current
+        ? {
+            ...current,
+            isEditingLabel: false,
+            labelDraft: current.canonicalLabel,
+            labelFeedback: null,
+          }
+        : current,
+    );
+  }
+
+  async function handleSaveGlossaryLabel() {
+    if (!modalState) {
+      return;
+    }
+
+    const nextLabel = modalState.labelDraft.trim();
+    if (!nextLabel) {
+      setModalState((current) =>
+        current
+          ? {
+              ...current,
+              labelFeedback: "Adj nevet a szótári entitásnak.",
+            }
+          : current,
+      );
+      return;
+    }
+
+    const selectedEntity =
+      modalState.selectedEntityId && modalState.selectedEntityId !== "new"
+        ? getSelectedProposedEntity(modalState.item, modalState.selectedEntityId)
+        : modalState.item.candidateClass === "match_candidate"
+          ? getSelectedProposedEntity(modalState.item, modalState.selectedEntityId)
+          : null;
+
+    if (!selectedEntity) {
+      setModalState((current) =>
+        current
+          ? {
+              ...current,
+              canonicalLabel: nextLabel,
+              labelDraft: nextLabel,
+              isEditingLabel: false,
+              labelFeedback: null,
+            }
+          : current,
+      );
+      return;
+    }
+
+    setGlossaryFeedback(null);
+    startSavingGlossaryLabel(async () => {
+      try {
+        const response = await fetch(`/api/glossary/terms/${selectedEntity.id}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            canonicalLabel: nextLabel,
+            type: selectedEntity.type,
+            generalNote: selectedEntity.generalNote ?? null,
+          }),
+        });
+
+        const body = (await response.json()) as {
+          error?: string;
+          term?: { id: string; canonicalLabel: string; type: GlossaryEntityType; generalNote?: string | null };
+        };
+
+        if (!response.ok || !body.term) {
+          throw new Error(body.error ?? "A név mentése nem sikerült.");
+        }
+
+        const savedTerm = body.term;
+        const savedLabel = savedTerm.canonicalLabel.trim() || nextLabel;
+
+        setGlossaryItems((current) =>
+          current.map((entry) => {
+            if (entry.kind === "saved" && entry.id === `saved-${savedTerm.id}`) {
+              return {
+                ...entry,
+                label: savedLabel,
+                canonicalLabel: savedLabel,
+                entityType: savedTerm.type,
+              };
+            }
+
+            if (entry.kind === "candidate") {
+              return {
+                ...entry,
+                proposedEntities: entry.proposedEntities.map((entity) =>
+                  entity.id === savedTerm.id
+                    ? {
+                        ...entity,
+                        canonicalLabel: savedLabel,
+                        type: savedTerm.type,
+                        generalNote: savedTerm.generalNote ?? entity.generalNote,
+                      }
+                    : entity,
+                ),
+              };
+            }
+
+            return entry;
+          }),
+        );
+
+        setModalState((current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            item: {
+              ...current.item,
+              proposedEntities: current.item.proposedEntities.map((entity) =>
+                entity.id === savedTerm.id
+                  ? {
+                      ...entity,
+                      canonicalLabel: savedLabel,
+                      type: savedTerm.type,
+                      generalNote: savedTerm.generalNote ?? entity.generalNote,
+                    }
+                  : entity,
+              ),
+            },
+            canonicalLabel: savedLabel,
+            labelDraft: savedLabel,
+            isEditingLabel: false,
+            labelFeedback: null,
+            entityType: savedTerm.type,
+          };
+        });
+      } catch (error) {
+        setModalState((current) =>
+          current
+            ? {
+                ...current,
+                labelFeedback: error instanceof Error ? error.message : "A név mentése nem sikerült.",
+              }
+            : current,
+        );
+      }
+    });
+  }
+
+  function handleGlossaryLabelKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      handleCancelGlossaryLabelEdit();
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void handleSaveGlossaryLabel();
+    }
   }
 
   async function handleDismissCandidate(item: Extract<GlossaryPanelItem, { kind: "candidate" }>) {
@@ -428,23 +611,23 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
 
     return (
       <div className={styles.modalSection}>
-        <p className={styles.modalSectionLabel}>Existing Entity</p>
+        <p className={styles.modalSectionLabel}>Meglévő entitás</p>
         <dl className={styles.entityMetaList}>
           <div>
-            <dt>Canonical Label</dt>
+            <dt>Név</dt>
             <dd>{selectedEntity.canonicalLabel}</dd>
           </div>
           <div>
-            <dt>Type</dt>
+            <dt>Típus</dt>
             <dd>{toEntityTypeLabel(selectedEntity.type)}</dd>
           </div>
           <div>
-            <dt>Appearance Count</dt>
+            <dt>Előfordulások</dt>
             <dd>{selectedEntity.appearanceCount}</dd>
           </div>
           {selectedEntity.generalNote ? (
             <div>
-              <dt>General Note</dt>
+              <dt>Általános jegyzet</dt>
               <dd>{selectedEntity.generalNote}</dd>
             </div>
           ) : null}
@@ -716,10 +899,62 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
           >
             <div className={styles.modalHeader}>
               <div>
-                <h3 id="orientation-glossary-title">{modalState.item.label}</h3>
+                {modalState.isEditingLabel ? (
+                  <>
+                    <input
+                      id="orientation-glossary-title"
+                      aria-label="Szótári entitás nevének szerkesztése"
+                      className={styles.titleInput}
+                      value={modalState.labelDraft}
+                      onChange={(event) =>
+                        setModalState((current) =>
+                          current ? { ...current, labelDraft: event.target.value, labelFeedback: null } : current,
+                        )
+                      }
+                      onKeyDown={handleGlossaryLabelKeyDown}
+                      autoFocus
+                      maxLength={80}
+                    />
+                    {modalState.labelFeedback ? <p className={styles.titleFeedback}>{modalState.labelFeedback}</p> : null}
+                  </>
+                ) : (
+                  <h3 id="orientation-glossary-title">{modalState.canonicalLabel}</h3>
+                )}
                 <p className={styles.modalType}>{toEntityTypeLabel(modalState.entityType)}</p>
               </div>
-              <button
+              <div className={styles.titleActions}>
+                {modalState.isEditingLabel ? (
+                  <>
+                    <button
+                      type="button"
+                      className={styles.iconButton}
+                      aria-label="Név mentése"
+                      onClick={() => void handleSaveGlossaryLabel()}
+                      disabled={isSavingGlossaryLabel}
+                    >
+                      <span aria-hidden="true">✓</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.iconButton}
+                      aria-label="Névszerkesztés megszakítása"
+                      onClick={handleCancelGlossaryLabelEdit}
+                      disabled={isSavingGlossaryLabel}
+                    >
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.iconButton}
+                    aria-label="Név szerkesztése"
+                    onClick={handleStartGlossaryLabelEdit}
+                  >
+                    <span aria-hidden="true">✎</span>
+                  </button>
+                )}
+                <button
                 type="button"
                 className={styles.rowIconButton}
                 aria-label="Bezárás"
@@ -727,11 +962,12 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
               >
                 <X size={16} strokeWidth={2} aria-hidden="true" />
               </button>
+              </div>
             </div>
 
             {modalState.item.candidateClass === "ambiguous_match_candidate" ? (
               <div className={styles.modalSection}>
-                <p className={styles.modalSectionLabel}>Existing Entity</p>
+                <p className={styles.modalSectionLabel}>Meglévő entitás</p>
                 <div className={styles.selectionList}>
                   {modalState.item.proposedEntities.map((entity) => (
                     <label key={entity.id} className={styles.selectionOption}>
@@ -746,6 +982,9 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
                                   ...current,
                                   selectedEntityId: entity.id,
                                   canonicalLabel: entity.canonicalLabel,
+                                  labelDraft: entity.canonicalLabel,
+                                  isEditingLabel: false,
+                                  labelFeedback: null,
                                   entityType: entity.type,
                                 }
                               : current,
@@ -770,6 +1009,9 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
                                 ...current,
                                 selectedEntityId: "new",
                                 canonicalLabel: current.item.label,
+                                labelDraft: current.item.label,
+                                isEditingLabel: false,
+                                labelFeedback: null,
                                 entityType: current.item.entityType,
                               }
                             : current,
@@ -777,7 +1019,7 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
                       }
                     />
                     <span>
-                      <strong>Create New</strong>
+                      <strong>Új létrehozása</strong>
                       <span>Új entitás létrehozása ebből a jelöltből.</span>
                     </span>
                   </label>
@@ -793,23 +1035,10 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
               ? renderExistingEntitySummary(modalState.item)
               : null}
 
-            <div className={styles.modalSection}>
-              <label className={styles.fieldLabel}>
-                <span>Canonical Label</span>
-                <input
-                  className={styles.fieldInput}
-                  value={modalState.canonicalLabel}
-                  onChange={(event) =>
-                    setModalState((current) => (current ? { ...current, canonicalLabel: event.target.value } : current))
-                  }
-                />
-              </label>
-            </div>
-
             {(modalState.item.candidateClass === "new_candidate" || modalState.selectedEntityId === "new") ? (
               <div className={styles.modalSection}>
                 <label className={styles.fieldLabel}>
-                  <span>Type</span>
+                  <span>Típus</span>
                   <select
                     className={styles.fieldSelect}
                     value={modalState.entityType}
@@ -828,7 +1057,7 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
                 </label>
 
                 <label className={styles.fieldLabel}>
-                  <span>General Note</span>
+                  <span>Általános jegyzet</span>
                   <textarea
                     className={styles.textArea}
                     rows={3}
@@ -843,7 +1072,7 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
 
             <div className={styles.modalSection}>
               <label className={styles.fieldLabel}>
-                <span>Appearance Note</span>
+                <span>Ehhez az előforduláshoz</span>
                 <textarea
                   className={styles.textArea}
                   rows={4}
@@ -862,7 +1091,7 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
                 onClick={() => void handleResolveCandidate()}
                 disabled={pendingGlossaryId === modalState.item.id}
               >
-                {pendingGlossaryId === modalState.item.id ? "Saving..." : toPrimaryActionLabel(modalState.item)}
+                {pendingGlossaryId === modalState.item.id ? "Mentés..." : toPrimaryActionLabel(modalState.item)}
               </button>
             </div>
           </div>
