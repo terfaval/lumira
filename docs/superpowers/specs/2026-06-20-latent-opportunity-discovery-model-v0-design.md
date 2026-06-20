@@ -64,6 +64,23 @@ Discovery exists to prepare later Latent work.
 
 It is not a reflective object visible to the user.
 
+### Discovery is disposable and ephemeral
+
+Discovery output must be treated as disposable runtime scaffolding.
+
+It is not merely non-persistent.
+
+It must also be explicitly re-creatable on every run from current upstream inputs.
+
+Discovery output does not count as system memory.
+
+It must not become:
+
+- durable reflective state,
+- continuity memory,
+- a recoverable historical artifact the runtime depends on,
+- or a hidden identity layer beneath Opportunities.
+
 ### Discovery must not own later decisions
 
 Discovery must not make:
@@ -388,6 +405,8 @@ Discovery should produce the minimum runtime output needed for later Opportunity
 
 It should not be persistence-ready and should not carry identity/lifecycle/salience decisions.
 
+It should also be fully disposable and reproducible from the current run's upstream evidence.
+
 ### Minimum useful Discovery output
 
 ```text
@@ -530,6 +549,18 @@ Construction is responsible for:
 - generating manifestation summaries
 - shaping persistence-ready evidence blocks
 
+Construction may also reject every candidate.
+
+Discovery is allowed to be broad.
+
+Construction remains allowed to return:
+
+- no valid opportunities
+- only one Opportunity
+- or a small subset of discovered candidates
+
+when the remaining candidates are too weak, too ambiguous, too overlapping, or too poorly supported.
+
 ### Why this boundary matters
 
 Without this boundary:
@@ -542,6 +573,7 @@ With this boundary:
 
 - Discovery can remain generous and ambiguity-preserving
 - Construction can remain conservative and evidence-governed
+- Construction can reject weak candidate sets without weakening Discovery itself
 
 That is a healthier division of responsibility.
 
@@ -675,6 +707,7 @@ If implemented later, this design implies:
 - a Latent discovery packet composer distinct from or upstream of the final constructor packet
 - a Discovery runtime contract
 - separate tests for packet preservation, discovery multiplicity, and construction selection
+- tests where Construction is allowed to reject all discovered candidates
 - long multi-scene dream regressions
 - downstream simplicity for Anchor/Openings because the upstream primitive is cleaner
 
@@ -703,9 +736,11 @@ With these hard rules:
 
 - Discovery is internal-only
 - Discovery is non-user-facing
+- Discovery is disposable and ephemeral
 - Discovery does not assign lifecycle
 - Discovery does not assign identity reuse
 - Discovery does not assign salience
+- Construction may reject every discovered candidate
 - Construction remains the first layer that turns candidates into actual Reflective Opportunities
 
 This is the strongest fit for Backend V2 canon, the best response to the multiplicity diagnosis, and the best foundation for future reflective layers.
