@@ -1,0 +1,58 @@
+{
+  "reflectiveObject": {
+    "id": "666c955c-a2c0-4cec-8679-9d42ab81f650",
+    "title": "Határ a labirintus hóban",
+    "textLength": 4613
+  },
+  "storedObservation": {
+    "bundleId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1",
+    "sceneCount": 1,
+    "observationCount": 14,
+    "scenes": [
+      {
+        "sceneId": "scene1",
+        "position": 1,
+        "summary": "A hatalmas munkahelyen való tartózkodás, ahol a környezet és emberi viselkedés megfigyelése történik.",
+        "evidenceSpanStart": 0,
+        "evidenceSpanEnd": 397,
+        "observationCount": 14
+      }
+    ]
+  },
+  "freshExtraction": {
+    "mode": "validated_llm",
+    "reason": null,
+    "observation": {
+      "bundleId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1",
+      "sceneCount": 2,
+      "observationCount": 20,
+      "scenes": [
+        {
+          "sceneId": "scene1",
+          "position": 1,
+          "summary": "Nagyméretű munkahely felfedezése, ahol a dolgozók többsége bulizik vagy vásárol, míg a narrátor dolgozni próbál és bullying áldozata lesz.",
+          "evidenceSpanStart": 0,
+          "evidenceSpanEnd": 348,
+          "observationCount": 14
+        },
+        {
+          "sceneId": "scene2",
+          "position": 2,
+          "summary": "Álom-tudatra ébredés után városi környezetben levegőtisztítással, gyermekkori barátokkal és ikertestvérrel való találkozással folytatódik a kaland.",
+          "evidenceSpanStart": 905,
+          "evidenceSpanEnd": 1364,
+          "observationCount": 6
+        }
+      ]
+    }
+  },
+  "discovery": {
+    "mode": "failed",
+    "reason": "observation_ref_out_of_scope",
+    "details": {
+      "candidateId": "candidate1",
+      "observationRef": "obs1_10"
+    }
+  },
+  "comparison": null
+}

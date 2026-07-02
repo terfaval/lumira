@@ -1,0 +1,98 @@
+[
+  {
+    "id": "effe94bb-dcc3-44b0-984c-2ea5ac22527d",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Telefon",
+    "createdAt": "2026-06-17T14:24:17.694554+00:00",
+    "updatedAt": "2026-06-17T14:24:17.694554+00:00"
+  },
+  {
+    "id": "b6acffba-1c20-41df-8b0b-1c72f0334189",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Bóra",
+    "createdAt": "2026-06-17T14:24:18.772873+00:00",
+    "updatedAt": "2026-06-17T14:24:18.772873+00:00"
+  },
+  {
+    "id": "ebeb9c2d-5782-48fe-b627-15effa5943a2",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Markus",
+    "createdAt": "2026-06-17T14:24:19.242922+00:00",
+    "updatedAt": "2026-06-17T14:24:19.242922+00:00"
+  },
+  {
+    "id": "51cad0a4-caaa-4544-8895-d0b3d3309bee",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Kata, mostohaanya",
+    "createdAt": "2026-06-17T14:24:19.622289+00:00",
+    "updatedAt": "2026-06-17T14:24:19.622289+00:00"
+  },
+  {
+    "id": "4e495c03-c472-48f9-bf25-b7b7ff56beaa",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Évi",
+    "createdAt": "2026-06-17T14:24:20.023523+00:00",
+    "updatedAt": "2026-06-17T14:24:20.023523+00:00"
+  },
+  {
+    "id": "a59ab057-ab89-46ed-8a45-804c1f958441",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ROLE",
+    "identityLabel": "Telefon dobáló",
+    "createdAt": "2026-06-17T14:24:20.39126+00:00",
+    "updatedAt": "2026-06-17T14:24:20.39126+00:00"
+  },
+  {
+    "id": "428f316f-73be-47b3-9a37-dced817a4915",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ROLE",
+    "identityLabel": "Telefon kereső és segítő",
+    "createdAt": "2026-06-17T14:24:21.297427+00:00",
+    "updatedAt": "2026-06-17T14:24:21.297427+00:00"
+  },
+  {
+    "id": "f2e10dcf-c451-418b-a28e-9d4c81d220b8",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ROLE",
+    "identityLabel": "Konyhai helyreállító segítő",
+    "createdAt": "2026-06-17T14:24:21.539563+00:00",
+    "updatedAt": "2026-06-17T14:24:21.539563+00:00"
+  },
+  {
+    "id": "582d2805-f42d-4bee-8c69-a0f858a10b47",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ROLE",
+    "identityLabel": "Megnyugtató apa",
+    "createdAt": "2026-06-17T14:24:21.844692+00:00",
+    "updatedAt": "2026-06-17T14:24:21.844692+00:00"
+  },
+  {
+    "id": "63610a67-26dd-4c2b-bf8a-876fb644895c",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "STRUCTURE",
+    "identityLabel": "Telefon aggódás és Bóra idegessége feszültség",
+    "createdAt": "2026-06-17T14:24:22.083177+00:00",
+    "updatedAt": "2026-06-17T14:24:22.083177+00:00"
+  },
+  {
+    "id": "2f6f7a86-c827-4c16-8ab5-2d482e6611b4",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "STRUCTURE",
+    "identityLabel": "Hamu hullása, bocsánatkérés és takarítás feszültségi struktúra",
+    "createdAt": "2026-06-17T14:24:22.888811+00:00",
+    "updatedAt": "2026-06-17T14:24:22.888811+00:00"
+  },
+  {
+    "id": "2ca433e6-de8f-42fd-99bf-98970a89be0a",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "STRUCTURE",
+    "identityLabel": "Bóra eltűnése, idősebb érzet, Évi figyelme átmenet",
+    "createdAt": "2026-06-17T14:24:23.242732+00:00",
+    "updatedAt": "2026-06-17T14:24:23.242732+00:00"
+  }
+]

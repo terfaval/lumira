@@ -804,8 +804,7 @@ describe("SupabaseGlossaryRepository isolation", () => {
     const objectIs = vi.fn().mockReturnValue({ maybeSingle: objectMaybeSingle });
     const objectEq = vi.fn((column: string) => {
       if (column === "id") return { eq: objectEq };
-      if (column === "user_id") return { eq: objectEq };
-      if (column === "object_type") return { is: objectIs };
+      if (column === "user_id") return { is: objectIs };
       return { is: objectIs };
     });
     const objectSelect = vi.fn().mockReturnValue({ eq: objectEq });
@@ -1001,8 +1000,7 @@ describe("SupabaseGlossaryRepository isolation", () => {
     const objectIs = vi.fn().mockReturnValue({ maybeSingle: objectMaybeSingle });
     const objectEq = vi.fn((column: string) => {
       if (column === "id") return { eq: objectEq };
-      if (column === "user_id") return { eq: objectEq };
-      if (column === "object_type") return { is: objectIs };
+      if (column === "user_id") return { is: objectIs };
       return { is: objectIs };
     });
     const objectSelect = vi.fn().mockReturnValue({ eq: objectEq });
@@ -1177,8 +1175,7 @@ describe("SupabaseGlossaryRepository isolation", () => {
     const objectIs = vi.fn().mockReturnValue({ maybeSingle: objectMaybeSingle });
     const objectEq = vi.fn((column: string) => {
       if (column === "id") return { eq: objectEq };
-      if (column === "user_id") return { eq: objectEq };
-      if (column === "object_type") return { is: objectIs };
+      if (column === "user_id") return { is: objectIs };
       return { is: objectIs };
     });
     const objectSelect = vi.fn().mockReturnValue({ eq: objectEq });
@@ -1349,8 +1346,7 @@ describe("SupabaseGlossaryRepository isolation", () => {
     const objectIs = vi.fn().mockReturnValue({ maybeSingle: objectMaybeSingle });
     const objectEq = vi.fn((column: string) => {
       if (column === "id") return { eq: objectEq };
-      if (column === "user_id") return { eq: objectEq };
-      if (column === "object_type") return { is: objectIs };
+      if (column === "user_id") return { is: objectIs };
       return { is: objectIs };
     });
     const objectSelect = vi.fn().mockReturnValue({ eq: objectEq });
@@ -1393,5 +1389,173 @@ describe("SupabaseGlossaryRepository isolation", () => {
     expect(resolved?.candidate.state).toBe("pinned");
     expect(resolved?.term.id).toBe("term-unknown-ex");
     expect(resolved?.appearanceRecord?.entityId).toBe("term-unknown-ex");
+  });
+
+  it("resolves candidates against reflective objects without requiring dream object_type", async () => {
+    const candidateRow = {
+      id: "cand-generic-object",
+      user_id: "user-a",
+      reflective_object_id: "obj-9",
+      normalized_key: "lantern guide",
+      display_label: "Lantern Guide",
+      source_category: "actor",
+      source_observation_id: "obs-9",
+      source_observation_fragment_id: "frag-9",
+      recurrence_count: 1,
+      candidate_class: "new_candidate",
+      proposed_entity_ids: [],
+      state: "candidate",
+      suppression_state: "none",
+      suppression_reason: null,
+      suppressed_at: null,
+      last_seen_at: "2026-06-19T08:00:00.000Z",
+      archived_at: null,
+      created_at: "2026-06-19T08:00:00.000Z",
+      updated_at: "2026-06-19T08:00:00.000Z",
+    };
+
+    const createdTermRow = {
+      id: "term-lantern-guide",
+      user_id: "user-a",
+      normalized_key: "lantern guide",
+      display_label: "Lantern Guide",
+      canonical_label: "Lantern Guide",
+      type: "role",
+      aliases: [],
+      general_note: null,
+      appearance_count: 1,
+      notes: null,
+      state: "active",
+      suppression_state: "none",
+      suppression_reason: null,
+      suppressed_at: null,
+      archived_at: null,
+      created_at: "2026-06-19T08:05:00.000Z",
+      updated_at: "2026-06-19T08:05:00.000Z",
+    };
+
+    const appearanceRow = {
+      id: "appearance-lantern-guide",
+      user_id: "user-a",
+      entity_id: "term-lantern-guide",
+      dream_id: "obj-9",
+      appearance_note: null,
+      confirmed_at: "2026-06-19T08:05:00.000Z",
+      created_at: "2026-06-19T08:05:00.000Z",
+      updated_at: "2026-06-19T08:05:00.000Z",
+    };
+
+    const resolvedCandidateRow = {
+      ...candidateRow,
+      state: "pinned",
+      updated_at: "2026-06-19T08:05:00.000Z",
+    };
+
+    const candidateMaybeSingle = vi.fn().mockResolvedValue({ data: candidateRow, error: null });
+    const candidateIsForLoad = vi.fn().mockReturnValue({ maybeSingle: candidateMaybeSingle });
+    const candidateEqForLoad = vi.fn((column: string) => {
+      if (column === "id") return { eq: candidateEqForLoad };
+      return { is: candidateIsForLoad };
+    });
+    const candidateSelectForLoad = vi.fn().mockReturnValue({ eq: candidateEqForLoad });
+
+    const candidateMaybeSingleForPin = vi.fn().mockResolvedValue({ data: resolvedCandidateRow, error: null });
+    const candidateSelectForPin = vi.fn().mockReturnValue({ maybeSingle: candidateMaybeSingleForPin });
+    const candidateIsForPin = vi.fn().mockReturnValue({ select: candidateSelectForPin });
+    const candidateEqForPin = vi.fn((column: string) => {
+      if (column === "id") return { eq: candidateEqForPin };
+      return { is: candidateIsForPin };
+    });
+    const candidateUpdate = vi.fn().mockReturnValue({ eq: candidateEqForPin });
+
+    const termInsertSingle = vi.fn().mockResolvedValue({ data: createdTermRow, error: null });
+    const termInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: termInsertSingle }) });
+    const termMaybeSingle = vi.fn().mockResolvedValue({ data: createdTermRow, error: null });
+    const termIs = vi.fn().mockReturnValue({ maybeSingle: termMaybeSingle });
+    const termEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: termEq };
+      return { is: termIs };
+    });
+    const termSelect = vi.fn().mockReturnValue({ eq: termEq });
+    const termUpdateIs = vi.fn().mockResolvedValue({ error: null });
+    const termUpdateEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: termUpdateEq };
+      return { is: termUpdateIs };
+    });
+    const termUpdate = vi.fn().mockReturnValue({ eq: termUpdateEq });
+
+    const appearanceMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const appearanceEq = vi.fn((column: string) => {
+      if (column === "entity_id") return { eq: appearanceEq };
+      if (column === "dream_id") return { eq: appearanceEq };
+      return { maybeSingle: appearanceMaybeSingle };
+    });
+    const appearanceInsertSingle = vi.fn().mockResolvedValue({ data: appearanceRow, error: null });
+    const appearanceInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: appearanceInsertSingle }) });
+    const appearanceCountEq = vi.fn((column: string) => {
+      if (column === "entity_id") return { eq: vi.fn().mockResolvedValue({ count: 1, error: null }) };
+      return { eq: vi.fn().mockResolvedValue({ count: 1, error: null }) };
+    });
+    const appearanceSelect = vi
+      .fn()
+      .mockReturnValueOnce({ eq: appearanceEq })
+      .mockReturnValueOnce({ eq: appearanceCountEq });
+
+    const associationInsertSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: "assoc-lantern-guide",
+        user_id: "user-a",
+        glossary_term_id: "term-lantern-guide",
+        reflective_object_id: "obj-9",
+        observation_id: "obs-9",
+        observation_fragment_id: "frag-9",
+        association_label: "Created continuity entity from glossary candidate resolution.",
+        created_at: "2026-06-19T08:05:00.000Z",
+        updated_at: "2026-06-19T08:05:00.000Z",
+      },
+      error: null,
+    });
+    const associationInsert = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single: associationInsertSingle }) });
+
+    const objectMaybeSingle = vi.fn().mockResolvedValue({ data: { id: "obj-9" }, error: null });
+    const objectIs = vi.fn().mockReturnValue({ maybeSingle: objectMaybeSingle });
+    const objectEq = vi.fn((column: string) => {
+      if (column === "id") return { eq: objectEq };
+      if (column === "user_id") return { is: objectIs };
+      return { is: objectIs };
+    });
+    const objectSelect = vi.fn().mockReturnValue({ eq: objectEq });
+
+    const from = vi.fn((table: string) => {
+      if (table === "glossary_candidate_states") {
+        return { select: candidateSelectForLoad, update: candidateUpdate };
+      }
+      if (table === "glossary_terms") {
+        return { insert: termInsert, select: termSelect, update: termUpdate };
+      }
+      if (table === "glossary_appearance_records") {
+        return { select: appearanceSelect, insert: appearanceInsert };
+      }
+      if (table === "glossary_associations") {
+        return { insert: associationInsert };
+      }
+      if (table === "reflective_objects") {
+        return { select: objectSelect };
+      }
+      throw new Error(`Unexpected table ${table}`);
+    });
+
+    const repository = new SupabaseGlossaryRepository({ from } as never);
+    const resolved = await repository.resolveCandidate({
+      candidateId: "cand-generic-object",
+      userId: "user-a",
+      resolutionType: "create_new_entity",
+      canonicalLabel: "Lantern Guide",
+      type: "role",
+    });
+
+    expect(resolved?.candidate.state).toBe("pinned");
+    expect(resolved?.appearanceRecord?.dreamId).toBe("obj-9");
+    expect(objectEq).not.toHaveBeenCalledWith("object_type", "dream");
   });
 });

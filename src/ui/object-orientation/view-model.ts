@@ -1,5 +1,6 @@
 import type {
   GlossaryCandidateClass,
+  GlossaryCandidateContinuityVisibility,
   GlossaryCandidateState,
   GlossaryEntityType,
 } from "@/src/domain/glossary/types";
@@ -11,11 +12,12 @@ export type OrientationStackView = "new" | "active" | "dormant" | "all";
 export interface OrientationOpeningCard {
   id: string;
   title: string;
+  context: string;
   tone: OpeningTone;
   kind: OpeningType;
   state: Exclude<OrientationStackView, "all">;
   ctaLabel: string;
-  href: string;
+  href: string | null;
 }
 
 export interface GlossaryPanelProposedEntity {
@@ -36,6 +38,7 @@ interface GlossaryPanelItemBase {
   sourceCategory: ObservationCategory | "saved_entity";
   recurrenceCount: number | null;
   status: GlossaryPanelStatus;
+  continuityVisibility?: GlossaryCandidateContinuityVisibility | null;
   proposedEntities: GlossaryPanelProposedEntity[];
   href: string | null;
 }
@@ -54,6 +57,17 @@ export interface GlossarySavedPanelItem extends GlossaryPanelItemBase {
 export type GlossaryPanelItem = GlossaryCandidatePanelItem | GlossarySavedPanelItem;
 
 export type GlossaryPanelFilter = "all" | "pending" | "matches" | "ambiguous" | "new" | "saved";
+
+export function glossaryPrimaryActionLabel(candidateClass: GlossaryCandidateClass): string {
+  switch (candidateClass) {
+    case "match_candidate":
+      return "Megerősítés";
+    case "ambiguous_match_candidate":
+      return "Kiválasztás";
+    default:
+      return "Rögzítés";
+  }
+}
 
 export function countOpeningsByState(items: OrientationOpeningCard[]): Record<OrientationStackView, number> {
   const counts: Record<OrientationStackView, number> = {

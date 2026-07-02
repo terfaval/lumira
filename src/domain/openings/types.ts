@@ -83,6 +83,15 @@ export interface OpeningCadenceWindow {
   suppressionWindowDays: number;
 }
 
+export type OpeningKind = "question";
+
+export interface OpeningContextPayload {
+  context: string;
+  sourceOpportunityManifestationId: string | null;
+  openingKind: OpeningKind | null;
+  sourceRuntime: string | null;
+}
+
 export interface OpeningProvenance {
   sourceObjects: ReflectiveObjectId[];
   sourceObservations: ObservationId[];
@@ -92,6 +101,8 @@ export interface OpeningProvenance {
   latentSnapshotReference: LatentSnapshotId | null;
   confidenceBand: LatentConfidenceBand;
   openingGenerationContext: string;
+  openingContext?: OpeningContextPayload | null;
+  sourceOpportunityManifestationId?: string | null;
 }
 
 export interface OpeningCandidate {

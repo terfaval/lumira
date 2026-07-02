@@ -22,6 +22,12 @@ describe("glossary recognition normalization", () => {
   });
 
   it("keeps user-facing display cleanup separate from recognition normalization", () => {
-    expect(cleanGlossaryDisplayText("  Kozmó,   ")).toBe("Kozmó,");
+    expect(cleanGlossaryDisplayText("  Kozmó,   ")).toBe("Kozmó");
+  });
+
+  it("strips explanatory appositive suffixes from candidate display labels", () => {
+    expect(cleanGlossaryDisplayText("Kata, a mostohaanyám")).toBe("Kata");
+    expect(cleanGlossaryDisplayText("Évi, az egyetemi barátnőm")).toBe("Évi");
+    expect(cleanGlossaryDisplayText("Bóra, az első crushom")).toBe("Bóra");
   });
 });

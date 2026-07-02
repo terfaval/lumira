@@ -1,0 +1,319 @@
+{
+  "generationContext": {
+    "runtimeVersion": "latent_opportunity_constructor_v1",
+    "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "observationBundleId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1"
+  },
+  "decision": {
+    "mode": "opportunities_found",
+    "silenceReason": null
+  },
+  "opportunities": [
+    {
+      "clientOpportunityKey": "opp1_phone_dobalas_and_kereses_transition",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingIdentityId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "opportunityStructure": {
+        "primaryCategory": "transition",
+        "secondaryCategories": [
+          "relationship"
+        ],
+        "structureType": "A_TO_B",
+        "nodes": [
+          {
+            "key": "A",
+            "label": "telefon dobálása",
+            "kind": "state"
+          },
+          {
+            "key": "B",
+            "label": "telefon keresése együtt Borával",
+            "kind": "state"
+          }
+        ],
+        "edges": [
+          {
+            "from": "A",
+            "to": "B",
+            "relation": "sequence/transition"
+          }
+        ],
+        "tensions": [],
+        "gaps": [],
+        "continuitySignals": [
+          {
+            "kind": "none",
+            "referenceId": null,
+            "description": null
+          }
+        ]
+      },
+      "manifestation": {
+        "summaryForInternalUse": "Átmenet a telefon tudatos dobálásától a közös kereséshez, a telefonnal való bánásmód dinamikája Borával és az aggódás jelenléte.",
+        "priorityReflectiveObjectRole": "primary_source",
+        "salience": {
+          "credibility": 0.9,
+          "reflectivePotential": 0.8,
+          "salienceBand": "high",
+          "credibilityRationale": "Jól alátámasztott több megfigyelésből, több erős konkrét jelenet alapján.",
+          "reflectivePotentialRationale": "Erős jellegű, strukturált átmenet az eseményekben és interakciókban, szereplőkkel és érzelmi aspektusokkal."
+        }
+      },
+      "evidenceBlocks": [
+        {
+          "clientBlockKey": "priorityBlock_scene1",
+          "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+          "role": "priority",
+          "summary": "Telefon dobálása és keresési interakció Borával a mezőn és az épületeknél.",
+          "observationRefs": [
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_4",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs1_4",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "A"
+              ],
+              "supportsEdgeIndexes": []
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs1_5",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "A"
+              ],
+              "supportsEdgeIndexes": []
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs1_6",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "A"
+              ],
+              "supportsEdgeIndexes": []
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_7",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs1_7",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "B"
+              ],
+              "supportsEdgeIndexes": []
+            }
+          ],
+          "confirmedGlossaryRefs": [
+            {
+              "glossaryTermId": "58064f26-7caf-4e80-b188-039d78e5c2b4",
+              "relationshipRole": "continuity",
+              "note": "telefon"
+            },
+            {
+              "glossaryTermId": "eeedd1f9-8677-4e96-9802-8748f9dbe189",
+              "relationshipRole": "continuity",
+              "note": "Bóra"
+            }
+          ],
+          "candidateGlossaryMentions": []
+        }
+      ],
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientOpportunityKey": "opp2_konnyhai_kornyezet_es_rossz_erzes_tension",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingIdentityId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "opportunityStructure": {
+        "primaryCategory": "tension",
+        "secondaryCategories": [
+          "relationship",
+          "ambiguity"
+        ],
+        "structureType": "TENSION",
+        "nodes": [
+          {
+            "key": "A",
+            "label": "hamu hullása Markus nadrágjára",
+            "kind": "event"
+          },
+          {
+            "key": "B",
+            "label": "rossz érzés, bocsánatkérés",
+            "kind": "affect"
+          },
+          {
+            "key": "C",
+            "label": "apai megnyugtatás",
+            "kind": "event"
+          },
+          {
+            "key": "D",
+            "label": "Kata és Markus elmennek együtt, segítő szándék",
+            "kind": "event"
+          },
+          {
+            "key": "E",
+            "label": "Évi láthatatlan, mégis érzékelt figyelme",
+            "kind": "phenomenological_signal"
+          }
+        ],
+        "edges": [
+          {
+            "from": "A",
+            "to": "B",
+            "relation": "causal_affect"
+          },
+          {
+            "from": "B",
+            "to": "C",
+            "relation": "reassurance"
+          },
+          {
+            "from": "A",
+            "to": "D",
+            "relation": "support_interaction"
+          },
+          {
+            "from": "E",
+            "to": "B",
+            "relation": "unseen_attention_affect"
+          }
+        ],
+        "tensions": [
+          {
+            "between": [
+              "B",
+              "C"
+            ],
+            "description": "Bocsánatkérés és apai megnyugtatás feszültsége és feloldása."
+          },
+          {
+            "between": [
+              "E",
+              "B"
+            ],
+            "description": "Évi láthatatlan jelenléte és a rossz érzés közti feszültség."
+          }
+        ],
+        "gaps": [],
+        "continuitySignals": [
+          {
+            "kind": "none",
+            "referenceId": null,
+            "description": null
+          }
+        ]
+      },
+      "manifestation": {
+        "summaryForInternalUse": "Feszültség a hamu foltjából eredő rossz közérzet, bocsánatkérés és apai megnyugtatás között, Évi láthatatlan figyelmének folyamatos érzékelése.",
+        "priorityReflectiveObjectRole": "primary_source",
+        "salience": {
+          "credibility": 0.85,
+          "reflectivePotential": 0.75,
+          "salienceBand": "high",
+          "credibilityRationale": "Jól dokumentált jelenetek, számos közeli megfigyelés, konkrét cselekvések és érzelmek.",
+          "reflectivePotentialRationale": "Pragmatikus, konkrét feszültség és rezolúció jelenik meg, egyedi figyelmi jelenséggel kibővítve."
+        }
+      },
+      "evidenceBlocks": [
+        {
+          "clientBlockKey": "priorityBlock_scene2",
+          "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+          "role": "priority",
+          "summary": "hamu hullás Markus nadrágjára, bocsánatkérés, apai megnyugtatás, Kata és Markus elmennek, Évi láthatatlan figyelme.",
+          "observationRefs": [
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs2_5",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "A",
+                "B",
+                "D"
+              ],
+              "supportsEdgeIndexes": []
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs2_6",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "C",
+                "B"
+              ],
+              "supportsEdgeIndexes": []
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs2_7",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "E"
+              ],
+              "supportsEdgeIndexes": []
+            }
+          ],
+          "confirmedGlossaryRefs": [
+            {
+              "glossaryTermId": "3125cc45-2b2f-4a79-b36d-143aa92f22cf",
+              "relationshipRole": "continuity",
+              "note": "Markus fehér vászonnadrágja"
+            },
+            {
+              "glossaryTermId": "7d157173-136a-4d6a-85a9-953bab13069b",
+              "relationshipRole": "continuity",
+              "note": "apám"
+            },
+            {
+              "glossaryTermId": "0a85508a-9356-4cba-a90a-91648c4f38ae",
+              "relationshipRole": "continuity",
+              "note": "Kata"
+            },
+            {
+              "glossaryTermId": "463f0099-4d94-44f0-b384-b972d52e7e40",
+              "relationshipRole": "continuity",
+              "note": "Évi"
+            }
+          ],
+          "candidateGlossaryMentions": []
+        }
+      ],
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    }
+  ]
+}

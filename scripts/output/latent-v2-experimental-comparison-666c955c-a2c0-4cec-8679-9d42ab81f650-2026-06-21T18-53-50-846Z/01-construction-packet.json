@@ -1,0 +1,820 @@
+{
+  "generationContext": {
+    "runtimeVersion": "latent_opportunity_constructor_v1",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "priorityReflectiveObjectId": "666c955c-a2c0-4cec-8679-9d42ab81f650",
+    "priorityReflectiveObjectType": "dream",
+    "priorityReflectiveObjectTitle": "Határ a labirintus hóban",
+    "objectLanguage": "hu",
+    "observationBundleId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1",
+    "observationRuntimeVersion": "observation_v2_phase1",
+    "semanticPolicyResult": "accept_with_uncertainty",
+    "bundleUncertaintyNotes": [
+      "Existing opportunity context truncated to 5 identities."
+    ]
+  },
+  "priorityObject": {
+    "content": "egy hatalmas munkahelyen vagyok. olyan hatalmas, hogy még szupermarket és alvó egységek is vannak benne. nem teljesen értem, hogy mivel foglalkozik a cég, de gondolom amilyen hatalmas, olyan sok mindennel. van pár ismerős arc, de őket se biztos, hogy tudnám azonosítani. ez egy nagyon elfogadó munkahely, tulajdonképpen egy túl elfogadó munkahely. elég sokáig csak bolyongok benne, nézelődök. azt látom, hogy az emberek többsége nem is dolgozik, csak bulizik vagy vásárol. engem egyre kevésbé látnak szívesen helyeken. elmegyek vásárolni, mert éhes vagyok. elég hosszú nézelődés után szerzek valamit, majd visszamegyek az én helyemre, ahol ismerős arcok vannak, elkezdek dolgozni. egyszer csak valaki elkezd kötekedni velem és egész hosszan bullyingolni kezd engem egy társaság nem pontosan emlékszem, hogy mi a problémájuk, de arra igen, hogy egyszer fakadtam ki, hogy “itt senki nem csinál semmit, mindenki csak szórakozik és vásárol”. tovább kekeckednek velem. egy ideig válaszolgatok valami szarkasztikus odaszúrással, ami hosszabb időre elcsendesít egy-egy embert, de mintha utána még többen és hangosabban jönnének. azt hiszem az a bajuk, hogy nem vagyok elég elfogadó, hogy én nem teszem azt, amit “akarok”, hanem inkább dolgozom, és zavar, hogy mások nem ezt teszik. amikor már olyan sokan vannak és olyan hangosak, hogy a saját gondolataimat sem hallom, akkor elkezdem azt mondogatni, hogy “ez csak egy álom”. tudatra ébredek. hirtelen nem a hatalmas munkahelyen vagyok, hanem egy kedves városban, elég nagy városnak tűnik az épületek alapján, de nem ismerem fel, szerettem volna itt élni. viszont nagyon szennyezett volt a levegő, es eszembe jut, hogy ezt megpróbálhatnám megtisztítani. elkezdem fújni a felhőket, a kezemmel szétválasztani, de nem nagyon történik semmi. majd egyszer meglátom, hogy azért egy-egy fújásom eléri a szennyezést. akkor fújás közben tornádót kezdek csinálni a kezemmel, vagyis inkább csak légcsavarokat, amik elérik. szépen elkezdem tisztítani a levegőt, és a hatalmas fák is egyre szebbek lesznek. közben egyszer csak jön egy társaság. többnyire az általános iskolából barátaim, illetve meglepő módon a nem létező ikertestvérem. a társasággal megyek egy ideig, de aztán szétszakadozik, ahogy mindenki hazamegy. hárman maradunk az ikremmel, és Karesz barátommal. el akarom mondani nekik, hogy mi történt velem, hogy ez csak egy álom és irányítani tudom, de valahogy sosem sikerül. bemennek egy dohányboltba és eltűnnek, vagyis inkább csak én nem várom meg, hogy kijöjjenek, tovább megyek. egyszer csak az ikrem jön utánam, akinek végre el tudom mondani és együtt kezdünk kalandozni. kicsit fura ezen a ponton, mert amit csinálok, az egyértelműen az én döntésem, de hogy hova megyünk az nem rajtam múlik. először azzal kísérletezünk, hogy az asztmámat gyógyítsuk: tiszta es gyógyító levegőt szívok be, de nem különösebben használ. aztán egyszer csak meglátunk egy égőházat, odasietünk segíteni. amikor odaérünk egy tűzoltó kis kutyákat ad ki a liftből, egy másik pedig aki az oltást vezeti azt mondja, hogy vigyázzunk a kutyákra. úgyis teszünk, majd a liftes tűzoltó mindenféle bútor részeket kezd el lehozni. kiderül, hogy a tűz el van oltva, és most keresik, hogy mi okozta. én meg vagyok lepve, hogy nem az egész házat ürítették ki, de elmagyarázzák, hogy mivel kicsi volt a tűz, ilyenkor csak egy-egy lakást ürítenek ki. tovább megyünk. kitaláljuk, hogy egy olyan varázsgombát kéne termeszteni vagy keresni, ami még a halálból is visszahoz, és mindent meggyógyít. keresni kezdjük. egy nagyon fura parkba megyünk, ami egy ponton labirintussá válik. minél beljebb megyünk, annál furább és nehezebb lesz. egy ponton már hatalmas szint eltérések vannak, ezért nem tudunk átmászni a falakon. közben valamiért szétváltunk. hogy könnyebben találjunk vagy mert üldöztek, arra nem emlékszem, de elveszítettem az ikrem. őt is keresni kezdem. kijutok a labirintusból egy hatalmas térre. olyan mintha a város kisebbé vált volna, legalábbis az épületek kisvárosiasabbak. van valami vasút, meg valami másik közeledési mód. nem tudom hova visznek, talán csak turista járatok, de nagyon magukkal akarnak vinni. az az érzésem, hogy visszavisznek az álomba, de ellenállok. futni kezdek a sínek között. egyre kijjebb érek, itt már hó van és talán a tengert is látom. az ikremet és a gombát keresem. már nyugodtabban megyek tovább, amikor megszólít egy ember, akinek az arca hasonlít egy középiskolai barátomra, de a teste más, a teste teljesen ki van gyúrva, de inkább ijesztő és összeségében quasimodóra hasonlít. azt mondja, hogy tud segíteni a gombával. ad egy papírt, de akkor felébredek"
+  },
+  "scenes": [
+    {
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "position": 1,
+      "summary": "A hatalmas munkahelyen való tartózkodás, ahol a környezet és emberi viselkedés megfigyelése történik.",
+      "evidenceSnippet": "egy hatalmas munkahelyen vagyok... elég sokáig csak bolyongok benne, nézelődök... azt látom, hogy az emberek többsége nem is dolgozik, csak bulizik vagy vásárol... engem egyre kevésbé látnak szívesen helyeken.",
+      "boundarySignals": [
+        {
+          "kind": "temporal_change",
+          "note": "Átmenet a hatalmas munkahelyen töltött időszakról a tudatfelébredésre és városi jelenetre."
+        }
+      ],
+      "derivedStructures": {
+        "actors": [
+          "ismerős arcok",
+          "bullyingoló társaság"
+        ],
+        "locations": [
+          "hatalmas munkahely",
+          "szupermarket"
+        ],
+        "objects": [],
+        "interactions": [
+          "bullying kötekedés"
+        ],
+        "affect": [
+          "frusztráció"
+        ],
+        "agency": [
+          "tudatra ébredés és álom megnevezése"
+        ],
+        "metacognition": [
+          "lucid tudatosság"
+        ],
+        "phenomenology": []
+      }
+    }
+  ],
+  "observations": [
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_1",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_1",
+      "position": 1,
+      "text": "Nagy méretű munkahely, ahol szupermarket és alvó egységek is találhatók.",
+      "category": "location",
+      "evidence": [
+        {
+          "snippet": "olyan hatalmas, hogy még szupermarket és alvó egységek is vannak benne",
+          "spanStart": 25,
+          "spanEnd": 72
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_2",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_2",
+      "position": 2,
+      "text": "Nem értette teljesen, hogy mivel foglalkozik a cég, de feltételezi, hogy sok mindennel.",
+      "category": "other",
+      "evidence": [
+        {
+          "snippet": "nem teljesen értem, hogy mivel foglalkozik a cég, de gondolom amilyen hatalmas, olyan sok mindennel",
+          "spanStart": 73,
+          "spanEnd": 146
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_3",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_3",
+      "position": 3,
+      "text": "Van néhány ismerős arc, de nem biztos az azonosításukban.",
+      "category": "actor",
+      "evidence": [
+        {
+          "snippet": "van pár ismerős arc, de őket se biztos, hogy tudnám azonosítani",
+          "spanStart": 147,
+          "spanEnd": 192
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_4",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_4",
+      "position": 4,
+      "text": "Ez a munkahely nagyon elfogadó, túlságosan is.",
+      "category": "other",
+      "evidence": [
+        {
+          "snippet": "ez egy nagyon elfogadó munkahely, tulajdonképpen egy túl elfogadó munkahely",
+          "spanStart": 193,
+          "spanEnd": 247
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_5",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_5",
+      "position": 5,
+      "text": "Hosszú ideig bolyong és nézelődik a munkahelyen.",
+      "category": "other",
+      "evidence": [
+        {
+          "snippet": "elég sokáig csak bolyongok benne, nézelődök",
+          "spanStart": 248,
+          "spanEnd": 279
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_6",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_6",
+      "position": 6,
+      "text": "Az emberek többsége nem dolgozik, hanem bulizik vagy vásárol.",
+      "category": "other",
+      "evidence": [
+        {
+          "snippet": "az emberek többsége nem is dolgozik, csak bulizik vagy vásárol",
+          "spanStart": 280,
+          "spanEnd": 327
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_7",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_7",
+      "position": 7,
+      "text": "Egyre kevésbé látható szívesen a helyeken.",
+      "category": "other",
+      "evidence": [
+        {
+          "snippet": "engem egyre kevésbé látnak szívesen helyeken",
+          "spanStart": 328,
+          "spanEnd": 372
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_8",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_8",
+      "position": 8,
+      "text": "Vásárolni megy, mert éhes.",
+      "category": "other",
+      "evidence": [
+        {
+          "snippet": "elmegyek vásárolni, mert éhes vagyok",
+          "spanStart": 373,
+          "spanEnd": 407
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_9",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_9",
+      "position": 9,
+      "text": "Hosszú nézelődés után szerez valamit, majd visszatér az ő helyére dolgozni, ahol ismerős arcok vannak.",
+      "category": "actor",
+      "evidence": [
+        {
+          "snippet": "elég hosszú nézelődés után szerzek valamit, majd visszamegyek az én helyemre, ahol ismerős arcok vannak, elkezdek dolgozni",
+          "spanStart": 408,
+          "spanEnd": 475
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_10",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_10",
+      "position": 10,
+      "text": "Elkezdik kötekedni és hosszasan bullyingolják egy társaság miatt, akik nem pontosan tudni, mi a problémájuk.",
+      "category": "interaction",
+      "evidence": [
+        {
+          "snippet": "egyszer csak valaki elkezd kötekedni velem és egész hosszan bullyingolni kezd engem egy társaság nem pontosan emlékszem, hogy mi a problémájuk",
+          "spanStart": 476,
+          "spanEnd": 557
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_11",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_11",
+      "position": 11,
+      "text": "Egyszer kifakad, hogy 'itt senki nem csinál semmit, mindenki csak szórakozik és vásárol'.",
+      "category": "affect",
+      "evidence": [
+        {
+          "snippet": "egyszer fakadtam ki, hogy “itt senki nem csinál semmit, mindenki csak szórakozik és vásárol”",
+          "spanStart": 558,
+          "spanEnd": 618
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_12",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_12",
+      "position": 12,
+      "text": "Bullying tovább folytatódik, válaszolgat szarkasztikus odaszúrással, ami időlegesen elcsendesít egy-egy embert.",
+      "category": "interaction",
+      "evidence": [
+        {
+          "snippet": "tovább kekeckednek velem... egy ideig válaszolgatok valami szarkasztikus odaszúrással, ami hosszabb időre elcsendesít egy-egy embert",
+          "spanStart": 619,
+          "spanEnd": 695
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_13",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_13",
+      "position": 13,
+      "text": "Úgy érzi, hogy azért van bajuk vele, mert nem elég elfogadó és dolgozik, miközben mások nem.",
+      "category": "affect",
+      "evidence": [
+        {
+          "snippet": "az a bajuk, hogy nem vagyok elég elfogadó, hogy én nem teszem azt, amit “akarok”, hanem inkább dolgozom, és zavar, hogy mások nem ezt teszik",
+          "spanStart": 696,
+          "spanEnd": 796
+        }
+      ],
+      "uncertaintyNote": null
+    },
+    {
+      "observationV2SceneObservationId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_14",
+      "sceneRowId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1",
+      "sceneStableId": "scene1",
+      "observationStableId": "obs1_14",
+      "position": 14,
+      "text": "Amikor túl sokan és túl hangosan vannak, elkezdi mondogatni, hogy 'ez csak egy álom', tudatra ébred.",
+      "category": "agency",
+      "evidence": [
+        {
+          "snippet": "amikor már olyan sokan vannak és olyan hangosak, hogy a saját gondolataimat sem hallom, akkor elkezdem azt mondogatni, hogy “ez csak egy álom”",
+          "spanStart": 797,
+          "spanEnd": 877
+        }
+      ],
+      "uncertaintyNote": null
+    }
+  ],
+  "glossaryContext": {
+    "confirmedTerms": [],
+    "appearanceRecords": [],
+    "candidates": [
+      {
+        "glossaryCandidateId": "9de66c31-0523-42d0-857e-3113772886ec",
+        "displayLabel": "ismerős arcok",
+        "normalizedKey": "ismerosok",
+        "sourceCategory": "actor",
+        "candidateClass": "new_candidate",
+        "state": "candidate",
+        "sourceObservationStableId": "scene1"
+      },
+      {
+        "glossaryCandidateId": "3c912357-c26b-49ff-8b9c-9027f6abbaf5",
+        "displayLabel": "bullyingoló társaság",
+        "normalizedKey": "tarsasag bullying",
+        "sourceCategory": "actor",
+        "candidateClass": "new_candidate",
+        "state": "candidate",
+        "sourceObservationStableId": "scene1"
+      },
+      {
+        "glossaryCandidateId": "9fe27695-f4f2-48d4-b306-18e996464cf1",
+        "displayLabel": "hatalmas munkahely",
+        "normalizedKey": "hatalmas munkahely",
+        "sourceCategory": "location",
+        "candidateClass": "new_candidate",
+        "state": "candidate",
+        "sourceObservationStableId": "scene1"
+      },
+      {
+        "glossaryCandidateId": "cd8e45f0-59ba-4ef9-87b6-b76dc2e19d99",
+        "displayLabel": "szupermarket",
+        "normalizedKey": "szupermarket",
+        "sourceCategory": "location",
+        "candidateClass": "new_candidate",
+        "state": "candidate",
+        "sourceObservationStableId": "scene1"
+      }
+    ]
+  },
+  "existingOpportunityContext": {
+    "identities": [
+      {
+        "identityId": "97abcbc8-8a63-41fd-b336-75e9a2d1e78f",
+        "primaryCategory": "transition",
+        "secondaryCategories": [
+          "relationship"
+        ],
+        "lifecycleState": "emerging",
+        "latestStructure": {
+          "structureType": "A_TO_B",
+          "nodes": [
+            "Belső űrállomás terület",
+            "Luxus kertvárosi külső tér az űrben",
+            "Én (álmodó)",
+            "Luxus kertváros lakói"
+          ]
+        },
+        "recentManifestationSummaries": [
+          {
+            "manifestationId": "23575778-9a5d-4475-9700-b4d66c1d06e7",
+            "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+            "structure": {
+              "kind": "A_TO_B",
+              "label": "Belső űrállomás terület -> Luxus kertvárosi külső tér az űrben -> Én (álmodó)",
+              "elements": [
+                "Belső űrállomás terület",
+                "Luxus kertvárosi külső tér az űrben",
+                "Én (álmodó)",
+                "Luxus kertváros lakói"
+              ],
+              "metadata": {
+                "gaps": [],
+                "edges": [
+                  {
+                    "to": "B",
+                    "from": "A",
+                    "relation": "location_transition"
+                  },
+                  {
+                    "to": "A",
+                    "from": "actor1",
+                    "relation": "located_in"
+                  },
+                  {
+                    "to": "B",
+                    "from": "actor1",
+                    "relation": "moves_to"
+                  },
+                  {
+                    "to": "B",
+                    "from": "actor2",
+                    "relation": "inhabits"
+                  }
+                ],
+                "nodes": [
+                  {
+                    "key": "A",
+                    "kind": "location",
+                    "label": "Belső űrállomás terület"
+                  },
+                  {
+                    "key": "B",
+                    "kind": "location",
+                    "label": "Luxus kertvárosi külső tér az űrben"
+                  },
+                  {
+                    "key": "actor1",
+                    "kind": "actor",
+                    "label": "Én (álmodó)"
+                  },
+                  {
+                    "key": "actor2",
+                    "kind": "actor",
+                    "label": "Luxus kertváros lakói"
+                  }
+                ],
+                "tensions": [],
+                "continuitySignals": [
+                  {
+                    "kind": "none",
+                    "description": null,
+                    "referenceId": null
+                  }
+                ]
+              }
+            },
+            "primaryEvidenceObservationTexts": []
+          }
+        ]
+      },
+      {
+        "identityId": "b3261991-7af6-4e6a-8a0f-63d48a5bd514",
+        "primaryCategory": "ambiguity",
+        "secondaryCategories": [
+          "gap",
+          "relationship"
+        ],
+        "lifecycleState": "emerging",
+        "latestStructure": {
+          "structureType": "GAP",
+          "nodes": [
+            "Az én szobám felismerhetetlensége az űrállomáson",
+            "Én (álmodó)",
+            "Űrállomás munkatársai"
+          ]
+        },
+        "recentManifestationSummaries": [
+          {
+            "manifestationId": "6d541b1b-f8e1-45df-ba1e-af4eddece419",
+            "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+            "structure": {
+              "kind": "GAP",
+              "label": "Az én szobám felismerhetetlensége az űrállomáson -> Én (álmodó) -> Űrállomás munkatársai",
+              "elements": [
+                "Az én szobám felismerhetetlensége az űrállomáson",
+                "Én (álmodó)",
+                "Űrállomás munkatársai"
+              ],
+              "metadata": {
+                "gaps": [
+                  {
+                    "description": "Számos név és korábbi lakó nevek egy szobán, megtalálhatatlan saját hely, bizonytalanság érzése.",
+                    "supportedByObservationIds": [
+                      "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-5"
+                    ]
+                  }
+                ],
+                "edges": [
+                  {
+                    "to": "A",
+                    "from": "actor1",
+                    "relation": "experiences"
+                  }
+                ],
+                "nodes": [
+                  {
+                    "key": "A",
+                    "kind": "state",
+                    "label": "Az én szobám felismerhetetlensége az űrállomáson"
+                  },
+                  {
+                    "key": "actor1",
+                    "kind": "actor",
+                    "label": "Én (álmodó)"
+                  },
+                  {
+                    "key": "actor2",
+                    "kind": "actor",
+                    "label": "Űrállomás munkatársai"
+                  }
+                ],
+                "tensions": [],
+                "continuitySignals": [
+                  {
+                    "kind": "none",
+                    "description": null,
+                    "referenceId": null
+                  }
+                ]
+              }
+            },
+            "primaryEvidenceObservationTexts": []
+          }
+        ]
+      },
+      {
+        "identityId": "69f6ccd7-9525-44bb-a306-fc32ad060efe",
+        "primaryCategory": "transition",
+        "secondaryCategories": [
+          "relationship",
+          "ambiguity"
+        ],
+        "lifecycleState": "emerging",
+        "latestStructure": {
+          "structureType": "A_TO_B_TO_C",
+          "nodes": [
+            "Űrkutatás vagy űrutazás lehetősége",
+            "Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon",
+            "Űrállomás megérkezés és társaság viselkedése",
+            "Én (álmodó)",
+            "Ismerősök",
+            "BKK vagy Volán busz, tömeg"
+          ]
+        },
+        "recentManifestationSummaries": [
+          {
+            "manifestationId": "f063c5af-66b4-44ec-8f69-bdfbee1dc9c7",
+            "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+            "structure": {
+              "kind": "A_TO_B_TO_C",
+              "label": "Űrkutatás vagy űrutazás lehetősége -> Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon -> Űrállomás megérkezés és társaság viselkedése",
+              "elements": [
+                "Űrkutatás vagy űrutazás lehetősége",
+                "Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon",
+                "Űrállomás megérkezés és társaság viselkedése",
+                "Én (álmodó)",
+                "Ismerősök",
+                "BKK vagy Volán busz, tömeg"
+              ],
+              "metadata": {
+                "gaps": [
+                  {
+                    "description": "Az esemény ünnepélyességének hiánya kontrasztban áll az űrutazás szokatlan lehetőségével.",
+                    "supportedByObservationIds": [
+                      "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene1:obs1-2",
+                      "observation-bundle-604ee990-4a55-49b8-940b-c1203f7d7c0-observation_v2_phase1:scene1:obs1-3"
+                    ]
+                  }
+                ],
+                "edges": [
+                  {
+                    "to": "B",
+                    "from": "A",
+                    "relation": "leads_to_transition"
+                  },
+                  {
+                    "to": "C",
+                    "from": "B",
+                    "relation": "leads_to_transition"
+                  },
+                  {
+                    "to": "A",
+                    "from": "actor1",
+                    "relation": "experiences"
+                  },
+                  {
+                    "to": "C",
+                    "from": "actor1",
+                    "relation": "interacts_with"
+                  },
+                  {
+                    "to": "B",
+                    "from": "actor3",
+                    "relation": "participates_in"
+                  }
+                ],
+                "nodes": [
+                  {
+                    "key": "A",
+                    "kind": "state",
+                    "label": "Űrkutatás vagy űrutazás lehetősége"
+                  },
+                  {
+                    "key": "B",
+                    "kind": "event",
+                    "label": "Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon"
+                  },
+                  {
+                    "key": "C",
+                    "kind": "state",
+                    "label": "Űrállomás megérkezés és társaság viselkedése"
+                  },
+                  {
+                    "key": "actor1",
+                    "kind": "actor",
+                    "label": "Én (álmodó)"
+                  },
+                  {
+                    "key": "actor2",
+                    "kind": "actor",
+                    "label": "Ismerősök"
+                  },
+                  {
+                    "key": "actor3",
+                    "kind": "object",
+                    "label": "BKK vagy Volán busz, tömeg"
+                  }
+                ],
+                "tensions": [],
+                "continuitySignals": [
+                  {
+                    "kind": "none",
+                    "description": null,
+                    "referenceId": null
+                  }
+                ]
+              }
+            },
+            "primaryEvidenceObservationTexts": []
+          }
+        ]
+      },
+      {
+        "identityId": "04806d07-13b9-4db9-99a8-ac68e6bc9df2",
+        "primaryCategory": "tension",
+        "secondaryCategories": [
+          "relationship",
+          "continuity"
+        ],
+        "lifecycleState": "emerging",
+        "latestStructure": {
+          "structureType": "TENSION",
+          "nodes": [
+            "Markus fehér vászonnadrágjának lehamuzása és takarítása",
+            "Bocsánatkérés és tisztítás, Kata segít citrommal",
+            "Én (álmodó)",
+            "Markus",
+            "Kata, mostohaanya"
+          ]
+        },
+        "recentManifestationSummaries": [
+          {
+            "manifestationId": "cdf26c9c-895f-4de7-9c35-8b0c32f96e63",
+            "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+            "structure": {
+              "kind": "TENSION",
+              "label": "Markus fehér vászonnadrágjának lehamuzása és takarítása -> Bocsánatkérés és tisztítás, Kata segít citrommal -> Én (álmodó)",
+              "elements": [
+                "Markus fehér vászonnadrágjának lehamuzása és takarítása",
+                "Bocsánatkérés és tisztítás, Kata segít citrommal",
+                "Én (álmodó)",
+                "Markus",
+                "Kata, mostohaanya"
+              ],
+              "metadata": {
+                "gaps": [],
+                "edges": [
+                  {
+                    "to": "action",
+                    "from": "issue",
+                    "relation": "repair_attempt"
+                  },
+                  {
+                    "to": "issue",
+                    "from": "actor1",
+                    "relation": "involved_in"
+                  },
+                  {
+                    "to": "action",
+                    "from": "actor1",
+                    "relation": "performs"
+                  },
+                  {
+                    "to": "action",
+                    "from": "actor3",
+                    "relation": "provides_support"
+                  },
+                  {
+                    "to": "issue",
+                    "from": "actor2",
+                    "relation": "affected_by"
+                  }
+                ],
+                "nodes": [
+                  {
+                    "key": "issue",
+                    "kind": "event",
+                    "label": "Markus fehér vászonnadrágjának lehamuzása és takarítása"
+                  },
+                  {
+                    "key": "action",
+                    "kind": "repair",
+                    "label": "Bocsánatkérés és tisztítás, Kata segít citrommal"
+                  },
+                  {
+                    "key": "actor1",
+                    "kind": "actor",
+                    "label": "Én (álmodó)"
+                  },
+                  {
+                    "key": "actor2",
+                    "kind": "actor",
+                    "label": "Markus"
+                  },
+                  {
+                    "key": "actor3",
+                    "kind": "actor",
+                    "label": "Kata, mostohaanya"
+                  }
+                ],
+                "tensions": [
+                  {
+                    "between": [
+                      "issue",
+                      "action"
+                    ],
+                    "description": "Bocsánatkérés és segítség a károsodás miatt kialakuló feszültség enyhítésére."
+                  }
+                ],
+                "continuitySignals": [
+                  {
+                    "kind": "none",
+                    "description": null,
+                    "referenceId": null
+                  }
+                ]
+              }
+            },
+            "primaryEvidenceObservationTexts": []
+          }
+        ]
+      },
+      {
+        "identityId": "9c40efc0-b3be-4b3b-9748-f68aaad686a6",
+        "primaryCategory": "transition",
+        "secondaryCategories": [
+          "salience_signal",
+          "relationship"
+        ],
+        "lifecycleState": "emerging",
+        "latestStructure": {
+          "structureType": "A_TO_B",
+          "nodes": [
+            "Bóra eltűnése",
+            "Idősebbnek érzem magam, Évi figyelme érzékelése",
+            "Én (álmodó)",
+            "Évi"
+          ]
+        },
+        "recentManifestationSummaries": [
+          {
+            "manifestationId": "cfcd5f17-9c21-450d-bba3-95643d9036f6",
+            "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+            "structure": {
+              "kind": "A_TO_B",
+              "label": "Bóra eltűnése -> Idősebbnek érzem magam, Évi figyelme érzékelése -> Én (álmodó)",
+              "elements": [
+                "Bóra eltűnése",
+                "Idősebbnek érzem magam, Évi figyelme érzékelése",
+                "Én (álmodó)",
+                "Évi"
+              ],
+              "metadata": {
+                "gaps": [],
+                "edges": [
+                  {
+                    "to": "B",
+                    "from": "A",
+                    "relation": "leads_to_transition"
+                  },
+                  {
+                    "to": "B",
+                    "from": "actor1",
+                    "relation": "experiences"
+                  },
+                  {
+                    "to": "B",
+                    "from": "actor3",
+                    "relation": "provides_attention_signal"
+                  }
+                ],
+                "nodes": [
+                  {
+                    "key": "A",
+                    "kind": "event",
+                    "label": "Bóra eltűnése"
+                  },
+                  {
+                    "key": "B",
+                    "kind": "state",
+                    "label": "Idősebbnek érzem magam, Évi figyelme érzékelése"
+                  },
+                  {
+                    "key": "actor1",
+                    "kind": "actor",
+                    "label": "Én (álmodó)"
+                  },
+                  {
+                    "key": "actor3",
+                    "kind": "actor",
+                    "label": "Évi"
+                  }
+                ],
+                "tensions": [],
+                "continuitySignals": [
+                  {
+                    "kind": "none",
+                    "description": null,
+                    "referenceId": null
+                  }
+                ]
+              }
+            },
+            "primaryEvidenceObservationTexts": []
+          }
+        ]
+      }
+    ]
+  }
+}

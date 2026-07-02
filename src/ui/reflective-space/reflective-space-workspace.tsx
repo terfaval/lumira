@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import type { Observation } from "@/src/domain/observation/types";
 import type { OpeningSurface } from "@/src/domain/openings/types";
 import type { ReflectiveObject, ReflectiveObjectType } from "@/src/domain/reflective-objects/types";
 import type { ReflectiveResponseSurface } from "@/src/reflective-space/composition/derive-response-surfaces";
@@ -70,7 +69,6 @@ export function ReflectiveSpaceWorkspace({ initialCenterObjectId }: ReflectiveSp
   const [summary, setSummary] = useState("Reflective space is loading.");
   const [reflectiveObjects, setReflectiveObjects] = useState<ReflectiveObject[]>([]);
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
-  const [observations, setObservations] = useState<Observation[]>([]);
   const [threadSurfaces, setThreadSurfaces] = useState<ReflectiveThreadSurface[]>([]);
   const [responseSurfaces, setResponseSurfaces] = useState<ReflectiveResponseSurface[]>([]);
   const [openingSurfaces, setOpeningSurfaces] = useState<OpeningSurface[]>([]);
@@ -109,7 +107,6 @@ export function ReflectiveSpaceWorkspace({ initialCenterObjectId }: ReflectiveSp
     (viewport: ReflectiveSpaceViewportReadModel, appendDialogues: boolean, requestedCenterObjectId?: string) => {
       setSummary(viewport.summary);
       setReflectiveObjects(viewport.sections.reflectiveObjects.items);
-      setObservations(viewport.sections.observations.items);
       setThreadSurfaces(viewport.sections.threadSurfaces.items);
       setResponseSurfaces(viewport.sections.responseSurfaces.items);
       setOpeningSurfaces(viewport.sections.openingSurfaces.items);
@@ -373,25 +370,6 @@ export function ReflectiveSpaceWorkspace({ initialCenterObjectId }: ReflectiveSp
               <p>{selectedObject.primaryContent}</p>
             </div>
           ) : isBootstrapping ? <p>Loading reflective material...</p> : <p>No reflective material yet.</p>}
-        </article>
-
-        <article className={styles.panel}>
-          <h2>Observation Orientation</h2>
-          {observations[0] ? (
-            <>
-              <p>{observations[0].summary}</p>
-              <ul className={styles.inlineList}>
-                {observations[0].fragments.slice(0, 5).map((fragment) => (
-                  <li key={fragment.id}>
-                    <strong>{fragment.category}</strong>
-                    <span>{fragment.fragmentText}</span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p>No descriptive observations are available for this material yet.</p>
-          )}
         </article>
 
         <article className={styles.panel}>

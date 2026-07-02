@@ -71,6 +71,7 @@ describe("composeReflectiveSpaceViewport", () => {
       threadRepository: {
         createThread: async () => { throw new Error("not used"); },
         getThreadById: async () => null,
+        listThreadsByReflectiveObject: async () => [],
         listThreadsByUser: async () => [],
         updateThread: async () => null,
         setThreadState: async () => null,
@@ -112,6 +113,22 @@ describe("composeReflectiveSpaceViewport", () => {
           updatedAt: "2026-05-25T00:00:00.000Z",
         }),
         listOpeningSurfacesByUser: async () => [
+          {
+            openingId: "opening-1",
+            userId: "user-1",
+            openingType: "continuity_noticing",
+            tone: "gentle",
+            visibility: "invitation_surface",
+            suppressionState: "none",
+            suppressionDuration: null,
+            suppressionRevisitEligibility: "revisitable_dormant",
+            state: "available",
+            preview: "continuity noticing is available",
+            activated: false,
+            createdAt: "2026-05-25T00:00:00.000Z",
+          },
+        ],
+        listOpeningSurfacesByReflectiveObject: async () => [
           {
             openingId: "opening-1",
             userId: "user-1",
@@ -169,10 +186,172 @@ describe("composeReflectiveSpaceViewport", () => {
     });
 
     expect(viewport.sections.reflectiveObjects.items).toHaveLength(1);
+    expect("observations" in viewport.sections).toBe(false);
     expect(viewport.windows.objectsWindow.hasMore).toBe(true);
     expect(viewport.windows.dialogueWindow.section).toBe("dialogues");
+    expect("observationsWindow" in viewport.windows).toBe(false);
     expect(viewport.payloadGuardrails.maxSerializedBytes).toBeGreaterThan(0);
     expect(viewport.sections.openingDialogues.items[0]?.lineage.openingResponseContext).toBe("activation_without_response");
+  });
+
+  it("keeps dream material, glossary cue fallback, and openings without exposing raw observations", async () => {
+    const viewport = await composeReflectiveSpaceViewport({
+      userId: "user-fallback",
+      centerObjectId: "obj-1",
+      reflectiveObjectRepository: {
+        create: async () => { throw new Error("not used"); },
+        getById: async () => null,
+        listByUser: async () => [
+          {
+            id: "obj-1",
+            userId: "user-fallback",
+            objectType: "dream",
+            title: "Threshold dream",
+            primaryContent: "I paused by the doorway while the house stayed still.",
+            sourceContext: "manual",
+            state: "active",
+            metadata: {},
+            createdAt: "2026-06-20T10:00:00.000Z",
+            updatedAt: "2026-06-20T10:00:00.000Z",
+          },
+        ],
+        update: async () => null,
+        archive: async () => null,
+      },
+      observationRepository: {
+        create: async () => { throw new Error("not used"); },
+        listByReflectiveObject: async () => [
+          {
+            id: "obs-1",
+            userId: "user-fallback",
+            reflectiveObjectId: "obj-1",
+            source: "system_descriptive_extract",
+            summary: "A doorway and house remain central.",
+            uncertaintyNotes: [],
+            semanticPolicyResult: "accept",
+            semanticPolicyReasons: [],
+            provenanceTier: "system_extract",
+            summaryTrace: [],
+            latentBackflowGuard: "observation_only",
+            boundaryVersion: "v1",
+            status: "active",
+            fragments: [
+              {
+                id: "frag-1",
+                observationId: "obs-1",
+                reflectiveObjectId: "obj-1",
+                userId: "user-fallback",
+                category: "object",
+                fragmentText: "Doorway",
+                evidenceAdequacy: "snippet_only",
+                evidence: {
+                  snippet: "doorway",
+                  spanStart: 0,
+                  spanEnd: 7,
+                  contextLabel: null,
+                },
+                uncertaintyNote: null,
+                position: 0,
+                createdAt: "2026-06-20T10:01:00.000Z",
+                updatedAt: "2026-06-20T10:01:00.000Z",
+              },
+            ],
+            createdAt: "2026-06-20T10:01:00.000Z",
+            updatedAt: "2026-06-20T10:01:00.000Z",
+          },
+        ],
+        getById: async () => null,
+      },
+      observationV2Repository: {
+        create: async () => { throw new Error("not used"); },
+        getByBundleId: async () => null,
+        getByReflectiveObjectId: async () => null,
+      },
+      glossaryRepository: {
+        listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [],
+        getTermById: async () => null,
+        listAppearanceRecordsByTerm: async () => [],
+        createTerm: async () => { throw new Error("not used"); },
+        updateTerm: async () => null,
+        listCandidates: async () => [],
+        listCandidatesByReflectiveObject: async () => [],
+        getCandidateById: async () => null,
+        upsertCandidates: async () => [],
+        setCandidateLifecycle: async () => null,
+        resolveCandidate: async () => null,
+        createAssociation: async () => { throw new Error("not used"); },
+        createAppearanceRecord: async () => null,
+      },
+      threadRepository: {
+        createThread: async () => { throw new Error("not used"); },
+        getThreadById: async () => null,
+        listThreadsByReflectiveObject: async () => [],
+        listThreadsByUser: async () => [],
+        updateThread: async () => null,
+        setThreadState: async () => null,
+        archiveThread: async () => null,
+        createObjectAssociation: async () => { throw new Error("not used"); },
+        createGlossaryAssociation: async () => { throw new Error("not used"); },
+        listAssociationsByThread: async () => [],
+      },
+      openingRepository: {
+        createOpening: async () => { throw new Error("not used"); },
+        getOpeningById: async () => null,
+        listOpeningSurfacesByReflectiveObject: async () => [
+          {
+            openingId: "opening-1",
+            userId: "user-fallback",
+            openingType: "continuity_noticing",
+            tone: "gentle",
+            visibility: "invitation_surface",
+            suppressionState: "none",
+            suppressionDuration: null,
+            suppressionRevisitEligibility: "revisitable_dormant",
+            state: "available",
+            preview: "A quiet opening is available.",
+            activated: false,
+            createdAt: "2026-06-20T10:02:00.000Z",
+          },
+        ],
+        listOpeningSurfacesByUser: async () => [],
+        listDormantSuppressedOpeningsByUser: async () => [],
+        listRecentOpeningsByUser: async () => [],
+        listOpeningsByLatentSnapshot: async () => [],
+        activateOpening: async () => null,
+        reactivateOpening: async () => null,
+        dismissOpening: async () => null,
+        setSuppression: async () => null,
+        recordSurfaceEvent: async () => { throw new Error("not used"); },
+      },
+      responseRepository: {
+        createResponse: async () => { throw new Error("not used"); },
+        getResponseById: async () => null,
+        listResponsesByUser: async () => [],
+        listResponsesByReflectiveObject: async () => [],
+        updateResponse: async () => null,
+        setResponseState: async () => null,
+        archiveResponse: async () => null,
+        createObjectAssociation: async () => { throw new Error("not used"); },
+        createThreadAssociation: async () => { throw new Error("not used"); },
+        removeObjectAssociation: async () => false,
+        removeThreadAssociation: async () => false,
+        listAssociationsByResponse: async () => [],
+        createOpeningActivationEvent: async () => { throw new Error("not used"); },
+        listOpeningActivationEventsByWindow: async () => [],
+        createOpeningResponseAssociation: async () => { throw new Error("not used"); },
+        removeOpeningResponseAssociation: async () => false,
+        listOpeningResponseAssociationsByOpening: async () => [],
+      },
+    });
+
+    expect(viewport.sections.reflectiveObjects.items[0]?.primaryContent).toContain("doorway");
+    expect(viewport.continuity.glossaryCues[0]).toMatchObject({
+      label: "Doorway",
+      category: "object",
+    });
+    expect(viewport.sections.openingSurfaces.items[0]?.preview).toBe("A quiet opening is available.");
+    expect("observations" in viewport.sections).toBe(false);
   });
 
   it("enforces section window contracts and bounded omissions", async () => {
@@ -231,6 +410,7 @@ describe("composeReflectiveSpaceViewport", () => {
       threadRepository: {
         createThread: async () => { throw new Error("not used"); },
         getThreadById: async () => null,
+        listThreadsByReflectiveObject: async () => [],
         listThreadsByUser: async () => [],
         updateThread: async () => null,
         setThreadState: async () => null,
@@ -242,6 +422,7 @@ describe("composeReflectiveSpaceViewport", () => {
       openingRepository: {
         createOpening: async () => { throw new Error("not used"); },
         getOpeningById: async () => null,
+        listOpeningSurfacesByReflectiveObject: async () => [],
         listOpeningSurfacesByUser: async () => [],
         listDormantSuppressedOpeningsByUser: async () => [],
         listRecentOpeningsByUser: async () => [],
@@ -278,5 +459,273 @@ describe("composeReflectiveSpaceViewport", () => {
     expect(viewport.windows.objectsWindow.section).toBe("reflective_objects");
     expect(viewport.windows.dialogueWindow.section).toBe("dialogues");
     expect(viewport.payloadGuardrails.estimatedSerializedBytes).toBeLessThanOrEqual(viewport.payloadGuardrails.maxSerializedBytes);
+  });
+
+  it("surfaces object-associated threads for the center object without falling back to unrelated user-wide threads", async () => {
+    const listThreadsByReflectiveObject = async () => [
+      {
+        id: "thread-obj-1",
+        userId: "user-3",
+        title: "First reflective contribution",
+        contextNote: null,
+        state: "active" as const,
+        visibility: "ambient" as const,
+        dormantSince: null,
+        archivedAt: null,
+        continuityCues: [],
+        createdAt: "2026-06-18T12:00:00.000Z",
+        updatedAt: "2026-06-18T12:00:00.000Z",
+      },
+    ];
+    const listThreadsByUser = async () => [
+      {
+        id: "thread-unrelated",
+        userId: "user-3",
+        title: "Unrelated thread",
+        contextNote: null,
+        state: "active" as const,
+        visibility: "foreground" as const,
+        dormantSince: null,
+        archivedAt: null,
+        continuityCues: [],
+        createdAt: "2026-06-18T11:00:00.000Z",
+        updatedAt: "2026-06-18T11:00:00.000Z",
+      },
+    ];
+
+    const viewport = await composeReflectiveSpaceViewport({
+      userId: "user-3",
+      centerObjectId: "obj-1",
+      reflectiveObjectRepository: {
+        create: async () => { throw new Error("not used"); },
+        getById: async () => null,
+        listByUser: async () => [
+          {
+            id: "obj-1",
+            userId: "user-3",
+            objectType: "dream",
+            title: "Object A",
+            primaryContent: "Content",
+            sourceContext: "manual",
+            state: "active",
+            metadata: {},
+            createdAt: "2026-06-18T12:00:00.000Z",
+            updatedAt: "2026-06-18T12:00:00.000Z",
+          },
+        ],
+        update: async () => null,
+        archive: async () => null,
+      },
+      observationRepository: {
+        create: async () => { throw new Error("not used"); },
+        listByReflectiveObject: async () => [],
+        getById: async () => null,
+      },
+      observationV2Repository: {
+        create: async () => { throw new Error("not used"); },
+        getByBundleId: async () => null,
+        getByReflectiveObjectId: async () => null,
+      },
+      glossaryRepository: {
+        listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [],
+        getTermById: async () => null,
+        listAppearanceRecordsByTerm: async () => [],
+        createTerm: async () => { throw new Error("not used"); },
+        updateTerm: async () => null,
+        listCandidates: async () => [],
+        listCandidatesByReflectiveObject: async () => [],
+        getCandidateById: async () => null,
+        upsertCandidates: async () => [],
+        setCandidateLifecycle: async () => null,
+        resolveCandidate: async () => null,
+        createAssociation: async () => { throw new Error("not used"); },
+        createAppearanceRecord: async () => null,
+      },
+      threadRepository: {
+        createThread: async () => { throw new Error("not used"); },
+        getThreadById: async () => null,
+        listThreadsByReflectiveObject,
+        listThreadsByUser,
+        updateThread: async () => null,
+        setThreadState: async () => null,
+        archiveThread: async () => null,
+        createObjectAssociation: async () => { throw new Error("not used"); },
+        createGlossaryAssociation: async () => { throw new Error("not used"); },
+        listAssociationsByThread: async () => [],
+      },
+      openingRepository: {
+        createOpening: async () => { throw new Error("not used"); },
+        getOpeningById: async () => null,
+        listOpeningSurfacesByReflectiveObject: async () => [],
+        listOpeningSurfacesByUser: async () => [],
+        listDormantSuppressedOpeningsByUser: async () => [],
+        listRecentOpeningsByUser: async () => [],
+        listOpeningsByLatentSnapshot: async () => [],
+        activateOpening: async () => null,
+        reactivateOpening: async () => null,
+        dismissOpening: async () => null,
+        setSuppression: async () => null,
+        recordSurfaceEvent: async () => { throw new Error("not used"); },
+      },
+      responseRepository: {
+        createResponse: async () => { throw new Error("not used"); },
+        getResponseById: async () => null,
+        listResponsesByUser: async () => [],
+        listResponsesByReflectiveObject: async () => [],
+        updateResponse: async () => null,
+        setResponseState: async () => null,
+        archiveResponse: async () => null,
+        createObjectAssociation: async () => { throw new Error("not used"); },
+        createThreadAssociation: async () => { throw new Error("not used"); },
+        removeObjectAssociation: async () => false,
+        removeThreadAssociation: async () => false,
+        listAssociationsByResponse: async () => [],
+        createOpeningActivationEvent: async () => { throw new Error("not used"); },
+        listOpeningActivationEventsByWindow: async () => [],
+        createOpeningResponseAssociation: async () => { throw new Error("not used"); },
+        removeOpeningResponseAssociation: async () => false,
+        listOpeningResponseAssociationsByOpening: async () => [],
+      },
+    });
+
+    expect(viewport.sections.threadSurfaces.items).toHaveLength(1);
+    expect(viewport.sections.threadSurfaces.items[0]?.threadId).toBe("thread-obj-1");
+    expect(viewport.sections.threadSurfaces.items[0]?.title).toBe("First reflective contribution");
+  });
+
+  it("surfaces object-associated openings for the center object without foregrounding unrelated user openings", async () => {
+    const listOpeningSurfacesByReflectiveObject = async () => [
+      {
+        openingId: "opening-obj-1",
+        userId: "user-4",
+        openingType: "continuity_noticing" as const,
+        tone: "gentle" as const,
+        visibility: "invitation_surface" as const,
+        suppressionState: "none" as const,
+        suppressionDuration: null,
+        suppressionRevisitEligibility: "revisitable_dormant" as const,
+        state: "available" as const,
+        preview: "Object opening",
+        activated: false,
+        createdAt: "2026-06-18T12:00:00.000Z",
+      },
+    ];
+    const listOpeningSurfacesByUser = async () => [
+      {
+        openingId: "opening-unrelated",
+        userId: "user-4",
+        openingType: "reflective_question" as const,
+        tone: "curious" as const,
+        visibility: "invitation_surface" as const,
+        suppressionState: "none" as const,
+        suppressionDuration: null,
+        suppressionRevisitEligibility: "revisitable_dormant" as const,
+        state: "available" as const,
+        preview: "Unrelated opening",
+        activated: false,
+        createdAt: "2026-06-18T11:00:00.000Z",
+      },
+    ];
+
+    const viewport = await composeReflectiveSpaceViewport({
+      userId: "user-4",
+      centerObjectId: "obj-1",
+      reflectiveObjectRepository: {
+        create: async () => { throw new Error("not used"); },
+        getById: async () => null,
+        listByUser: async () => [
+          {
+            id: "obj-1",
+            userId: "user-4",
+            objectType: "dream",
+            title: "Object A",
+            primaryContent: "Content",
+            sourceContext: "manual",
+            state: "active",
+            metadata: {},
+            createdAt: "2026-06-18T12:00:00.000Z",
+            updatedAt: "2026-06-18T12:00:00.000Z",
+          },
+        ],
+        update: async () => null,
+        archive: async () => null,
+      },
+      observationRepository: {
+        create: async () => { throw new Error("not used"); },
+        listByReflectiveObject: async () => [],
+        getById: async () => null,
+      },
+      observationV2Repository: {
+        create: async () => { throw new Error("not used"); },
+        getByBundleId: async () => null,
+        getByReflectiveObjectId: async () => null,
+      },
+      glossaryRepository: {
+        listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [],
+        getTermById: async () => null,
+        listAppearanceRecordsByTerm: async () => [],
+        createTerm: async () => { throw new Error("not used"); },
+        updateTerm: async () => null,
+        listCandidates: async () => [],
+        listCandidatesByReflectiveObject: async () => [],
+        getCandidateById: async () => null,
+        upsertCandidates: async () => [],
+        setCandidateLifecycle: async () => null,
+        resolveCandidate: async () => null,
+        createAssociation: async () => { throw new Error("not used"); },
+        createAppearanceRecord: async () => null,
+      },
+      threadRepository: {
+        createThread: async () => { throw new Error("not used"); },
+        getThreadById: async () => null,
+        listThreadsByReflectiveObject: async () => [],
+        listThreadsByUser: async () => [],
+        updateThread: async () => null,
+        setThreadState: async () => null,
+        archiveThread: async () => null,
+        createObjectAssociation: async () => { throw new Error("not used"); },
+        createGlossaryAssociation: async () => { throw new Error("not used"); },
+        listAssociationsByThread: async () => [],
+      },
+      openingRepository: {
+        createOpening: async () => { throw new Error("not used"); },
+        getOpeningById: async () => null,
+        listOpeningSurfacesByReflectiveObject,
+        listOpeningSurfacesByUser,
+        listDormantSuppressedOpeningsByUser: async () => [],
+        listRecentOpeningsByUser: async () => [],
+        listOpeningsByLatentSnapshot: async () => [],
+        activateOpening: async () => null,
+        reactivateOpening: async () => null,
+        dismissOpening: async () => null,
+        setSuppression: async () => null,
+        recordSurfaceEvent: async () => { throw new Error("not used"); },
+      },
+      responseRepository: {
+        createResponse: async () => { throw new Error("not used"); },
+        getResponseById: async () => null,
+        listResponsesByUser: async () => [],
+        listResponsesByReflectiveObject: async () => [],
+        updateResponse: async () => null,
+        setResponseState: async () => null,
+        archiveResponse: async () => null,
+        createObjectAssociation: async () => { throw new Error("not used"); },
+        createThreadAssociation: async () => { throw new Error("not used"); },
+        removeObjectAssociation: async () => false,
+        removeThreadAssociation: async () => false,
+        listAssociationsByResponse: async () => [],
+        createOpeningActivationEvent: async () => { throw new Error("not used"); },
+        listOpeningActivationEventsByWindow: async () => [],
+        createOpeningResponseAssociation: async () => { throw new Error("not used"); },
+        removeOpeningResponseAssociation: async () => false,
+        listOpeningResponseAssociationsByOpening: async () => [],
+      },
+    });
+
+    expect(viewport.sections.openingSurfaces.items).toHaveLength(1);
+    expect(viewport.sections.openingSurfaces.items[0]?.openingId).toBe("opening-obj-1");
+    expect(viewport.sections.openingSurfaces.items[0]?.preview).toBe("Object opening");
   });
 });

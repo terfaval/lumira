@@ -1,0 +1,13 @@
+{
+  "mode": "failed",
+  "success": false,
+  "stage": "llm",
+  "reason": "provider_timeout",
+  "identitiesCreated": 0,
+  "manifestationsCreated": 0,
+  "participationsCreated": 0,
+  "anchorIds": [],
+  "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+  "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+  "outputDir": "C:\\mira\\scripts\\output\\anchor-v1-ae7fd730-eb19-43d6-9781-20e042fc5d9c-2026-06-17T14-20-52-417Z"
+}

@@ -54,7 +54,7 @@ const HOMEPAGE_ROUTE_TARGET_REGISTRY: Record<HomepageNavigationTargetKey, Homepa
   },
   reflective_object_orientation: {
     targetKey: "reflective_object_orientation",
-    href: "/objects/[objectId]/reflect",
+    href: "/objects/[objectId]",
     routeStatus: "implemented",
   },
 };
@@ -85,6 +85,6 @@ export function toReflectiveObjectOrientationTarget(objectId: string): HomepageN
 
   return {
     ...base,
-    href: `/objects/${encodePathSegment(objectId)}/reflect`,
+    href: `/objects/${encodePathSegment(objectId)}`,
   };
 }

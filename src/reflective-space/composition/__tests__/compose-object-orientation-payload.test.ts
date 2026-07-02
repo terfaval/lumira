@@ -164,7 +164,46 @@ describe("composeObjectOrientationPayload", () => {
           throw new Error("not used");
         },
         updateTerm: async () => null,
-        listCandidates: async () => [],
+        listCandidates: async () => [
+          {
+            id: "cand-1",
+            userId: "user-1",
+            reflectiveObjectId: "obj-1",
+            normalizedKey: "house",
+            displayLabel: "House",
+            sourceCategory: "location",
+            sourceObservationId: "obs-1",
+            sourceObservationFragmentId: "frag-1",
+            recurrenceCount: 3,
+            candidateClass: "new_candidate",
+            proposedEntityIds: [],
+            state: "pinned",
+            suppression: { state: "none", suppressedAt: null, reason: null },
+            continuityVisibility: null,
+            lastSeenAt: "2026-06-03T08:01:00.000Z",
+            createdAt: "2026-06-03T08:01:00.000Z",
+            updatedAt: "2026-06-03T08:01:00.000Z",
+          },
+          {
+            id: "cand-2",
+            userId: "user-1",
+            reflectiveObjectId: "obj-2",
+            normalizedKey: "house",
+            displayLabel: "House",
+            sourceCategory: "location",
+            sourceObservationId: "obs-2",
+            sourceObservationFragmentId: "frag-2",
+            recurrenceCount: 1,
+            candidateClass: "new_candidate",
+            proposedEntityIds: [],
+            state: "candidate",
+            suppression: { state: "none", suppressedAt: null, reason: null },
+            continuityVisibility: null,
+            lastSeenAt: "2026-06-05T08:01:00.000Z",
+            createdAt: "2026-06-05T08:01:00.000Z",
+            updatedAt: "2026-06-05T08:01:00.000Z",
+          },
+        ],
         listCandidatesByReflectiveObject: async () => [
           {
             id: "cand-1",
@@ -180,6 +219,7 @@ describe("composeObjectOrientationPayload", () => {
             proposedEntityIds: [],
             state: "pinned",
             suppression: { state: "none", suppressedAt: null, reason: null },
+            continuityVisibility: null,
             lastSeenAt: "2026-06-03T08:01:00.000Z",
             createdAt: "2026-06-03T08:01:00.000Z",
             updatedAt: "2026-06-03T08:01:00.000Z",
@@ -242,6 +282,12 @@ describe("composeObjectOrientationPayload", () => {
               latentSnapshotReference: null,
               confidenceBand: "tentative",
               openingGenerationContext: "test",
+              openingContext: {
+                context: "A threshold between staying inside and moving onward.",
+                sourceOpportunityManifestationId: "manifestation-1",
+                openingKind: "question",
+                sourceRuntime: "opening_v2_constructor_mvp",
+              },
             },
             activatedAt: null,
             dismissedAt: null,
@@ -272,6 +318,12 @@ describe("composeObjectOrientationPayload", () => {
               latentSnapshotReference: null,
               confidenceBand: "moderate",
               openingGenerationContext: "test",
+              openingContext: {
+                context: "The hidden water keeps the pressure below the scene.",
+                sourceOpportunityManifestationId: "manifestation-2",
+                openingKind: "question",
+                sourceRuntime: "opening_v2_constructor_mvp",
+              },
             },
             activatedAt: "2026-06-03T08:03:00.000Z",
             dismissedAt: null,
@@ -302,6 +354,12 @@ describe("composeObjectOrientationPayload", () => {
               latentSnapshotReference: null,
               confidenceBand: "tentative",
               openingGenerationContext: "test",
+              openingContext: {
+                context: "The dream may be revisiting a familiar edge.",
+                sourceOpportunityManifestationId: "manifestation-3",
+                openingKind: "question",
+                sourceRuntime: "opening_v2_constructor_mvp",
+              },
             },
             activatedAt: null,
             dismissedAt: null,
@@ -332,6 +390,12 @@ describe("composeObjectOrientationPayload", () => {
               latentSnapshotReference: null,
               confidenceBand: "tentative",
               openingGenerationContext: "test",
+              openingContext: {
+                context: "Unrelated context.",
+                sourceOpportunityManifestationId: "manifestation-4",
+                openingKind: "question",
+                sourceRuntime: "opening_v2_constructor_mvp",
+              },
             },
             activatedAt: null,
             dismissedAt: null,
@@ -358,6 +422,12 @@ describe("composeObjectOrientationPayload", () => {
     expect(payload?.glossary.items[0]).toMatchObject({
       candidateClass: "new_candidate",
       status: "new",
+      continuityVisibility: {
+        possibleContinuity: true,
+        dreamCount: 2,
+        firstSeenAt: "2026-06-03T08:01:00.000Z",
+        lastSeenAt: "2026-06-05T08:01:00.000Z",
+      },
     });
     expect(payload?.glossary.items[1]).toMatchObject({
       label: "Bridge",
@@ -375,6 +445,11 @@ describe("composeObjectOrientationPayload", () => {
       "opening-new",
       "opening-active",
       "opening-dormant",
+    ]);
+    expect(payload?.openingStack.items.map((item) => item.context)).toEqual([
+      "A threshold between staying inside and moving onward.",
+      "The hidden water keeps the pressure below the scene.",
+      "The dream may be revisiting a familiar edge.",
     ]);
   });
 

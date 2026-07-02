@@ -1,0 +1,366 @@
+{
+  "generationContext": {
+    "runtimeVersion": "latent_opportunity_constructor_v1",
+    "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "observationBundleId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1"
+  },
+  "decision": {
+    "mode": "opportunities_found",
+    "silenceReason": null
+  },
+  "opportunities": [
+    {
+      "clientOpportunityKey": "opportunity_phone_dobalas_tension_ae7fd730",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingIdentityId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "opportunityStructure": {
+        "primaryCategory": "tension",
+        "secondaryCategories": [
+          "ambiguity"
+        ],
+        "structureType": "TENSION",
+        "nodes": [
+          {
+            "key": "A",
+            "label": "Telefon tudatos dobálása aggodalom ellenére",
+            "kind": "event"
+          },
+          {
+            "key": "B",
+            "label": "Bóra idegessége és feszültsége",
+            "kind": "affect"
+          }
+        ],
+        "edges": [
+          {
+            "from": "A",
+            "to": "B",
+            "relation": "provokes"
+          }
+        ],
+        "tensions": [
+          {
+            "between": [
+              "A",
+              "B"
+            ],
+            "description": "Az elkövető tudatosan dobálja a telefont annak ellenére, hogy aggódik a sérülés miatt, míg Bóra egyre idegesebb lesz."
+          }
+        ],
+        "gaps": [],
+        "continuitySignals": [
+          {
+            "kind": "none",
+            "referenceId": null,
+            "description": null
+          }
+        ]
+      },
+      "manifestation": {
+        "summaryForInternalUse": "Feszültség a telefon dobálása és Bóra növekvő idegessége között a tábori mezőn.",
+        "priorityReflectiveObjectRole": "primary_source",
+        "salience": {
+          "credibility": 0.95,
+          "reflectivePotential": 0.88,
+          "salienceBand": "high",
+          "credibilityRationale": "Közvetlenül előforduló megfigyelések és ismételt események a prioritású objektumból.",
+          "reflectivePotentialRationale": "Erős érzelmi és cselekvésbeli ellentét, amely befolyásolja a jelenetet."
+        }
+      },
+      "evidenceBlocks": [
+        {
+          "clientBlockKey": "block_scene1_phone_tossing_tension",
+          "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+          "role": "priority",
+          "summary": "A telefon dobálása és Bóra idegessége a 1. jelenetben a tábori mezőn.",
+          "observationRefs": [
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs1_5",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "A"
+              ],
+              "supportsEdgeIndexes": []
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs1_6",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "B"
+              ],
+              "supportsEdgeIndexes": []
+            }
+          ],
+          "confirmedGlossaryRefs": [],
+          "candidateGlossaryMentions": [
+            {
+              "glossaryCandidateId": "58064f26-7caf-4e80-b188-039d78e5c2b4",
+              "note": "telefon"
+            },
+            {
+              "glossaryCandidateId": "eeedd1f9-8677-4e96-9802-8748f9dbe189",
+              "note": "Bóra"
+            }
+          ]
+        }
+      ],
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientOpportunityKey": "opportunity_age_shift_and_saliencepresence_ae7fd730",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingIdentityId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "opportunityStructure": {
+        "primaryCategory": "transition",
+        "secondaryCategories": [
+          "salience_signal",
+          "ambiguity"
+        ],
+        "structureType": "A_TO_B",
+        "nodes": [
+          {
+            "key": "A",
+            "label": "Bóra jelenléte a mezőn",
+            "kind": "phenomenology"
+          },
+          {
+            "key": "B",
+            "label": "Hirtelen idősebb érzés a konyhában, Bóra eltűnése és Évi figyelme",
+            "kind": "phenomenology"
+          }
+        ],
+        "edges": [
+          {
+            "from": "A",
+            "to": "B",
+            "relation": "transition_with_phenomenological_shift"
+          }
+        ],
+        "tensions": [],
+        "gaps": [
+          {
+            "description": "Bóra eltűnése és Évi jelenlétének csak implicit, közvetett érzékelése.",
+            "supportedByObservationIds": [
+              "obs2_2",
+              "obs2_7"
+            ]
+          }
+        ],
+        "continuitySignals": [
+          {
+            "kind": "none",
+            "referenceId": null,
+            "description": null
+          }
+        ]
+      },
+      "manifestation": {
+        "summaryForInternalUse": "Érzékelhető korváltozás és személyes jelenlétváltás a tábori mező helyszínről a verandás sorház konyhájába való belépéskor.",
+        "priorityReflectiveObjectRole": "primary_source",
+        "salience": {
+          "credibility": 0.92,
+          "reflectivePotential": 0.9,
+          "salienceBand": "high",
+          "credibilityRationale": "Közvetlen megfigyelések jelenléte az érzékelhető kor- és személyi változásban a prioritású objektumból.",
+          "reflectivePotentialRationale": "Kifejezett, fenomén szintű jelenlétváltás és korérzés, jelentős tudatossági hullámzás."
+        }
+      },
+      "evidenceBlocks": [
+        {
+          "clientBlockKey": "block_scene2_age_shift_and_presence",
+          "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+          "role": "priority",
+          "summary": "A konyhába lépéskor Bóra eltűnése és a hirtelen idősebb korérzet, Évi implicit figyelme a 2. jelenetben.",
+          "observationRefs": [
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_2",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs2_2",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "B"
+              ],
+              "supportsEdgeIndexes": []
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs2_7",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "B"
+              ],
+              "supportsEdgeIndexes": []
+            }
+          ],
+          "confirmedGlossaryRefs": [],
+          "candidateGlossaryMentions": [
+            {
+              "glossaryCandidateId": "eeedd1f9-8677-4e96-9802-8748f9dbe189",
+              "note": "Bóra"
+            },
+            {
+              "glossaryCandidateId": "463f0099-4d94-44f0-b384-b972d52e7e40",
+              "note": "Évi"
+            }
+          ]
+        }
+      ],
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientOpportunityKey": "opportunity_social_repair_sequence_ae7fd730",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingIdentityId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "opportunityStructure": {
+        "primaryCategory": "transition",
+        "secondaryCategories": [
+          "relationship",
+          "reversal"
+        ],
+        "structureType": "A_TO_B_TO_C",
+        "nodes": [
+          {
+            "key": "A",
+            "label": "Hamu hullása Markus nadrágjára",
+            "kind": "event"
+          },
+          {
+            "key": "B",
+            "label": "Bocsánatkérés és takarítás, rossz érzés",
+            "kind": "event"
+          },
+          {
+            "key": "C",
+            "label": "Kata segít a tisztításban, Markus zavarodottsága, apám megnyugtatása",
+            "kind": "event"
+          }
+        ],
+        "edges": [
+          {
+            "from": "A",
+            "to": "B",
+            "relation": "causes"
+          },
+          {
+            "from": "B",
+            "to": "C",
+            "relation": "leads_to"
+          }
+        ],
+        "tensions": [],
+        "gaps": [],
+        "continuitySignals": [
+          {
+            "kind": "none",
+            "referenceId": null,
+            "description": null
+          }
+        ]
+      },
+      "manifestation": {
+        "summaryForInternalUse": "Szociális helyreállítási mozgás a szennyeződés előidézése, bocsánatkérés és segítség között a verandás konyhában.",
+        "priorityReflectiveObjectRole": "primary_source",
+        "salience": {
+          "credibility": 0.93,
+          "reflectivePotential": 0.85,
+          "salienceBand": "high",
+          "credibilityRationale": "Egymás után következő megfigyelések a prioritású objektumból az eseményláncban.",
+          "reflectivePotentialRationale": "Jelentős társas interakciós lánc, váltás a feszültségből a nyugtatásba."
+        }
+      },
+      "evidenceBlocks": [
+        {
+          "clientBlockKey": "block_scene2_social_repair",
+          "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+          "role": "priority",
+          "summary": "Hamu hullása, bocsánatkérés és Kata segítsége Markus nadrágján a 2. jelenetben a verandás ház konyhájában.",
+          "observationRefs": [
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs2_5",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "A",
+                "B"
+              ],
+              "supportsEdgeIndexes": [
+                0
+              ]
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6",
+              "sceneRowId": null,
+              "sceneStableId": null,
+              "observationStableId": "obs2_6",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "B",
+                "C"
+              ],
+              "supportsEdgeIndexes": [
+                1
+              ]
+            }
+          ],
+          "confirmedGlossaryRefs": [],
+          "candidateGlossaryMentions": [
+            {
+              "glossaryCandidateId": "27e4a627-28df-4267-8b61-099f73c54316",
+              "note": "Markus"
+            },
+            {
+              "glossaryCandidateId": "0a85508a-9356-4cba-a90a-91648c4f38ae",
+              "note": "Kata"
+            },
+            {
+              "glossaryCandidateId": "7d157173-136a-4d6a-85a9-953bab13069b",
+              "note": "apám"
+            }
+          ]
+        }
+      ],
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    }
+  ]
+}

@@ -58,6 +58,423 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-06-22 - Observation V2 Stabilization Phase 3 Phenomenology & Metacognition Capture
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts`
+  - `docs/superpowers/specs/2026-06-22-observation-v2-phenomenology-metacognition-phase3-design.md`
+  - `docs/superpowers/plans/2026-06-22-observation-v2-phenomenology-metacognition-phase3.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts` -> fail first on missing phenomenology/metacognition Phase 3 prompt guidance, then pass (`1` file, `19` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-22T18-07-09-091Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Strengthened the live scene-first extractor prompt so phenomenology explicitly covers reality-behavior anomalies such as impossible space, transformed environments, altered identity, discontinuity, strange reflections, and distorted time.
+  - Strengthened the live prompt so metacognition explicitly covers noticing, realizing, dream-state recognition, awareness of uncertainty, awareness of remembering, awareness of not knowing, self-observation, and lucid awareness.
+  - Added explicit anti-interpretation and non-invention prompt constraints plus focused positive and negative fixtures so anomaly capture improves without forcing awareness, interpretation, or unsupported category emission.
+
+## 2026-06-22 - Observation V2 Stabilization Phase 2 Coverage Fidelity
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts`
+  - `docs/superpowers/specs/2026-06-22-observation-v2-coverage-fidelity-phase2-design.md`
+  - `docs/superpowers/plans/2026-06-22-observation-v2-coverage-fidelity-phase2.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts` -> fail first on missing late-retention prompt guidance and missing late-section guard behavior, then pass (`1` file, `16` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-22T17-37-26-869Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Strengthened the scene-first extractor prompt so meaningful late-dream material, final transitions, final encounters, emotional shifts, dream-state changes, and unresolved ending states are explicitly preserved when present.
+  - Added a conservative late-section presence guard for long dreams that detects obvious ending loss or thin compressed closing traces without comparing beginning/middle/end density or synthesizing observations.
+  - Reused the existing retry/fallback pattern so repeated ending-loss outputs fail closed instead of being silently persisted after retry.
+
+## 2026-06-22 - Observation V2 Stabilization Phase 1 Scene Transition Fidelity Improvement
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts`
+  - `docs/superpowers/specs/2026-06-22-observation-v2-scene-transition-fidelity-phase1-design.md`
+  - `docs/superpowers/plans/2026-06-22-observation-v2-scene-transition-fidelity-phase1.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts` -> fail first on missing transition-boundary prompt guidance and missing over-merge guard behavior, then pass (`1` file, `13` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-22T17-06-33-842Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Strengthened the scene-first extractor prompt so scene boundaries are guided by situational, relational, goal-state, and dream-logic transitions rather than relying mainly on location change.
+  - Added a conservative extractor-local over-merge guard for long single-scene outputs with many internal transition cues, while keeping the LLM as the scene-boundary authority and avoiding deterministic scene splitting.
+  - Reused the existing retry/fallback semantics so clearly macro-scene outputs are retried once and then fail closed instead of being silently persisted after repeated under-segmentation.
+
+## 2026-06-21 - Latent Discovery Phase 4 Handoff Harness
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/experimental-construction-handoff/types.ts`
+  - `src/cognition/latent-v2/experimental-construction-handoff/handoff-packet.ts`
+  - `src/cognition/latent-v2/experimental-construction-handoff/parser.ts`
+  - `src/cognition/latent-v2/experimental-construction-handoff/validator.ts`
+  - `src/cognition/latent-v2/experimental-construction-handoff/harness.ts`
+  - `src/cognition/latent-v2/experimental-construction-handoff/index.ts`
+  - `src/cognition/latent-v2/experimental-construction-handoff/__tests__/handoff-harness.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/latent-v2/experimental-construction-handoff/__tests__/handoff-harness.test.ts` -> fail first on missing experimental handoff module, then pass (`1` file, `7` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-21T07-24-53-773Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added a non-production Discovery -> Construction handoff packet that preserves full constructor evidence space while making Discovery an additive mandatory-to-consider candidate map rather than a replacement input.
+  - Added an isolated experimental output contract plus validator rules that require every Discovery candidate to be considered, while still allowing reject-all, merge, split, and full-evidence missed-structure construction behaviors.
+  - Kept the harness completely outside production orchestration and persistence; it validates boundary behavior only and records the standing assumption that frequent missed-structure construction indicates Discovery quality risk.
+
+## 2026-06-18 - Deep Reflection Thread-Centered Route And Shell v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/api/openings/[id]/select/route.ts`
+  - `app/api/openings/[id]/select/__tests__/route.test.ts`
+  - `app/api/openings/[id]/responses/route.ts`
+  - `app/api/openings/[id]/responses/__tests__/route.test.ts`
+  - `app/objects/[objectId]/reflect/page.tsx`
+  - `app/objects/[objectId]/reflect/[threadId]/page.tsx`
+  - `src/domain/openings/contracts.ts`
+  - `src/infrastructure/supabase/repositories/opening-supabase-repository.ts`
+  - `src/reflective-space/resolve-opening-thread.ts`
+  - `src/reflective-space/composition/compose-deep-reflection-payload.ts`
+  - `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`
+  - `src/reflective-space/composition/compose-object-orientation-payload.ts`
+  - `src/reflective-space/composition/homepage-route-target-registry.ts`
+  - `src/ui/object-orientation/view-model.ts`
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `src/ui/reflective-space/deep-reflection-shell.tsx`
+  - `src/ui/reflective-space/deep-reflection-shell.module.css`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - Focused TDD pass:
+    - `npx.cmd vitest run "app/api/openings/[id]/select/__tests__/route.test.ts" "app/api/openings/[id]/responses/__tests__/route.test.ts" "src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts"` -> fail first on missing thread-centered route/composer seams, then pass (`3` files, `11` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`126` files, `623` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-18T20-20-08-744Z.log`
+- Notes:
+  - Replaced the old object-only Deep Reflection assumption with a truthful thread-centered handoff: Orientation now selects through a dedicated opening-selection endpoint that activates/reactivates the opening, resolves or creates the thread center immediately, persists that thread back onto opening provenance, and navigates to `/objects/[objectId]/reflect/[threadId]`.
+  - Added the first bounded `composeDeepReflectionPayload(...)` path and a dedicated Deep Reflection shell so the new thread route renders one central dialogue lane, a quiet nearby-context rail, and alternate openings without reusing the broader reflective workspace viewport.
+  - Preserved the existing response-save backend while teaching it to reuse a thread already attached during selection, which keeps first-response persistence aligned with the new thread-first lifecycle instead of recreating duplicate centers.
+
+## 2026-06-17 - Anchor Constructor Canon-Aligned Discovery Audit & Calibration v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/anchor-v1/constructor/llm-anchor-constructor.ts`
+  - `src/cognition/anchor-v1/constructor/__tests__/anchor-constructor.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/anchor-v1/constructor/__tests__/anchor-constructor.test.ts` -> fail first on missing prompt-calibration expectations, then pass (`1` file, `20` tests)
+  - `npm.cmd test -- src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts` -> pass (`1` file, `4` tests)
+  - `npm.cmd run typecheck` -> pass
+  - Read-only live constructor audit before calibration via `npx.cmd tsx --eval ...` on real reflective packets:
+    - `ae7fd730-eb19-43d6-9781-20e042fc5d9c` -> before baseline moved from all-`ENTITY` historical output to `ENTITY: 5, STRUCTURE: 1`, with no `ROLE` and mostly `EVIDENCE`
+    - `04325afa-1495-4f98-9349-0838529d9f68` -> valid `no_anchor` with `0` opportunities
+  - Read-only live constructor audit after discovery calibration via `npx.cmd tsx --eval ...`:
+    - repeated runs on `ae7fd730-eb19-43d6-9781-20e042fc5d9c` reached all three canon categories within single runs, including `ENTITY: 2, ROLE: 3, STRUCTURE: 4` and later `ENTITY: 5, ROLE: 2, STRUCTURE: 2`
+    - participation-role spread expanded beyond `EVIDENCE` to include `CONTEXT`, `STRUCTURAL_SUPPORT`, and `SALIENT_LINK`
+    - repeated no-opportunity check on `04325afa-1495-4f98-9349-0838529d9f68` remained valid `no_anchor`
+    - one final read-only audit run timed out at the provider boundary (`provider_timeout`) without changing validation or persistence behavior
+  - `npm.cmd test` -> pass (`122` files, `570` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-17T14-06-01-086Z.log`
+- Notes:
+  - Audited the Anchor constructor path against the Anchor canon and found the main bias in discovery framing rather than schema, parser, validator, mapper, or persistence; the packet already exposed entity, interaction, and opportunity-structure evidence with sufficient breadth for prompt-side correction.
+  - Calibrated the prompt to explicitly perform packet-level `ENTITY`, `ROLE`, and `STRUCTURE` discovery passes, preserve category independence within one run, and resist early collapse into named-entity discovery.
+  - Strengthened participation-role guidance so the model no longer defaults every valid link to `EVIDENCE`, while also reinforcing the canon distinction that named people/objects remain `ENTITY` unless the label is purely functional.
+
+## 2026-06-17 - Anchor Runtime Persistence Orchestration v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/anchor-v1/contracts.ts`
+  - `src/infrastructure/supabase/repositories/anchor-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/anchor-supabase-repository.test.ts`
+  - `src/cognition/anchor-v1/constructor/llm-anchor-constructor.ts`
+  - `src/cognition/anchor-v1/constructor/index.ts`
+  - `src/cognition/anchor-v1/constructor/__tests__/anchor-constructor.test.ts`
+  - `src/runtime/orchestration/generate-anchors-for-reflective-object.ts`
+  - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+  - `scripts/dev-run-anchor-v1.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts` -> fail first before implementation (`module not found`), then pass (`1` file, `4` tests)
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/anchor-supabase-repository.test.ts` -> pass (`1` file, `3` tests)
+  - `npm.cmd test -- src/cognition/anchor-v1/constructor/__tests__/anchor-constructor.test.ts` -> pass (`1` file, `20` tests)
+  - `npx.cmd tsx scripts/dev-run-anchor-v1.ts ae7fd730-eb19-43d6-9781-20e042fc5d9c` -> first blocked on `generation_context_runtime_mismatch`, then on `opportunity_ref_out_of_scope`, then on `trace_ref_out_of_scope`, finally pass with persisted result (`5` identities, `5` manifestations, `9` participations)
+  - Dev-run artifact: `scripts/output/anchor-v1-ae7fd730-eb19-43d6-9781-20e042fc5d9c-2026-06-17T10-32-22-029Z`
+  - `npm.cmd test` -> pass (`122` files, `570` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-17T10-32-32-152Z.log`
+- Notes:
+  - Added the first Anchor runtime orchestration entrypoint that composes the constructor packet, runs the existing constructor, parses and validates output, maps validated anchors to repository create inputs, and persists identities, manifestations, and participations in order.
+  - Hardened persistence failure handling by extending the Anchor repository with owner-scoped identity deletion and using identity-level rollback for partial-write cleanup, relying on anchor foundation cascade semantics for dependent manifestations and participations.
+  - Added a manual dev-run workflow with structured artifacts for packet, raw output, parsed output, validated output, mapped inputs, persisted records, and final summary, then used that workflow against a real reflective object to tighten the constructor’s exact runtime context, opportunity reference, and trace omission boundaries before successful persistence.
+
+## 2026-06-17 - Anchor Constructor v1 Parser, Validator, Mapping, and Minimal LLM Constructor
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/anchor-v1/constructor/types.ts`
+  - `src/cognition/anchor-v1/constructor/parser.ts`
+  - `src/cognition/anchor-v1/constructor/safety.ts`
+  - `src/cognition/anchor-v1/constructor/validator.ts`
+  - `src/cognition/anchor-v1/constructor/mapping.ts`
+  - `src/cognition/anchor-v1/constructor/llm-anchor-constructor.ts`
+  - `src/cognition/anchor-v1/constructor/index.ts`
+  - `src/cognition/anchor-v1/constructor/__tests__/anchor-constructor.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/anchor-v1/constructor/__tests__/anchor-constructor.test.ts` -> fail first (`1` file, `20` tests) before implementation exports, then pass (`1` file, `20` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd test` -> pass (`121` files, `566` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-17T08-50-08-858Z.log`
+- Notes:
+  - Added the first Anchor Constructor v1 output runtime contract, including conservative `create_new` identity decisions only, strict anchor/manifestation/participation enums, and a validated silence path.
+  - Implemented parser and validator guards that require both observation grounding and opportunity grounding, verify packet-local observation/opportunity/trace references, and reject interpretive, diagnostic, identity-claim, advice, and user-facing leakage.
+  - Added a pure mapping layer that produces Anchor Identity, Anchor Manifestation, and Anchor Participation create inputs without repository writes or orchestration, plus a minimal OpenAI-backed constructor with a contract-aligned non-interpretive prompt and strict JSON schema.
+
+## 2026-06-17 - Anchor Constructor Packet Composer v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/anchor-v1/constructor/types.ts`
+  - `src/cognition/anchor-v1/constructor/input-packet-composer.ts`
+  - `src/cognition/anchor-v1/constructor/index.ts`
+  - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts` -> fail first (`1` file) before boundary implementation, then pass (`1` file, `3` tests)
+  - `npm.cmd test` -> pass (`120` files, `546` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-17T08-05-03-072Z.log`
+- Notes:
+  - Added a dedicated Anchor constructor boundary with a constructor-facing packet contract instead of extending the Latent packet composer or leaking raw repository shapes into the future Anchor constructor.
+  - Implemented a read-only packet composer that assembles the reflective object, Observation V2 scenes and observations, current-object latent opportunities, preserved opportunity evidence trace, and glossary context without any Anchor repository usage or persistence writes.
+  - Preserved traceability by keeping `supportsNodeKeys` and `supportsEdgeIndexes` attached to the containing opportunity manifestation, evidence block, and supporting observation, while limiting glossary candidates to already-available cheap context passed into the composer rather than introducing candidate-specific fetch or derivation logic.
+
+## 2026-06-17 - Anchor Foundation Persistence v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/shared/types.ts`
+  - `src/domain/anchor-v1/types.ts`
+  - `src/domain/anchor-v1/contracts.ts`
+  - `src/domain/anchor-v1/__tests__/types.test.ts`
+  - `src/infrastructure/supabase/adapters/anchor-row.ts`
+  - `src/infrastructure/supabase/adapters/__tests__/anchor-row.test.ts`
+  - `src/infrastructure/supabase/repositories/anchor-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/create-anchor-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/anchor-supabase-repository.test.ts`
+  - `src/shared/__tests__/anchor-foundation-migration.test.ts`
+  - `supabase/migrations/20260617_0026_anchor_foundation.sql`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/domain/anchor-v1/__tests__/types.test.ts src/infrastructure/supabase/adapters/__tests__/anchor-row.test.ts src/infrastructure/supabase/repositories/__tests__/anchor-supabase-repository.test.ts src/shared/__tests__/anchor-foundation-migration.test.ts` -> fail first (`4` files) before implementation, then pass (`4` files, `9` tests)
+  - `npm.cmd test` -> pass (`119` files, `543` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-17T06-46-00-434Z.log`
+- Notes:
+  - Added the first Anchor Foundation persistence primitives with strict canon enum sets for Anchor Identity, Anchor Manifestation, and Anchor Participation, including both `DREAM_DERIVED` and `REFLECTIVE_OBJECT_DERIVED` manifestation sources.
+  - Kept the repository layer intentionally narrow with create/read support only, matching the foundation scope and avoiding extraction, weaving, lifecycle, normalization, reuse, or orchestration behavior.
+  - Preserved continuity linkage in one participation table by supporting identity-only rows and manifestation-linked rows while enforcing owner-scoped foreign keys to anchors, latent opportunities, and reflective objects.
+
+## 2026-06-17 - Latent Opportunity Evidence Trace Preservation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/latent-v2/types.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/mapping.ts`
+  - `src/infrastructure/supabase/adapters/latent-opportunity-row.ts`
+  - `supabase/migrations/20260617_0025_latent_opportunity_evidence_trace.sql`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts`
+  - `src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts` -> pass (`1` file, `30` tests)
+  - `npm.cmd test -- src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts` -> pass (`1` file, `7` tests)
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass (`1` file, `8` tests)
+  - `npm.cmd test -- src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` -> pass (`1` file, `13` tests)
+  - `npm.cmd test` -> pass (`115` files, `534` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-17T06-15-42-176Z.log`
+- Notes:
+  - Preserved validated constructor evidence trace fields through Latent V2 mapping and persistence so observation evidence can continue to identify which opportunity node keys and edge indexes it supports after repository writes and reads.
+  - Kept the persistence extension Latent-only and minimal by adding explicit nullable array columns on `latent_opportunity_evidence_observations` rather than introducing Anchor-specific storage or a generic JSON payload.
+  - Preserved existing evidence-observation behavior, kept glossary candidates non-persisted, and normalized missing trace support to empty arrays on the mapped and rehydrated domain shape for consistent downstream consumption.
+
+## 2026-06-16 - Latent V2 Constructor Discovery Prompt And Coverage Expansion
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/opportunity-constructor/llm-opportunity-constructor.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/index.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts` -> fail first (`buildOpportunityConstructorPrompt is not a function`)
+  - `npm.cmd test -- src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` -> pass (`2` files, `39` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`115` files, `525` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-16T09-03-06-272Z.log`
+- Notes:
+  - Expanded constructor prompt guidance so discovery explicitly scans multiple canon-valid dream-internal opportunity classes, including scene transitions, absences, ambiguities, repair sequences, and search/finding/loss structures.
+  - Added explicit multiplicity counterweights so the model still prefers fewer stronger opportunities without collapsing distinct evidence-supported structures into one narrow local tension.
+  - Extended constructor and orchestration tests to cover three materially distinct opportunities from one priority object plus focused transition, gap, and repair/reassurance examples while preserving silence, safety, and inventory-graph rejection.
+
+## 2026-06-16 - Latent V2 Same-Object Constructor Context Exclusion
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/opportunity-constructor/input-packet-composer.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts` -> pass (`1` file, `13` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`115` files, `522` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-16T07-04-46-276Z.log`
+- Notes:
+  - Removed same-priority-reflective-object opportunity identities from constructor context assembly so reruns of the same dream no longer feed prior opportunities from that same dream back into the constructor.
+  - Preserved cross-object continuity by continuing to include recent opportunity identities whose manifestations originate from other reflective objects.
+  - Kept repository schema and persistence behavior unchanged; the patch is isolated to packet composition and coverage for inclusion/exclusion behavior.
+
+## 2026-06-15 - Latent V2 Orchestrator Debug Artifact Visibility
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `scripts/dev-run-latent-v2.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` -> pass (`1` file, `12` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`115` files, `520` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T16-57-45-559Z.log`
+- Notes:
+  - Expanded the Latent V2 orchestrator result so successful persisted runs expose `parsedOutput`, `validatedOutput`, `mappedPayload`, `persistedIdentities`, and `persistedManifestations` alongside the input packet and raw LLM output.
+  - Failure results now expose every artifact available before the failing stage, including parsed output on validation failures and mapped payload on persistence failures, without changing prompt, validation, mapping, or persistence semantics.
+  - Updated the local dev runner to write plural persistence artifacts so debug review can inspect the full persisted identity and manifestation arrays from successful runs.
+
+## 2026-06-15 - Latent V2 Structured Output Schema Evidence Ref Alignment
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/opportunity-constructor/llm-opportunity-constructor.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`115` files, `520` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T15-06-46-552Z.log`
+- Notes:
+  - Reworked the OpenAI structured output schema for evidence observation refs so optional scene identifiers are expressed as explicit allowed object variants instead of a single object shape that provider-side schema validation treated as missing required fields.
+  - `observationV2SceneObservationId` remains required, while `sceneRowId` and `sceneStableId` are now schema-optional in a way that matches the current parser and validator contract.
+
+## 2026-06-15 - Latent V2 Evidence Reference Ergonomics
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/opportunity-constructor/types.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/parser.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/validator.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/mapping.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/llm-opportunity-constructor.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` -> pass (`36` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`115` files, `520` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T14-58-33-483Z.log`
+- Notes:
+  - Validation now matches evidence refs observation-first by `observationV2SceneObservationId`, allowing short stable scene ids or omitted scene ids without weakening evidence grounding.
+  - If a scene reference is provided, it must still match the matched observation's canonical scene row id or stable scene id; unknown scene refs remain rejected.
+  - Repository mapping now canonicalizes scene ids from the input packet before persistence, so short LLM-facing ids are never written through as canonical internal scene ids.
+
+## 2026-06-15 - Latent V2 Opportunity Constructor Prompt And Schema Tightening
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/opportunity-constructor/llm-opportunity-constructor.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/types.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/parser.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/validator.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts`
+  - `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` -> pass (`31` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`115` files, `515` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T13-31-14-254Z.log`
+- Notes:
+  - Tightened the structured-output schema and prompt so the constructor requests only canon-aligned reflective opportunities, canonical categories, allowed structure types, and `safety.userFacingReady = false`.
+  - Parser-level enforcement now rejects non-canonical categories and disallowed structure types such as `graph` before persistence can begin.
+  - Validator-level enforcement now rejects user-facing-ready outputs and broad inventory-style scene/actor/object mappings that drift away from focused reflective structure, while preserving valid silence outputs and non-persistent failure behavior in orchestration.
+
 ## 2026-06-13 - Glossary Live Admission Enforcement Slice
 
 - Phase: BUILD
@@ -2650,3 +3067,709 @@ Verification references:
   - Kept the glossary candidate modal one-step while making `canonicalLabel` editable for new candidates, match confirmations, and ambiguous existing-entity selections.
   - Routed existing-entity renames through Glossary candidate resolution so the selected continuity entity is renamed before the appearance record is created.
   - Preserved ownership boundaries by leaving Observation data untouched and keeping `appearanceNote` on the appearance record while `generalNote` remains limited to create-new entity flow.
+
+## 2026-06-14 - Observation V2 Derived Structure Completion
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts` -> pass (`1` file, `5` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-14T19-51-26-260Z.log`
+- Notes:
+  - Strengthened the live Observation V2 extractor prompt to explicitly request `interactions`, `affect`, `agency`, `phenomenology`, and `metacognition`.
+  - Added the evidence rule that these categories should only be extracted when supported by explicit dream evidence or strongly implied by directly described dream action.
+  - Preserved the existing schema, parser, runtime bundle, and persistence behavior without adding fallback enrichment or retry logic.
+
+## 2026-06-15 - Observation V2 Derived Structure Construction Phase
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation/llm-derived-structure-constructor.ts`
+  - `src/cognition/observation/__tests__/llm-derived-structure-constructor.test.ts`
+  - `app/capture/page.tsx`
+  - `app/capture/page.test.tsx`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/observation/__tests__/llm-derived-structure-constructor.test.ts app/capture/page.test.tsx` -> pass (`2` files, `10` tests)
+  - `npm.cmd test` -> pass (`110` files, `463` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T06-17-47-614Z.log`
+- Notes:
+  - Added a dedicated Observation V2 bundle-level LLM construction seam that reads scene summaries, observations, evidence excerpts, and existing derived structures before returning updated scene-local derived categories.
+  - Wired live capture to run the constructor after scene extraction and before native Observation V2 persistence.
+  - Preserved the first-pass extractor and native V2 durability path while shifting population responsibility for the canonical derived categories toward a distinct Observation-to-Derived phase.
+
+## 2026-06-15 - Observation/Glossary Identity Hygiene
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/observation/v2-runtime.ts`
+  - `src/domain/glossary/recognition-normalization.ts`
+  - `src/cognition/glossary/continuity-admission.ts`
+  - `src/cognition/glossary/extract-glossary-candidates-from-observations.ts`
+  - `src/domain/observation/__tests__/v2-runtime.test.ts`
+  - `src/domain/glossary/__tests__/recognition-normalization.test.ts`
+  - `src/cognition/glossary/__tests__/continuity-admission.test.ts`
+  - `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/domain/glossary/__tests__/recognition-normalization.test.ts src/cognition/glossary/__tests__/continuity-admission.test.ts src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts src/domain/observation/__tests__/v2-runtime.test.ts` -> pass (`4` files, `26` tests)
+  - `npm.cmd test` -> pass (`110` files, `467` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T06-17-47-614Z.log`
+- Notes:
+  - Canonicalized dreamer/self actor identities to `Álmodó` during Observation V2 bundle normalization so actor-derived structures no longer diverge across self-reference variants.
+  - Blocked dreamer-equivalent labels from entering glossary candidate generation in both fragment-based and V2-derived extraction, with continuity admission retaining the same guard as a secondary safety net.
+  - Trimmed explanatory appositive suffixes from glossary candidate display labels so continuity candidates surface as canonical identity names only.
+ 
+## 2026-06-15 - Latent V2 Opportunity Schema And Persistence Foundation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations/20260615_0024_latent_opportunity_foundation.sql`
+  - `src/domain/latent-v2/types.ts`
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/shared/types.ts`
+  - `src/infrastructure/supabase/adapters/latent-opportunity-row.ts`
+  - `src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/create-latent-opportunity-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts` -> pass (`1` file, `2` tests)
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass (`1` file, `1` test)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`112` files, `473` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T09-07-03-236Z.log`
+- Notes:
+  - Added a native Latent V2 persistence foundation for `latent_opportunity_identities`, `latent_opportunity_manifestations`, `latent_opportunity_evidence_blocks`, `latent_opportunity_evidence_observations`, and `latent_opportunity_glossary_links`.
+  - Anchored manifestations on `priority_reflective_object_id` and linked evidence observations directly to native `observation_v2_scene_observations`.
+  - Kept glossary continuity links at manifestation scope and omitted a `glossary_appearance_record_id` reference in the first build because current glossary appearance persistence does not expose a clean user-owned composite key for ownership-safe foreign-key enforcement.
+
+## 2026-06-15 - Latent V2 LLM Opportunity Constructor Contract Layer
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/opportunity-constructor/index.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/types.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/parser.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/validator.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/safety.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/mapping.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts` -> pass (`1` file, `13` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`113` files, `486` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T11-39-13-114Z.log`
+- Notes:
+  - Added the first pure Latent V2 opportunity-constructor seam defining the contract-shaped input/output packet types, raw JSON parsing, conservative validation, and explicit repository-input mapping without calling any LLM or persistence writer.
+  - Enforced the non-interpretive boundary with extendable prohibited-language scans plus output-flag checks for interpretive, diagnostic, identity-claim, and advice language.
+  - Restricted identity reuse to explicitly supplied existing identities, required priority-object evidence plus in-scope Observation V2 references, and persisted only confirmed glossary links while dropping candidate glossary mentions from mapping output.
+
+## 2026-06-15 - Latent V2 Constructor Input Packet Composer
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/opportunity-constructor/input-packet-composer.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/index.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts` -> pass (`1` file, `11` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`114` files, `497` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T12-12-57-160Z.log`
+- Notes:
+  - Added the first pure constructor input-packet composer that assembles a contract-compatible Latent V2 opportunity-constructor packet from native `reflective_objects`, `observation_v2`, `glossary`, and `latent_opportunity` reads.
+  - Preserved the glossary boundary by separating confirmed terms, appearance-record context, and candidate-only context while filtering non-candidate glossary rows out of constructor input.
+  - Added a bounded recent-manifestation read to Latent V2 repository access so composer context can include priority-object-relevant and recent existing opportunity identities without touching legacy latent/opening/thread structures.
+
+## 2026-06-15 - Latent V2 LLM Generation And Persistence Orchestrator
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/opportunity-constructor/llm-opportunity-constructor.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/index.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` -> pass (`1` file, `10` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`115` files, `507` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T12-56-22-990Z.log`
+- Notes:
+  - Added the first Latent V2 end-to-end generation orchestrator that composes a real constructor packet, requests contract-shaped JSON from the existing OpenAI Responses infrastructure, parses and validates it, maps it to repository payloads, and persists only validated opportunities.
+  - Preserved the contract boundary by allowing both `create_new` and validator-approved `reuse_existing` identity paths while persisting confirmed glossary links only and keeping glossary candidates context-only.
+  - Hardened persistence failure handling with explicit Latent V2 cleanup methods and rollback of already-created identities/manifestations so failed runs do not leave partial opportunity graphs behind.
+
+## 2026-06-16 - Latent Opportunity Discovery Broadening Pass v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/opportunity-constructor/llm-opportunity-constructor.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` -> fail first (`1` test) before prompt patch, then pass (`2` files, `41` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`115` files, `527` tests)
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-16T09-45-28-479Z.log`
+- Notes:
+  - Broadened constructor guidance without changing schema, validator, mapper, repository, or persistence behavior by explicitly instructing the LLM to scan the full priority object before narrowing and to continue scanning across scenes and categories after finding strong candidates.
+  - Expanded prompt coverage for non-spatial transitions, gap and ambiguity structures, repair and reassurance sequences, expectation violations, emerging continuity signals, and phenomenological salience while preserving the existing non-interpretive and no-inventory safety boundaries.
+  - Added contract-level and orchestration-level tests proving that one priority object can validly yield multiple materially distinct opportunities, including transition, gap, repair, and phenomenological salience opportunities, without breaking existing persistence expectations.
+
+## 2026-06-15 - Dreamer Variant Exclusion In Glossary Candidates
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/observation/v2-runtime.ts`
+  - `src/cognition/glossary/continuity-admission.ts`
+  - `src/domain/observation/__tests__/v2-runtime.test.ts`
+  - `src/cognition/glossary/__tests__/continuity-admission.test.ts`
+  - `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/domain/observation/__tests__/v2-runtime.test.ts src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts src/cognition/glossary/__tests__/continuity-admission.test.ts` -> pass (`3` files, `25` tests)
+  - `npm.cmd test` -> pass (`110` files, `470` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-15T07-25-02-345Z.log`
+- Notes:
+  - Hardened dreamer/self detection from exact-match identity labels to normalized dreamer prefixes so qualified variants such as `Ăn (gyerek)`, `ĂlmodĂł (idĹ‘sebb)`, and `Dreamer (older)` collapse to the dreamer identity during Observation V2 actor normalization.
+  - Reused the same normalized dreamer classifier as a secondary continuity-admission guard so qualified self-variants are rejected even if they arrive downstream as labels.
+  - Confirmed glossary extraction still preserves real actor candidates including `BĂłra`, `Ăvi`, `Kata`, `ApĂˇm`, and `Markus`.
+## 2026-06-17 - Anchor Identity Normalization Enforcement v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/anchor-v1/constructor/anchor-identity-canon.ts`
+  - `src/cognition/anchor-v1/constructor/llm-anchor-constructor.ts`
+  - `src/cognition/anchor-v1/constructor/validator.ts`
+  - `src/cognition/anchor-v1/constructor/index.ts`
+  - `src/cognition/anchor-v1/constructor/__tests__/anchor-constructor.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/anchor-v1/constructor/__tests__/anchor-constructor.test.ts` -> fail first (`1` file, `45` tests) before prompt/family-label hardening, then pass (`1` file, `45` tests)
+  - `npx.cmd tsx scripts/dev-run-anchor-v1.ts ae7fd730-eb19-43d6-9781-20e042fc5d9c` -> first fail at validation with `structure_identity_label_not_in_canon`, then pass with persisted output (`9` identities, `9` manifestations, `25` participations)
+  - Dev-run artifact: `scripts/output/anchor-v1-ae7fd730-eb19-43d6-9781-20e042fc5d9c-2026-06-17T15-56-25-507Z`
+  - `npm.cmd test` -> pass (`122` files, `595` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-17T15-56-40-286Z.log`
+- Notes:
+  - Added a single-source Anchor identity canon module and reused it across prompt construction, validator enforcement, public constructor exports, and the constructor contract tests.
+  - Enforced exact canon membership for `ROLE` and `STRUCTURE` `identityLabel` values while leaving `ENTITY` labels flexible and `manifestationLabel` values dream-specific.
+  - Hardened the prompt with explicit closed-vocabulary instructions, canon lists, identity-versus-manifestation separation, omission rules, and negative guidance against invalid structure-family labels such as `Tension`.
+
+## 2026-06-17 - Anchor V1 Canon Selection Quality Calibration v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/anchor-v1/constructor/llm-anchor-constructor.ts`
+  - `src/cognition/anchor-v1/constructor/__tests__/anchor-constructor.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/anchor-v1/constructor/__tests__/anchor-constructor.test.ts` -> fail first (`1` file, `45` tests) before prompt calibration, then pass (`1` file, `47` tests)
+  - `npx.cmd tsx scripts/dev-run-anchor-v1.ts ae7fd730-eb19-43d6-9781-20e042fc5d9c` -> pass with persisted output (`9` identities, `9` manifestations, `21` participations)
+  - Dev-run artifact: `scripts/output/anchor-v1-ae7fd730-eb19-43d6-9781-20e042fc5d9c-2026-06-17T16-09-55-272Z`
+  - `npm.cmd test` -> pass (`122` files, `597` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-17T16-12-31-793Z.log`
+- Notes:
+  - Tightened prompt guidance around dominant-pattern reasoning so STRUCTURE selection prefers the best-fitting canonical family rather than generic fallbacks, with explicit disambiguation for `Transition`, `Conflict`, `Search`, `Repair`, `Separation`, and `Connection`.
+  - Added packet-level prompt regressions to guard that the calibration remains general across packets and is not tuned to a single reviewed dream.
+  - Strengthened participation-role instructions without changing schema, validator, mapper, or persistence contracts; the live probe still shows an `EVIDENCE` bias, so this ticket improves instruction quality but does not guarantee balanced role distribution on every run.
+
+## 2026-06-18 - Backend V2 Live Runtime Cutover: Latent V2 Authority Preparation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/runtime/orchestration/prepare-latent-opening-for-reflection.ts`
+  - `src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts` -> pass (`1` file, `6` tests)
+  - `npm.cmd test -- app/api/reflective-objects/[id]/latent-snapshots/__tests__/route.test.ts` -> pass (`1` file, `2` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd test` -> pass (`122` files, `599` tests)
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-18T06-07-56-089Z.log`
+- Notes:
+  - Switched live reflection/opening preparation to a V2-first path that checks Observation V2, reuses or generates Latent V2 manifestations, and only falls back to legacy latent snapshot scaffolding when V2 authority is unavailable or cannot provide a bounded opening handoff.
+  - Added a temporary convergence bridge that maps Latent V2 manifestations into the existing Opening contract without exposing manifestation summaries or other raw Latent V2 internals as user-facing truth.
+  - Kept the legacy latent snapshot path intact as explicit compatibility fallback and left the manual latent snapshot API unchanged for now.
+
+## 2026-06-18 - Thread V2 First Contribution Creation Seam
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/api/openings/[id]/responses/route.ts`
+  - `app/api/openings/[id]/responses/__tests__/route.test.ts`
+  - `app/api/openings/[id]/activate/__tests__/route.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- app/api/openings/[id]/responses/__tests__/route.test.ts app/api/openings/[id]/activate/__tests__/route.test.ts` -> fail first (`2` files, `7` tests) before seam implementation, then pass (`2` files, `7` tests)
+  - `npm.cmd run typecheck` -> first fail on nullable `createdThread` branch in `app/api/openings/[id]/responses/route.ts`, then pass after narrowing
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-18T13-20-13-002Z.log`
+- Notes:
+  - Established the first runtime seam where a user-authored reflective response creates a compatibility-backed thread only when no thread id is already provided in the request.
+  - Preserved the existing response persistence order, opening activation behavior, object lineage persistence, opening-response association behavior, and explicit-thread compatibility path.
+  - Kept the existing `reflective_threads` substrate in compatibility-only service as an interim seam and did not introduce reflection, completion, or workflow semantics.
+
+## 2026-06-18 - Thread V2 Re-entry / Viewport Surfacing
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/threads/contracts.ts`
+  - `src/infrastructure/supabase/repositories/thread-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/thread-supabase-repository.test.ts`
+  - `src/reflective-space/composition/compose-reflective-space-viewport.ts`
+  - `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts src/infrastructure/supabase/repositories/__tests__/thread-supabase-repository.test.ts` -> fail first (`2` files, `6` tests) before object-scoped thread retrieval, then pass (`2` files, `6` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-18T13-28-54-451Z.log`
+- Notes:
+  - Added a compatibility-backed object-scoped thread retrieval path to the existing thread repository so the reflective-space viewport can load threads associated with the current center object on re-entry.
+  - Switched viewport composition to prefer object-first thread loading when `centerObjectId` is present, while preserving the existing user-wide fallback for compatibility and keeping bounded window behavior unchanged.
+  - Left response surfaces, dialogue traces, opening surfaces, and the quarantined thread substrate behavior otherwise unchanged.
+
+## 2026-06-18 - Opening Surfacing Object-First Alignment
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/openings/contracts.ts`
+  - `src/infrastructure/supabase/repositories/opening-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/opening-supabase-repository.test.ts`
+  - `src/reflective-space/composition/compose-reflective-space-viewport.ts`
+  - `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/opening-supabase-repository.test.ts src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts` -> fail first (`2` files, `10` tests) before object-first opening retrieval, then pass (`2` files, `10` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-18T13-42-10-079Z.log`
+- Notes:
+  - Added an object-first opening surface retrieval path to the compatibility-backed opening repository, scoped by user, non-archived state, and reflective-object lineage via `source_objects`.
+  - Switched viewport composition to prefer object-first opening loading when `centerObjectId` is present, while preserving the existing user-wide fallback and suppression filtering.
+  - Left opening activation, suppression, dialogue traces, latent generation, convergence bridge behavior, and opening construction logic unchanged.
+
+## 2026-06-18 - Opening Response Thread Lineage Hardening
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/api/openings/[id]/responses/route.ts`
+  - `app/api/openings/[id]/responses/__tests__/route.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- app/api/openings/[id]/responses/__tests__/route.test.ts app/api/openings/[id]/activate/__tests__/route.test.ts` -> fail first (`2` files, `9` tests) before thread reuse and lineage validation, then pass (`2` files, `9` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass
+  - Build log summary: `docs/BUILD_LOG.md`
+  - Build log artifact: `docs/build-logs/2026-06-18T14-09-14-848Z.log`
+- Notes:
+  - Hardened the compatibility-backed opening response save path so it reuses an existing opening-linked thread when object-lineage-compatible thread continuity already exists, instead of creating duplicate threads on repeated saves.
+  - Added explicit object-lineage validation for supplied `threadId` values before response persistence continues.
+  - Normalized response-thread association creation so both the explicit-thread and created-thread paths persist the same response-thread lineage substrate.
+
+## 2026-06-18 - Opening V2 Constructor MVP
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/openings/opening-v2-constructor/`
+  - `src/cognition/openings/__tests__/opening-v2-constructor.test.ts`
+  - `src/domain/openings/types.ts`
+  - `src/infrastructure/supabase/adapters/opening-row.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/opening-supabase-repository.test.ts`
+  - `src/runtime/orchestration/prepare-latent-opening-for-reflection.ts`
+  - `src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts`
+  - `scripts/dev-run-opening-v2.ts`
+  - `supabase/migrations/20260618_0027_opening_v2_metadata.sql`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/openings/__tests__/opening-v2-constructor.test.ts` -> pass (`1` file, `11` tests)
+  - `npm.cmd test -- src/cognition/openings/__tests__/generate-opening-v2-create-input.test.ts` -> pass (`1` file, `1` test)
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/opening-supabase-repository.test.ts` -> fail first on missing Opening V2 metadata persistence, then pass (`1` file, `7` tests)
+  - `npm.cmd test -- src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts` -> pass (`1` file, `6` tests)
+  - `npm.cmd run typecheck` -> fail first on duplicate import and candidate typing, then pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-18T19-44-29-083Z.log`; a parallel second invocation collided and logged `docs/build-logs/2026-06-18T19-48-41-641Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added an Opening V2 constructor path from persisted latent opportunity manifestations into the existing openings substrate as a provisional compatibility strategy, not final Opening V2 persistence architecture.
+  - Persisted `question` into `utterance` and added narrow metadata persistence for `context` plus `sourceOpportunityManifestationId`.
+  - Replaced the prior Latent V2 compatibility utterance bridge with generated Opening V2 question content when the constructor succeeds, while preserving a bounded fallback bridge when generation fails.
+  - Generated sample Opening V2 outputs from the saved latent run via `scripts/dev-run-opening-v2.ts` for owner review before broader rollout: `scripts/output/opening-v2-samples-2026-06-18T19-44-05-370Z.json`
+
+## 2026-06-19 - Opening V2 Content Calibration
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/openings/opening-v2-constructor/llm-opening-v2-constructor.ts`
+  - `src/cognition/openings/opening-v2-constructor/validator.ts`
+  - `src/cognition/openings/opening-v2-constructor/generate-opening-v2-create-input.ts`
+  - `src/cognition/openings/__tests__/opening-v2-constructor.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/openings/__tests__/opening-v2-constructor.test.ts` -> pass (`1` file, `15` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-19T06-25-00-770Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Tightened the Opening V2 prompt around a single structural turning point rather than whole-opportunity summarization.
+  - Added validator guardrails against reflective jargon, abstract relationship framing, over-broad opportunity coverage, and explanatory context summaries.
+  - Regenerated sample Opening V2 outputs from the saved latent run for owner review: `scripts/output/opening-v2-samples-2026-06-19T06-24-43-399Z.json`
+
+## 2026-06-19 - Opening V2 Single Turning Point Calibration
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/openings/opening-v2-constructor/llm-opening-v2-constructor.ts`
+  - `src/cognition/openings/opening-v2-constructor/validator.ts`
+  - `src/cognition/openings/__tests__/opening-v2-constructor.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/openings/__tests__/opening-v2-constructor.test.ts` -> pass (`1` file, `17` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-19T06-41-30-462Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Tightened the prompt so the model must choose one salient turning point, ignore other major shifts, and prefer a narrower doorway-question over a broader summary-question.
+  - Added heuristic validation pressure against multiple major shifts by splitting structural node labels into sub-fragments and counting distinct matched turning-point signals.
+  - Regenerated sample Opening V2 outputs from the saved latent run for owner review: `scripts/output/opening-v2-samples-2026-06-19T06-41-20-851Z.json`
+
+## 2026-06-19 - Opening V2 Repair and Natural Language Stabilization
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/openings/opening-v2-constructor/llm-opening-v2-constructor.ts`
+  - `src/cognition/openings/opening-v2-constructor/validator.ts`
+  - `src/cognition/openings/opening-v2-constructor/generate-opening-v2-create-input.ts`
+  - `src/cognition/openings/__tests__/opening-v2-constructor.test.ts`
+  - `src/cognition/openings/__tests__/generate-opening-v2-create-input.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/openings/__tests__/opening-v2-constructor.test.ts` -> pass (`1` file, `20` tests)
+  - `npm.cmd test -- src/cognition/openings/__tests__/generate-opening-v2-create-input.test.ts` -> pass (`1` file, `3` tests)
+  - `npm.cmd run typecheck` -> fail first on corrupted generated `.next/dev/types` artifacts, then pass after clearing that generated folder
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> fail first at `docs/build-logs/2026-06-19T08-45-38-895Z.log` on the same corrupted `.next/dev/types` artifacts, then pass at `docs/build-logs/2026-06-19T08-47-27-024Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Split repair into an explicit repair task with failure-specific instructions and previous invalid draft context, instead of treating repair as a broad retry.
+  - Tuned multi-shift validation to target enumerated structural bundling while allowing single-action anchored questions like the Markus/Kata repair scene.
+  - Regenerated Opening V2 samples from the saved latent run for owner review after the repair changes: `scripts/output/opening-v2-samples-2026-06-19T08-44-29-292Z.json`
+
+## 2026-06-19 - Opening V2 Hungarian Language Polish Pass
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/openings/opening-v2-constructor/llm-opening-v2-constructor.ts`
+  - `src/cognition/openings/opening-v2-constructor/generate-opening-v2-create-input.ts`
+  - `src/cognition/openings/opening-v2-constructor/index.ts`
+  - `src/cognition/openings/__tests__/opening-v2-constructor.test.ts`
+  - `src/cognition/openings/__tests__/generate-opening-v2-create-input.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/openings/__tests__/generate-opening-v2-create-input.test.ts` -> pass (`1` file, `5` tests)
+  - `npm.cmd test -- src/cognition/openings/__tests__/opening-v2-constructor.test.ts` -> pass (`1` file, `21` tests)
+  - Sample review runs from the provided latent run:
+    - `scripts/output/opening-v2-samples-2026-06-19T09-08-51-695Z.json`
+    - `scripts/output/opening-v2-samples-2026-06-19T09-10-34-897Z.json`
+    - `scripts/output/opening-v2-samples-2026-06-19T09-11-08-663Z.json`
+- Notes:
+  - Added a separate Hungarian-only polish prompt that runs only after an Opening V2 output has already passed validation.
+  - Kept repair and polish separate; polish rewrites only `question` and `context`, while preserving non-text fields unchanged.
+  - Added guardrails and fallback so the original valid Opening is reused if polish fails provider-side, fails validation, or changes the question frame/anchor in a way that suggests broadened focus.
+  - Exposed `polishStatus` in the constructor result for sample-review visibility without changing Opening persistence.
+
+## 2026-06-20 - Latent Discovery Phase 1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/discovery/types.ts`
+  - `src/cognition/latent-v2/discovery/input-packet-composer.ts`
+  - `src/cognition/latent-v2/discovery/index.ts`
+  - `src/cognition/latent-v2/discovery/__tests__/input-packet-composer.test.ts`
+  - `src/cognition/latent-v2/packet-shared.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/input-packet-composer.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+  - `docs/superpowers/plans/2026-06-20-latent-discovery-phase1.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/latent-v2/discovery/__tests__/input-packet-composer.test.ts src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` -> pass (`3` files, `29` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-20T09-00-44-215Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added an internal-only Discovery packet contract that is explicitly ephemeral and re-creatable from Observation V2 inputs.
+  - Preserved scene grouping, boundary signals, derived structures, and per-scene observation clusters without wiring Discovery into production orchestration yet.
+  - Replaced the latent constructor packet's blanket `category: "other"` fallback with derived-structure-based category inference so packet preservation improves before any global behavior swap.
+
+## 2026-06-20 - Latent Discovery Phase 2
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/discovery/types.ts`
+  - `src/cognition/latent-v2/discovery/parser.ts`
+  - `src/cognition/latent-v2/discovery/validator.ts`
+  - `src/cognition/latent-v2/discovery/discovery-pass.ts`
+  - `src/cognition/latent-v2/discovery/index.ts`
+  - `src/cognition/latent-v2/discovery/__tests__/discovery-runtime.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/latent-v2/discovery/__tests__/input-packet-composer.test.ts src/cognition/latent-v2/discovery/__tests__/discovery-runtime.test.ts src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` -> pass (`4` files, `32` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-20T09-24-41-890Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added the first internal Discovery runtime output contract with ephemeral candidate structures, scene refs, evidence groups, structure sketches, distinctness rationale, and uncertainty while keeping identity, lifecycle, salience, and persistence concerns out of scope.
+  - Implemented a dedicated Discovery parser and validator that check candidate shape, packet-local scene and observation linkage, evidence-group integrity, and minimal structural presence without reusing Opportunity construction validation rules.
+  - Added a first non-production deterministic Discovery pass plus a dense multi-scene regression that verifies multiplicity, late-scene retention, and evidence linkage without cutting production Latent orchestration over to Discovery yet.
+
+## 2026-06-20 - Deep Reflection UX Refinement v1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/ui/reflective-space/deep-reflection-shell.tsx`
+  - `src/ui/reflective-space/deep-reflection-shell.module.css`
+  - `src/ui/reflective-space/__tests__/deep-reflection-shell.test.tsx`
+  - `docs/superpowers/specs/2026-06-20-deep-reflection-ux-refinement-v1-design.md`
+  - `docs/superpowers/plans/2026-06-20-deep-reflection-ux-refinement-v1.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/ui/reflective-space/__tests__/deep-reflection-shell.test.tsx` -> pass (`1` file, `2` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`130` files, `649` tests)
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-20T09-34-22-794Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Removed the detached Deep Reflection hero treatment so the opening now reads as the first thread entry instead of duplicated header content.
+  - Converted the shell into a viewport-bounded thread surface with internal dialogue scrolling and a reduced composer footprint.
+  - Omitted empty support sections entirely and added a narrow-screen `Context` reveal control that appears only when support content exists.
+
+## 2026-06-20 - Deep Reflection UX Refinement v2
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/ui/reflective-space/deep-reflection-shell.tsx`
+  - `src/ui/reflective-space/deep-reflection-shell.module.css`
+  - `src/ui/reflective-space/__tests__/deep-reflection-shell.test.tsx`
+  - `docs/superpowers/specs/2026-06-20-deep-reflection-ux-refinement-v2-design.md`
+  - `docs/superpowers/plans/2026-06-20-deep-reflection-ux-refinement-v2.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/ui/reflective-space/__tests__/deep-reflection-shell.test.tsx` -> pass (`1` file, `2` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`130` files, `649` tests)
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-20T10-13-15-694Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Replaced visible shell copy with Hungarian `tegező` language, including a `Kontextus` reveal control and an accessible `Küldés` action.
+  - Moved the send action into the composer field, keeping it disabled when the textarea is empty and returning it to the disabled state after a successful submit clears the field.
+  - Removed phantom no-rail spacing by centering the thread column when support content is absent, while also softening the outer shell and shifting tones toward Lumira’s green-beige Orientation atmosphere.
+
+## 2026-06-21 - Deep Reflection UX Refinement v3
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/ui/reflective-space/deep-reflection-shell.tsx`
+  - `src/ui/reflective-space/deep-reflection-shell.module.css`
+  - `src/ui/reflective-space/__tests__/deep-reflection-shell.test.tsx`
+  - `docs/superpowers/specs/2026-06-21-deep-reflection-ux-refinement-v3-design.md`
+  - `docs/superpowers/plans/2026-06-21-deep-reflection-ux-refinement-v3.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/ui/reflective-space/__tests__/deep-reflection-shell.test.tsx` -> pass (`1` file, `2` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`131` files, `654` tests)
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-21T06-47-44-869Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Preserved the vertical spaciousness while removing most of the thread-surface chrome so the opening, replies, and composer define the rhythm.
+  - Restyled the opening as a lighter lead message and user entries as calm reply bubbles with subtle alignment cues inside Lumira's green-beige atmosphere.
+  - Updated the composer placeholder to `Írd le, amit gondolsz...` and enlarged the embedded `Küldés` arrow without changing the button footprint or submit-enable behavior.
+
+## 2026-06-21 - Deep Reflection UX Refinement v4
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/objects/[objectId]/reflect/[threadId]/page.tsx`
+  - `src/ui/reflective-space/deep-reflection-shell.tsx`
+  - `src/ui/reflective-space/deep-reflection-shell.module.css`
+  - `src/ui/reflective-space/__tests__/deep-reflection-shell.test.tsx`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/ui/reflective-space/__tests__/deep-reflection-shell.test.tsx` -> pass (`1` file, `3` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`134` files, `668` tests)
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-21T10-01-33-799Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Diagnosed that composer margin changes were being visually neutralized by the dialogue lane's flex-fill behavior, then separated the scrollable lane and composer into distinct shell rows so lower composer placement is controlled intentionally instead of by absorbed margins.
+  - Added a subtle top-left back chevron that returns one attentional level to object Orientation at `/objects/[objectId]`, using the same quiet circular back-link treatment already established elsewhere in the app.
+  - Kept the fixed viewport, internal dialogue scrolling, mobile context reveal behavior, and the prior bubble-depth styling direction unchanged while trimming bottom shell padding so the composer sits closer to the viewport floor.
+
+## 2026-06-20 - Latent Discovery Phase 3
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/discovery/types.ts`
+  - `src/cognition/latent-v2/discovery/cue-builder.ts`
+  - `src/cognition/latent-v2/discovery/llm-discovery.ts`
+  - `src/cognition/latent-v2/discovery/hybrid-discovery-pass.ts`
+  - `src/cognition/latent-v2/discovery/validator.ts`
+  - `src/cognition/latent-v2/discovery/index.ts`
+  - `src/cognition/latent-v2/discovery/__tests__/hybrid-discovery-pass.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/latent-v2/discovery/__tests__/discovery-runtime.test.ts src/cognition/latent-v2/discovery/__tests__/input-packet-composer.test.ts src/cognition/latent-v2/discovery/__tests__/hybrid-discovery-pass.test.ts` -> pass (`3` files, `11` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-20T10-35-41-918Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added a non-production Hybrid Discovery path that keeps heuristic logic strictly in a cue-building role while delegating candidate discovery itself to a dedicated LLM Discovery pass.
+  - Introduced a Discovery-specific prompt and strict JSON-schema contract that ask only for internal candidate reflective structures, preserve multiplicity and ambiguity, and explicitly avoid Opportunity construction, persistence, lifecycle, salience, and user-facing language.
+  - Kept Phase 2’s deterministic placeholder pass intact while wiring a separate cue -> LLM -> parser -> validator -> Discovery Result pipeline for experimental validation on dense multi-scene dreams without production cutover.
+
+## 2026-06-21 - Experimental Opportunity Construction Generator Phase 5
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/types.ts`
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/packet.ts`
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/parser.ts`
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/validator.ts`
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/harness.ts`
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/llm-experimental-opportunity-constructor.ts`
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/comparison.ts`
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/regression.ts`
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/index.ts`
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/experimental-opportunity-constructor.test.ts`
+  - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/regression.test.ts`
+  - `scripts/dev-run-latent-v2-experimental-comparison.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/experimental-opportunity-constructor.test.ts src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/regression.test.ts` -> pass (`2` files, `6` tests)
+  - `npm.cmd run typecheck` -> failed due pre-existing errors in `src/ui/reflective-space/__tests__/deep-reflection-shell.test.tsx:105` and `:106`
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-21T08-02-11-342Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added an isolated experimental Opportunity Construction path that consumes full evidence plus Discovery output while explicitly treating Discovery as mandatory to consider but not mandatory to promote.
+  - Added a diagnostic-heavy experimental output contract that records candidate outcomes, merge decisions, split decisions, rejected candidates, and missed-structure opportunities without changing production Opportunity contracts or persistence.
+  - Added side-by-side comparison and regression harnesses so the current constructor and the experimental constructor can be evaluated against the same dream inputs for multiplicity, distinctness, evidence grounding, late-scene retention, and ambiguity preservation.
+
+## 2026-06-23 - Glossary V2 Stabilization Phase 1 - Cross-Dream Continuity Visibility
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/glossary/types.ts`
+  - `src/domain/glossary/continuity-visibility.ts`
+  - `src/domain/glossary/__tests__/continuity-visibility.test.ts`
+  - `app/api/reflective-objects/[id]/glossary-candidates/route.ts`
+  - `app/api/reflective-objects/[id]/glossary-candidates/__tests__/route.test.ts`
+  - `src/reflective-space/composition/compose-object-orientation-payload.ts`
+  - `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`
+  - `src/ui/object-orientation/view-model.ts`
+  - `src/ui/object-orientation/object-orientation-layer.tsx`
+  - `src/ui/object-orientation/object-orientation-layer.module.css`
+  - `src/ui/object-orientation/__tests__/orientation-layer.test.tsx`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/domain/glossary/__tests__/continuity-visibility.test.ts app/api/reflective-objects/[id]/glossary-candidates/__tests__/route.test.ts src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts src/ui/object-orientation/__tests__/orientation-layer.test.tsx` -> pass (`4` files, `12` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-23T07-45-14-696Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added a projection-only continuity visibility layer that groups existing candidate rows by `sourceCategory + normalizedKey`, preserving current persistence ownership while making cross-dream recurrence visible before confirmation.
+  - Extended the reflective-object glossary candidates route and the object orientation payload composer to project `dreamCount`, `firstSeenAt`, `lastSeenAt`, and `possibleContinuity` onto object-local candidates without creating terms, appearances, or confirmation side effects.
+  - Surfaced recurring unconfirmed candidates in the orientation glossary panel as a quiet `Lehetséges folytonosság • N álomban` hint, while leaving single-dream candidates and confirmation authority behavior unchanged.
+## 2026-06-24 - Glossary V2 Stabilization - Runtime ContinuityHypothesis Contract
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/glossary/types.ts`
+  - `src/domain/glossary/continuity-hypothesis.ts`
+  - `src/domain/glossary/continuity-visibility.ts`
+  - `src/domain/glossary/__tests__/continuity-visibility.test.ts`
+  - `src/cognition/glossary/extract-glossary-candidates-from-observations.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/domain/glossary/__tests__/continuity-visibility.test.ts` -> pass (`1` file, `6` tests)
+  - `npx.cmd vitest run app/api/reflective-objects/[id]/glossary-candidates/__tests__/route.test.ts` -> pass (`1` file, `6` tests)
+  - `npx.cmd vitest run src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts` -> pass (`1` file, `8` tests)
+  - `npx.cmd vitest run src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts` -> pass (`1` file, `10` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run test` -> pass (`136` files, `689` tests)
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-06-24T07-56-44-793Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Introduced a runtime-only `ContinuityHypothesis` domain contract so cross-dream recurrence is represented as an explicit advisory aggregation unit instead of only as candidate decoration.
+  - Kept candidate rows dream-local and persistence-neutral while attaching hypothesis-backed visibility summaries to projected candidates.
+  - Added conservative grouping rules: prefer `identityKey` when present, otherwise fall back to `sourceCategory + normalizedKey`, and mark fallback-based hypotheses explicitly.

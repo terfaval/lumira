@@ -13,6 +13,14 @@ export type ResponseAssociationId = string;
 export type LatentSnapshotId = string;
 export type LatentSignalId = string;
 export type LatentSuggestionId = string;
+export type LatentOpportunityIdentityId = string;
+export type LatentOpportunityManifestationId = string;
+export type LatentOpportunityEvidenceBlockId = string;
+export type LatentOpportunityEvidenceObservationId = string;
+export type LatentOpportunityGlossaryLinkId = string;
+export type AnchorIdentityId = string;
+export type AnchorManifestationId = string;
+export type AnchorParticipationId = string;
 export type ObservationId = string;
 export type ObservationFragmentId = string;
 

@@ -41,6 +41,53 @@ describe("assessGlossaryContinuityAdmission", () => {
       admitted: false,
       reason: "system_perspective_label",
     });
+
+    expect(assessGlossaryContinuityAdmission({
+      label: "Álmodó",
+      sourceCategory: "actor",
+      recurrenceCount: 3,
+    })).toEqual({
+      admitted: false,
+      reason: "system_perspective_label",
+    });
+
+    expect(assessGlossaryContinuityAdmission({
+      label: "Saját magam",
+      sourceCategory: "actor",
+      recurrenceCount: 1,
+    })).toEqual({
+      admitted: false,
+      reason: "system_perspective_label",
+    });
+  });
+
+  it("rejects qualified dreamer variants as system-perspective labels", () => {
+    expect(assessGlossaryContinuityAdmission({
+      label: "Álmodó (gyerek)",
+      sourceCategory: "actor",
+      recurrenceCount: 1,
+    })).toEqual({
+      admitted: false,
+      reason: "system_perspective_label",
+    });
+
+    expect(assessGlossaryContinuityAdmission({
+      label: "Én (idősebb)",
+      sourceCategory: "actor",
+      recurrenceCount: 1,
+    })).toEqual({
+      admitted: false,
+      reason: "system_perspective_label",
+    });
+
+    expect(assessGlossaryContinuityAdmission({
+      label: "Dreamer (older)",
+      sourceCategory: "actor",
+      recurrenceCount: 1,
+    })).toEqual({
+      admitted: false,
+      reason: "system_perspective_label",
+    });
   });
 
   it("rejects emotional labels", () => {
@@ -132,7 +179,7 @@ describe("assessGlossaryContinuityAdmission", () => {
       recurrenceCount: 1,
     })).toEqual({
       admitted: false,
-      reason: "composite_or_narrative_phrase",
+      reason: "generic_non_identity_label",
     });
 
     expect(assessGlossaryContinuityAdmission({

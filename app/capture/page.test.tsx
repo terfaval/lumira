@@ -10,6 +10,7 @@ const updateReflectiveObjectMock = vi.fn();
 const createObservationFromBundleMock = vi.fn();
 const generateGlossaryCandidatesForReflectiveObjectMock = vi.fn();
 const buildLlmSceneObservationExtractionMock = vi.fn();
+const constructDerivedStructuresFromObservationBundleMock = vi.fn();
 const generateDreamTitleSuggestionMock = vi.fn();
 const randomUuidMock = vi.fn();
 
@@ -40,6 +41,10 @@ vi.mock("@/src/runtime/orchestration/generate-glossary-candidates-for-reflective
 
 vi.mock("@/src/cognition/observation/llm-scene-observation-extractor", () => ({
   buildLlmSceneObservationExtraction: buildLlmSceneObservationExtractionMock,
+}));
+
+vi.mock("@/src/cognition/observation/llm-derived-structure-constructor", () => ({
+  constructDerivedStructuresFromObservationBundle: constructDerivedStructuresFromObservationBundleMock,
 }));
 
 vi.mock("@/src/cognition/title/llm-dream-title-generator", () => ({
@@ -114,6 +119,7 @@ describe("CapturePage", () => {
     createObservationFromBundleMock.mockReset();
     generateGlossaryCandidatesForReflectiveObjectMock.mockReset();
     buildLlmSceneObservationExtractionMock.mockReset();
+    constructDerivedStructuresFromObservationBundleMock.mockReset();
     generateDreamTitleSuggestionMock.mockReset();
     randomUuidMock.mockReset();
 
@@ -129,6 +135,10 @@ describe("CapturePage", () => {
         scenes: [],
       },
     });
+    constructDerivedStructuresFromObservationBundleMock.mockImplementation(async (bundle) => ({
+      ...bundle,
+      runtimeVersion: "observation_v2_phase1",
+    }));
     generateDreamTitleSuggestionMock.mockResolvedValue({
       mode: "generated",
       title: "The Lantern House",
@@ -218,11 +228,18 @@ describe("CapturePage", () => {
         id: "obj-123",
       }),
     );
+    expect(constructDerivedStructuresFromObservationBundleMock).toHaveBeenCalledWith({
+      reflectiveObjectId: "obj-123",
+      userId: "user-1",
+      source: "system_llm_extract",
+      scenes: [],
+    });
     expect(createObservationFromBundleMock).toHaveBeenCalledWith({
       reflectiveObjectId: "obj-123",
       userId: "user-1",
       source: "system_llm_extract",
       scenes: [],
+      runtimeVersion: "observation_v2_phase1",
     });
     expect(generateGlossaryCandidatesForReflectiveObjectMock).toHaveBeenCalledWith({
       reflectiveObjectId: "obj-123",
@@ -230,7 +247,7 @@ describe("CapturePage", () => {
     });
   });
 
-  it("generates glossary candidates after observation persistence and before redirect", async () => {
+  it("constructs derived structures after extraction, then persists before glossary generation and redirect", async () => {
     const pageModule = await import("./page");
     const page = await pageModule.default();
     const submitCapture = findFormAction(page);
@@ -240,6 +257,12 @@ describe("CapturePage", () => {
 
     await submitCapture?.(formData);
 
+    expect(buildLlmSceneObservationExtractionMock.mock.invocationCallOrder[0]).toBeLessThan(
+      constructDerivedStructuresFromObservationBundleMock.mock.invocationCallOrder[0],
+    );
+    expect(constructDerivedStructuresFromObservationBundleMock.mock.invocationCallOrder[0]).toBeLessThan(
+      createObservationFromBundleMock.mock.invocationCallOrder[0],
+    );
     expect(createObservationFromBundleMock.mock.invocationCallOrder[0]).toBeLessThan(
       generateGlossaryCandidatesForReflectiveObjectMock.mock.invocationCallOrder[0],
     );

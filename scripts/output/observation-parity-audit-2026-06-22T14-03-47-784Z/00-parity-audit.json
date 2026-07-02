@@ -1,0 +1,2644 @@
+{
+  "summary": {
+    "analyzedDreamCount": 13,
+    "driftCounts": {
+      "MINIMAL DRIFT": 1,
+      "MODERATE DRIFT": 1,
+      "MAJOR DRIFT": 7,
+      "CRITICAL DRIFT": 4
+    },
+    "freshMoreScenesCount": 9,
+    "lateMissingCount": 6,
+    "languageDriftCount": 7,
+    "coverageDeltaCorrelationWithLength": -0.287,
+    "sceneDeltaCorrelationWithLength": 0.009,
+    "lengthBands": {
+      "short": {
+        "count": 6,
+        "avgStoredCoverage": 56.5,
+        "avgFreshCoverage": 70.2,
+        "avgCoverageDelta": 13.8,
+        "avgStoredScenes": 2.8,
+        "avgFreshScenes": 4.5
+      },
+      "medium": {
+        "count": 6,
+        "avgStoredCoverage": 37.9,
+        "avgFreshCoverage": 31.2,
+        "avgCoverageDelta": -6.7,
+        "avgStoredScenes": 2.2,
+        "avgFreshScenes": 3
+      },
+      "long": {
+        "count": 1,
+        "avgStoredCoverage": 19,
+        "avgFreshCoverage": 30.7,
+        "avgCoverageDelta": 11.7,
+        "avgStoredScenes": 1,
+        "avgFreshScenes": 4
+      }
+    },
+    "avgStoredCoverage": 45,
+    "avgFreshCoverage": 49.2,
+    "avgCoverageDelta": 4.2,
+    "avgStoredSceneCount": 2.4,
+    "avgFreshSceneCount": 3.8,
+    "rootCauseCounts": {
+      "Persistence Failure": 10,
+      "Orchestration Failure": 10,
+      "Historical Artifact": 9,
+      "Extraction Failure": 12
+    }
+  },
+  "results": [
+    {
+      "dream": {
+        "id": "ee9500f5-427b-4805-bdec-d118536efb3c",
+        "title": "Dombok, Lépcső, és Moslék Ömlik",
+        "createdAt": "2026-06-12T14:58:27.46601+00:00",
+        "length": 939,
+        "sourceLanguage": "hu",
+        "lengthBand": "short"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 1,
+        "observationCount": 6,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 310,
+          "coveragePercent": 33
+        },
+        "categoryDistribution": {
+          "agency": 3,
+          "location": 3
+        },
+        "summaryLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 1,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 5,
+            "unknown": 1
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change",
+              "actor_change"
+            ],
+            "summary": "The dreamer and others hike through unknown hilly terrain, reach steps with dry snow, enter a closed building where the stairs become stranger, then reach a door-like structure. The father presses a button, causing a slurry to pour through the door, knocking the dreamer and some others down a level while others remain above. They eventually find someone who can help them."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 4,
+        "observationCount": 19,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 657,
+          "coveragePercent": 70
+        },
+        "categoryDistribution": {
+          "actor": 2,
+          "affect": 3,
+          "agency": 4,
+          "interaction": 1,
+          "location": 7,
+          "other": 2
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 4,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 19,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Gyapai túra az ismeretlen dombos vidéken, ahol száraz hóval borított lépcsőhöz érkeznek és felmennek egy zárt épületbe, ahol furcsa lépcsők vannak."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Apja megnyom egy gombot, és egy moslék ömlik ki az ajtón, ami miatt a mesélőt és másokat lesodorja, így csak lejjebb tud megkapaszkodni, míg a többiek fent maradnak."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change",
+              "narrative_change"
+            ],
+            "summary": "Találnak valakit, aki segíteni tud, majd egy nagy szobában sok emberrel találkoznak, akik kérdeznek és fenyegetőek lesznek, miközben az álmodó az ablakon át Pestre lát, amit gyanúsnak talál."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "Az álmodók elmenekülnek egy hosszú vízi csúszdán keresztül, majd az álmodó felébred."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 3,
+        "observationDelta": 13,
+        "coverageDelta": 37,
+        "categoryDelta": {
+          "actor": 2,
+          "affect": 3,
+          "agency": 1,
+          "interaction": 1,
+          "location": 4,
+          "other": 2
+        },
+        "languageDelta": "en/en->hu/hu"
+      },
+      "driftClass": "CRITICAL DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:apak:apám",
+          "actor:gyapai tura csoport:gyapai túra résztvevői",
+          "actor:masok segito:valaki",
+          "actor:reszvevok:a többiek",
+          "actor:sok ember:sok ember a nagy szobában",
+          "emotion:feszultseg:feszültség",
+          "emotion:menekules feszultsegben:menekülés feszültségben",
+          "location:ajtoszeruseg:ajtószerűség",
+          "location:ismeretlen dombos videk:ismeretlen dombos vidék",
+          "location:lepcsok:lépcsők",
+          "location:nagy szoba:nagy szoba",
+          "location:pest:Pest",
+          "location:vizi csuszdaszeruseg:vízi csúszdaszerűség",
+          "location:zart epulet:zárt épület",
+          "object:gomb:gomb",
+          "object:moslek:moslék"
+        ],
+        "lostGlossaryCandidateCount": 16,
+        "lateOnlyObservations": [
+          {
+            "sceneId": "scene3",
+            "observationId": "obs3_3",
+            "text": "Az emberek kérdezik, hogy hogyan kerültek ide és miért jöttek.",
+            "spanStart": 349,
+            "spanEnd": 386
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "obs3_4",
+            "text": "Az emberek egyre barátságtalanabbak lesznek.",
+            "spanStart": 386,
+            "spanEnd": 404
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "obs3_5",
+            "text": "Az emberek azt hiszik, hogy ellenőrök vagy még rosszabbak.",
+            "spanStart": 404,
+            "spanEnd": 436
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "obs3_6",
+            "text": "Nem mondanak semmit, csak fenyegetnek és kérdezősködnek.",
+            "spanStart": 436,
+            "spanEnd": 470
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "obs3_7",
+            "text": "Az álmodó egy ablakon keresztül meglátja Pestet, ami gyanús a számára mert gyapán túráztak.",
+            "spanStart": 470,
+            "spanEnd": 533
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "obs3_8",
+            "text": "Nem válaszolnak az észrevételre.",
+            "spanStart": 533,
+            "spanEnd": 546
+          },
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_1",
+            "text": "El tudnak menekülni egyre feszültebb helyzetből.",
+            "spanStart": 571,
+            "spanEnd": 603
+          },
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_2",
+            "text": "Nagyon hosszan csúsznak egy vízi csúszdaszerűségen.",
+            "spanStart": 603,
+            "spanEnd": 645
+          }
+        ]
+      },
+      "rootCause": {
+        "primary": "Mixed Cause",
+        "causes": [
+          "Persistence Failure",
+          "Orchestration Failure",
+          "Historical Artifact",
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "8800b0ce-f895-4f23-b976-c11a84eee342",
+        "title": "Dry Snowed Stairs and Sludge Escape",
+        "createdAt": "2026-06-12T15:44:53.044209+00:00",
+        "length": 939,
+        "sourceLanguage": "hu",
+        "lengthBand": "short"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 3,
+        "observationCount": 11,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 464,
+          "coveragePercent": 49.4
+        },
+        "categoryDistribution": {
+          "actor": 1,
+          "agency": 1,
+          "interaction": 4,
+          "location": 4,
+          "object": 1
+        },
+        "summaryLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 3,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 9,
+            "unknown": 2
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "A journey through hilly terrain reaches a staircase covered with dry snow leading to a strange enclosed building with altered stairs and eventually a door-like structure."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Inside the building, the father presses a button; slime pours out the door, knocking the dreamer and others down the stairs; eventually they find someone to help."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "In a large room with many people questioning them suspiciously, the dreamer notices through a window that they are in Pest, which feels suspicious after hiking in Gyapa; the atmosphere becomes increasingly hostile until they manage to escape via a long water-slide-like structure."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 6,
+        "observationCount": 26,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 837,
+          "coveragePercent": 89.1
+        },
+        "categoryDistribution": {
+          "affect": 4,
+          "agency": 5,
+          "interaction": 3,
+          "location": 3,
+          "object": 5,
+          "other": 6
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 6,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 26,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Gyapai túra az ismeretlen dombos vidéken, lépcsőkhöz érkezés száraz hóval."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Zárt épületben haladunk tovább, a lépcsők furábbá válnak, ajtóhoz érkezés, apám gombnyomása."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Moslék ömlik az ajtón, engem és másokat lesodor, én lent ragadok, mások fent maradnak."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Találkozás valakivel, aki tud segíteni, majd nagy szoba sok emberrel, barátságtalan kérdezősködés, fenyegetések."
+          },
+          {
+            "sceneId": "scene5",
+            "position": 5,
+            "boundaryKinds": [
+              "perspective_change"
+            ],
+            "summary": "Észrevettem, hogy Pesten vagyunk, ami gyanús a gyapai túrához képest, nem válaszolnak."
+          },
+          {
+            "sceneId": "scene6",
+            "position": 6,
+            "boundaryKinds": [
+              "temporal_change"
+            ],
+            "summary": "A helyzet egyre feszültebb lesz, majd elmenekülünk, vízi csúszdán csúszva végül felébredek."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 3,
+        "observationDelta": 15,
+        "coverageDelta": 39.7,
+        "categoryDelta": {
+          "actor": -1,
+          "affect": 4,
+          "agency": 4,
+          "interaction": -1,
+          "location": -1,
+          "object": 4,
+          "other": 6
+        },
+        "languageDelta": "en/en->hu/hu"
+      },
+      "driftClass": "CRITICAL DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:apa:apám",
+          "emotion:baratsagtalansag:barátságtalanság",
+          "emotion:feszultseg:feszültség",
+          "emotion:gyanu:gyanú",
+          "location:abkakon keresztul latott pest:ablakon keresztül látott Pest",
+          "location:dombos videk:dombos vidék",
+          "location:nagy szoba:nagy szoba",
+          "location:pest:Pest",
+          "location:zart epulet:zárt épület",
+          "object:ablak:ablak",
+          "object:ajto:ajtószerűség",
+          "object:gomb:gomb",
+          "object:lepcso:lépcső",
+          "object:moslek:moslék",
+          "object:vizi csuszda:vízi csúszdaszerűség"
+        ],
+        "lostGlossaryCandidateCount": 15,
+        "lateOnlyObservations": [
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_4",
+            "text": "Az emberek egyre barátságtalanabbak.",
+            "spanStart": 514,
+            "spanEnd": 535
+          },
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_5",
+            "text": "Az emberek azt hiszik, hogy ellenőrök vagyunk vagy még rosszabbak.",
+            "spanStart": 536,
+            "spanEnd": 576
+          },
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_6",
+            "text": "Nem mondanak semmit, csak fenyegetnek és kérdezősködnek.",
+            "spanStart": 577,
+            "spanEnd": 623
+          },
+          {
+            "sceneId": "scene5",
+            "observationId": "obs5_1",
+            "text": "Az ablakon keresztül észrevettem, hogy Pesten vagyunk.",
+            "spanStart": 624,
+            "spanEnd": 665
+          },
+          {
+            "sceneId": "scene5",
+            "observationId": "obs5_2",
+            "text": "Gyanúsnak tartom, hogy Pesten vagyunk, mert gyapai túráztunk.",
+            "spanStart": 666,
+            "spanEnd": 695
+          },
+          {
+            "sceneId": "scene5",
+            "observationId": "obs5_3",
+            "text": "Nem válaszolnak.",
+            "spanStart": 696,
+            "spanEnd": 709
+          },
+          {
+            "sceneId": "scene6",
+            "observationId": "obs6_1",
+            "text": "A helyzet egyre feszültebb.",
+            "spanStart": 710,
+            "spanEnd": 735
+          },
+          {
+            "sceneId": "scene6",
+            "observationId": "obs6_2",
+            "text": "Egyszer csak el tudunk menekülni.",
+            "spanStart": 736,
+            "spanEnd": 775
+          }
+        ]
+      },
+      "rootCause": {
+        "primary": "Mixed Cause",
+        "causes": [
+          "Persistence Failure",
+          "Orchestration Failure",
+          "Historical Artifact"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "e2261277-40cd-44c6-80b8-2aa8bd8f5365",
+        "title": "Dry Snow Stairway Escape",
+        "createdAt": "2026-06-12T15:52:45.561347+00:00",
+        "length": 938,
+        "sourceLanguage": "hu",
+        "lengthBand": "short"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 1,
+        "observationCount": 11,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 522,
+          "coveragePercent": 55.7
+        },
+        "categoryDistribution": {
+          "actor": 2,
+          "agency": 3,
+          "interaction": 2,
+          "location": 4
+        },
+        "summaryLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 1,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 8,
+            "unknown": 3
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change",
+              "narrative_change"
+            ],
+            "summary": "A journey into unknown hilly terrain leads to climbing stairs with dry snow, entering a strange closed building with unusual stairs, encountering a door-like object where a button pressed by the father causes a flow of slop that separates the narrator from others, followed by finding someone who can help, then arriving in a large room with many hostile people who interrogate them and suspect them of being inspectors, noticing they are in Pest through a window, tension rising until they escape via a long watery slide, then waking up."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 5,
+        "observationCount": 21,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 700,
+          "coveragePercent": 74.6
+        },
+        "categoryDistribution": {
+          "actor": 2,
+          "affect": 1,
+          "agency": 3,
+          "interaction": 7,
+          "location": 4,
+          "object": 1,
+          "other": 3
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 5,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 21,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Gyapai túra ismeretlen dombos vidéken, majd száraz hóval fedett lépcső és zárt épülethez érkezés."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Apám megnyom egy gombot az ajtószerűségen, amitől moslék ömlik az ajtón, engem és másokat lesodor, én lent maradok, a többiek fent vannak."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Találkozás valakivel, aki tud segíteni."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "spatial_change",
+              "perspective_change"
+            ],
+            "summary": "Nagy szoba sok emberrel, akik kérdeznek és fenyegetnek minket, feszültség növekedése."
+          },
+          {
+            "sceneId": "scene5",
+            "position": 5,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Menekülés vízi csúszdán, majd felébredés."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 4,
+        "observationDelta": 10,
+        "coverageDelta": 18.9,
+        "categoryDelta": {
+          "actor": 0,
+          "affect": 1,
+          "agency": 0,
+          "interaction": 5,
+          "location": 0,
+          "object": 1,
+          "other": 3
+        },
+        "languageDelta": "en/en->hu/hu"
+      },
+      "driftClass": "CRITICAL DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:father:apám",
+          "actor:multiple people:sok ember",
+          "actor:unknown helper:valaki",
+          "emotion:increasing tension:növekvő feszültség",
+          "location:closed building:zárt épület",
+          "location:large room:nagy szoba",
+          "location:pest city:Pest",
+          "location:unknown hilly area:ismeretlen dombos vidék",
+          "object:button:gomb",
+          "object:door like structure:ajtószerűség",
+          "object:dry snow:száraz hó",
+          "object:slimy flood:moslék",
+          "object:stairs:lépcső",
+          "object:water slide like structure:vízi csúszdaszerűség",
+          "object:window:ablak"
+        ],
+        "lostGlossaryCandidateCount": 15,
+        "lateOnlyObservations": [
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_6",
+            "text": "Egy ablakon keresztül észreveszem, hogy Pesten vagyunk, ami gyanús.",
+            "spanStart": 548,
+            "spanEnd": 597
+          },
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_7",
+            "text": "Nem válaszolnak a gyanús kérdésekre.",
+            "spanStart": 598,
+            "spanEnd": 604
+          },
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_8",
+            "text": "A helyzet egyre feszültebb lesz.",
+            "spanStart": 605,
+            "spanEnd": 626
+          },
+          {
+            "sceneId": "scene5",
+            "observationId": "obs5_1",
+            "text": "Egyszer csak el tudunk menekülni.",
+            "spanStart": 627,
+            "spanEnd": 664
+          },
+          {
+            "sceneId": "scene5",
+            "observationId": "obs5_2",
+            "text": "Valami vízi csúszdaszerűségen csúszunk nagyon hosszan.",
+            "spanStart": 665,
+            "spanEnd": 697
+          },
+          {
+            "sceneId": "scene5",
+            "observationId": "obs5_3",
+            "text": "Majd felébredek.",
+            "spanStart": 698,
+            "spanEnd": 700
+          }
+        ]
+      },
+      "rootCause": {
+        "primary": "Mixed Cause",
+        "causes": [
+          "Persistence Failure",
+          "Orchestration Failure",
+          "Historical Artifact",
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "d354f817-f75d-40da-babd-8fb40880a6d9",
+        "title": "Lépcsők és Moslék Átjárója",
+        "createdAt": "2026-06-12T16:21:15.025716+00:00",
+        "length": 938,
+        "sourceLanguage": "hu",
+        "lengthBand": "short"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 4,
+        "observationCount": 16,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 499,
+          "coveragePercent": 53.2
+        },
+        "categoryDistribution": {
+          "actor": 3,
+          "affect": 3,
+          "agency": 1,
+          "interaction": 3,
+          "location": 6
+        },
+        "summaryLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 3,
+            "unknown": 1
+          }
+        },
+        "observationLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 13,
+            "unknown": 3
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Walking on a hilly terrain, encountering stairs covered with dry snow, ascending them."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change",
+              "narrative_change"
+            ],
+            "summary": "Entering a strange closed building with deteriorating stairs leading to a door where filth starts pouring out after a button is pressed, causing separation from the group."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change",
+              "narrative_change"
+            ],
+            "summary": "Finding someone to help, arriving in a large room with many people who interrogate and threaten them with increasing hostility, suspecting them of being inspectors or worse."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "Looking through a window noticing that they are in Pest despite previously hiking in Gyapa; the others do not answer, tense situation escalates, followed by escape via a long water-slide-like structure leading to awakening."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 4,
+        "observationCount": 18,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 744,
+          "coveragePercent": 79.3
+        },
+        "categoryDistribution": {
+          "actor": 1,
+          "affect": 2,
+          "agency": 4,
+          "interaction": 4,
+          "location": 5,
+          "metacognition": 1,
+          "object": 1
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 4,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 18,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Gyapai túra az ismeretlen dombos vidéken, majd egy lépcsőn száraz hóval feljutás egy zárt épületbe, ahol furcsa lépcsők vannak."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Apával az ajtószerűség előtt állva gombnyomásra moslék ömlik az ajtón át, engem és másokat lemos az anyag, én csak lejjebb kapaszkodok meg, míg mások fent maradnak."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Találkozás valakivel, aki tud segíteni, majd egy nagy szobában sok emberrel, akik faggatnak minket, egyre barátságtalanabbak, fenyegetőek és kérdezősködnek."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Az ablakon keresztül észreveszem, hogy Pesten vagyunk, ami gyanús a gyapái túra alapján, de nem kapok választ, a helyzet feszültté válik, majd sikeresen elmenekülünk és egy vízi csúszdán csúszunk hosszasan."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 0,
+        "observationDelta": 2,
+        "coverageDelta": 26.1,
+        "categoryDelta": {
+          "actor": -2,
+          "affect": -1,
+          "agency": 3,
+          "interaction": 1,
+          "location": -1,
+          "metacognition": 1,
+          "object": 1
+        },
+        "languageDelta": "en/en->hu/hu"
+      },
+      "driftClass": "MAJOR DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:apa:apám",
+          "actor:ismeretlen ember:valaki",
+          "actor:sok ember:sok ember",
+          "emotion:feszultseg:feszültség",
+          "location:ajtoszeruseg:ajtószerűség",
+          "location:dombosvidek:dombos vidéken",
+          "location:nagy szoba:nagy szoba",
+          "location:pest:Pesten",
+          "location:zart epulet:zárt épület",
+          "object:ablak:ablak",
+          "object:gomb:gomb",
+          "object:lepcsok:lépcsők",
+          "object:moslek:moslék",
+          "object:szaraz ho:száraz hó",
+          "object:vizicsuszda:vízi csúszda"
+        ],
+        "lostGlossaryCandidateCount": 15,
+        "lateOnlyObservations": [
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_1",
+            "text": "Az ablakon keresztül észreveszem, hogy Pesten vagyunk.",
+            "spanStart": 568,
+            "spanEnd": 609
+          },
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_2",
+            "text": "Gyanús, mert gyapán túráztunk, de nem kapok választ.",
+            "spanStart": 610,
+            "spanEnd": 645
+          },
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_3",
+            "text": "A helyzet egyre feszültebb.",
+            "spanStart": 646,
+            "spanEnd": 669
+          },
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_4",
+            "text": "Egyszer csak el tudunk menekülni.",
+            "spanStart": 670,
+            "spanEnd": 698
+          },
+          {
+            "sceneId": "scene4",
+            "observationId": "obs4_5",
+            "text": "Egy vízi csúszdaszerűségen nagyon hosszan csúszunk.",
+            "spanStart": 699,
+            "spanEnd": 744
+          }
+        ]
+      },
+      "rootCause": {
+        "primary": "Mixed Cause",
+        "causes": [
+          "Persistence Failure",
+          "Orchestration Failure",
+          "Historical Artifact",
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "f14ecef1-480e-4a3f-8c4f-a2f38729f41e",
+        "title": "Dry Snow Staircase to Flooded Door",
+        "createdAt": "2026-06-12T18:54:27.928394+00:00",
+        "length": 938,
+        "sourceLanguage": "hu",
+        "lengthBand": "short"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 1,
+        "observationCount": 13,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 712,
+          "coveragePercent": 75.9
+        },
+        "categoryDistribution": {
+          "actor": 2,
+          "affect": 2,
+          "agency": 2,
+          "interaction": 1,
+          "location": 2,
+          "object": 2,
+          "phenomenology": 2
+        },
+        "summaryLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 1,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 9,
+            "unknown": 4
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change",
+              "actor_change",
+              "narrative_change"
+            ],
+            "summary": "Group hiking in an unknown hilly area, reaching stairs covered with dry snow and entering a strange building with unusual stairs, leading to a door-like structure where the father presses a button and a slop starts pouring through the door, pushing the narrator and others down while some stay up, eventually finding someone who can help, then ending up in a large room with many people interrogating and threatening them, perceiving they might be inspectors or worse, noticing suspicious location through a window, tension rising until they escape by sliding down a long water slide-like structure and then waking up."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 4,
+        "observationCount": 15,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 472,
+          "coveragePercent": 50.3
+        },
+        "categoryDistribution": {
+          "actor": 1,
+          "affect": 2,
+          "agency": 3,
+          "location": 6,
+          "object": 1,
+          "other": 2
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 4,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 15,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Gyapai túra a dombos vidéken, lépcsőhöz érkezés száraz hóval."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change",
+              "actor_change"
+            ],
+            "summary": "Furább lépcsőkön egy zárt épülethez érünk, apám megnyom egy gombot, moslék ömlik az ajtón keresztül, a moslék lesodor engem és valakiket."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change",
+              "actor_change"
+            ],
+            "summary": "Találunk valakit, aki tud segíteni, majd egy nagy szobában vagyunk sok emberrel, akik fenyegetően kérdezősködnek."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Átnézek egy ablakon, látom, hogy Pesten vagyok, ami gyanús, de nem válaszolnak, végül elmenekülünk egy hosszú vízi csúszdaszerűségen."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 3,
+        "observationDelta": 2,
+        "coverageDelta": -25.6,
+        "categoryDelta": {
+          "actor": -1,
+          "affect": 0,
+          "agency": 1,
+          "interaction": -1,
+          "location": 4,
+          "object": -1,
+          "other": 2,
+          "phenomenology": -2
+        },
+        "languageDelta": "en/en->hu/hu"
+      },
+      "driftClass": "MAJOR DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:apa:apám",
+          "actor:segito valaki:valaki",
+          "actor:sok ember:sok ember",
+          "emotion:baratsagtalansag:barátságtalanság",
+          "emotion:feszultseg:feszültség",
+          "location:ablak:ablakon",
+          "location:ajtosszeruseg:ajtószerűség",
+          "location:dombos videk:dombos vidéken",
+          "location:gyapai tura:gyapai túra",
+          "location:lepcso:lépcső",
+          "location:nagy szoba:nagy szoba",
+          "location:pest varos:Pesten",
+          "location:zart epulet:zárt épület",
+          "object:gomb:gomb",
+          "object:moslek:moslék"
+        ],
+        "lostGlossaryCandidateCount": 15,
+        "lateOnlyObservations": []
+      },
+      "rootCause": {
+        "primary": "Mixed Cause",
+        "causes": [
+          "Persistence Failure",
+          "Orchestration Failure",
+          "Historical Artifact",
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "04325afa-1495-4f98-9349-0838529d9f68",
+        "title": "Lépcsőkön átvízi csúszda felé",
+        "createdAt": "2026-06-13T14:24:16.010972+00:00",
+        "length": 938,
+        "sourceLanguage": "hu",
+        "lengthBand": "short"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 7,
+        "observationCount": 23,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 672,
+          "coveragePercent": 71.6
+        },
+        "categoryDistribution": {
+          "actor": 3,
+          "affect": 1,
+          "interaction": 5,
+          "location": 11,
+          "other": 3
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 7,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 22,
+            "en": 0,
+            "unknown": 1
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Gyapai túra dombos vidéken, lépcsőhöz érkezés száraz hóval."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Zárt épület, furább lépcsők, ajtószerűség és moslék ömlik ki az ajtón."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Moslék lesodor, egyes elakadnak, mások fent maradnak."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Találnak valakit, aki tud segíteni."
+          },
+          {
+            "sceneId": "scene5",
+            "position": 5,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Sok emberrel nagy szobában, fenyegető kérdezgetés, gyanú ellenőrökről."
+          },
+          {
+            "sceneId": "scene6",
+            "position": 6,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Egy ablakon keresztül észrevehetjük Pestet, ami furcsa gyapai túra közben."
+          },
+          {
+            "sceneId": "scene7",
+            "position": 7,
+            "boundaryKinds": [
+              "temporal_change"
+            ],
+            "summary": "Feszültség a helyzetben, majd menekülés és hosszú vízi csúszda."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 4,
+        "observationCount": 17,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 545,
+          "coveragePercent": 58.1
+        },
+        "categoryDistribution": {
+          "actor": 1,
+          "affect": 1,
+          "agency": 3,
+          "interaction": 5,
+          "location": 3,
+          "object": 3,
+          "other": 1
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 4,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 17,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Gyapai túra az ismeretlen dombos vidéken, száraz hóval borított lépcsőn felmegyünk egy zárt épületbe, ahol furcsa lépcsők és egy ajtószerűség van."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Apám megnyom egy gombot az ajtón, moslék ömlik át, engem és másokat lesodor a moslék, én lejjebb kapaszkodom, a többiek fent maradnak."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Találkozunk valakivel, aki segít, majd egy nagy szobában sok emberrel, akik fenyegetnek és kérdeznek minket, barátságtalanul, az ablakból egy furcsa helyet látok."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "temporal_change"
+            ],
+            "summary": "Elmenekülünk, majd hosszú vízi csúszdaszerűségen csúszunk."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": -3,
+        "observationDelta": -6,
+        "coverageDelta": -13.5,
+        "categoryDelta": {
+          "actor": -2,
+          "affect": 0,
+          "agency": 3,
+          "interaction": 0,
+          "location": -8,
+          "object": 3,
+          "other": -2
+        },
+        "languageDelta": "none"
+      },
+      "driftClass": "MAJOR DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:apa:apám",
+          "actor:segito szemely:valaki",
+          "actor:sok ember:sok ember",
+          "location:gyapai terep:gyapai vidéken",
+          "object:ajtoszeruseg:ajtószerűség",
+          "object:gomb:gomb",
+          "object:lecso:lépcső"
+        ],
+        "lostGlossaryCandidateCount": 7,
+        "lateOnlyObservations": []
+      },
+      "rootCause": {
+        "primary": "Extraction Failure",
+        "causes": [
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "6ffcd486-0b5d-4b5a-a97d-e0c81f99be8b",
+        "title": "Tábori mezőn elveszett telefon",
+        "createdAt": "2026-06-14T16:17:07.00977+00:00",
+        "length": 2779,
+        "sourceLanguage": "hu",
+        "lengthBand": "medium"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 2,
+        "observationCount": 18,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 994,
+          "coveragePercent": 35.8
+        },
+        "categoryDistribution": {
+          "actor": 3,
+          "location": 14,
+          "object": 1
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 2,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 18,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change",
+              "actor_change"
+            ],
+            "summary": "Tábori szálláson a mezőn Bórával találkozás és a telefon keresése."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change",
+              "actor_change",
+              "temporal_change"
+            ],
+            "summary": "Konyhában a szállásházban találkozás apával, Katával, Markussal és Évivel; nadrágra való hamuzás és Évi figyelmének érzékelése."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 3,
+        "observationCount": 22,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 1226,
+          "coveragePercent": 44.1
+        },
+        "categoryDistribution": {
+          "actor": 1,
+          "affect": 5,
+          "agency": 2,
+          "interaction": 5,
+          "location": 3,
+          "object": 1,
+          "other": 5
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 3,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 22,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Táborban vagyok gyerek és kortalan arcok között, ismerős helyen, eleinte bosszúság az elszállásolás miatt, majd találkozás Bórával mezőn."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "Visszatérés a táborba, épületekhez és verandás sorházhoz, telefon keresés közösségi tereken, majd belépés kisebb konyhába/étkezőbe, ahol idősebben, apával, Katával és ismerősökkel vagyok."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Dohányzás közbeni baleset: Markus vászonnadrágjára hamuzom rá, bocsánatkérés és segítés, Kata ajánl citromot a foltra, majd elmennek ketten. Évi figyelmét érzem magamon."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 1,
+        "observationDelta": 4,
+        "coverageDelta": 8.3,
+        "categoryDelta": {
+          "actor": -2,
+          "affect": 5,
+          "agency": 2,
+          "interaction": 5,
+          "location": -11,
+          "object": 0,
+          "other": 5
+        },
+        "languageDelta": "none"
+      },
+      "driftClass": "MODERATE DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:father:apám",
+          "emotion:annoyance:idegesség",
+          "emotion:attention:figyelem",
+          "emotion:embarrassment:rossz érzés",
+          "emotion:good mood:jó hangulat",
+          "emotion:worry:aggódás",
+          "location:camp field:Szállás előtti mező",
+          "location:kitchen dining room:konyha/étkező",
+          "location:verandas row house:verandás sorház",
+          "object:canvas trousers:fehér vászonnadrág",
+          "object:lemon:citrom",
+          "object:phone:telefon",
+          "object:recipe:recept",
+          "object:table:asztal"
+        ],
+        "lostGlossaryCandidateCount": 14,
+        "lateOnlyObservations": [
+          {
+            "sceneId": "scene3",
+            "observationId": "obs3_2",
+            "text": "Sűrűn bocsánatot kérek Markus-tól és letörölgetem a foltot.",
+            "spanStart": 1028,
+            "spanEnd": 1059
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "obs3_3",
+            "text": "Kata azt mondja, citrommal ki lehet szedni a foltot, Markus zavarban van, Kata segíteni akar neki.",
+            "spanStart": 1060,
+            "spanEnd": 1135
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "obs3_4",
+            "text": "Kata és Markus elmennek ketten.",
+            "spanStart": 1136,
+            "spanEnd": 1149
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "obs3_5",
+            "text": "Évi figyelmét érzem magamon folyamatosan, bár őt nem látom vagy csak röviden.",
+            "spanStart": 1150,
+            "spanEnd": 1226
+          }
+        ]
+      },
+      "rootCause": {
+        "primary": "Mixed Cause",
+        "causes": [
+          "Persistence Failure",
+          "Orchestration Failure",
+          "Historical Artifact",
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "78d09890-2016-4624-a3b2-a04eb8684f5f",
+        "title": "Tábor mezőjén dobálgatva",
+        "createdAt": "2026-06-14T19:57:16.429273+00:00",
+        "length": 2779,
+        "sourceLanguage": "hu",
+        "lengthBand": "medium"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 2,
+        "observationCount": 21,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 1317,
+          "coveragePercent": 47.4
+        },
+        "categoryDistribution": {
+          "actor": 5,
+          "affect": 4,
+          "agency": 3,
+          "interaction": 3,
+          "location": 5,
+          "other": 1
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 2,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 21,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "Tábori szállás, gyerekkori és kortalan arcok jelenléte, az első nagy crush megjelenése, telefon eltűnése és keresése."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "Belső tér a táborban, idősebbé válás, látott és érzékelt személyek, apai főzés és beszélgetés, nadrág lehamuzása, reakciók és érzések."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 4,
+        "observationCount": 24,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 1129,
+          "coveragePercent": 40.6
+        },
+        "categoryDistribution": {
+          "actor": 2,
+          "affect": 5,
+          "agency": 1,
+          "interaction": 6,
+          "location": 3,
+          "object": 1,
+          "other": 5,
+          "phenomenology": 1
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 4,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 24,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Táborban vagyok, ahol gyerek és kortalan arcokat ismerek fel, és a szálláshely miatt bosszankodom."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Találkozás Bórával a mezőn, telefonját eldugom, dobálgatom a saját telefonom aggódva, majd segítek megtalálni."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Visszatérés az épületekhez, telefon keresése mások mellett, átlépés a konyhába, ahol idősebb vagyok és egy bensőséges beszélgetés zajlik."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "temporal_change"
+            ],
+            "summary": "Dohányzás közbeni baleset Markus nadrágján, bocsánatkérés és segítség, majd Évi figyelme érzékelése és felébredés."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 2,
+        "observationDelta": 3,
+        "coverageDelta": -6.8,
+        "categoryDelta": {
+          "actor": -3,
+          "affect": 1,
+          "agency": -2,
+          "interaction": 3,
+          "location": -2,
+          "object": 1,
+          "other": 4,
+          "phenomenology": 1
+        },
+        "languageDelta": "none"
+      },
+      "driftClass": "MAJOR DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:father:apám",
+          "emotion:annoyance:bosszankodás",
+          "emotion:bora annoyance:Bóra idegessége",
+          "emotion:good mood:jó hangulat",
+          "emotion:guilt:rossz érzés",
+          "emotion:worry:aggódás",
+          "location:camp buildings:épületek",
+          "location:camp field:szállás előtti mező",
+          "location:kitchen dining room:konyha/étkező",
+          "object:bora phone:Bóra telefonja",
+          "object:own phone:saját telefon",
+          "object:stain:folt",
+          "object:table:kisebb asztal",
+          "object:white pants:fehér vászonnadrág"
+        ],
+        "lostGlossaryCandidateCount": 14,
+        "lateOnlyObservations": []
+      },
+      "rootCause": {
+        "primary": "Mixed Cause",
+        "causes": [
+          "Persistence Failure",
+          "Orchestration Failure",
+          "Historical Artifact",
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "98dc539a-374b-4c64-aa4a-74888d7cfc61",
+        "title": "Tábor verandás sorház mellett",
+        "createdAt": "2026-06-15T06:27:43.188647+00:00",
+        "length": 2779,
+        "sourceLanguage": "hu",
+        "lengthBand": "medium"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 2,
+        "observationCount": 16,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 1106,
+          "coveragePercent": 39.8
+        },
+        "categoryDistribution": {
+          "actor": 3,
+          "affect": 4,
+          "agency": 3,
+          "interaction": 1,
+          "location": 4,
+          "phenomenology": 1
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 2,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 16,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "Tábori szállás és találkozás Bórával, a régi általános iskolai szerelmemmel, ahol telefont keresünk és dobálgatok."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "Belső tér az épületben, ahol idősebb lettem, apám és mostohaanyám főznek, társaság ül az asztalnál, dohányzás közben nadrágot lehamuzok Markuson, Évi jelenléte érzékelhető."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 4,
+        "observationCount": 21,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 854,
+          "coveragePercent": 30.7
+        },
+        "categoryDistribution": {
+          "actor": 1,
+          "affect": 5,
+          "agency": 4,
+          "interaction": 3,
+          "location": 7,
+          "object": 1
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 4,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 21,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "temporal_change"
+            ],
+            "summary": "A táborban vagyok, vegyes korú gyerekekkel, ismerős helyen, kezdeti bosszankodás a szobák miatt, majd találkozás Bórával, akivel telefonját keresem, de nem árulom el a helyét."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Visszatérés az épületekhez, ahol a társaság több tagja is tartózkodik, tovább keresik a telefont, ismeretlen párral találkozás."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "Belépés a konyhába/étkezőbe, idősebb vagyok, apám és Kata főznek, társasági hangulat az asztal körül, apám receptet mutat be."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "temporal_change"
+            ],
+            "summary": "Dohányzás közben lehamuzom Markus fehér vászonnadrágját, többször bocsánatot kérek, Kata segíteni akar, majd apám megnyugtat, Évi figyelmét érzem."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 2,
+        "observationDelta": 5,
+        "coverageDelta": -9.1,
+        "categoryDelta": {
+          "actor": -2,
+          "affect": 1,
+          "agency": 1,
+          "interaction": 2,
+          "location": 3,
+          "object": 1,
+          "phenomenology": -1
+        },
+        "languageDelta": "none"
+      },
+      "driftClass": "MAJOR DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:bora:Bóra",
+          "actor:evi:Évi",
+          "actor:kata:Kata",
+          "actor:markus:Markus",
+          "actor:unknown couple:ismeretlen pár",
+          "emotion:annoyance bora:Bóra idegessége",
+          "emotion:annoyance markus:Markus zavara",
+          "emotion:guilt:rossz érzés",
+          "emotion:initial annoyance rooms:Kezdeti bosszankodás a szobák miatt",
+          "emotion:worry about phone:Aggódás a telefon miatt",
+          "location:camp buildings verandah:verandás sorház a mező szélén",
+          "location:camp field near lodging:a szállás előtti mező",
+          "location:camp:tábor",
+          "location:kitchen dining room:konyha/étkező",
+          "object:own phone:a saját telefonom",
+          "object:recipe:recept",
+          "object:table:kisebb asztal",
+          "object:white canvas pants:fehér vászonnadrág"
+        ],
+        "lostGlossaryCandidateCount": 18,
+        "lateOnlyObservations": []
+      },
+      "rootCause": {
+        "primary": "Mixed Cause",
+        "causes": [
+          "Persistence Failure",
+          "Orchestration Failure",
+          "Historical Artifact",
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "a945f88b-9d07-43b0-b123-74223a4a5c37",
+        "title": "Tábori telefonkeresés a verandás sorházban",
+        "createdAt": "2026-06-15T07:15:06.399581+00:00",
+        "length": 2779,
+        "sourceLanguage": "hu",
+        "lengthBand": "medium"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 2,
+        "observationCount": 22,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 1270,
+          "coveragePercent": 45.7
+        },
+        "categoryDistribution": {
+          "actor": 4,
+          "affect": 6,
+          "agency": 3,
+          "interaction": 2,
+          "location": 3,
+          "object": 1,
+          "other": 2,
+          "phenomenology": 1
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 2,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 21,
+            "en": 0,
+            "unknown": 1
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Tábori szálláshelyen vagyok gyerekként, találkozom Bórával és telefon keresésével foglalkozom."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "Visszatérés a tábor verandás sorházába, idősebbnek érzem magam, apámék főznek, társaság beszélget, dobok Markus fehér nadrágjára hamut, bocsánatkérés és megnyugtató szülői reakció történik."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 2,
+        "observationCount": 21,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 1249,
+          "coveragePercent": 44.9
+        },
+        "categoryDistribution": {
+          "actor": 4,
+          "affect": 5,
+          "agency": 4,
+          "interaction": 2,
+          "location": 4,
+          "object": 1,
+          "other": 1
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 2,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 21,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "A tábori szálláson gyerekként vagy kortalanként vagyok, ahol Bórával találkozom és a telefonját keressük."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change",
+              "temporal_change"
+            ],
+            "summary": "A konyhában kisebb helyiségben vagyok, ott Apámmal, Katával, Markus-szal és Évivel vagyunk, Apám főz, baleset történik Markus nadrágjánál, majd Kata és Markus elmennek."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 0,
+        "observationDelta": -1,
+        "coverageDelta": -0.8,
+        "categoryDelta": {
+          "actor": 0,
+          "affect": -1,
+          "agency": 1,
+          "interaction": 0,
+          "location": 1,
+          "object": 0,
+          "other": -1,
+          "phenomenology": -1
+        },
+        "languageDelta": "none"
+      },
+      "driftClass": "MINIMAL DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:couple unknown:egy pár (ismeretlen)",
+          "actor:father:apám",
+          "emotion:annoyance bora:Bóra idegessége",
+          "emotion:annoyance markus:zavar Markusnál a hamuzódás miatt",
+          "emotion:guilt self:bűntudat",
+          "emotion:pleasant mood:jó hangulat",
+          "emotion:worry self:aggódás a telefon miatt",
+          "location:camp buildings:tábori épületek verandás sorháza",
+          "location:camp field:tábori mező",
+          "location:kitchen room:konyha/étkező",
+          "object:phone:telefon",
+          "object:recipe:recept",
+          "object:white pants:fehér vászonnadrág"
+        ],
+        "lostGlossaryCandidateCount": 13,
+        "lateOnlyObservations": []
+      },
+      "rootCause": {
+        "primary": "Extraction Failure",
+        "causes": [
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+        "title": "Tábori telefonkeresés és családi konyha",
+        "createdAt": "2026-06-15T07:30:51.079205+00:00",
+        "length": 2779,
+        "sourceLanguage": "hu",
+        "lengthBand": "medium"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 2,
+        "observationCount": 14,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 874,
+          "coveragePercent": 31.5
+        },
+        "categoryDistribution": {
+          "affect": 4,
+          "agency": 1,
+          "interaction": 4,
+          "location": 3,
+          "other": 1,
+          "phenomenology": 1
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 2,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 14,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Táborban vagyok, idegen és ismerős arcok vegyesével, első találkozás Borával, a telefon keresése és dobálása."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Visszatérés a szállásra, konyhai helyzet, idősebbnek érzem magam, apám és mostohaanyám főznek, rossz érzés Markus miatt, Évi figyelme érzékelése."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "fallback",
+        "reason": "provider_timeout",
+        "sceneCount": 0,
+        "observationCount": 0,
+        "coverage": {
+          "earliestEvidence": null,
+          "latestEvidence": null,
+          "coveragePercent": 0
+        },
+        "categoryDistribution": {},
+        "summaryLanguage": {
+          "dominant": "missing",
+          "counts": {
+            "hu": 0,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "missing",
+          "counts": {
+            "hu": 0,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": []
+      },
+      "delta": {
+        "sceneDelta": -2,
+        "observationDelta": -14,
+        "coverageDelta": -31.5,
+        "categoryDelta": {
+          "affect": -4,
+          "agency": -1,
+          "interaction": -4,
+          "location": -3,
+          "other": -1,
+          "phenomenology": -1
+        },
+        "languageDelta": "hu/hu->missing/missing"
+      },
+      "driftClass": "MAJOR DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [],
+        "lostGlossaryCandidateCount": 0,
+        "lateOnlyObservations": []
+      },
+      "rootCause": {
+        "primary": "Extraction Failure",
+        "causes": [
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "666c955c-a2c0-4cec-8679-9d42ab81f650",
+        "title": "Határ a labirintus hóban",
+        "createdAt": "2026-06-20T07:07:32.030657+00:00",
+        "length": 4613,
+        "sourceLanguage": "hu",
+        "lengthBand": "long"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 1,
+        "observationCount": 14,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 877,
+          "coveragePercent": 19
+        },
+        "categoryDistribution": {
+          "actor": 2,
+          "affect": 2,
+          "agency": 1,
+          "interaction": 2,
+          "location": 1,
+          "other": 6
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 1,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 14,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "temporal_change"
+            ],
+            "summary": "A hatalmas munkahelyen való tartózkodás, ahol a környezet és emberi viselkedés megfigyelése történik."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 4,
+        "observationCount": 26,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 1416,
+          "coveragePercent": 30.7
+        },
+        "categoryDistribution": {
+          "actor": 5,
+          "affect": 2,
+          "agency": 4,
+          "interaction": 3,
+          "location": 8,
+          "object": 2,
+          "other": 2
+        },
+        "summaryLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 4,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "hu",
+          "counts": {
+            "hu": 26,
+            "en": 0,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Hatalmas munkahelyen bolyongás és vásárlás, majd munka és bullying egy társaság részéről."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "temporal_change"
+            ],
+            "summary": "A tudatra ébredés és városban való megjelenés, a levegő megtisztítása és baráti társaság megjelenése."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "temporal_change"
+            ],
+            "summary": "Ikremmel és Karesz barátommal kalandok, asztma kezelése, tűzoltás egy égő háznál és varázsgomba keresése labirintusos parkban."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "Kijutás a labirintusból egy kisebb, kedvesebb városba, ellenállás az álomba visszavezető járműveknek, ismeretlen arcú ember segítségígérete a varázsgombával."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 3,
+        "observationDelta": 12,
+        "coverageDelta": 11.7,
+        "categoryDelta": {
+          "actor": 3,
+          "affect": 0,
+          "agency": 3,
+          "interaction": 1,
+          "location": 7,
+          "object": 2,
+          "other": -4
+        },
+        "languageDelta": "none"
+      },
+      "driftClass": "CRITICAL DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:firefighter command:tűzoltó oltásvezető",
+          "actor:firefighter dogs:tűzoltó kis kutyák",
+          "actor:friend karesz:Karesz barátom",
+          "actor:group bullies:bullyingoló társaság",
+          "actor:twin brother:nem létező ikertestvér",
+          "actor:unknown man:ismeretlen férfi",
+          "emotion:feeling unwelcome:egyre kevésbé vagyok szívesen látott",
+          "emotion:frustration or irritation:bosszús vagyok a helyzet miatt",
+          "location:burning house:égő ház",
+          "location:large square smaller city:nagy tér kisebb városban",
+          "location:large workplace:hatalmas munkahely",
+          "location:maze park:labirintus park",
+          "location:pleasant large city:kedves nagy város",
+          "location:railway and other transport:vasút és másik közlekedési mód",
+          "location:supermarket within workplace:szupermarket a munkahelyen",
+          "object:magic mushroom:varázsgomba",
+          "object:paper note:papír"
+        ],
+        "lostGlossaryCandidateCount": 17,
+        "lateOnlyObservations": [
+          {
+            "sceneId": "scene3",
+            "observationId": "scene3_obs1",
+            "text": "Ikremmel és Karesz barátommal együtt kalandozni kezdünk.",
+            "spanStart": 917,
+            "spanEnd": 949
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "scene3_obs2",
+            "text": "Próbáljuk gyógyítani az asztmámat tiszta és gyógyító levegő beszívásával, ami nem használ különösebben.",
+            "spanStart": 950,
+            "spanEnd": 990
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "scene3_obs3",
+            "text": "Meglátunk egy égő házat, odasietünk segíteni.",
+            "spanStart": 991,
+            "spanEnd": 1023
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "scene3_obs4",
+            "text": "A tűzoltók kis tűzoltó kutyákat bocsátanak ki a liftből, és arra figyelmeztetnek, hogy vigyázzunk a kutyákra.",
+            "spanStart": 1024,
+            "spanEnd": 1075
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "scene3_obs5",
+            "text": "A tűz el van oltva, és most keresik az okot. Meglepődöm, hogy nem az egész házat ürítették ki, csak egy-egy lakást.",
+            "spanStart": 1076,
+            "spanEnd": 1117
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "scene3_obs6",
+            "text": "Kitaláljuk, hogy varázsgombát kéne találni, ami még a halálból is visszahoz, és meggyógyít mindent.",
+            "spanStart": 1118,
+            "spanEnd": 1165
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "scene3_obs7",
+            "text": "Egy nagyon furcsa parkba megyünk, ami labirintussá válik, ahol nehezebbé válik haladni és szétváltunk.",
+            "spanStart": 1166,
+            "spanEnd": 1219
+          },
+          {
+            "sceneId": "scene3",
+            "observationId": "scene3_obs8",
+            "text": "Elveszítem az ikrem és elkezdem keresni.",
+            "spanStart": 1220,
+            "spanEnd": 1245
+          }
+        ]
+      },
+      "rootCause": {
+        "primary": "Mixed Cause",
+        "causes": [
+          "Persistence Failure",
+          "Orchestration Failure",
+          "Historical Artifact",
+          "Extraction Failure"
+        ]
+      }
+    },
+    {
+      "dream": {
+        "id": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+        "title": "Űrállomás és luxuskertváros séta",
+        "createdAt": "2026-06-21T10:16:04.359297+00:00",
+        "length": 3465,
+        "sourceLanguage": "hu",
+        "lengthBand": "medium"
+      },
+      "stored": {
+        "present": true,
+        "sceneCount": 3,
+        "observationCount": 16,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 943,
+          "coveragePercent": 27.2
+        },
+        "categoryDistribution": {
+          "actor": 1,
+          "affect": 1,
+          "agency": 1,
+          "interaction": 3,
+          "location": 9,
+          "object": 1
+        },
+        "summaryLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 3,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "mixed",
+          "counts": {
+            "hu": 1,
+            "en": 15,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "narrative_change"
+            ],
+            "summary": "A dreamer participates in a mysterious space mission with friends after winning a ticket hidden in food; travel to the launch site is on a crowded bus without celebration."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "At the space station, the dreamer meets two people, is shown the rooms and common areas by a mostly unfriendly attendant, and tries to settle in but faces confusion and lack of attention."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "The dreamer walks outside the station into a bizarre luxury space suburb with residents mostly ignoring or avoiding them; they inspect books outside houses and eventually meet a smiling young man on a terrace before waking."
+          }
+        ]
+      },
+      "fresh": {
+        "mode": "validated_llm",
+        "reason": null,
+        "sceneCount": 5,
+        "observationCount": 18,
+        "coverage": {
+          "earliestEvidence": 0,
+          "latestEvidence": 933,
+          "coveragePercent": 26.9
+        },
+        "categoryDistribution": {
+          "actor": 3,
+          "affect": 4,
+          "agency": 1,
+          "interaction": 2,
+          "location": 5,
+          "metacognition": 1,
+          "object": 1,
+          "phenomenology": 1
+        },
+        "summaryLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 5,
+            "unknown": 0
+          }
+        },
+        "observationLanguage": {
+          "dominant": "en",
+          "counts": {
+            "hu": 0,
+            "en": 18,
+            "unknown": 0
+          }
+        },
+        "sceneBoundaries": [
+          {
+            "sceneId": "scene1",
+            "position": 1,
+            "boundaryKinds": [
+              "world_rule_change"
+            ],
+            "summary": "A dreamer participates in some kind of space mission with acquaintances, traveling to the launch site by crowded bus, feeling a lack of enthusiasm and ceremony."
+          },
+          {
+            "sceneId": "scene2",
+            "position": 2,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "At the space station, meeting two people, touring the station, showing somewhat indifferent and moody social atmosphere."
+          },
+          {
+            "sceneId": "scene3",
+            "position": 3,
+            "boundaryKinds": [
+              "temporal_change"
+            ],
+            "summary": "Dreamer wanted to bathe at the station after the tour but found the experience unremarkable; later disposed of a smelly dog waste bag."
+          },
+          {
+            "sceneId": "scene4",
+            "position": 4,
+            "boundaryKinds": [
+              "goal_change"
+            ],
+            "summary": "The dreamer could not find their own room among many with multiple names and gave up looking, choosing instead to go for a walk."
+          },
+          {
+            "sceneId": "scene5",
+            "position": 5,
+            "boundaryKinds": [
+              "spatial_change"
+            ],
+            "summary": "The dreamer walks in a bizarre luxury garden town in space, observes people living there mostly without interaction or response, examines houses and books, and finally encounters a young man who smiles back."
+          }
+        ]
+      },
+      "delta": {
+        "sceneDelta": 2,
+        "observationDelta": 2,
+        "coverageDelta": -0.3,
+        "categoryDelta": {
+          "actor": 2,
+          "affect": 3,
+          "agency": 0,
+          "interaction": -1,
+          "location": -4,
+          "metacognition": 1,
+          "object": 0,
+          "phenomenology": 1
+        },
+        "languageDelta": "en/mixed->en/en"
+      },
+      "driftClass": "MAJOR DRIFT",
+      "downstreamRiskProxy": {
+        "lostGlossaryCandidates": [
+          "actor:acquaintance winner:Ismerősöm",
+          "actor:luxury people:Emberek a luxus kertvárosban",
+          "actor:station person social moody:Az állomáson lévő szociális",
+          "actor:young man terrace:Srác a felső teraszon",
+          "emotion:frustration searching for room:Frusztráció a szoba megtalálásában",
+          "emotion:lack of celebration:Ünneplés hiánya",
+          "emotion:moodiness:Mogorvaság",
+          "emotion:relief:Megszabadulás a kellemetlen dologtól",
+          "location:bus:Zsúfolt busz",
+          "location:green modern family houses:Rendezett zöld övezet modern családi házakkal",
+          "location:interesting book house:Házzal érdekes könyvekkel",
+          "location:launch site:Kilövési helyszín",
+          "location:luxury garden town:Luxus kertváros űrben",
+          "location:space station:Űrállomás",
+          "location:station rooms corridor:Az állomás szobái",
+          "object:dog waste bag:Kakis zacskó",
+          "object:japanese chinese philosophy history books:Japán és kínai filozófia és történelem könyvek",
+          "object:room name plates:Szobák ajtóin nevek",
+          "object:ticket hidden in food:Élelmiszerbe rejtett jegy",
+          "recurrence_candidate:the dreamer took part in a space mission or something similar:The dreamer took part in a space mission or something similar"
+        ],
+        "lostGlossaryCandidateCount": 20,
+        "lateOnlyObservations": []
+      },
+      "rootCause": {
+        "primary": "Mixed Cause",
+        "causes": [
+          "Persistence Failure",
+          "Orchestration Failure",
+          "Extraction Failure"
+        ]
+      }
+    }
+  ]
+}

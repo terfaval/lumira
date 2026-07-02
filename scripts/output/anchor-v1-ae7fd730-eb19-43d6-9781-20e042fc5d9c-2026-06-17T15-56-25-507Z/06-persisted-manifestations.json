@@ -1,0 +1,92 @@
+[
+  {
+    "id": "b5804c2a-17a1-413c-bab1-d5ae352cc36a",
+    "anchorId": "1312c69f-3ff2-4845-bb4f-e7c3f98c33bf",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "telefon",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T15:56:23.277502+00:00",
+    "updatedAt": "2026-06-17T15:56:23.277502+00:00"
+  },
+  {
+    "id": "206d93fa-be11-4554-be67-80bcde447fb0",
+    "anchorId": "16424a93-72e6-499c-8424-6d04f669a72e",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Bóra",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T15:56:23.537922+00:00",
+    "updatedAt": "2026-06-17T15:56:23.537922+00:00"
+  },
+  {
+    "id": "eef884dd-8ae8-4496-8ed6-e0154d3d11be",
+    "anchorId": "8f68b858-669a-4a7f-b0c8-63f812582eba",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Markus",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T15:56:24.028298+00:00",
+    "updatedAt": "2026-06-17T15:56:24.028298+00:00"
+  },
+  {
+    "id": "534ae800-46ee-4690-8bb7-da352d499c87",
+    "anchorId": "65a090b2-17d0-40c6-b03b-05e8f1500d37",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Kata, mostohaanya",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T15:56:24.356591+00:00",
+    "updatedAt": "2026-06-17T15:56:24.356591+00:00"
+  },
+  {
+    "id": "0e7cac52-cdd0-480a-bdab-75b1304850a8",
+    "anchorId": "1fe39cdc-2ded-448d-9b08-cfc298194be8",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "telefon keresése és segítés Bórával",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T15:56:24.665925+00:00",
+    "updatedAt": "2026-06-17T15:56:24.665925+00:00"
+  },
+  {
+    "id": "a96d88fe-5abf-4932-a4df-e5586b36db7c",
+    "anchorId": "160abbc3-eccc-4ee8-b9f2-8a4a483cf107",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Kata segít citrommal",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T15:56:24.858879+00:00",
+    "updatedAt": "2026-06-17T15:56:24.858879+00:00"
+  },
+  {
+    "id": "28814eda-573f-409e-8e0a-5f3e0cc1fa70",
+    "anchorId": "7962bafe-0319-4d94-ac97-22f212632aa4",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Bóra eltűnése -> Idősebbnek érzem magam, Évi figyelme érzékelése",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T15:56:25.115602+00:00",
+    "updatedAt": "2026-06-17T15:56:25.115602+00:00"
+  },
+  {
+    "id": "9c89cccd-28a2-498d-b5a4-9df9aa993f32",
+    "anchorId": "dc04ac82-469e-483f-b452-dc333c0f13c5",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Telefon dobálás aggódással -> Telefon leesése többször -> Telefon keresése és segítés Bórával",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T15:56:25.373133+00:00",
+    "updatedAt": "2026-06-17T15:56:25.373133+00:00"
+  },
+  {
+    "id": "a3f4f0cf-c8f1-4272-8548-bb78cb17d825",
+    "anchorId": "7350b8da-94db-4e0d-84b4-7f662c5db701",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Telefon tudatos dobálása aggodalom ellenére -> Bóra idegessége és feszültsége",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T15:56:25.558722+00:00",
+    "updatedAt": "2026-06-17T15:56:25.558722+00:00"
+  }
+]

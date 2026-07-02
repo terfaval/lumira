@@ -1,0 +1,87 @@
+{
+  "reflectiveObject": {
+    "id": "666c955c-a2c0-4cec-8679-9d42ab81f650",
+    "title": "Határ a labirintus hóban",
+    "textLength": 4613
+  },
+  "storedObservation": {
+    "bundleId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1",
+    "sceneCount": 1,
+    "observationCount": 14,
+    "scenes": [
+      {
+        "sceneId": "scene1",
+        "position": 1,
+        "summary": "A hatalmas munkahelyen való tartózkodás, ahol a környezet és emberi viselkedés megfigyelése történik.",
+        "evidenceSpanStart": 0,
+        "evidenceSpanEnd": 397,
+        "observationCount": 14
+      }
+    ]
+  },
+  "freshExtraction": {
+    "mode": "validated_llm",
+    "reason": null,
+    "observation": {
+      "bundleId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1",
+      "sceneCount": 2,
+      "observationCount": 35,
+      "scenes": [
+        {
+          "sceneId": "scene1",
+          "position": 1,
+          "summary": "Egy hatalmas munkahelyen bolyongás, ahol emberek nem dolgoznak, hanem buliznak és vásárolnak. Bullying és konfliktus történik.",
+          "evidenceSpanStart": 0,
+          "evidenceSpanEnd": 797,
+          "observationCount": 12
+        },
+        {
+          "sceneId": "scene2",
+          "position": 2,
+          "summary": "Átmenet kedves, nagy, szennyezett városba, ahol a levegőt próbálom megtisztítani, majd barátokkal együtt kalandozom, keresünk gyógyító varázsgombát, találkozunk tűzoltó kutyákkal, majd labirintusba érkezünk, ikremet elvesztem, egy vasúti térre érek, futok a sínek között, majd egy ijesztő ember szólít meg.",
+          "evidenceSpanStart": 899,
+          "evidenceSpanEnd": 2349,
+          "observationCount": 23
+        }
+      ]
+    }
+  },
+  "discovery": {
+    "mode": "generated",
+    "candidateCount": 3,
+    "candidates": [
+      {
+        "candidateId": "candidate1_scene1_transition1",
+        "provisionalStructureType": "transition",
+        "sceneRefs": [
+          "scene1"
+        ],
+        "evidenceGroupCount": 1
+      },
+      {
+        "candidateId": "candidate2_scene2_transition1",
+        "provisionalStructureType": "transition",
+        "sceneRefs": [
+          "scene2"
+        ],
+        "evidenceGroupCount": 1
+      },
+      {
+        "candidateId": "candidate3_scene2_search_structure1",
+        "provisionalStructureType": "search_structure",
+        "sceneRefs": [
+          "scene2"
+        ],
+        "evidenceGroupCount": 1
+      }
+    ]
+  },
+  "comparison": {
+    "mode": "failed",
+    "stage": "experimental",
+    "reason": "missed_structure_opportunity_missing",
+    "details": {
+      "opportunityKey": "opportunity_missed_glossary_continuity"
+    }
+  }
+}

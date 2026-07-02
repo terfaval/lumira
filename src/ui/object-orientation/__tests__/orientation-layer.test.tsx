@@ -25,6 +25,12 @@ const payload: ObjectOrientationPayload = {
         sourceCategory: "actor",
         recurrenceCount: 3,
         status: "match",
+        continuityVisibility: {
+          possibleContinuity: true,
+          dreamCount: 4,
+          firstSeenAt: "2026-06-11T00:00:00.000Z",
+          lastSeenAt: "2026-06-19T00:00:00.000Z",
+        },
         proposedEntities: [
           {
             id: "term-1",
@@ -48,6 +54,12 @@ const payload: ObjectOrientationPayload = {
         sourceCategory: "actor",
         recurrenceCount: 1,
         status: "ambiguous",
+        continuityVisibility: {
+          possibleContinuity: false,
+          dreamCount: 1,
+          firstSeenAt: "2026-06-18T00:00:00.000Z",
+          lastSeenAt: "2026-06-18T00:00:00.000Z",
+        },
         proposedEntities: [
           {
             id: "term-2",
@@ -71,6 +83,12 @@ const payload: ObjectOrientationPayload = {
         sourceCategory: "object",
         recurrenceCount: 1,
         status: "new",
+        continuityVisibility: {
+          possibleContinuity: false,
+          dreamCount: 1,
+          firstSeenAt: "2026-06-18T00:00:00.000Z",
+          lastSeenAt: "2026-06-18T00:00:00.000Z",
+        },
         proposedEntities: [],
         href: null,
       },
@@ -93,6 +111,7 @@ const payload: ObjectOrientationPayload = {
       {
         id: "opening-new",
         title: "The doorway may matter here.",
+        context: "A threshold between staying inside and moving onward.",
         tone: "gentle",
         kind: "continuity_noticing",
         state: "new",
@@ -116,7 +135,7 @@ const payload: ObjectOrientationPayload = {
 };
 
 describe("ObjectOrientationLayer", () => {
-  it("renders the glossary orientation panel with a bottom dropdown filter", () => {
+  it("renders the glossary orientation panel with collapsed opening cards by default", () => {
     const markup = renderToStaticMarkup(<ObjectOrientationLayer payload={payload} />);
 
     expect(markup).toContain("Lantern House");
@@ -138,16 +157,14 @@ describe("ObjectOrientationLayer", () => {
     expect(markup).toContain("Megnyitások");
     expect(markup).toContain("Jegyzetek");
     expect(markup).toContain('aria-label="Cím szerkesztése"');
-    expect(markup).toContain("aria-hidden=\"true\"");
-    expect(markup).not.toContain("Átnevezés");
-    expect(markup).not.toContain("Bármikor átnevezheted.");
     expect(markup).toContain('aria-pressed="true">Új');
     expect(markup).toContain("The doorway may matter here.");
-    expect(markup).not.toContain("Existing Entity");
-    expect(markup).not.toContain("Canonical Label");
-    expect(markup).not.toContain("General Note");
-    expect(markup).not.toContain("Appearance Note");
-    expect(markup).not.toContain("Create New");
-    expect(markup).not.toContain("Saving...");
+    expect(markup).toContain("A threshold between staying inside and moving onward.");
+    expect(markup).toContain("LehetsĂ©ges folytonossĂˇg");
+    expect(markup).toContain("4 Ăˇlomban");
+    expect(markup).toContain('aria-expanded="false"');
+    expect(markup).toContain('aria-hidden="true"');
+    expect(markup).not.toContain("Begin in Deep Reflection");
+    expect(markup).not.toContain("continuity noticing");
   });
 });

@@ -1,0 +1,950 @@
+{
+  "generationContext": {
+    "runtimeVersion": "anchor_constructor_v1",
+    "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+  },
+  "decision": {
+    "mode": "anchors_found",
+    "silenceReason": null
+  },
+  "anchors": [
+    {
+      "clientAnchorKey": "anchor_1_entity_phone",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "ENTITY",
+        "identityLabel": "Telefon",
+        "normalizationRationale": "Identified as a distinct physical object appearing in observations and relevant across multiple opportunities regarding phone throwing and searching."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Telefon",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "aeecacd4-77e0-4cf0-a5e3-942f32949f7f",
+          "participationRole": "CONTEXT",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "4fdcf562-7447-450a-8be7-c90fcdf404a8",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "efe84aae-d960-410e-af0a-ffcf76d770b7",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "01367ed5-f9a1-4ba8-953e-12c12239acd2",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "1854cf81-db03-4d5f-a120-3de4d023de05",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "6f4245fb-c3d6-46e1-9840-d21c63f1e00f",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_4",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_7",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_2_entity_bora",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "ENTITY",
+        "identityLabel": "Bóra",
+        "normalizationRationale": "Person named Bóra appearing in multiple observations and relevant opportunities related to phone interactions and transitions."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Bóra",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "aeecacd4-77e0-4cf0-a5e3-942f32949f7f",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "214d4fd4-7f5c-4672-874d-07c3ec83abf2",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "640989a7-5d80-4c0c-9611-e7c2276f277e",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_3",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_4",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "aeecacd4-77e0-4cf0-a5e3-942f32949f7f",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "214d4fd4-7f5c-4672-874d-07c3ec83abf2",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "640989a7-5d80-4c0c-9611-e7c2276f277e",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_3_entity_markus",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "ENTITY",
+        "identityLabel": "Markus",
+        "normalizationRationale": "Identified as specific person appearing in multiple observations and opportunities related to kitchen events and tension resolution."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Markus",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "cdf26c9c-895f-4de7-9c35-8b0c32f96e63",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "18010692-908e-4dcb-b91c-bd4e24ad2ecb",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "624bf1b6-b46a-47d4-b6b0-7bd7be202270",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "cdf26c9c-895f-4de7-9c35-8b0c32f96e63",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "18010692-908e-4dcb-b91c-bd4e24ad2ecb",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "624bf1b6-b46a-47d4-b6b0-7bd7be202270",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_4_entity_kata_mostohaanya",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "ENTITY",
+        "identityLabel": "Kata, mostohaanya",
+        "normalizationRationale": "Named person with functional role in cooking and assistance in the kitchen scene."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Kata, mostohaanya",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "cdf26c9c-895f-4de7-9c35-8b0c32f96e63",
+          "participationRole": "SALIENT_LINK",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "18010692-908e-4dcb-b91c-bd4e24ad2ecb",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "624bf1b6-b46a-47d4-b6b0-7bd7be202270",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "cdf26c9c-895f-4de7-9c35-8b0c32f96e63",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "18010692-908e-4dcb-b91c-bd4e24ad2ecb",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "624bf1b6-b46a-47d4-b6b0-7bd7be202270",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_5_entity_avi",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "ENTITY",
+        "identityLabel": "Évi",
+        "normalizationRationale": "Entity representing a person whose presence and attention is sensed and relevant as a salience signal."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Évi",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "cfcd5f17-9c21-450d-bba3-95643d9036f6",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "85c3472f-f31a-4647-baf8-59da8cb25fc0",
+          "participationRole": "SALIENT_LINK",
+          "confidence": "MEDIUM",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "4c8f1d73-f837-4b85-abcd-ea47114301f2",
+          "participationRole": "SALIENT_LINK",
+          "confidence": "MEDIUM",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_2",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "cfcd5f17-9c21-450d-bba3-95643d9036f6",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "85c3472f-f31a-4647-baf8-59da8cb25fc0",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "4c8f1d73-f837-4b85-abcd-ea47114301f2",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_6_role_phone_thrower",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "ROLE",
+        "identityLabel": "Telefon dobáló",
+        "normalizationRationale": "Role describing the function of the dreamer throwing the phone, derived from observational evidence and opportunity relevance."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Telefon dobáló",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "aeecacd4-77e0-4cf0-a5e3-942f32949f7f",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "214d4fd4-7f5c-4672-874d-07c3ec83abf2",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "640989a7-5d80-4c0c-9611-e7c2276f277e",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "4fdcf562-7447-450a-8be7-c90fcdf404a8",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "efe84aae-d960-410e-af0a-ffcf76d770b7",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "01367ed5-f9a1-4ba8-953e-12c12239acd2",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "1854cf81-db03-4d5f-a120-3de4d023de05",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "6f4245fb-c3d6-46e1-9840-d21c63f1e00f",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "aeecacd4-77e0-4cf0-a5e3-942f32949f7f",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "214d4fd4-7f5c-4672-874d-07c3ec83abf2",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "640989a7-5d80-4c0c-9611-e7c2276f277e",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "4fdcf562-7447-450a-8be7-c90fcdf404a8",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "efe84aae-d960-410e-af0a-ffcf76d770b7",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "01367ed5-f9a1-4ba8-953e-12c12239acd2",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "1854cf81-db03-4d5f-a120-3de4d023de05",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "6f4245fb-c3d6-46e1-9840-d21c63f1e00f",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_7_role_phone_searcher_helper",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "ROLE",
+        "identityLabel": "Telefon kereső és segítő",
+        "normalizationRationale": "Functional role of the dreamer searching for and assisting in phone retrieval, grounded in observations and opportunity relevance."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Telefon kereső és segítő",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_7",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_8_role_repair_helper_kitchen",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "ROLE",
+        "identityLabel": "Konyhai helyreállító segítő",
+        "normalizationRationale": "Role of Kata as assisting repair activity during the kitchen stain removal episode, grounded in observations and opportunity relevance."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Konyhai helyreállító segítő",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "18010692-908e-4dcb-b91c-bd4e24ad2ecb",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "624bf1b6-b46a-47d4-b6b0-7bd7be202270",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "18010692-908e-4dcb-b91c-bd4e24ad2ecb",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "624bf1b6-b46a-47d4-b6b0-7bd7be202270",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_9_role_comforting_father",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "ROLE",
+        "identityLabel": "Megnyugtató apa",
+        "normalizationRationale": "Role of father providing comfort in the kitchen scene, supported by observations and relevant opportunity."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Megnyugtató apa",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "18010692-908e-4dcb-b91c-bd4e24ad2ecb",
+          "participationRole": "CONTEXT",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "18010692-908e-4dcb-b91c-bd4e24ad2ecb",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_10_structure_phone_aggodalom_bora_idegessége",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "STRUCTURE",
+        "identityLabel": "Telefon aggódás és Bóra idegessége feszültség",
+        "normalizationRationale": "Narrative feszültség structure linking phone throwing worry and Bóra's growing annoyance, grounded in observations and opportunities."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Telefon aggódás és Bóra idegessége feszültség",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "aeecacd4-77e0-4cf0-a5e3-942f32949f7f",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "214d4fd4-7f5c-4672-874d-07c3ec83abf2",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "640989a7-5d80-4c0c-9611-e7c2276f277e",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "4fdcf562-7447-450a-8be7-c90fcdf404a8",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "efe84aae-d960-410e-af0a-ffcf76d770b7",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "01367ed5-f9a1-4ba8-953e-12c12239acd2",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "1854cf81-db03-4d5f-a120-3de4d023de05",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "6f4245fb-c3d6-46e1-9840-d21c63f1e00f",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "aeecacd4-77e0-4cf0-a5e3-942f32949f7f",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "214d4fd4-7f5c-4672-874d-07c3ec83abf2",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "640989a7-5d80-4c0c-9611-e7c2276f277e",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "4fdcf562-7447-450a-8be7-c90fcdf404a8",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "efe84aae-d960-410e-af0a-ffcf76d770b7",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "01367ed5-f9a1-4ba8-953e-12c12239acd2",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "1854cf81-db03-4d5f-a120-3de4d023de05",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "6f4245fb-c3d6-46e1-9840-d21c63f1e00f",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_11_structure_konyhai_hamu_takaritas_feszultseg",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "STRUCTURE",
+        "identityLabel": "Hamu hullása, bocsánatkérés és takarítás feszültségi struktúra",
+        "normalizationRationale": "Structural tension pattern describing stain incident and subsequent social repair actions in kitchen scene, grounded in observations and opportunities."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Hamu hullása, bocsánatkérés és takarítás feszültségi struktúra",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "18010692-908e-4dcb-b91c-bd4e24ad2ecb",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "624bf1b6-b46a-47d4-b6b0-7bd7be202270",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "18010692-908e-4dcb-b91c-bd4e24ad2ecb",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "624bf1b6-b46a-47d4-b6b0-7bd7be202270",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    },
+    {
+      "clientAnchorKey": "anchor_12_structure_bora_elvesztes_idosebb_erzes_avi_figyelem",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingAnchorId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "anchorIdentity": {
+        "anchorType": "STRUCTURE",
+        "identityLabel": "Bóra eltűnése, idősebb érzet, Évi figyelme átmenet",
+        "normalizationRationale": "Transition dynamic linking disappearance of Bóra, personal age shift, and attention from Évi, evidenced in observations and related opportunities."
+      },
+      "anchorManifestation": {
+        "manifestationLabel": "Bóra eltűnése, idősebb érzet, Évi figyelme átmenet",
+        "sourceType": "DREAM_DERIVED",
+        "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+      },
+      "participations": [
+        {
+          "opportunityManifestationId": "cfcd5f17-9c21-450d-bba3-95643d9036f6",
+          "participationRole": "EVIDENCE",
+          "confidence": "HIGH",
+          "source": "LLM_CONSTRUCTED"
+        },
+        {
+          "opportunityManifestationId": "85c3472f-f31a-4647-baf8-59da8cb25fc0",
+          "participationRole": "SALIENT_LINK",
+          "confidence": "MEDIUM",
+          "source": "LLM_CONSTRUCTED"
+        }
+      ],
+      "evidence": {
+        "observationRefs": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_2",
+            "role": "primary_support"
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7",
+            "role": "primary_support"
+          }
+        ],
+        "opportunityRefs": [
+          {
+            "opportunityManifestationId": "cfcd5f17-9c21-450d-bba3-95643d9036f6",
+            "role": "supporting_opportunity"
+          },
+          {
+            "opportunityManifestationId": "85c3472f-f31a-4647-baf8-59da8cb25fc0",
+            "role": "supporting_opportunity"
+          }
+        ],
+        "traceRefs": []
+      },
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    }
+  ]
+}

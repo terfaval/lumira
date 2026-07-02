@@ -1,5 +1,6 @@
 import type { CreateGlossaryCandidateInput } from "@/src/domain/glossary/types";
 import { normalizeGlossaryRecognitionText } from "@/src/domain/glossary/recognition-normalization";
+import { isDreamerIdentityText } from "@/src/domain/observation/v2-runtime";
 
 export interface GlossaryContinuityAdmissionInput {
   label: string;
@@ -20,7 +21,18 @@ export type GlossaryContinuityAdmissionDecision =
   | { admitted: true; reason: "immediate_identity_entity" | "recurrence_confirmed_generic_motif" }
   | { admitted: false; reason: Exclude<GlossaryContinuityAdmissionReason, "immediate_identity_entity" | "recurrence_confirmed_generic_motif"> };
 
-const SYSTEM_PERSPECTIVE_LABELS = new Set(["dreamer", "narrator", "self", "observer"]);
+const SYSTEM_PERSPECTIVE_LABELS = new Set([
+  "dreamer",
+  "narrator",
+  "self",
+  "observer",
+  "almodo",
+  "en",
+  "i",
+  "me",
+  "myself",
+  "sajat magam",
+]);
 const EMOTIONAL_LABELS = new Set(["fear", "threat", "tension", "anxiety", "relief"]);
 const PERSONAL_REFERENCE_TOKENS = new Set([
   "father",
@@ -141,7 +153,7 @@ function hasAnyToken(tokens: string[], values: Set<string>): boolean {
 }
 
 function isSystemPerspectiveLabel(normalizedLabel: string): boolean {
-  return SYSTEM_PERSPECTIVE_LABELS.has(normalizedLabel);
+  return SYSTEM_PERSPECTIVE_LABELS.has(normalizedLabel) || isDreamerIdentityText(normalizedLabel);
 }
 
 function isEmotionalLabel(input: GlossaryContinuityAdmissionInput, normalizedLabel: string): boolean {

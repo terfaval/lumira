@@ -82,6 +82,53 @@ export class SupabaseThreadRepository implements ThreadRepository {
     return (data ?? []).map((row) => fromReflectiveThreadRow(row as ReflectiveThreadRow));
   }
 
+  async listThreadsByReflectiveObject(userId: UserId, reflectiveObjectId: string, limit?: number): Promise<ReflectiveThread[]> {
+    let associationRequest = this.client
+      .from(OBJECT_ASSOCIATIONS_TABLE)
+      .select("thread_id")
+      .eq("user_id", userId)
+      .eq("reflective_object_id", reflectiveObjectId)
+      .order("created_at", { ascending: false });
+
+    if (limit && Number.isFinite(limit) && limit > 0) {
+      associationRequest = associationRequest.limit(Math.floor(limit));
+    }
+
+    const { data: associationData, error: associationError } = await associationRequest;
+    if (associationError) {
+      throw new Error(`Failed to list thread-object associations: ${associationError.message}`);
+    }
+
+    const threadIds = Array.from(
+      new Set((associationData ?? []).map((row) => (row as { thread_id: string }).thread_id).filter(Boolean)),
+    );
+    if (threadIds.length === 0) {
+      return [];
+    }
+
+    let threadRequest = this.client
+      .from(THREADS_TABLE)
+      .select("*")
+      .eq("user_id", userId)
+      .is("archived_at", null)
+      .in("id", threadIds)
+      .order("created_at", { ascending: false });
+
+    if (limit && Number.isFinite(limit) && limit > 0) {
+      threadRequest = threadRequest.limit(Math.floor(limit));
+    }
+
+    const { data, error } = await threadRequest;
+    if (error) {
+      throw new Error(`Failed to list reflective threads by object: ${error.message}`);
+    }
+
+    const rows = (data ?? []).map((row) => fromReflectiveThreadRow(row as ReflectiveThreadRow));
+    const rowsById = new Map(rows.map((row) => [row.id, row] as const));
+
+    return threadIds.map((threadId) => rowsById.get(threadId)).filter((row): row is ReflectiveThread => Boolean(row));
+  }
+
   async updateThread(input: UpdateReflectiveThreadInput): Promise<ReflectiveThread | null> {
     const now = new Date().toISOString();
     const patch = toReflectiveThreadUpdateRow(input, now);

@@ -236,6 +236,34 @@ describe("extractGlossaryCandidatesFromObservations", () => {
       recurrenceCount: 2,
     });
   });
+
+  it("removes explanatory suffixes and skips dreamer labels in observation candidate extraction", () => {
+    const observation = makeObservation();
+    observation.fragments = [
+      {
+        ...observation.fragments[0],
+        fragmentText: "Kata, a mostohaanyám",
+      },
+      {
+        ...observation.fragments[1],
+        id: "frag-2b",
+        fragmentText: "Álmodó",
+      },
+    ];
+
+    const candidates = extractGlossaryCandidatesFromObservations({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      observations: [observation],
+    });
+
+    expect(candidates).toEqual([
+      expect.objectContaining({
+        displayLabel: "Kata",
+        normalizedKey: "kata",
+      }),
+    ]);
+  });
 });
 
 describe("extractGlossaryCandidatesFromObservationV2Bundle", () => {
@@ -363,5 +391,72 @@ describe("extractGlossaryCandidatesFromObservationV2Bundle", () => {
         }),
       ]),
     );
+  });
+
+  it("skips dreamer candidates and canonicalizes explanatory actor labels", () => {
+    const bundle = makeObservationV2Bundle();
+    bundle.scenes[0].derived.actors = [
+      { identityKey: "dreamer", displayLabel: "Álmodó", sourceLanguage: "hu", label: "Álmodó", observationIds: ["obsv2-1"] },
+      { identityKey: "kata", displayLabel: "Kata, a mostohaanyám", sourceLanguage: "hu", label: "Kata, a mostohaanyám", observationIds: ["obsv2-1"] },
+    ];
+    bundle.scenes[1].derived.actors = [
+      { identityKey: "dreamer", displayLabel: "Dreamer", sourceLanguage: "en", label: "Dreamer", observationIds: ["obsv2-2"] },
+    ];
+
+    const candidates = extractGlossaryCandidatesFromObservationV2Bundle({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      bundle,
+    });
+
+    expect(candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          displayLabel: "Kata",
+          normalizedKey: "kata",
+          sourceCategory: "actor",
+        }),
+      ]),
+    );
+    expect(candidates.some((candidate) => candidate.displayLabel === "Álmodó" || candidate.displayLabel === "Dreamer")).toBe(false);
+  });
+
+  it("skips qualified dreamer variants while preserving real actor candidates", () => {
+    const bundle = makeObservationV2Bundle();
+    bundle.scenes[0].derived.actors = [
+      { identityKey: "self_child", displayLabel: "Én (gyerek)", sourceLanguage: "hu", label: "Én (gyerek)", observationIds: ["obsv2-1"] },
+      { identityKey: "dreamer_older", displayLabel: "Dreamer (older)", sourceLanguage: "en", label: "Dreamer (older)", observationIds: ["obsv2-2"] },
+      { identityKey: "markus", displayLabel: "Markus", sourceLanguage: "hu", label: "Markus", observationIds: ["obsv2-3"] },
+      { identityKey: "evi", displayLabel: "Évi", sourceLanguage: "hu", label: "Évi", observationIds: ["obsv2-4"] },
+    ];
+    bundle.scenes[1].derived.actors = [
+      { identityKey: "almodo_idosebb", displayLabel: "Álmodó (idősebb)", sourceLanguage: "hu", label: "Álmodó (idősebb)", observationIds: ["obsv2-5"] },
+      { identityKey: "bora", displayLabel: "Bóra", sourceLanguage: "hu", label: "Bóra", observationIds: ["obsv2-6"] },
+      { identityKey: "apa", displayLabel: "Apám", sourceLanguage: "hu", label: "Apám", observationIds: ["obsv2-7"] },
+      { identityKey: "kata", displayLabel: "Kata", sourceLanguage: "hu", label: "Kata", observationIds: ["obsv2-8"] },
+    ];
+
+    const candidates = extractGlossaryCandidatesFromObservationV2Bundle({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      bundle,
+    });
+
+    expect(candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ displayLabel: "Markus", normalizedKey: "markus", sourceCategory: "actor" }),
+        expect.objectContaining({ displayLabel: "Évi", normalizedKey: "evi", sourceCategory: "actor" }),
+        expect.objectContaining({ displayLabel: "Bóra", normalizedKey: "bora", sourceCategory: "actor" }),
+        expect.objectContaining({ displayLabel: "Apám", normalizedKey: "apa", sourceCategory: "actor" }),
+        expect.objectContaining({ displayLabel: "Kata", normalizedKey: "kata", sourceCategory: "actor" }),
+      ]),
+    );
+    expect(
+      candidates.some((candidate) =>
+        candidate.displayLabel.includes("Álmodó") ||
+        candidate.displayLabel.includes("Dreamer") ||
+        candidate.displayLabel.includes("Én"),
+      ),
+    ).toBe(false);
   });
 });

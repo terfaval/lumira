@@ -1,0 +1,52 @@
+[
+  {
+    "id": "bc34ef7a-81f1-4a44-9b31-25e8e87aa301",
+    "anchorId": "96c8992c-3121-40a1-8987-beba0868b1c4",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Bóra",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T10:32:21.66673+00:00",
+    "updatedAt": "2026-06-17T10:32:21.66673+00:00"
+  },
+  {
+    "id": "fb5b42c2-e9aa-4937-aed3-4f2c42676881",
+    "anchorId": "fc82f0bb-03f5-40e2-a250-ea3dbab20e26",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Telefon",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T10:32:21.998001+00:00",
+    "updatedAt": "2026-06-17T10:32:21.998001+00:00"
+  },
+  {
+    "id": "bc8ad96b-b552-4576-ab90-2571263046e8",
+    "anchorId": "b25ca521-d8bf-492c-a5bf-73b67503f8cc",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Markus",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T10:32:22.199719+00:00",
+    "updatedAt": "2026-06-17T10:32:22.199719+00:00"
+  },
+  {
+    "id": "932ab606-5566-4d25-9ac9-8daf147ddb9d",
+    "anchorId": "fef9c122-9d9c-424c-a63f-3ed4e479c8d7",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Kata, mostohaanya",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T10:32:22.487186+00:00",
+    "updatedAt": "2026-06-17T10:32:22.487186+00:00"
+  },
+  {
+    "id": "c93d4269-8029-4a10-a870-15b7103a80ac",
+    "anchorId": "4d7e6388-0036-48ed-a5d8-5a8d7d6fdc54",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Évi",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T10:32:22.771904+00:00",
+    "updatedAt": "2026-06-17T10:32:22.771904+00:00"
+  }
+]

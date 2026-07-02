@@ -13,7 +13,9 @@ export interface OpeningRepository {
   createOpening(input: CreateOpeningInput): Promise<Opening>;
   getOpeningById(openingId: OpeningId, userId: UserId): Promise<Opening | null>;
   getOpeningByIdIncludingArchived?: (openingId: OpeningId, userId: UserId) => Promise<Opening | null>;
+  attachThreadToOpening?: (openingId: OpeningId, userId: UserId, threadId: string) => Promise<Opening | null>;
   listOpeningSurfacesByUser(userId: UserId, limit?: number): Promise<OpeningSurface[]>;
+  listOpeningSurfacesByReflectiveObject?(userId: UserId, reflectiveObjectId: string, limit?: number): Promise<OpeningSurface[]>;
   listDormantSuppressedOpeningsByUser(userId: UserId): Promise<Opening[]>;
   listRecentOpeningsByUser(userId: UserId, limit?: number): Promise<Opening[]>;
   listOpeningsByLatentSnapshot(snapshotId: LatentSnapshotId, userId: UserId): Promise<Opening[]>;

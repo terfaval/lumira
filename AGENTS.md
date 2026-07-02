@@ -6,6 +6,11 @@ This repository is developed with an AI coding agent collaborating with a human 
 - Default rule set for the entire repo.
 - More specific `AGENTS.md` files can override this within their scope.
 
+## Coordination framing
+- Lumira uses a coordinator-driven workflow.
+- Repository reality is implementation evidence, not automatic product authority.
+- If a meaningful product, architecture, cleanup, or UX decision appears, surface it instead of silently choosing.
+
 ## 1) Required first step
 Before starting any ticket, read:
 1. `docs/AGENT_START_HERE.md`
@@ -13,6 +18,8 @@ Before starting any ticket, read:
 3. any files explicitly referenced by the ticket
 
 Do not read every document by default. Use `docs/AGENT_START_HERE.md` and `docs/DOCS_INDEX.md` to identify the right documentation layer, then use `docs/SPEC_INDEX.md` for task-specific lookup.
+
+`docs/CURRENT_STATE.md` is a re-entry document. Read it after longer breaks, during coordinator transitions, or when current implementation state is directly relevant.
 
 ## UI implementation read path
 Before starting any UI implementation ticket, read in this order:
@@ -28,8 +35,20 @@ Route contracts must be interpreted through the visual philosophy and shared pri
 ## 2) Working mode
 - Prefer small, reviewable changes per ticket.
 - If scope is large, produce an AUDIT plan first, then BUILD.
+- Use Repo Scout -> Audit -> Build when repository grounding or decisions are still uncertain.
 - Keep diffs minimal and localized.
 - Do not change unrelated code.
+
+## Working rules
+- Implement directly on main.
+- Do not create isolated worktrees.
+- Do not create `.worktrees` directories.
+- Validate on actual repository main unless a ticket explicitly overrides this.
+
+## Dirty working tree
+- The repository may contain unrelated pre-existing changes; preserve them.
+- If the ticket requires editing a file that already has unrelated edits, make the smallest targeted change and avoid reformatting or cleanup.
+- Do not revert unrelated work.
 
 ## 3) Ticket protocol
 For each ticket:
@@ -48,12 +67,16 @@ If blocked by ambiguity, ask one clear question with concrete options.
 - Prefer deterministic ordering; explicitly sort keys when needed.
 - Use idempotent migrations where possible.
 - Avoid destructive DB changes unless explicitly requested.
+- Treat Backend V2 as a clean-room implementation, not a default migration project.
+- Do not treat quarantined legacy backend structures as Backend V2 architectural authority.
 
 ## 5) Must not do
 - No unrelated refactors or style-only changes.
 - No new dependencies without explicit approval.
 - No public API renames without migration/compat plan.
 - Do not remove debug/logging/meta fields unless requested.
+- Do not remove legacy code merely because it appears unused; cleanup follows replacement, validation, and dependency review.
+- Do not casually remove or damage user-facing pages, routes, established UI flows, or other protected surfaces without explicit instruction.
 
 ## 6) Validation commands
 Use repo scripts when available:

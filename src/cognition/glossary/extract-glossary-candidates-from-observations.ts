@@ -13,6 +13,7 @@ import type {
 import {
   getObservationV2DerivedItemDisplayLabel,
   getObservationV2DerivedItemIdentityKey,
+  isDreamerIdentityText,
 } from "@/src/domain/observation/v2-runtime";
 import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
 
@@ -44,6 +45,7 @@ interface ExtractGlossaryCandidatesFromObservationV2Input {
 interface CandidateAccumulator {
   userId: UserId;
   reflectiveObjectId: ReflectiveObjectId;
+  identityKey?: string | null;
   normalizedKey: string;
   displayLabel: string;
   sourceCategory: CreateGlossaryCandidateInput["sourceCategory"];
@@ -84,7 +86,7 @@ export function extractGlossaryCandidatesFromObservations(
       const displayLabel = cleanGlossaryDisplayText(fragment.fragmentText);
       const normalizedKey = normalizeGlossaryRecognitionText(displayLabel);
 
-      if (!displayLabel || !normalizedKey) {
+      if (!displayLabel || !normalizedKey || isDreamerIdentityText(displayLabel)) {
         continue;
       }
 
@@ -99,6 +101,7 @@ export function extractGlossaryCandidatesFromObservations(
       candidates.set(key, {
         userId: input.userId,
         reflectiveObjectId: input.reflectiveObjectId,
+        identityKey: null,
         normalizedKey,
         displayLabel,
         sourceCategory: fragment.category,
@@ -112,6 +115,7 @@ export function extractGlossaryCandidatesFromObservations(
   return Array.from(candidates.values()).map((candidate) => ({
     userId: candidate.userId,
     reflectiveObjectId: candidate.reflectiveObjectId,
+    identityKey: candidate.identityKey ?? null,
     normalizedKey: candidate.normalizedKey,
     displayLabel: candidate.displayLabel,
     sourceCategory: candidate.sourceCategory,
@@ -144,15 +148,23 @@ function buildCandidateFromDerivedItem(input: {
   reflectiveObjectId: ReflectiveObjectId;
 }): CandidateAccumulator | null {
   const displayLabel = cleanGlossaryDisplayText(getObservationV2DerivedItemDisplayLabel(input.item));
-  const normalizedKey = normalizeGlossaryRecognitionText(getObservationV2DerivedItemIdentityKey(input.item));
+  const identityKey = getObservationV2DerivedItemIdentityKey(input.item);
+  const normalizedKey = normalizeGlossaryRecognitionText(identityKey);
 
-  if (!displayLabel || !normalizedKey || containsInterpretiveLanguage(displayLabel)) {
+  if (
+    !displayLabel ||
+    !normalizedKey ||
+    containsInterpretiveLanguage(displayLabel) ||
+    isDreamerIdentityText(displayLabel) ||
+    isDreamerIdentityText(identityKey)
+  ) {
     return null;
   }
 
   return {
     userId: input.userId,
     reflectiveObjectId: input.reflectiveObjectId,
+    identityKey,
     normalizedKey,
     displayLabel,
     sourceCategory: input.category,
@@ -182,6 +194,7 @@ function buildRecurrenceCandidateFromObservation(input: {
   return {
     userId: input.userId,
     reflectiveObjectId: input.reflectiveObjectId,
+    identityKey: null,
     normalizedKey,
     displayLabel,
     sourceCategory: "recurrence_candidate",
@@ -240,6 +253,7 @@ export function extractGlossaryCandidatesFromObservationV2Bundle(
   return Array.from(candidates.values()).map((candidate) => ({
     userId: candidate.userId,
     reflectiveObjectId: candidate.reflectiveObjectId,
+    identityKey: candidate.identityKey ?? null,
     normalizedKey: candidate.normalizedKey,
     displayLabel: candidate.displayLabel,
     sourceCategory: candidate.sourceCategory,

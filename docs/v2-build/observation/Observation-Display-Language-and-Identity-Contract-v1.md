@@ -157,6 +157,43 @@ UI should not own translation or semantic relabeling.
 
 ---
 
+# Field Ownership Map
+
+This section is the single authority for language ownership inside Observation V2.
+
+| Field | Purpose | Owner | Expected language | User-facing? | Internal-facing? |
+| --- | --- | --- | --- | --- | --- |
+| `dreamLanguage` | Carries the language signal for the dream / source material. | Observation metadata | Language code such as `hu`, `en`, or `unknown`, not prose. | Not directly. | Yes. |
+| `identityKey` | Preserves stable internal identity across language variation. | Observation identity layer | Stable normalized identity text. It should remain language-stable rather than source-language display text. | No. | Yes. |
+| `displayLabel` | Provides language-appropriate display text for derived structures. | Observation display layer | Should follow the dream / source language when that language is clear. | Yes. | Yes. |
+| `sourceLanguage` | Records which language the `displayLabel` belongs to. | Observation display metadata | Language code such as `hu`, `en`, or `unknown`, not prose. | Indirectly, as display metadata. | Yes. |
+| `scene.summary` | Preserves short scene-level descriptive orientation. | Observation prose layer | Observation-owned descriptive cognition field. Current doctrine does not require English. Source-language display is required if shown directly to the user. | Not by default. If surfaced directly, it requires a read/display contract. | Yes. |
+| `observation.text` | Preserves canonical descriptive observation prose. | Observation prose layer | Observation-owned descriptive cognition field. Current doctrine does not require English. Source-language display is required if shown directly to the user. | Not by default. If surfaced directly, it requires a read/display contract. | Yes. |
+
+## Prose Layer Clarification
+
+`scene.summary` and `observation.text` are Observation-owned descriptive cognition fields.
+
+Current doctrine does not require these prose fields to be English, and English Observation prose is not automatically a bug.
+
+However, these fields are not the same thing as source-language display labels.
+
+If `scene.summary` or `observation.text` is surfaced directly to the dreamer, a source-language read/display contract is required at that downstream boundary.
+
+English prose for Hungarian dreams becomes a bug candidate when it leaks into:
+
+* user-facing surfaces
+* candidate-facing display
+* or other display contexts that present raw Observation prose without source-language mediation
+
+This preserves the intended distinction:
+
+* `identityKey` = stable internal identity
+* `displayLabel` + `sourceLanguage` = display-facing language contract
+* `scene.summary` + `observation.text` = descriptive cognition prose that may require downstream mediation before direct display
+
+---
+
 # Glossary Candidate Propagation
 
 Glossary candidate generation should prefer source-language display labels when creating user-facing candidates.

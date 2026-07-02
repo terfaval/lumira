@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { projectGlossaryCandidateContinuityVisibility } from "@/src/domain/glossary/continuity-visibility";
 import { DEV_FALLBACK_HEADER, resolveRequestUserContext } from "@/src/infrastructure/supabase/auth/resolve-request-user-context";
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
 import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
@@ -35,9 +36,16 @@ export async function GET(request: Request, context: RouteParams) {
   }
 
   const glossaryRepository = createGlossaryRepository();
-  const candidates = await glossaryRepository.listCandidatesByReflectiveObject(user.userId, reflectiveObjectId);
+  const [allCandidates, objectCandidates] = await Promise.all([
+    glossaryRepository.listCandidates(user.userId),
+    glossaryRepository.listCandidatesByReflectiveObject(user.userId, reflectiveObjectId),
+  ]);
+  const projectedCandidates = projectGlossaryCandidateContinuityVisibility([
+    ...allCandidates.filter((candidate) => candidate.reflectiveObjectId !== reflectiveObjectId),
+    ...objectCandidates,
+  ]).filter((candidate) => candidate.reflectiveObjectId === reflectiveObjectId);
 
-  return NextResponse.json({ candidates });
+  return NextResponse.json({ candidates: projectedCandidates });
 }
 
 export async function POST(request: Request, context: RouteParams) {
@@ -60,5 +68,12 @@ export async function POST(request: Request, context: RouteParams) {
     reflectiveObjectId,
   });
 
-  return NextResponse.json({ candidates }, { status: 201 });
+  const glossaryRepository = createGlossaryRepository();
+  const allCandidates = await glossaryRepository.listCandidates(user.userId);
+  const generatedIds = new Set(candidates.map((candidate) => candidate.id));
+  const projectedCandidates = projectGlossaryCandidateContinuityVisibility(allCandidates).filter((candidate) =>
+    generatedIds.has(candidate.id),
+  );
+
+  return NextResponse.json({ candidates: projectedCandidates }, { status: 201 });
 }

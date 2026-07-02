@@ -2,7 +2,6 @@ import type { ReflectiveObject } from "@/src/domain/reflective-objects/types";
 import type { ReflectiveThread } from "@/src/domain/threads/types";
 import type { ReflectiveOpening } from "@/src/domain/openings/types";
 import type { OpeningSurface } from "@/src/domain/openings/types";
-import type { Observation } from "@/src/domain/observation/types";
 import type { ReflectiveResponse } from "@/src/domain/responses/types";
 import type { GlossaryTerm } from "@/src/domain/glossary/types";
 import type { ReflectiveLatentHint } from "@/src/reflective-space/composition/derive-latent-hints";
@@ -28,7 +27,6 @@ export interface ReflectiveSpaceViewport {
   responseSurfaces: ReflectiveResponseSurface[];
   latentHints: ReflectiveLatentHint[];
   openingDialogues?: OpeningDialogue[];
-  observations: Observation[];
   glossaryCues: ReflectiveGlossaryCue[];
   summary: string;
 }
@@ -37,7 +35,6 @@ export interface ReflectiveSpaceViewportWindow {
   mode: "bounded_archive_window";
   section:
     | "reflective_objects"
-    | "observations"
     | "threads"
     | "responses"
     | "glossary"
@@ -71,7 +68,6 @@ export interface ReflectiveSpaceViewportReadModel {
   centerObjectId: string | null;
   sections: {
     reflectiveObjects: ReflectiveSpaceViewportSection<ReflectiveObject>;
-    observations: ReflectiveSpaceViewportSection<Observation>;
     threadSurfaces: ReflectiveSpaceViewportSection<ReflectiveThreadSurface>;
     responseSurfaces: ReflectiveSpaceViewportSection<ReflectiveResponseSurface>;
     openingSurfaces: ReflectiveSpaceViewportSection<OpeningSurface>;
@@ -85,7 +81,6 @@ export interface ReflectiveSpaceViewportReadModel {
   };
   windows: {
     objectsWindow: ReflectiveSpaceViewportWindow;
-    observationsWindow: ReflectiveSpaceViewportWindow;
     threadsWindow: ReflectiveSpaceViewportWindow;
     responsesWindow: ReflectiveSpaceViewportWindow;
     glossaryWindow: ReflectiveSpaceViewportWindow;

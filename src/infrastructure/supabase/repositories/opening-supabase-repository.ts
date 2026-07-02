@@ -33,20 +33,33 @@ const DEFAULT_SURFACE_LIMIT = 3;
 const DEFAULT_RECENT_OPENINGS_LIMIT = 40;
 
 export class SupabaseOpeningRepository implements OpeningRepository {
+  private openingV2MetadataColumnsAvailable: boolean | null = null;
+
   constructor(private readonly client: SupabaseInfrastructureClient) {}
 
   async createOpening(input: CreateOpeningInput): Promise<Opening> {
-    const { data, error } = await this.client
-      .from(OPENINGS_TABLE)
-      .insert(toOpeningInsertRow(input))
-      .select("*")
-      .single<OpeningRow>();
+    const attempts = this.openingV2MetadataColumnsAvailable === false ? [false] : [true, false];
 
-    if (error) {
-      throw new Error(`Failed to create opening: ${error.message}`);
+    for (const includeV2Metadata of attempts) {
+      const { data, error } = await this.client
+        .from(OPENINGS_TABLE)
+        .insert(this.toOpeningInsertPatch(input, includeV2Metadata))
+        .select("*")
+        .single<OpeningRow>();
+
+      if (!error && data) {
+        this.openingV2MetadataColumnsAvailable = includeV2Metadata;
+        return fromOpeningRow(data);
+      }
+
+      if (!this.isMissingOpeningV2MetadataColumnError(error) || !includeV2Metadata) {
+        throw new Error(`Failed to create opening: ${error?.message ?? "unknown_error"}`);
+      }
+
+      this.openingV2MetadataColumnsAvailable = false;
     }
 
-    return fromOpeningRow(data);
+    throw new Error("Failed to create opening: unknown_error");
   }
 
   async getOpeningById(openingId: OpeningId, userId: UserId): Promise<Opening | null> {
@@ -80,6 +93,31 @@ export class SupabaseOpeningRepository implements OpeningRepository {
     return data ? fromOpeningRow(data) : null;
   }
 
+  async attachThreadToOpening(openingId: OpeningId, userId: UserId, threadId: string): Promise<Opening | null> {
+    const current = await this.getOpeningById(openingId, userId);
+    if (!current) {
+      return null;
+    }
+
+    const nextSourceThreads = Array.from(new Set([...current.provenance.sourceThreads, threadId]));
+    const { data, error } = await this.client
+      .from(OPENINGS_TABLE)
+      .update({
+        source_threads: nextSourceThreads,
+      })
+      .eq("id", openingId)
+      .eq("user_id", userId)
+      .is("archived_at", null)
+      .select("*")
+      .maybeSingle<OpeningRow>();
+
+    if (error) {
+      throw new Error(`Failed to attach thread to opening: ${error.message}`);
+    }
+
+    return data ? fromOpeningRow(data) : null;
+  }
+
   async listOpeningSurfacesByUser(userId: UserId, limit = DEFAULT_SURFACE_LIMIT): Promise<OpeningSurface[]> {
     const { data, error } = await this.client
       .from(OPENINGS_TABLE)
@@ -91,6 +129,29 @@ export class SupabaseOpeningRepository implements OpeningRepository {
 
     if (error) {
       throw new Error(`Failed to list opening surfaces: ${error.message}`);
+    }
+
+    return (data ?? [])
+      .map((row) => toOpeningSurface(row as OpeningRow))
+      .filter((surface) => surface.suppressionState === "none");
+  }
+
+  async listOpeningSurfacesByReflectiveObject(
+    userId: UserId,
+    reflectiveObjectId: string,
+    limit = DEFAULT_SURFACE_LIMIT,
+  ): Promise<OpeningSurface[]> {
+    const { data, error } = await this.client
+      .from(OPENINGS_TABLE)
+      .select("*")
+      .eq("user_id", userId)
+      .contains("source_objects", [reflectiveObjectId])
+      .is("archived_at", null)
+      .order("created_at", { ascending: false })
+      .limit(Math.max(1, Math.floor(limit)));
+
+    if (error) {
+      throw new Error(`Failed to list opening surfaces by object: ${error.message}`);
     }
 
     return (data ?? [])
@@ -293,5 +354,24 @@ export class SupabaseOpeningRepository implements OpeningRepository {
     }
 
     return fromOpeningSurfaceEventRow(data);
+  }
+
+  private toOpeningInsertPatch(input: CreateOpeningInput, includeV2Metadata: boolean): Record<string, unknown> {
+    const row = toOpeningInsertRow(input) as unknown as Record<string, unknown>;
+
+    if (!includeV2Metadata) {
+      delete row.opening_context;
+      delete row.source_opportunity_manifestation_id;
+    }
+
+    return row;
+  }
+
+  private isMissingOpeningV2MetadataColumnError(error: { code?: string; message?: string } | null): boolean {
+    const message = error?.message?.toLowerCase() ?? "";
+    const referencesV2Metadata =
+      message.includes("opening_context") || message.includes("source_opportunity_manifestation_id");
+
+    return referencesV2Metadata && (error?.code === "42703" || error?.code === "PGRST204");
   }
 }

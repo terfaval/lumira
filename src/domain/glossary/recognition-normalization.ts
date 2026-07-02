@@ -1,7 +1,12 @@
 const MAX_GLOSSARY_DISPLAY_LENGTH = 120;
 
 export function cleanGlossaryDisplayText(text: string): string {
-  return text.replace(/\s+/g, " ").trim().slice(0, MAX_GLOSSARY_DISPLAY_LENGTH);
+  const collapsed = text.replace(/\s+/g, " ").trim();
+  const withoutAppositive = collapsed.includes(",")
+    ? collapsed.split(",")[0]?.trim() ?? collapsed
+    : collapsed;
+
+  return withoutAppositive.slice(0, MAX_GLOSSARY_DISPLAY_LENGTH);
 }
 
 export function normalizeGlossaryRecognitionText(text: string): string {

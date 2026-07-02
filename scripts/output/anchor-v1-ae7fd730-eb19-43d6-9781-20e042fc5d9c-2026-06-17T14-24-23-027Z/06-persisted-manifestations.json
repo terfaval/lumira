@@ -1,0 +1,122 @@
+[
+  {
+    "id": "6ec98c6d-6060-4fee-bab9-c4ee40452a77",
+    "anchorId": "effe94bb-dcc3-44b0-984c-2ea5ac22527d",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Telefon",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:17.876602+00:00",
+    "updatedAt": "2026-06-17T14:24:17.876602+00:00"
+  },
+  {
+    "id": "02037ef2-0edf-4857-a61b-a41583db4dab",
+    "anchorId": "b6acffba-1c20-41df-8b0b-1c72f0334189",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Bóra",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:18.847358+00:00",
+    "updatedAt": "2026-06-17T14:24:18.847358+00:00"
+  },
+  {
+    "id": "216d64b1-aead-42cf-88c1-288672fea3e6",
+    "anchorId": "ebeb9c2d-5782-48fe-b627-15effa5943a2",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Markus",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:19.313429+00:00",
+    "updatedAt": "2026-06-17T14:24:19.313429+00:00"
+  },
+  {
+    "id": "84b3987c-ad62-4a53-8816-63b119aa7695",
+    "anchorId": "51cad0a4-caaa-4544-8895-d0b3d3309bee",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Kata, mostohaanya",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:19.70601+00:00",
+    "updatedAt": "2026-06-17T14:24:19.70601+00:00"
+  },
+  {
+    "id": "fdc6e4d3-45dd-42b2-8f24-e028bc6cfe8c",
+    "anchorId": "4e495c03-c472-48f9-bf25-b7b7ff56beaa",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Évi",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:20.094094+00:00",
+    "updatedAt": "2026-06-17T14:24:20.094094+00:00"
+  },
+  {
+    "id": "2c3b2fda-62b2-4b43-aaa9-4aef37b6d5fd",
+    "anchorId": "a59ab057-ab89-46ed-8a45-804c1f958441",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Telefon dobáló",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:20.468124+00:00",
+    "updatedAt": "2026-06-17T14:24:20.468124+00:00"
+  },
+  {
+    "id": "e1385b8d-cd7f-4c37-96b5-39b3665b7c53",
+    "anchorId": "428f316f-73be-47b3-9a37-dced817a4915",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Telefon kereső és segítő",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:21.376701+00:00",
+    "updatedAt": "2026-06-17T14:24:21.376701+00:00"
+  },
+  {
+    "id": "856216cb-5e34-4784-9550-752794f9bedb",
+    "anchorId": "f2e10dcf-c451-418b-a28e-9d4c81d220b8",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Konyhai helyreállító segítő",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:21.625132+00:00",
+    "updatedAt": "2026-06-17T14:24:21.625132+00:00"
+  },
+  {
+    "id": "3393d48e-ef09-4608-9829-d8f93e9abe05",
+    "anchorId": "582d2805-f42d-4bee-8c69-a0f858a10b47",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Megnyugtató apa",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:21.925592+00:00",
+    "updatedAt": "2026-06-17T14:24:21.925592+00:00"
+  },
+  {
+    "id": "1a08efff-7558-4d87-b3d1-abfcde7ad8d3",
+    "anchorId": "63610a67-26dd-4c2b-bf8a-876fb644895c",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Telefon aggódás és Bóra idegessége feszültség",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:22.171138+00:00",
+    "updatedAt": "2026-06-17T14:24:22.171138+00:00"
+  },
+  {
+    "id": "64ee969d-a5ba-4285-84c5-1fdda6584ee5",
+    "anchorId": "2f6f7a86-c827-4c16-8ab5-2d482e6611b4",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Hamu hullása, bocsánatkérés és takarítás feszültségi struktúra",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:22.971715+00:00",
+    "updatedAt": "2026-06-17T14:24:22.971715+00:00"
+  },
+  {
+    "id": "edbdcf25-ddcd-4380-bdc5-f736eecc581f",
+    "anchorId": "2ca433e6-de8f-42fd-99bf-98970a89be0a",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+    "manifestationLabel": "Bóra eltűnése, idősebb érzet, Évi figyelme átmenet",
+    "sourceType": "DREAM_DERIVED",
+    "createdAt": "2026-06-17T14:24:23.317812+00:00",
+    "updatedAt": "2026-06-17T14:24:23.317812+00:00"
+  }
+]

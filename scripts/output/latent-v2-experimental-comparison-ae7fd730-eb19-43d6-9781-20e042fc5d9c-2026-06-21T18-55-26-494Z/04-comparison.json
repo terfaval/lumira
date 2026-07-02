@@ -1,0 +1,3463 @@
+{
+  "mode": "compared",
+  "comparison": {
+    "metrics": {
+      "current": {
+        "multiplicity": 4,
+        "distinctness": 1,
+        "evidenceGrounding": 1,
+        "lateSceneRetention": 0.75,
+        "ambiguityPreservation": 0.5
+      },
+      "experimental": {
+        "multiplicity": 3,
+        "distinctness": 1,
+        "evidenceGrounding": 1,
+        "lateSceneRetention": 0.6666666666666666,
+        "ambiguityPreservation": 0
+      }
+    },
+    "current": {
+      "generationContext": {
+        "runtimeVersion": "latent_opportunity_constructor_v1",
+        "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+        "observationBundleId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1"
+      },
+      "decision": {
+        "mode": "opportunities_found",
+        "silenceReason": null
+      },
+      "opportunities": [
+        {
+          "clientOpportunityKey": "opportunity-1-telephone-toss-uncertainty",
+          "identityDecision": {
+            "mode": "create_new",
+            "existingIdentityId": null,
+            "reuseConfidence": null,
+            "reuseRationale": null
+          },
+          "opportunityStructure": {
+            "primaryCategory": "transition",
+            "secondaryCategories": [
+              "ambiguity",
+              "relationship"
+            ],
+            "structureType": "A_TO_B_TO_C",
+            "nodes": [
+              {
+                "key": "A",
+                "label": "Tudatos telefon dobálás aggodalommal",
+                "kind": "state"
+              },
+              {
+                "key": "B",
+                "label": "Telefon elvesztésének és keresésének bizonytalansága",
+                "kind": "state"
+              },
+              {
+                "key": "actor1",
+                "label": "Én (álmodó)",
+                "kind": "actor"
+              },
+              {
+                "key": "actor2",
+                "label": "Bóra",
+                "kind": "actor"
+              },
+              {
+                "key": "object1",
+                "label": "Telefon",
+                "kind": "object"
+              }
+            ],
+            "edges": [
+              {
+                "from": "actor1",
+                "to": "A",
+                "relation": "experiences"
+              },
+              {
+                "from": "A",
+                "to": "B",
+                "relation": "leads_to_transition"
+              },
+              {
+                "from": "actor1",
+                "to": "actor2",
+                "relation": "interacts_with"
+              },
+              {
+                "from": "actor1",
+                "to": "object1",
+                "relation": "controls"
+              },
+              {
+                "from": "object1",
+                "to": "B",
+                "relation": "object_of_search"
+              }
+            ],
+            "tensions": [
+              {
+                "between": [
+                  "A",
+                  "B"
+                ],
+                "description": "Aggodalom a telefon sérülése miatt, de a tudatos kockáztatás mellett bizonytalanság a telefon valódi helyét illetően."
+              }
+            ],
+            "gaps": [
+              {
+                "description": "Hiányzó tudás a telefon pontos helyéről, kizárólag találgatás és keresés indul.",
+                "supportedByObservationIds": [
+                  "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_4",
+                  "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_7"
+                ]
+              }
+            ],
+            "continuitySignals": [
+              {
+                "kind": "none",
+                "referenceId": null,
+                "description": null
+              }
+            ]
+          },
+          "manifestation": {
+            "summaryForInternalUse": "A telefon tudatos dobálásával együtt járó aggódás, majd a telefon elvesztése és bizonytalan keresése Bórával együtt a mezőn.",
+            "priorityReflectiveObjectRole": "primary_source",
+            "salience": {
+              "credibility": 0.9,
+              "reflectivePotential": 0.9,
+              "salienceBand": "high",
+              "credibilityRationale": "Több releváns megfigyelés a telefon dobálásáról, az aggódás kifejezéséről, illetve a bizonytalan keresési interakcióról szerepel.",
+              "reflectivePotentialRationale": "A szerkezet állapota átmenetet és bizonytalanságot, valamint érzelmi-társas dinamikát mutat, több megfigyelés által megerősítve."
+            }
+          },
+          "evidenceBlocks": [
+            {
+              "clientBlockKey": "evidenceblock1",
+              "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+              "role": "priority",
+              "summary": "A telefon dobálása, aggodalom és Bóra idegessége.",
+              "observationRefs": [
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+                  "sceneRowId": null,
+                  "sceneStableId": null,
+                  "observationStableId": "obs1_5",
+                  "role": "primary_support",
+                  "supportsNodeKeys": [
+                    "A"
+                  ],
+                  "supportsEdgeIndexes": []
+                },
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+                  "sceneRowId": null,
+                  "sceneStableId": null,
+                  "observationStableId": "obs1_6",
+                  "role": "primary_support",
+                  "supportsNodeKeys": [
+                    "B"
+                  ],
+                  "supportsEdgeIndexes": []
+                }
+              ],
+              "confirmedGlossaryRefs": [],
+              "candidateGlossaryMentions": [
+                {
+                  "glossaryCandidateId": "58064f26-7caf-4e80-b188-039d78e5c2b4",
+                  "note": "telefon szerepel az eseményben."
+                },
+                {
+                  "glossaryCandidateId": "eeedd1f9-8677-4e96-9802-8748f9dbe189",
+                  "note": "Bóra szereplői kapcsolat."
+                }
+              ]
+            }
+          ],
+          "safety": {
+            "containsInterpretation": false,
+            "containsDiagnosis": false,
+            "containsIdentityClaim": false,
+            "containsAdvice": false,
+            "userFacingReady": false
+          }
+        },
+        {
+          "clientOpportunityKey": "opportunity-2-kitchen-stain-repair",
+          "identityDecision": {
+            "mode": "create_new",
+            "existingIdentityId": null,
+            "reuseConfidence": null,
+            "reuseRationale": null
+          },
+          "opportunityStructure": {
+            "primaryCategory": "transformation",
+            "secondaryCategories": [
+              "relationship",
+              "reversal"
+            ],
+            "structureType": "A_TO_B",
+            "nodes": [
+              {
+                "key": "A",
+                "label": "Baleset: hamu hullik Markus nadrágjára",
+                "kind": "event"
+              },
+              {
+                "key": "B",
+                "label": "Takarítási kísérlet és megnyugtatás",
+                "kind": "event"
+              },
+              {
+                "key": "actor1",
+                "label": "Én (álmodó)",
+                "kind": "actor"
+              },
+              {
+                "key": "actor2",
+                "label": "Markus",
+                "kind": "actor"
+              },
+              {
+                "key": "actor3",
+                "label": "Kata, mostohaanya",
+                "kind": "actor"
+              },
+              {
+                "key": "glossaryTerm1",
+                "label": "apám",
+                "kind": "actor"
+              }
+            ],
+            "edges": [
+              {
+                "from": "actor1",
+                "to": "A",
+                "relation": "causes_accidental_event"
+              },
+              {
+                "from": "A",
+                "to": "B",
+                "relation": "leads_to_repair_attempt"
+              },
+              {
+                "from": "actor1",
+                "to": "B",
+                "relation": "participates_in"
+              },
+              {
+                "from": "actor3",
+                "to": "B",
+                "relation": "assists_in_repair"
+              },
+              {
+                "from": "glossaryTerm1",
+                "to": "B",
+                "relation": "supports_repair"
+              },
+              {
+                "from": "actor1",
+                "to": "actor2",
+                "relation": "interacts_with"
+              }
+            ],
+            "tensions": [
+              {
+                "between": [
+                  "A",
+                  "B"
+                ],
+                "description": "Baleset miatti kellemetlen érzés és a helyzet megnyugtató kezelése, bocsánatkérés és segítségnyújtás."
+              }
+            ],
+            "gaps": [],
+            "continuitySignals": [
+              {
+                "kind": "confirmed_glossary_term",
+                "referenceId": "f69e6141-77bf-4639-b00d-23bc3773a795",
+                "description": "Megjelenik a 'apám' mint motívum a helyzetben."
+              }
+            ]
+          },
+          "manifestation": {
+            "summaryForInternalUse": "A hamu lejuttatása Markus nadrágjára, a sértődöttség és bocsánatkérés, majd Kata segítsége és apám megnyugtató szerepe.",
+            "priorityReflectiveObjectRole": "primary_source",
+            "salience": {
+              "credibility": 0.85,
+              "reflectivePotential": 0.8,
+              "salienceBand": "high",
+              "credibilityRationale": "Részletes megfigyelések az esemény leírására, több szereplő és cselekvés leírva, megerősítve az érzelmi töltettel.",
+              "reflectivePotentialRationale": "A helyzet változása és a reparációs interakció egymással szemben áll, gazdag társas érzelmi dinamikát mutat."
+            }
+          },
+          "evidenceBlocks": [
+            {
+              "clientBlockKey": "evidenceblock2",
+              "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+              "role": "priority",
+              "summary": "Markus nadrágjára hulló hamu, bocsánatkérés, Kata segítsége, apám megnyugtató szavai.",
+              "observationRefs": [
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+                  "sceneRowId": null,
+                  "sceneStableId": null,
+                  "observationStableId": "obs2_5",
+                  "role": "primary_support",
+                  "supportsNodeKeys": [
+                    "A",
+                    "B"
+                  ],
+                  "supportsEdgeIndexes": []
+                },
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6",
+                  "sceneRowId": null,
+                  "sceneStableId": null,
+                  "observationStableId": "obs2_6",
+                  "role": "primary_support",
+                  "supportsNodeKeys": [
+                    "B"
+                  ],
+                  "supportsEdgeIndexes": []
+                }
+              ],
+              "confirmedGlossaryRefs": [
+                {
+                  "glossaryTermId": "f69e6141-77bf-4639-b00d-23bc3773a795",
+                  "relationshipRole": "continuity",
+                  "note": "Apám jelenléte a szituációban mint folytonossági elem."
+                },
+                {
+                  "glossaryTermId": "d18ab76d-20aa-4521-b31f-6c6e1c68176e",
+                  "relationshipRole": "continuity",
+                  "note": "Kata, a mostohaanya jelenléte a történetben."
+                }
+              ],
+              "candidateGlossaryMentions": [
+                {
+                  "glossaryCandidateId": "27e4a627-28df-4267-8b61-099f73c54316",
+                  "note": "Markus szereplőként."
+                },
+                {
+                  "glossaryCandidateId": "3ba7615e-c64b-428e-81a4-b147def28492",
+                  "note": "citrom mint segítség eszköz."
+                }
+              ]
+            }
+          ],
+          "safety": {
+            "containsInterpretation": false,
+            "containsDiagnosis": false,
+            "containsIdentityClaim": false,
+            "containsAdvice": false,
+            "userFacingReady": false
+          }
+        },
+        {
+          "clientOpportunityKey": "opportunity-3-phenomenological-age-shift",
+          "identityDecision": {
+            "mode": "create_new",
+            "existingIdentityId": null,
+            "reuseConfidence": null,
+            "reuseRationale": null
+          },
+          "opportunityStructure": {
+            "primaryCategory": "transition",
+            "secondaryCategories": [
+              "salience_signal"
+            ],
+            "structureType": "A_TO_B",
+            "nodes": [
+              {
+                "key": "A",
+                "label": "Gyermeki vagy kortalan közösségi tábori helyzet",
+                "kind": "state"
+              },
+              {
+                "key": "B",
+                "label": "Hirtelen idősebbnek érzett belépés a konyhába/étkezőbe",
+                "kind": "state"
+              },
+              {
+                "key": "actor1",
+                "label": "Én (álmodó)",
+                "kind": "actor"
+              }
+            ],
+            "edges": [
+              {
+                "from": "A",
+                "to": "B",
+                "relation": "emotional_and_temporal_transition"
+              },
+              {
+                "from": "actor1",
+                "to": "A",
+                "relation": "experiences"
+              },
+              {
+                "from": "actor1",
+                "to": "B",
+                "relation": "experiences"
+              }
+            ],
+            "tensions": [],
+            "gaps": [],
+            "continuitySignals": [
+              {
+                "kind": "none",
+                "referenceId": null,
+                "description": null
+              }
+            ]
+          },
+          "manifestation": {
+            "summaryForInternalUse": "Hirtelen életkori állapotváltozás az én (álmodó) percében a táborból a konyhai szituációba való belépéskor.",
+            "priorityReflectiveObjectRole": "primary_source",
+            "salience": {
+              "credibility": 0.8,
+              "reflectivePotential": 0.85,
+              "salienceBand": "moderate",
+              "credibilityRationale": "Jó alappal rendelkező megfigyelések érkeznek a kor és állapot változásáról a belépés idején.",
+              "reflectivePotentialRationale": "A változás szubjektív és erőteljes fenoménként jelenik meg a narratívában, különálló jelenségként értelmezendő."
+            }
+          },
+          "evidenceBlocks": [
+            {
+              "clientBlockKey": "evidenceblock3",
+              "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+              "role": "priority",
+              "summary": "Életkori érzés hirtelen változása a konyhába érkezéskor.",
+              "observationRefs": [
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_2",
+                  "sceneRowId": null,
+                  "sceneStableId": null,
+                  "observationStableId": "obs2_2",
+                  "role": "primary_support",
+                  "supportsNodeKeys": [
+                    "B"
+                  ],
+                  "supportsEdgeIndexes": []
+                }
+              ],
+              "confirmedGlossaryRefs": [],
+              "candidateGlossaryMentions": []
+            }
+          ],
+          "safety": {
+            "containsInterpretation": false,
+            "containsDiagnosis": false,
+            "containsIdentityClaim": false,
+            "containsAdvice": false,
+            "userFacingReady": false
+          }
+        },
+        {
+          "clientOpportunityKey": "opportunity-4-invisible-attention-evire",
+          "identityDecision": {
+            "mode": "create_new",
+            "existingIdentityId": null,
+            "reuseConfidence": null,
+            "reuseRationale": null
+          },
+          "opportunityStructure": {
+            "primaryCategory": "salience_signal",
+            "secondaryCategories": [
+              "ambiguity",
+              "relationship"
+            ],
+            "structureType": "SALIENCE_SIGNAL",
+            "nodes": [
+              {
+                "key": "actor1",
+                "label": "Én (álmodó)",
+                "kind": "actor"
+              },
+              {
+                "key": "actor2",
+                "label": "Évi (nem látható, de figyelő jelenlét)",
+                "kind": "actor"
+              }
+            ],
+            "edges": [
+              {
+                "from": "actor2",
+                "to": "actor1",
+                "relation": "silent_attention_presence"
+              }
+            ],
+            "tensions": [],
+            "gaps": [
+              {
+                "description": "Figyelés érzékelése Éviről annak ellenére, hogy őt nem vagy csak elég röviden látom.",
+                "supportedByObservationIds": [
+                  "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7"
+                ]
+              }
+            ],
+            "continuitySignals": [
+              {
+                "kind": "none",
+                "referenceId": null,
+                "description": null
+              }
+            ]
+          },
+          "manifestation": {
+            "summaryForInternalUse": "Évi jelenlétének, figyelmének markáns érzékelése, annak ellenére, hogy személye nincs láthatóan jelen a jelenetben.",
+            "priorityReflectiveObjectRole": "primary_source",
+            "salience": {
+              "credibility": 0.85,
+              "reflectivePotential": 0.9,
+              "salienceBand": "high",
+              "credibilityRationale": "Erős és egyértelmű megfigyelés a figyelem érzékelésére Évi részéről, bár személye nem jelenik meg.",
+              "reflectivePotentialRationale": "A jelenség megmutat egy önálló, nem látott, de érzékelt jelenlétet és figyelmet, fokozott potenciált hordoz."
+            }
+          },
+          "evidenceBlocks": [
+            {
+              "clientBlockKey": "evidenceblock4",
+              "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+              "role": "priority",
+              "summary": "Évi láthatatlan jelenléte és figyelme az álmodóra, érzékelt de nem látható személy.",
+              "observationRefs": [
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7",
+                  "sceneRowId": null,
+                  "sceneStableId": null,
+                  "observationStableId": "obs2_7",
+                  "role": "primary_support",
+                  "supportsNodeKeys": [
+                    "actor2",
+                    "actor1"
+                  ],
+                  "supportsEdgeIndexes": []
+                }
+              ],
+              "confirmedGlossaryRefs": [],
+              "candidateGlossaryMentions": [
+                {
+                  "glossaryCandidateId": "463f0099-4d94-44f0-b384-b972d52e7e40",
+                  "note": "Évi szereplőként, jelenlét és figyelem érzékelése."
+                }
+              ]
+            }
+          ],
+          "safety": {
+            "containsInterpretation": false,
+            "containsDiagnosis": false,
+            "containsIdentityClaim": false,
+            "containsAdvice": false,
+            "userFacingReady": false
+          }
+        }
+      ],
+      "inputPacket": {
+        "generationContext": {
+          "runtimeVersion": "latent_opportunity_constructor_v1",
+          "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+          "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+          "priorityReflectiveObjectType": "dream",
+          "priorityReflectiveObjectTitle": "Tábori telefonkeresés és családi konyha",
+          "objectLanguage": "hu",
+          "observationBundleId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1",
+          "observationRuntimeVersion": "observation_v2_phase1",
+          "semanticPolicyResult": "accept_with_uncertainty",
+          "bundleUncertaintyNotes": []
+        },
+        "priorityObject": {
+          "content": "valami táborban vagyok. még gyerek, de ugyanakkor valamennyire kortalan, mert általános iskolás arcokat és középiskolai arcokat is felismerek. a táborban már jártam, legalábbis ismerős a hely. eleinte azon bosszankodom, hogy miért ezekbe a szobákba lettünk elszállásolva, aztán valahogy megértem, hogy így volt olcsóbb. lemegyek a szállás előtti mezőre és az első nagy crushommal találkozom, Bórával az általános iskolából. valamiért azzal froclizom, hogy eldugtam a telefonját - legalábbis valamiért rajtam keresi azt, én meg tudom, hogy hol van, de nem árulom el. hogy bosszantsam a saját telefonomat dobálgatom fel jó magasra. kicsit aggódom, hogy össze fog törni vagy bármi baja lesz, de csak azért is dobálgatom. pocsolyába esik, száraz talajra esik, mindegy folytatom. már 4-5 alkalommal dobtam azt hiszem, és Bóra egyre idegesebb, még egyszer feldobom, majd megmondom neki, hogy hol van. közben azonban kiderül, hogy igazából én se tudom, hogy hol van, úgyhogy segítek neki megkeresni. visszaérünk az épületekhez. a szállás és a közösségi terek egy verandás sorházban vannak a nagy mező szélén a fák alatt. elkezdjük keresni a telefont, egy pár, akiket nem ismerek fel talán memorit vagy valami más társast játszanak, megnézem az előttük lévő telefont, de nem ezt keressük. tovább megyünk, a konyhába/étkezőbe lépek, Bóra eltűnt és én hirtelen idősebb lettem valamivel. a szoba nem túl nagy. van egy kisebb konyha, amiben apám és Kata, a mostohaanyám főznek, illetve egy kisebb asztal, ami körül többen ülnek, mint ahányan kényelmesen el lehet férni, de jó hangulat van. az asztalnál csak két arcot ismerek fel: Markus, az általános iskolában volt osztálytársam és Évi, aki az egyetem alatt volt a barátnőm. amikor belépek, akkor apám épp egy receptet pitchel. valami túrós, sajtos, zöldséges.. nem is tudom mit, csak azért emlékszem, mert úgy lépek be a szobába, hogy ezeket ismételem úgy dramatizálva, mintha valami bennszülött törzs tagja lennék. azt hiszem apámék szervezhetik a tábort, ez a benyomásom. az érkezés után beszélgetünk mindenféléről. majd egyszer csak dohányzás közben lehamuzom Markus fehér vászonnadrágját. sűrűn bocsánatot kérek, és letörölgetem, majd folytatjuk a beszélgetést, amikor Kata egyszercsak azt mondja, hogy citrommal ki lehet szedni. oldalra nézek, és látom, hogy Markus még mindig a nadrággal van elfoglalva, láthatóan zavarja, és Kata segíteni akar neki. el is mennek ketten. én rosszul érzem magam, de apám megnyugtat, hogy nem történt semmi baj és mindenkivel megesik. Évire csak úgy emlékszem, mint akinek érzem a figyelmét magamon folyamatosan - őt magát egyébként nem láttam, vagy legalábbis nem emlékszem rá, talán csak egy pillanatra, de a jelenlétét és figyelmét egyértelműen érzékeltem a dohányzós epizód óta. aztán felébredtem"
+        },
+        "scenes": [
+          {
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+            "sceneStableId": "scene1",
+            "position": 1,
+            "summary": "Táborban vagyok, idegen és ismerős arcok vegyesével, első találkozás Borával, a telefon keresése és dobálása.",
+            "evidenceSnippet": "valami táborban vagyok... lemegyek a szállás előtti mezőre és az első nagy crushommal találkozom, Bórával... dobálgatom a saját telefonomat... visszaérünk az épületekhez.",
+            "boundarySignals": [
+              {
+                "kind": "spatial_change",
+                "note": "Mozgás a táborból a szállás előtti mezőre, majd vissza az épületekhez jelez jelenetszakadást."
+              }
+            ],
+            "derivedStructures": {
+              "actors": [
+                "Bóra"
+              ],
+              "locations": [
+                "Tábor",
+                "szállás előtti mező"
+              ],
+              "objects": [
+                "telefon"
+              ],
+              "interactions": [
+                "telefon eldugásával ugratás",
+                "telefon dobálása",
+                "telefon keresése és segítés"
+              ],
+              "affect": [
+                "Bóra idegessége",
+                "aggódás a telefonért"
+              ],
+              "agency": [
+                "telefon tudatos dobálása folytatása aggodalom ellenére"
+              ],
+              "metacognition": [],
+              "phenomenology": []
+            }
+          },
+          {
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+            "sceneStableId": "scene2",
+            "position": 2,
+            "summary": "Visszatérés a szállásra, konyhai helyzet, idősebbnek érzem magam, apám és mostohaanyám főznek, rossz érzés Markus miatt, Évi figyelme érzékelése.",
+            "evidenceSnippet": "visszaérünk az épületekhez. a szállás és a közösségi terek egy verandás sorházban vannak... a konyhába/étkezőbe lépek, Bóra eltűnt és én hirtelen idősebb lettem valamivel... apám és Kata, a mostohaanyám főznek... doháyzás közben lehamuzom Markus vászonnadrágját... Évire csak úgy emlékszem, mint akinek érzem a figyelmét magamon... aztán felébredtem.",
+            "boundarySignals": [
+              {
+                "kind": "spatial_change",
+                "note": "Visszatérés az épületekhez, belépés a konyhába/étkezőbe, rögtönzött korváltozás."
+              }
+            ],
+            "derivedStructures": {
+              "actors": [
+                "apám",
+                "Kata, mostohaanya",
+                "Markus",
+                "Évi"
+              ],
+              "locations": [
+                "épületek, verandás sorház a mező szélén",
+                "konyha/étkező"
+              ],
+              "objects": [
+                "pitchelt recept",
+                "Markus fehér vászonnadrágja",
+                "citrom"
+              ],
+              "interactions": [
+                "főzés",
+                "recept pitchelése",
+                "hamu hullása nadrágra",
+                "bocsánatkérés és takarítás",
+                "Kata segít citrommal a folton",
+                "Kata és Markus elmennek együtt"
+              ],
+              "affect": [
+                "rossz érzés",
+                "apám megnyugtatása",
+                "Évi figyelmének érzése"
+              ],
+              "agency": [
+                "bocsánatkérés és takarítás aktív cselekvésként"
+              ],
+              "metacognition": [],
+              "phenomenology": [
+                "hirtelen idősebb érzése"
+              ]
+            }
+          }
+        ],
+        "observations": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_1",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+            "sceneStableId": "scene1",
+            "observationStableId": "obs1_1",
+            "position": 1,
+            "text": "A táborban vagyok, gyerek vagyok, de kortalan iskolás arcokkal.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "valami táborban vagyok. még gyerek, de ugyanakkor valamennyire kortalan, mert általános iskolás arcokat és középiskolai arcokat is felismerek.",
+                "spanStart": 0,
+                "spanEnd": 79
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_2",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+            "sceneStableId": "scene1",
+            "observationStableId": "obs1_2",
+            "position": 2,
+            "text": "Eleinte bosszankodom a szobákon, amelyekben elszállásoltak, később megértem az okát.",
+            "category": "other",
+            "evidence": [
+              {
+                "snippet": "eleinte azon bosszankodom, hogy miért ezekbe a szobákba lettünk elszállásolva, aztán valahogy megértem, hogy így volt olcsóbb.",
+                "spanStart": 80,
+                "spanEnd": 143
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_3",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+            "sceneStableId": "scene1",
+            "observationStableId": "obs1_3",
+            "position": 3,
+            "text": "A szállás előtti mezőn találkozom Bórával, az általános iskolából ismert crushommal.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "lemegyek a szállás előtti mezőre és az első nagy crushommal találkozom, Bórával az általános iskolából.",
+                "spanStart": 144,
+                "spanEnd": 203
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_4",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+            "sceneStableId": "scene1",
+            "observationStableId": "obs1_4",
+            "position": 4,
+            "text": "Froclizom Bórát, hogy eldugtam a telefonját, de nem árulom el a helyét.",
+            "category": "interaction",
+            "evidence": [
+              {
+                "snippet": "valamiért azzal froclizom, hogy eldugtam a telefonját - legalábbis valamiért rajtam keresi azt, én meg tudom, hogy hol van, de nem árulom el.",
+                "spanStart": 204,
+                "spanEnd": 261
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+            "sceneStableId": "scene1",
+            "observationStableId": "obs1_5",
+            "position": 5,
+            "text": "A saját telefonomat magasra dobálgatom, aggódom a sérülés miatt, de folytatom.",
+            "category": "affect",
+            "evidence": [
+              {
+                "snippet": "hogy bosszantsam a saját telefonomat dobálgatom fel jó magasra. kicsit aggódom, hogy össze fog törni vagy bármi baja lesz, de csak azért is dobálgatom.",
+                "spanStart": 262,
+                "spanEnd": 327
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+            "sceneStableId": "scene1",
+            "observationStableId": "obs1_6",
+            "position": 6,
+            "text": "A telefon többször leesik, de folytatom a dobálást, Bóra egyre idegesebb.",
+            "category": "affect",
+            "evidence": [
+              {
+                "snippet": "pocsolyába esik, száraz talajra esik, mindegy folytatom. már 4-5 alkalommal dobtam azt hiszem, és Bóra egyre idegesebb...",
+                "spanStart": 328,
+                "spanEnd": 382
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_7",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+            "sceneStableId": "scene1",
+            "observationStableId": "obs1_7",
+            "position": 7,
+            "text": "Megmondom Bórának a telefon helyét, de közben kiderül, hogy én sem tudom, így segítek keresni.",
+            "category": "interaction",
+            "evidence": [
+              {
+                "snippet": "még egyszer feldobom, majd megmondom neki, hogy hol van. közben azonban kiderül, hogy igazából én se tudom, hogy hol van, úgyhogy segítek neki megkeresni.",
+                "spanStart": 383,
+                "spanEnd": 459
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_1",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+            "sceneStableId": "scene2",
+            "observationStableId": "obs2_1",
+            "position": 1,
+            "text": "Visszaérkezünk az épületekhez, ahol verandás sorház található a mező szélén fák alatt.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "visszaérünk az épületekhez. a szállás és a közösségi terek egy verandás sorházban vannak a nagy mező szélén a fák alatt.",
+                "spanStart": 460,
+                "spanEnd": 517
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_2",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+            "sceneStableId": "scene2",
+            "observationStableId": "obs2_2",
+            "position": 2,
+            "text": "Belépek a konyhába/étkezőbe, Bóra eltűnt és idősebbnek érzem magam.",
+            "category": "phenomenology",
+            "evidence": [
+              {
+                "snippet": "a konyhába/étkezőbe lépek, Bóra eltűnt és én hirtelen idősebb lettem valamivel.",
+                "spanStart": 518,
+                "spanEnd": 563
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_3",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+            "sceneStableId": "scene2",
+            "observationStableId": "obs2_3",
+            "position": 3,
+            "text": "Apám és Kata főznek, az asztalnál többen ülnek, jó hangulat van.",
+            "category": "interaction",
+            "evidence": [
+              {
+                "snippet": "van egy kisebb konyha, amiben apám és Kata, a mostohaanyám főznek, illetve egy kisebb asztal, ami körül többen ülnek, mint ahányan kényelmesen el lehet férni, de jó hangulat van.",
+                "spanStart": 564,
+                "spanEnd": 628
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_4",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+            "sceneStableId": "scene2",
+            "observationStableId": "obs2_4",
+            "position": 4,
+            "text": "Apám receptet pitchel: túrós, sajtos, zöldséges étel, dramatizált belépés.",
+            "category": "interaction",
+            "evidence": [
+              {
+                "snippet": "amikor belépek, akkor apám épp egy receptet pitchel. valami túrós, sajtos, zöldséges.. nem is tudom mit, csak azért emlékszem, mert úgy lépek be a szobába, hogy ezeket ismételem úgy dramatizálva...",
+                "spanStart": 629,
+                "spanEnd": 695
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+            "sceneStableId": "scene2",
+            "observationStableId": "obs2_5",
+            "position": 5,
+            "text": "Dohányzás közben lehamuzom Markus fehér vászonnadrágját, bocsánatot kérek, letörlöm, Kata segíteni akar.",
+            "category": "agency",
+            "evidence": [
+              {
+                "snippet": "majd egyszer csak dohányzás közben lehamuzom Markus fehér vászonnadrágját. sűrűn bocsánatot kérek, és letörölgetem... Kata egyszercsak azt mondja, hogy citrommal ki lehet szedni... Kata segíteni akar... el is mennek ketten.",
+                "spanStart": 696,
+                "spanEnd": 786
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+            "sceneStableId": "scene2",
+            "observationStableId": "obs2_6",
+            "position": 6,
+            "text": "Rossz érzésem van emiatt, apám megnyugtat, hogy mindenkivel megesik.",
+            "category": "affect",
+            "evidence": [
+              {
+                "snippet": "én rosszul érzem magam, de apám megnyugtat, hogy nem történt semmi baj és mindenkivel megesik.",
+                "spanStart": 787,
+                "spanEnd": 833
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7",
+            "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+            "sceneStableId": "scene2",
+            "observationStableId": "obs2_7",
+            "position": 7,
+            "text": "Évi figyelmét érzem magamon folyamatosan, bár őt nem látom vagy alig emlékszem rá.",
+            "category": "affect",
+            "evidence": [
+              {
+                "snippet": "Évire csak úgy emlékszem, mint akinek érzem a figyelmét magamon folyamatosan - őt magát egyébként nem láttam, vagy legalábbis nem emlékszem rá, talán csak egy pillanatra, de a jelenlétét és figyelmét egyértelműen érzékeltem a dohányzós epizód óta.",
+                "spanStart": 834,
+                "spanEnd": 874
+              }
+            ],
+            "uncertaintyNote": null
+          }
+        ],
+        "glossaryContext": {
+          "confirmedTerms": [
+            {
+              "glossaryTermId": "f69e6141-77bf-4639-b00d-23bc3773a795",
+              "displayLabel": "apám",
+              "normalizedKey": "apam",
+              "termType": "motif",
+              "userNotes": "édesapám",
+              "appearanceCount": 1,
+              "recentAppearanceObjectIds": [
+                "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+              ]
+            },
+            {
+              "glossaryTermId": "d18ab76d-20aa-4521-b31f-6c6e1c68176e",
+              "displayLabel": "Kata",
+              "normalizedKey": "kata",
+              "termType": "motif",
+              "userNotes": "édesapám élettársa",
+              "appearanceCount": 1,
+              "recentAppearanceObjectIds": [
+                "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+              ]
+            }
+          ],
+          "appearanceRecords": [
+            {
+              "appearanceRecordId": "e20571a0-b88c-4c7d-9283-392000ec034e",
+              "glossaryTermId": "d18ab76d-20aa-4521-b31f-6c6e1c68176e",
+              "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+              "displayLabelAtAppearance": "Kata",
+              "sourceObservationId": null
+            },
+            {
+              "appearanceRecordId": "f0bf92d9-9f1b-44cf-ad50-c6e9a7fb332f",
+              "glossaryTermId": "f69e6141-77bf-4639-b00d-23bc3773a795",
+              "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+              "displayLabelAtAppearance": "apám",
+              "sourceObservationId": null
+            }
+          ],
+          "candidates": [
+            {
+              "glossaryCandidateId": "eeedd1f9-8677-4e96-9802-8748f9dbe189",
+              "displayLabel": "Bóra",
+              "normalizedKey": "bora",
+              "sourceCategory": "actor",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene1"
+            },
+            {
+              "glossaryCandidateId": "dfa3da47-423b-49b7-891e-f8e91ad81199",
+              "displayLabel": "Tábor",
+              "normalizedKey": "camp",
+              "sourceCategory": "location",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene1"
+            },
+            {
+              "glossaryCandidateId": "39de9584-7ba5-4b82-919f-8b5202305710",
+              "displayLabel": "szállás előtti mező",
+              "normalizedKey": "field in front of lodging",
+              "sourceCategory": "location",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene1"
+            },
+            {
+              "glossaryCandidateId": "58064f26-7caf-4e80-b188-039d78e5c2b4",
+              "displayLabel": "telefon",
+              "normalizedKey": "phone",
+              "sourceCategory": "object",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene1"
+            },
+            {
+              "glossaryCandidateId": "27e4a627-28df-4267-8b61-099f73c54316",
+              "displayLabel": "Markus",
+              "normalizedKey": "markus",
+              "sourceCategory": "actor",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene2"
+            },
+            {
+              "glossaryCandidateId": "463f0099-4d94-44f0-b384-b972d52e7e40",
+              "displayLabel": "Évi",
+              "normalizedKey": "evi",
+              "sourceCategory": "actor",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene2"
+            },
+            {
+              "glossaryCandidateId": "b188bce1-b7a6-4070-860c-64a5502d36fe",
+              "displayLabel": "épületek",
+              "normalizedKey": "camp buildings",
+              "sourceCategory": "location",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene2"
+            },
+            {
+              "glossaryCandidateId": "d8b5f56e-9063-43d7-a53f-bcd25518ffb1",
+              "displayLabel": "konyha/étkező",
+              "normalizedKey": "kitchen dining room",
+              "sourceCategory": "location",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene2"
+            },
+            {
+              "glossaryCandidateId": "618145b1-a2ab-43c1-ac92-5e974037b1da",
+              "displayLabel": "pitchelt recept",
+              "normalizedKey": "pitched recipe",
+              "sourceCategory": "object",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene2"
+            },
+            {
+              "glossaryCandidateId": "3125cc45-2b2f-4a79-b36d-143aa92f22cf",
+              "displayLabel": "Markus fehér vászonnadrágja",
+              "normalizedKey": "lace trousers markus",
+              "sourceCategory": "object",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene2"
+            },
+            {
+              "glossaryCandidateId": "3ba7615e-c64b-428e-81a4-b147def28492",
+              "displayLabel": "citrom",
+              "normalizedKey": "lemon",
+              "sourceCategory": "object",
+              "candidateClass": "new_candidate",
+              "state": "candidate",
+              "sourceObservationStableId": "scene2"
+            }
+          ]
+        },
+        "existingOpportunityContext": {
+          "identities": [
+            {
+              "identityId": "97abcbc8-8a63-41fd-b336-75e9a2d1e78f",
+              "primaryCategory": "transition",
+              "secondaryCategories": [
+                "relationship"
+              ],
+              "lifecycleState": "emerging",
+              "latestStructure": {
+                "structureType": "A_TO_B",
+                "nodes": [
+                  "Belső űrállomás terület",
+                  "Luxus kertvárosi külső tér az űrben",
+                  "Én (álmodó)",
+                  "Luxus kertváros lakói"
+                ]
+              },
+              "recentManifestationSummaries": [
+                {
+                  "manifestationId": "23575778-9a5d-4475-9700-b4d66c1d06e7",
+                  "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+                  "structure": {
+                    "kind": "A_TO_B",
+                    "label": "Belső űrállomás terület -> Luxus kertvárosi külső tér az űrben -> Én (álmodó)",
+                    "elements": [
+                      "Belső űrállomás terület",
+                      "Luxus kertvárosi külső tér az űrben",
+                      "Én (álmodó)",
+                      "Luxus kertváros lakói"
+                    ],
+                    "metadata": {
+                      "gaps": [],
+                      "edges": [
+                        {
+                          "to": "B",
+                          "from": "A",
+                          "relation": "location_transition"
+                        },
+                        {
+                          "to": "A",
+                          "from": "actor1",
+                          "relation": "located_in"
+                        },
+                        {
+                          "to": "B",
+                          "from": "actor1",
+                          "relation": "moves_to"
+                        },
+                        {
+                          "to": "B",
+                          "from": "actor2",
+                          "relation": "inhabits"
+                        }
+                      ],
+                      "nodes": [
+                        {
+                          "key": "A",
+                          "kind": "location",
+                          "label": "Belső űrállomás terület"
+                        },
+                        {
+                          "key": "B",
+                          "kind": "location",
+                          "label": "Luxus kertvárosi külső tér az űrben"
+                        },
+                        {
+                          "key": "actor1",
+                          "kind": "actor",
+                          "label": "Én (álmodó)"
+                        },
+                        {
+                          "key": "actor2",
+                          "kind": "actor",
+                          "label": "Luxus kertváros lakói"
+                        }
+                      ],
+                      "tensions": [],
+                      "continuitySignals": [
+                        {
+                          "kind": "none",
+                          "description": null,
+                          "referenceId": null
+                        }
+                      ]
+                    }
+                  },
+                  "primaryEvidenceObservationTexts": []
+                }
+              ]
+            },
+            {
+              "identityId": "b3261991-7af6-4e6a-8a0f-63d48a5bd514",
+              "primaryCategory": "ambiguity",
+              "secondaryCategories": [
+                "gap",
+                "relationship"
+              ],
+              "lifecycleState": "emerging",
+              "latestStructure": {
+                "structureType": "GAP",
+                "nodes": [
+                  "Az én szobám felismerhetetlensége az űrállomáson",
+                  "Én (álmodó)",
+                  "Űrállomás munkatársai"
+                ]
+              },
+              "recentManifestationSummaries": [
+                {
+                  "manifestationId": "6d541b1b-f8e1-45df-ba1e-af4eddece419",
+                  "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+                  "structure": {
+                    "kind": "GAP",
+                    "label": "Az én szobám felismerhetetlensége az űrállomáson -> Én (álmodó) -> Űrállomás munkatársai",
+                    "elements": [
+                      "Az én szobám felismerhetetlensége az űrállomáson",
+                      "Én (álmodó)",
+                      "Űrállomás munkatársai"
+                    ],
+                    "metadata": {
+                      "gaps": [
+                        {
+                          "description": "Számos név és korábbi lakó nevek egy szobán, megtalálhatatlan saját hely, bizonytalanság érzése.",
+                          "supportedByObservationIds": [
+                            "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-5"
+                          ]
+                        }
+                      ],
+                      "edges": [
+                        {
+                          "to": "A",
+                          "from": "actor1",
+                          "relation": "experiences"
+                        }
+                      ],
+                      "nodes": [
+                        {
+                          "key": "A",
+                          "kind": "state",
+                          "label": "Az én szobám felismerhetetlensége az űrállomáson"
+                        },
+                        {
+                          "key": "actor1",
+                          "kind": "actor",
+                          "label": "Én (álmodó)"
+                        },
+                        {
+                          "key": "actor2",
+                          "kind": "actor",
+                          "label": "Űrállomás munkatársai"
+                        }
+                      ],
+                      "tensions": [],
+                      "continuitySignals": [
+                        {
+                          "kind": "none",
+                          "description": null,
+                          "referenceId": null
+                        }
+                      ]
+                    }
+                  },
+                  "primaryEvidenceObservationTexts": []
+                }
+              ]
+            },
+            {
+              "identityId": "69f6ccd7-9525-44bb-a306-fc32ad060efe",
+              "primaryCategory": "transition",
+              "secondaryCategories": [
+                "relationship",
+                "ambiguity"
+              ],
+              "lifecycleState": "emerging",
+              "latestStructure": {
+                "structureType": "A_TO_B_TO_C",
+                "nodes": [
+                  "Űrkutatás vagy űrutazás lehetősége",
+                  "Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon",
+                  "Űrállomás megérkezés és társaság viselkedése",
+                  "Én (álmodó)",
+                  "Ismerősök",
+                  "BKK vagy Volán busz, tömeg"
+                ]
+              },
+              "recentManifestationSummaries": [
+                {
+                  "manifestationId": "f063c5af-66b4-44ec-8f69-bdfbee1dc9c7",
+                  "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+                  "structure": {
+                    "kind": "A_TO_B_TO_C",
+                    "label": "Űrkutatás vagy űrutazás lehetősége -> Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon -> Űrállomás megérkezés és társaság viselkedése",
+                    "elements": [
+                      "Űrkutatás vagy űrutazás lehetősége",
+                      "Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon",
+                      "Űrállomás megérkezés és társaság viselkedése",
+                      "Én (álmodó)",
+                      "Ismerősök",
+                      "BKK vagy Volán busz, tömeg"
+                    ],
+                    "metadata": {
+                      "gaps": [
+                        {
+                          "description": "Az esemény ünnepélyességének hiánya kontrasztban áll az űrutazás szokatlan lehetőségével.",
+                          "supportedByObservationIds": [
+                            "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene1:obs1-2",
+                            "observation-bundle-604ee990-4a55-49b8-940b-c1203f7d7c0-observation_v2_phase1:scene1:obs1-3"
+                          ]
+                        }
+                      ],
+                      "edges": [
+                        {
+                          "to": "B",
+                          "from": "A",
+                          "relation": "leads_to_transition"
+                        },
+                        {
+                          "to": "C",
+                          "from": "B",
+                          "relation": "leads_to_transition"
+                        },
+                        {
+                          "to": "A",
+                          "from": "actor1",
+                          "relation": "experiences"
+                        },
+                        {
+                          "to": "C",
+                          "from": "actor1",
+                          "relation": "interacts_with"
+                        },
+                        {
+                          "to": "B",
+                          "from": "actor3",
+                          "relation": "participates_in"
+                        }
+                      ],
+                      "nodes": [
+                        {
+                          "key": "A",
+                          "kind": "state",
+                          "label": "Űrkutatás vagy űrutazás lehetősége"
+                        },
+                        {
+                          "key": "B",
+                          "kind": "event",
+                          "label": "Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon"
+                        },
+                        {
+                          "key": "C",
+                          "kind": "state",
+                          "label": "Űrállomás megérkezés és társaság viselkedése"
+                        },
+                        {
+                          "key": "actor1",
+                          "kind": "actor",
+                          "label": "Én (álmodó)"
+                        },
+                        {
+                          "key": "actor2",
+                          "kind": "actor",
+                          "label": "Ismerősök"
+                        },
+                        {
+                          "key": "actor3",
+                          "kind": "object",
+                          "label": "BKK vagy Volán busz, tömeg"
+                        }
+                      ],
+                      "tensions": [],
+                      "continuitySignals": [
+                        {
+                          "kind": "none",
+                          "description": null,
+                          "referenceId": null
+                        }
+                      ]
+                    }
+                  },
+                  "primaryEvidenceObservationTexts": []
+                }
+              ]
+            },
+            {
+              "identityId": "b368407f-061a-451f-a788-f0aecd022d8d",
+              "primaryCategory": "transition",
+              "secondaryCategories": [
+                "relationship",
+                "ambiguity"
+              ],
+              "lifecycleState": "emerging",
+              "latestStructure": {
+                "structureType": "A_TO_B",
+                "nodes": [
+                  "Közösség elfogadottságának csökkenése",
+                  "Tudatos álomként való felébredés",
+                  "Én (álmodó)",
+                  "Bullyingoló társaság"
+                ]
+              },
+              "recentManifestationSummaries": [
+                {
+                  "manifestationId": "b9779dba-5e56-45a2-85df-3e63e6679408",
+                  "priorityReflectiveObjectId": "666c955c-a2c0-4cec-8679-9d42ab81f650",
+                  "structure": {
+                    "kind": "A_TO_B",
+                    "label": "Közösség elfogadottságának csökkenése -> Tudatos álomként való felébredés -> Én (álmodó)",
+                    "elements": [
+                      "Közösség elfogadottságának csökkenése",
+                      "Tudatos álomként való felébredés",
+                      "Én (álmodó)",
+                      "Bullyingoló társaság"
+                    ],
+                    "metadata": {
+                      "gaps": [
+                        {
+                          "description": "Nem világos, miért kezdődött a bullying és miért nem fogadják el az álmodót.",
+                          "supportedByObservationIds": [
+                            "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_10",
+                            "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_13"
+                          ]
+                        }
+                      ],
+                      "edges": [
+                        {
+                          "to": "B",
+                          "from": "A",
+                          "relation": "leads_to_transition"
+                        },
+                        {
+                          "to": "A",
+                          "from": "actor1",
+                          "relation": "experiences"
+                        },
+                        {
+                          "to": "A",
+                          "from": "actor2",
+                          "relation": "causes_feeling"
+                        }
+                      ],
+                      "nodes": [
+                        {
+                          "key": "A",
+                          "kind": "state",
+                          "label": "Közösség elfogadottságának csökkenése"
+                        },
+                        {
+                          "key": "B",
+                          "kind": "state",
+                          "label": "Tudatos álomként való felébredés"
+                        },
+                        {
+                          "key": "actor1",
+                          "kind": "actor",
+                          "label": "Én (álmodó)"
+                        },
+                        {
+                          "key": "actor2",
+                          "kind": "actor",
+                          "label": "Bullyingoló társaság"
+                        }
+                      ],
+                      "tensions": [],
+                      "continuitySignals": [
+                        {
+                          "kind": "none",
+                          "description": null,
+                          "referenceId": null
+                        }
+                      ]
+                    }
+                  },
+                  "primaryEvidenceObservationTexts": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "experimental": {
+      "generationContext": {
+        "runtimeVersion": "latent_experimental_opportunity_constructor_v1",
+        "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+        "observationBundleId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1"
+      },
+      "consideration": {
+        "consideredCandidateIds": [
+          "candidate1",
+          "candidate2",
+          "candidate3"
+        ],
+        "promotedDiscoveryCandidateIds": [
+          "candidate1",
+          "candidate2",
+          "candidate3"
+        ],
+        "rejectedCandidateIds": [],
+        "candidateOutcomes": [
+          {
+            "candidateId": "candidate1",
+            "outcome": "promoted",
+            "opportunityKeys": [
+              "opportunity1"
+            ],
+            "rationale": "Candidate 1 represents a coherent tension structure around the phone tossing and related affect, supported well by the evidence with clear tensions and relations."
+          },
+          {
+            "candidateId": "candidate2",
+            "outcome": "promoted",
+            "opportunityKeys": [
+              "opportunity2"
+            ],
+            "rationale": "Candidate 2 presents a distinct transition structure involving spatial and phenomenological shifts well supported by evidence, forming a separate opportunity."
+          },
+          {
+            "candidateId": "candidate3",
+            "outcome": "promoted",
+            "opportunityKeys": [
+              "opportunity3"
+            ],
+            "rationale": "Candidate 3 encapsulates a separate tension around a social incident and related affect, justified by observations and distinct from other structures."
+          }
+        ],
+        "mergeDecisions": [],
+        "splitDecisions": [],
+        "missedStructure": []
+      },
+      "decision": {
+        "mode": "opportunities_found",
+        "silenceReason": null
+      },
+      "opportunities": [
+        {
+          "sourceKind": "discovery_candidate",
+          "relatedDiscoveryCandidateIds": [
+            "candidate1"
+          ],
+          "missedStructureRationale": null,
+          "opportunity": {
+            "clientOpportunityKey": "opportunity1",
+            "identityDecision": {
+              "mode": "create_new",
+              "existingIdentityId": null,
+              "reuseConfidence": null,
+              "reuseRationale": null
+            },
+            "opportunityStructure": {
+              "primaryCategory": "tension",
+              "secondaryCategories": [
+                "relationship"
+              ],
+              "structureType": "TENSION",
+              "nodes": [
+                {
+                  "key": "ugratas_boraval",
+                  "label": "ugratás Bórával",
+                  "kind": "activity"
+                },
+                {
+                  "key": "telefon_dobalas",
+                  "label": "telefon dobálás",
+                  "kind": "activity"
+                },
+                {
+                  "key": "aggodalom_telefonert",
+                  "label": "aggódás a telefonért",
+                  "kind": "affect"
+                },
+                {
+                  "key": "bora_idegessege",
+                  "label": "Bóra idegessége",
+                  "kind": "affect"
+                },
+                {
+                  "key": "telefon_kereses",
+                  "label": "telefon keresése",
+                  "kind": "activity"
+                }
+              ],
+              "edges": [
+                {
+                  "from": "telefon_dobalas",
+                  "to": "bora_idegessege",
+                  "relation": "feszültséget okoz"
+                },
+                {
+                  "from": "telefon_dobalas",
+                  "to": "aggodalom_telefonert",
+                  "relation": "együtthatás"
+                },
+                {
+                  "from": "telefon_kereses",
+                  "to": "telefon_dobalas",
+                  "relation": "megoldási kísérlet"
+                }
+              ],
+              "tensions": [
+                {
+                  "between": [
+                    "telefon_dobalas",
+                    "aggodalom_telefonert"
+                  ],
+                  "description": "dobálás kontra aggódás"
+                },
+                {
+                  "between": [
+                    "telefon_dobalas",
+                    "bora_idegessege"
+                  ],
+                  "description": "dobálás és Bóra idegessége"
+                }
+              ],
+              "gaps": [],
+              "continuitySignals": [
+                {
+                  "kind": "none",
+                  "referenceId": null,
+                  "description": null
+                }
+              ]
+            },
+            "manifestation": {
+              "summaryForInternalUse": "Feszültségi hálózat a telefon dobálás, aggódás, és Bóra idegességének viszonyában a tábori jelenetben.",
+              "priorityReflectiveObjectRole": "primary_source",
+              "salience": {
+                "credibility": 0.85,
+                "reflectivePotential": 0.7,
+                "salienceBand": "moderate",
+                "credibilityRationale": "több megfigyelés alátámasztja a kapcsolatokat és feszültségeket.",
+                "reflectivePotentialRationale": "érdekes viszonyfeszültség, több dimenzióval."
+              }
+            },
+            "evidenceBlocks": [
+              {
+                "clientBlockKey": "eb_opportunity1_group1",
+                "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+                "role": "priority",
+                "summary": "Telefon eldugásával ugratás és keresés közti interakciók",
+                "observationRefs": [
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_4",
+                    "sceneRowId": "scene1",
+                    "sceneStableId": "scene1",
+                    "observationStableId": "obs1_4",
+                    "role": "primary_support",
+                    "supportsNodeKeys": [
+                      "ugratas_boraval"
+                    ],
+                    "supportsEdgeIndexes": []
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_7",
+                    "sceneRowId": "scene1",
+                    "sceneStableId": "scene1",
+                    "observationStableId": "obs1_7",
+                    "role": "primary_support",
+                    "supportsNodeKeys": [
+                      "telefon_kereses"
+                    ],
+                    "supportsEdgeIndexes": []
+                  }
+                ],
+                "confirmedGlossaryRefs": [],
+                "candidateGlossaryMentions": [
+                  {
+                    "glossaryCandidateId": "eeedd1f9-8677-4e96-9802-8748f9dbe189",
+                    "note": "Kapcsolódás a 'Bóra' szereplőhöz."
+                  },
+                  {
+                    "glossaryCandidateId": "58064f26-7caf-4e80-b188-039d78e5c2b4",
+                    "note": "Kapcsolódás a 'telefon' fogalomhoz."
+                  }
+                ]
+              },
+              {
+                "clientBlockKey": "eb_opportunity1_group2",
+                "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+                "role": "context",
+                "summary": "Telefon magasba dobálása aggodalmak és Bóra idegessége kontextusa",
+                "observationRefs": [
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+                    "sceneRowId": "scene1",
+                    "sceneStableId": "scene1",
+                    "observationStableId": "obs1_5",
+                    "role": "context_support",
+                    "supportsNodeKeys": [
+                      "telefon_dobalas",
+                      "aggodalom_telefonert"
+                    ],
+                    "supportsEdgeIndexes": [
+                      0
+                    ]
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+                    "sceneRowId": "scene1",
+                    "sceneStableId": "scene1",
+                    "observationStableId": "obs1_6",
+                    "role": "context_support",
+                    "supportsNodeKeys": [
+                      "bora_idegessege"
+                    ],
+                    "supportsEdgeIndexes": [
+                      1
+                    ]
+                  }
+                ],
+                "confirmedGlossaryRefs": [],
+                "candidateGlossaryMentions": [
+                  {
+                    "glossaryCandidateId": "eeedd1f9-8677-4e96-9802-8748f9dbe189",
+                    "note": "Kapcsolódás 'Bóra' szereplőhöz."
+                  }
+                ]
+              }
+            ],
+            "safety": {
+              "containsInterpretation": false,
+              "containsDiagnosis": false,
+              "containsIdentityClaim": false,
+              "containsAdvice": false,
+              "userFacingReady": false
+            }
+          }
+        },
+        {
+          "sourceKind": "discovery_candidate",
+          "relatedDiscoveryCandidateIds": [
+            "candidate2"
+          ],
+          "missedStructureRationale": null,
+          "opportunity": {
+            "clientOpportunityKey": "opportunity2",
+            "identityDecision": {
+              "mode": "create_new",
+              "existingIdentityId": null,
+              "reuseConfidence": null,
+              "reuseRationale": null
+            },
+            "opportunityStructure": {
+              "primaryCategory": "transition",
+              "secondaryCategories": [],
+              "structureType": "A_TO_B_TO_C",
+              "nodes": [
+                {
+                  "key": "camp",
+                  "label": "tábor",
+                  "kind": "location"
+                },
+                {
+                  "key": "field_in_front_of_lodging",
+                  "label": "szállás előtti mező",
+                  "kind": "location"
+                },
+                {
+                  "key": "lodging_buildings",
+                  "label": "szállás épületei",
+                  "kind": "location"
+                },
+                {
+                  "key": "kitchen",
+                  "label": "konyha",
+                  "kind": "location"
+                },
+                {
+                  "key": "older_feeling",
+                  "label": "idősebb érzés",
+                  "kind": "phenomenology"
+                }
+              ],
+              "edges": [
+                {
+                  "from": "camp",
+                  "to": "field_in_front_of_lodging",
+                  "relation": "lapozás"
+                },
+                {
+                  "from": "field_in_front_of_lodging",
+                  "to": "lodging_buildings",
+                  "relation": "visszatérés"
+                },
+                {
+                  "from": "lodging_buildings",
+                  "to": "kitchen",
+                  "relation": "belépés"
+                },
+                {
+                  "from": "kitchen",
+                  "to": "older_feeling",
+                  "relation": "korváltozás"
+                }
+              ],
+              "tensions": [],
+              "gaps": [],
+              "continuitySignals": [
+                {
+                  "kind": "none",
+                  "referenceId": null,
+                  "description": null
+                }
+              ]
+            },
+            "manifestation": {
+              "summaryForInternalUse": "Jelenetszakadás és rituális átmenet a tábor és szállás térben és korélményben.",
+              "priorityReflectiveObjectRole": "primary_source",
+              "salience": {
+                "credibility": 0.9,
+                "reflectivePotential": 0.65,
+                "salienceBand": "moderate",
+                "credibilityRationale": "Világos, jól alátámasztott térbeli és fenomenológiai változások.",
+                "reflectivePotentialRationale": "Kiemelten különálló idő- és térátmenet jelenség."
+              }
+            },
+            "evidenceBlocks": [
+              {
+                "clientBlockKey": "eb_opportunity2_group3",
+                "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+                "role": "priority",
+                "summary": "Tábor és szállás előtti mező helyszínekkel kapcsolatos megfigyelések",
+                "observationRefs": [
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_1",
+                    "sceneRowId": "scene1",
+                    "sceneStableId": "scene1",
+                    "observationStableId": "obs1_1",
+                    "role": "primary_support",
+                    "supportsNodeKeys": [
+                      "camp"
+                    ],
+                    "supportsEdgeIndexes": []
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_3",
+                    "sceneRowId": "scene1",
+                    "sceneStableId": "scene1",
+                    "observationStableId": "obs1_3",
+                    "role": "primary_support",
+                    "supportsNodeKeys": [
+                      "field_in_front_of_lodging"
+                    ],
+                    "supportsEdgeIndexes": []
+                  }
+                ],
+                "confirmedGlossaryRefs": [],
+                "candidateGlossaryMentions": [
+                  {
+                    "glossaryCandidateId": "dfa3da47-423b-49b7-891e-f8e91ad81199",
+                    "note": "Kapcsolódás 'Tábor' helyszínhez."
+                  },
+                  {
+                    "glossaryCandidateId": "39de9584-7ba5-4b82-919f-8b5202305710",
+                    "note": "Kapcsolódás 'szállás előtti mező' helyszínhez."
+                  }
+                ]
+              },
+              {
+                "clientBlockKey": "eb_opportunity2_group4",
+                "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+                "role": "context",
+                "summary": "Életkori és térbeli változások: tábor visszatérés, idősebb érzés",
+                "observationRefs": [
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_1",
+                    "sceneRowId": "scene2",
+                    "sceneStableId": "scene2",
+                    "observationStableId": "obs2_1",
+                    "role": "context_support",
+                    "supportsNodeKeys": [
+                      "lodging_buildings"
+                    ],
+                    "supportsEdgeIndexes": [
+                      1
+                    ]
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_2",
+                    "sceneRowId": "scene2",
+                    "sceneStableId": "scene2",
+                    "observationStableId": "obs2_2",
+                    "role": "context_support",
+                    "supportsNodeKeys": [
+                      "older_feeling"
+                    ],
+                    "supportsEdgeIndexes": [
+                      3
+                    ]
+                  }
+                ],
+                "confirmedGlossaryRefs": [],
+                "candidateGlossaryMentions": [
+                  {
+                    "glossaryCandidateId": "b188bce1-b7a6-4070-860c-64a5502d36fe",
+                    "note": "Kapcsolódás 'épületek' helyszínhez."
+                  },
+                  {
+                    "glossaryCandidateId": "d8b5f56e-9063-43d7-a53f-bcd25518ffb1",
+                    "note": "Kapcsolódás 'konyha/étkező' helyszínhez."
+                  }
+                ]
+              }
+            ],
+            "safety": {
+              "containsInterpretation": false,
+              "containsDiagnosis": false,
+              "containsIdentityClaim": false,
+              "containsAdvice": false,
+              "userFacingReady": false
+            }
+          }
+        },
+        {
+          "sourceKind": "discovery_candidate",
+          "relatedDiscoveryCandidateIds": [
+            "candidate3"
+          ],
+          "missedStructureRationale": null,
+          "opportunity": {
+            "clientOpportunityKey": "opportunity3",
+            "identityDecision": {
+              "mode": "create_new",
+              "existingIdentityId": null,
+              "reuseConfidence": null,
+              "reuseRationale": null
+            },
+            "opportunityStructure": {
+              "primaryCategory": "tension",
+              "secondaryCategories": [
+                "relationship"
+              ],
+              "structureType": "TENSION",
+              "nodes": [
+                {
+                  "key": "hamu_folt_nadragon",
+                  "label": "hamu folt Markus nadrágján",
+                  "kind": "event"
+                },
+                {
+                  "key": "bocsanatkeres",
+                  "label": "bocsánatkérés",
+                  "kind": "agency"
+                },
+                {
+                  "key": "kata_segitese",
+                  "label": "Kata segítése citrommal",
+                  "kind": "agency"
+                },
+                {
+                  "key": "rossz_erezes",
+                  "label": "rossz érzés",
+                  "kind": "affect"
+                },
+                {
+                  "key": "apam_megnyugtatas",
+                  "label": "apád megnyugtatása",
+                  "kind": "affect"
+                },
+                {
+                  "key": "evi_figyelmezese",
+                  "label": "Évi figyelmezés",
+                  "kind": "affect"
+                }
+              ],
+              "edges": [
+                {
+                  "from": "hamu_folt_nadragon",
+                  "to": "bocsanatkeres",
+                  "relation": "okoz"
+                },
+                {
+                  "from": "bocsanatkeres",
+                  "to": "kata_segitese",
+                  "relation": "követ"
+                },
+                {
+                  "from": "kata_segitese",
+                  "to": "apam_megnyugtatas",
+                  "relation": "kapcsolódik"
+                },
+                {
+                  "from": "rossz_erezes",
+                  "to": "apam_megnyugtatas",
+                  "relation": "kontraszt"
+                },
+                {
+                  "from": "evi_figyelmezese",
+                  "to": "hamu_folt_nadragon",
+                  "relation": "összefügghet"
+                }
+              ],
+              "tensions": [
+                {
+                  "between": [
+                    "rossz_erezes",
+                    "apam_megnyugtatas"
+                  ],
+                  "description": "rossz érzés kontra megnyugtatás"
+                },
+                {
+                  "between": [
+                    "hamu_folt_nadragon",
+                    "bocsanatkeres"
+                  ],
+                  "description": "hiba okozta szorongás és megnyugtatás"
+                },
+                {
+                  "between": [
+                    "evi_figyelmezese",
+                    "hamu_folt_nadragon"
+                  ],
+                  "description": "észlelt figyelem és feszültség kapcsolata"
+                }
+              ],
+              "gaps": [],
+              "continuitySignals": [
+                {
+                  "kind": "none",
+                  "referenceId": null,
+                  "description": null
+                }
+              ]
+            },
+            "manifestation": {
+              "summaryForInternalUse": "Szociális feszültség és megnyugtatás folyamata a hamuzás miatt, kiegészítve az észlelt figyelem témájával.",
+              "priorityReflectiveObjectRole": "primary_source",
+              "salience": {
+                "credibility": 0.85,
+                "reflectivePotential": 0.6,
+                "salienceBand": "moderate",
+                "credibilityRationale": "Komplex, többféle szereplőre és érzésre alapuló bizonyított struktúra.",
+                "reflectivePotentialRationale": "Szociális és érzelmi dinamikák fontosak lehetnek."
+              }
+            },
+            "evidenceBlocks": [
+              {
+                "clientBlockKey": "eb_opportunity3_group5",
+                "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+                "role": "priority",
+                "summary": "Dohányzás közbeni baleset és utóhatás: hamu folt, bocsánatkérés, Kata segítése",
+                "observationRefs": [
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+                    "sceneRowId": "scene2",
+                    "sceneStableId": "scene2",
+                    "observationStableId": "obs2_5",
+                    "role": "primary_support",
+                    "supportsNodeKeys": [
+                      "hamu_folt_nadragon",
+                      "bocsanatkeres",
+                      "kata_segitese"
+                    ],
+                    "supportsEdgeIndexes": [
+                      0,
+                      1
+                    ]
+                  }
+                ],
+                "confirmedGlossaryRefs": [
+                  {
+                    "glossaryTermId": "f69e6141-77bf-4639-b00d-23bc3773a795",
+                    "relationshipRole": "continuity",
+                    "note": "Megjelenik 'apám' motívumként, támogatva az identitás folytonosságát."
+                  },
+                  {
+                    "glossaryTermId": "d18ab76d-20aa-4521-b31f-6c6e1c68176e",
+                    "relationshipRole": "continuity",
+                    "note": "Megjelenik 'Kata', az apám élettársa szereplő."
+                  }
+                ],
+                "candidateGlossaryMentions": [
+                  {
+                    "glossaryCandidateId": "27e4a627-28df-4267-8b61-099f73c54316",
+                    "note": "Kapcsolódás 'Markus' szereplőhöz."
+                  },
+                  {
+                    "glossaryCandidateId": "3ba7615e-c64b-428e-81a4-b147def28492",
+                    "note": "Kapcsolódás 'citrom' objektumhoz."
+                  }
+                ]
+              },
+              {
+                "clientBlockKey": "eb_opportunity3_group6",
+                "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+                "role": "context",
+                "summary": "Évi jelenlétének és figyelmének érzékelése később",
+                "observationRefs": [
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7",
+                    "sceneRowId": "scene2",
+                    "sceneStableId": "scene2",
+                    "observationStableId": "obs2_7",
+                    "role": "context_support",
+                    "supportsNodeKeys": [
+                      "evi_figyelmezese"
+                    ],
+                    "supportsEdgeIndexes": [
+                      4
+                    ]
+                  }
+                ],
+                "confirmedGlossaryRefs": [],
+                "candidateGlossaryMentions": [
+                  {
+                    "glossaryCandidateId": "463f0099-4d94-44f0-b384-b972d52e7e40",
+                    "note": "Kapcsolódás 'Évi' szereplőhöz."
+                  }
+                ]
+              }
+            ],
+            "safety": {
+              "containsInterpretation": false,
+              "containsDiagnosis": false,
+              "containsIdentityClaim": false,
+              "containsAdvice": false,
+              "userFacingReady": false
+            }
+          }
+        }
+      ],
+      "inputPacket": {
+        "generationContext": {
+          "runtimeVersion": "latent_experimental_opportunity_constructor_v1",
+          "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+          "observationBundleId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1"
+        },
+        "authorityBoundary": {
+          "discoveryRole": "mandatory_to_consider_candidate_map",
+          "constructionRole": "authoritative_opportunity_gate",
+          "discoveryIsAdditiveToFullEvidence": true,
+          "fullEvidenceAccessRequired": true,
+          "discoveryPromotionRule": "mandatory_to_consider_not_mandatory_to_promote",
+          "allowedConstructionBehaviors": [
+            "reject",
+            "merge",
+            "split",
+            "discover_missed_structure"
+          ]
+        },
+        "fullEvidence": {
+          "generationContext": {
+            "runtimeVersion": "latent_opportunity_constructor_v1",
+            "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+            "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+            "priorityReflectiveObjectType": "dream",
+            "priorityReflectiveObjectTitle": "Tábori telefonkeresés és családi konyha",
+            "objectLanguage": "hu",
+            "observationBundleId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1",
+            "observationRuntimeVersion": "observation_v2_phase1",
+            "semanticPolicyResult": "accept_with_uncertainty",
+            "bundleUncertaintyNotes": []
+          },
+          "priorityObject": {
+            "content": "valami táborban vagyok. még gyerek, de ugyanakkor valamennyire kortalan, mert általános iskolás arcokat és középiskolai arcokat is felismerek. a táborban már jártam, legalábbis ismerős a hely. eleinte azon bosszankodom, hogy miért ezekbe a szobákba lettünk elszállásolva, aztán valahogy megértem, hogy így volt olcsóbb. lemegyek a szállás előtti mezőre és az első nagy crushommal találkozom, Bórával az általános iskolából. valamiért azzal froclizom, hogy eldugtam a telefonját - legalábbis valamiért rajtam keresi azt, én meg tudom, hogy hol van, de nem árulom el. hogy bosszantsam a saját telefonomat dobálgatom fel jó magasra. kicsit aggódom, hogy össze fog törni vagy bármi baja lesz, de csak azért is dobálgatom. pocsolyába esik, száraz talajra esik, mindegy folytatom. már 4-5 alkalommal dobtam azt hiszem, és Bóra egyre idegesebb, még egyszer feldobom, majd megmondom neki, hogy hol van. közben azonban kiderül, hogy igazából én se tudom, hogy hol van, úgyhogy segítek neki megkeresni. visszaérünk az épületekhez. a szállás és a közösségi terek egy verandás sorházban vannak a nagy mező szélén a fák alatt. elkezdjük keresni a telefont, egy pár, akiket nem ismerek fel talán memorit vagy valami más társast játszanak, megnézem az előttük lévő telefont, de nem ezt keressük. tovább megyünk, a konyhába/étkezőbe lépek, Bóra eltűnt és én hirtelen idősebb lettem valamivel. a szoba nem túl nagy. van egy kisebb konyha, amiben apám és Kata, a mostohaanyám főznek, illetve egy kisebb asztal, ami körül többen ülnek, mint ahányan kényelmesen el lehet férni, de jó hangulat van. az asztalnál csak két arcot ismerek fel: Markus, az általános iskolában volt osztálytársam és Évi, aki az egyetem alatt volt a barátnőm. amikor belépek, akkor apám épp egy receptet pitchel. valami túrós, sajtos, zöldséges.. nem is tudom mit, csak azért emlékszem, mert úgy lépek be a szobába, hogy ezeket ismételem úgy dramatizálva, mintha valami bennszülött törzs tagja lennék. azt hiszem apámék szervezhetik a tábort, ez a benyomásom. az érkezés után beszélgetünk mindenféléről. majd egyszer csak dohányzás közben lehamuzom Markus fehér vászonnadrágját. sűrűn bocsánatot kérek, és letörölgetem, majd folytatjuk a beszélgetést, amikor Kata egyszercsak azt mondja, hogy citrommal ki lehet szedni. oldalra nézek, és látom, hogy Markus még mindig a nadrággal van elfoglalva, láthatóan zavarja, és Kata segíteni akar neki. el is mennek ketten. én rosszul érzem magam, de apám megnyugtat, hogy nem történt semmi baj és mindenkivel megesik. Évire csak úgy emlékszem, mint akinek érzem a figyelmét magamon folyamatosan - őt magát egyébként nem láttam, vagy legalábbis nem emlékszem rá, talán csak egy pillanatra, de a jelenlétét és figyelmét egyértelműen érzékeltem a dohányzós epizód óta. aztán felébredtem"
+          },
+          "scenes": [
+            {
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+              "sceneStableId": "scene1",
+              "position": 1,
+              "summary": "Táborban vagyok, idegen és ismerős arcok vegyesével, első találkozás Borával, a telefon keresése és dobálása.",
+              "evidenceSnippet": "valami táborban vagyok... lemegyek a szállás előtti mezőre és az első nagy crushommal találkozom, Bórával... dobálgatom a saját telefonomat... visszaérünk az épületekhez.",
+              "boundarySignals": [
+                {
+                  "kind": "spatial_change",
+                  "note": "Mozgás a táborból a szállás előtti mezőre, majd vissza az épületekhez jelez jelenetszakadást."
+                }
+              ],
+              "derivedStructures": {
+                "actors": [
+                  "Bóra"
+                ],
+                "locations": [
+                  "Tábor",
+                  "szállás előtti mező"
+                ],
+                "objects": [
+                  "telefon"
+                ],
+                "interactions": [
+                  "telefon eldugásával ugratás",
+                  "telefon dobálása",
+                  "telefon keresése és segítés"
+                ],
+                "affect": [
+                  "Bóra idegessége",
+                  "aggódás a telefonért"
+                ],
+                "agency": [
+                  "telefon tudatos dobálása folytatása aggodalom ellenére"
+                ],
+                "metacognition": [],
+                "phenomenology": []
+              }
+            },
+            {
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+              "sceneStableId": "scene2",
+              "position": 2,
+              "summary": "Visszatérés a szállásra, konyhai helyzet, idősebbnek érzem magam, apám és mostohaanyám főznek, rossz érzés Markus miatt, Évi figyelme érzékelése.",
+              "evidenceSnippet": "visszaérünk az épületekhez. a szállás és a közösségi terek egy verandás sorházban vannak... a konyhába/étkezőbe lépek, Bóra eltűnt és én hirtelen idősebb lettem valamivel... apám és Kata, a mostohaanyám főznek... doháyzás közben lehamuzom Markus vászonnadrágját... Évire csak úgy emlékszem, mint akinek érzem a figyelmét magamon... aztán felébredtem.",
+              "boundarySignals": [
+                {
+                  "kind": "spatial_change",
+                  "note": "Visszatérés az épületekhez, belépés a konyhába/étkezőbe, rögtönzött korváltozás."
+                }
+              ],
+              "derivedStructures": {
+                "actors": [
+                  "apám",
+                  "Kata, mostohaanya",
+                  "Markus",
+                  "Évi"
+                ],
+                "locations": [
+                  "épületek, verandás sorház a mező szélén",
+                  "konyha/étkező"
+                ],
+                "objects": [
+                  "pitchelt recept",
+                  "Markus fehér vászonnadrágja",
+                  "citrom"
+                ],
+                "interactions": [
+                  "főzés",
+                  "recept pitchelése",
+                  "hamu hullása nadrágra",
+                  "bocsánatkérés és takarítás",
+                  "Kata segít citrommal a folton",
+                  "Kata és Markus elmennek együtt"
+                ],
+                "affect": [
+                  "rossz érzés",
+                  "apám megnyugtatása",
+                  "Évi figyelmének érzése"
+                ],
+                "agency": [
+                  "bocsánatkérés és takarítás aktív cselekvésként"
+                ],
+                "metacognition": [],
+                "phenomenology": [
+                  "hirtelen idősebb érzése"
+                ]
+              }
+            }
+          ],
+          "observations": [
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_1",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+              "sceneStableId": "scene1",
+              "observationStableId": "obs1_1",
+              "position": 1,
+              "text": "A táborban vagyok, gyerek vagyok, de kortalan iskolás arcokkal.",
+              "category": "location",
+              "evidence": [
+                {
+                  "snippet": "valami táborban vagyok. még gyerek, de ugyanakkor valamennyire kortalan, mert általános iskolás arcokat és középiskolai arcokat is felismerek.",
+                  "spanStart": 0,
+                  "spanEnd": 79
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_2",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+              "sceneStableId": "scene1",
+              "observationStableId": "obs1_2",
+              "position": 2,
+              "text": "Eleinte bosszankodom a szobákon, amelyekben elszállásoltak, később megértem az okát.",
+              "category": "other",
+              "evidence": [
+                {
+                  "snippet": "eleinte azon bosszankodom, hogy miért ezekbe a szobákba lettünk elszállásolva, aztán valahogy megértem, hogy így volt olcsóbb.",
+                  "spanStart": 80,
+                  "spanEnd": 143
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_3",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+              "sceneStableId": "scene1",
+              "observationStableId": "obs1_3",
+              "position": 3,
+              "text": "A szállás előtti mezőn találkozom Bórával, az általános iskolából ismert crushommal.",
+              "category": "location",
+              "evidence": [
+                {
+                  "snippet": "lemegyek a szállás előtti mezőre és az első nagy crushommal találkozom, Bórával az általános iskolából.",
+                  "spanStart": 144,
+                  "spanEnd": 203
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_4",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+              "sceneStableId": "scene1",
+              "observationStableId": "obs1_4",
+              "position": 4,
+              "text": "Froclizom Bórát, hogy eldugtam a telefonját, de nem árulom el a helyét.",
+              "category": "interaction",
+              "evidence": [
+                {
+                  "snippet": "valamiért azzal froclizom, hogy eldugtam a telefonját - legalábbis valamiért rajtam keresi azt, én meg tudom, hogy hol van, de nem árulom el.",
+                  "spanStart": 204,
+                  "spanEnd": 261
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+              "sceneStableId": "scene1",
+              "observationStableId": "obs1_5",
+              "position": 5,
+              "text": "A saját telefonomat magasra dobálgatom, aggódom a sérülés miatt, de folytatom.",
+              "category": "affect",
+              "evidence": [
+                {
+                  "snippet": "hogy bosszantsam a saját telefonomat dobálgatom fel jó magasra. kicsit aggódom, hogy össze fog törni vagy bármi baja lesz, de csak azért is dobálgatom.",
+                  "spanStart": 262,
+                  "spanEnd": 327
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+              "sceneStableId": "scene1",
+              "observationStableId": "obs1_6",
+              "position": 6,
+              "text": "A telefon többször leesik, de folytatom a dobálást, Bóra egyre idegesebb.",
+              "category": "affect",
+              "evidence": [
+                {
+                  "snippet": "pocsolyába esik, száraz talajra esik, mindegy folytatom. már 4-5 alkalommal dobtam azt hiszem, és Bóra egyre idegesebb...",
+                  "spanStart": 328,
+                  "spanEnd": 382
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_7",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+              "sceneStableId": "scene1",
+              "observationStableId": "obs1_7",
+              "position": 7,
+              "text": "Megmondom Bórának a telefon helyét, de közben kiderül, hogy én sem tudom, így segítek keresni.",
+              "category": "interaction",
+              "evidence": [
+                {
+                  "snippet": "még egyszer feldobom, majd megmondom neki, hogy hol van. közben azonban kiderül, hogy igazából én se tudom, hogy hol van, úgyhogy segítek neki megkeresni.",
+                  "spanStart": 383,
+                  "spanEnd": 459
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_1",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+              "sceneStableId": "scene2",
+              "observationStableId": "obs2_1",
+              "position": 1,
+              "text": "Visszaérkezünk az épületekhez, ahol verandás sorház található a mező szélén fák alatt.",
+              "category": "location",
+              "evidence": [
+                {
+                  "snippet": "visszaérünk az épületekhez. a szállás és a közösségi terek egy verandás sorházban vannak a nagy mező szélén a fák alatt.",
+                  "spanStart": 460,
+                  "spanEnd": 517
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_2",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+              "sceneStableId": "scene2",
+              "observationStableId": "obs2_2",
+              "position": 2,
+              "text": "Belépek a konyhába/étkezőbe, Bóra eltűnt és idősebbnek érzem magam.",
+              "category": "phenomenology",
+              "evidence": [
+                {
+                  "snippet": "a konyhába/étkezőbe lépek, Bóra eltűnt és én hirtelen idősebb lettem valamivel.",
+                  "spanStart": 518,
+                  "spanEnd": 563
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_3",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+              "sceneStableId": "scene2",
+              "observationStableId": "obs2_3",
+              "position": 3,
+              "text": "Apám és Kata főznek, az asztalnál többen ülnek, jó hangulat van.",
+              "category": "interaction",
+              "evidence": [
+                {
+                  "snippet": "van egy kisebb konyha, amiben apám és Kata, a mostohaanyám főznek, illetve egy kisebb asztal, ami körül többen ülnek, mint ahányan kényelmesen el lehet férni, de jó hangulat van.",
+                  "spanStart": 564,
+                  "spanEnd": 628
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_4",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+              "sceneStableId": "scene2",
+              "observationStableId": "obs2_4",
+              "position": 4,
+              "text": "Apám receptet pitchel: túrós, sajtos, zöldséges étel, dramatizált belépés.",
+              "category": "interaction",
+              "evidence": [
+                {
+                  "snippet": "amikor belépek, akkor apám épp egy receptet pitchel. valami túrós, sajtos, zöldséges.. nem is tudom mit, csak azért emlékszem, mert úgy lépek be a szobába, hogy ezeket ismételem úgy dramatizálva...",
+                  "spanStart": 629,
+                  "spanEnd": 695
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+              "sceneStableId": "scene2",
+              "observationStableId": "obs2_5",
+              "position": 5,
+              "text": "Dohányzás közben lehamuzom Markus fehér vászonnadrágját, bocsánatot kérek, letörlöm, Kata segíteni akar.",
+              "category": "agency",
+              "evidence": [
+                {
+                  "snippet": "majd egyszer csak dohányzás közben lehamuzom Markus fehér vászonnadrágját. sűrűn bocsánatot kérek, és letörölgetem... Kata egyszercsak azt mondja, hogy citrommal ki lehet szedni... Kata segíteni akar... el is mennek ketten.",
+                  "spanStart": 696,
+                  "spanEnd": 786
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+              "sceneStableId": "scene2",
+              "observationStableId": "obs2_6",
+              "position": 6,
+              "text": "Rossz érzésem van emiatt, apám megnyugtat, hogy mindenkivel megesik.",
+              "category": "affect",
+              "evidence": [
+                {
+                  "snippet": "én rosszul érzem magam, de apám megnyugtat, hogy nem történt semmi baj és mindenkivel megesik.",
+                  "spanStart": 787,
+                  "spanEnd": 833
+                }
+              ],
+              "uncertaintyNote": null
+            },
+            {
+              "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7",
+              "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+              "sceneStableId": "scene2",
+              "observationStableId": "obs2_7",
+              "position": 7,
+              "text": "Évi figyelmét érzem magamon folyamatosan, bár őt nem látom vagy alig emlékszem rá.",
+              "category": "affect",
+              "evidence": [
+                {
+                  "snippet": "Évire csak úgy emlékszem, mint akinek érzem a figyelmét magamon folyamatosan - őt magát egyébként nem láttam, vagy legalábbis nem emlékszem rá, talán csak egy pillanatra, de a jelenlétét és figyelmét egyértelműen érzékeltem a dohányzós epizód óta.",
+                  "spanStart": 834,
+                  "spanEnd": 874
+                }
+              ],
+              "uncertaintyNote": null
+            }
+          ],
+          "glossaryContext": {
+            "confirmedTerms": [
+              {
+                "glossaryTermId": "f69e6141-77bf-4639-b00d-23bc3773a795",
+                "displayLabel": "apám",
+                "normalizedKey": "apam",
+                "termType": "motif",
+                "userNotes": "édesapám",
+                "appearanceCount": 1,
+                "recentAppearanceObjectIds": [
+                  "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+                ]
+              },
+              {
+                "glossaryTermId": "d18ab76d-20aa-4521-b31f-6c6e1c68176e",
+                "displayLabel": "Kata",
+                "normalizedKey": "kata",
+                "termType": "motif",
+                "userNotes": "édesapám élettársa",
+                "appearanceCount": 1,
+                "recentAppearanceObjectIds": [
+                  "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+                ]
+              }
+            ],
+            "appearanceRecords": [
+              {
+                "appearanceRecordId": "e20571a0-b88c-4c7d-9283-392000ec034e",
+                "glossaryTermId": "d18ab76d-20aa-4521-b31f-6c6e1c68176e",
+                "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+                "displayLabelAtAppearance": "Kata",
+                "sourceObservationId": null
+              },
+              {
+                "appearanceRecordId": "f0bf92d9-9f1b-44cf-ad50-c6e9a7fb332f",
+                "glossaryTermId": "f69e6141-77bf-4639-b00d-23bc3773a795",
+                "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+                "displayLabelAtAppearance": "apám",
+                "sourceObservationId": null
+              }
+            ],
+            "candidates": [
+              {
+                "glossaryCandidateId": "eeedd1f9-8677-4e96-9802-8748f9dbe189",
+                "displayLabel": "Bóra",
+                "normalizedKey": "bora",
+                "sourceCategory": "actor",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene1"
+              },
+              {
+                "glossaryCandidateId": "dfa3da47-423b-49b7-891e-f8e91ad81199",
+                "displayLabel": "Tábor",
+                "normalizedKey": "camp",
+                "sourceCategory": "location",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene1"
+              },
+              {
+                "glossaryCandidateId": "39de9584-7ba5-4b82-919f-8b5202305710",
+                "displayLabel": "szállás előtti mező",
+                "normalizedKey": "field in front of lodging",
+                "sourceCategory": "location",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene1"
+              },
+              {
+                "glossaryCandidateId": "58064f26-7caf-4e80-b188-039d78e5c2b4",
+                "displayLabel": "telefon",
+                "normalizedKey": "phone",
+                "sourceCategory": "object",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene1"
+              },
+              {
+                "glossaryCandidateId": "27e4a627-28df-4267-8b61-099f73c54316",
+                "displayLabel": "Markus",
+                "normalizedKey": "markus",
+                "sourceCategory": "actor",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene2"
+              },
+              {
+                "glossaryCandidateId": "463f0099-4d94-44f0-b384-b972d52e7e40",
+                "displayLabel": "Évi",
+                "normalizedKey": "evi",
+                "sourceCategory": "actor",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene2"
+              },
+              {
+                "glossaryCandidateId": "b188bce1-b7a6-4070-860c-64a5502d36fe",
+                "displayLabel": "épületek",
+                "normalizedKey": "camp buildings",
+                "sourceCategory": "location",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene2"
+              },
+              {
+                "glossaryCandidateId": "d8b5f56e-9063-43d7-a53f-bcd25518ffb1",
+                "displayLabel": "konyha/étkező",
+                "normalizedKey": "kitchen dining room",
+                "sourceCategory": "location",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene2"
+              },
+              {
+                "glossaryCandidateId": "618145b1-a2ab-43c1-ac92-5e974037b1da",
+                "displayLabel": "pitchelt recept",
+                "normalizedKey": "pitched recipe",
+                "sourceCategory": "object",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene2"
+              },
+              {
+                "glossaryCandidateId": "3125cc45-2b2f-4a79-b36d-143aa92f22cf",
+                "displayLabel": "Markus fehér vászonnadrágja",
+                "normalizedKey": "lace trousers markus",
+                "sourceCategory": "object",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene2"
+              },
+              {
+                "glossaryCandidateId": "3ba7615e-c64b-428e-81a4-b147def28492",
+                "displayLabel": "citrom",
+                "normalizedKey": "lemon",
+                "sourceCategory": "object",
+                "candidateClass": "new_candidate",
+                "state": "candidate",
+                "sourceObservationStableId": "scene2"
+              }
+            ]
+          },
+          "existingOpportunityContext": {
+            "identities": [
+              {
+                "identityId": "97abcbc8-8a63-41fd-b336-75e9a2d1e78f",
+                "primaryCategory": "transition",
+                "secondaryCategories": [
+                  "relationship"
+                ],
+                "lifecycleState": "emerging",
+                "latestStructure": {
+                  "structureType": "A_TO_B",
+                  "nodes": [
+                    "Belső űrállomás terület",
+                    "Luxus kertvárosi külső tér az űrben",
+                    "Én (álmodó)",
+                    "Luxus kertváros lakói"
+                  ]
+                },
+                "recentManifestationSummaries": [
+                  {
+                    "manifestationId": "23575778-9a5d-4475-9700-b4d66c1d06e7",
+                    "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+                    "structure": {
+                      "kind": "A_TO_B",
+                      "label": "Belső űrállomás terület -> Luxus kertvárosi külső tér az űrben -> Én (álmodó)",
+                      "elements": [
+                        "Belső űrállomás terület",
+                        "Luxus kertvárosi külső tér az űrben",
+                        "Én (álmodó)",
+                        "Luxus kertváros lakói"
+                      ],
+                      "metadata": {
+                        "gaps": [],
+                        "edges": [
+                          {
+                            "to": "B",
+                            "from": "A",
+                            "relation": "location_transition"
+                          },
+                          {
+                            "to": "A",
+                            "from": "actor1",
+                            "relation": "located_in"
+                          },
+                          {
+                            "to": "B",
+                            "from": "actor1",
+                            "relation": "moves_to"
+                          },
+                          {
+                            "to": "B",
+                            "from": "actor2",
+                            "relation": "inhabits"
+                          }
+                        ],
+                        "nodes": [
+                          {
+                            "key": "A",
+                            "kind": "location",
+                            "label": "Belső űrállomás terület"
+                          },
+                          {
+                            "key": "B",
+                            "kind": "location",
+                            "label": "Luxus kertvárosi külső tér az űrben"
+                          },
+                          {
+                            "key": "actor1",
+                            "kind": "actor",
+                            "label": "Én (álmodó)"
+                          },
+                          {
+                            "key": "actor2",
+                            "kind": "actor",
+                            "label": "Luxus kertváros lakói"
+                          }
+                        ],
+                        "tensions": [],
+                        "continuitySignals": [
+                          {
+                            "kind": "none",
+                            "description": null,
+                            "referenceId": null
+                          }
+                        ]
+                      }
+                    },
+                    "primaryEvidenceObservationTexts": []
+                  }
+                ]
+              },
+              {
+                "identityId": "b3261991-7af6-4e6a-8a0f-63d48a5bd514",
+                "primaryCategory": "ambiguity",
+                "secondaryCategories": [
+                  "gap",
+                  "relationship"
+                ],
+                "lifecycleState": "emerging",
+                "latestStructure": {
+                  "structureType": "GAP",
+                  "nodes": [
+                    "Az én szobám felismerhetetlensége az űrállomáson",
+                    "Én (álmodó)",
+                    "Űrállomás munkatársai"
+                  ]
+                },
+                "recentManifestationSummaries": [
+                  {
+                    "manifestationId": "6d541b1b-f8e1-45df-ba1e-af4eddece419",
+                    "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+                    "structure": {
+                      "kind": "GAP",
+                      "label": "Az én szobám felismerhetetlensége az űrállomáson -> Én (álmodó) -> Űrállomás munkatársai",
+                      "elements": [
+                        "Az én szobám felismerhetetlensége az űrállomáson",
+                        "Én (álmodó)",
+                        "Űrállomás munkatársai"
+                      ],
+                      "metadata": {
+                        "gaps": [
+                          {
+                            "description": "Számos név és korábbi lakó nevek egy szobán, megtalálhatatlan saját hely, bizonytalanság érzése.",
+                            "supportedByObservationIds": [
+                              "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-5"
+                            ]
+                          }
+                        ],
+                        "edges": [
+                          {
+                            "to": "A",
+                            "from": "actor1",
+                            "relation": "experiences"
+                          }
+                        ],
+                        "nodes": [
+                          {
+                            "key": "A",
+                            "kind": "state",
+                            "label": "Az én szobám felismerhetetlensége az űrállomáson"
+                          },
+                          {
+                            "key": "actor1",
+                            "kind": "actor",
+                            "label": "Én (álmodó)"
+                          },
+                          {
+                            "key": "actor2",
+                            "kind": "actor",
+                            "label": "Űrállomás munkatársai"
+                          }
+                        ],
+                        "tensions": [],
+                        "continuitySignals": [
+                          {
+                            "kind": "none",
+                            "description": null,
+                            "referenceId": null
+                          }
+                        ]
+                      }
+                    },
+                    "primaryEvidenceObservationTexts": []
+                  }
+                ]
+              },
+              {
+                "identityId": "69f6ccd7-9525-44bb-a306-fc32ad060efe",
+                "primaryCategory": "transition",
+                "secondaryCategories": [
+                  "relationship",
+                  "ambiguity"
+                ],
+                "lifecycleState": "emerging",
+                "latestStructure": {
+                  "structureType": "A_TO_B_TO_C",
+                  "nodes": [
+                    "Űrkutatás vagy űrutazás lehetősége",
+                    "Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon",
+                    "Űrállomás megérkezés és társaság viselkedése",
+                    "Én (álmodó)",
+                    "Ismerősök",
+                    "BKK vagy Volán busz, tömeg"
+                  ]
+                },
+                "recentManifestationSummaries": [
+                  {
+                    "manifestationId": "f063c5af-66b4-44ec-8f69-bdfbee1dc9c7",
+                    "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+                    "structure": {
+                      "kind": "A_TO_B_TO_C",
+                      "label": "Űrkutatás vagy űrutazás lehetősége -> Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon -> Űrállomás megérkezés és társaság viselkedése",
+                      "elements": [
+                        "Űrkutatás vagy űrutazás lehetősége",
+                        "Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon",
+                        "Űrállomás megérkezés és társaság viselkedése",
+                        "Én (álmodó)",
+                        "Ismerősök",
+                        "BKK vagy Volán busz, tömeg"
+                      ],
+                      "metadata": {
+                        "gaps": [
+                          {
+                            "description": "Az esemény ünnepélyességének hiánya kontrasztban áll az űrutazás szokatlan lehetőségével.",
+                            "supportedByObservationIds": [
+                              "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene1:obs1-2",
+                              "observation-bundle-604ee990-4a55-49b8-940b-c1203f7d7c0-observation_v2_phase1:scene1:obs1-3"
+                            ]
+                          }
+                        ],
+                        "edges": [
+                          {
+                            "to": "B",
+                            "from": "A",
+                            "relation": "leads_to_transition"
+                          },
+                          {
+                            "to": "C",
+                            "from": "B",
+                            "relation": "leads_to_transition"
+                          },
+                          {
+                            "to": "A",
+                            "from": "actor1",
+                            "relation": "experiences"
+                          },
+                          {
+                            "to": "C",
+                            "from": "actor1",
+                            "relation": "interacts_with"
+                          },
+                          {
+                            "to": "B",
+                            "from": "actor3",
+                            "relation": "participates_in"
+                          }
+                        ],
+                        "nodes": [
+                          {
+                            "key": "A",
+                            "kind": "state",
+                            "label": "Űrkutatás vagy űrutazás lehetősége"
+                          },
+                          {
+                            "key": "B",
+                            "kind": "event",
+                            "label": "Kilövés előtti egyszerű, nem ünnepélyes utazás zsúfolt buszon"
+                          },
+                          {
+                            "key": "C",
+                            "kind": "state",
+                            "label": "Űrállomás megérkezés és társaság viselkedése"
+                          },
+                          {
+                            "key": "actor1",
+                            "kind": "actor",
+                            "label": "Én (álmodó)"
+                          },
+                          {
+                            "key": "actor2",
+                            "kind": "actor",
+                            "label": "Ismerősök"
+                          },
+                          {
+                            "key": "actor3",
+                            "kind": "object",
+                            "label": "BKK vagy Volán busz, tömeg"
+                          }
+                        ],
+                        "tensions": [],
+                        "continuitySignals": [
+                          {
+                            "kind": "none",
+                            "description": null,
+                            "referenceId": null
+                          }
+                        ]
+                      }
+                    },
+                    "primaryEvidenceObservationTexts": []
+                  }
+                ]
+              },
+              {
+                "identityId": "b368407f-061a-451f-a788-f0aecd022d8d",
+                "primaryCategory": "transition",
+                "secondaryCategories": [
+                  "relationship",
+                  "ambiguity"
+                ],
+                "lifecycleState": "emerging",
+                "latestStructure": {
+                  "structureType": "A_TO_B",
+                  "nodes": [
+                    "Közösség elfogadottságának csökkenése",
+                    "Tudatos álomként való felébredés",
+                    "Én (álmodó)",
+                    "Bullyingoló társaság"
+                  ]
+                },
+                "recentManifestationSummaries": [
+                  {
+                    "manifestationId": "b9779dba-5e56-45a2-85df-3e63e6679408",
+                    "priorityReflectiveObjectId": "666c955c-a2c0-4cec-8679-9d42ab81f650",
+                    "structure": {
+                      "kind": "A_TO_B",
+                      "label": "Közösség elfogadottságának csökkenése -> Tudatos álomként való felébredés -> Én (álmodó)",
+                      "elements": [
+                        "Közösség elfogadottságának csökkenése",
+                        "Tudatos álomként való felébredés",
+                        "Én (álmodó)",
+                        "Bullyingoló társaság"
+                      ],
+                      "metadata": {
+                        "gaps": [
+                          {
+                            "description": "Nem világos, miért kezdődött a bullying és miért nem fogadják el az álmodót.",
+                            "supportedByObservationIds": [
+                              "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_10",
+                              "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1:scene1:obs1_13"
+                            ]
+                          }
+                        ],
+                        "edges": [
+                          {
+                            "to": "B",
+                            "from": "A",
+                            "relation": "leads_to_transition"
+                          },
+                          {
+                            "to": "A",
+                            "from": "actor1",
+                            "relation": "experiences"
+                          },
+                          {
+                            "to": "A",
+                            "from": "actor2",
+                            "relation": "causes_feeling"
+                          }
+                        ],
+                        "nodes": [
+                          {
+                            "key": "A",
+                            "kind": "state",
+                            "label": "Közösség elfogadottságának csökkenése"
+                          },
+                          {
+                            "key": "B",
+                            "kind": "state",
+                            "label": "Tudatos álomként való felébredés"
+                          },
+                          {
+                            "key": "actor1",
+                            "kind": "actor",
+                            "label": "Én (álmodó)"
+                          },
+                          {
+                            "key": "actor2",
+                            "kind": "actor",
+                            "label": "Bullyingoló társaság"
+                          }
+                        ],
+                        "tensions": [],
+                        "continuitySignals": [
+                          {
+                            "kind": "none",
+                            "description": null,
+                            "referenceId": null
+                          }
+                        ]
+                      }
+                    },
+                    "primaryEvidenceObservationTexts": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "discoveryResult": {
+          "generationContext": {
+            "runtimeVersion": "latent_discovery_v1",
+            "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+            "observationBundleId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1"
+          },
+          "candidateStructures": [
+            {
+              "candidateId": "candidate1",
+              "origin": "context_revealed",
+              "sceneRefs": [
+                "scene1"
+              ],
+              "evidenceGroups": [
+                {
+                  "groupId": "group1",
+                  "sceneRef": "scene1",
+                  "observationRefs": [
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_4",
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_7"
+                  ],
+                  "boundaryNotes": [
+                    "Telefon eldugásával ugratás és keresés közti interakciók"
+                  ]
+                },
+                {
+                  "groupId": "group2",
+                  "sceneRef": "scene1",
+                  "observationRefs": [
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6"
+                  ],
+                  "boundaryNotes": [
+                    "Telefon magasba dobálása aggodalom mellett, Bóra növekvő idegessége"
+                  ]
+                }
+              ],
+              "provisionalStructureType": "tension",
+              "structureSketch": {
+                "nodes": [
+                  "ugratás Bórával",
+                  "telefon dobálás",
+                  "aggodalom a telefonért",
+                  "Bóra idegessége",
+                  "telefon keresése"
+                ],
+                "relations": [
+                  "telefon dobálás feszültséget okoz Bórában",
+                  "telefon dobálás és aggódás együttese",
+                  "telefon keresés mint a feszültség megoldási kísérlete"
+                ],
+                "tensions": [
+                  "dobálás kontra aggódás",
+                  "dobálás és Bóra idegessége"
+                ],
+                "gaps": []
+              },
+              "distinctnessRationale": "Ebben a jelenetben strukturálisan éles a feszültség a telefon dobálása és az aggódás, illetve Bóra idegessége között, amelyek különböző megfigyelési csoportokból származnak és meghatározzák a viszonyt.",
+              "uncertainty": [
+                "Bóra idegességének intenzitása és hatása a viszonyra nem teljesen explicit"
+              ]
+            },
+            {
+              "candidateId": "candidate2",
+              "origin": "context_revealed",
+              "sceneRefs": [
+                "scene1",
+                "scene2"
+              ],
+              "evidenceGroups": [
+                {
+                  "groupId": "group3",
+                  "sceneRef": "scene1",
+                  "observationRefs": [
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_1",
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_3"
+                  ],
+                  "boundaryNotes": [
+                    "Tábor és szállás előtti mező helyszínekkel kapcsolatos megfigyelések"
+                  ]
+                },
+                {
+                  "groupId": "group4",
+                  "sceneRef": "scene2",
+                  "observationRefs": [
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_1",
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_2"
+                  ],
+                  "boundaryNotes": [
+                    "Életkori és térbeli változások: tábor visszatérés, idősebb érzése"
+                  ]
+                }
+              ],
+              "provisionalStructureType": "transition",
+              "structureSketch": {
+                "nodes": [
+                  "tábor",
+                  "szállás előtti mező",
+                  "szállás épületei",
+                  "konyha",
+                  "idősebb érzés"
+                ],
+                "relations": [
+                  "tábor lapozás szállás előtti mezőre",
+                  "visszatérés a szállás épületeihez",
+                  "belépés konyhába",
+                  "korváltozás a konyhába lépéskor"
+                ],
+                "tensions": [],
+                "gaps": []
+              },
+              "distinctnessRationale": "Jól elkülönült jelenetszakadás és rituális átmenet jellemzi az egyik helyszínről a másikra való mozgást, kiegészítve a hirtelen idősebbedés élményével, amely különálló transzíciós struktúrát hoz létre.",
+              "uncertainty": [
+                "A korban változás pontos szemantikai jelentése nem egyértelmű"
+              ]
+            },
+            {
+              "candidateId": "candidate3",
+              "origin": "context_revealed",
+              "sceneRefs": [
+                "scene2"
+              ],
+              "evidenceGroups": [
+                {
+                  "groupId": "group5",
+                  "sceneRef": "scene2",
+                  "observationRefs": [
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6"
+                  ],
+                  "boundaryNotes": [
+                    "Dohányzás közbeni baleset és utóhatás: hamu folt, bocsánatkérés, Kata segítése"
+                  ]
+                },
+                {
+                  "groupId": "group6",
+                  "sceneRef": "scene2",
+                  "observationRefs": [
+                    "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7"
+                  ],
+                  "boundaryNotes": [
+                    "Évi jelenlétének és figyelmének érzékelése később"
+                  ]
+                }
+              ],
+              "provisionalStructureType": "tension",
+              "structureSketch": {
+                "nodes": [
+                  "hamu folt Markus nadrágján",
+                  "bocsánatkérés",
+                  "Kata segítése citrommal",
+                  "rossz érzés",
+                  "apád megnyugtatása",
+                  "Évi figyelmezés"
+                ],
+                "relations": [
+                  "hamu folt okoz feszültséget",
+                  "bocsánatkérés próbálja oldani feszültséget",
+                  "Kata segítő intervenciója",
+                  "apád nyugtat mint feszültség enyhítés",
+                  "Évi figyelmének jelenléte"
+                ],
+                "tensions": [
+                  "hiba okozta szorongás és megnyugtatás viszonya",
+                  "rossz érzés kontra megnyugtatás",
+                  "észlelt figyelem mint feszültség vagy jelenlét"
+                ],
+                "gaps": []
+              },
+              "distinctnessRationale": "Különálló feszültségi hálózat a hibából eredő szociális kellemetlenség, a bocsánatkérés és megnyugtatás folyamata, továbbá az észlelt másik személy figyelme miatt.",
+              "uncertainty": [
+                "Évi jelenlétének és figyelmének pontos viszonya a feszültséghez bizonytalan"
+              ]
+            }
+          ],
+          "inputPacket": {
+            "generationContext": {
+              "runtimeVersion": "latent_discovery_v1",
+              "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+              "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+              "priorityReflectiveObjectType": "dream",
+              "priorityReflectiveObjectTitle": "Tábori telefonkeresés és családi konyha",
+              "objectLanguage": "hu",
+              "observationBundleId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1",
+              "observationRuntimeVersion": "observation_v2_phase1",
+              "semanticPolicyResult": "accept_with_uncertainty",
+              "bundleUncertaintyNotes": []
+            },
+            "discoveryPolicy": {
+              "persistence": "ephemeral",
+              "recreatableFromUpstream": true,
+              "countsAsSystemMemory": false
+            },
+            "priorityObject": {
+              "content": "valami táborban vagyok. még gyerek, de ugyanakkor valamennyire kortalan, mert általános iskolás arcokat és középiskolai arcokat is felismerek. a táborban már jártam, legalábbis ismerős a hely. eleinte azon bosszankodom, hogy miért ezekbe a szobákba lettünk elszállásolva, aztán valahogy megértem, hogy így volt olcsóbb. lemegyek a szállás előtti mezőre és az első nagy crushommal találkozom, Bórával az általános iskolából. valamiért azzal froclizom, hogy eldugtam a telefonját - legalábbis valamiért rajtam keresi azt, én meg tudom, hogy hol van, de nem árulom el. hogy bosszantsam a saját telefonomat dobálgatom fel jó magasra. kicsit aggódom, hogy össze fog törni vagy bármi baja lesz, de csak azért is dobálgatom. pocsolyába esik, száraz talajra esik, mindegy folytatom. már 4-5 alkalommal dobtam azt hiszem, és Bóra egyre idegesebb, még egyszer feldobom, majd megmondom neki, hogy hol van. közben azonban kiderül, hogy igazából én se tudom, hogy hol van, úgyhogy segítek neki megkeresni. visszaérünk az épületekhez. a szállás és a közösségi terek egy verandás sorházban vannak a nagy mező szélén a fák alatt. elkezdjük keresni a telefont, egy pár, akiket nem ismerek fel talán memorit vagy valami más társast játszanak, megnézem az előttük lévő telefont, de nem ezt keressük. tovább megyünk, a konyhába/étkezőbe lépek, Bóra eltűnt és én hirtelen idősebb lettem valamivel. a szoba nem túl nagy. van egy kisebb konyha, amiben apám és Kata, a mostohaanyám főznek, illetve egy kisebb asztal, ami körül többen ülnek, mint ahányan kényelmesen el lehet férni, de jó hangulat van. az asztalnál csak két arcot ismerek fel: Markus, az általános iskolában volt osztálytársam és Évi, aki az egyetem alatt volt a barátnőm. amikor belépek, akkor apám épp egy receptet pitchel. valami túrós, sajtos, zöldséges.. nem is tudom mit, csak azért emlékszem, mert úgy lépek be a szobába, hogy ezeket ismételem úgy dramatizálva, mintha valami bennszülött törzs tagja lennék. azt hiszem apámék szervezhetik a tábort, ez a benyomásom. az érkezés után beszélgetünk mindenféléről. majd egyszer csak dohányzás közben lehamuzom Markus fehér vászonnadrágját. sűrűn bocsánatot kérek, és letörölgetem, majd folytatjuk a beszélgetést, amikor Kata egyszercsak azt mondja, hogy citrommal ki lehet szedni. oldalra nézek, és látom, hogy Markus még mindig a nadrággal van elfoglalva, láthatóan zavarja, és Kata segíteni akar neki. el is mennek ketten. én rosszul érzem magam, de apám megnyugtat, hogy nem történt semmi baj és mindenkivel megesik. Évire csak úgy emlékszem, mint akinek érzem a figyelmét magamon folyamatosan - őt magát egyébként nem láttam, vagy legalábbis nem emlékszem rá, talán csak egy pillanatra, de a jelenlétét és figyelmét egyértelműen érzékeltem a dohányzós epizód óta. aztán felébredtem"
+            },
+            "scenes": [
+              {
+                "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+                "sceneStableId": "scene1",
+                "position": 1,
+                "summary": "Táborban vagyok, idegen és ismerős arcok vegyesével, első találkozás Borával, a telefon keresése és dobálása.",
+                "evidenceSnippet": "valami táborban vagyok... lemegyek a szállás előtti mezőre és az első nagy crushommal találkozom, Bórával... dobálgatom a saját telefonomat... visszaérünk az épületekhez.",
+                "boundarySignals": [
+                  {
+                    "kind": "spatial_change",
+                    "note": "Mozgás a táborból a szállás előtti mezőre, majd vissza az épületekhez jelez jelenetszakadást."
+                  }
+                ],
+                "derivedStructures": {
+                  "actors": [
+                    "Bóra"
+                  ],
+                  "locations": [
+                    "Tábor",
+                    "szállás előtti mező"
+                  ],
+                  "objects": [
+                    "telefon"
+                  ],
+                  "interactions": [
+                    "telefon eldugásával ugratás",
+                    "telefon dobálása",
+                    "telefon keresése és segítés"
+                  ],
+                  "affect": [
+                    "Bóra idegessége",
+                    "aggódás a telefonért"
+                  ],
+                  "agency": [
+                    "telefon tudatos dobálása folytatása aggodalom ellenére"
+                  ],
+                  "metacognition": [],
+                  "phenomenology": []
+                },
+                "observations": [
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_1",
+                    "observationStableId": "obs1_1",
+                    "position": 1,
+                    "text": "A táborban vagyok, gyerek vagyok, de kortalan iskolás arcokkal.",
+                    "category": "location",
+                    "evidence": [
+                      {
+                        "snippet": "valami táborban vagyok. még gyerek, de ugyanakkor valamennyire kortalan, mert általános iskolás arcokat és középiskolai arcokat is felismerek.",
+                        "spanStart": 0,
+                        "spanEnd": 79
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_2",
+                    "observationStableId": "obs1_2",
+                    "position": 2,
+                    "text": "Eleinte bosszankodom a szobákon, amelyekben elszállásoltak, később megértem az okát.",
+                    "category": "other",
+                    "evidence": [
+                      {
+                        "snippet": "eleinte azon bosszankodom, hogy miért ezekbe a szobákba lettünk elszállásolva, aztán valahogy megértem, hogy így volt olcsóbb.",
+                        "spanStart": 80,
+                        "spanEnd": 143
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_3",
+                    "observationStableId": "obs1_3",
+                    "position": 3,
+                    "text": "A szállás előtti mezőn találkozom Bórával, az általános iskolából ismert crushommal.",
+                    "category": "location",
+                    "evidence": [
+                      {
+                        "snippet": "lemegyek a szállás előtti mezőre és az első nagy crushommal találkozom, Bórával az általános iskolából.",
+                        "spanStart": 144,
+                        "spanEnd": 203
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_4",
+                    "observationStableId": "obs1_4",
+                    "position": 4,
+                    "text": "Froclizom Bórát, hogy eldugtam a telefonját, de nem árulom el a helyét.",
+                    "category": "interaction",
+                    "evidence": [
+                      {
+                        "snippet": "valamiért azzal froclizom, hogy eldugtam a telefonját - legalábbis valamiért rajtam keresi azt, én meg tudom, hogy hol van, de nem árulom el.",
+                        "spanStart": 204,
+                        "spanEnd": 261
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+                    "observationStableId": "obs1_5",
+                    "position": 5,
+                    "text": "A saját telefonomat magasra dobálgatom, aggódom a sérülés miatt, de folytatom.",
+                    "category": "affect",
+                    "evidence": [
+                      {
+                        "snippet": "hogy bosszantsam a saját telefonomat dobálgatom fel jó magasra. kicsit aggódom, hogy össze fog törni vagy bármi baja lesz, de csak azért is dobálgatom.",
+                        "spanStart": 262,
+                        "spanEnd": 327
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+                    "observationStableId": "obs1_6",
+                    "position": 6,
+                    "text": "A telefon többször leesik, de folytatom a dobálást, Bóra egyre idegesebb.",
+                    "category": "affect",
+                    "evidence": [
+                      {
+                        "snippet": "pocsolyába esik, száraz talajra esik, mindegy folytatom. már 4-5 alkalommal dobtam azt hiszem, és Bóra egyre idegesebb...",
+                        "spanStart": 328,
+                        "spanEnd": 382
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_7",
+                    "observationStableId": "obs1_7",
+                    "position": 7,
+                    "text": "Megmondom Bórának a telefon helyét, de közben kiderül, hogy én sem tudom, így segítek keresni.",
+                    "category": "interaction",
+                    "evidence": [
+                      {
+                        "snippet": "még egyszer feldobom, majd megmondom neki, hogy hol van. közben azonban kiderül, hogy igazából én se tudom, hogy hol van, úgyhogy segítek neki megkeresni.",
+                        "spanStart": 383,
+                        "spanEnd": 459
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  }
+                ]
+              },
+              {
+                "sceneRowId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+                "sceneStableId": "scene2",
+                "position": 2,
+                "summary": "Visszatérés a szállásra, konyhai helyzet, idősebbnek érzem magam, apám és mostohaanyám főznek, rossz érzés Markus miatt, Évi figyelme érzékelése.",
+                "evidenceSnippet": "visszaérünk az épületekhez. a szállás és a közösségi terek egy verandás sorházban vannak... a konyhába/étkezőbe lépek, Bóra eltűnt és én hirtelen idősebb lettem valamivel... apám és Kata, a mostohaanyám főznek... doháyzás közben lehamuzom Markus vászonnadrágját... Évire csak úgy emlékszem, mint akinek érzem a figyelmét magamon... aztán felébredtem.",
+                "boundarySignals": [
+                  {
+                    "kind": "spatial_change",
+                    "note": "Visszatérés az épületekhez, belépés a konyhába/étkezőbe, rögtönzött korváltozás."
+                  }
+                ],
+                "derivedStructures": {
+                  "actors": [
+                    "apám",
+                    "Kata, mostohaanya",
+                    "Markus",
+                    "Évi"
+                  ],
+                  "locations": [
+                    "épületek, verandás sorház a mező szélén",
+                    "konyha/étkező"
+                  ],
+                  "objects": [
+                    "pitchelt recept",
+                    "Markus fehér vászonnadrágja",
+                    "citrom"
+                  ],
+                  "interactions": [
+                    "főzés",
+                    "recept pitchelése",
+                    "hamu hullása nadrágra",
+                    "bocsánatkérés és takarítás",
+                    "Kata segít citrommal a folton",
+                    "Kata és Markus elmennek együtt"
+                  ],
+                  "affect": [
+                    "rossz érzés",
+                    "apám megnyugtatása",
+                    "Évi figyelmének érzése"
+                  ],
+                  "agency": [
+                    "bocsánatkérés és takarítás aktív cselekvésként"
+                  ],
+                  "metacognition": [],
+                  "phenomenology": [
+                    "hirtelen idősebb érzése"
+                  ]
+                },
+                "observations": [
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_1",
+                    "observationStableId": "obs2_1",
+                    "position": 1,
+                    "text": "Visszaérkezünk az épületekhez, ahol verandás sorház található a mező szélén fák alatt.",
+                    "category": "location",
+                    "evidence": [
+                      {
+                        "snippet": "visszaérünk az épületekhez. a szállás és a közösségi terek egy verandás sorházban vannak a nagy mező szélén a fák alatt.",
+                        "spanStart": 460,
+                        "spanEnd": 517
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_2",
+                    "observationStableId": "obs2_2",
+                    "position": 2,
+                    "text": "Belépek a konyhába/étkezőbe, Bóra eltűnt és idősebbnek érzem magam.",
+                    "category": "phenomenology",
+                    "evidence": [
+                      {
+                        "snippet": "a konyhába/étkezőbe lépek, Bóra eltűnt és én hirtelen idősebb lettem valamivel.",
+                        "spanStart": 518,
+                        "spanEnd": 563
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_3",
+                    "observationStableId": "obs2_3",
+                    "position": 3,
+                    "text": "Apám és Kata főznek, az asztalnál többen ülnek, jó hangulat van.",
+                    "category": "interaction",
+                    "evidence": [
+                      {
+                        "snippet": "van egy kisebb konyha, amiben apám és Kata, a mostohaanyám főznek, illetve egy kisebb asztal, ami körül többen ülnek, mint ahányan kényelmesen el lehet férni, de jó hangulat van.",
+                        "spanStart": 564,
+                        "spanEnd": 628
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_4",
+                    "observationStableId": "obs2_4",
+                    "position": 4,
+                    "text": "Apám receptet pitchel: túrós, sajtos, zöldséges étel, dramatizált belépés.",
+                    "category": "interaction",
+                    "evidence": [
+                      {
+                        "snippet": "amikor belépek, akkor apám épp egy receptet pitchel. valami túrós, sajtos, zöldséges.. nem is tudom mit, csak azért emlékszem, mert úgy lépek be a szobába, hogy ezeket ismételem úgy dramatizálva...",
+                        "spanStart": 629,
+                        "spanEnd": 695
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+                    "observationStableId": "obs2_5",
+                    "position": 5,
+                    "text": "Dohányzás közben lehamuzom Markus fehér vászonnadrágját, bocsánatot kérek, letörlöm, Kata segíteni akar.",
+                    "category": "agency",
+                    "evidence": [
+                      {
+                        "snippet": "majd egyszer csak dohányzás közben lehamuzom Markus fehér vászonnadrágját. sűrűn bocsánatot kérek, és letörölgetem... Kata egyszercsak azt mondja, hogy citrommal ki lehet szedni... Kata segíteni akar... el is mennek ketten.",
+                        "spanStart": 696,
+                        "spanEnd": 786
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6",
+                    "observationStableId": "obs2_6",
+                    "position": 6,
+                    "text": "Rossz érzésem van emiatt, apám megnyugtat, hogy mindenkivel megesik.",
+                    "category": "affect",
+                    "evidence": [
+                      {
+                        "snippet": "én rosszul érzem magam, de apám megnyugtat, hogy nem történt semmi baj és mindenkivel megesik.",
+                        "spanStart": 787,
+                        "spanEnd": 833
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  },
+                  {
+                    "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7",
+                    "observationStableId": "obs2_7",
+                    "position": 7,
+                    "text": "Évi figyelmét érzem magamon folyamatosan, bár őt nem látom vagy alig emlékszem rá.",
+                    "category": "affect",
+                    "evidence": [
+                      {
+                        "snippet": "Évire csak úgy emlékszem, mint akinek érzem a figyelmét magamon folyamatosan - őt magát egyébként nem láttam, vagy legalábbis nem emlékszem rá, talán csak egy pillanatra, de a jelenlétét és figyelmét egyértelműen érzékeltem a dohányzós epizód óta.",
+                        "spanStart": 834,
+                        "spanEnd": 874
+                      }
+                    ],
+                    "uncertaintyNote": null
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

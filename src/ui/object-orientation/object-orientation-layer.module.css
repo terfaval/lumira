@@ -310,6 +310,22 @@
   text-overflow: ellipsis;
 }
 
+.glossaryRowCopy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.glossaryRowMeta {
+  min-width: 0;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: #60737b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .typeIndicator {
   width: 0.72rem;
   height: 0.72rem;
@@ -371,7 +387,6 @@
 }
 
 .stateCopy strong,
-.openingCard strong,
 .selectionOption strong {
   display: block;
   margin-bottom: 4px;
@@ -379,7 +394,6 @@
 }
 
 .countBadge,
-.openingMeta,
 .selectionOption span span {
   font-size: 0.82rem;
   color: #60737b;
@@ -429,12 +443,68 @@
   border-radius: 18px;
 }
 
-.openingMeta {
-  display: block;
-  margin-bottom: 12px;
+.openingCard {
+  padding: 0;
+  overflow: hidden;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
-.openingAction,
+.openingCardExpanded {
+  border-color: rgba(73, 91, 80, 0.24);
+  background: rgba(250, 248, 243, 0.96);
+}
+
+.openingCardButton {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 0;
+  align-content: start;
+  justify-items: start;
+}
+
+.openingQuestion {
+  display: block;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.openingContext {
+  display: block;
+  width: 100%;
+  max-height: 0;
+  overflow: hidden;
+  margin-top: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: #60737b;
+  opacity: 0;
+  transition:
+    max-height 220ms ease,
+    margin-top 220ms ease,
+    opacity 180ms ease;
+}
+
+.openingContext[aria-hidden="false"] {
+  max-height: 8rem;
+  margin-top: 10px;
+  opacity: 1;
+}
+
 .modalPrimaryAction {
   padding: 9px 12px;
   border-radius: 999px;
@@ -444,7 +514,7 @@
   cursor: pointer;
 }
 
-.openingAction:disabled,
+.openingCardButton:disabled,
 .modalPrimaryAction:disabled,
 .rowIconButton:disabled {
   opacity: 0.65;
@@ -459,8 +529,6 @@
 .stateButton:focus-visible,
 .tabButton:hover,
 .tabButton:focus-visible,
-.openingAction:hover,
-.openingAction:focus-visible,
 .selectionOption:hover,
 .selectionOption:focus-within {
   border-color: rgba(73, 91, 80, 0.26);
@@ -491,7 +559,7 @@
 .stateButton:focus-visible,
 .tabButton:focus-visible,
 .filterSelect:focus-visible,
-.openingAction:focus-visible,
+.openingCardButton:focus-visible,
 .modalPrimaryAction:focus-visible {
   outline: 2px solid rgba(59, 91, 72, 0.46);
   outline-offset: 2px;

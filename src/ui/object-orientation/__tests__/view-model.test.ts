@@ -4,6 +4,7 @@ import {
   countOpeningsByState,
   filterGlossaryPanelItems,
   filterOrientationOpenings,
+  glossaryPrimaryActionLabel,
   orderGlossaryPanelItems,
   type GlossaryPanelItem,
   type OrientationOpeningCard,
@@ -13,6 +14,7 @@ const cards: OrientationOpeningCard[] = [
   {
     id: "opening-new",
     title: "A new opening",
+    context: "A threshold returns in a new way.",
     tone: "gentle",
     kind: "continuity_noticing",
     state: "new",
@@ -22,6 +24,7 @@ const cards: OrientationOpeningCard[] = [
   {
     id: "opening-active",
     title: "An active opening",
+    context: "The earlier movement remains available.",
     tone: "curious",
     kind: "reflective_question",
     state: "active",
@@ -31,6 +34,7 @@ const cards: OrientationOpeningCard[] = [
   {
     id: "opening-dormant",
     title: "A dormant opening",
+    context: "This still links back to an older threshold.",
     tone: "calm",
     kind: "reflective_recall",
     state: "dormant",
@@ -217,5 +221,11 @@ describe("object orientation view model", () => {
     expect(filterGlossaryPanelItems(items, "ambiguous")).toEqual([]);
     expect(filterGlossaryPanelItems(items, "new")).toEqual([]);
     expect(filterGlossaryPanelItems(items, "saved").map((item) => item.id)).toEqual(["saved-1"]);
+  });
+
+  it("uses the updated glossary primary action copy for new candidates", () => {
+    expect(glossaryPrimaryActionLabel("match_candidate")).toBe("Megerősítés");
+    expect(glossaryPrimaryActionLabel("ambiguous_match_candidate")).toBe("Kiválasztás");
+    expect(glossaryPrimaryActionLabel("new_candidate")).toBe("Rögzítés");
   });
 });

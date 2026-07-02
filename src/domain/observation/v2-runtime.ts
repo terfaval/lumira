@@ -7,6 +7,35 @@ import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
 
 const DEFAULT_RUNTIME_VERSION = "observation_v2_phase1";
 export type ObservationLanguage = "hu" | "en" | "unknown";
+export const CANONICAL_DREAMER_IDENTITY_KEY = "dreamer";
+export const CANONICAL_DREAMER_LABEL = "Álmodó";
+
+const DREAMER_IDENTITY_VARIANTS = new Set([
+  "almodo",
+  "dreamer",
+  "narrator",
+  "self",
+  "observer",
+  "en",
+  "i",
+  "me",
+  "myself",
+  "sajat_magam",
+]);
+
+function matchesDreamerIdentityVariant(normalizedIdentity: string): boolean {
+  if (!normalizedIdentity) {
+    return false;
+  }
+
+  for (const variant of DREAMER_IDENTITY_VARIANTS) {
+    if (normalizedIdentity === variant || normalizedIdentity.startsWith(`${variant}_`)) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 export interface ObservationV2BundleProvenance {
   provenanceTier: ObservationProvenanceTier;
@@ -100,6 +129,10 @@ export function normalizeObservationIdentityKey(text: string): string {
     .replace(/_+/g, "_");
 }
 
+export function isDreamerIdentityText(text: string): boolean {
+  return matchesDreamerIdentityVariant(normalizeObservationIdentityKey(text));
+}
+
 export function getObservationV2DerivedItemDisplayLabel(item: ObservationV2DerivedItem): string {
   return (item.displayLabel ?? item.label ?? "").trim();
 }
@@ -117,10 +150,23 @@ export function getObservationV2DerivedItemSourceLanguage(item: ObservationV2Der
   return normalizeObservationLanguage(item.sourceLanguage);
 }
 
-export function buildObservationV2DerivedItem(input: ObservationV2DerivedItem): ObservationV2DerivedItem {
+export function buildObservationV2DerivedItem(
+  input: ObservationV2DerivedItem,
+  options?: { category?: keyof ObservationV2DerivedStructures },
+): ObservationV2DerivedItem {
   const displayLabel = getObservationV2DerivedItemDisplayLabel(input);
   const identityKey = getObservationV2DerivedItemIdentityKey(input);
   const sourceLanguage = getObservationV2DerivedItemSourceLanguage(input);
+
+  if (options?.category === "actors" && (isDreamerIdentityText(identityKey) || isDreamerIdentityText(displayLabel))) {
+    return {
+      identityKey: CANONICAL_DREAMER_IDENTITY_KEY,
+      displayLabel: CANONICAL_DREAMER_LABEL,
+      sourceLanguage: "hu",
+      label: CANONICAL_DREAMER_LABEL,
+      observationIds: [...input.observationIds],
+    };
+  }
 
   return {
     identityKey: identityKey || undefined,
@@ -132,20 +178,23 @@ export function buildObservationV2DerivedItem(input: ObservationV2DerivedItem): 
   };
 }
 
-function normalizeDerivedItems(items: ObservationV2DerivedItem[]): ObservationV2DerivedItem[] {
-  return items.map(buildObservationV2DerivedItem);
+function normalizeDerivedItems(
+  items: ObservationV2DerivedItem[],
+  category: keyof ObservationV2DerivedStructures,
+): ObservationV2DerivedItem[] {
+  return items.map((item) => buildObservationV2DerivedItem(item, { category }));
 }
 
 function normalizeDerivedStructures(derived: ObservationV2DerivedStructures): ObservationV2DerivedStructures {
   return {
-    actors: normalizeDerivedItems(derived.actors),
-    locations: normalizeDerivedItems(derived.locations),
-    objects: normalizeDerivedItems(derived.objects),
-    interactions: normalizeDerivedItems(derived.interactions),
-    affect: normalizeDerivedItems(derived.affect),
-    agency: normalizeDerivedItems(derived.agency),
-    phenomenology: normalizeDerivedItems(derived.phenomenology),
-    metacognition: normalizeDerivedItems(derived.metacognition),
+    actors: normalizeDerivedItems(derived.actors, "actors"),
+    locations: normalizeDerivedItems(derived.locations, "locations"),
+    objects: normalizeDerivedItems(derived.objects, "objects"),
+    interactions: normalizeDerivedItems(derived.interactions, "interactions"),
+    affect: normalizeDerivedItems(derived.affect, "affect"),
+    agency: normalizeDerivedItems(derived.agency, "agency"),
+    phenomenology: normalizeDerivedItems(derived.phenomenology, "phenomenology"),
+    metacognition: normalizeDerivedItems(derived.metacognition, "metacognition"),
   };
 }
 

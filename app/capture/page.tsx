@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { constructDerivedStructuresFromObservationBundle } from "@/src/cognition/observation/llm-derived-structure-constructor";
 import { buildLlmSceneObservationExtraction } from "@/src/cognition/observation/llm-scene-observation-extractor";
 import { generateDreamTitleSuggestion } from "@/src/cognition/title/llm-dream-title-generator";
 import { createObservationV2WriteStore } from "@/src/infrastructure/persistence/observation-v2-write-store";
@@ -72,8 +73,9 @@ async function submitCapture(formData: FormData) {
     });
   }
 
+  const enrichedBundle = await constructDerivedStructuresFromObservationBundle(extraction.bundle);
   const observationWriteStore = createObservationV2WriteStore();
-  await observationWriteStore.createFromBundle(extraction.bundle);
+  await observationWriteStore.createFromBundle(enrichedBundle);
   await generateGlossaryCandidatesForReflectiveObject({
     userId,
     reflectiveObjectId: reflectiveObject.id,

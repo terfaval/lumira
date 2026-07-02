@@ -93,13 +93,6 @@ function applyPayloadGuardrail(viewport: ReflectiveSpaceViewportReadModel): Refl
       return true;
     },
     () => {
-      if (viewport.sections.observations.items.length === 0) return false;
-      viewport.sections.observations.items.pop();
-      viewport.windows.observationsWindow.returned = viewport.sections.observations.items.length;
-      markTrimmed(viewport.windows.observationsWindow);
-      return true;
-    },
-    () => {
       if (viewport.sections.responseSurfaces.items.length === 0) return false;
       viewport.sections.responseSurfaces.items.pop();
       viewport.windows.responsesWindow.returned = viewport.sections.responseSurfaces.items.length;
@@ -184,11 +177,9 @@ export async function composeReflectiveSpaceViewport(
   const objectLimit = toBoundedLimit(input.objectLimit, DEFAULT_OBJECT_LIMIT, MAX_OBJECT_LIMIT);
   const dialogueLimit = toBoundedLimit(input.dialogueLimit, DEFAULT_DIALOGUE_LIMIT, MAX_DIALOGUE_LIMIT);
 
-  const [objectRows, threadRows, glossaryRows, openingRows] = await Promise.all([
+  const [objectRows, glossaryRows] = await Promise.all([
     input.reflectiveObjectRepository.listByUser(input.userId, objectLimit + 1),
-    input.threadRepository.listThreadsByUser(input.userId, THREAD_SURFACE_LIMIT + 1),
     input.glossaryRepository.listTerms(input.userId, GLOSSARY_LIMIT + 1),
-    input.openingRepository.listOpeningSurfacesByUser(input.userId, OPENING_SURFACE_LIMIT + 1),
   ]);
 
   const hasMoreObjects = objectRows.length > objectLimit;
@@ -198,7 +189,13 @@ export async function composeReflectiveSpaceViewport(
     ? input.centerObjectId
     : (reflectiveObjects[0]?.id ?? null);
 
-  const [observationBundle, observationRows, responseRows, dialogueWindow] = await Promise.all([
+  const [threadRows, openingRows, observationBundle, observationRows, responseRows, dialogueWindow] = await Promise.all([
+    centerObjectId && input.threadRepository.listThreadsByReflectiveObject
+      ? input.threadRepository.listThreadsByReflectiveObject(input.userId, centerObjectId, THREAD_SURFACE_LIMIT + 1)
+      : input.threadRepository.listThreadsByUser(input.userId, THREAD_SURFACE_LIMIT + 1),
+    centerObjectId && input.openingRepository.listOpeningSurfacesByReflectiveObject
+      ? input.openingRepository.listOpeningSurfacesByReflectiveObject(input.userId, centerObjectId, OPENING_SURFACE_LIMIT + 1)
+      : input.openingRepository.listOpeningSurfacesByUser(input.userId, OPENING_SURFACE_LIMIT + 1),
     centerObjectId
       ? input.observationV2Repository.getByReflectiveObjectId(centerObjectId, input.userId)
       : Promise.resolve(null),
@@ -222,7 +219,6 @@ export async function composeReflectiveSpaceViewport(
       responseRepository: input.responseRepository,
     }),
   ]);
-  const hasMoreObservations = observationRows.length > OBSERVATION_LIMIT;
   const observations = observationRows.slice(0, OBSERVATION_LIMIT);
 
   const threadSurfacesAll = deriveThreadSurfaces(threadRows);
@@ -255,7 +251,6 @@ export async function composeReflectiveSpaceViewport(
     centerObjectId,
     sections: {
       reflectiveObjects: { items: reflectiveObjects },
-      observations: { items: observations },
       threadSurfaces: { items: threadSurfaces },
       responseSurfaces: { items: responseSurfaces },
       openingSurfaces: { items: openingSurfaces },
@@ -279,14 +274,6 @@ export async function composeReflectiveSpaceViewport(
         hasMore: hasMoreObjects,
         nextBeforeCreatedAt: hasMoreObjects ? reflectiveObjects[reflectiveObjects.length - 1]?.createdAt ?? null : null,
         omissionReason: hasMoreObjects ? "section_cap" : (reflectiveObjects.length === 0 ? "silence_legitimate" : "none"),
-      }),
-      observationsWindow: toWindow({
-        section: "observations",
-        limit: OBSERVATION_LIMIT,
-        returned: observations.length,
-        hasMore: hasMoreObservations,
-        nextBeforeCreatedAt: hasMoreObservations ? observations[observations.length - 1]?.createdAt ?? null : null,
-        omissionReason: hasMoreObservations ? "section_cap" : (observations.length === 0 ? "silence_legitimate" : "none"),
       }),
       threadsWindow: toWindow({
         section: "threads",

@@ -2,6 +2,7 @@ import type {
   GlossaryAssociationId,
   GlossaryCandidateId,
   GlossaryTermId,
+  IsoDatetime,
   ObservationFragmentId,
   ObservationId,
   ReflectiveObjectId,
@@ -40,6 +41,40 @@ export interface GlossarySuppressionState {
   reason: string | null;
 }
 
+export interface GlossaryCandidateContinuityVisibility {
+  possibleContinuity: boolean;
+  dreamCount: number;
+  firstSeenAt: IsoDatetime;
+  lastSeenAt: IsoDatetime;
+}
+
+export const GLOSSARY_CONTINUITY_HYPOTHESIS_GROUPING_BASES = [
+  "identity_key",
+  "source_category_normalized_key",
+] as const;
+export type GlossaryContinuityHypothesisGroupingBasis =
+  (typeof GLOSSARY_CONTINUITY_HYPOTHESIS_GROUPING_BASES)[number];
+
+export interface GlossaryContinuityHypothesisSighting {
+  candidateId: GlossaryCandidateId;
+  reflectiveObjectId: ReflectiveObjectId;
+  sourceObservationId: ObservationId | null;
+  sourceObservationFragmentId: ObservationFragmentId | null;
+}
+
+export interface GlossaryContinuityHypothesis {
+  hypothesisKey: string;
+  groupingBasis: GlossaryContinuityHypothesisGroupingBasis;
+  sourceCategory: ObservationCategory;
+  candidateIds: GlossaryCandidateId[];
+  sightings: GlossaryContinuityHypothesisSighting[];
+  dreamCount: number;
+  firstSeenAt: IsoDatetime;
+  lastSeenAt: IsoDatetime;
+  observedLabelVariants: string[];
+  isFallbackBased: boolean;
+}
+
 export interface GlossaryTerm extends VersionedTimestamps {
   id: GlossaryTermId;
   userId: UserId;
@@ -68,6 +103,7 @@ export interface GlossaryCandidate extends VersionedTimestamps {
   id: GlossaryCandidateId;
   userId: UserId;
   reflectiveObjectId: ReflectiveObjectId;
+  identityKey?: string | null;
   normalizedKey: string;
   displayLabel: string;
   sourceCategory: ObservationCategory;
@@ -78,6 +114,8 @@ export interface GlossaryCandidate extends VersionedTimestamps {
   proposedEntityIds: GlossaryTermId[];
   state: GlossaryCandidateState;
   suppression: GlossarySuppressionState;
+  continuityHypothesis?: GlossaryContinuityHypothesis | null;
+  continuityVisibility?: GlossaryCandidateContinuityVisibility | null;
   lastSeenAt: string;
 }
 
@@ -123,6 +161,7 @@ export interface CreateGlossaryAppearanceRecordInput {
 export interface CreateGlossaryCandidateInput {
   userId: UserId;
   reflectiveObjectId: ReflectiveObjectId;
+  identityKey?: string | null;
   normalizedKey: string;
   displayLabel: string;
   sourceCategory: ObservationCategory;

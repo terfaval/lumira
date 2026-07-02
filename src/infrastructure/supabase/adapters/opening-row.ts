@@ -29,6 +29,8 @@ export interface OpeningRow {
   source_responses: string[] | null;
   confidence_band: Opening["provenance"]["confidenceBand"];
   opening_generation_context: string;
+  opening_context?: Opening["provenance"]["openingContext"] | null;
+  source_opportunity_manifestation_id?: string | null;
   activated_at: string | null;
   dismissed_at: string | null;
   archived_at: string | null;
@@ -82,6 +84,8 @@ export interface OpeningInsertRow {
   source_responses: string[];
   confidence_band: Opening["provenance"]["confidenceBand"];
   opening_generation_context: string;
+  opening_context: Opening["provenance"]["openingContext"] | null;
+  source_opportunity_manifestation_id: string | null;
 }
 
 export interface OpeningUpdateRow {
@@ -139,6 +143,8 @@ export function fromOpeningRow(row: OpeningRow): Opening {
       latentSnapshotReference: row.latent_snapshot_id,
       confidenceBand: row.confidence_band,
       openingGenerationContext: row.opening_generation_context,
+      openingContext: row.opening_context ?? null,
+      sourceOpportunityManifestationId: row.source_opportunity_manifestation_id ?? null,
     },
     activatedAt: row.activated_at,
     dismissedAt: row.dismissed_at,
@@ -187,6 +193,8 @@ export function toOpeningInsertRow(input: CreateOpeningInput): OpeningInsertRow 
     source_responses: input.provenance.sourceResponses,
     confidence_band: input.provenance.confidenceBand,
     opening_generation_context: input.provenance.openingGenerationContext,
+    opening_context: input.provenance.openingContext ?? null,
+    source_opportunity_manifestation_id: input.provenance.sourceOpportunityManifestationId ?? null,
   };
 }
 

@@ -26,7 +26,6 @@ export function assembleReflectiveSpace(input: AssembleReflectiveSpaceInput): Re
     threadSurfaces: deriveThreadSurfaces(input.snapshot.threads),
     responseSurfaces: deriveResponseSurfaces(input.responses),
     latentHints: deriveLatentHints(input.latentSuggestions),
-    observations: input.observations,
     glossaryCues: deriveGlossaryCuesFromObservations(input.observations),
     summary: "Minimal reflective composition is available with descriptive orientation and continuity cues.",
   };

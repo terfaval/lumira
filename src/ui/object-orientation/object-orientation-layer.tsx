@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Check, ChevronRight, GitBranch, Plus, X } from "lucide-react";
 
 import type { GlossaryEntityType } from "@/src/domain/glossary/types";
@@ -8,6 +8,7 @@ import type { ObjectOrientationPayload } from "@/src/reflective-space/compositio
 import {
   filterGlossaryPanelItems,
   filterOrientationOpenings,
+  glossaryPrimaryActionLabel,
   orderGlossaryPanelItems,
   type GlossaryPanelFilter,
   type GlossaryPanelItem,
@@ -19,6 +20,8 @@ import styles from "@/src/ui/object-orientation/object-orientation-layer.module.
 interface ObjectOrientationLayerProps {
   payload: ObjectOrientationPayload;
 }
+
+const OPENING_HOVER_DELAY_MS = 320;
 
 const STACK_TABS: Array<{ key: Exclude<OrientationStackView, "dormant">; label: string }> = [
   { key: "new", label: "Új" },
@@ -105,14 +108,7 @@ function toStatusClass(status: GlossaryPanelItem["status"]): string {
 }
 
 function toPrimaryActionLabel(item: Extract<GlossaryPanelItem, { kind: "candidate" }>): string {
-  switch (item.candidateClass) {
-    case "match_candidate":
-      return "Megerősítés";
-    case "ambiguous_match_candidate":
-      return "Kiválasztás";
-    default:
-      return "Létrehozás";
-  }
+  return glossaryPrimaryActionLabel(item.candidateClass);
 }
 
 function toPrimaryActionTooltip(item: Extract<GlossaryPanelItem, { kind: "candidate" }>): string {
@@ -135,6 +131,14 @@ function toPrimaryActionIcon(item: Extract<GlossaryPanelItem, { kind: "candidate
     default:
       return Plus;
   }
+}
+
+function toContinuityVisibilityCopy(item: GlossaryPanelItem): string | null {
+  if (item.kind !== "candidate" || !item.continuityVisibility?.possibleContinuity) {
+    return null;
+  }
+
+  return `LehetsĂ©ges folytonossĂˇg • ${item.continuityVisibility.dreamCount} Ăˇlomban`;
 }
 
 function buildInitialModalState(item: Extract<GlossaryPanelItem, { kind: "candidate" }>): GlossaryModalState {
@@ -189,6 +193,7 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
   const [pendingGlossaryId, setPendingGlossaryId] = useState<string | null>(null);
   const [glossaryFeedback, setGlossaryFeedback] = useState<string | null>(null);
   const [pendingOpeningId, setPendingOpeningId] = useState<string | null>(null);
+  const [expandedOpeningId, setExpandedOpeningId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [dreamTitle, setDreamTitle] = useState(payload.dream.title);
   const [titleDraft, setTitleDraft] = useState(payload.dream.title);
@@ -196,6 +201,7 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
   const [titleFeedback, setTitleFeedback] = useState<string | null>(null);
   const [isSavingTitle, startSavingTitle] = useTransition();
   const [isSavingGlossaryLabel, startSavingGlossaryLabel] = useTransition();
+  const openingHoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const visibleOpenings = filterOrientationOpenings(payload.openingStack.items, selectedView);
   const orderedGlossaryItems = useMemo(() => orderGlossaryPanelItems(glossaryItems), [glossaryItems]);
@@ -218,36 +224,49 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
     setGlossaryFeedback(null);
   }, [payload.glossary.items]);
 
-  async function handleEnterOpening(openingId: string, href: string, state: OrientationStackView) {
+  useEffect(() => {
+    return () => {
+      if (openingHoverTimeoutRef.current !== null) {
+        clearTimeout(openingHoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  function clearOpeningHoverTimeout() {
+    if (openingHoverTimeoutRef.current !== null) {
+      clearTimeout(openingHoverTimeoutRef.current);
+      openingHoverTimeoutRef.current = null;
+    }
+  }
+
+  function scheduleOpeningExpansion(openingId: string) {
+    clearOpeningHoverTimeout();
+    openingHoverTimeoutRef.current = setTimeout(() => {
+      setExpandedOpeningId(openingId);
+      openingHoverTimeoutRef.current = null;
+    }, OPENING_HOVER_DELAY_MS);
+  }
+
+  function collapseOpening(openingId: string) {
+    clearOpeningHoverTimeout();
+    setExpandedOpeningId((current) => (current === openingId ? null : current));
+  }
+
+  async function handleEnterOpening(openingId: string) {
     setPendingOpeningId(openingId);
     setFeedback(null);
 
     try {
-      if (state === "new") {
-        const response = await fetch(`/api/openings/${openingId}/activate`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ source: "reflective_space_surface" }),
-        });
+      const response = await fetch(`/api/openings/${openingId}/select`, {
+        method: "POST",
+      });
+      const body = (await response.json()) as { error?: string; href?: string };
 
-        if (!response.ok) {
-          throw new Error("Opening activation failed.");
-        }
+      if (!response.ok || !body.href) {
+        throw new Error(body.error ?? "This opening could not be entered yet.");
       }
 
-      if (state === "dormant") {
-        const response = await fetch(`/api/openings/${openingId}/reactivate`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ source: "reflective_space_surface" }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Opening reactivation failed.");
-        }
-      }
-
-      window.location.assign(href);
+      window.location.assign(body.href);
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "This opening could not be entered yet.");
       setPendingOpeningId(null);
@@ -733,7 +752,12 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
                   return (
                     <li key={item.id} className={`${styles.glossaryRow} ${toTypeClass(item.entityType)}`}>
                       <span className={`${styles.typeIndicator} ${toStatusClass(item.status)}`} aria-hidden="true" />
-                      <span className={styles.glossaryRowLabel}>{item.label}</span>
+                      <span className={styles.glossaryRowCopy}>
+                        <span className={styles.glossaryRowLabel}>{item.label}</span>
+                        {toContinuityVisibilityCopy(item) ? (
+                          <span className={styles.glossaryRowMeta}>{toContinuityVisibilityCopy(item)}</span>
+                        ) : null}
+                      </span>
                       <div className={styles.glossaryRowActions}>
                         {item.kind === "candidate" ? (
                           <>
@@ -853,21 +877,33 @@ export function ObjectOrientationLayer({ payload }: ObjectOrientationLayerProps)
 
             {feedback ? <p className={styles.feedback}>{feedback}</p> : null}
 
-            {visibleOpenings.length > 0 ? (
+{visibleOpenings.length > 0 ? (
               <ul className={styles.openingList}>
                 {visibleOpenings.map((item) => (
-                  <li key={item.id} className={styles.openingCard}>
-                    <strong>{item.title}</strong>
-                    <span className={styles.openingMeta}>
-                      {toStateLabel(item.state)} • {item.kind.replaceAll("_", " ")}
-                    </span>
+                  <li
+                    key={item.id}
+                    className={`${styles.openingCard} ${expandedOpeningId === item.id ? styles.openingCardExpanded : ""}`}
+                  >
                     <button
                       type="button"
-                      className={styles.openingAction}
+                      className={styles.openingCardButton}
                       disabled={pendingOpeningId === item.id}
-                      onClick={() => void handleEnterOpening(item.id, item.href, item.state)}
+                      aria-expanded={expandedOpeningId === item.id}
+                      onMouseEnter={() => scheduleOpeningExpansion(item.id)}
+                      onMouseLeave={() => collapseOpening(item.id)}
+                      onFocus={() => {
+                        clearOpeningHoverTimeout();
+                        setExpandedOpeningId(item.id);
+                      }}
+                      onBlur={() => collapseOpening(item.id)}
+                      onClick={() => void handleEnterOpening(item.id)}
                     >
-                      {pendingOpeningId === item.id ? "Előkészítés..." : item.ctaLabel}
+                      <strong className={styles.openingQuestion}>
+                        {pendingOpeningId === item.id ? "Előkészítés..." : item.title}
+                      </strong>
+                      <span className={styles.openingContext} aria-hidden={expandedOpeningId !== item.id}>
+                        {item.context}
+                      </span>
                     </button>
                   </li>
                 ))}

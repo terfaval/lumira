@@ -1,0 +1,23 @@
+{
+  "mode": "persisted",
+  "success": true,
+  "stage": null,
+  "reason": null,
+  "identitiesCreated": 9,
+  "manifestationsCreated": 9,
+  "participationsCreated": 25,
+  "anchorIds": [
+    "1312c69f-3ff2-4845-bb4f-e7c3f98c33bf",
+    "16424a93-72e6-499c-8424-6d04f669a72e",
+    "8f68b858-669a-4a7f-b0c8-63f812582eba",
+    "65a090b2-17d0-40c6-b03b-05e8f1500d37",
+    "1fe39cdc-2ded-448d-9b08-cfc298194be8",
+    "160abbc3-eccc-4ee8-b9f2-8a4a483cf107",
+    "7962bafe-0319-4d94-ac97-22f212632aa4",
+    "dc04ac82-469e-483f-b452-dc333c0f13c5",
+    "7350b8da-94db-4e0d-84b4-7f662c5db701"
+  ],
+  "priorityReflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+  "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+  "outputDir": "C:\\mira\\scripts\\output\\anchor-v1-ae7fd730-eb19-43d6-9781-20e042fc5d9c-2026-06-17T15-56-25-507Z"
+}

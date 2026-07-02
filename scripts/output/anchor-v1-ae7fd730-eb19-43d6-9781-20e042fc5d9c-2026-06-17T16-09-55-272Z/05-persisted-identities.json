@@ -1,0 +1,74 @@
+[
+  {
+    "id": "908c80b8-7ca2-4fc7-92cd-9a41cd315f94",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "telefon",
+    "createdAt": "2026-06-17T16:09:53.226865+00:00",
+    "updatedAt": "2026-06-17T16:09:53.226865+00:00"
+  },
+  {
+    "id": "db651856-d0d4-4e9e-b958-cdd08ef9d964",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Bóra",
+    "createdAt": "2026-06-17T16:09:53.483943+00:00",
+    "updatedAt": "2026-06-17T16:09:53.483943+00:00"
+  },
+  {
+    "id": "fda3dab6-88a6-4034-8f34-93e682e90bdb",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "apám",
+    "createdAt": "2026-06-17T16:09:53.975681+00:00",
+    "updatedAt": "2026-06-17T16:09:53.975681+00:00"
+  },
+  {
+    "id": "3ef7aaa0-32ca-4393-bdc5-109988444e1d",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Kata, mostohaanya",
+    "createdAt": "2026-06-17T16:09:54.23707+00:00",
+    "updatedAt": "2026-06-17T16:09:54.23707+00:00"
+  },
+  {
+    "id": "6ad86689-ff51-4c76-9708-4c9a41bbf69d",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Markus",
+    "createdAt": "2026-06-17T16:09:54.49647+00:00",
+    "updatedAt": "2026-06-17T16:09:54.49647+00:00"
+  },
+  {
+    "id": "badcd282-fe02-4486-9204-dbba4511356b",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Évi",
+    "createdAt": "2026-06-17T16:09:54.757389+00:00",
+    "updatedAt": "2026-06-17T16:09:54.757389+00:00"
+  },
+  {
+    "id": "f48b210b-b8ad-450f-82c3-3e94daf99c8c",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ROLE",
+    "identityLabel": "Caregiver",
+    "createdAt": "2026-06-17T16:09:55.078463+00:00",
+    "updatedAt": "2026-06-17T16:09:55.078463+00:00"
+  },
+  {
+    "id": "61d87578-819a-4b14-b4fa-e422ed09af8b",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "STRUCTURE",
+    "identityLabel": "Conflict",
+    "createdAt": "2026-06-17T16:09:55.332372+00:00",
+    "updatedAt": "2026-06-17T16:09:55.332372+00:00"
+  },
+  {
+    "id": "2b9a769a-2ea7-44c4-ba03-f447f1810c58",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "STRUCTURE",
+    "identityLabel": "Transition",
+    "createdAt": "2026-06-17T16:09:55.651982+00:00",
+    "updatedAt": "2026-06-17T16:09:55.651982+00:00"
+  }
+]

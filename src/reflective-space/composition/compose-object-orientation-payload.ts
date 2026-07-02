@@ -1,3 +1,4 @@
+import { projectGlossaryCandidateContinuityVisibility } from "@/src/domain/glossary/continuity-visibility";
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type {
   GlossaryCandidate,
@@ -86,6 +87,10 @@ function toOpeningTitle(opening: Opening): string {
   return opening.utterance.trim().slice(0, 160);
 }
 
+function toOpeningContext(opening: Opening): string {
+  return opening.provenance.openingContext?.context?.trim() ?? "";
+}
+
 function isOpeningForObject(opening: Opening, reflectiveObjectId: ReflectiveObjectId): boolean {
   return opening.provenance.sourceObjects.includes(reflectiveObjectId);
 }
@@ -147,6 +152,7 @@ function toCandidateItem(candidate: GlossaryCandidate, termsById: Map<string, Gl
     sourceCategory: candidate.sourceCategory,
     recurrenceCount: candidate.recurrenceCount,
     status: candidateStatus(candidate),
+    continuityVisibility: candidate.continuityVisibility ?? null,
     proposedEntities,
     href: null,
   };
@@ -193,13 +199,14 @@ export async function composeObjectOrientationPayload(
     return null;
   }
 
-  const [, , glossaryCandidates, recentOpenings, glossaryTerms, savedTerms] = await Promise.all([
+  const [, , allGlossaryCandidates, glossaryCandidates, recentOpenings, glossaryTerms, savedTerms] = await Promise.all([
     input.observationV2Repository.getByReflectiveObjectId(input.reflectiveObjectId, input.userId),
     input.observationRepository.listByReflectiveObject({
       userId: input.userId,
       reflectiveObjectId: input.reflectiveObjectId,
       limit: OBSERVATION_LIMIT,
     }),
+    input.glossaryRepository.listCandidates(input.userId),
     input.glossaryRepository.listCandidatesByReflectiveObject(input.userId, input.reflectiveObjectId),
     input.openingRepository.listRecentOpeningsByUser(input.userId, RECENT_OPENINGS_LIMIT),
     input.glossaryRepository.listTerms(input.userId),
@@ -207,30 +214,34 @@ export async function composeObjectOrientationPayload(
   ]);
 
   const termsById = new Map(glossaryTerms.map((term) => [term.id, term]));
+  const projectedCandidates = projectGlossaryCandidateContinuityVisibility([
+    ...allGlossaryCandidates.filter((candidate) => candidate.reflectiveObjectId !== input.reflectiveObjectId),
+    ...glossaryCandidates,
+  ]).filter((candidate) => candidate.reflectiveObjectId === input.reflectiveObjectId);
   const glossaryItems = uniqueGlossaryItems([
-    ...glossaryCandidates.map((candidate) => toCandidateItem(candidate, termsById)),
+    ...projectedCandidates.map((candidate) => toCandidateItem(candidate, termsById)),
     ...savedTerms.map(toSavedEntityItem),
   ]);
 
-  const openingItems = recentOpenings
+  const openingItems: OrientationOpeningCard[] = recentOpenings
     .filter((opening) => isOpeningForObject(opening, input.reflectiveObjectId))
-    .map((opening) => {
+    .flatMap((opening) => {
       const state = toOpeningState(opening);
       if (!state) {
-        return null;
+        return [];
       }
 
-      return {
+      return [{
         id: opening.id,
         title: toOpeningTitle(opening),
+        context: toOpeningContext(opening),
         tone: opening.tone,
         kind: opening.openingType,
         state,
         ctaLabel: toOpeningCtaLabel(state),
-        href: `/objects/${input.reflectiveObjectId}/reflect`,
-      } satisfies OrientationOpeningCard;
-    })
-    .filter((item): item is OrientationOpeningCard => item !== null);
+        href: null,
+      }];
+    });
 
   const openingCounts = countOpeningsByState(openingItems);
 

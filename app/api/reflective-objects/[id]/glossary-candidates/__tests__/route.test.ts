@@ -4,6 +4,7 @@ const resolveRequestUserContext = vi.fn();
 const getById = vi.fn();
 const listByReflectiveObject = vi.fn();
 const getByReflectiveObjectId = vi.fn();
+const listCandidates = vi.fn();
 const listCandidatesByReflectiveObject = vi.fn();
 const upsertCandidates = vi.fn();
 const listTerms = vi.fn();
@@ -33,6 +34,7 @@ vi.mock("@/src/infrastructure/supabase/repositories/create-observation-v2-reposi
 
 vi.mock("@/src/infrastructure/supabase/repositories/create-glossary-repository", () => ({
   createGlossaryRepository: () => ({
+    listCandidates,
     listCandidatesByReflectiveObject,
     listTerms,
     upsertCandidates,
@@ -45,19 +47,44 @@ describe("/api/reflective-objects/[id]/glossary-candidates route", () => {
     getById.mockReset();
     listByReflectiveObject.mockReset();
     getByReflectiveObjectId.mockReset();
+    listCandidates.mockReset();
     listCandidatesByReflectiveObject.mockReset();
     listTerms.mockReset();
     upsertCandidates.mockReset();
+    listCandidates.mockResolvedValue([]);
   });
 
   it("requires reflective object ownership before listing candidates", async () => {
     resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
     getById.mockResolvedValue({ id: "obj-1" });
+    listCandidates.mockResolvedValue([
+      {
+        id: "cand-1",
+        reflectiveObjectId: "obj-1",
+        normalizedKey: "father",
+        sourceCategory: "actor",
+        createdAt: "2026-06-12T00:00:00.000Z",
+        lastSeenAt: "2026-06-12T00:00:00.000Z",
+      },
+      {
+        id: "cand-2",
+        reflectiveObjectId: "obj-9",
+        normalizedKey: "father",
+        sourceCategory: "actor",
+        createdAt: "2026-06-19T00:00:00.000Z",
+        lastSeenAt: "2026-06-19T00:00:00.000Z",
+      },
+    ]);
     listCandidatesByReflectiveObject.mockResolvedValue([
       {
         id: "cand-1",
+        reflectiveObjectId: "obj-1",
+        normalizedKey: "father",
+        sourceCategory: "actor",
         candidateClass: "ambiguous_match_candidate",
         proposedEntityIds: ["term-1", "term-2"],
+        createdAt: "2026-06-12T00:00:00.000Z",
+        lastSeenAt: "2026-06-12T00:00:00.000Z",
       },
     ]);
 
@@ -69,9 +96,16 @@ describe("/api/reflective-objects/[id]/glossary-candidates route", () => {
     const json = await response.json();
     expect(response.status).toBe(200);
     expect(getById).toHaveBeenCalledWith("obj-1", "user-a");
+    expect(listCandidates).toHaveBeenCalledWith("user-a");
     expect(listCandidatesByReflectiveObject).toHaveBeenCalledWith("user-a", "obj-1");
     expect(json.candidates[0].candidateClass).toBe("ambiguous_match_candidate");
     expect(json.candidates[0].proposedEntityIds).toEqual(["term-1", "term-2"]);
+    expect(json.candidates[0].continuityVisibility).toEqual({
+      possibleContinuity: true,
+      dreamCount: 2,
+      firstSeenAt: "2026-06-12T00:00:00.000Z",
+      lastSeenAt: "2026-06-19T00:00:00.000Z",
+    });
   });
 
   it("returns 404 when reflective object is not owned by user", async () => {

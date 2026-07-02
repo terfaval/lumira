@@ -199,4 +199,92 @@ describe("buildObservationV2Bundle", () => {
       label: "Apa",
     });
   });
+
+  it("normalizes dreamer actor variants to a single canonical Álmodó label", () => {
+    const bundle = buildObservationV2Bundle({
+      reflectiveObjectId: "object-1",
+      userId: "user-1",
+      source: "system_llm_extract",
+      scenes: [
+        {
+          sceneId: "scene-1",
+          position: 0,
+          summary: "Self-reference appears among the actors.",
+          boundaryReasoning: [],
+          evidenceContext: {
+            snippet: "I was there with my father.",
+            spanStart: 0,
+            spanEnd: 25,
+            contextLabel: "scene_opening",
+          },
+          observations: [],
+          derived: {
+            actors: [
+              { identityKey: "self", displayLabel: "I", sourceLanguage: "en", label: "I", observationIds: ["obs-1"] },
+              { identityKey: "dreamer", displayLabel: "Dreamer", sourceLanguage: "en", label: "Dreamer", observationIds: ["obs-2"] },
+              { identityKey: "narrator", displayLabel: "Narrator", sourceLanguage: "en", label: "Narrator", observationIds: ["obs-3"] },
+              { identityKey: "sajat_magam", displayLabel: "Saját magam", sourceLanguage: "hu", label: "Saját magam", observationIds: ["obs-4"] },
+            ],
+            locations: [],
+            objects: [],
+            interactions: [],
+            affect: [],
+            agency: [],
+            phenomenology: [],
+            metacognition: [],
+          },
+        },
+      ],
+    });
+
+    expect(bundle.scenes[0].derived.actors).toEqual([
+      expect.objectContaining({ identityKey: "dreamer", displayLabel: "Álmodó", label: "Álmodó" }),
+      expect.objectContaining({ identityKey: "dreamer", displayLabel: "Álmodó", label: "Álmodó" }),
+      expect.objectContaining({ identityKey: "dreamer", displayLabel: "Álmodó", label: "Álmodó" }),
+      expect.objectContaining({ identityKey: "dreamer", displayLabel: "Álmodó", label: "Álmodó" }),
+    ]);
+  });
+
+  it("normalizes qualified dreamer actor variants to the canonical dreamer identity", () => {
+    const bundle = buildObservationV2Bundle({
+      reflectiveObjectId: "object-1",
+      userId: "user-1",
+      source: "system_llm_extract",
+      scenes: [
+        {
+          sceneId: "scene-1",
+          position: 0,
+          summary: "Qualified self-variants appear among the actors.",
+          boundaryReasoning: [],
+          evidenceContext: {
+            snippet: "I appear as a child and as an older self.",
+            spanStart: 0,
+            spanEnd: 42,
+            contextLabel: "scene_opening",
+          },
+          observations: [],
+          derived: {
+            actors: [
+              { identityKey: "self_child", displayLabel: "Én (gyerek)", sourceLanguage: "hu", label: "Én (gyerek)", observationIds: ["obs-1"] },
+              { identityKey: "dreamer_older", displayLabel: "Dreamer (older)", sourceLanguage: "en", label: "Dreamer (older)", observationIds: ["obs-2"] },
+              { identityKey: "almodo_idosebb", displayLabel: "Álmodó (idősebb)", sourceLanguage: "hu", label: "Álmodó (idősebb)", observationIds: ["obs-3"] },
+            ],
+            locations: [],
+            objects: [],
+            interactions: [],
+            affect: [],
+            agency: [],
+            phenomenology: [],
+            metacognition: [],
+          },
+        },
+      ],
+    });
+
+    expect(bundle.scenes[0].derived.actors).toEqual([
+      expect.objectContaining({ identityKey: "dreamer", displayLabel: "Álmodó", label: "Álmodó" }),
+      expect.objectContaining({ identityKey: "dreamer", displayLabel: "Álmodó", label: "Álmodó" }),
+      expect.objectContaining({ identityKey: "dreamer", displayLabel: "Álmodó", label: "Álmodó" }),
+    ]);
+  });
 });

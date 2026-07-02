@@ -602,12 +602,11 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
       .select("id")
       .eq("id", dreamId)
       .eq("user_id", userId)
-      .eq("object_type", "dream")
       .is("archived_at", null)
       .maybeSingle<{ id: string }>();
 
     if (error) {
-      throw new Error(`Failed to load dream for glossary appearance record: ${error.message}`);
+      throw new Error(`Failed to load reflective object for glossary appearance record: ${error.message}`);
     }
 
     return data;

@@ -18,14 +18,23 @@ It is not:
 
 The AI should support user-led reflection through questions, pacing, and non-dogmatic framing.
 
+## Coordination Context
+
+Lumira uses a coordinator-driven workflow.
+
+- Repository reality is implementation evidence, not automatic product authority.
+- Surface meaningful product, architecture, cleanup, and UX decisions instead of silently choosing.
+- `docs/chatgpt coordinating/LUMIRA_COORDINATION_PLAYBOOK.md` exists for coordinator and handoff context; do not treat it as mandatory reading for every implementation ticket.
+
 ## Required Reading by Task Type
 
 ### Any task
 - `AGENTS.md`
 - this file
 - `docs/DOCS_INDEX.md`
-- `docs/CURRENT_STATE.md`
 - the assigned ticket
+
+Read `docs/CURRENT_STATE.md` only when re-entering after time away, during coordinator transitions, or when current implementation state is directly relevant.
 
 ### Product / README / copy task
 - `README.md`
@@ -52,17 +61,32 @@ Interpret route-level UI work through the visual philosophy and shared primitive
 - latest relevant migration files
 - affected repo files
 
+Backend V2 is a clean-room implementation, not a default migration project.
+Quarantined legacy backend structures are not architectural authority.
+
 ### Cleanup / removal task
 - `docs/DECISIONS.md`
 - recent relevant entries in `docs/STABILIZATION_LEDGER.md`
 - run audit before deleting anything unclear
 
+Cleanup follows replacement: replacement, validation, and dependency review come before removal.
+
 ## Navigation Rules
 
 - `docs/DOCS_INDEX.md` is the primary documentation map.
-- `docs/CURRENT_STATE.md` is the operational re-entry snapshot.
+- `docs/CURRENT_STATE.md` is the operational re-entry snapshot, not default first reading for every ticket.
 - `docs/SPEC_INDEX.md` is for task-context lookup, not general onboarding.
 - `docs/STABILIZATION_LEDGER.md` is historical/process context, not default first reading.
+- Do not read the documentation corpus by default; use the indexes and the ticket to narrow the next documents.
+- Avoid unnecessary documentation archaeology.
+
+## Working Rules
+
+- Implement directly on main.
+- Do not create isolated worktrees.
+- Do not create `.worktrees` directories.
+- Validate on actual repository main unless the ticket explicitly overrides this.
+- Preserve unrelated pre-existing changes; make only the smallest required edits in dirty files and do not revert unrelated work.
 
 ## Current Priority
 
@@ -79,3 +103,4 @@ Interpret route-level UI work through the visual philosophy and shared primitive
 - Do not remove legacy code without audit or explicit instruction.
 - Do not create broad refactors inside small tickets.
 - Do not treat `docs/backend-v2-migration/` as active Backend V2 authority.
+- Do not casually remove or damage user-facing pages, routes, or established UI flows during backend cleanup or architecture work without explicit instruction.

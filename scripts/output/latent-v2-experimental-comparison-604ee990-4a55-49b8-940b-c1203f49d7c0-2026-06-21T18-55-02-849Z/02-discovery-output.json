@@ -1,0 +1,546 @@
+{
+  "generationContext": {
+    "runtimeVersion": "latent_discovery_v1",
+    "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+    "observationBundleId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1"
+  },
+  "candidateStructures": [
+    {
+      "candidateId": "candidate1",
+      "origin": "context_revealed",
+      "sceneRefs": [
+        "scene1"
+      ],
+      "evidenceGroups": [
+        {
+          "groupId": "eg1",
+          "sceneRef": "scene1",
+          "observationRefs": [
+            "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene1:obs1-2",
+            "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene1:obs1-3"
+          ],
+          "boundaryNotes": [
+            "The dreamer felt lack of celebration and low status environment despite the special opportunity, traveling by crowded local bus to the launch site"
+          ]
+        }
+      ],
+      "provisionalStructureType": "tension",
+      "structureSketch": {
+        "nodes": [
+          "Álmodó",
+          "Kilövési helyszín",
+          "Ünnepélyesség hiánya",
+          "Zsúfolt busz"
+        ],
+        "relations": [
+          "Álmodó -> Kilövési helyszín",
+          "Álmodó experiences Ünnepélyesség hiánya",
+          "Kilövési helyszín connected to Zsúfolt busz"
+        ],
+        "tensions": [
+          "Opportunity meets lack of celebration/luck"
+        ],
+        "gaps": []
+      },
+      "distinctnessRationale": "A tension between the special opportunity of space participation and the low-status, uncelebrated environment is grounded in affect and location observations in scene1.",
+      "uncertainty": []
+    },
+    {
+      "candidateId": "candidate2",
+      "origin": "context_revealed",
+      "sceneRefs": [
+        "scene2"
+      ],
+      "evidenceGroups": [
+        {
+          "groupId": "eg2",
+          "sceneRef": "scene2",
+          "observationRefs": [
+            "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-5",
+            "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-1"
+          ],
+          "boundaryNotes": [
+            "Dreamer’s agency is limited or confused in the space station, unable to identify their own room and interacting with moody, duty-only staff"
+          ]
+        }
+      ],
+      "provisionalStructureType": "search_structure",
+      "structureSketch": {
+        "nodes": [
+          "Álmodó",
+          "Űrállomás",
+          "Mogorva munkatárs",
+          "Szobakeresés"
+        ],
+        "relations": [
+          "Álmodó on Űrállomás",
+          "Álmodó attempts Szobakeresés",
+          "Mogorva munkatárs guides Álmodó"
+        ],
+        "tensions": [],
+        "gaps": [
+          "Unclear identity of Álmodó’s room despite signage"
+        ]
+      },
+      "distinctnessRationale": "A search structure revolving around the dreamer’s agency to find their room on the space station is structurally distinct and supported by multiple observations including failed room identification.",
+      "uncertainty": [
+        "Uncertainty about precise feelings during search",
+        "Possible alternative interpretations of staff’s mood"
+      ]
+    },
+    {
+      "candidateId": "candidate3",
+      "origin": "context_revealed",
+      "sceneRefs": [
+        "scene3"
+      ],
+      "evidenceGroups": [
+        {
+          "groupId": "eg3",
+          "sceneRef": "scene3",
+          "observationRefs": [
+            "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3:obs3-6",
+            "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3:obs3-8"
+          ],
+          "boundaryNotes": [
+            "Interactions with residents in the luxury suburb are characterized by lack of response or avoidance despite greetings"
+          ]
+        }
+      ],
+      "provisionalStructureType": "tension",
+      "structureSketch": {
+        "nodes": [
+          "Álmodó",
+          "Luxus kertváros",
+          "Emberek a kertvárosban",
+          "Fiatal férfi"
+        ],
+        "relations": [
+          "Álmodó walks in Luxus kertváros",
+          "Álmodó greets Emberek a kertvárosban",
+          "Emberek a kertvárosban avoid Álmodó",
+          "Fiatal férfi smiles to Álmodó"
+        ],
+        "tensions": [
+          "Social isolation vs greetings in luxury area"
+        ],
+        "gaps": []
+      },
+      "distinctnessRationale": "A social tension between the dreamer’s attempts at interaction and residents’ avoidance or silence is clearly grounded in scene3 observations of interactions and atmosphere.",
+      "uncertainty": [
+        "Uncertainty about the meaning of the smiling young man’s appearance"
+      ]
+    },
+    {
+      "candidateId": "candidate4",
+      "origin": "context_revealed",
+      "sceneRefs": [
+        "scene2"
+      ],
+      "evidenceGroups": [
+        {
+          "groupId": "eg4",
+          "sceneRef": "scene2",
+          "observationRefs": [
+            "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-4"
+          ],
+          "boundaryNotes": [
+            "The dreamer manages to discard a poop bag carried since before launch in the space station environment"
+          ]
+        }
+      ],
+      "provisionalStructureType": "repair_sequence",
+      "structureSketch": {
+        "nodes": [
+          "Álmodó",
+          "Kakis zacskó",
+          "Kidobás"
+        ],
+        "relations": [
+          "Álmodó carries Kakis zacskó",
+          "Álmodó performs Kidobás"
+        ],
+        "tensions": [],
+        "gaps": []
+      },
+      "distinctnessRationale": "A repair sequence reflecting the resolution of carrying a retained discarded object is grounded in the localized action and evidence of success in scene2.",
+      "uncertainty": [
+        "Uncertainty about emotional or symbolic significance"
+      ]
+    }
+  ],
+  "inputPacket": {
+    "generationContext": {
+      "runtimeVersion": "latent_discovery_v1",
+      "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+      "priorityReflectiveObjectId": "604ee990-4a55-49b8-940b-c1203f49d7c0",
+      "priorityReflectiveObjectType": "dream",
+      "priorityReflectiveObjectTitle": "Űrállomás és luxuskertváros séta",
+      "objectLanguage": "hu",
+      "observationBundleId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1",
+      "observationRuntimeVersion": "observation_v2_phase1",
+      "semanticPolicyResult": "accept_with_uncertainty",
+      "bundleUncertaintyNotes": []
+    },
+    "discoveryPolicy": {
+      "persistence": "ephemeral",
+      "recreatableFromUpstream": true,
+      "countsAsSystemMemory": false
+    },
+    "priorityObject": {
+      "content": "álmomban részt vettem egy űrkutatásban, pontosabban nem is tudom mi volt. egy ismerősöm nyerte valami élelmiszerbe rejtett jeggyel (mint a charlie és a csokigyárban). négyen mentünk fel, de sokszor úgy éreztem, hogy nem vagyunk túl szerencsések, a lehetőségnek örültem persze, de a környezetemben senki nem örült kifejezetten nekünk és nem volt semmi ünnepélyesség sem - a kilövésre egy bkk vagy volán járattal mentünk ki a reptérre egy nagyon zsúfolt buszon. nem sok mindent lehetett vinni, egy táskányi cuccot csak, de abban meg jó vagyok, jól megpakoltam a hátizsákomat pár ruhával, kevés kajával, meg könyvekkel. eleinte úgy volt hogy lehet hozni kutyát is (minden nyertesnek volt kutyája), ráadásul nekem szerintem nem is kozmó volt, hanem egy gyerekkori kutyám, rozi.. akartam is vinni, mert gondoltam milyen mulatságos lesz, h ő ott van, és ha minden szar lesz, akkor legalább rajta tudok szórakozni, de az utolsó pillanatban elfelejtettem, ahogy sok minden mást is, és egyszer csak fent voltunk az állomáson. fent két emberrel találkoztunk - elvileg voltak többen is, de nem mutatkoztak - és közülük is csak az egyik volt szociális, de ő is inkább mogorva volt és csak kötelességből csinálta az egészet. körbevezetett minket az állomáson, megmutatta a szobáinkat, és a közös használatú tereket. nem nagyon figyeltem. valamiért fürdeni akartam nagyon, uh amint vége volt a túrának és mindenki elvonult pihenni, én elmentem űrzuhanyozni - ami nem volt egyáltalán különös élmény.. fürdés után már nagyon meg akartam szabadulni egy kakis zacskótól, amit valamikor még kilövés előtt szedhettem fel rozitól, de azóta nem volt alkalmam kidobni, ezért hoztam magammal.. mindenesetre sikerült kidobni. még űr-wcztem is egyet, aztán a szobámba akartam menni, h én is lepihenjek, de mivel nem nagyon figyeltem, nem is tudtam, h melyik az én szobám. egy ideig keresgéltem, nézegettem a szobákat, mert mindegyik ajtóra ki volt írva, h ki lakik bent, de az is ki volt írva, h korábban ki lakott itt - volt olyan szoba, ahol 30 név is volt, uh egy idő után feladtam.. pihenés helyett elmentem sétálni (!) nem mentem sokat, amikor egy luxus kertvárosban találtam magamat, nagyon bizarr volt, de valamiért nem lepett meg nagyon, hogy emberek életvitelszerűen élnek az űrben a luxus villájukban. ahogy mentem tovább egyre kevésbé luxus házak voltak, de még mindig nagyon rendezett zöld övezetben voltam, és a modern kialakítású családi házakhoz értem. itt is nézegettem a neveket - sok magyar név volt, aminek ott nagy jelentőséget tulajdonítottam, most már azt hiszem nincs ennek semmi jelentése. ami még fura volt, h láthatóan a házon kívül tartották a könyveiket. elkezdtem nézelődni, hogy ki miket olvas, de kevés érdekes dolgot találtam. illetve kevés emberrel is találkoztam, pedig azt is szerettem volna meg tudni, hogy mennyibe kerül itt az élet. a luxus részen láttam valami ficsúrt meg az inasát. a ficsúr dalolt valamit, de túl távol volt. a családi házaknál láttam pár embert dohányozni vagy kávézni a teraszukon, köszöntem is nekik, de nem reagáltak, sőt többen inkább el is bújtak előlem. az utca végén találtam végre egy házat, ahol igazán érdekes könyveket találtam - mindenféle japán meg kínai filozófia és történelemkönyveket főleg, pár olyat is, amiket én is szeretnék még megszerezni. itt sokat nézelődtem és egy idő után itt is megjelent egy srác az egyik felső teraszon, mosolyogtam rá és köszöntem is neki, ő vissza is mosolygott, de akkor felébredtem."
+    },
+    "scenes": [
+      {
+        "sceneRowId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene1",
+        "sceneStableId": "scene1",
+        "position": 1,
+        "summary": "A dreamer participates in a mysterious space mission with friends after winning a ticket hidden in food; travel to the launch site is on a crowded bus without celebration.",
+        "evidenceSnippet": "álmomban részt vettem egy űrkutatásban...a kilövésre egy bkk vagy volán járattal mentünk ki a reptérre egy nagyon zsúfolt buszon.",
+        "boundarySignals": [
+          {
+            "kind": "other",
+            "note": "Shift from general introduction to the specifics of going to the launch site and the feeling about the journey and environment."
+          }
+        ],
+        "derivedStructures": {
+          "actors": [
+            "Álmodó",
+            "Ismerősök"
+          ],
+          "locations": [
+            "Kilövési helyszín"
+          ],
+          "objects": [
+            "Élelmiszerben rejtett jegy"
+          ],
+          "interactions": [],
+          "affect": [
+            "Ünnepélyesség hiánya",
+            "Vegyes érzések"
+          ],
+          "agency": [],
+          "metacognition": [],
+          "phenomenology": []
+        },
+        "observations": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene1:obs1-1",
+            "observationStableId": "obs1-1",
+            "position": 1,
+            "text": "The dreamer participates in a mysterious space research or mission with friends after winning a ticket hidden in food.",
+            "category": "object",
+            "evidence": [
+              {
+                "snippet": "álmomban részt vettem egy űrkutatásban, pontosabban nem is tudom mi volt. egy ismerősöm nyerte valami élelmiszerbe rejtett jeggyel",
+                "spanStart": 0,
+                "spanEnd": 86
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene1:obs1-2",
+            "observationStableId": "obs1-2",
+            "position": 2,
+            "text": "Four people went up, but the dreamer felt they were not very lucky and noticed a lack of celebration from others.",
+            "category": "affect",
+            "evidence": [
+              {
+                "snippet": "négyen mentünk fel, de sokszor úgy éreztem, hogy nem vagyunk túl szerencsések...a környezetemben senki nem örült kifejezetten nekünk és nem volt semmi ünnepélyesség",
+                "spanStart": 87,
+                "spanEnd": 161
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene1:obs1-3",
+            "observationStableId": "obs1-3",
+            "position": 3,
+            "text": "They traveled to the launch site by crowded public bus (BKK or Volán), reflecting low status or informality.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "a kilövésre egy bkk vagy volán járattal mentünk ki a reptérre egy nagyon zsúfolt buszon.",
+                "spanStart": 162,
+                "spanEnd": 193
+              }
+            ],
+            "uncertaintyNote": null
+          }
+        ]
+      },
+      {
+        "sceneRowId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2",
+        "sceneStableId": "scene2",
+        "position": 2,
+        "summary": "At the space station, the dreamer meets two people, is shown the rooms and common areas by a mostly unfriendly attendant, and tries to settle in but faces confusion and lack of attention.",
+        "evidenceSnippet": "fent két emberrel találkoztunk...körbevezetett minket az állomáson, megmutatta a szobáinkat...fürdés után...nem tudtam melyik az én szobám...keresgéltem...feladtam..",
+        "boundarySignals": [
+          {
+            "kind": "spatial_change",
+            "note": "Shift from travel and launch site to being on the space station and interacting with staff."
+          }
+        ],
+        "derivedStructures": {
+          "actors": [
+            "Űrállomás munkatársa",
+            "Álmodó"
+          ],
+          "locations": [
+            "Űrállomás"
+          ],
+          "objects": [
+            "Kakis zacskó",
+            "Űrzuhany",
+            "Űr WC"
+          ],
+          "interactions": [
+            "Tárlatvezetés az állomáson"
+          ],
+          "affect": [],
+          "agency": [
+            "Szobakeresés és feladás"
+          ],
+          "metacognition": [],
+          "phenomenology": []
+        },
+        "observations": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-1",
+            "observationStableId": "obs2-1",
+            "position": 1,
+            "text": "At the station, the dreamer and companions meet two people; only one is somewhat social but moody and doing the job out of duty.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "fent két emberrel találkoztunk - elvileg voltak többen is, de nem mutatkoztak - és közülük is csak az egyik volt szociális, de ő is inkább mogorva volt és csak kötelességből csinálta az egészet.",
+                "spanStart": 194,
+                "spanEnd": 279
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-2",
+            "observationStableId": "obs2-2",
+            "position": 2,
+            "text": "The attendant showed them around the station, including their rooms and common areas, but the dreamer did not pay much attention.",
+            "category": "interaction",
+            "evidence": [
+              {
+                "snippet": "körbevezetett minket az állomáson, megmutatta a szobáinkat, és a közös használatú tereket. nem nagyon figyeltem.",
+                "spanStart": 280,
+                "spanEnd": 335
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-3",
+            "observationStableId": "obs2-3",
+            "position": 3,
+            "text": "After the tour, the dreamer wanted to shower using a space shower, which was an unremarkable experience.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "amint vége volt a túrának és mindenki elvonult pihenni, én elmentem űrzuhanyozni - ami nem volt egyáltalán különös élmény..",
+                "spanStart": 336,
+                "spanEnd": 387
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-4",
+            "observationStableId": "obs2-4",
+            "position": 4,
+            "text": "The dreamer wanted to get rid of a poop bag picked up from the dog Rozit but had not had the chance until now, and finally succeeded.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "már nagyon meg akartam szabadulni egy kakis zacskótól, amit valamikor még kilövés előtt szedhettem fel rozitól...sikerült kidobni.",
+                "spanStart": 388,
+                "spanEnd": 441
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene2:obs2-5",
+            "observationStableId": "obs2-5",
+            "position": 5,
+            "text": "The dreamer used the space toilet and then tried to find their room but could not recognize it due to many name plaques and gave up searching.",
+            "category": "agency",
+            "evidence": [
+              {
+                "snippet": "űr-wcztem is egyet, aztán a szobámba akartam menni, h én is lepihenjek, de...nem is tudtam, h melyik az én szobám...nézegettem a szobákat, mert mindegyik ajtóra ki volt írva, h ki lakik bent, de az is ki volt írva, h korábban ki lakott itt - volt olyan szoba, ahol 30 név is volt...egy idő után feladtam..",
+                "spanStart": 442,
+                "spanEnd": 530
+              }
+            ],
+            "uncertaintyNote": null
+          }
+        ]
+      },
+      {
+        "sceneRowId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3",
+        "sceneStableId": "scene3",
+        "position": 3,
+        "summary": "The dreamer walks outside the station into a bizarre luxury space suburb with residents mostly ignoring or avoiding them; they inspect books outside houses and eventually meet a smiling young man on a terrace before waking.",
+        "evidenceSnippet": "pihenés helyett elmentem sétálni...luxus kertvárosban találtam magamat...emberek életvitelszerűen élnek az űrben a luxus villájukban...nézegettem neveket...láttam valami ficsúrt meg az inasát...láttam pár embert dohányozni vagy kávézni a teraszukon...végre egy házat, ahol érdekes könyveket találtam...megjelent egy srác...mosolyogtam rá és köszöntem is neki, ő vissza is mosolygott, de akkor felébredtem.",
+        "boundarySignals": [
+          {
+            "kind": "spatial_change",
+            "note": "From inside the station to walking outside and exploring a luxury residential area in space."
+          }
+        ],
+        "derivedStructures": {
+          "actors": [
+            "Álmodó",
+            "Fiatal férfi",
+            "Inas",
+            "Emberek a kertvárosban"
+          ],
+          "locations": [
+            "Luxus kertváros az űrben",
+            "Utca végi ház könyvekkel"
+          ],
+          "objects": [
+            "Könyvek"
+          ],
+          "interactions": [
+            "Álomélő köszön az embereknek"
+          ],
+          "affect": [],
+          "agency": [],
+          "metacognition": [],
+          "phenomenology": []
+        },
+        "observations": [
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3:obs3-1",
+            "observationStableId": "obs3-1",
+            "position": 1,
+            "text": "Instead of resting, the dreamer goes for a walk and finds themselves in a bizarre luxury suburb in space where people live; this surprises but does not shock the dreamer.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "pihenés helyett elmentem sétálni...luxus kertvárosban találtam magamat, nagyon bizarr volt, de valamiért nem lepett meg nagyon, hogy emberek életvitelszerűen élnek az űrben a luxus villájukban.",
+                "spanStart": 531,
+                "spanEnd": 606
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3:obs3-2",
+            "observationStableId": "obs3-2",
+            "position": 2,
+            "text": "As the dreamer walks further, the houses become less luxurious but remain tidy green zones with modern family houses.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "ahogy mentem tovább egyre kevésbé luxus házak voltak, de még mindig nagyon rendezett zöld övezetben voltam, és a modern kialakítású családi házakhoz értem.",
+                "spanStart": 607,
+                "spanEnd": 660
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3:obs3-3",
+            "observationStableId": "obs3-3",
+            "position": 3,
+            "text": "The dreamer noticed many Hungarian names by the houses but later thinks those names may not hold significance here.",
+            "category": "actor",
+            "evidence": [
+              {
+                "snippet": "itt is nézegettem a neveket - sok magyar név volt, aminek ott nagy jelentőséget tulajdonítottam, most már azt hiszem nincs ennek semmi jelentése.",
+                "spanStart": 661,
+                "spanEnd": 709
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3:obs3-4",
+            "observationStableId": "obs3-4",
+            "position": 4,
+            "text": "The dreamer noticed people kept their books outside the houses and looked through them, but few interesting books or people were found.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "ami még fura volt, h láthatóan a házon kívül tartották a könyveiket...kezdtem nézelődni, hogy ki miket olvas, de kevés érdekes dolgot találtam...illetve kevés emberrel is találkoztam",
+                "spanStart": 710,
+                "spanEnd": 757
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3:obs3-5",
+            "observationStableId": "obs3-5",
+            "position": 5,
+            "text": "At the luxury area, the dreamer saw a well-dressed young man and his servant; the young man was singing from a distance.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "a luxus részen láttam valami ficsúrt meg az inasát. a ficsúr dalolt valamit, de túl távol volt.",
+                "spanStart": 758,
+                "spanEnd": 796
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3:obs3-6",
+            "observationStableId": "obs3-6",
+            "position": 6,
+            "text": "The dreamer saw some people smoking or drinking coffee on terraces at family houses, greeted them, but they did not respond and some hid.",
+            "category": "interaction",
+            "evidence": [
+              {
+                "snippet": "a családi házaknál láttam pár embert dohányozni vagy kávézni a teraszukon, köszöntem is nekik, de nem reagáltak, sőt többen inkább el is bújtak előlem.",
+                "spanStart": 797,
+                "spanEnd": 851
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3:obs3-7",
+            "observationStableId": "obs3-7",
+            "position": 7,
+            "text": "At the street end, the dreamer found a house with many interesting books mainly about Japanese and Chinese philosophy and history, which the dreamer wanted to acquire someday.",
+            "category": "location",
+            "evidence": [
+              {
+                "snippet": "az utca végén találtam végre egy házat, ahol igazán érdekes könyveket találtam - mindenféle japán meg kínai filozófia és történelemkönyveket főleg, pár olyat is, amiket én is szeretnék még megszerezni.",
+                "spanStart": 852,
+                "spanEnd": 918
+              }
+            ],
+            "uncertaintyNote": null
+          },
+          {
+            "observationV2SceneObservationId": "observation-bundle-604ee990-4a55-49b8-940b-c1203f49d7c0-observation_v2_phase1:scene3:obs3-8",
+            "observationStableId": "obs3-8",
+            "position": 8,
+            "text": "A young man appeared on an upper terrace, smiled to the dreamer who greeted him back, then the dreamer woke up.",
+            "category": "interaction",
+            "evidence": [
+              {
+                "snippet": "itt sokat nézelődtem és egy idő után itt is megjelent egy srác az egyik felső teraszon, mosolyogtam rá és köszöntem is neki, ő vissza is mosolygott, de akkor felébredtem.",
+                "spanStart": 919,
+                "spanEnd": 943
+              }
+            ],
+            "uncertaintyNote": null
+          }
+        ]
+      }
+    ]
+  }
+}

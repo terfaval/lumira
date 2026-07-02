@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const resolveRequestUserContext = vi.fn();
 const activateOpening = vi.fn();
 const createOpeningActivationEvent = vi.fn();
+const createThreadRepository = vi.fn();
 
 vi.mock("@/src/infrastructure/supabase/auth/resolve-request-user-context", () => ({
   DEV_FALLBACK_HEADER: "x-lumira-user-id",
@@ -21,11 +22,16 @@ vi.mock("@/src/infrastructure/supabase/repositories/create-response-repository",
   }),
 }));
 
+vi.mock("@/src/infrastructure/supabase/repositories/create-thread-repository", () => ({
+  createThreadRepository,
+}));
+
 describe("/api/openings/[id]/activate route", () => {
   beforeEach(() => {
     resolveRequestUserContext.mockReset();
     activateOpening.mockReset();
     createOpeningActivationEvent.mockReset();
+    createThreadRepository.mockReset();
   });
 
   it("requires explicit activation source", async () => {
@@ -70,5 +76,6 @@ describe("/api/openings/[id]/activate route", () => {
       activationContext: "reflective_space_surface",
       openingResponseContext: "activation_without_response",
     });
+    expect(createThreadRepository).not.toHaveBeenCalled();
   });
 });

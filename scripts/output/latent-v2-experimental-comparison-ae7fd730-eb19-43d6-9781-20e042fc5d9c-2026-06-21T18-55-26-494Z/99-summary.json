@@ -1,0 +1,5 @@
+{
+  "mode": "compared",
+  "summary": "current multiplicity=4, experimental multiplicity=3; current distinctness=1.00, experimental distinctness=1.00; current evidence=1.00, experimental evidence=1.00; current late-scene=0.75, experimental late-scene=0.67; current ambiguity=0.50, experimental ambiguity=0.00",
+  "outputDir": "C:\\mira\\scripts\\output\\latent-v2-experimental-comparison-ae7fd730-eb19-43d6-9781-20e042fc5d9c-2026-06-21T18-55-26-494Z"
+}

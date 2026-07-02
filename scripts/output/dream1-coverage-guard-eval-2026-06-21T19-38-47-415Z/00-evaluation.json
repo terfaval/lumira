@@ -1,0 +1,29 @@
+{
+  "reflectiveObject": {
+    "id": "666c955c-a2c0-4cec-8679-9d42ab81f650",
+    "title": "Határ a labirintus hóban",
+    "textLength": 4613
+  },
+  "storedObservation": {
+    "bundleId": "observation-bundle-666c955c-a2c0-4cec-8679-9d42ab81f650-observation_v2_phase1",
+    "sceneCount": 1,
+    "observationCount": 14,
+    "scenes": [
+      {
+        "sceneId": "scene1",
+        "position": 1,
+        "summary": "A hatalmas munkahelyen való tartózkodás, ahol a környezet és emberi viselkedés megfigyelése történik.",
+        "evidenceSpanStart": 0,
+        "evidenceSpanEnd": 397,
+        "observationCount": 14
+      }
+    ]
+  },
+  "freshExtraction": {
+    "mode": "fallback",
+    "reason": "coverage_guard_failed_after_retry",
+    "observation": null
+  },
+  "discovery": null,
+  "comparison": null
+}

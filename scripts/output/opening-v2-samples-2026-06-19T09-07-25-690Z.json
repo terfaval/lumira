@@ -1,0 +1,472 @@
+[
+  {
+    "manifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+    "summary": "Álom első jelenetében a telefon dobálása, az aggódás és a kétségek fázisai a telefon keresése során erősen támogatott reflexióra alkalmasak.",
+    "result": {
+      "mode": "generated",
+      "packet": {
+        "generationContext": {
+          "runtimeVersion": "opening_v2_constructor_mvp",
+          "objectLanguage": "hu",
+          "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+          "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+          "sourceOpportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb"
+        },
+        "opportunity": {
+          "manifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+          "summary": "Álom első jelenetében a telefon dobálása, az aggódás és a kétségek fázisai a telefon keresése során erősen támogatott reflexióra alkalmasak.",
+          "primaryCategory": "transition",
+          "secondaryCategories": [
+            "tension",
+            "relationship"
+          ],
+          "structure": {
+            "kind": "A_TO_B_TO_C",
+            "label": "Telefon dobálás aggódással -> Telefon leesése többször -> Telefon keresése és segítés Bórával",
+            "elements": [
+              "Telefon dobálás aggódással",
+              "Telefon leesése többször",
+              "Telefon keresése és segítés Bórával",
+              "Én (álmodó)",
+              "Bóra"
+            ],
+            "metadata": {
+              "gaps": [],
+              "edges": [
+                {
+                  "to": "A",
+                  "from": "actor1",
+                  "relation": "experiences"
+                },
+                {
+                  "to": "B",
+                  "from": "A",
+                  "relation": "leads_to_transition"
+                },
+                {
+                  "to": "C",
+                  "from": "B",
+                  "relation": "leads_to_transition"
+                },
+                {
+                  "to": "C",
+                  "from": "actor2",
+                  "relation": "participates_in"
+                },
+                {
+                  "to": "C",
+                  "from": "actor1",
+                  "relation": "participates_in"
+                }
+              ],
+              "nodes": [
+                {
+                  "key": "A",
+                  "kind": "state",
+                  "label": "Telefon dobálás aggódással"
+                },
+                {
+                  "key": "B",
+                  "kind": "event",
+                  "label": "Telefon leesése többször"
+                },
+                {
+                  "key": "C",
+                  "kind": "interaction",
+                  "label": "Telefon keresése és segítés Bórával"
+                },
+                {
+                  "key": "actor1",
+                  "kind": "actor",
+                  "label": "Én (álmodó)"
+                },
+                {
+                  "key": "actor2",
+                  "kind": "actor",
+                  "label": "Bóra"
+                }
+              ],
+              "tensions": [
+                {
+                  "between": [
+                    "A",
+                    "B"
+                  ],
+                  "description": "Aggodalom a telefon sérülése miatt miközben tovább dobálom tudatosan"
+                },
+                {
+                  "between": [
+                    "actor1",
+                    "actor2"
+                  ],
+                  "description": "Bóra egyre idegesebb a telefon dobálása és eldugása miatt"
+                }
+              ],
+              "continuitySignals": [
+                {
+                  "kind": "none",
+                  "description": null,
+                  "referenceId": null
+                }
+              ]
+            }
+          },
+          "evidenceBlocks": [
+            {
+              "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+              "role": "priority",
+              "summary": null,
+              "observations": [
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_4",
+                  "sceneId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+                  "role": "primary_support"
+                },
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_5",
+                  "sceneId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+                  "role": "primary_support"
+                },
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_6",
+                  "sceneId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+                  "role": "primary_support"
+                },
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1:obs1_7",
+                  "sceneId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene1",
+                  "role": "primary_support"
+                }
+              ]
+            }
+          ],
+          "salienceBand": "high",
+          "credibilityScore": 0.9,
+          "reflectivePotentialScore": 0.9
+        }
+      },
+      "rawOutput": "{\"question\":\"Mi változik meg a telefon dobálásából a telefon keresésében Bórával?\",\"context\":\"Először a telefon aggódva dobálódik. A telefon többször leesik. Ezután Bóra segít a telefon keresésében.\",\"sourceOpportunityManifestationId\":\"35ec6d7e-c849-4f40-96ab-5322011531fb\",\"reflectiveObjectId\":\"ae7fd730-eb19-43d6-9781-20e042fc5d9c\",\"openingKind\":\"question\",\"sourceRuntime\":\"opening_v2_constructor_mvp\"}",
+      "opening": {
+        "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+        "openingType": "reflective_question",
+        "tone": "gentle",
+        "utterance": "Mi változik meg a telefon dobálásából a telefon keresésében Bórával?",
+        "visibility": "invitation_surface",
+        "provenance": {
+          "sourceObjects": [
+            "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+          ],
+          "sourceObservations": [],
+          "sourceGlossaryTerms": [],
+          "sourceThreads": [],
+          "sourceResponses": [],
+          "latentSnapshotReference": null,
+          "confidenceBand": "moderate",
+          "openingGenerationContext": "opening_v2_constructor_mvp",
+          "openingContext": {
+            "context": "Először a telefon aggódva dobálódik. A telefon többször leesik. Ezután Bóra segít a telefon keresésében.",
+            "sourceOpportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb",
+            "openingKind": "question",
+            "sourceRuntime": "opening_v2_constructor_mvp"
+          },
+          "sourceOpportunityManifestationId": "35ec6d7e-c849-4f40-96ab-5322011531fb"
+        }
+      },
+      "attempts": 2
+    }
+  },
+  {
+    "manifestationId": "cfcd5f17-9c21-450d-bba3-95643d9036f6",
+    "summary": "Álom második jeleneti átmenete: Bóra eltűnése után hirtelen korváltozás és figyelem érzékelése egy másik szereplőtől, Évitől.",
+    "result": {
+      "mode": "generated",
+      "packet": {
+        "generationContext": {
+          "runtimeVersion": "opening_v2_constructor_mvp",
+          "objectLanguage": "hu",
+          "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+          "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+          "sourceOpportunityManifestationId": "cfcd5f17-9c21-450d-bba3-95643d9036f6"
+        },
+        "opportunity": {
+          "manifestationId": "cfcd5f17-9c21-450d-bba3-95643d9036f6",
+          "summary": "Álom második jeleneti átmenete: Bóra eltűnése után hirtelen korváltozás és figyelem érzékelése egy másik szereplőtől, Évitől.",
+          "primaryCategory": "transition",
+          "secondaryCategories": [
+            "salience_signal",
+            "relationship"
+          ],
+          "structure": {
+            "kind": "A_TO_B",
+            "label": "Bóra eltűnése -> Idősebbnek érzem magam, Évi figyelme érzékelése -> Én (álmodó)",
+            "elements": [
+              "Bóra eltűnése",
+              "Idősebbnek érzem magam, Évi figyelme érzékelése",
+              "Én (álmodó)",
+              "Évi"
+            ],
+            "metadata": {
+              "gaps": [],
+              "edges": [
+                {
+                  "to": "B",
+                  "from": "A",
+                  "relation": "leads_to_transition"
+                },
+                {
+                  "to": "B",
+                  "from": "actor1",
+                  "relation": "experiences"
+                },
+                {
+                  "to": "B",
+                  "from": "actor3",
+                  "relation": "provides_attention_signal"
+                }
+              ],
+              "nodes": [
+                {
+                  "key": "A",
+                  "kind": "event",
+                  "label": "Bóra eltűnése"
+                },
+                {
+                  "key": "B",
+                  "kind": "state",
+                  "label": "Idősebbnek érzem magam, Évi figyelme érzékelése"
+                },
+                {
+                  "key": "actor1",
+                  "kind": "actor",
+                  "label": "Én (álmodó)"
+                },
+                {
+                  "key": "actor3",
+                  "kind": "actor",
+                  "label": "Évi"
+                }
+              ],
+              "tensions": [],
+              "continuitySignals": [
+                {
+                  "kind": "none",
+                  "description": null,
+                  "referenceId": null
+                }
+              ]
+            }
+          },
+          "evidenceBlocks": [
+            {
+              "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+              "role": "priority",
+              "summary": null,
+              "observations": [
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_2",
+                  "sceneId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+                  "role": "primary_support"
+                },
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_7",
+                  "sceneId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+                  "role": "primary_support"
+                }
+              ]
+            }
+          ],
+          "salienceBand": "high",
+          "credibilityScore": 0.85,
+          "reflectivePotentialScore": 0.85
+        }
+      },
+      "rawOutput": "{\"question\":\"Mi változik benned, miután Bóra eltűnik?\",\"context\":\"Bóra eltűnik a jelenetből. Észreveszed, hogy Évi figyel rád. Magadat idősebbnek érzed.\" ,\"sourceOpportunityManifestationId\":\"cfcd5f17-9c21-450d-bba3-95643d9036f6\",\"reflectiveObjectId\":\"ae7fd730-eb19-43d6-9781-20e042fc5d9c\",\"openingKind\":\"question\",\"sourceRuntime\":\"opening_v2_constructor_mvp\"}",
+      "opening": {
+        "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+        "openingType": "reflective_question",
+        "tone": "gentle",
+        "utterance": "Mi változik benned, miután Bóra eltűnik?",
+        "visibility": "invitation_surface",
+        "provenance": {
+          "sourceObjects": [
+            "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+          ],
+          "sourceObservations": [],
+          "sourceGlossaryTerms": [],
+          "sourceThreads": [],
+          "sourceResponses": [],
+          "latentSnapshotReference": null,
+          "confidenceBand": "moderate",
+          "openingGenerationContext": "opening_v2_constructor_mvp",
+          "openingContext": {
+            "context": "Bóra eltűnik a jelenetből. Észreveszed, hogy Évi figyel rád. Magadat idősebbnek érzed.",
+            "sourceOpportunityManifestationId": "cfcd5f17-9c21-450d-bba3-95643d9036f6",
+            "openingKind": "question",
+            "sourceRuntime": "opening_v2_constructor_mvp"
+          },
+          "sourceOpportunityManifestationId": "cfcd5f17-9c21-450d-bba3-95643d9036f6"
+        }
+      },
+      "attempts": 3
+    }
+  },
+  {
+    "manifestationId": "cdf26c9c-895f-4de7-9c35-8b0c32f96e63",
+    "summary": "Dinamika Markus nadrágján kialakult folt és annak takarítása, bocsánatkérés, valamint Kata segítsége a javításban.",
+    "result": {
+      "mode": "generated",
+      "packet": {
+        "generationContext": {
+          "runtimeVersion": "opening_v2_constructor_mvp",
+          "objectLanguage": "hu",
+          "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+          "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+          "sourceOpportunityManifestationId": "cdf26c9c-895f-4de7-9c35-8b0c32f96e63"
+        },
+        "opportunity": {
+          "manifestationId": "cdf26c9c-895f-4de7-9c35-8b0c32f96e63",
+          "summary": "Dinamika Markus nadrágján kialakult folt és annak takarítása, bocsánatkérés, valamint Kata segítsége a javításban.",
+          "primaryCategory": "tension",
+          "secondaryCategories": [
+            "relationship",
+            "continuity"
+          ],
+          "structure": {
+            "kind": "TENSION",
+            "label": "Markus fehér vászonnadrágjának lehamuzása és takarítása -> Bocsánatkérés és tisztítás, Kata segít citrommal -> Én (álmodó)",
+            "elements": [
+              "Markus fehér vászonnadrágjának lehamuzása és takarítása",
+              "Bocsánatkérés és tisztítás, Kata segít citrommal",
+              "Én (álmodó)",
+              "Markus",
+              "Kata, mostohaanya"
+            ],
+            "metadata": {
+              "gaps": [],
+              "edges": [
+                {
+                  "to": "action",
+                  "from": "issue",
+                  "relation": "repair_attempt"
+                },
+                {
+                  "to": "issue",
+                  "from": "actor1",
+                  "relation": "involved_in"
+                },
+                {
+                  "to": "action",
+                  "from": "actor1",
+                  "relation": "performs"
+                },
+                {
+                  "to": "action",
+                  "from": "actor3",
+                  "relation": "provides_support"
+                },
+                {
+                  "to": "issue",
+                  "from": "actor2",
+                  "relation": "affected_by"
+                }
+              ],
+              "nodes": [
+                {
+                  "key": "issue",
+                  "kind": "event",
+                  "label": "Markus fehér vászonnadrágjának lehamuzása és takarítása"
+                },
+                {
+                  "key": "action",
+                  "kind": "repair",
+                  "label": "Bocsánatkérés és tisztítás, Kata segít citrommal"
+                },
+                {
+                  "key": "actor1",
+                  "kind": "actor",
+                  "label": "Én (álmodó)"
+                },
+                {
+                  "key": "actor2",
+                  "kind": "actor",
+                  "label": "Markus"
+                },
+                {
+                  "key": "actor3",
+                  "kind": "actor",
+                  "label": "Kata, mostohaanya"
+                }
+              ],
+              "tensions": [
+                {
+                  "between": [
+                    "issue",
+                    "action"
+                  ],
+                  "description": "Bocsánatkérés és segítség a károsodás miatt kialakuló feszültség enyhítésére."
+                }
+              ],
+              "continuitySignals": [
+                {
+                  "kind": "none",
+                  "description": null,
+                  "referenceId": null
+                }
+              ]
+            }
+          },
+          "evidenceBlocks": [
+            {
+              "reflectiveObjectId": "ae7fd730-eb19-43d6-9781-20e042fc5d9c",
+              "role": "priority",
+              "summary": null,
+              "observations": [
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_5",
+                  "sceneId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+                  "role": "primary_support"
+                },
+                {
+                  "observationV2SceneObservationId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2:obs2_6",
+                  "sceneId": "observation-bundle-ae7fd730-eb19-43d6-9781-20e042fc5d9c-observation_v2_phase1:scene2",
+                  "role": "primary_support"
+                }
+              ]
+            }
+          ],
+          "salienceBand": "high",
+          "credibilityScore": 0.88,
+          "reflectivePotentialScore": 0.87
+        }
+      },
+      "rawOutput": "{\"question\":\"Hogyan tisztítja Kata citrommal Markus fehér vászonnadrágját?\",\"context\":\"Markus nadrágján folt keletkezik. A folt tisztításában Kata, a mostohaanya, citrommal segít.\" ,\"sourceOpportunityManifestationId\":\"cdf26c9c-895f-4de7-9c35-8b0c32f96e63\",\"reflectiveObjectId\":\"ae7fd730-eb19-43d6-9781-20e042fc5d9c\",\"openingKind\":\"question\",\"sourceRuntime\":\"opening_v2_constructor_mvp\"}",
+      "opening": {
+        "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+        "openingType": "reflective_question",
+        "tone": "gentle",
+        "utterance": "Hogyan tisztítja Kata citrommal Markus fehér vászonnadrágját?",
+        "visibility": "invitation_surface",
+        "provenance": {
+          "sourceObjects": [
+            "ae7fd730-eb19-43d6-9781-20e042fc5d9c"
+          ],
+          "sourceObservations": [],
+          "sourceGlossaryTerms": [],
+          "sourceThreads": [],
+          "sourceResponses": [],
+          "latentSnapshotReference": null,
+          "confidenceBand": "moderate",
+          "openingGenerationContext": "opening_v2_constructor_mvp",
+          "openingContext": {
+            "context": "Markus nadrágján folt keletkezik. A folt tisztításában Kata, a mostohaanya, citrommal segít.",
+            "sourceOpportunityManifestationId": "cdf26c9c-895f-4de7-9c35-8b0c32f96e63",
+            "openingKind": "question",
+            "sourceRuntime": "opening_v2_constructor_mvp"
+          },
+          "sourceOpportunityManifestationId": "cdf26c9c-895f-4de7-9c35-8b0c32f96e63"
+        }
+      },
+      "attempts": 2
+    }
+  }
+]

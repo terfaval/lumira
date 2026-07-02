@@ -1,0 +1,42 @@
+[
+  {
+    "id": "96c8992c-3121-40a1-8987-beba0868b1c4",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Bóra",
+    "createdAt": "2026-06-17T10:32:21.565345+00:00",
+    "updatedAt": "2026-06-17T10:32:21.565345+00:00"
+  },
+  {
+    "id": "fc82f0bb-03f5-40e2-a250-ea3dbab20e26",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Telefon",
+    "createdAt": "2026-06-17T10:32:21.921935+00:00",
+    "updatedAt": "2026-06-17T10:32:21.921935+00:00"
+  },
+  {
+    "id": "b25ca521-d8bf-492c-a5bf-73b67503f8cc",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Markus",
+    "createdAt": "2026-06-17T10:32:22.135392+00:00",
+    "updatedAt": "2026-06-17T10:32:22.135392+00:00"
+  },
+  {
+    "id": "fef9c122-9d9c-424c-a63f-3ed4e479c8d7",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Kata",
+    "createdAt": "2026-06-17T10:32:22.416009+00:00",
+    "updatedAt": "2026-06-17T10:32:22.416009+00:00"
+  },
+  {
+    "id": "4d7e6388-0036-48ed-a5d8-5a8d7d6fdc54",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "anchorType": "ENTITY",
+    "identityLabel": "Évi",
+    "createdAt": "2026-06-17T10:32:22.703638+00:00",
+    "updatedAt": "2026-06-17T10:32:22.703638+00:00"
+  }
+]
