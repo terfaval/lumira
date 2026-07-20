@@ -40,6 +40,7 @@ export interface GlossaryCandidateRow {
   id: string;
   user_id: string;
   reflective_object_id: string;
+  identity_key?: string | null;
   normalized_key: string;
   display_label: string;
   source_category:
@@ -117,6 +118,7 @@ export interface GlossaryTermInsertRow {
 export interface GlossaryCandidateInsertRow {
   user_id: string;
   reflective_object_id: string;
+  identity_key: string | null;
   normalized_key: string;
   display_label: string;
   source_category: GlossaryCandidateRow["source_category"];
@@ -227,7 +229,13 @@ function toSuppression(
   };
 }
 
+function resolveAuthoritativeGeneralNote(input: { general_note: string | null; notes: string | null }): string | null {
+  return input.general_note ?? input.notes ?? null;
+}
+
 export function fromGlossaryTermRow(row: GlossaryTermRow): GlossaryTerm {
+  const generalNote = resolveAuthoritativeGeneralNote(row);
+
   return {
     id: row.id,
     userId: row.user_id,
@@ -236,9 +244,9 @@ export function fromGlossaryTermRow(row: GlossaryTermRow): GlossaryTerm {
     canonicalLabel: row.canonical_label,
     type: row.type,
     aliases: row.aliases,
-    generalNote: row.general_note,
+    generalNote,
     appearanceCount: row.appearance_count,
-    notes: row.notes,
+    notes: generalNote,
     state: row.state,
     suppression: toSuppression(row.suppression_state, row.suppressed_at, row.suppression_reason),
     createdAt: row.created_at,
@@ -251,6 +259,7 @@ export function fromGlossaryCandidateRow(row: GlossaryCandidateRow): GlossaryCan
     id: row.id,
     userId: row.user_id,
     reflectiveObjectId: row.reflective_object_id,
+    identityKey: row.identity_key ?? null,
     normalizedKey: row.normalized_key,
     displayLabel: row.display_label,
     sourceCategory: row.source_category,
@@ -295,6 +304,8 @@ export function fromGlossaryAppearanceRecordRow(row: GlossaryAppearanceRecordRow
 }
 
 export function toGlossaryTermInsertRow(input: CreateGlossaryTermInput): GlossaryTermInsertRow {
+  const generalNote = input.generalNote ?? null;
+
   return {
     user_id: input.userId,
     normalized_key: input.normalizedKey,
@@ -302,9 +313,9 @@ export function toGlossaryTermInsertRow(input: CreateGlossaryTermInput): Glossar
     canonical_label: input.canonicalLabel,
     type: input.type,
     aliases: input.aliases ?? [],
-    general_note: input.generalNote ?? null,
+    general_note: generalNote,
     appearance_count: input.appearanceCount ?? 0,
-    notes: input.notes ?? null,
+    notes: generalNote,
     state: "active",
     suppression_state: "none",
   };
@@ -322,6 +333,7 @@ export function toGlossaryCandidateInsertRow(
   return {
     user_id: input.userId,
     reflective_object_id: input.reflectiveObjectId,
+    identity_key: input.identityKey ?? null,
     normalized_key: input.normalizedKey,
     display_label: input.displayLabel,
     source_category: input.sourceCategory,

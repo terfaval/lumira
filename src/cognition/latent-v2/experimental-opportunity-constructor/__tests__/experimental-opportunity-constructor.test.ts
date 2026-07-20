@@ -215,6 +215,9 @@ function createConstructionPacket(): OpportunityConstructorInputPacket {
     existingOpportunityContext: {
       identities: [],
     },
+    reflectionContext: {
+      reflections: [],
+    },
   };
 }
 

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
-import type { ObservationRepository } from "@/src/domain/observation/contracts";
+import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 import { composeHomepageOrientationPayload } from "@/src/reflective-space/composition/compose-homepage-orientation-payload";
 import { getHomepageRouteTargetRegistry } from "@/src/reflective-space/composition/homepage-route-target-registry";
 
 describe("composeHomepageOrientationPayload", () => {
-  it("builds bounded panel payloads with fixed counts and preview fallback order", async () => {
+  it("builds bounded panel payloads with native observation previews preferred over legacy summary fallbacks", async () => {
     const payload = await composeHomepageOrientationPayload({
       userId: "user-1",
       generatedAt: "2026-05-26T00:00:00.000Z",
@@ -82,7 +82,8 @@ describe("composeHomepageOrientationPayload", () => {
             userId: "user-1",
             normalizedKey: "doorway",
             displayLabel: "Doorway",
-            notes: "Appears during transitions.",
+            generalNote: "Appears during transitions.",
+            notes: "Stale compatibility note.",
             state: "active",
             suppression: { state: "none", suppressedAt: null, reason: null },
             createdAt: "2026-05-26T09:30:00.000Z",
@@ -93,6 +94,7 @@ describe("composeHomepageOrientationPayload", () => {
             userId: "user-1",
             normalizedKey: "platform",
             displayLabel: "Platform",
+            generalNote: null,
             notes: null,
             state: "active",
             suppression: { state: "none", suppressedAt: null, reason: null },
@@ -104,6 +106,7 @@ describe("composeHomepageOrientationPayload", () => {
             userId: "user-1",
             normalizedKey: "wind",
             displayLabel: "Wind",
+            generalNote: null,
             notes: null,
             state: "active",
             suppression: { state: "none", suppressedAt: null, reason: null },
@@ -115,6 +118,7 @@ describe("composeHomepageOrientationPayload", () => {
             userId: "user-1",
             normalizedKey: "stairs",
             displayLabel: "Stairs",
+            generalNote: null,
             notes: null,
             state: "active",
             suppression: { state: "none", suppressedAt: null, reason: null },
@@ -126,6 +130,7 @@ describe("composeHomepageOrientationPayload", () => {
             userId: "user-1",
             normalizedKey: "water",
             displayLabel: "Water",
+            generalNote: null,
             notes: null,
             state: "active",
             suppression: { state: "none", suppressedAt: null, reason: null },
@@ -137,6 +142,7 @@ describe("composeHomepageOrientationPayload", () => {
             userId: "user-1",
             normalizedKey: "lights",
             displayLabel: "Lights",
+            generalNote: null,
             notes: null,
             state: "active",
             suppression: { state: "none", suppressedAt: null, reason: null },
@@ -173,6 +179,54 @@ describe("composeHomepageOrientationPayload", () => {
           return [];
         },
       } as unknown as ObservationRepository,
+      observationV2Repository: {
+        getByReflectiveObjectId: async (reflectiveObjectId: string) => {
+          if (reflectiveObjectId === "dream-1") {
+            return {
+              bundleId: "bundle-dream-1",
+              reflectiveObjectId: "dream-1",
+              userId: "user-1",
+              source: "system_llm_extract",
+              runtimeVersion: "observation_v2_phase1",
+              uncertaintyNotes: [],
+              provenance: {
+                provenanceTier: "system_extract",
+                semanticPolicyResult: "accept_with_uncertainty",
+                semanticPolicyReasons: [],
+                latentBackflowGuard: "observation_only",
+                boundaryVersion: "observation_v2_phase1",
+              },
+              scenes: [
+                {
+                  sceneId: "scene-1",
+                  position: 0,
+                  summary: "A quiet doorway stayed central.",
+                  boundaryReasoning: [],
+                  evidenceContext: {
+                    snippet: "doorway",
+                    spanStart: 0,
+                    spanEnd: 7,
+                    contextLabel: "scene",
+                  },
+                  observations: [],
+                  derived: {
+                    actors: [],
+                    locations: [],
+                    objects: [],
+                    interactions: [],
+                    affect: [],
+                    agency: [],
+                    phenomenology: [],
+                    metacognition: [],
+                  },
+                },
+              ],
+            };
+          }
+
+          return null;
+        },
+      } as unknown as ObservationV2Repository,
     });
 
     expect(payload.mode).toBe("orientation_home");
@@ -188,12 +242,14 @@ describe("composeHomepageOrientationPayload", () => {
     expect(payload.recentObjectsPreview.items).toHaveLength(3);
     expect(payload.recentObjectsPreview.hasMore).toBe(true);
     expect(payload.recentObjectsPreview.items[0].target.routeStatus).toBe("implemented");
+    expect(payload.recentObjectsPreview.items[0].descriptor).toBe("A quiet doorway stayed central.");
 
     expect(payload.dreamJournalPreview.targetSlots).toBe(3);
     expect(payload.dreamJournalPreview.items).toHaveLength(3);
     expect(payload.dreamJournalPreview.hasMore).toBe(true);
-    expect(payload.dreamJournalPreview.items[0].previewSource).toBe("ai_summary");
-    expect(payload.dreamJournalPreview.items[1].previewSource).toBe("observation_summary");
+    expect(payload.dreamJournalPreview.items[0].previewSource).toBe("observation_preview");
+    expect(payload.dreamJournalPreview.items[0].previewText).toBe("A quiet doorway stayed central.");
+    expect(payload.dreamJournalPreview.items[1].previewSource).toBe("observation_preview");
     expect(payload.dreamJournalPreview.items[2].previewSource).toBe("dream_excerpt");
 
     expect(payload.guardrails.noFeed).toBe(true);
@@ -223,6 +279,9 @@ describe("composeHomepageOrientationPayload", () => {
       observationRepository: {
         listByReflectiveObject: async () => [],
       } as unknown as ObservationRepository,
+      observationV2Repository: {
+        getByReflectiveObjectId: async () => null,
+      } as unknown as ObservationV2Repository,
     });
 
     expect(payload.navigation.capture.routeStatus).toBe("implemented");

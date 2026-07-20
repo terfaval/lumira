@@ -2,7 +2,7 @@
 
 ## Legacy Backend V1 Quarantine
 
-The current reflective-space backend assembly remains in place for protected route and UI compatibility.
+This layer remains compatibility-shaped, but it is active runtime authority for protected reflection-facing route composition.
 
 Its object-centered viewport assembly is not the canonical Backend V2 backend root.
 

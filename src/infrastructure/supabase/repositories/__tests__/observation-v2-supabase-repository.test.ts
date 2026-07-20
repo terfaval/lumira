@@ -68,7 +68,7 @@ describe("SupabaseObservationV2Repository", () => {
           position: 0,
           summary: "A stairwell scene.",
           boundary_signals: [],
-          uncertainty_notes: [],
+          uncertainty_notes: ["The stairwell may connect to a second landing."],
           evidence_context: {
             snippet: "I followed someone up a stairwell.",
             spanStart: 0,
@@ -175,6 +175,7 @@ describe("SupabaseObservationV2Repository", () => {
           position: 0,
           summary: "A stairwell scene.",
           boundaryReasoning: [],
+          uncertaintyNotes: ["The stairwell may connect to a second landing."],
           evidenceContext: {
             snippet: "I followed someone up a stairwell.",
             spanStart: 0,
@@ -216,7 +217,15 @@ describe("SupabaseObservationV2Repository", () => {
     expect(bundleInsert).toHaveBeenCalled();
     expect(sceneInsert).toHaveBeenCalled();
     expect(observationInsert).toHaveBeenCalled();
+    expect(sceneInsert).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          uncertainty_notes: ["The stairwell may connect to a second landing."],
+        }),
+      ]),
+    );
     expect(stored.bundleId).toBe("bundle-1");
+    expect(stored.scenes[0].uncertaintyNotes).toEqual(["The stairwell may connect to a second landing."]);
     expect(stored.scenes[0].observations[0].observationId).toBe("obs-1");
   });
 
@@ -305,5 +314,148 @@ describe("SupabaseObservationV2Repository", () => {
 
     expect(loaded?.bundleId).toBe("bundle-1");
     expect(loaded?.reflectiveObjectId).toBe("obj-1");
+  });
+
+  it("loads an archived bundle only when explicitly requested", async () => {
+    const maybeSingleBundle = vi.fn().mockResolvedValue({
+      data: {
+        id: "bundle-1",
+        user_id: "user-1",
+        reflective_object_id: "obj-1",
+        source: "system_llm_extract",
+        provenance_metadata: {
+          provenanceTier: "system_extract",
+          semanticPolicyResult: "accept_with_uncertainty",
+          semanticPolicyReasons: [],
+          latentBackflowGuard: "observation_only",
+          boundaryVersion: "observation_v2_phase1",
+        },
+        bundle_uncertainty_notes: [],
+        runtime_version: "observation_v2_phase1",
+        status: "archived",
+        archived_at: "2026-06-12T10:00:00.000Z",
+        created_at: "2026-06-11T10:00:00.000Z",
+        updated_at: "2026-06-12T10:00:00.000Z",
+      },
+      error: null,
+    });
+    const archivedFilter = vi.fn().mockReturnValue({
+      maybeSingle: maybeSingleBundle,
+    });
+    const sceneOrder = vi.fn().mockResolvedValue({ data: [], error: null });
+    const observationOrder = vi.fn().mockResolvedValue({ data: [], error: null });
+
+    const from = vi.fn().mockImplementation((table: string) => {
+      if (table === "observation_v2_bundles") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                is: archivedFilter,
+                maybeSingle: maybeSingleBundle,
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "observation_v2_scenes") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: sceneOrder,
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "observation_v2_scene_observations") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: observationOrder,
+              }),
+            }),
+          }),
+        };
+      }
+
+      return {};
+    });
+
+    const repository = new SupabaseObservationV2Repository({ from } as never);
+    const loaded = await repository.getByBundleId("bundle-1", "user-1", { includeArchived: true });
+
+    expect(archivedFilter).not.toHaveBeenCalled();
+    expect(loaded?.status).toBe("archived");
+    expect(loaded?.archivedAt).toBe("2026-06-12T10:00:00.000Z");
+  });
+
+  it("archives an active bundle through the atomic rpc and returns the archived lifecycle state", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        id: "bundle-1",
+        user_id: "user-1",
+        reflective_object_id: "obj-1",
+        source: "system_llm_extract",
+        provenance_metadata: {
+          provenanceTier: "system_extract",
+          semanticPolicyResult: "accept_with_uncertainty",
+          semanticPolicyReasons: [],
+          latentBackflowGuard: "observation_only",
+          boundaryVersion: "observation_v2_phase1",
+        },
+        bundle_uncertainty_notes: [],
+        runtime_version: "observation_v2_phase1",
+        status: "archived",
+        archived_at: "2026-06-12T10:00:00.000Z",
+        created_at: "2026-06-11T10:00:00.000Z",
+        updated_at: "2026-06-12T10:00:00.000Z",
+      },
+      error: null,
+    });
+    const sceneOrder = vi.fn().mockResolvedValue({ data: [], error: null });
+    const observationOrder = vi.fn().mockResolvedValue({ data: [], error: null });
+
+    const from = vi.fn().mockImplementation((table: string) => {
+      if (table === "observation_v2_scenes") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: sceneOrder,
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "observation_v2_scene_observations") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: observationOrder,
+              }),
+            }),
+          }),
+        };
+      }
+
+      return {};
+    });
+
+    const repository = new SupabaseObservationV2Repository({ from, rpc } as never);
+    const archived = await repository.archive("bundle-1", "user-1");
+
+    expect(rpc).toHaveBeenCalledWith("archive_observation_v2_bundle", {
+      p_bundle_id: "bundle-1",
+      p_user_id: "user-1",
+    });
+    expect(archived?.status).toBe("archived");
+    expect(archived?.archivedAt).toBe("2026-06-12T10:00:00.000Z");
   });
 });

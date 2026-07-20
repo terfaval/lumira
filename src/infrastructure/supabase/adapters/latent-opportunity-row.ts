@@ -1,6 +1,17 @@
 import type {
+  CreateLatentGenerationRunInput,
+  CreateLatentGenerationRunInvalidationEventInput,
   CreateLatentOpportunityIdentityInput,
   CreateLatentOpportunityManifestationInput,
+  LatentAuthorityProvenance,
+  LatentContextProvenance,
+  LatentExecutionProvenance,
+  LatentGenerationRun,
+  LatentGenerationRunInvalidationEvent,
+  LatentGenerationRunInvalidationReason,
+  LatentGenerationRunInvalidationSourceEntityType,
+  LatentGenerationRunInvalidationSourceLayer,
+  LatentGenerationRunStatus,
   LatentOpportunityCategory,
   LatentOpportunityEvidenceObservationRole,
   LatentOpportunityEvidenceRole,
@@ -25,8 +36,27 @@ export interface LatentOpportunityIdentityRow {
   updated_at: string;
 }
 
+export interface LatentGenerationRunRow {
+  id: string;
+  user_id: string;
+  priority_reflective_object_id: string;
+  status: string;
+  input_fingerprint: string;
+  authority_fingerprint?: string | null;
+  authority_provenance?: unknown;
+  context_provenance?: unknown;
+  execution_provenance?: unknown;
+  trigger_reason: string | null;
+  predecessor_run_id: string | null;
+  accepted_at: string | null;
+  superseded_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface LatentOpportunityManifestationRow {
   id: string;
+  generation_run_id: string;
   identity_id: string;
   user_id: string;
   priority_reflective_object_id: string;
@@ -76,6 +106,19 @@ export interface LatentOpportunityGlossaryLinkRow {
   created_at: string;
 }
 
+export interface LatentGenerationRunInvalidationEventRow {
+  id: string;
+  user_id: string;
+  priority_reflective_object_id: string;
+  target_generation_run_id: string;
+  source_layer: string;
+  source_entity_type: string;
+  source_entity_id: string;
+  source_revision: string;
+  reason: string;
+  created_at: string;
+}
+
 export interface LatentOpportunityIdentityInsertRow {
   id: string;
   user_id: string;
@@ -86,8 +129,35 @@ export interface LatentOpportunityIdentityInsertRow {
   status: LatentOpportunityStatus;
 }
 
+export interface LatentGenerationRunInsertRow {
+  id: string;
+  user_id: string;
+  priority_reflective_object_id: string;
+  status: LatentGenerationRunStatus;
+  input_fingerprint: string;
+  authority_fingerprint: string | null;
+  authority_provenance: LatentAuthorityProvenance | null;
+  context_provenance: LatentContextProvenance | null;
+  execution_provenance: LatentExecutionProvenance | null;
+  trigger_reason: string | null;
+  predecessor_run_id: string | null;
+}
+
+export interface LatentGenerationRunInvalidationEventInsertRow {
+  id: string;
+  user_id: string;
+  priority_reflective_object_id: string;
+  target_generation_run_id: string;
+  source_layer: LatentGenerationRunInvalidationSourceLayer;
+  source_entity_type: LatentGenerationRunInvalidationSourceEntityType;
+  source_entity_id: string;
+  source_revision: string;
+  reason: LatentGenerationRunInvalidationReason;
+}
+
 export interface LatentOpportunityManifestationInsertRow {
   id: string;
+  generation_run_id: string;
   identity_id: string;
   user_id: string;
   priority_reflective_object_id: string;
@@ -184,6 +254,45 @@ function parseStatus(input: string): LatentOpportunityStatus {
   return input === "archived" ? "archived" : "active";
 }
 
+function parseGenerationRunStatus(input: string): LatentGenerationRunStatus {
+  switch (input) {
+    case "pending":
+    case "current":
+    case "superseded":
+    case "empty":
+    case "no_change":
+    case "failed":
+    case "rejected":
+      return input;
+    default:
+      throw new Error(`Unsupported latent generation run status: ${input}`);
+  }
+}
+
+function parseGenerationRunInvalidationSourceLayer(input: string): LatentGenerationRunInvalidationSourceLayer {
+  if (input === "observation") {
+    return input;
+  }
+
+  throw new Error(`Unsupported latent generation run invalidation source layer: ${input}`);
+}
+
+function parseGenerationRunInvalidationSourceEntityType(input: string): LatentGenerationRunInvalidationSourceEntityType {
+  if (input === "observation_v2_bundle") {
+    return input;
+  }
+
+  throw new Error(`Unsupported latent generation run invalidation source entity type: ${input}`);
+}
+
+function parseGenerationRunInvalidationReason(input: string): LatentGenerationRunInvalidationReason {
+  if (input === "observation_bundle_archived") {
+    return input;
+  }
+
+  throw new Error(`Unsupported latent generation run invalidation reason: ${input}`);
+}
+
 function parseSalienceBand(input: string): LatentOpportunitySalienceBand {
   switch (input) {
     case "low":
@@ -239,6 +348,14 @@ function parseRecord(input: unknown): Record<string, unknown> {
   return input as Record<string, unknown>;
 }
 
+function parseNullableRecord(input: unknown): Record<string, unknown> | null {
+  if (input == null) {
+    return null;
+  }
+
+  return parseRecord(input);
+}
+
 function parseStringArray(input: unknown): string[] {
   if (!Array.isArray(input)) {
     return [];
@@ -259,7 +376,15 @@ function buildIdentityId(input: CreateLatentOpportunityIdentityInput): string {
   return input.id ?? crypto.randomUUID();
 }
 
+function buildGenerationRunId(input: CreateLatentGenerationRunInput): string {
+  return input.id ?? crypto.randomUUID();
+}
+
 function buildManifestationId(input: CreateLatentOpportunityManifestationInput): string {
+  return input.id ?? crypto.randomUUID();
+}
+
+function buildGenerationRunInvalidationEventId(input: CreateLatentGenerationRunInvalidationEventInput): string {
   return input.id ?? crypto.randomUUID();
 }
 
@@ -277,11 +402,30 @@ export function toLatentOpportunityIdentityInsertRow(
   };
 }
 
+export function toLatentGenerationRunInsertRow(
+  input: CreateLatentGenerationRunInput,
+): LatentGenerationRunInsertRow {
+  return {
+    id: buildGenerationRunId(input),
+    user_id: input.userId,
+    priority_reflective_object_id: input.priorityReflectiveObjectId,
+    status: input.status,
+    input_fingerprint: input.inputFingerprint,
+    authority_fingerprint: input.authorityFingerprint ?? null,
+    authority_provenance: input.authorityProvenance ?? null,
+    context_provenance: input.contextProvenance ?? null,
+    execution_provenance: input.executionProvenance ?? null,
+    trigger_reason: input.triggerReason ?? null,
+    predecessor_run_id: input.predecessorRunId ?? null,
+  };
+}
+
 export function toLatentOpportunityManifestationInsertRow(
   input: CreateLatentOpportunityManifestationInput,
 ): LatentOpportunityManifestationInsertRow {
   return {
     id: buildManifestationId(input),
+    generation_run_id: input.generationRunId,
     identity_id: input.identityId,
     user_id: input.userId,
     priority_reflective_object_id: input.priorityReflectiveObjectId,
@@ -294,6 +438,22 @@ export function toLatentOpportunityManifestationInsertRow(
     salience_band: input.salienceBand,
     salience_rationale: input.salienceRationale ?? {},
     construction_metadata: input.constructionMetadata ?? {},
+  };
+}
+
+export function toLatentGenerationRunInvalidationEventInsertRow(
+  input: CreateLatentGenerationRunInvalidationEventInput,
+): LatentGenerationRunInvalidationEventInsertRow {
+  return {
+    id: buildGenerationRunInvalidationEventId(input),
+    user_id: input.userId,
+    priority_reflective_object_id: input.priorityReflectiveObjectId,
+    target_generation_run_id: input.targetGenerationRunId,
+    source_layer: input.sourceLayer,
+    source_entity_type: input.sourceEntityType,
+    source_entity_id: input.sourceEntityId,
+    source_revision: input.sourceRevision,
+    reason: input.reason,
   };
 }
 
@@ -391,6 +551,7 @@ export function fromLatentOpportunityRows(
 
   return {
     id: manifestationRow.id,
+    generationRunId: manifestationRow.generation_run_id,
     identityId: manifestationRow.identity_id,
     userId: manifestationRow.user_id,
     priorityReflectiveObjectId: manifestationRow.priority_reflective_object_id,
@@ -428,5 +589,42 @@ export function fromLatentOpportunityRows(
       role: parseGlossaryLinkRole(row.role),
       createdAt: row.created_at,
     })),
+  };
+}
+
+export function fromLatentGenerationRunRow(row: LatentGenerationRunRow): LatentGenerationRun {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    priorityReflectiveObjectId: row.priority_reflective_object_id,
+    status: parseGenerationRunStatus(row.status),
+    inputFingerprint: row.input_fingerprint,
+    authorityFingerprint: row.authority_fingerprint ?? null,
+    authorityProvenance: parseNullableRecord(row.authority_provenance) as LatentAuthorityProvenance | null,
+    contextProvenance: parseNullableRecord(row.context_provenance) as LatentContextProvenance | null,
+    executionProvenance: parseNullableRecord(row.execution_provenance) as LatentExecutionProvenance | null,
+    triggerReason: row.trigger_reason,
+    predecessorRunId: row.predecessor_run_id,
+    acceptedAt: row.accepted_at,
+    supersededAt: row.superseded_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function fromLatentGenerationRunInvalidationEventRow(
+  row: LatentGenerationRunInvalidationEventRow,
+): LatentGenerationRunInvalidationEvent {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    priorityReflectiveObjectId: row.priority_reflective_object_id,
+    targetGenerationRunId: row.target_generation_run_id,
+    sourceLayer: parseGenerationRunInvalidationSourceLayer(row.source_layer),
+    sourceEntityType: parseGenerationRunInvalidationSourceEntityType(row.source_entity_type),
+    sourceEntityId: row.source_entity_id,
+    sourceRevision: row.source_revision,
+    reason: parseGenerationRunInvalidationReason(row.reason),
+    createdAt: row.created_at,
   };
 }

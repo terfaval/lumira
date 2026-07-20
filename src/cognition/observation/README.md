@@ -1,9 +1,9 @@
 # Observation Cognition
 
-## Legacy Backend V1 Quarantine
+## Backend V2 Authority
 
-This folder contains the current observation cognition implementation that still feeds protected surfaces.
+This folder contains the active Backend V2 Observation cognition implementation.
 
-It is not clean-room Backend V2 authority.
+Its extractors, discovery layers, and downstream projections operate on Observation V2 bundles for the native write path and for canonical Observation consumption in Backend V2 cognition.
 
-Do not extend these modules as the future Backend V2 backend root. Treat them as disposable legacy scaffolding until a canonical Observation V2 implementation replaces them.
+Compatibility projections may still exist where older protected surfaces require them, but those projections are transitional support rather than Observation authority.

@@ -6,9 +6,12 @@ import {
 } from "@/src/domain/responses/http-contract";
 import { DEV_FALLBACK_HEADER, resolveRequestUserContext } from "@/src/infrastructure/supabase/auth/resolve-request-user-context";
 import { createOpeningRepository } from "@/src/infrastructure/supabase/repositories/create-opening-repository";
+import { createReflectionCandidateRepository } from "@/src/infrastructure/supabase/repositories/create-reflection-candidate-repository";
+import { createReflectionRepository } from "@/src/infrastructure/supabase/repositories/create-reflection-repository";
 import { createResponseRepository } from "@/src/infrastructure/supabase/repositories/create-response-repository";
 import { createThreadRepository } from "@/src/infrastructure/supabase/repositories/create-thread-repository";
 import { hasObjectLineageOverlap, resolveReusableThreadId } from "@/src/reflective-space/resolve-opening-thread";
+import type { ReflectionCandidate } from "@/src/domain/reflection-candidates/types";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -44,6 +47,66 @@ function parseResponseAssociationRemovalTarget(payload: unknown): { ok: true; re
   }
 
   return { ok: true, responseId };
+}
+
+interface ReflectionAdmissionRequest {
+  candidateId: string;
+  statement: string;
+  pattern: string[];
+}
+
+function parseReflectionAdmissionRequest(
+  payload: unknown,
+): { ok: true; value: ReflectionAdmissionRequest | null } | { ok: false; error: string } {
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+    return { ok: false, error: "Request body must be an object." };
+  }
+
+  const record = payload as Record<string, unknown>;
+  if (record.reflectionAdmission === undefined) {
+    return { ok: true, value: null };
+  }
+
+  if (
+    typeof record.reflectionAdmission !== "object" ||
+    record.reflectionAdmission === null ||
+    Array.isArray(record.reflectionAdmission)
+  ) {
+    return { ok: false, error: "reflectionAdmission must be an object." };
+  }
+
+  const admission = record.reflectionAdmission as Record<string, unknown>;
+  const candidateId = typeof admission.candidateId === "string" ? admission.candidateId.trim() : "";
+  if (!candidateId) {
+    return { ok: false, error: "reflectionAdmission.candidateId is required." };
+  }
+
+  const statement = typeof admission.statement === "string" ? admission.statement.trim() : "";
+  if (!statement) {
+    return { ok: false, error: "reflectionAdmission.statement is required." };
+  }
+
+  if (!Array.isArray(admission.pattern)) {
+    return { ok: false, error: "reflectionAdmission.pattern must be an array." };
+  }
+
+  const pattern = admission.pattern
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
+  if (pattern.length === 0) {
+    return { ok: false, error: "reflectionAdmission.pattern must contain at least one item." };
+  }
+
+  return {
+    ok: true,
+    value: {
+      candidateId,
+      statement,
+      pattern,
+    },
+  };
 }
 
 export async function GET(request: Request, context: RouteParams) {
@@ -94,6 +157,10 @@ export async function POST(request: Request, context: RouteParams) {
   const parsedAssociation = parseCreateOpeningResponseAssociationInput(payload, openingId, userId);
   if (!parsedAssociation.ok) {
     return NextResponse.json({ error: parsedAssociation.error }, { status: 400 });
+  }
+  const parsedReflectionAdmission = parseReflectionAdmissionRequest(payload);
+  if (!parsedReflectionAdmission.ok) {
+    return NextResponse.json({ error: parsedReflectionAdmission.error }, { status: 400 });
   }
 
   const threadRepository = createThreadRepository();
@@ -184,11 +251,79 @@ export async function POST(request: Request, context: RouteParams) {
     threadId: resolvedThreadId,
   });
 
+  const reflectionCandidateRepository = createReflectionCandidateRepository();
+  const reflectionRepository = createReflectionRepository();
+  let reflectionCandidate;
+  let reflection = null;
+
+  try {
+    const existingSourceCandidate = await reflectionCandidateRepository.getCandidateBySourceResponse(response.id, userId);
+    if (existingSourceCandidate) {
+      reflectionCandidate = existingSourceCandidate;
+    } else {
+      const threadCandidates = await reflectionCandidateRepository.listCandidatesByThread(resolvedThreadId, userId);
+      const provisionalThreadCandidates = threadCandidates.filter((candidate) => candidate.state === "provisional");
+
+      if (provisionalThreadCandidates.length === 1) {
+        reflectionCandidate = provisionalThreadCandidates[0];
+        await reflectionCandidateRepository.appendEvidence({
+          userId,
+          candidateId: reflectionCandidate.id,
+          responseId: response.id,
+          openingId,
+        });
+      } else {
+        // If more than one provisional candidate exists on the thread, this slice does not guess.
+        // It falls back to creating a fresh provisional candidate for the new response lineage.
+        reflectionCandidate = await reflectionCandidateRepository.createCandidate({
+          userId,
+          threadId: resolvedThreadId,
+          sourceResponseId: response.id,
+          sourceOpeningId: openingId,
+          sourceReflectiveObjectIds: openingSourceObjectIds,
+        });
+      }
+    }
+
+  } catch {
+    return NextResponse.json({ error: "Failed to create reflection candidate." }, { status: 500 });
+  }
+
+  if (parsedReflectionAdmission.value) {
+    const admission = parsedReflectionAdmission.value;
+    const admissionCandidate = await reflectionCandidateRepository.getCandidateById(admission.candidateId, userId);
+    if (!admissionCandidate) {
+      return NextResponse.json({ error: "Reflection admission candidate not found." }, { status: 404 });
+    }
+    if (admissionCandidate.threadId !== resolvedThreadId) {
+      return NextResponse.json({ error: "Reflection admission candidate does not belong to the resolved thread." }, { status: 400 });
+    }
+    if (!matchesReflectionCandidate(reflectionCandidate, admissionCandidate.id)) {
+      return NextResponse.json(
+        { error: "Reflection admission candidate must match the candidate selected for this response." },
+        { status: 400 },
+      );
+    }
+
+    try {
+      reflection = await reflectionRepository.admitReflection({
+        userId,
+        candidateId: admissionCandidate.id,
+        statement: admission.statement,
+        pattern: admission.pattern,
+      });
+    } catch {
+      return NextResponse.json({ error: "Failed to admit reflection." }, { status: 500 });
+    }
+  }
+
   return NextResponse.json(
     {
       response,
       activationEvent,
       openingResponseAssociation,
+      reflectionCandidate,
+      reflection,
       createdThread,
       createdThreadObjectAssociations,
       createdResponseThreadAssociation,
@@ -230,4 +365,8 @@ export async function DELETE(request: Request, context: RouteParams) {
   }
 
   return NextResponse.json({ removed: true });
+}
+
+function matchesReflectionCandidate(candidate: ReflectionCandidate | undefined, candidateId: string) {
+  return Boolean(candidate && candidate.id === candidateId);
 }

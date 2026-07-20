@@ -2,9 +2,10 @@
 
 ## Legacy Backend V1 Quarantine
 
-The current responses/reflections backend/domain shape is legacy compatibility scaffolding.
+This area still carries compatibility-era structure, but parts of it remain active runtime authority for the current Backend V2 reflection flow.
 
-It remains only to preserve protected surfaces and must not be treated as the starting point for Backend V2 reflection persistence.
+It preserves protected surfaces including active reflective response authorship and the response-side boundary that feeds Reflection Candidate and Reflection admission.
+It should not be treated as a dead or ignorable compatibility layer, but it also should not be treated as the clean-room architectural root for all Backend V2 persistence decisions.
 
 Reflective responses are user-authored reflective artifacts.
 They preserve evolving meaning traces and continuity context.

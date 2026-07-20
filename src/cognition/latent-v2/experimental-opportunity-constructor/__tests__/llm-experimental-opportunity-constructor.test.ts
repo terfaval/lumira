@@ -87,6 +87,9 @@ function createExperimentalPacket(): ExperimentalOpportunityConstructorInputPack
       existingOpportunityContext: {
         identities: [],
       },
+      reflectionContext: {
+        reflections: [],
+      },
     },
     discoveryResult: {
       generationContext: {

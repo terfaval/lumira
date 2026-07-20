@@ -49,6 +49,7 @@ describe("composeReflectiveSpaceViewport", () => {
         create: async () => { throw new Error("not used"); },
         getByBundleId: async () => null,
         getByReflectiveObjectId: async () => null,
+        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -266,6 +267,7 @@ describe("composeReflectiveSpaceViewport", () => {
         create: async () => { throw new Error("not used"); },
         getByBundleId: async () => null,
         getByReflectiveObjectId: async () => null,
+        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -388,6 +390,7 @@ describe("composeReflectiveSpaceViewport", () => {
         create: async () => { throw new Error("not used"); },
         getByBundleId: async () => null,
         getByReflectiveObjectId: async () => null,
+        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -525,6 +528,7 @@ describe("composeReflectiveSpaceViewport", () => {
         create: async () => { throw new Error("not used"); },
         getByBundleId: async () => null,
         getByReflectiveObjectId: async () => null,
+        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -660,6 +664,7 @@ describe("composeReflectiveSpaceViewport", () => {
         create: async () => { throw new Error("not used"); },
         getByBundleId: async () => null,
         getByReflectiveObjectId: async () => null,
+        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],

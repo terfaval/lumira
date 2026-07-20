@@ -1,12 +1,14 @@
 # Observation Domain
 
-## Legacy Backend V1 Quarantine
+## Backend V2 Authority
 
-The current Observation backend/domain shape remains present only so protected surfaces continue to compile.
+This folder contains the active Backend V2 Observation domain model.
 
-It is not active Backend V2 authority.
+Observation V2 is the active Observation implementation authority for native construction, canonical bundle semantics, authoritative persistence, and authoritative retrieval.
 
-In particular, any path that flattens scene-first Observation V2 output into the current summary/fragment persistence substrate is legacy-only and disposable.
+Compatibility paths that flatten scene-first Observation V2 bundles into summary/fragment-era shapes remain only as transitional support for protected manual or historical surfaces.
+
+Those compatibility paths do not define Observation architecture or ownership.
 
 Observation is descriptive orientation only.
 

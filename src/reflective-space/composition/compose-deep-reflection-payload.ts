@@ -1,14 +1,16 @@
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
-import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
 import type { OpeningRepository } from "@/src/domain/openings/contracts";
 import type { Opening, OpeningTone, OpeningType } from "@/src/domain/openings/types";
+import type { ReflectionRepository } from "@/src/domain/reflections/contracts";
+import type { Reflection } from "@/src/domain/reflections/types";
 import type { ReflectiveResponseRepository } from "@/src/domain/responses/contracts";
 import type { ThreadRepository } from "@/src/domain/threads/contracts";
 import { composeOpeningDialogueWindow } from "@/src/reflective-space/composition/compose-opening-dialogue-window";
 
 export type DeepReflectionCenterStatus = "new" | "continued" | "reentered";
 export type DeepReflectionThreadResolution = "created" | "reused" | "reentered";
+const MAX_RELATED_REFLECTIONS = 2;
 
 export interface DeepReflectionPayload {
   center: {
@@ -61,6 +63,16 @@ export interface DeepReflectionPayload {
       summary: string;
       details: string[];
     }>;
+    relatedMaterial: Array<{
+      itemId: string;
+      kind: "prior_reflection" | "thread_continuity" | "related_opening" | "related_dream";
+      label: string;
+      excerpt: string | null;
+      target: {
+        href: string;
+        routeStatus: "implemented" | "placeholder" | "missing";
+      } | null;
+    }>;
   };
   alternateOpenings: {
     items: Array<{
@@ -82,10 +94,9 @@ export interface ComposeDeepReflectionPayloadInput {
   threadRepository: ThreadRepository;
   openingRepository: OpeningRepository;
   responseRepository: ReflectiveResponseRepository;
-  observationRepository: ObservationRepository;
-  observationV2Repository: ObservationV2Repository;
   glossaryRepository: GlossaryRepository;
   latentOpportunityRepository: LatentOpportunityRepository;
+  reflectionRepository: ReflectionRepository;
 }
 
 function toSupportingFragmentCard(
@@ -176,6 +187,32 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
   return ordered;
 }
 
+function compareReflectionsByAdmittedAtDescending(left: Reflection, right: Reflection): number {
+  if (left.admittedAt !== right.admittedAt) {
+    return right.admittedAt.localeCompare(left.admittedAt);
+  }
+
+  return left.id.localeCompare(right.id);
+}
+
+function toRelatedMaterial(reflections: Reflection[], input: {
+  threadId: string;
+  reflectiveObjectId: string;
+}) {
+  return reflections
+    .filter((reflection) => reflection.threadId === input.threadId)
+    .filter((reflection) => reflection.sourceReflectiveObjectIds.includes(input.reflectiveObjectId))
+    .sort(compareReflectionsByAdmittedAtDescending)
+    .slice(0, MAX_RELATED_REFLECTIONS)
+    .map((reflection) => ({
+      itemId: `reflection:${reflection.id}`,
+      kind: "prior_reflection" as const,
+      label: reflection.statement,
+      excerpt: reflection.pattern.length > 0 ? reflection.pattern.join(" · ") : null,
+      target: null,
+    }));
+}
+
 export async function composeDeepReflectionPayload(
   input: ComposeDeepReflectionPayloadInput,
 ): Promise<DeepReflectionPayload | null> {
@@ -189,7 +226,7 @@ export async function composeDeepReflectionPayload(
     return null;
   }
 
-  const [{ dialogues }, recentOpenings, glossaryTerms] = await Promise.all([
+  const [{ dialogues }, recentOpenings, glossaryTerms, reflections] = await Promise.all([
     composeOpeningDialogueWindow({
       userId: input.userId,
       threadId: input.threadId,
@@ -199,6 +236,7 @@ export async function composeDeepReflectionPayload(
     }),
     input.openingRepository.listRecentOpeningsByUser(input.userId, 12),
     input.glossaryRepository.listTermsByReflectiveObject(input.userId, input.reflectiveObjectId),
+    input.reflectionRepository.listReflectionsByUser(input.userId),
   ]);
 
   const chronologicalDialogues = [...dialogues].sort(
@@ -299,6 +337,10 @@ export async function composeDeepReflectionPayload(
     })
     .filter((opening): opening is NonNullable<typeof opening> => opening !== null)
     .slice(0, 3);
+  const relatedMaterial = toRelatedMaterial(reflections, {
+    threadId: input.threadId,
+    reflectiveObjectId: input.reflectiveObjectId,
+  });
 
   const centerStatus = input.centerStatus ?? "continued";
 
@@ -329,6 +371,7 @@ export async function composeDeepReflectionPayload(
     },
     nearbyContext: {
       cards,
+      relatedMaterial,
     },
     alternateOpenings: {
       items: alternateOpenings,

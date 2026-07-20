@@ -235,7 +235,7 @@ export function toObservationV2SceneInsertRows(bundle: ObservationV2Bundle): Obs
     position: scene.position,
     summary: scene.summary,
     boundary_signals: scene.boundaryReasoning,
-    uncertainty_notes: [],
+    uncertainty_notes: parseStringArray(scene.uncertaintyNotes),
     evidence_context: scene.evidenceContext,
     derived_structures: scene.derived,
   }));
@@ -272,6 +272,7 @@ export function fromObservationV2Rows(
       position: sceneRow.position,
       summary: sceneRow.summary,
       boundaryReasoning: parseBoundarySignals(sceneRow.boundary_signals) as ObservationV2Bundle["scenes"][number]["boundaryReasoning"],
+      uncertaintyNotes: parseStringArray(sceneRow.uncertainty_notes),
       evidenceContext: parseEvidenceRef(sceneRow.evidence_context),
       observations: observationRows
         .filter((row) => row.scene_row_id === sceneRow.id)
@@ -291,6 +292,8 @@ export function fromObservationV2Rows(
     reflectiveObjectId: bundleRow.reflective_object_id,
     userId: bundleRow.user_id,
     source: bundleRow.source,
+    status: bundleRow.status,
+    archivedAt: bundleRow.archived_at,
     provenance: parseProvenance(bundleRow.provenance_metadata),
     uncertaintyNotes: parseStringArray(bundleRow.bundle_uncertainty_notes),
     runtimeVersion: bundleRow.runtime_version,

@@ -1,4 +1,4 @@
-import type { ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationV2GetOptions, ObservationV2Repository } from "@/src/domain/observation/contracts";
 import { buildObservationV2Bundle, type ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
 import type { UserId } from "@/src/shared/types";
 import type { SupabaseInfrastructureClient } from "@/src/infrastructure/supabase/client/create-supabase-infrastructure-client";
@@ -15,6 +15,7 @@ import {
 const BUNDLES_TABLE = "observation_v2_bundles";
 const SCENES_TABLE = "observation_v2_scenes";
 const SCENE_OBSERVATIONS_TABLE = "observation_v2_scene_observations";
+const ARCHIVE_BUNDLE_RPC = "archive_observation_v2_bundle";
 
 export class SupabaseObservationV2Repository implements ObservationV2Repository {
   constructor(private readonly client: SupabaseInfrastructureClient) {}
@@ -56,14 +57,12 @@ export class SupabaseObservationV2Repository implements ObservationV2Repository 
     return loaded;
   }
 
-  async getByBundleId(bundleId: string, userId: UserId): Promise<ObservationV2Bundle | null> {
-    const { data, error } = await this.client
-      .from(BUNDLES_TABLE)
-      .select("*")
-      .eq("id", bundleId)
-      .eq("user_id", userId)
-      .is("archived_at", null)
-      .maybeSingle<ObservationV2BundleRow>();
+  async getByBundleId(
+    bundleId: string,
+    userId: UserId,
+    options?: ObservationV2GetOptions,
+  ): Promise<ObservationV2Bundle | null> {
+    const { data, error } = await this.queryBundleByColumn("id", bundleId, userId, options);
 
     if (error) {
       throw new Error(`Failed to load observation v2 bundle: ${error.message}`);
@@ -76,14 +75,12 @@ export class SupabaseObservationV2Repository implements ObservationV2Repository 
     return this.loadBundleGraph(data);
   }
 
-  async getByReflectiveObjectId(reflectiveObjectId: string, userId: UserId): Promise<ObservationV2Bundle | null> {
-    const { data, error } = await this.client
-      .from(BUNDLES_TABLE)
-      .select("*")
-      .eq("reflective_object_id", reflectiveObjectId)
-      .eq("user_id", userId)
-      .is("archived_at", null)
-      .maybeSingle<ObservationV2BundleRow>();
+  async getByReflectiveObjectId(
+    reflectiveObjectId: string,
+    userId: UserId,
+    options?: ObservationV2GetOptions,
+  ): Promise<ObservationV2Bundle | null> {
+    const { data, error } = await this.queryBundleByColumn("reflective_object_id", reflectiveObjectId, userId, options);
 
     if (error) {
       throw new Error(`Failed to load observation v2 bundle by reflective object: ${error.message}`);
@@ -94,6 +91,42 @@ export class SupabaseObservationV2Repository implements ObservationV2Repository 
     }
 
     return this.loadBundleGraph(data);
+  }
+
+  async archive(bundleId: string, userId: UserId): Promise<ObservationV2Bundle | null> {
+    const { data, error } = await this.client.rpc(ARCHIVE_BUNDLE_RPC, {
+      p_bundle_id: bundleId,
+      p_user_id: userId,
+    });
+
+    if (error) {
+      throw new Error(`Failed to archive observation v2 bundle: ${error.message}`);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return this.loadBundleGraph(data as ObservationV2BundleRow);
+  }
+
+  private queryBundleByColumn(
+    column: "id" | "reflective_object_id",
+    value: string,
+    userId: UserId,
+    options?: ObservationV2GetOptions,
+  ) {
+    let query = this.client
+      .from(BUNDLES_TABLE)
+      .select("*")
+      .eq(column, value)
+      .eq("user_id", userId);
+
+    if (!options?.includeArchived) {
+      query = query.is("archived_at", null);
+    }
+
+    return query.maybeSingle<ObservationV2BundleRow>();
   }
 
   private async loadBundleGraph(bundleRow: ObservationV2BundleRow): Promise<ObservationV2Bundle> {

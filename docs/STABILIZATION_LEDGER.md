@@ -58,6 +58,27 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-07-04 - Reflection Candidate Evidence Accumulation Slice IF-REF-002A
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations/20260704_0001_reflection_candidate_evidence.sql`
+  - `src/domain/reflection-candidates/types.ts`
+  - `src/domain/reflection-candidates/contracts.ts`
+  - `src/infrastructure/supabase/adapters/reflection-candidate-row.ts`
+  - `src/infrastructure/supabase/repositories/reflection-candidate-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/reflection-candidate-supabase-repository.test.ts`
+  - `app/api/openings/[id]/responses/route.ts`
+  - `app/api/openings/[id]/responses/__tests__/route.test.ts`
+  - `docs/superpowers/plans/2026-07-04-if-ref-002a-candidate-evidence-plan.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/reflection-candidate-supabase-repository.test.ts app/api/openings/[id]/responses/__tests__/route.test.ts` -> pass (`2` files, `14` tests)
+- Notes:
+  - Added a dedicated `reflection_candidate_evidence` relation so continued reflective work can accumulate provenance without overloading the provisional candidate row.
+  - Extended the reflective response write boundary to append evidence only when the target candidate is unambiguous at the reused thread boundary.
+  - Preserved conservative ambiguity handling: when multiple provisional candidates exist on a thread, the runtime does not guess and instead creates a fresh provisional candidate for the new response lineage.
+
 ## 2026-06-22 - Observation V2 Stabilization Phase 3 Phenomenology & Metacognition Capture
 
 - Phase: BUILD
@@ -3773,3 +3794,475 @@ Verification references:
   - Introduced a runtime-only `ContinuityHypothesis` domain contract so cross-dream recurrence is represented as an explicit advisory aggregation unit instead of only as candidate decoration.
   - Kept candidate rows dream-local and persistence-neutral while attaching hypothesis-backed visibility summaries to projected candidates.
   - Added conservative grouping rules: prefer `identityKey` when present, otherwise fall back to `sourceCategory + normalizedKey`, and mark fallback-based hypotheses explicitly.
+
+## 2026-07-04 - IF-REF-002B Refinement - Reflection Admission Boundary Hardening
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/api/openings/[id]/responses/route.ts`
+  - `app/api/openings/[id]/responses/__tests__/route.test.ts`
+  - `src/domain/reflection-candidates/contracts.ts`
+  - `src/domain/reflection-candidates/types.ts`
+  - `src/domain/reflections/contracts.ts`
+  - `src/infrastructure/supabase/adapters/reflection-candidate-row.ts`
+  - `src/infrastructure/supabase/repositories/reflection-candidate-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/reflection-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/reflection-candidate-supabase-repository.test.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/reflection-supabase-repository.test.ts`
+  - `supabase/migrations/20260704_0003_reflection_admission.sql`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run app/api/openings/[id]/responses/__tests__/route.test.ts src/infrastructure/supabase/repositories/__tests__/reflection-candidate-supabase-repository.test.ts src/infrastructure/supabase/repositories/__tests__/reflection-supabase-repository.test.ts` -> pass (`3` files, `20` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> not run; ticket validation was explicitly limited to focused route/repository tests plus typecheck when required
+- Notes:
+  - Moved reflection admission to a single repository-level RPC so reflection creation and candidate archival cannot diverge at the route boundary.
+  - Added explicit archived-candidate and candidate-evidence read seams so admitted reflection lineage remains recoverable after archival.
+  - Split admission failure handling from candidate-creation failure handling without expanding admission meaning beyond `IF-REF-002B`.
+
+## 2026-07-07 - IF-REF-005 - Reflection Repository Authority Consolidation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/reflections/contracts.ts`
+  - `src/domain/reflections/types.ts`
+  - `src/infrastructure/supabase/adapters/reflection-row.ts`
+  - `src/infrastructure/supabase/repositories/reflection-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/reflection-supabase-repository.test.ts`
+  - `src/reflective-space/composition/compose-deep-reflection-payload.ts`
+  - `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`
+  - `app/objects/[objectId]/reflect/[threadId]/page.tsx`
+  - `app/api/openings/[id]/responses/__tests__/route.test.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+  - `src/domain/responses/README.md`
+  - `src/reflective-space/README.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/reflection-supabase-repository.test.ts app/api/openings/[id]/responses/__tests__/route.test.ts src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts` -> pass (`4` files, `34` tests)
+  - `npx.cmd tsc --noEmit` -> fails on previously accepted Latent experimental fixture debt: missing `reflectionContext` in `OpportunityConstructorInputPacket` fixtures under `src/cognition/latent-v2/experimental-*` and `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-07T10-53-51-185Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Removed the obsolete direct Reflection creation seam so active repository authority now centers on the admitted production boundary.
+  - Removed unused Deep Reflection composition dependencies without changing payload semantics or consumer behavior.
+  - Updated repository-facing README files so active runtime authority is described truthfully without rewriting constitutional doctrine or historical context.
+
+## 2026-07-07 - S-01A Observation Repository Authority Alignment
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/observation/README.md`
+  - `src/cognition/observation/README.md`
+  - `docs/v2-build/observation/Observation-V2-Ownership-Implementation-Plan.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-07T16-55-42-313Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Replaced outdated Observation quarantine language with conservative authority language that matches the live V2 write, persistence, retrieval, and downstream cognition seams.
+  - Reframed the ownership implementation plan's draft-time repository assessment as historical context and added a current-state note so contributors do not read old cutover analysis as live authority.
+  - Preserved compatibility as transitional support and left remaining Observation stabilization items in stewardship unchanged.
+
+## 2026-07-08 - S-01E Observation Lifecycle Completion
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/observation/contracts.ts`
+  - `src/domain/observation/v2-runtime.ts`
+  - `src/domain/observation/__tests__/v2-runtime.test.ts`
+  - `src/infrastructure/supabase/adapters/observation-v2-row.ts`
+  - `src/infrastructure/supabase/adapters/__tests__/observation-v2-row.test.ts`
+  - `src/infrastructure/supabase/repositories/observation-v2-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/observation-v2-supabase-repository.test.ts`
+  - `supabase/migrations/20260708_0001_observation_v2_archive_visibility.sql`
+  - Observation V2 repository test doubles updated for contract parity in:
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/discovery/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- --run src/domain/observation/__tests__/v2-runtime.test.ts src/infrastructure/supabase/adapters/__tests__/observation-v2-row.test.ts src/infrastructure/supabase/repositories/__tests__/observation-v2-supabase-repository.test.ts src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts` -> pass (`5` files, `20` tests)
+  - `npm.cmd run typecheck` -> fails on previously known unrelated Latent `reflectionContext` fixture drift in:
+    - `src/cognition/latent-v2/experimental-construction-handoff/__tests__/handoff-harness.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/experimental-opportunity-constructor.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/llm-experimental-opportunity-constructor.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/regression.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-08T09-25-41-283Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Realized the remaining Observation-owned lifecycle as archive semantics rather than introducing supersession or version-transition machinery unsupported by the live repository.
+  - Exposed persisted Observation V2 lifecycle metadata (`status`, `archivedAt`) in the native contract while preserving active-only default reads for downstream consumers.
+  - Added an explicit archived-read path and widened bundle select visibility at the policy layer so archived Observation bundles remain retrievable when lifecycle work explicitly asks for them.
+
+## 2026-07-09 - G-01B Candidate Identity Matching Authority
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts`
+  - `supabase/migrations/20260709_0001_glossary_candidate_identity_authority.sql`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts` -> pass (`1` file, `15` tests)
+  - `npm.cmd run typecheck` -> fails on previously known unrelated Latent `reflectionContext` fixture drift in:
+    - `src/cognition/latent-v2/experimental-construction-handoff/__tests__/handoff-harness.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/experimental-opportunity-constructor.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/llm-experimental-opportunity-constructor.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/regression.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-09T11-04-22-362Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Candidate upsert now prefers `identity_key` when present and only falls back to `normalized_key` for legacy candidate rows that still have null identity metadata.
+  - Confirmed continuity authority remains on `glossary_terms.id`; this slice does not change term resolution, appearance authority, or user confirmation boundaries.
+  - Added partial unique indexes so identity-backed candidates and legacy normalized-only candidates can coexist without collapsing distinct candidate identities.
+
+## 2026-07-09 - G-01C Glossary Note Authority Cleanup
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/glossary/types.ts`
+  - `src/domain/glossary/http-contract.ts`
+  - `src/infrastructure/supabase/adapters/glossary-row.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `src/cognition/anchor-v1/constructor/input-packet-composer.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/input-packet-composer.ts`
+  - `src/reflective-space/composition/compose-homepage-orientation-payload.ts`
+  - focused tests in:
+    - `src/domain/glossary/__tests__/http-contract.test.ts`
+    - `src/infrastructure/supabase/adapters/__tests__/glossary-row.test.ts`
+    - `src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts`
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/domain/glossary/__tests__/http-contract.test.ts src/infrastructure/supabase/adapters/__tests__/glossary-row.test.ts src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts` -> pass (`6` files, `59` tests)
+  - `npm.cmd run typecheck` -> fails on previously known unrelated Latent `reflectionContext` fixture drift in:
+    - `src/cognition/latent-v2/experimental-construction-handoff/__tests__/handoff-harness.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/experimental-opportunity-constructor.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/llm-experimental-opportunity-constructor.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/regression.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-09T11-26-37-152Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - `generalNote` now acts as the authoritative Continuity Entity note in parser, adapter, repository, and local downstream reader behavior.
+  - `notes` remains only as a compatibility mirror of the authoritative note value and is backfilled from legacy note-only rows when `general_note` is absent.
+  - This slice does not change candidate identity authority, continuity entity identity, appearance ownership, or role-level continuity behavior.
+
+## 2026-07-09 - G-01D Glossary Dead Legacy Cleanup
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/glossary/contracts.ts`
+  - `src/infrastructure/supabase/repositories/glossary-supabase-repository.ts`
+  - `src/infrastructure/persistence/README.md`
+  - `src/infrastructure/persistence/glossary-store.ts`
+  - focused contract-consumer test doubles in:
+    - `app/api/reflective-objects/[id]/latent-snapshots/__tests__/route.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - Repository caller audit before deletion:
+    - `rg -n "glossary-store" src app` -> only `src/infrastructure/persistence/README.md`
+    - `rg -n "\brenameTerm\b" src app` -> repository implementation plus test doubles only; no runtime callers
+    - `rg -n "\bensureGlossaryTermForPinnedCandidate\b" src app` -> private method definition only
+  - `npm.cmd test -- --run src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts app/api/reflective-objects/[id]/latent-snapshots/__tests__/route.test.ts src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts` -> pass (`5` files, `41` tests)
+  - `npm.cmd run typecheck` -> fails on previously known unrelated Latent `reflectionContext` fixture drift in:
+    - `src/cognition/latent-v2/experimental-construction-handoff/__tests__/handoff-harness.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/experimental-opportunity-constructor.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/llm-experimental-opportunity-constructor.test.ts`
+    - `src/cognition/latent-v2/experimental-opportunity-constructor/__tests__/regression.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - Additional broader affected-module test attempt surfaced the same unrelated drift at runtime:
+    - `npm.cmd test -- --run src/infrastructure/supabase/repositories/__tests__/glossary-supabase-repository.test.ts app/api/reflective-objects/[id]/latent-snapshots/__tests__/route.test.ts src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts` -> one unrelated failure in `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` (`result.mode` expected `persisted`, received `failed`)
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-09T12-07-01-653Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Removed the obsolete glossary persistence bridge file after confirming it had no runtime callers and no compatibility responsibility beyond a stale README mention.
+  - Removed the dead `renameTerm` alias from the glossary repository contract, implementation, and dependent test doubles after confirming active runtime code uses `updateTerm`.
+  - Removed the unused private `ensureGlossaryTermForPinnedCandidate` helper after confirming no production path or compatibility seam referenced it.
+  - Preserved active glossary routes, notes compatibility behavior, continuity identity authority, and all user-facing glossary flows.
+
+## 2026-07-18 - LAT-R01A Latent Generation-Run Authority Foundation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations/20260718_0001_latent_generation_run_authority.sql`
+  - `src/shared/types.ts`
+  - `src/domain/latent-v2/types.ts`
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/types.ts`
+  - `src/infrastructure/supabase/adapters/latent-opportunity-row.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `src/runtime/orchestration/prepare-latent-opening-for-reflection.ts`
+  - focused contract-consumer and adapter tests in:
+    - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+    - `src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+    - `src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/openings/__tests__/opening-v2-constructor.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`
+    - latent experimental constructor fixture tests updated for packet-shape compatibility
+  - `src/infrastructure/persistence/README.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - Focused latent authority seam:
+    - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts` -> pass (`3` files, `22` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`139` files, `729` tests)
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-18T07-42-58-068Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added first-class Latent generation-run persistence so one dream-scoped reflective object can have one current accepted manifestation set while preserving immutable historical runs and manifestations.
+  - Migrated existing manifestations conservatively by grouping each existing `(user_id, priority_reflective_object_id)` manifestation set into one synthetic legacy current run rather than inventing unverifiable historical run boundaries.
+  - Opening preparation now reads manifestations through current generation-run authority and only falls back to initial Latent V2 generation when no current run exists.
+  - This slice intentionally does not compute canonical recomposition fingerprints from the final constructor packet, automatically supersede current runs, or persist lifecycle/split/merge history.
+
+## 2026-07-18 - LAT-R01A-C1 Generation-Run Authority Hardening
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations/20260718_0002_latent_generation_run_empty_status_hardening.sql`
+  - `src/domain/latent-v2/types.ts`
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/domain/latent-v2/errors.ts`
+  - `src/infrastructure/supabase/adapters/latent-opportunity-row.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `src/runtime/orchestration/prepare-latent-opening-for-reflection.ts`
+  - focused validation and contract fixtures in:
+    - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+    - `src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+    - `src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`
+    - `src/shared/__tests__/latent-generation-run-hardening-migration.test.ts`
+  - `src/infrastructure/persistence/README.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - Focused latent hardening seam:
+    - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts src/shared/__tests__/latent-generation-run-hardening-migration.test.ts` -> pass (`5` files, `33` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`140` files, `738` tests)
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-18T11-18-51-872Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Hardened every supported generation-run transition with write-time expected-status filtering so stale concurrent transitions fail with a domain conflict instead of reporting success from a pre-read.
+  - Reserved `no_change` for future recomposition and introduced terminal `empty` assessments for initial zero-opportunity runs so repeated page loads do not create duplicate non-authoritative runs.
+  - Restricted generation-run deletion to pending rollback only, preserving accepted and terminal runs as immutable provenance-bearing authority state.
+
+## 2026-07-18 - LAT-R01A-C2 Pending-Run Rollback Authority Fix
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - focused repository and orchestration coverage in:
+    - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+    - `src/shared/__tests__/latent-generation-run-hardening-migration.test.ts`
+  - `src/infrastructure/persistence/README.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - Focused rollback-authority seam:
+    - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts src/shared/__tests__/latent-generation-run-hardening-migration.test.ts` -> pass (`3` files, `44` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd test` -> pass (`140` files, `760` tests)
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-18T13-42-12-752Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Corrected pending-run rollback deletion so the repository now requests an exact delete count and only treats `count === 1` as confirmed success.
+  - Kept deletion rollback-only at the write boundary with `id`, `user_id`, and `status = 'pending'`, while preserving focused conflict reporting for stale or non-pending rows.
+  - Strengthened repository coverage around delete result semantics, invalid transition boundaries, and terminal-state deletion rejection; migration coverage remains explicitly static SQL-shape validation rather than behavioral execution proof.
+  - Added orchestration regression coverage showing rollback still targets only the failed pending run, preserves reused identities, and keeps the original persistence failure visible when cleanup also fails.
+
+## 2026-07-19 - LAT-R02A Latent Provenance Foundation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations/20260719_0001_latent_generation_run_provenance.sql`
+  - `src/domain/latent-v2/types.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/provenance.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/input-packet-composer.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/index.ts`
+  - `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `src/infrastructure/supabase/adapters/latent-opportunity-row.ts`
+  - focused provenance validation in:
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/provenance.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts`
+    - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+    - `src/shared/__tests__/latent-generation-run-hardening-migration.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/latent-v2/opportunity-constructor/__tests__/provenance.test.ts src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts src/shared/__tests__/latent-generation-run-hardening-migration.test.ts` -> pass (`6` files, `78` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-19T10-57-13-486Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added first-class run-level `authority_fingerprint`, `authority_provenance`, `context_provenance`, and `execution_provenance` persistence without altering legacy `input_fingerprint` meaning.
+  - Captured provenance before pending run creation so accepted current and empty runs preserve the actual constructor packet authority, context, and execution contract that produced them.
+  - Kept authority fingerprinting constitutionally narrow to Dream, Observation, confirmed Glossary, and admitted Reflection, while preserving Existing Opportunity material and truncation notes exclusively in Context Provenance.
+  - Stabilized confirmed Glossary authority ordering so canonically equivalent authority inputs produce the same SHA-256 authority fingerprint.
+  - Recorded `LAT-R02A-REV-001` as resolved and the final constitutional assessment for `LAT-R02A` as `SATISFIED`.
+  - Preserved two deferred minor debt findings as non-blocking follow-up: Execution Provenance currently duplicates live constructor execution constants, and provenance JSON deserialization still relies on unchecked shape casts.
+
+## 2026-07-19 - LAT-R02B Explicit Invalidation Event Authority
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations/20260719_0002_latent_generation_run_invalidation.sql`
+  - `src/domain/latent-v2/types.ts`
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/infrastructure/supabase/adapters/latent-opportunity-row.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/observation-v2-supabase-repository.ts`
+  - focused verification and fixture updates in:
+    - `src/shared/__tests__/latent-generation-run-invalidation-migration.test.ts`
+    - `src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts`
+    - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+    - `src/infrastructure/supabase/repositories/__tests__/observation-v2-supabase-repository.test.ts`
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`
+  - `docs/constitution/stewardship/BACKEND_V2_CONSTITUTIONAL_REALIZATION_STATE.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/shared/__tests__/latent-generation-run-invalidation-migration.test.ts` -> pass (`4` tests)
+  - `npm.cmd test -- src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts` -> pass (`7` tests)
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass (`27` tests)
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/observation-v2-supabase-repository.test.ts` -> pass (`4` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-19T15-21-11-605Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added the first immutable, deduplicated Latent invalidation-event table and repository seam without introducing mutable status or resolution fields.
+  - Moved Observation V2 archive authority to the atomic SQL RPC `archive_observation_v2_bundle`, which archives the bundle, resolves the eligible accepted target run, and inserts the invalidation request in one transaction.
+  - Target resolution now prefers accepted `current` and otherwise the latest accepted `empty` run ordered by `created_at desc, id desc`; `pending`, `failed`, `rejected`, `no_change`, and `superseded` are excluded.
+  - Preserved accepted generation runs as immutable history and intentionally did not add staleness classification, reassessment, regeneration, or Opening changes.
+
+## 2026-07-19 - LAT-R02B-C1 Superseded Empty Run Exclusion Correction
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations/20260719_0002_latent_generation_run_invalidation.sql`
+  - `src/shared/__tests__/latent-generation-run-invalidation-migration.test.ts`
+  - `docs/constitution/stewardship/BACKEND_V2_CONSTITUTIONAL_REALIZATION_STATE.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/shared/__tests__/latent-generation-run-invalidation-migration.test.ts` -> pass (`5` tests)
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/observation-v2-supabase-repository.test.ts` -> pass (`4` tests)
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass (`27` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-19T17-35-19-763Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Resolved `LAT-R02B-REV-001` by adding `superseded_at is null` to the fallback accepted `empty` target-selection branch inside `archive_observation_v2_bundle`.
+  - Preserved the existing ownership filters, deterministic ordering (`created_at desc, id desc`), archive semantics, dedupe behavior, and invalidation persistence contract.
+  - Strengthened the static migration guard so future edits fail if the fallback `empty` branch stops excluding superseded generation runs.
+
+## 2026-07-19 - LAT-R02C Assessment Reuse Resolver and Opening Seam
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/latent-v2/types.ts`
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+  - `src/runtime/orchestration/prepare-latent-opening-for-reflection.ts`
+  - `src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts`
+  - Latent repository test-double updates in:
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `docs/constitution/stewardship/BACKEND_V2_CONSTITUTIONAL_REALIZATION_STATE.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass (`34` tests)
+  - `npm.cmd test -- src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts` -> pass (`9` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-19T17-50-37-611Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Added explicit repository-level reuse resolution so accepted Latent generation runs are reusable only when accepted authority exists and no invalidation event targets that run.
+  - Preserved the established accepted-run hierarchy by resolving eligible `current` first and otherwise the latest eligible non-superseded `empty` run.
+  - Integrated Opening to consult the reuse resolver before manifestation reuse, while preserving the downstream generation path, legacy fallback path, and the separation between reuse blocking, staleness, and reassessment.
+
+## 2026-07-19 - LAT-R02C-C1 Authoritative Reuse Decision Propagation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+  - `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `src/runtime/orchestration/prepare-latent-opening-for-reflection.ts`
+  - `src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts`
+  - `docs/constitution/stewardship/BACKEND_V2_CONSTITUTIONAL_REALIZATION_STATE.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass (`35` tests)
+  - `npm.cmd test -- src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts` -> pass (`10` tests)
+  - `npm.cmd test -- src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts` -> pass (`19` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-19T19-39-52-526Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Aligned accepted-run reuse fallback selection with the R02B authority contract by enforcing deterministic `empty` selection parity on `created_at DESC, id DESC`.
+  - Made the repository reuse decision authoritative through the Opening -> Generation seam by passing an explicit guard mode that skips downstream accepted-run reuse checks after Opening has already resolved `reusable = false`.
+  - Preserved all unrelated generation semantics, persistence, manifestation creation, fallback behavior, and error handling.
+  - Made invalidation evidence selection deterministic with `created_at DESC, id DESC` without adding staleness or reassessment semantics.
+
+## 2026-07-20 - LAT-R03A Repository-Owned Authority Evaluation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/latent-v2/authority-provenance.ts`
+  - `src/domain/latent-v2/__tests__/authority-provenance.test.ts`
+  - `src/domain/latent-v2/types.ts`
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/cognition/latent-v2/opportunity-constructor/provenance.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+  - Latent repository test-double updates in:
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `docs/constitution/stewardship/BACKEND_V2_CONSTITUTIONAL_REALIZATION_STATE.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/domain/latent-v2/__tests__/authority-provenance.test.ts src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass (`2` files, `45` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-20T14-54-23-457Z.log`
+  - Build log summary: `docs/BUILD_LOG.md`
+- Notes:
+  - Extracted canonical Authority Provenance normalization and SHA-256 fingerprinting into a layer-neutral Latent domain primitive so both cognition and repository evaluation depend on the same constitutional identity semantics.
+  - Added a detached accepted/candidate authority-evidence repository seam that compares only Authority Provenance and treats caller-supplied fingerprints as derivative evidence subject to repository verification.
+  - Kept authority evaluation read-only and lifecycle-free by returning only sameness outcomes plus repository-derived fingerprints, while preserving separation from accepted-run selection, reuse resolution, staleness, reassessment, invalidation, and Opening behavior.

@@ -163,6 +163,20 @@ function createInputPacket(): OpportunityConstructorInputPacket {
         },
       ],
     },
+    reflectionContext: {
+      reflections: [
+        {
+          reflectionId: "reflection-1",
+          threadId: "thread-9",
+          sourceResponseId: "response-9",
+          sourceOpeningId: "opening-4",
+          sourceReflectiveObjectIds: ["reflective-object-0"],
+          statement: "Searching tends to keep uncertainty active across returns.",
+          pattern: ["Search", "Uncertainty", "Return"],
+          admittedAt: "2026-07-05T09:00:00.000Z",
+        },
+      ],
+    },
   };
 }
 
@@ -866,6 +880,18 @@ describe("opportunity constructor parsing, validation, and mapping", () => {
     );
     expect(prompt).toContain(
       "Do not merge a strong felt-presence-without-appearance structure into a broader transition opportunity when it is materially distinct and evidence-supported.",
+    );
+  });
+
+  it("builds a prompt that keeps reflections bounded as secondary continuity evidence", () => {
+    const prompt = buildOpportunityConstructorPrompt(createInputPacket());
+
+    expect(prompt).toContain("Use admitted reflections only as bounded secondary continuity evidence.");
+    expect(prompt).toContain(
+      "Reflections may reinforce, challenge, recontextualize, or reactivate opportunity thinking, but they must never override current-dream grounding or become direct instructions to generate opportunities.",
+    );
+    expect(prompt).toContain(
+      "Do not treat reflections as truth, recommendations, global memory, or mutable process state.",
     );
   });
 

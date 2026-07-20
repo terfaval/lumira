@@ -32,6 +32,7 @@ describe("observation v2 row adapters", () => {
           position: 0,
           summary: "A stairwell scene.",
           boundaryReasoning: [],
+          uncertaintyNotes: ["The stairwell may connect to a second landing."],
           evidenceContext: {
             snippet: "I followed someone up a stairwell.",
             spanStart: 0,
@@ -76,6 +77,7 @@ describe("observation v2 row adapters", () => {
     expect(bundleRow.provenance_metadata).toEqual(bundle.provenance);
     expect(sceneRows[0].bundle_id).toBe("bundle-1");
     expect(sceneRows[0].summary).toBe("A stairwell scene.");
+    expect(sceneRows[0].uncertainty_notes).toEqual(["The stairwell may connect to a second landing."]);
     expect(observationRows[0].bundle_id).toBe("bundle-1");
     expect(observationRows[0].evidence).toEqual(bundle.scenes[0].observations[0].evidence);
   });
@@ -111,7 +113,7 @@ describe("observation v2 row adapters", () => {
         position: 0,
         summary: "A stairwell scene.",
         boundary_signals: [],
-        uncertainty_notes: [],
+        uncertainty_notes: ["The stairwell may connect to a second landing."],
         evidence_context: {
           snippet: "I followed someone up a stairwell.",
           spanStart: 0,
@@ -160,8 +162,11 @@ describe("observation v2 row adapters", () => {
     const bundle = fromObservationV2Rows(bundleRow, sceneRows, observationRows);
 
     expect(bundle.bundleId).toBe("bundle-1");
+    expect(bundle.status).toBe("active");
+    expect(bundle.archivedAt).toBeNull();
     expect(bundle.scenes).toHaveLength(1);
     expect(bundle.scenes[0].sceneId).toBe("scene-1");
+    expect(bundle.scenes[0].uncertaintyNotes).toEqual(["The stairwell may connect to a second landing."]);
     expect(bundle.scenes[0].observations[0].observationId).toBe("obs-1");
     expect(bundle.provenance?.semanticPolicyReasons).toEqual(["llm_scene_extract"]);
   });

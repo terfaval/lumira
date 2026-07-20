@@ -91,7 +91,7 @@ function mapConfirmedTerms(
     displayLabel: term.displayLabel,
     normalizedKey: term.normalizedKey,
     termType: term.type === "concept" ? "concept" : term.type === "role" ? "other" : "motif",
-    userNotes: term.notes,
+    userNotes: term.generalNote,
     appearanceCount: term.appearanceCount,
     recentAppearanceObjectIds: [],
   }));

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  fromLatentGenerationRunRow,
+  fromLatentGenerationRunInvalidationEventRow,
   fromLatentOpportunityRows,
+  toLatentGenerationRunInvalidationEventInsertRow,
+  toLatentGenerationRunInsertRow,
   toLatentOpportunityEvidenceBlockInsertRows,
   toLatentOpportunityEvidenceObservationInsertRows,
   toLatentOpportunityGlossaryLinkInsertRows,
@@ -20,6 +24,7 @@ function createManifestationInput(): CreateLatentOpportunityManifestationInput {
     identityId: "identity-1",
     userId: "user-1",
     priorityReflectiveObjectId: "object-1",
+    generationRunId: "run-1",
     summary: "A transition from open movement into threat remains notable.",
     structure: {
       kind: "transition",
@@ -136,6 +141,7 @@ describe("latent opportunity row adapters", () => {
       identity_id: "identity-1",
       user_id: "user-1",
       priority_reflective_object_id: "object-1",
+      generation_run_id: "run-1",
       summary: "A transition from open movement into threat remains notable.",
       structure_payload: {
         kind: "transition",
@@ -210,5 +216,245 @@ describe("latent opportunity row adapters", () => {
     expect((manifestation.evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsNodeKeys).toEqual(["issue", "action"]);
     expect((manifestation.evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsEdgeIndexes).toEqual([0]);
     expect(manifestation.glossaryLinks[0].glossaryTermId).toBe("term-1");
+  });
+
+  it("rehydrates an assessed-empty generation run status without coercion", () => {
+    const run = fromLatentGenerationRunRow({
+      id: "run-empty-1",
+      user_id: "user-1",
+      priority_reflective_object_id: "object-1",
+      status: "empty",
+      input_fingerprint: "fingerprint:test",
+      trigger_reason: null,
+      predecessor_run_id: null,
+      accepted_at: null,
+      superseded_at: null,
+      created_at: "2026-07-18T08:00:00.000Z",
+      updated_at: "2026-07-18T08:00:00.000Z",
+    });
+
+    expect(run.status).toBe("empty");
+    expect(run.inputFingerprint).toBe("fingerprint:test");
+  });
+
+  it("maps latent provenance fields through generation-run row adapters", () => {
+    const insertRow = toLatentGenerationRunInsertRow({
+      id: "run-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "pending",
+      inputFingerprint: "fingerprint:mixed",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: {
+        dream: {
+          priorityReflectiveObjectId: "object-1",
+          title: "House search dream",
+          objectLanguage: "hu",
+          content: "I move through a house searching for someone.",
+          summary: "A house search remains active.",
+        },
+        observation: {
+          observationBundleId: "bundle-1",
+          observationRuntimeVersion: "observation_v2_phase1",
+          semanticPolicyResult: "accept_with_uncertainty",
+          bundleUncertaintyNotes: [],
+          scenes: [],
+          observations: [],
+        },
+        glossary: {
+          confirmedTerms: [],
+          appearanceRecords: [],
+        },
+        reflections: [],
+      },
+      contextProvenance: {
+        existingOpportunityContext: {
+          identities: [],
+        },
+        truncationNote: null,
+      },
+      executionProvenance: {
+        constructorRuntimeVersion: "latent_opportunity_constructor_v1",
+        llm: {
+          provider: "openai",
+          model: "gpt-4.1-mini",
+          requestTimeoutMs: 180000,
+          responseFormat: {
+            type: "json_schema",
+            schemaName: "lumira_latent_opportunity_constructor_v1",
+            strict: true,
+          },
+        },
+      },
+      triggerReason: null,
+      predecessorRunId: null,
+    });
+
+    expect(insertRow.authority_fingerprint).toBe("a".repeat(64));
+    expect(insertRow.authority_provenance).toEqual(
+      expect.objectContaining({
+        dream: expect.objectContaining({
+          priorityReflectiveObjectId: "object-1",
+        }),
+      }),
+    );
+    expect(insertRow.context_provenance).toEqual(
+      expect.objectContaining({
+        truncationNote: null,
+      }),
+    );
+    expect(insertRow.execution_provenance).toEqual(
+      expect.objectContaining({
+        constructorRuntimeVersion: "latent_opportunity_constructor_v1",
+      }),
+    );
+
+    const run = fromLatentGenerationRunRow({
+      id: "run-1",
+      user_id: "user-1",
+      priority_reflective_object_id: "object-1",
+      status: "pending",
+      input_fingerprint: "fingerprint:mixed",
+      authority_fingerprint: "a".repeat(64),
+      authority_provenance: insertRow.authority_provenance,
+      context_provenance: insertRow.context_provenance,
+      execution_provenance: insertRow.execution_provenance,
+      trigger_reason: null,
+      predecessor_run_id: null,
+      accepted_at: null,
+      superseded_at: null,
+      created_at: "2026-07-18T08:00:00.000Z",
+      updated_at: "2026-07-18T08:00:00.000Z",
+    });
+
+    expect(run.authorityFingerprint).toBe("a".repeat(64));
+    expect(run.authorityProvenance).toEqual(insertRow.authority_provenance);
+    expect(run.contextProvenance).toEqual(insertRow.context_provenance);
+    expect(run.executionProvenance).toEqual(insertRow.execution_provenance);
+  });
+
+  it("keeps historical generation runs with null provenance readable", () => {
+    const run = fromLatentGenerationRunRow({
+      id: "run-legacy-1",
+      user_id: "user-1",
+      priority_reflective_object_id: "object-1",
+      status: "current",
+      input_fingerprint: "legacy:mixed",
+      authority_fingerprint: null,
+      authority_provenance: null,
+      context_provenance: null,
+      execution_provenance: null,
+      trigger_reason: null,
+      predecessor_run_id: null,
+      accepted_at: "2026-07-18T08:00:00.000Z",
+      superseded_at: null,
+      created_at: "2026-07-18T08:00:00.000Z",
+      updated_at: "2026-07-18T08:00:00.000Z",
+    });
+
+    expect(run.inputFingerprint).toBe("legacy:mixed");
+    expect(run.authorityFingerprint).toBeNull();
+    expect(run.authorityProvenance).toBeNull();
+    expect(run.contextProvenance).toBeNull();
+    expect(run.executionProvenance).toBeNull();
+  });
+
+  it("maps invalidation event rows and insert payloads with exact literals", () => {
+    const insertRow = toLatentGenerationRunInvalidationEventInsertRow({
+      id: "invalidate-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      targetGenerationRunId: "run-1",
+      sourceLayer: "observation",
+      sourceEntityType: "observation_v2_bundle",
+      sourceEntityId: "bundle-1",
+      sourceRevision: "archive:bundle-1",
+      reason: "observation_bundle_archived",
+    });
+
+    expect(insertRow).toEqual({
+      id: "invalidate-1",
+      user_id: "user-1",
+      priority_reflective_object_id: "object-1",
+      target_generation_run_id: "run-1",
+      source_layer: "observation",
+      source_entity_type: "observation_v2_bundle",
+      source_entity_id: "bundle-1",
+      source_revision: "archive:bundle-1",
+      reason: "observation_bundle_archived",
+    });
+
+    const event = fromLatentGenerationRunInvalidationEventRow({
+      id: "invalidate-1",
+      user_id: "user-1",
+      priority_reflective_object_id: "object-1",
+      target_generation_run_id: "run-1",
+      source_layer: "observation",
+      source_entity_type: "observation_v2_bundle",
+      source_entity_id: "bundle-1",
+      source_revision: "archive:bundle-1",
+      reason: "observation_bundle_archived",
+      created_at: "2026-07-19T10:00:00.000Z",
+    });
+
+    expect(event).toEqual({
+      id: "invalidate-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      targetGenerationRunId: "run-1",
+      sourceLayer: "observation",
+      sourceEntityType: "observation_v2_bundle",
+      sourceEntityId: "bundle-1",
+      sourceRevision: "archive:bundle-1",
+      reason: "observation_bundle_archived",
+      createdAt: "2026-07-19T10:00:00.000Z",
+    });
+  });
+
+  it("rejects unsupported invalidation literals instead of silently coercing them", () => {
+    expect(() =>
+      fromLatentGenerationRunInvalidationEventRow({
+        id: "invalidate-1",
+        user_id: "user-1",
+        priority_reflective_object_id: "object-1",
+        target_generation_run_id: "run-1",
+        source_layer: "glossary",
+        source_entity_type: "observation_v2_bundle",
+        source_entity_id: "bundle-1",
+        source_revision: "archive:bundle-1",
+        reason: "observation_bundle_archived",
+        created_at: "2026-07-19T10:00:00.000Z",
+      }),
+    ).toThrow("Unsupported latent generation run invalidation source layer: glossary");
+
+    expect(() =>
+      fromLatentGenerationRunInvalidationEventRow({
+        id: "invalidate-1",
+        user_id: "user-1",
+        priority_reflective_object_id: "object-1",
+        target_generation_run_id: "run-1",
+        source_layer: "observation",
+        source_entity_type: "thread",
+        source_entity_id: "bundle-1",
+        source_revision: "archive:bundle-1",
+        reason: "observation_bundle_archived",
+        created_at: "2026-07-19T10:00:00.000Z",
+      }),
+    ).toThrow("Unsupported latent generation run invalidation source entity type: thread");
+
+    expect(() =>
+      fromLatentGenerationRunInvalidationEventRow({
+        id: "invalidate-1",
+        user_id: "user-1",
+        priority_reflective_object_id: "object-1",
+        target_generation_run_id: "run-1",
+        source_layer: "observation",
+        source_entity_type: "observation_v2_bundle",
+        source_entity_id: "bundle-1",
+        source_revision: "archive:bundle-1",
+        reason: "bundle_restored",
+        created_at: "2026-07-19T10:00:00.000Z",
+      }),
+    ).toThrow("Unsupported latent generation run invalidation reason: bundle_restored");
   });
 });

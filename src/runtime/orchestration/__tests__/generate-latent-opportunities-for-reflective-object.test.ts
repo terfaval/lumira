@@ -5,6 +5,11 @@ import {
   type GenerateLatentOpportunitiesForReflectiveObjectRepositories,
 } from "@/src/runtime/orchestration/generate-latent-opportunities-for-reflective-object";
 import type { OpportunityConstructorInputPacket, OpportunityConstructorOutputPacket } from "@/src/cognition/latent-v2/opportunity-constructor";
+import type {
+  LatentAuthorityProvenance,
+  LatentContextProvenance,
+  LatentExecutionProvenance,
+} from "@/src/cognition/latent-v2/opportunity-constructor/provenance";
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { GlossaryCandidate, GlossaryTerm } from "@/src/domain/glossary/types";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
@@ -129,6 +134,9 @@ function createPacket(overrides: Partial<OpportunityConstructorInputPacket> = {}
     existingOpportunityContext: {
       identities: [],
     },
+    reflectionContext: {
+      reflections: [],
+    },
   };
 
   return {
@@ -149,6 +157,10 @@ function createPacket(overrides: Partial<OpportunityConstructorInputPacket> = {}
     existingOpportunityContext: {
       ...base.existingOpportunityContext,
       ...overrides.existingOpportunityContext,
+    },
+    reflectionContext: {
+      ...base.reflectionContext,
+      ...overrides.reflectionContext,
     },
   };
 }
@@ -283,6 +295,60 @@ function createOutputForPacket(
   return {
     ...base,
     ...overrides,
+  };
+}
+
+function createAuthorityProvenance(
+  packet: OpportunityConstructorInputPacket = createPacket(),
+): LatentAuthorityProvenance {
+  return {
+    dream: {
+      priorityReflectiveObjectId: packet.generationContext.priorityReflectiveObjectId,
+      title: packet.generationContext.priorityReflectiveObjectTitle,
+      objectLanguage: packet.generationContext.objectLanguage,
+      content: packet.priorityObject.content ?? null,
+      summary: packet.priorityObject.summary ?? null,
+    },
+    observation: {
+      observationBundleId: packet.generationContext.observationBundleId,
+      observationRuntimeVersion: packet.generationContext.observationRuntimeVersion,
+      semanticPolicyResult: packet.generationContext.semanticPolicyResult,
+      bundleUncertaintyNotes: packet.generationContext.bundleUncertaintyNotes,
+      scenes: packet.scenes,
+      observations: packet.observations,
+    },
+    glossary: {
+      confirmedTerms: packet.glossaryContext.confirmedTerms,
+      appearanceRecords: packet.glossaryContext.appearanceRecords,
+    },
+    reflections: packet.reflectionContext.reflections,
+  };
+}
+
+function createContextProvenance(
+  packet: OpportunityConstructorInputPacket = createPacket(),
+): LatentContextProvenance {
+  return {
+    existingOpportunityContext: packet.existingOpportunityContext,
+    truncationNote: null,
+  };
+}
+
+function createExecutionProvenance(
+  packet: OpportunityConstructorInputPacket = createPacket(),
+): LatentExecutionProvenance {
+  return {
+    constructorRuntimeVersion: packet.generationContext.runtimeVersion,
+    llm: {
+      provider: "openai",
+      model: "gpt-4.1-mini",
+      requestTimeoutMs: 180000,
+      responseFormat: {
+        type: "json_schema",
+        schemaName: "lumira_latent_opportunity_constructor_v1",
+        strict: true,
+      },
+    },
   };
 }
 
@@ -580,12 +646,14 @@ function createPersistedManifestation(input: {
   id: string;
   identityId: string;
   priorityReflectiveObjectId: string;
+  generationRunId?: string;
 }): LatentOpportunityManifestation {
   return {
     id: input.id,
     identityId: input.identityId,
     userId: "user-1",
     priorityReflectiveObjectId: input.priorityReflectiveObjectId,
+    generationRunId: input.generationRunId ?? "run-1",
     summary: "Search movement shifts into uncertainty without fixed meaning.",
     structure: {
       kind: "A_TO_B",
@@ -783,6 +851,7 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
         },
       ],
     } satisfies ObservationV2Bundle),
+    archive: vi.fn(),
   };
 
   const glossaryRepository: GlossaryRepository = {
@@ -813,7 +882,6 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
     listAppearanceRecordsByTerm: vi.fn().mockResolvedValue([]),
     createTerm: vi.fn(),
     updateTerm: vi.fn(),
-    renameTerm: vi.fn(),
     listCandidates: vi.fn(),
     listCandidatesByReflectiveObject: vi.fn().mockResolvedValue([
       {
@@ -864,17 +932,154 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
       id: input.id ?? "manifestation-1",
       identityId: input.identityId,
       priorityReflectiveObjectId: input.priorityReflectiveObjectId,
+      generationRunId: input.generationRunId,
     }),
   );
 
   const latentOpportunityRepository: LatentOpportunityRepository = {
+    evaluateAuthoritySameness: vi.fn().mockResolvedValue({
+      outcome: "materially_changed",
+      acceptedFingerprint: "a".repeat(64),
+      candidateFingerprint: "b".repeat(64),
+    }),
+    resolveReusableAcceptedGenerationRun: vi.fn().mockResolvedValue({
+      reusable: false,
+      generationRun: null,
+      invalidation: null,
+    }),
+    createGenerationRun: vi.fn().mockResolvedValue({
+      id: "run-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "pending",
+      inputFingerprint: "fingerprint:pending",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(),
+      contextProvenance: createContextProvenance(),
+      executionProvenance: createExecutionProvenance(),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: null,
+      supersededAt: null,
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:00:00.000Z",
+    }),
     createIdentity,
     createManifestation,
+    getGenerationRunById: vi.fn().mockResolvedValue(null),
+    getCurrentGenerationRunForReflectiveObject: vi.fn().mockResolvedValue(null),
+    listGenerationRunsForReflectiveObject: vi.fn().mockResolvedValue([]),
+    listManifestationsByGenerationRun: vi.fn().mockResolvedValue([]),
     getManifestationById: vi.fn(),
     listManifestationsByPriorityReflectiveObject: vi.fn().mockResolvedValue([]),
     listManifestationsByIdentity: vi.fn(),
     listRecentManifestationsByUser: vi.fn().mockResolvedValue([]),
+    createGenerationRunInvalidationIfAbsent: vi.fn().mockResolvedValue(null),
+    listGenerationRunInvalidations: vi.fn().mockResolvedValue([]),
+    markGenerationRunCurrent: vi.fn().mockResolvedValue({
+      id: "run-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "current",
+      inputFingerprint: "fingerprint:pending",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(),
+      contextProvenance: createContextProvenance(),
+      executionProvenance: createExecutionProvenance(),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: "2026-07-18T12:01:00.000Z",
+      supersededAt: null,
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:01:00.000Z",
+    }),
+    markGenerationRunFailed: vi.fn().mockResolvedValue({
+      id: "run-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "failed",
+      inputFingerprint: "fingerprint:pending",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(),
+      contextProvenance: createContextProvenance(),
+      executionProvenance: createExecutionProvenance(),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: null,
+      supersededAt: null,
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:01:00.000Z",
+    }),
+    markGenerationRunRejected: vi.fn().mockResolvedValue({
+      id: "run-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "rejected",
+      inputFingerprint: "fingerprint:pending",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(),
+      contextProvenance: createContextProvenance(),
+      executionProvenance: createExecutionProvenance(),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: null,
+      supersededAt: null,
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:01:00.000Z",
+    }),
+    markGenerationRunNoChange: vi.fn().mockResolvedValue({
+      id: "run-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "no_change",
+      inputFingerprint: "fingerprint:pending",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(),
+      contextProvenance: createContextProvenance(),
+      executionProvenance: createExecutionProvenance(),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: null,
+      supersededAt: null,
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:01:00.000Z",
+    }),
+    markGenerationRunEmpty: vi.fn().mockResolvedValue({
+      id: "run-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "empty",
+      inputFingerprint: "fingerprint:pending",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(),
+      contextProvenance: createContextProvenance(),
+      executionProvenance: createExecutionProvenance(),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: null,
+      supersededAt: null,
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:01:00.000Z",
+    }),
+    markGenerationRunSuperseded: vi.fn().mockResolvedValue({
+      id: "run-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "superseded",
+      inputFingerprint: "fingerprint:pending",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(),
+      contextProvenance: createContextProvenance(),
+      executionProvenance: createExecutionProvenance(),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: "2026-07-18T12:01:00.000Z",
+      supersededAt: "2026-07-18T12:02:00.000Z",
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:02:00.000Z",
+    }),
     deleteIdentity: vi.fn().mockResolvedValue(undefined),
+    deleteGenerationRun: vi.fn().mockResolvedValue(undefined),
     deleteManifestation: vi.fn().mockResolvedValue(undefined),
   };
 
@@ -889,6 +1094,7 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
 describe("generateLatentOpportunitiesForReflectiveObject", () => {
   it("runs the successful generation path end to end", async () => {
     const repositories = createActualComposerRepositories();
+    const packet = createPacket();
     const generateOutput = vi.fn(async ({ packet }: { packet: OpportunityConstructorInputPacket }) => ({
       mode: "generated" as const,
       rawOutput: JSON.stringify(createOutputForPacket(packet)),
@@ -898,15 +1104,19 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       userId: "user-1",
       priorityReflectiveObjectId: "object-1",
       repositories,
+      composeInputPacket: vi.fn().mockResolvedValue(packet),
       generateOutput,
     });
 
     expect(result.mode).toBe("persisted");
     expect(generateOutput).toHaveBeenCalledTimes(1);
+    expect(repositories.latentOpportunityRepository.createGenerationRun).toHaveBeenCalledTimes(1);
     expect(repositories.latentOpportunityRepository.createIdentity).toHaveBeenCalledTimes(1);
     expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenCalledTimes(1);
+    expect(repositories.latentOpportunityRepository.markGenerationRunCurrent).toHaveBeenCalledWith("run-1", "user-1");
     expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenCalledWith(
       expect.objectContaining({
+        generationRunId: "run-1",
         priorityReflectiveObjectId: "object-1",
         glossaryLinks: [
           {
@@ -979,7 +1189,7 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
     expect((result.persistedManifestations[0].evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsEdgeIndexes).toEqual([0]);
   });
 
-  it("returns a no-opportunity result without persisting", async () => {
+  it("records an assessed-empty run when the constructor accepts no opportunities", async () => {
     const packet = createPacket();
     const repositories = createActualComposerRepositories();
     const generateOutput = vi.fn(async () => ({
@@ -1007,8 +1217,10 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
     });
 
     expect(result).toEqual({
-      mode: "no_opportunity",
+      mode: "empty",
       packet,
+      generationRunId: "run-1",
+      source: "new_assessment",
       rawOutput: expect.any(String),
       parsedOutput: expect.objectContaining({
         decision: {
@@ -1025,6 +1237,122 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
     });
     expect(repositories.latentOpportunityRepository.createIdentity).not.toHaveBeenCalled();
     expect(repositories.latentOpportunityRepository.createManifestation).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.markGenerationRunCurrent).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.markGenerationRunNoChange).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.markGenerationRunEmpty).toHaveBeenCalledWith("run-1", "user-1");
+  });
+
+  it("reuses an existing assessed-empty run instead of creating another generation run", async () => {
+    const packet = createPacket();
+    const repositories = createActualComposerRepositories();
+    const existingEmptyRun = {
+      id: "run-empty-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "empty" as const,
+      inputFingerprint: "fingerprint:pending",
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: null,
+      supersededAt: null,
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:01:00.000Z",
+    };
+
+    repositories.latentOpportunityRepository.listGenerationRunsForReflectiveObject = vi.fn().mockResolvedValue([
+      existingEmptyRun,
+    ]);
+    const generateOutput = vi.fn();
+
+    const result = await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket: vi.fn().mockResolvedValue(packet),
+      generateOutput,
+    });
+
+    expect(result).toEqual({
+      mode: "empty",
+      packet,
+      generationRunId: "run-empty-1",
+      source: "existing_assessment",
+    });
+    expect(generateOutput).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.createGenerationRun).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.markGenerationRunEmpty).not.toHaveBeenCalled();
+  });
+
+  it("skips accepted current-run reuse guards when Opening has already resolved reuse as blocked", async () => {
+    const packet = createPacket();
+    const repositories = createActualComposerRepositories();
+    repositories.latentOpportunityRepository.getCurrentGenerationRunForReflectiveObject = vi.fn().mockResolvedValue({
+      id: "run-current-invalidated-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "current",
+      inputFingerprint: "fingerprint:current",
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: "2026-07-18T12:01:00.000Z",
+      supersededAt: null,
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:01:00.000Z",
+    });
+    const generateOutput = vi.fn().mockResolvedValue({
+      mode: "generated",
+      rawOutput: JSON.stringify(createOutputForPacket(packet)),
+    });
+
+    const result = await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket: vi.fn().mockResolvedValue(packet),
+      generateOutput,
+      acceptedRunReuseGuard: "skip",
+    });
+
+    expect(result.mode).toBe("persisted");
+    expect(generateOutput).toHaveBeenCalledTimes(1);
+    expect(repositories.latentOpportunityRepository.createGenerationRun).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips accepted empty-run reuse guards when Opening has already resolved reuse as blocked", async () => {
+    const packet = createPacket();
+    const repositories = createActualComposerRepositories();
+    repositories.latentOpportunityRepository.listGenerationRunsForReflectiveObject = vi.fn().mockResolvedValue([
+      {
+        id: "run-empty-invalidated-1",
+        userId: "user-1",
+        priorityReflectiveObjectId: "object-1",
+        status: "empty" as const,
+        inputFingerprint: "fingerprint:empty",
+        triggerReason: null,
+        predecessorRunId: null,
+        acceptedAt: null,
+        supersededAt: null,
+        createdAt: "2026-07-18T12:00:00.000Z",
+        updatedAt: "2026-07-18T12:01:00.000Z",
+      },
+    ]);
+    const generateOutput = vi.fn().mockResolvedValue({
+      mode: "generated",
+      rawOutput: JSON.stringify(createOutputForPacket(packet)),
+    });
+
+    const result = await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket: vi.fn().mockResolvedValue(packet),
+      generateOutput,
+      acceptedRunReuseGuard: "skip",
+    });
+
+    expect(result.mode).toBe("persisted");
+    expect(generateOutput).toHaveBeenCalledTimes(1);
+    expect(repositories.latentOpportunityRepository.createGenerationRun).toHaveBeenCalledTimes(1);
   });
 
   it("returns a parse failure when the LLM output is invalid JSON", async () => {
@@ -1096,6 +1424,7 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
     const createIdentity = repositories.latentOpportunityRepository.createIdentity as ReturnType<typeof vi.fn>;
     const createManifestation = repositories.latentOpportunityRepository.createManifestation as ReturnType<typeof vi.fn>;
     const deleteIdentity = repositories.latentOpportunityRepository.deleteIdentity as ReturnType<typeof vi.fn>;
+    const deleteGenerationRun = repositories.latentOpportunityRepository.deleteGenerationRun as ReturnType<typeof vi.fn>;
 
     createIdentity.mockResolvedValueOnce({
       id: "identity-new-1",
@@ -1150,10 +1479,11 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       cleanup: {
         attempted: true,
         completed: true,
-        resourceCount: 1,
+        resourceCount: 2,
       },
     });
     expect(deleteIdentity).toHaveBeenCalledWith("identity-new-1", "user-1");
+    expect(deleteGenerationRun).toHaveBeenCalledWith("run-1", "user-1");
   });
 
   it("does not persist glossary candidates", async () => {
@@ -1178,6 +1508,128 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
             glossaryTermId: "candidate-1",
           }),
         ]),
+      }),
+    );
+  });
+
+  it("persists provenance on generation-run creation before constructor execution", async () => {
+    const repositories = createActualComposerRepositories();
+    const packet = createPacket();
+    const authorityProvenance = createAuthorityProvenance(packet);
+    const contextProvenance = createContextProvenance(packet);
+    const composeInputPacket = vi.fn().mockResolvedValue({
+      packet,
+      authorityProvenance,
+      contextProvenance,
+    });
+    const createGenerationRun = repositories.latentOpportunityRepository.createGenerationRun as ReturnType<typeof vi.fn>;
+    const generateOutput = vi.fn().mockImplementation(async () => {
+      expect(createGenerationRun).toHaveBeenCalledTimes(1);
+      return {
+        mode: "generated" as const,
+        rawOutput: JSON.stringify(createOutputForPacket(packet)),
+      };
+    });
+
+    await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket,
+      generateOutput,
+    });
+
+    expect(createGenerationRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inputFingerprint: expect.any(String),
+        authorityFingerprint: expect.stringMatching(/^[a-f0-9]{64}$/),
+        authorityProvenance,
+        contextProvenance,
+        executionProvenance: expect.objectContaining({
+          constructorRuntimeVersion: packet.generationContext.runtimeVersion,
+        }),
+      }),
+    );
+  });
+
+  it("keeps the authority fingerprint stable across context-only changes", async () => {
+    const repositories = createActualComposerRepositories();
+    const packet = createPacket();
+    const createGenerationRun = repositories.latentOpportunityRepository.createGenerationRun as ReturnType<typeof vi.fn>;
+    const composeInputPacket = vi
+      .fn()
+      .mockResolvedValueOnce({
+        packet,
+        authorityProvenance: createAuthorityProvenance(packet),
+        contextProvenance: createContextProvenance(packet),
+      })
+      .mockResolvedValueOnce({
+        packet: {
+          ...packet,
+          existingOpportunityContext: {
+            identities: [
+              {
+                identityId: "identity-existing-1",
+                primaryCategory: "transition",
+                secondaryCategories: ["tension"],
+                lifecycleState: "emerging",
+                latestStructure: {
+                  structureType: "A_TO_B",
+                  nodes: ["house search", "uncertainty"],
+                },
+                recentManifestationSummaries: [],
+              },
+            ],
+          },
+        },
+        authorityProvenance: createAuthorityProvenance(packet),
+        contextProvenance: {
+          existingOpportunityContext: {
+            identities: [
+              {
+                identityId: "identity-existing-1",
+                primaryCategory: "transition",
+                secondaryCategories: ["tension"],
+                lifecycleState: "emerging",
+                latestStructure: {
+                  structureType: "A_TO_B",
+                  nodes: ["house search", "uncertainty"],
+                },
+                recentManifestationSummaries: [],
+              },
+            ],
+          },
+          truncationNote: "Different context note.",
+        },
+      });
+    const generateOutput = vi.fn().mockResolvedValue({
+      mode: "generated",
+      rawOutput: JSON.stringify(createOutputForPacket(packet)),
+    });
+
+    await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket,
+      generateOutput,
+    });
+
+    await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket,
+      generateOutput,
+    });
+
+    expect(createGenerationRun.mock.calls[0]?.[0]?.authorityFingerprint).toBe(
+      createGenerationRun.mock.calls[1]?.[0]?.authorityFingerprint,
+    );
+    expect(createGenerationRun.mock.calls[0]?.[0]?.inputFingerprint).toEqual(expect.any(String));
+    expect(createGenerationRun.mock.calls[1]?.[0]?.contextProvenance).toEqual(
+      expect.objectContaining({
+        truncationNote: "Different context note.",
       }),
     );
   });
@@ -1412,6 +1864,7 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
     const createManifestation = repositories.latentOpportunityRepository.createManifestation as ReturnType<typeof vi.fn>;
     const deleteIdentity = repositories.latentOpportunityRepository.deleteIdentity as ReturnType<typeof vi.fn>;
     const deleteManifestation = repositories.latentOpportunityRepository.deleteManifestation as ReturnType<typeof vi.fn>;
+    const deleteGenerationRun = repositories.latentOpportunityRepository.deleteGenerationRun as ReturnType<typeof vi.fn>;
 
     createIdentity
       .mockResolvedValueOnce({
@@ -1491,12 +1944,82 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       cleanup: {
         attempted: true,
         completed: true,
-        resourceCount: 3,
+        resourceCount: 4,
       },
     });
     expect(deleteIdentity).toHaveBeenCalledWith("identity-new-2", "user-1");
     expect(deleteManifestation).toHaveBeenCalledWith("manifestation-1", "user-1");
     expect(deleteIdentity).toHaveBeenCalledWith("identity-new-1", "user-1");
+    expect(deleteGenerationRun).toHaveBeenCalledWith("run-1", "user-1");
+  });
+
+  it("preserves the primary persistence failure when rollback cleanup also fails", async () => {
+    const packet = createPacket();
+    const repositories = createActualComposerRepositories();
+    const createIdentity = repositories.latentOpportunityRepository.createIdentity as ReturnType<typeof vi.fn>;
+    const createManifestation = repositories.latentOpportunityRepository.createManifestation as ReturnType<typeof vi.fn>;
+    const deleteIdentity = repositories.latentOpportunityRepository.deleteIdentity as ReturnType<typeof vi.fn>;
+    const deleteGenerationRun = repositories.latentOpportunityRepository.deleteGenerationRun as ReturnType<typeof vi.fn>;
+
+    createIdentity.mockResolvedValueOnce({
+      id: "identity-new-1",
+      userId: "user-1",
+      title: "house search -> uncertainty",
+      primaryCategory: "transition",
+      secondaryCategories: ["tension"],
+      lifecycleState: "emerging",
+      status: "active",
+      archivedAt: null,
+      createdAt: "2026-06-15T12:00:00.000Z",
+      updatedAt: "2026-06-15T12:00:00.000Z",
+    });
+    createManifestation.mockRejectedValueOnce(new Error("manifestation_write_failed"));
+    deleteGenerationRun.mockRejectedValueOnce(new Error("rollback_delete_failed"));
+
+    const result = await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket: vi.fn().mockResolvedValue(packet),
+      generateOutput: vi.fn().mockResolvedValue({
+        mode: "generated",
+        rawOutput: JSON.stringify(createOutputForPacket(packet)),
+      }),
+    });
+
+    expect(result).toEqual({
+      mode: "failed",
+      stage: "persistence",
+      reason: "manifestation_write_failed",
+      packet,
+      rawOutput: expect.any(String),
+      parsedOutput: expect.objectContaining({
+        decision: {
+          mode: "opportunities_found",
+          silenceReason: null,
+        },
+      }),
+      validatedOutput: expect.objectContaining({
+        decision: {
+          mode: "opportunities_found",
+          silenceReason: null,
+        },
+      }),
+      mappedPayload: expect.objectContaining({
+        creates: [
+          expect.objectContaining({
+            clientOpportunityKey: "op-1",
+          }),
+        ],
+      }),
+      cleanup: {
+        attempted: true,
+        completed: false,
+        resourceCount: 2,
+      },
+    });
+    expect(deleteIdentity).toHaveBeenCalledWith("identity-new-1", "user-1");
+    expect(deleteGenerationRun).toHaveBeenCalledWith("run-1", "user-1");
   });
 
   it("does not persist when output drifts into a graph inventory packet", async () => {

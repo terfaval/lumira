@@ -18,6 +18,7 @@ import {
   type GlossaryPanelProposedEntity,
   type OrientationOpeningCard,
 } from "@/src/ui/object-orientation/view-model";
+import { buildObservationV2PresentationText } from "@/src/reflective-space/composition/observation-presentation";
 
 const OBSERVATION_LIMIT = 3;
 const RECENT_OPENINGS_LIMIT = 12;
@@ -190,6 +191,24 @@ function uniqueGlossaryItems(items: GlossaryPanelItem[]): GlossaryPanelItem[] {
   return ordered;
 }
 
+function toOrientationDreamPreview(input: {
+  observationBundle: Awaited<ReturnType<ObservationV2Repository["getByReflectiveObjectId"]>>;
+  observations: Awaited<ReturnType<ObservationRepository["listByReflectiveObject"]>>;
+  primaryContent: string;
+}): string {
+  const nativePreview = buildObservationV2PresentationText(input.observationBundle);
+  if (nativePreview) {
+    return nativePreview;
+  }
+
+  const compatibilityPreview = input.observations[0]?.summary.trim();
+  if (compatibilityPreview) {
+    return compatibilityPreview;
+  }
+
+  return input.primaryContent;
+}
+
 export async function composeObjectOrientationPayload(
   input: ComposeObjectOrientationPayloadInput,
 ): Promise<ObjectOrientationPayload | null> {
@@ -199,7 +218,7 @@ export async function composeObjectOrientationPayload(
     return null;
   }
 
-  const [, , allGlossaryCandidates, glossaryCandidates, recentOpenings, glossaryTerms, savedTerms] = await Promise.all([
+  const [observationBundle, observations, allGlossaryCandidates, glossaryCandidates, recentOpenings, glossaryTerms, savedTerms] = await Promise.all([
     input.observationV2Repository.getByReflectiveObjectId(input.reflectiveObjectId, input.userId),
     input.observationRepository.listByReflectiveObject({
       userId: input.userId,
@@ -249,7 +268,11 @@ export async function composeObjectOrientationPayload(
     dream: {
       id: reflectiveObject.id,
       title: reflectiveObject.title,
-      preview: reflectiveObject.primaryContent,
+      preview: toOrientationDreamPreview({
+        observationBundle,
+        observations,
+        primaryContent: reflectiveObject.primaryContent,
+      }),
       editHref: `/objects/${reflectiveObject.id}/reflect`,
     },
     glossary: {

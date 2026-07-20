@@ -1,7 +1,8 @@
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
-import type { ObservationRepository } from "@/src/domain/observation/contracts";
+import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
 import type { ReflectiveObject, ReflectiveObjectType } from "@/src/domain/reflective-objects/types";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
+import { buildObservationV2PresentationText } from "@/src/reflective-space/composition/observation-presentation";
 import type { UserId } from "@/src/shared/types";
 import {
   getHomepageRouteTarget,
@@ -45,7 +46,7 @@ export interface HomepageDreamJournalPreviewItem {
   title: string;
   recordedAt: HomepageTimestamp;
   previewText: string;
-  previewSource: "ai_summary" | "observation_summary" | "dream_excerpt" | "quiet_fallback";
+  previewSource: "ai_summary" | "observation_preview" | "dream_excerpt" | "quiet_fallback";
   target: HomepageNavigationTargetRef;
 }
 
@@ -120,6 +121,7 @@ export interface ComposeHomepageOrientationPayloadInput {
   reflectiveObjectRepository: ReflectiveObjectRepository;
   glossaryRepository: GlossaryRepository;
   observationRepository: ObservationRepository;
+  observationV2Repository: ObservationV2Repository;
 }
 
 function toTimestamp(iso: string, semantic: HomepageTimestamp["semantic"]): HomepageTimestamp {
@@ -163,24 +165,40 @@ function resolveAiSummary(object: ReflectiveObject): string | null {
   return toOptionalDescriptor(aiSummary);
 }
 
-async function buildObservationSummaryLookup(
-  input: Pick<ComposeHomepageOrientationPayloadInput, "userId" | "observationRepository">,
+interface ObservationPresentationPreview {
+  text: string | null;
+  source: "observation_v2" | "observation_v1" | "none";
+}
+
+async function buildObservationPresentationLookup(
+  input: Pick<ComposeHomepageOrientationPayloadInput, "userId" | "observationRepository" | "observationV2Repository">,
   objectIds: string[],
-): Promise<Record<string, string | null>> {
+): Promise<Record<string, ObservationPresentationPreview>> {
   const uniqueObjectIds = Array.from(new Set(objectIds));
-  const summaries = await Promise.all(
-    uniqueObjectIds.map(async (objectId) => {
+  const previews = await Promise.all(
+    uniqueObjectIds.map(async (objectId): Promise<readonly [string, ObservationPresentationPreview]> => {
+      const bundle = await input.observationV2Repository.getByReflectiveObjectId(objectId, input.userId);
+      const nativeText = toOptionalDescriptor(buildObservationV2PresentationText(bundle));
+      if (nativeText) {
+        return [objectId, { text: nativeText, source: "observation_v2" }];
+      }
+
       const observations = await input.observationRepository.listByReflectiveObject({
         userId: input.userId,
         reflectiveObjectId: objectId,
         limit: 1,
       });
 
-      return [objectId, toOptionalDescriptor(observations[0]?.summary)] as const;
+      const compatibilityText = toOptionalDescriptor(observations[0]?.summary);
+      if (compatibilityText) {
+        return [objectId, { text: compatibilityText, source: "observation_v1" }];
+      }
+
+      return [objectId, { text: null, source: "none" }];
     }),
   );
 
-  return Object.fromEntries(summaries);
+  return Object.fromEntries(previews);
 }
 
 export async function composeHomepageOrientationPayload(
@@ -207,10 +225,11 @@ export async function composeHomepageOrientationPayload(
   const dreamJournalWindow = dreamObjects.slice(0, DREAM_JOURNAL_TARGET_SLOTS + 1);
   const dreamPreviewObjects = dreamJournalWindow.slice(0, DREAM_JOURNAL_TARGET_SLOTS);
 
-  const observationSummaryByObjectId = await buildObservationSummaryLookup(
+  const observationPreviewByObjectId = await buildObservationPresentationLookup(
     {
       userId: input.userId,
       observationRepository: input.observationRepository,
+      observationV2Repository: input.observationV2Repository,
     },
     [...recentPreviewObjects.map((item) => item.id), ...dreamPreviewObjects.map((item) => item.id)],
   );
@@ -218,7 +237,7 @@ export async function composeHomepageOrientationPayload(
   const glossaryItems = glossaryTerms.slice(0, GLOSSARY_TARGET_SLOTS).map((term) => ({
     termId: term.id,
     label: term.displayLabel,
-    descriptor: toOptionalDescriptor(term.notes),
+    descriptor: toOptionalDescriptor(term.generalNote),
     markerKey: null,
     target: getHomepageRouteTarget("glossary_term_detail"),
   }));
@@ -228,13 +247,14 @@ export async function composeHomepageOrientationPayload(
     title: object.title,
     objectType: object.objectType,
     timestamp: toTimestamp(object.createdAt, "created_at"),
-    descriptor: observationSummaryByObjectId[object.id] ?? null,
+    descriptor: observationPreviewByObjectId[object.id]?.text ?? null,
     target: toReflectiveObjectOrientationTarget(object.id),
   }));
 
   const dreamJournalItems = dreamPreviewObjects.map((object) => {
-    const aiSummary = resolveAiSummary(object);
-    const observationSummary = observationSummaryByObjectId[object.id] ?? null;
+    const observationPreview = observationPreviewByObjectId[object.id] ?? { text: null, source: "none" as const };
+    const observationSummary = observationPreview.text;
+    const aiSummary = observationPreview.source === "none" ? resolveAiSummary(object) : null;
     const dreamExcerpt = toExcerpt(object.primaryContent);
 
     if (aiSummary) {
@@ -254,7 +274,7 @@ export async function composeHomepageOrientationPayload(
         title: object.title,
         recordedAt: toTimestamp(object.createdAt, "recorded_at"),
         previewText: observationSummary,
-        previewSource: "observation_summary" as const,
+        previewSource: "observation_preview" as const,
         target: toDreamOrientationTarget(object.id),
       };
     }

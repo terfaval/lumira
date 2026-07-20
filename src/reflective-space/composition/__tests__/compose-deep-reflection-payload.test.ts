@@ -262,35 +262,6 @@ describe("composeDeepReflectionPayload", () => {
           },
         ],
       },
-      observationRepository: {
-        create: async () => {
-          throw new Error("not used");
-        },
-        listByReflectiveObject: async () => [],
-        getById: async () => null,
-      },
-      observationV2Repository: {
-        create: async () => {
-          throw new Error("not used");
-        },
-        getByBundleId: async () => null,
-        getByReflectiveObjectId: async () => ({
-          bundleId: "bundle-1",
-          userId: "user-1",
-          reflectiveObjectId: "obj-1",
-          source: "system_llm_extract",
-          runtimeVersion: "observation_v2_phase1",
-          uncertaintyNotes: [],
-          provenance: {
-            provenanceTier: "system_extract",
-            semanticPolicyResult: "accept",
-            semanticPolicyReasons: [],
-            latentBackflowGuard: "observation_only",
-            boundaryVersion: "observation_v2_phase1",
-          },
-          scenes: [],
-        }),
-      },
       glossaryRepository: {
         listTerms: async () => [],
         listTermsByReflectiveObject: async () => [
@@ -329,19 +300,36 @@ describe("composeDeepReflectionPayload", () => {
         createAppearanceRecord: async () => null,
       },
       latentOpportunityRepository: {
+        evaluateAuthoritySameness: async () => ({
+          outcome: "materially_changed",
+          acceptedFingerprint: "a".repeat(64),
+          candidateFingerprint: "b".repeat(64),
+        }),
+        resolveReusableAcceptedGenerationRun: async () => ({
+          reusable: false,
+          generationRun: null,
+          invalidation: null,
+        }),
+        createGenerationRun: async () => {
+          throw new Error("not used");
+        },
         createIdentity: async () => {
           throw new Error("not used");
         },
         createManifestation: async () => {
           throw new Error("not used");
         },
+        deleteGenerationRun: async () => undefined,
         deleteIdentity: async () => undefined,
         deleteManifestation: async () => undefined,
+        getGenerationRunById: async () => null,
+        getCurrentGenerationRunForReflectiveObject: async () => null,
         getManifestationById: async () => ({
           id: "man-1",
           identityId: "identity-1",
           userId: "user-1",
           priorityReflectiveObjectId: "obj-1",
+          generationRunId: "run-1",
           summary: "A threshold between staying and moving keeps repeating.",
           structure: {
             kind: "transition",
@@ -406,9 +394,69 @@ describe("composeDeepReflectionPayload", () => {
           createdAt: "2026-06-10T10:00:00.000Z",
           updatedAt: "2026-06-10T10:00:00.000Z",
         }),
+        listGenerationRunsForReflectiveObject: async () => [],
+        listManifestationsByGenerationRun: async () => [],
         listManifestationsByPriorityReflectiveObject: async () => [],
         listManifestationsByIdentity: async () => [],
         listRecentManifestationsByUser: async () => [],
+        createGenerationRunInvalidationIfAbsent: async () => null,
+        listGenerationRunInvalidations: async () => [],
+        markGenerationRunCurrent: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunFailed: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunRejected: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunEmpty: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunNoChange: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunSuperseded: async () => {
+          throw new Error("not used");
+        },
+      },
+      reflectionRepository: {
+        admitReflection: async () => {
+          throw new Error("not used");
+        },
+        getReflectionById: async () => null,
+        listReflectionsByUser: async () => [
+          {
+            id: "reflection-1",
+            userId: "user-1",
+            candidateId: "candidate-1",
+            threadId: "thread-1",
+            sourceResponseId: "response-1",
+            sourceOpeningId: "opening-1",
+            sourceReflectiveObjectIds: ["obj-1"],
+            statement: "I keep pausing at thresholds when change feels close.",
+            pattern: ["Threshold", "Pause", "Change"],
+            admittedAt: "2026-06-10T10:10:00.000Z",
+            archivedAt: null,
+            createdAt: "2026-06-10T10:10:00.000Z",
+            updatedAt: "2026-06-10T10:10:00.000Z",
+          },
+          {
+            id: "reflection-2",
+            userId: "user-1",
+            candidateId: "candidate-2",
+            threadId: "thread-2",
+            sourceResponseId: "response-2",
+            sourceOpeningId: "opening-2",
+            sourceReflectiveObjectIds: ["obj-2"],
+            statement: "Unrelated reflection.",
+            pattern: ["Other"],
+            admittedAt: "2026-06-10T09:10:00.000Z",
+            archivedAt: null,
+            createdAt: "2026-06-10T09:10:00.000Z",
+            updatedAt: "2026-06-10T09:10:00.000Z",
+          },
+        ],
       },
     });
 
@@ -434,6 +482,488 @@ describe("composeDeepReflectionPayload", () => {
       summary: "The dream lingers at a doorway before moving on.",
       details: ["Observation support: 1 linked detail"],
     });
+    expect(payload.nearbyContext.relatedMaterial).toEqual([
+      {
+        itemId: "reflection:reflection-1",
+        kind: "prior_reflection",
+        label: "I keep pausing at thresholds when change feels close.",
+        excerpt: "Threshold · Pause · Change",
+        target: null,
+      },
+    ]);
     expect(payload.alternateOpenings.items.map((item) => item.id)).toEqual(["opening-2"]);
+  });
+
+  it("keeps reflection continuity optional when no admitted reflections are locally relevant", async () => {
+    const payload = await composeDeepReflectionPayload({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      threadId: "thread-1",
+      threadRepository: {
+        createThread: async () => {
+          throw new Error("not used");
+        },
+        getThreadById: async () => ({
+          id: "thread-1",
+          userId: "user-1",
+          title: "Doorway thread",
+          contextNote: null,
+          state: "active",
+          visibility: "ambient",
+          dormantSince: null,
+          archivedAt: null,
+          continuityCues: [],
+          createdAt: "2026-06-10T10:00:00.000Z",
+          updatedAt: "2026-06-10T10:00:00.000Z",
+        }),
+        listThreadsByUser: async () => [],
+        listThreadsByReflectiveObject: async () => [],
+        updateThread: async () => null,
+        setThreadState: async () => null,
+        archiveThread: async () => null,
+        createObjectAssociation: async () => {
+          throw new Error("not used");
+        },
+        createGlossaryAssociation: async () => {
+          throw new Error("not used");
+        },
+        listAssociationsByThread: async () => [
+          {
+            id: "thread-assoc-1",
+            userId: "user-1",
+            threadId: "thread-1",
+            kind: "reflective_object",
+            reflectiveObjectId: "obj-1",
+            glossaryTermId: null,
+            reflectiveResponseId: null,
+            associationLabel: null,
+            createdAt: "2026-06-10T10:00:00.000Z",
+            updatedAt: "2026-06-10T10:00:00.000Z",
+          },
+        ],
+      },
+      openingRepository: {
+        createOpening: async () => {
+          throw new Error("not used");
+        },
+        getOpeningById: async () => null,
+        listOpeningSurfacesByUser: async () => [],
+        listDormantSuppressedOpeningsByUser: async () => [],
+        listRecentOpeningsByUser: async () => [],
+        listOpeningsByLatentSnapshot: async () => [],
+        activateOpening: async () => null,
+        reactivateOpening: async () => null,
+        dismissOpening: async () => null,
+        setSuppression: async () => null,
+        recordSurfaceEvent: async () => {
+          throw new Error("not used");
+        },
+        attachThreadToOpening: async () => null,
+      },
+      responseRepository: {
+        createResponse: async () => {
+          throw new Error("not used");
+        },
+        getResponseById: async () => null,
+        listResponsesByUser: async () => [],
+        updateResponse: async () => null,
+        setResponseState: async () => null,
+        archiveResponse: async () => null,
+        createObjectAssociation: async () => {
+          throw new Error("not used");
+        },
+        createThreadAssociation: async () => {
+          throw new Error("not used");
+        },
+        removeObjectAssociation: async () => false,
+        removeThreadAssociation: async () => false,
+        listAssociationsByResponse: async () => [],
+        createOpeningActivationEvent: async () => {
+          throw new Error("not used");
+        },
+        listOpeningActivationEventsByWindow: async () => [],
+        createOpeningResponseAssociation: async () => {
+          throw new Error("not used");
+        },
+        removeOpeningResponseAssociation: async () => false,
+        listOpeningResponseAssociationsByOpening: async () => [],
+      },
+      glossaryRepository: {
+        listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [],
+        getTermById: async () => null,
+        listAppearanceRecordsByTerm: async () => [],
+        createTerm: async () => {
+          throw new Error("not used");
+        },
+        updateTerm: async () => null,
+        listCandidates: async () => [],
+        listCandidatesByReflectiveObject: async () => [],
+        getCandidateById: async () => null,
+        upsertCandidates: async () => [],
+        setCandidateLifecycle: async () => null,
+        resolveCandidate: async () => null,
+        createAssociation: async () => {
+          throw new Error("not used");
+        },
+        createAppearanceRecord: async () => null,
+      },
+      latentOpportunityRepository: {
+        evaluateAuthoritySameness: async () => ({
+          outcome: "materially_changed",
+          acceptedFingerprint: "a".repeat(64),
+          candidateFingerprint: "b".repeat(64),
+        }),
+        resolveReusableAcceptedGenerationRun: async () => ({
+          reusable: false,
+          generationRun: null,
+          invalidation: null,
+        }),
+        createGenerationRun: async () => {
+          throw new Error("not used");
+        },
+        createIdentity: async () => {
+          throw new Error("not used");
+        },
+        createManifestation: async () => {
+          throw new Error("not used");
+        },
+        deleteGenerationRun: async () => undefined,
+        deleteIdentity: async () => undefined,
+        deleteManifestation: async () => undefined,
+        getGenerationRunById: async () => null,
+        getCurrentGenerationRunForReflectiveObject: async () => null,
+        getManifestationById: async () => null,
+        listGenerationRunsForReflectiveObject: async () => [],
+        listManifestationsByGenerationRun: async () => [],
+        listManifestationsByPriorityReflectiveObject: async () => [],
+        listManifestationsByIdentity: async () => [],
+        listRecentManifestationsByUser: async () => [],
+        createGenerationRunInvalidationIfAbsent: async () => null,
+        listGenerationRunInvalidations: async () => [],
+        markGenerationRunCurrent: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunFailed: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunRejected: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunEmpty: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunNoChange: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunSuperseded: async () => {
+          throw new Error("not used");
+        },
+      },
+      reflectionRepository: {
+        admitReflection: async () => {
+          throw new Error("not used");
+        },
+        getReflectionById: async () => null,
+        listReflectionsByUser: async () => [
+          {
+            id: "reflection-2",
+            userId: "user-1",
+            candidateId: "candidate-2",
+            threadId: "thread-2",
+            sourceResponseId: "response-2",
+            sourceOpeningId: "opening-2",
+            sourceReflectiveObjectIds: ["obj-2"],
+            statement: "Unrelated reflection.",
+            pattern: ["Other"],
+            admittedAt: "2026-06-10T09:10:00.000Z",
+            archivedAt: null,
+            createdAt: "2026-06-10T09:10:00.000Z",
+            updatedAt: "2026-06-10T09:10:00.000Z",
+          },
+        ],
+      },
+    });
+
+    expect(payload).not.toBeNull();
+    if (!payload) {
+      throw new Error("Payload should not be null.");
+    }
+
+    expect(payload.nearbyContext.relatedMaterial).toEqual([]);
+  });
+
+  it("applies the bounded limit after selecting locally relevant reflections", async () => {
+    const payload = await composeDeepReflectionPayload({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      threadId: "thread-1",
+      threadRepository: {
+        createThread: async () => {
+          throw new Error("not used");
+        },
+        getThreadById: async () => ({
+          id: "thread-1",
+          userId: "user-1",
+          title: "Doorway thread",
+          contextNote: null,
+          state: "active",
+          visibility: "ambient",
+          dormantSince: null,
+          archivedAt: null,
+          continuityCues: [],
+          createdAt: "2026-06-10T10:00:00.000Z",
+          updatedAt: "2026-06-10T10:00:00.000Z",
+        }),
+        listThreadsByUser: async () => [],
+        listThreadsByReflectiveObject: async () => [],
+        updateThread: async () => null,
+        setThreadState: async () => null,
+        archiveThread: async () => null,
+        createObjectAssociation: async () => {
+          throw new Error("not used");
+        },
+        createGlossaryAssociation: async () => {
+          throw new Error("not used");
+        },
+        listAssociationsByThread: async () => [
+          {
+            id: "thread-assoc-1",
+            userId: "user-1",
+            threadId: "thread-1",
+            kind: "reflective_object",
+            reflectiveObjectId: "obj-1",
+            glossaryTermId: null,
+            reflectiveResponseId: null,
+            associationLabel: null,
+            createdAt: "2026-06-10T10:00:00.000Z",
+            updatedAt: "2026-06-10T10:00:00.000Z",
+          },
+        ],
+      },
+      openingRepository: {
+        createOpening: async () => {
+          throw new Error("not used");
+        },
+        getOpeningById: async () => null,
+        listOpeningSurfacesByUser: async () => [],
+        listDormantSuppressedOpeningsByUser: async () => [],
+        listRecentOpeningsByUser: async () => [],
+        listOpeningsByLatentSnapshot: async () => [],
+        activateOpening: async () => null,
+        reactivateOpening: async () => null,
+        dismissOpening: async () => null,
+        setSuppression: async () => null,
+        recordSurfaceEvent: async () => {
+          throw new Error("not used");
+        },
+        attachThreadToOpening: async () => null,
+      },
+      responseRepository: {
+        createResponse: async () => {
+          throw new Error("not used");
+        },
+        getResponseById: async () => null,
+        listResponsesByUser: async () => [],
+        updateResponse: async () => null,
+        setResponseState: async () => null,
+        archiveResponse: async () => null,
+        createObjectAssociation: async () => {
+          throw new Error("not used");
+        },
+        createThreadAssociation: async () => {
+          throw new Error("not used");
+        },
+        removeObjectAssociation: async () => false,
+        removeThreadAssociation: async () => false,
+        listAssociationsByResponse: async () => [],
+        createOpeningActivationEvent: async () => {
+          throw new Error("not used");
+        },
+        listOpeningActivationEventsByWindow: async () => [],
+        createOpeningResponseAssociation: async () => {
+          throw new Error("not used");
+        },
+        removeOpeningResponseAssociation: async () => false,
+        listOpeningResponseAssociationsByOpening: async () => [],
+      },
+      glossaryRepository: {
+        listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [],
+        getTermById: async () => null,
+        listAppearanceRecordsByTerm: async () => [],
+        createTerm: async () => {
+          throw new Error("not used");
+        },
+        updateTerm: async () => null,
+        listCandidates: async () => [],
+        listCandidatesByReflectiveObject: async () => [],
+        getCandidateById: async () => null,
+        upsertCandidates: async () => [],
+        setCandidateLifecycle: async () => null,
+        resolveCandidate: async () => null,
+        createAssociation: async () => {
+          throw new Error("not used");
+        },
+        createAppearanceRecord: async () => null,
+      },
+      latentOpportunityRepository: {
+        evaluateAuthoritySameness: async () => ({
+          outcome: "materially_changed",
+          acceptedFingerprint: "a".repeat(64),
+          candidateFingerprint: "b".repeat(64),
+        }),
+        resolveReusableAcceptedGenerationRun: async () => ({
+          reusable: false,
+          generationRun: null,
+          invalidation: null,
+        }),
+        createGenerationRun: async () => {
+          throw new Error("not used");
+        },
+        createIdentity: async () => {
+          throw new Error("not used");
+        },
+        createManifestation: async () => {
+          throw new Error("not used");
+        },
+        deleteGenerationRun: async () => undefined,
+        deleteIdentity: async () => undefined,
+        deleteManifestation: async () => undefined,
+        getGenerationRunById: async () => null,
+        getCurrentGenerationRunForReflectiveObject: async () => null,
+        getManifestationById: async () => null,
+        listGenerationRunsForReflectiveObject: async () => [],
+        listManifestationsByGenerationRun: async () => [],
+        listManifestationsByPriorityReflectiveObject: async () => [],
+        listManifestationsByIdentity: async () => [],
+        listRecentManifestationsByUser: async () => [],
+        createGenerationRunInvalidationIfAbsent: async () => null,
+        listGenerationRunInvalidations: async () => [],
+        markGenerationRunCurrent: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunFailed: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunRejected: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunEmpty: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunNoChange: async () => {
+          throw new Error("not used");
+        },
+        markGenerationRunSuperseded: async () => {
+          throw new Error("not used");
+        },
+      },
+      reflectionRepository: {
+        admitReflection: async () => {
+          throw new Error("not used");
+        },
+        getReflectionById: async () => null,
+        listReflectionsByUser: async () => [
+          {
+            id: "reflection-unrelated-newest-1",
+            userId: "user-1",
+            candidateId: "candidate-u1",
+            threadId: "thread-9",
+            sourceResponseId: "response-u1",
+            sourceOpeningId: "opening-u1",
+            sourceReflectiveObjectIds: ["obj-9"],
+            statement: "Unrelated newest 1",
+            pattern: ["Other"],
+            admittedAt: "2026-06-10T12:00:00.000Z",
+            archivedAt: null,
+            createdAt: "2026-06-10T12:00:00.000Z",
+            updatedAt: "2026-06-10T12:00:00.000Z",
+          },
+          {
+            id: "reflection-unrelated-newest-2",
+            userId: "user-1",
+            candidateId: "candidate-u2",
+            threadId: "thread-9",
+            sourceResponseId: "response-u2",
+            sourceOpeningId: "opening-u2",
+            sourceReflectiveObjectIds: ["obj-9"],
+            statement: "Unrelated newest 2",
+            pattern: ["Other"],
+            admittedAt: "2026-06-10T11:59:00.000Z",
+            archivedAt: null,
+            createdAt: "2026-06-10T11:59:00.000Z",
+            updatedAt: "2026-06-10T11:59:00.000Z",
+          },
+          {
+            id: "reflection-relevant-1",
+            userId: "user-1",
+            candidateId: "candidate-r1",
+            threadId: "thread-1",
+            sourceResponseId: "response-r1",
+            sourceOpeningId: "opening-r1",
+            sourceReflectiveObjectIds: ["obj-1"],
+            statement: "Relevant reflection 1",
+            pattern: ["Threshold", "Return"],
+            admittedAt: "2026-06-10T11:58:00.000Z",
+            archivedAt: null,
+            createdAt: "2026-06-10T11:58:00.000Z",
+            updatedAt: "2026-06-10T11:58:00.000Z",
+          },
+          {
+            id: "reflection-relevant-2",
+            userId: "user-1",
+            candidateId: "candidate-r2",
+            threadId: "thread-1",
+            sourceResponseId: "response-r2",
+            sourceOpeningId: "opening-r2",
+            sourceReflectiveObjectIds: ["obj-1"],
+            statement: "Relevant reflection 2",
+            pattern: ["Threshold", "Pause"],
+            admittedAt: "2026-06-10T11:57:00.000Z",
+            archivedAt: null,
+            createdAt: "2026-06-10T11:57:00.000Z",
+            updatedAt: "2026-06-10T11:57:00.000Z",
+          },
+          {
+            id: "reflection-relevant-3",
+            userId: "user-1",
+            candidateId: "candidate-r3",
+            threadId: "thread-1",
+            sourceResponseId: "response-r3",
+            sourceOpeningId: "opening-r3",
+            sourceReflectiveObjectIds: ["obj-1"],
+            statement: "Relevant reflection 3",
+            pattern: ["Threshold", "Change"],
+            admittedAt: "2026-06-10T11:56:00.000Z",
+            archivedAt: null,
+            createdAt: "2026-06-10T11:56:00.000Z",
+            updatedAt: "2026-06-10T11:56:00.000Z",
+          },
+        ],
+      },
+    });
+
+    expect(payload).not.toBeNull();
+    if (!payload) {
+      throw new Error("Payload should not be null.");
+    }
+
+    expect(payload.nearbyContext.relatedMaterial).toEqual([
+      {
+        itemId: "reflection:reflection-relevant-1",
+        kind: "prior_reflection",
+        label: "Relevant reflection 1",
+        excerpt: "Threshold · Return",
+        target: null,
+      },
+      {
+        itemId: "reflection:reflection-relevant-2",
+        kind: "prior_reflection",
+        label: "Relevant reflection 2",
+        excerpt: "Threshold · Pause",
+        target: null,
+      },
+    ]);
   });
 });

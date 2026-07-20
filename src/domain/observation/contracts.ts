@@ -12,8 +12,17 @@ export interface ObservationRepository {
   getById(id: ObservationId, userId: UserId): Promise<Observation | null>;
 }
 
+export interface ObservationV2GetOptions {
+  includeArchived?: boolean;
+}
+
 export interface ObservationV2Repository {
   create(bundle: ObservationV2Bundle): Promise<ObservationV2Bundle>;
-  getByBundleId(bundleId: string, userId: UserId): Promise<ObservationV2Bundle | null>;
-  getByReflectiveObjectId(reflectiveObjectId: string, userId: UserId): Promise<ObservationV2Bundle | null>;
+  getByBundleId(bundleId: string, userId: UserId, options?: ObservationV2GetOptions): Promise<ObservationV2Bundle | null>;
+  getByReflectiveObjectId(
+    reflectiveObjectId: string,
+    userId: UserId,
+    options?: ObservationV2GetOptions,
+  ): Promise<ObservationV2Bundle | null>;
+  archive(bundleId: string, userId: UserId): Promise<ObservationV2Bundle | null>;
 }

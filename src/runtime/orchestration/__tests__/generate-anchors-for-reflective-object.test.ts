@@ -285,6 +285,7 @@ function createRepositories(): GenerateAnchorsForReflectiveObjectRepositories {
     create: vi.fn(),
     getByBundleId: vi.fn(),
     getByReflectiveObjectId: vi.fn(),
+    archive: vi.fn(),
   };
 
   const glossaryRepository: GlossaryRepository = {
@@ -294,7 +295,6 @@ function createRepositories(): GenerateAnchorsForReflectiveObjectRepositories {
     listAppearanceRecordsByTerm: vi.fn(),
     createTerm: vi.fn(),
     updateTerm: vi.fn(),
-    renameTerm: vi.fn(),
     listCandidates: vi.fn(),
     listCandidatesByReflectiveObject: vi.fn(),
     getCandidateById: vi.fn(),
@@ -306,14 +306,34 @@ function createRepositories(): GenerateAnchorsForReflectiveObjectRepositories {
   };
 
   const latentOpportunityRepository: LatentOpportunityRepository = {
+    evaluateAuthoritySameness: vi.fn(),
+    resolveReusableAcceptedGenerationRun: vi.fn().mockResolvedValue({
+      reusable: false,
+      generationRun: null,
+      invalidation: null,
+    }),
+    createGenerationRun: vi.fn(),
     createIdentity: vi.fn(),
     createManifestation: vi.fn(),
+    deleteGenerationRun: vi.fn(),
     deleteIdentity: vi.fn(),
     deleteManifestation: vi.fn(),
+    getGenerationRunById: vi.fn(),
+    getCurrentGenerationRunForReflectiveObject: vi.fn(),
     getManifestationById: vi.fn(),
+    listGenerationRunsForReflectiveObject: vi.fn(),
+    listManifestationsByGenerationRun: vi.fn(),
     listManifestationsByPriorityReflectiveObject: vi.fn(),
     listManifestationsByIdentity: vi.fn(),
     listRecentManifestationsByUser: vi.fn(),
+    createGenerationRunInvalidationIfAbsent: vi.fn().mockResolvedValue(null),
+    listGenerationRunInvalidations: vi.fn().mockResolvedValue([]),
+    markGenerationRunCurrent: vi.fn(),
+    markGenerationRunFailed: vi.fn(),
+    markGenerationRunRejected: vi.fn(),
+    markGenerationRunEmpty: vi.fn(),
+    markGenerationRunNoChange: vi.fn(),
+    markGenerationRunSuperseded: vi.fn(),
   };
 
   const anchorRepository: AnchorRepository = {

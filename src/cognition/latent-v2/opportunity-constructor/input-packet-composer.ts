@@ -4,7 +4,10 @@ import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contrac
 import type { LatentOpportunityManifestation } from "@/src/domain/latent-v2/types";
 import type { ObservationV2Repository } from "@/src/domain/observation/contracts";
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
+import type { ReflectionRepository } from "@/src/domain/reflections/contracts";
+import type { Reflection } from "@/src/domain/reflections/types";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
+import { createReflectionRepository } from "@/src/infrastructure/supabase/repositories/create-reflection-repository";
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
 import { createLatentOpportunityRepository } from "@/src/infrastructure/supabase/repositories/create-latent-opportunity-repository";
 import { createObservationV2Repository } from "@/src/infrastructure/supabase/repositories/create-observation-v2-repository";
@@ -19,6 +22,11 @@ import {
   mapBoundarySignalKind,
   mapSemanticPolicyResult,
 } from "@/src/cognition/latent-v2/packet-shared";
+import {
+  projectAuthorityProvenance,
+  projectContextProvenance,
+  type ComposedOpportunityConstructorInput,
+} from "@/src/cognition/latent-v2/opportunity-constructor/provenance";
 import type { OpportunityConstructorInputPacket } from "@/src/cognition/latent-v2/opportunity-constructor/types";
 import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
 
@@ -26,6 +34,7 @@ const DEFAULT_RUNTIME_VERSION = "latent_opportunity_constructor_v1";
 const DEFAULT_EXISTING_OPPORTUNITY_IDENTITY_LIMIT = 5;
 const DEFAULT_EXISTING_MANIFESTATIONS_PER_IDENTITY_LIMIT = 3;
 const DEFAULT_RECENT_MANIFESTATIONS_FETCH_LIMIT = 12;
+const DEFAULT_REFLECTION_LIMIT = 8;
 
 export interface ComposeOpportunityConstructorInputPacketInput {
   userId: UserId;
@@ -34,9 +43,11 @@ export interface ComposeOpportunityConstructorInputPacketInput {
   observationV2Repository?: ObservationV2Repository;
   glossaryRepository?: GlossaryRepository;
   latentOpportunityRepository?: LatentOpportunityRepository;
+  reflectionRepository?: ReflectionRepository;
   existingOpportunityIdentityLimit?: number;
   recentManifestationsPerIdentityLimit?: number;
   recentManifestationsFetchLimit?: number;
+  reflectionLimit?: number;
 }
 
 function compareByCreatedAtDescending(left: { createdAt: string; id: string }, right: { createdAt: string; id: string }): number {
@@ -188,13 +199,30 @@ function buildExistingOpportunityIdentities(input: {
   };
 }
 
+function compareReflectionsByAdmittedAtDescending(left: Reflection, right: Reflection): number {
+  if (left.admittedAt !== right.admittedAt) {
+    return right.admittedAt.localeCompare(left.admittedAt);
+  }
+
+  return left.id.localeCompare(right.id);
+}
+
 export async function composeOpportunityConstructorInputPacket(
   input: ComposeOpportunityConstructorInputPacketInput,
 ): Promise<OpportunityConstructorInputPacket> {
+  const composed = await composeOpportunityConstructorInputPacketWithProvenance(input);
+
+  return composed.packet;
+}
+
+export async function composeOpportunityConstructorInputPacketWithProvenance(
+  input: ComposeOpportunityConstructorInputPacketInput,
+): Promise<ComposedOpportunityConstructorInput> {
   const reflectiveObjectRepository = input.reflectiveObjectRepository ?? createReflectiveObjectRepository();
   const observationV2Repository = input.observationV2Repository ?? createObservationV2Repository();
   const glossaryRepository = input.glossaryRepository ?? createGlossaryRepository();
   const latentOpportunityRepository = input.latentOpportunityRepository ?? createLatentOpportunityRepository();
+  const reflectionRepository = input.reflectionRepository ?? createReflectionRepository();
 
   const priorityReflectiveObject = await reflectiveObjectRepository.getById(input.priorityReflectiveObjectId, input.userId);
   if (!priorityReflectiveObject) {
@@ -225,6 +253,7 @@ export async function composeOpportunityConstructorInputPacket(
     input.recentManifestationsPerIdentityLimit ?? DEFAULT_EXISTING_MANIFESTATIONS_PER_IDENTITY_LIMIT;
   const recentManifestationsFetchLimit =
     input.recentManifestationsFetchLimit ?? DEFAULT_RECENT_MANIFESTATIONS_FETCH_LIMIT;
+  const reflectionLimit = input.reflectionLimit ?? DEFAULT_REFLECTION_LIMIT;
 
   const priorityManifestations = await latentOpportunityRepository.listManifestationsByPriorityReflectiveObject(
     input.priorityReflectiveObjectId,
@@ -234,6 +263,7 @@ export async function composeOpportunityConstructorInputPacket(
     input.userId,
     recentManifestationsFetchLimit,
   );
+  const reflections = await reflectionRepository.listReflectionsByUser(input.userId, reflectionLimit);
 
   const existingOpportunityContext = buildExistingOpportunityIdentities({
     priorityReflectiveObjectId: input.priorityReflectiveObjectId,
@@ -249,7 +279,22 @@ export async function composeOpportunityConstructorInputPacket(
     bundleUncertaintyNotes.push(existingOpportunityContext.truncationNote);
   }
 
-  return {
+  const reflectionContext = {
+    reflections: [...reflections]
+      .sort(compareReflectionsByAdmittedAtDescending)
+      .map((reflection) => ({
+        reflectionId: reflection.id,
+        threadId: reflection.threadId,
+        sourceResponseId: reflection.sourceResponseId,
+        sourceOpeningId: reflection.sourceOpeningId,
+        sourceReflectiveObjectIds: [...reflection.sourceReflectiveObjectIds],
+        statement: reflection.statement,
+        pattern: [...reflection.pattern],
+        admittedAt: reflection.admittedAt,
+      })),
+  };
+
+  const packet: OpportunityConstructorInputPacket = {
     generationContext: {
       runtimeVersion: DEFAULT_RUNTIME_VERSION,
       userId: input.userId,
@@ -316,7 +361,7 @@ export async function composeOpportunityConstructorInputPacket(
         displayLabel: term.displayLabel,
         normalizedKey: term.normalizedKey,
         termType: term.type === "concept" ? "concept" : "motif",
-        userNotes: term.notes,
+        userNotes: term.generalNote,
         appearanceCount: term.appearanceCount,
         recentAppearanceObjectIds: appearanceRecordLists
           .find((entry) => entry.term.id === term.id)
@@ -351,5 +396,18 @@ export async function composeOpportunityConstructorInputPacket(
     existingOpportunityContext: {
       identities: existingOpportunityContext.identities,
     },
+    reflectionContext,
+  };
+
+  return {
+    packet,
+    authorityProvenance: projectAuthorityProvenance({
+      packet,
+      observationBundleUncertaintyNotes: [...(bundle.uncertaintyNotes ?? [])],
+    }),
+    contextProvenance: projectContextProvenance({
+      packet,
+      truncationNote: existingOpportunityContext.truncationNote,
+    }),
   };
 }

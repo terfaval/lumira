@@ -76,7 +76,18 @@ Compatibility projections should exist only when they serve a clearly identified
 
 Compatibility should not become its own development track.
 
-## Current Ownership Map
+## Historical Ownership Map At Draft Time
+
+This section preserves the repository assessment that informed the original ownership cutover plan.
+
+It is historical planning context, not the current authority picture.
+
+Current repository reality is:
+
+- live generated Observation writes are V2-owned on the native capture path
+- authoritative persistence and retrieval flow through `ObservationV2Repository`
+- major downstream cognition reads Observation V2 directly
+- V1 summary/fragment shapes remain only where compatibility support is still intentionally preserved
 
 ## 1. Canonical authority vs operational ownership
 
@@ -92,32 +103,32 @@ Operational ownership is still V1-shaped:
 - persistence is `observations` plus `observation_fragments`
 - downstream consumers mostly depend on `summary` plus `fragments[]`
 
-In practice, the repo still treats the V1 contract as the system owner even though planning authority has moved to V2.
+At plan drafting time, the repo still treated the V1 contract as the system owner even though planning authority had moved to V2.
 
-## 2. Current write owner
+## 2. Historical write owner at plan drafting time
 
-System-generated Observation writes are currently owned by the V1 projection path:
+At plan drafting time, system-generated Observation writes were owned by the V1 projection path:
 
 - `app/capture/page.tsx` calls `buildLlmObservationExtraction()`
 - `src/cognition/observation/llm-observation-extractor.ts` returns `CreateObservationInput`
 - `createObservationRepository().create()` persists that V1-shaped payload
 
-The scene-first extractor exists, but it is not the live write owner:
+The scene-first extractor existed, but it was not yet the live write owner:
 
 - `src/cognition/observation/llm-scene-observation-extractor.ts`
 
-## 3. Current manual/API owner
+## 3. Historical manual/API owner at plan drafting time
 
-Manual/API ingress is also V1-owned:
+At plan drafting time, manual/API ingress was also V1-owned:
 
 - `app/api/reflective-objects/[id]/observations/route.ts`
 - `src/domain/observation/http-contract.ts`
 
 That route validates `summary` plus `fragments[]` and persists them directly through the V1 repository.
 
-## 4. Current persistence owner
+## 4. Historical persistence owner at plan drafting time
 
-Persistence currently defines the durable operational Observation shape:
+At plan drafting time, persistence defined the durable operational Observation shape:
 
 - `src/domain/observation/contracts.ts`
 - `src/infrastructure/supabase/repositories/observation-supabase-repository.ts`
@@ -132,9 +143,9 @@ This layer stores and reconstructs:
 - no native boundary signals
 - no native scene-local derived structures
 
-## 5. Current read owner
+## 5. Historical read owner at plan drafting time
 
-Observation reads are still owned by the V1 repository contract:
+At plan drafting time, Observation reads were still owned by the V1 repository contract:
 
 - `ObservationRepository.listByReflectiveObject()`
 - `ObservationRepository.getById()`
@@ -148,9 +159,9 @@ Read consumers include:
 
 These consumers read `Observation.summary` and `Observation.fragments`, not `ObservationV2Bundle`.
 
-## 6. Current V2 runtime status
+## 6. Historical V2 runtime status at plan drafting time
 
-The V2 runtime exists, but mostly as additive internal structure:
+At plan drafting time, the V2 runtime existed, but mostly as additive internal structure:
 
 - `src/domain/observation/v2-runtime.ts` defines the bundle
 - `src/cognition/observation/scene-discovery.ts` constructs ordered V2 bundles
@@ -158,7 +169,7 @@ The V2 runtime exists, but mostly as additive internal structure:
 
 Important consequence:
 
-The current projection flattens scene semantics into fragment-era durability. That means the repo cannot later recover a true V2 bundle from current durable storage without adding new persistence support.
+At plan drafting time, the projection flattened scene semantics into fragment-era durability. That meant the repo could not later recover a true V2 bundle from then-current durable storage without adding new persistence support.
 
 ## Target Ownership Model
 
@@ -391,25 +402,25 @@ Exit rule:
 
 Add or refine the following fallout items before and during implementation:
 
-1. **Live capture still uses the legacy extractor owner**
-   - current repo fact: `app/capture/page.tsx` still calls `buildLlmObservationExtraction()`
-   - implication: the main running write path is still V1-owned
+1. **Live capture now uses the scene-first V2 extractor owner**
+   - current repo fact: `app/capture/page.tsx` calls `buildLlmSceneObservationExtraction()`, enriches the resulting bundle, and writes through `createObservationV2WriteStore()`
+   - implication: the main running write path is now V2-owned above any remaining compatibility infrastructure
 
-2. **Repository contract is the actual V1 authority chokepoint**
-   - current repo fact: `ObservationRepository` only accepts/returns V1 shapes
-   - implication: V2 cannot own the system while this remains the only Observation seam
+2. **Legacy V1 repository contracts remain bounded compatibility seams**
+   - current repo fact: `ObservationRepository` still accepts/returns V1 shapes for older compatibility consumers, but it is no longer the only Observation seam
+   - implication: V1 repository contracts should remain explicitly compatibility-only and must not be treated as Observation ownership
 
-3. **Current persistence cannot durably rehydrate scene semantics**
-   - current repo fact: `scene-discovery-projection.ts` flattens scenes before durability
-   - implication: read-side V2 ownership requires a persistence change, not just a parser swap
+3. **Primary persistence now durably rehydrates scene-first Observation semantics**
+   - current repo fact: `observation-v2-write-store.ts` persists native bundles through `ObservationV2Repository`, and `observation-v2-supabase-repository.ts` rehydrates bundle, scene, and observation graphs by `bundleId` and `reflectiveObjectId`
+   - implication: persistence and retrieval authority have moved to the native V2 seam even while compatibility projections still exist elsewhere
 
 4. **Manual/API ingress still defines Observation as `summary + fragments[]`**
    - current repo fact: POST route and HTTP contract validate V1 payloads directly
    - implication: this must be classified as compatibility-only, not neutral
 
-5. **Downstream consumers still derive meaning from V1 read models**
-   - current repo fact: reflective-space, glossary, and latent intake all consume `Observation[]`
-   - implication: breakage or loss caused by ownership cutover should be recorded as fallout, not used to preserve V1 ownership
+5. **Major downstream cognition already consumes Observation V2 directly**
+   - current repo fact: latent and anchor orchestration compose their packets through `ObservationV2Repository`, and glossary candidate generation also reads the V2 bundle seam
+   - implication: downstream Observation authority has materially shifted to V2, while any remaining V1-shaped consumer support should be treated as compatibility fallout rather than ownership pressure
 
 6. **Compatibility projection is currently doing semantic compression, not just transport adaptation**
    - implication: this is more than a harmless DTO bridge and should be treated as an architectural risk item
@@ -462,7 +473,7 @@ The ownership cutover plan should explicitly keep the following out of scope unl
 
 ## Final Sequencing Rule
 
-The repo should treat Observation V2 ownership as complete only when all of the following are true:
+The repo should treat Observation V2 ownership as institutionally stabilized only when all of the following are true:
 
 - live generated writes are V2-owned
 - V1 ingress is explicitly compatibility-only or removed
@@ -470,4 +481,6 @@ The repo should treat Observation V2 ownership as complete only when all of the 
 - primary internal reads are V2-owned
 - remaining V1 shapes, if any, are projections with a documented migration purpose, not owners
 
-Until then, Observation V2 is authoritative in doctrine, but only partially authoritative in operation.
+Observation V2 is now the operational authority for native construction, authoritative persistence, authoritative retrieval, and major downstream cognition consumption.
+
+Remaining work is stabilization work around compatibility fidelity, uncertainty realization, bundle lifecycle completion, and display identity rather than a question of primary Observation ownership.

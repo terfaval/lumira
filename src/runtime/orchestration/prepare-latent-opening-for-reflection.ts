@@ -251,15 +251,24 @@ async function tryPrepareOpeningsFromLatentV2(
     return "fallback";
   }
 
-  let manifestations = await repositories.latentOpportunityRepository.listManifestationsByPriorityReflectiveObject(
+  const reuseResolution = await repositories.latentOpportunityRepository.resolveReusableAcceptedGenerationRun(
     input.reflectiveObjectId,
     input.userId,
   );
+  let currentRun = reuseResolution.reusable ? reuseResolution.generationRun : null;
+
+  if (reuseResolution.reusable && reuseResolution.generationRun?.status === "empty") {
+    return "fallback";
+  }
+  let manifestations = currentRun
+    ? await repositories.latentOpportunityRepository.listManifestationsByGenerationRun(currentRun.id, input.userId)
+    : [];
 
   if (manifestations.length === 0) {
     const generation = await generateLatentOpportunitiesForReflectiveObject({
       userId: input.userId,
       priorityReflectiveObjectId: input.reflectiveObjectId,
+      acceptedRunReuseGuard: reuseResolution.generationRun && !reuseResolution.reusable ? "skip" : "evaluate",
       repositories: {
         reflectiveObjectRepository: repositories.reflectiveObjectRepository,
         observationV2Repository: repositories.observationV2Repository,
@@ -268,20 +277,26 @@ async function tryPrepareOpeningsFromLatentV2(
       },
     });
 
-    if (generation.mode === "no_opportunity") {
-      return "handled";
+    if (generation.mode === "empty") {
+      return "fallback";
     }
 
     if (generation.mode !== "persisted" || generation.persistedManifestations.length === 0) {
       logLatentV2Fallback({
         userId: input.userId,
         reflectiveObjectId: input.reflectiveObjectId,
-        reason: generation.mode === "failed" ? `generation_failed:${generation.stage}` : "no_opportunity",
+        reason: generation.mode === "failed" ? `generation_failed:${generation.stage}` : "empty_assessment",
       });
       return "fallback";
     }
 
-    manifestations = generation.persistedManifestations;
+    currentRun = await repositories.latentOpportunityRepository.getCurrentGenerationRunForReflectiveObject(
+      input.reflectiveObjectId,
+      input.userId,
+    );
+    manifestations = currentRun
+      ? await repositories.latentOpportunityRepository.listManifestationsByGenerationRun(currentRun.id, input.userId)
+      : generation.persistedManifestations;
   }
 
   const candidates = await deriveOpeningCandidatesFromLatentV2Manifestations(

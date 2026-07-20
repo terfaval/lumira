@@ -79,7 +79,14 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
     const orderedIds = Array.from(
       new Set(
         (associations ?? [])
-          .sort((left, right) => left.created_at.localeCompare(right.created_at))
+          .sort((left, right) => {
+            const createdAtComparison = left.created_at.localeCompare(right.created_at);
+            if (createdAtComparison !== 0) {
+              return createdAtComparison;
+            }
+
+            return left.glossary_term_id.localeCompare(right.glossary_term_id);
+          })
           .map((row) => row.glossary_term_id)
           .filter((value): value is string => typeof value === "string" && value.length > 0),
       ),
@@ -135,7 +142,21 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
       throw new Error(`Failed to list glossary appearance records: ${error.message}`);
     }
 
-    return (data ?? []).map((row) => fromGlossaryAppearanceRecordRow(row as GlossaryAppearanceRecordRow));
+    return [...(data ?? [])]
+      .sort((left, right) => {
+        const confirmedAtComparison = right.confirmed_at.localeCompare(left.confirmed_at);
+        if (confirmedAtComparison !== 0) {
+          return confirmedAtComparison;
+        }
+
+        const dreamIdComparison = left.dream_id.localeCompare(right.dream_id);
+        if (dreamIdComparison !== 0) {
+          return dreamIdComparison;
+        }
+
+        return left.id.localeCompare(right.id);
+      })
+      .map((row) => fromGlossaryAppearanceRecordRow(row as GlossaryAppearanceRecordRow));
   }
 
   async createTerm(input: CreateGlossaryTermInput): Promise<GlossaryTerm> {
@@ -159,6 +180,9 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
       return null;
     }
 
+    const authoritativeGeneralNote =
+      input.generalNote === undefined ? existing.general_note ?? existing.notes : input.generalNote;
+
     const { data, error } = await this.client
       .from(TERMS_TABLE)
       .update({
@@ -166,8 +190,8 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
         canonical_label: input.canonicalLabel,
         type: input.type ?? existing.type,
         aliases: input.aliases ?? existing.aliases,
-        general_note: input.generalNote === undefined ? existing.general_note : input.generalNote,
-        notes: input.generalNote === undefined ? existing.notes : input.generalNote,
+        general_note: authoritativeGeneralNote,
+        notes: authoritativeGeneralNote,
       })
       .eq("id", input.termId)
       .eq("user_id", input.userId)
@@ -180,10 +204,6 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
     }
 
     return data ? fromGlossaryTermRow(data) : null;
-  }
-
-  async renameTerm(input: GlossaryTermUpdateInput): Promise<GlossaryTerm | null> {
-    return this.updateTerm(input);
   }
 
   async listCandidates(userId: UserId): Promise<GlossaryCandidate[]> {
@@ -325,6 +345,7 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
     const row = toGlossaryCandidateInsertRow(input, now) as unknown as Record<string, unknown>;
 
     if (!includeMetadata) {
+      delete row.identity_key;
       delete row.candidate_class;
       delete row.proposed_entity_ids;
     }
@@ -340,6 +361,7 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
     includeMetadata: boolean,
   ): Record<string, unknown> {
     const patch: Record<string, unknown> = {
+      identity_key: input.identityKey ?? existing.identity_key ?? null,
       display_label: input.displayLabel,
       source_category: input.sourceCategory,
       source_observation_id: input.sourceObservationId ?? existing.source_observation_id,
@@ -370,7 +392,7 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
   private isMissingCandidateMetadataColumnError(error: { code?: string; message?: string } | null): boolean {
     const message = error?.message?.toLowerCase() ?? "";
     const referencesCandidateMetadata =
-      message.includes("candidate_class") || message.includes("proposed_entity_ids");
+      message.includes("identity_key") || message.includes("candidate_class") || message.includes("proposed_entity_ids");
 
     return (
       referencesCandidateMetadata &&
@@ -547,18 +569,78 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
   }
 
   private async loadCandidateByNaturalKey(input: CreateGlossaryCandidateInput): Promise<GlossaryCandidateRow | null> {
+    if (input.identityKey && this.candidateMetadataColumnsAvailable !== false) {
+      try {
+        const candidate = await this.loadCandidateByIdentityKey(input);
+
+        if (candidate) {
+          return candidate;
+        }
+      } catch (error) {
+        if (!this.isMissingCandidateMetadataColumnError(error as { code?: string; message?: string } | null)) {
+          throw error;
+        }
+
+        this.candidateMetadataColumnsAvailable = false;
+      }
+
+      return this.loadCandidateByNormalizedKey(input, this.candidateMetadataColumnsAvailable !== false);
+    }
+
+    return this.loadCandidateByNormalizedKey(input, false);
+  }
+
+  private async loadCandidateByIdentityKey(input: CreateGlossaryCandidateInput): Promise<GlossaryCandidateRow | null> {
     const { data, error } = await this.client
       .from(CANDIDATES_TABLE)
       .select("*")
       .eq("user_id", input.userId)
       .eq("reflective_object_id", input.reflectiveObjectId)
-      .eq("normalized_key", input.normalizedKey)
       .eq("source_category", input.sourceCategory)
+      .eq("identity_key", input.identityKey)
       .is("archived_at", null)
       .maybeSingle<GlossaryCandidateRow>();
 
     if (error) {
-      throw new Error(`Failed to load glossary candidate by key: ${error.message}`);
+      const wrapped = new Error(`Failed to load glossary candidate by key: ${error.message}`) as Error & {
+        code?: string;
+      };
+      wrapped.code = error.code;
+      throw wrapped;
+    }
+
+    return data;
+  }
+
+  private async loadCandidateByNormalizedKey(
+    input: CreateGlossaryCandidateInput,
+    requireNullIdentityKey: boolean,
+  ): Promise<GlossaryCandidateRow | null> {
+    let request = this.client
+      .from(CANDIDATES_TABLE)
+      .select("*")
+      .eq("user_id", input.userId)
+      .eq("reflective_object_id", input.reflectiveObjectId)
+      .eq("normalized_key", input.normalizedKey)
+      .eq("source_category", input.sourceCategory);
+
+    if (requireNullIdentityKey) {
+      request = request.is("identity_key", null);
+    }
+
+    const { data, error } = await request.is("archived_at", null).maybeSingle<GlossaryCandidateRow>();
+
+    if (error && requireNullIdentityKey && this.isMissingCandidateMetadataColumnError(error)) {
+      this.candidateMetadataColumnsAvailable = false;
+      return this.loadCandidateByNormalizedKey(input, false);
+    }
+
+    if (error) {
+      const wrapped = new Error(`Failed to load glossary candidate by key: ${error.message}`) as Error & {
+        code?: string;
+      };
+      wrapped.code = error.code;
+      throw wrapped;
     }
 
     return data;
@@ -755,60 +837,4 @@ export class SupabaseGlossaryRepository implements GlossaryRepository {
     return data ? fromGlossaryCandidateRow(data) : null;
   }
 
-  private async ensureGlossaryTermForPinnedCandidate(candidate: GlossaryCandidateRow): Promise<GlossaryTerm> {
-    const { data: existingData, error: existingError } = await this.client
-      .from(TERMS_TABLE)
-      .select("*")
-      .eq("user_id", candidate.user_id)
-      .eq("normalized_key", candidate.normalized_key)
-      .is("archived_at", null)
-      .maybeSingle<GlossaryTermRow>();
-
-    if (existingError) {
-      throw new Error(`Failed to load glossary term for pinned candidate: ${existingError.message}`);
-    }
-
-    if (existingData) {
-      const { data, error } = await this.client
-        .from(TERMS_TABLE)
-        .update({
-          appearance_count: existingData.appearance_count + 1,
-        })
-        .eq("id", existingData.id)
-        .eq("user_id", existingData.user_id)
-        .is("archived_at", null)
-        .select("*")
-        .single<GlossaryTermRow>();
-
-      if (error) {
-        throw new Error(`Failed to increment glossary appearance count: ${error.message}`);
-      }
-
-      return fromGlossaryTermRow(data);
-    }
-
-    const { data, error } = await this.client
-      .from(TERMS_TABLE)
-      .insert(
-        toGlossaryTermInsertRow({
-          userId: candidate.user_id,
-          normalizedKey: candidate.normalized_key,
-          displayLabel: candidate.display_label,
-          canonicalLabel: candidate.display_label,
-          type: "concept",
-          aliases: [],
-          generalNote: null,
-          appearanceCount: 0,
-          notes: null,
-        }),
-      )
-      .select("*")
-      .single<GlossaryTermRow>();
-
-    if (error) {
-      throw new Error(`Failed to create glossary term from pinned candidate: ${error.message}`);
-    }
-
-    return fromGlossaryTermRow(data);
-  }
 }

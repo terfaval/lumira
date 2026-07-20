@@ -74,7 +74,7 @@ export function DeepReflectionShell({ payload, reflectiveObjectId }: DeepReflect
   const [pendingAlternateOpeningId, setPendingAlternateOpeningId] = useState<string | null>(null);
   const [isContextOpen, setIsContextOpen] = useState(false);
 
-  const hasNearbyContext = payload.nearbyContext.cards.length > 0;
+  const hasNearbyContext = payload.nearbyContext.cards.length > 0 || payload.nearbyContext.relatedMaterial.length > 0;
   const hasAlternateOpenings = payload.alternateOpenings.items.length > 0;
   const hasSupportContext = hasNearbyContext || hasAlternateOpenings;
 
@@ -153,6 +153,12 @@ export function DeepReflectionShell({ payload, reflectiveObjectId }: DeepReflect
                       ))}
                     </ul>
                   ) : null}
+                </article>
+              ))}
+              {payload.nearbyContext.relatedMaterial.map((item) => (
+                <article key={item.itemId} className={styles.card}>
+                  <h3>{item.label}</h3>
+                  {item.excerpt ? <p>{item.excerpt}</p> : null}
                 </article>
               ))}
             </div>

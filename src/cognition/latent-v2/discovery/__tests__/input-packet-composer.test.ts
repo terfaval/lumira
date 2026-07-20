@@ -174,6 +174,7 @@ function createRepositories(): {
       create: vi.fn(),
       getByBundleId: vi.fn(),
       getByReflectiveObjectId: vi.fn().mockResolvedValue(createObservationBundle()),
+      archive: vi.fn(),
     },
   };
 }

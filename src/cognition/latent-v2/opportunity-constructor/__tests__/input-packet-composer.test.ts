@@ -11,6 +11,8 @@ import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contrac
 import type { LatentOpportunityManifestation } from "@/src/domain/latent-v2/types";
 import type { ObservationV2Repository } from "@/src/domain/observation/contracts";
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
+import type { ReflectionRepository } from "@/src/domain/reflections/contracts";
+import type { Reflection } from "@/src/domain/reflections/types";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 import type { ReflectiveObject } from "@/src/domain/reflective-objects/types";
 
@@ -247,7 +249,7 @@ function createConfirmedTerms(): GlossaryTerm[] {
       aliases: [],
       generalNote: "Recurring search motif.",
       appearanceCount: 2,
-      notes: "Owner-confirmed continuity.",
+      notes: "Stale compatibility note.",
       state: "active",
       suppression: {
         state: "none",
@@ -375,6 +377,7 @@ function createManifestation(
     identityId: input.identityId,
     userId: "user-1",
     priorityReflectiveObjectId: input.priorityReflectiveObjectId,
+    generationRunId: "run-1",
     summary: input.summary,
     structure: {
       kind: "A_TO_B",
@@ -434,17 +437,46 @@ function createManifestation(
   };
 }
 
+function createReflection(input: {
+  id: string;
+  threadId: string;
+  sourceResponseId: string;
+  sourceOpeningId: string | null;
+  sourceReflectiveObjectIds: string[];
+  statement: string;
+  pattern: string[];
+  admittedAt: string;
+}): Reflection {
+  return {
+    id: input.id,
+    userId: "user-1",
+    candidateId: `${input.id}:candidate`,
+    threadId: input.threadId,
+    sourceResponseId: input.sourceResponseId,
+    sourceOpeningId: input.sourceOpeningId,
+    sourceReflectiveObjectIds: input.sourceReflectiveObjectIds,
+    statement: input.statement,
+    pattern: input.pattern,
+    admittedAt: input.admittedAt,
+    archivedAt: null,
+    createdAt: input.admittedAt,
+    updatedAt: input.admittedAt,
+  };
+}
+
 function createRepositories(options?: {
   confirmedTerms?: GlossaryTerm[];
   appearanceRecords?: Record<string, GlossaryAppearanceRecord[]>;
   candidates?: GlossaryCandidate[];
   priorityManifestations?: LatentOpportunityManifestation[];
   recentManifestations?: LatentOpportunityManifestation[];
+  reflections?: Reflection[];
 }): {
   reflectiveObjectRepository: ReflectiveObjectRepository;
   observationV2Repository: ObservationV2Repository;
   glossaryRepository: GlossaryRepository;
   latentOpportunityRepository: LatentOpportunityRepository;
+  reflectionRepository: ReflectionRepository;
 } {
   const confirmedTerms = options?.confirmedTerms ?? createConfirmedTerms();
   const appearanceRecords = options?.appearanceRecords ?? createAppearanceRecords();
@@ -485,6 +517,30 @@ function createRepositories(options?: {
         summary: "Distance remains unresolved.",
       }),
     ];
+  const reflections =
+    options?.reflections ??
+    [
+      createReflection({
+        id: "reflection-2",
+        threadId: "thread-older",
+        sourceResponseId: "response-older",
+        sourceOpeningId: null,
+        sourceReflectiveObjectIds: ["object-0"],
+        statement: "When searching repeats, uncertainty tends to stay active.",
+        pattern: ["Search", "Uncertainty", "Return"],
+        admittedAt: "2026-06-16T09:40:00.000Z",
+      }),
+      createReflection({
+        id: "reflection-1",
+        threadId: "thread-current",
+        sourceResponseId: "response-current",
+        sourceOpeningId: "opening-current",
+        sourceReflectiveObjectIds: ["object-1"],
+        statement: "Searching in a house keeps carrying uncertainty.",
+        pattern: ["House", "Search", "Uncertainty"],
+        admittedAt: "2026-06-15T11:00:00.000Z",
+      }),
+    ];
 
   return {
     reflectiveObjectRepository: {
@@ -498,6 +554,7 @@ function createRepositories(options?: {
       create: vi.fn(),
       getByBundleId: vi.fn(),
       getByReflectiveObjectId: vi.fn().mockResolvedValue(createObservationBundle()),
+      archive: vi.fn(),
     },
     glossaryRepository: {
       listTerms: vi.fn(),
@@ -506,7 +563,6 @@ function createRepositories(options?: {
       listAppearanceRecordsByTerm: vi.fn().mockImplementation(async (termId: string) => appearanceRecords[termId] ?? []),
       createTerm: vi.fn(),
       updateTerm: vi.fn(),
-      renameTerm: vi.fn(),
       listCandidates: vi.fn(),
       listCandidatesByReflectiveObject: vi.fn().mockResolvedValue(candidates),
       getCandidateById: vi.fn(),
@@ -517,14 +573,39 @@ function createRepositories(options?: {
       createAppearanceRecord: vi.fn(),
     },
     latentOpportunityRepository: {
+      evaluateAuthoritySameness: vi.fn(),
+      resolveReusableAcceptedGenerationRun: vi.fn().mockResolvedValue({
+        reusable: false,
+        generationRun: null,
+        invalidation: null,
+      }),
+      createGenerationRun: vi.fn(),
       createIdentity: vi.fn(),
       createManifestation: vi.fn(),
+      deleteGenerationRun: vi.fn(),
       deleteIdentity: vi.fn(),
       deleteManifestation: vi.fn(),
+      getGenerationRunById: vi.fn(),
+      getCurrentGenerationRunForReflectiveObject: vi.fn(),
       getManifestationById: vi.fn(),
+      listGenerationRunsForReflectiveObject: vi.fn(),
+      listManifestationsByGenerationRun: vi.fn(),
       listManifestationsByPriorityReflectiveObject: vi.fn().mockResolvedValue(priorityManifestations),
       listManifestationsByIdentity: vi.fn(),
       listRecentManifestationsByUser: vi.fn().mockResolvedValue(recentManifestations),
+      createGenerationRunInvalidationIfAbsent: vi.fn().mockResolvedValue(null),
+      listGenerationRunInvalidations: vi.fn().mockResolvedValue([]),
+      markGenerationRunCurrent: vi.fn(),
+      markGenerationRunFailed: vi.fn(),
+      markGenerationRunRejected: vi.fn(),
+      markGenerationRunEmpty: vi.fn(),
+      markGenerationRunNoChange: vi.fn(),
+      markGenerationRunSuperseded: vi.fn(),
+    },
+    reflectionRepository: {
+      admitReflection: vi.fn(),
+      getReflectionById: vi.fn(),
+      listReflectionsByUser: vi.fn().mockResolvedValue(reflections),
     },
   };
 }
@@ -599,6 +680,7 @@ describe("composeOpportunityConstructorInputPacket", () => {
     });
 
     expect(packet.glossaryContext.confirmedTerms.map((term) => term.glossaryTermId)).toEqual(["term-2", "term-1"]);
+    expect(packet.glossaryContext.confirmedTerms[1]?.userNotes).toBe("Recurring search motif.");
     expect(packet.glossaryContext.appearanceRecords).toEqual([
       {
         appearanceRecordId: "appearance-1",
@@ -664,6 +746,40 @@ describe("composeOpportunityConstructorInputPacket", () => {
         ],
       },
     ]);
+  });
+
+  it("includes admitted reflections as bounded continuity context ordered by admission recency", async () => {
+    const repositories = createRepositories();
+
+    const packet = await composeOpportunityConstructorInputPacket({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      ...repositories,
+    });
+
+    expect(packet.reflectionContext.reflections).toEqual([
+      {
+        reflectionId: "reflection-2",
+        threadId: "thread-older",
+        sourceResponseId: "response-older",
+        sourceOpeningId: null,
+        sourceReflectiveObjectIds: ["object-0"],
+        statement: "When searching repeats, uncertainty tends to stay active.",
+        pattern: ["Search", "Uncertainty", "Return"],
+        admittedAt: "2026-06-16T09:40:00.000Z",
+      },
+      {
+        reflectionId: "reflection-1",
+        threadId: "thread-current",
+        sourceResponseId: "response-current",
+        sourceOpeningId: "opening-current",
+        sourceReflectiveObjectIds: ["object-1"],
+        statement: "Searching in a house keeps carrying uncertainty.",
+        pattern: ["House", "Search", "Uncertainty"],
+        admittedAt: "2026-06-15T11:00:00.000Z",
+      },
+    ]);
+    expect(repositories.reflectionRepository.listReflectionsByUser).toHaveBeenCalledWith("user-1", 8);
   });
 
   it("excludes existing opportunity identities from the current reflective object", async () => {
@@ -758,6 +874,7 @@ describe("composeOpportunityConstructorInputPacket", () => {
     expect(repositories.reflectiveObjectRepository.listByUser).not.toHaveBeenCalled();
     expect(repositories.glossaryRepository.listTerms).not.toHaveBeenCalled();
     expect(repositories.glossaryRepository.listCandidates).not.toHaveBeenCalled();
+    expect(repositories.reflectionRepository.getReflectionById).not.toHaveBeenCalled();
   });
 
   it("preserves priorityReflectiveObjectId", async () => {
@@ -821,6 +938,22 @@ describe("composeOpportunityConstructorInputPacket", () => {
 
     expect(packet.existingOpportunityContext).toEqual({
       identities: [],
+    });
+  });
+
+  it("handles missing reflection context gracefully", async () => {
+    const repositories = createRepositories({
+      reflections: [],
+    });
+
+    const packet = await composeOpportunityConstructorInputPacket({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      ...repositories,
+    });
+
+    expect(packet.reflectionContext).toEqual({
+      reflections: [],
     });
   });
 
@@ -1014,6 +1147,30 @@ describe("composeOpportunityConstructorInputPacket", () => {
       },
       existingOpportunityContext: {
         identities: [],
+      },
+      reflectionContext: {
+        reflections: [
+          {
+            reflectionId: "reflection-2",
+            threadId: "thread-older",
+            sourceResponseId: "response-older",
+            sourceOpeningId: null,
+            sourceReflectiveObjectIds: ["object-0"],
+            statement: "When searching repeats, uncertainty tends to stay active.",
+            pattern: ["Search", "Uncertainty", "Return"],
+            admittedAt: "2026-06-16T09:40:00.000Z",
+          },
+          {
+            reflectionId: "reflection-1",
+            threadId: "thread-current",
+            sourceResponseId: "response-current",
+            sourceOpeningId: "opening-current",
+            sourceReflectiveObjectIds: ["object-1"],
+            statement: "Searching in a house keeps carrying uncertainty.",
+            pattern: ["House", "Search", "Uncertainty"],
+            admittedAt: "2026-06-15T11:00:00.000Z",
+          },
+        ],
       },
     });
   });

@@ -297,7 +297,6 @@ export function parseGlossaryTermCreate(payload: unknown, userId: UserId): Parse
       aliases: aliases ?? [],
       generalNote,
       appearanceCount: 0,
-      notes: generalNote ?? null,
     },
   };
 }

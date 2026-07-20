@@ -80,6 +80,7 @@ function createManifestation(): LatentOpportunityManifestation {
     identityId: "identity-1",
     userId: "user-1",
     priorityReflectiveObjectId: "reflective-object-1",
+    generationRunId: "run-1",
     summary: "A jatekos telefonos feszultseg kesobb kozos keresesse alakul Boraval.",
     structure: {
       kind: "A_TO_B_TO_C",

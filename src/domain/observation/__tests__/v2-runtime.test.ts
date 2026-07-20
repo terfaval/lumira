@@ -140,6 +140,8 @@ describe("buildObservationV2Bundle", () => {
 
     expect(bundle.bundleId).toMatch(/^observation-bundle-object-1-/);
     expect(bundle.runtimeVersion).toBe("observation_v2_phase1");
+    expect(bundle.status).toBe("active");
+    expect(bundle.archivedAt).toBeNull();
     expect(bundle.uncertaintyNotes).toEqual([]);
     expect(bundle.provenance).toEqual({
       provenanceTier: "system_extract",
@@ -149,6 +151,67 @@ describe("buildObservationV2Bundle", () => {
       boundaryVersion: "observation_v2_phase1",
       dreamLanguage: "unknown",
     });
+  });
+
+  it("normalizes scene-level uncertainty notes and preserves explicit entries", () => {
+    const bundle = buildObservationV2Bundle({
+      reflectiveObjectId: "object-1",
+      userId: "user-1",
+      source: "system_llm_extract",
+      scenes: [
+        {
+          sceneId: "scene-2",
+          position: 1,
+          summary: "An uncertain threshold appears.",
+          boundaryReasoning: [],
+          evidenceContext: {
+            snippet: "it may have been a doorway or a window",
+            spanStart: 10,
+            spanEnd: 47,
+            contextLabel: "scene_shift",
+          },
+          uncertaintyNotes: ["Threshold identity remains uncertain."],
+          observations: [],
+          derived: {
+            actors: [],
+            locations: [],
+            objects: [],
+            interactions: [],
+            affect: [],
+            agency: [],
+            phenomenology: [],
+            metacognition: [],
+          },
+        },
+        {
+          sceneId: "scene-1",
+          position: 0,
+          summary: "A quiet room opens the scene.",
+          boundaryReasoning: [],
+          evidenceContext: {
+            snippet: "I was in a quiet room",
+            spanStart: 0,
+            spanEnd: 21,
+            contextLabel: "scene_opening",
+          },
+          observations: [],
+          derived: {
+            actors: [],
+            locations: [],
+            objects: [],
+            interactions: [],
+            affect: [],
+            agency: [],
+            phenomenology: [],
+            metacognition: [],
+          },
+        },
+      ],
+    });
+
+    expect(bundle.scenes[0].sceneId).toBe("scene-1");
+    expect(bundle.scenes[0].uncertaintyNotes).toEqual([]);
+    expect(bundle.scenes[1].uncertaintyNotes).toEqual(["Threshold identity remains uncertain."]);
   });
 
   it("preserves explicit dream language and legacy derived label compatibility", () => {

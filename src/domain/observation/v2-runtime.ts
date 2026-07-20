@@ -1,4 +1,5 @@
 import type {
+  ObservationStatus,
   ObservationProvenanceTier,
   ObservationSemanticPolicyResult,
   ObservationSource,
@@ -99,6 +100,7 @@ export interface ObservationV2Scene {
   position: number;
   summary: string;
   boundaryReasoning: ObservationV2BoundaryReason[];
+  uncertaintyNotes?: string[];
   evidenceContext: ObservationV2EvidenceRef;
   observations: ObservationV2Observation[];
   derived: ObservationV2DerivedStructures;
@@ -109,6 +111,8 @@ export interface ObservationV2Bundle {
   reflectiveObjectId: ReflectiveObjectId;
   userId: UserId;
   source: ObservationSource;
+  status?: ObservationStatus;
+  archivedAt?: string | null;
   provenance?: ObservationV2BundleProvenance;
   uncertaintyNotes?: string[];
   runtimeVersion?: string;
@@ -198,6 +202,14 @@ function normalizeDerivedStructures(derived: ObservationV2DerivedStructures): Ob
   };
 }
 
+function normalizeUncertaintyNotes(notes: string[] | undefined): string[] {
+  if (!Array.isArray(notes)) {
+    return [];
+  }
+
+  return notes.map((note) => note.trim()).filter(Boolean);
+}
+
 function compareScenes(left: ObservationV2Scene, right: ObservationV2Scene): number {
   if (left.position !== right.position) {
     return left.position - right.position;
@@ -225,14 +237,17 @@ export function buildObservationV2Bundle(input: ObservationV2Bundle): Observatio
   return {
     ...input,
     bundleId: input.bundleId ?? `observation-bundle-${input.reflectiveObjectId}-${runtimeVersion}`,
+    status: input.status ?? "active",
+    archivedAt: input.archivedAt ?? null,
     provenance,
     scenes: [...input.scenes]
       .sort(compareScenes)
       .map((scene) => ({
         ...scene,
+        uncertaintyNotes: normalizeUncertaintyNotes(scene.uncertaintyNotes),
         derived: normalizeDerivedStructures(scene.derived),
       })),
-    uncertaintyNotes: input.uncertaintyNotes ?? [],
+    uncertaintyNotes: normalizeUncertaintyNotes(input.uncertaintyNotes),
     runtimeVersion,
   };
 }

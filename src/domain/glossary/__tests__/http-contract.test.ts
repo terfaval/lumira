@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   parseGlossaryCandidateResolution,
   parseGlossaryCandidateLifecycleUpdate,
+  parseGlossaryTermCreate,
   parseGlossaryTermUpdate,
 } from "@/src/domain/glossary/http-contract";
 
@@ -133,6 +134,22 @@ describe("glossary http contracts", () => {
     expect(parsed.value.aliases).toEqual(["bridge"]);
     expect(parsed.value.canonicalLabel).toBe("Bridge");
     expect(parsed.value.generalNote).toBe("Recurring crossing point.");
+  });
+
+  it("treats generalNote as the only note authority in term create payloads", () => {
+    const parsed = parseGlossaryTermCreate(
+      {
+        canonicalLabel: "Bridge",
+        type: "place",
+        generalNote: "Recurring crossing point.",
+      },
+      "user-1",
+    );
+
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value.generalNote).toBe("Recurring crossing point.");
+    expect(parsed.value.notes).toBeUndefined();
   });
 
   it("dedupes aliases using the shared recognition normalizer while preserving display text", () => {

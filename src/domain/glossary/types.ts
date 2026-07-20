@@ -85,6 +85,7 @@ export interface GlossaryTerm extends VersionedTimestamps {
   aliases: string[];
   generalNote: string | null;
   appearanceCount: number;
+  // Compatibility mirror of generalNote for transitional callers.
   notes: string | null;
   state: GlossaryTermState;
   suppression: GlossarySuppressionState;
@@ -138,6 +139,7 @@ export interface CreateGlossaryTermInput {
   aliases?: string[];
   generalNote?: string | null;
   appearanceCount?: number;
+  // Compatibility mirror input; authoritative note ownership remains on generalNote.
   notes?: string | null;
 }
 

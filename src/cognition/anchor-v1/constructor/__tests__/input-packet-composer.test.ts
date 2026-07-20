@@ -145,9 +145,9 @@ function createConfirmedTerms(): GlossaryTerm[] {
       canonicalLabel: "Ház keresés",
       type: "concept",
       aliases: [],
-      generalNote: null,
+      generalNote: "Recurring search motif.",
       appearanceCount: 2,
-      notes: "Owner-confirmed continuity.",
+      notes: "Stale compatibility note.",
       state: "active",
       suppression: {
         state: "none",
@@ -193,6 +193,7 @@ function createManifestation(): LatentOpportunityManifestation {
     identityId: "identity-current",
     userId: "user-1",
     priorityReflectiveObjectId: "object-1",
+    generationRunId: "run-1",
     summary: "Searching turns into uncertainty around a missing phone.",
     structure: {
       kind: "A_TO_B",
@@ -272,6 +273,7 @@ function createRepositories(input?: {
     create: vi.fn(),
     getByBundleId: vi.fn(),
     getByReflectiveObjectId: vi.fn().mockResolvedValue(observationBundle),
+    archive: vi.fn(),
   };
 
   const glossaryRepository: GlossaryRepository = {
@@ -281,7 +283,6 @@ function createRepositories(input?: {
     listAppearanceRecordsByTerm: vi.fn().mockResolvedValue([]),
     createTerm: vi.fn(),
     updateTerm: vi.fn(),
-    renameTerm: vi.fn(),
     listCandidates: vi.fn(),
     listCandidatesByReflectiveObject: vi.fn(),
     getCandidateById: vi.fn(),
@@ -293,14 +294,34 @@ function createRepositories(input?: {
   };
 
   const latentOpportunityRepository: LatentOpportunityRepository = {
+    evaluateAuthoritySameness: vi.fn(),
+    resolveReusableAcceptedGenerationRun: vi.fn().mockResolvedValue({
+      reusable: false,
+      generationRun: null,
+      invalidation: null,
+    }),
+    createGenerationRun: vi.fn(),
     createIdentity: vi.fn(),
     createManifestation: vi.fn(),
+    deleteGenerationRun: vi.fn(),
     deleteIdentity: vi.fn(),
     deleteManifestation: vi.fn(),
+    getGenerationRunById: vi.fn(),
+    getCurrentGenerationRunForReflectiveObject: vi.fn(),
     getManifestationById: vi.fn(),
+    listGenerationRunsForReflectiveObject: vi.fn(),
+    listManifestationsByGenerationRun: vi.fn(),
     listManifestationsByPriorityReflectiveObject: vi.fn().mockResolvedValue(priorityManifestations),
     listManifestationsByIdentity: vi.fn(),
     listRecentManifestationsByUser: vi.fn(),
+    createGenerationRunInvalidationIfAbsent: vi.fn().mockResolvedValue(null),
+    listGenerationRunInvalidations: vi.fn().mockResolvedValue([]),
+    markGenerationRunCurrent: vi.fn(),
+    markGenerationRunFailed: vi.fn(),
+    markGenerationRunRejected: vi.fn(),
+    markGenerationRunEmpty: vi.fn(),
+    markGenerationRunNoChange: vi.fn(),
+    markGenerationRunSuperseded: vi.fn(),
   };
 
   return {
@@ -334,6 +355,7 @@ describe("composeAnchorConstructorInputPacket", () => {
     ]);
     expect(packet.opportunitySet.opportunities).toHaveLength(1);
     expect(packet.glossaryContext.confirmedTerms.map((term) => term.glossaryTermId)).toEqual(["term-1"]);
+    expect(packet.glossaryContext.confirmedTerms[0]?.userNotes).toBe("Recurring search motif.");
     expect(packet.glossaryContext.candidates).toEqual([
       {
         glossaryCandidateId: "candidate-1",

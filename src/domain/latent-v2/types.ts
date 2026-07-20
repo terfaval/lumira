@@ -1,5 +1,6 @@
 import type {
   GlossaryTermId,
+  LatentGenerationRunId,
   LatentOpportunityEvidenceBlockId,
   LatentOpportunityEvidenceObservationId,
   LatentOpportunityGlossaryLinkId,
@@ -45,6 +46,28 @@ export type LatentOpportunityLifecycleState = (typeof LATENT_OPPORTUNITY_LIFECYC
 
 export const LATENT_OPPORTUNITY_STATUSES = ["active", "archived"] as const;
 export type LatentOpportunityStatus = (typeof LATENT_OPPORTUNITY_STATUSES)[number];
+
+export const LATENT_GENERATION_RUN_STATUSES = [
+  "pending",
+  "current",
+  "superseded",
+  "empty",
+  "no_change",
+  "failed",
+  "rejected",
+] as const;
+export type LatentGenerationRunStatus = (typeof LATENT_GENERATION_RUN_STATUSES)[number];
+
+export const LATENT_GENERATION_RUN_INVALIDATION_SOURCE_LAYERS = ["observation"] as const;
+export type LatentGenerationRunInvalidationSourceLayer =
+  (typeof LATENT_GENERATION_RUN_INVALIDATION_SOURCE_LAYERS)[number];
+
+export const LATENT_GENERATION_RUN_INVALIDATION_SOURCE_ENTITY_TYPES = ["observation_v2_bundle"] as const;
+export type LatentGenerationRunInvalidationSourceEntityType =
+  (typeof LATENT_GENERATION_RUN_INVALIDATION_SOURCE_ENTITY_TYPES)[number];
+
+export const LATENT_GENERATION_RUN_INVALIDATION_REASONS = ["observation_bundle_archived"] as const;
+export type LatentGenerationRunInvalidationReason = (typeof LATENT_GENERATION_RUN_INVALIDATION_REASONS)[number];
 
 export const LATENT_OPPORTUNITY_SALIENCE_BANDS = ["low", "moderate", "high"] as const;
 export type LatentOpportunitySalienceBand = (typeof LATENT_OPPORTUNITY_SALIENCE_BANDS)[number];
@@ -92,6 +115,179 @@ export interface LatentOpportunityIdentity extends VersionedTimestamps {
   archivedAt: string | null;
 }
 
+export interface LatentAuthorityDreamProvenance {
+  priorityReflectiveObjectId: ReflectiveObjectId;
+  title: string;
+  objectLanguage: string;
+  content: string | null;
+  summary: string | null;
+}
+
+export interface LatentAuthorityObservationProvenance {
+  observationBundleId: string;
+  observationRuntimeVersion: string;
+  semanticPolicyResult: "accept" | "accept_with_uncertainty";
+  bundleUncertaintyNotes: string[];
+  scenes: Array<{
+    sceneRowId: string;
+    sceneStableId: string;
+    position: number;
+    summary: string;
+    evidenceSnippet: string;
+    boundarySignals: Array<{
+      kind: string;
+      note: string;
+    }>;
+    derivedStructures: Record<string, string[]>;
+  }>;
+  observations: Array<{
+    observationV2SceneObservationId: string;
+    sceneRowId: string;
+    sceneStableId: string;
+    observationStableId: string;
+    position: number;
+    text: string;
+    category: string;
+    evidence: Array<{
+      snippet: string;
+      spanStart: number | null;
+      spanEnd: number | null;
+    }>;
+    uncertaintyNote: string | null;
+  }>;
+}
+
+export interface LatentAuthorityGlossaryProvenance {
+  confirmedTerms: Array<{
+    glossaryTermId: GlossaryTermId;
+    displayLabel: string;
+    normalizedKey: string;
+    termType: "motif" | "concept" | "other";
+    userNotes: string | null;
+    appearanceCount: number;
+    recentAppearanceObjectIds: ReflectiveObjectId[];
+  }>;
+  appearanceRecords: Array<{
+    appearanceRecordId: string;
+    glossaryTermId: GlossaryTermId;
+    reflectiveObjectId: ReflectiveObjectId;
+    displayLabelAtAppearance: string;
+    sourceObservationId: string | null;
+  }>;
+}
+
+export interface LatentAuthorityReflectionProvenance {
+  reflectionId: string;
+  threadId: string;
+  sourceResponseId: string;
+  sourceOpeningId: string | null;
+  sourceReflectiveObjectIds: ReflectiveObjectId[];
+  statement: string;
+  pattern: string[];
+  admittedAt: string;
+}
+
+export interface LatentAuthorityProvenance {
+  dream: LatentAuthorityDreamProvenance;
+  observation: LatentAuthorityObservationProvenance;
+  glossary: LatentAuthorityGlossaryProvenance;
+  reflections: LatentAuthorityReflectionProvenance[];
+}
+
+export interface LatentContextProvenance {
+  existingOpportunityContext: {
+    identities: Array<{
+      identityId: LatentOpportunityIdentityId;
+      primaryCategory: LatentOpportunityCategory;
+      secondaryCategories: LatentOpportunityCategory[];
+      lifecycleState: string;
+      latestStructure: {
+        structureType: string;
+        nodes: string[];
+      };
+      recentManifestationSummaries: Array<{
+        manifestationId: string;
+        priorityReflectiveObjectId: ReflectiveObjectId;
+        structure: Record<string, unknown>;
+        primaryEvidenceObservationTexts: string[];
+      }>;
+    }>;
+  };
+  truncationNote: string | null;
+}
+
+export interface LatentExecutionProvenance {
+  constructorRuntimeVersion: string;
+  llm: {
+    provider: string;
+    model: string;
+    requestTimeoutMs: number;
+    responseFormat: {
+      type: string;
+      schemaName: string;
+      strict: boolean;
+    };
+  };
+}
+
+export interface LatentGenerationRun extends VersionedTimestamps {
+  id: LatentGenerationRunId;
+  userId: UserId;
+  priorityReflectiveObjectId: ReflectiveObjectId;
+  status: LatentGenerationRunStatus;
+  inputFingerprint: string;
+  authorityFingerprint: string | null;
+  authorityProvenance: LatentAuthorityProvenance | null;
+  contextProvenance: LatentContextProvenance | null;
+  executionProvenance: LatentExecutionProvenance | null;
+  triggerReason: string | null;
+  predecessorRunId: LatentGenerationRunId | null;
+  acceptedAt: string | null;
+  supersededAt: string | null;
+}
+
+export interface LatentGenerationRunInvalidationEvent {
+  id: string;
+  userId: UserId;
+  priorityReflectiveObjectId: ReflectiveObjectId;
+  targetGenerationRunId: LatentGenerationRunId;
+  sourceLayer: LatentGenerationRunInvalidationSourceLayer;
+  sourceEntityType: LatentGenerationRunInvalidationSourceEntityType;
+  sourceEntityId: string;
+  sourceRevision: string;
+  reason: LatentGenerationRunInvalidationReason;
+  createdAt: string;
+}
+
+export interface AcceptedGenerationReuseResolution {
+  reusable: boolean;
+  generationRun: LatentGenerationRun | null;
+  invalidation: LatentGenerationRunInvalidationEvent | null;
+}
+
+export interface AcceptedAuthorityEvidence {
+  authorityProvenance: LatentAuthorityProvenance;
+  authorityFingerprint?: string;
+}
+
+export interface CandidateAuthorityEvidence {
+  authorityProvenance: LatentAuthorityProvenance;
+  authorityFingerprint?: string;
+}
+
+export const AUTHORITY_SAMENESS_OUTCOMES = [
+  "constitutionally_identical",
+  "materially_changed",
+] as const;
+export type AuthoritySamenessOutcome =
+  (typeof AUTHORITY_SAMENESS_OUTCOMES)[number];
+
+export interface AuthorityEvaluationResult {
+  outcome: AuthoritySamenessOutcome;
+  acceptedFingerprint: string;
+  candidateFingerprint: string;
+}
+
 export interface LatentOpportunityGlossaryLink {
   id: LatentOpportunityGlossaryLinkId;
   manifestationId: LatentOpportunityManifestationId;
@@ -127,6 +323,7 @@ export interface LatentOpportunityEvidenceBlock {
 
 export interface LatentOpportunityManifestation extends VersionedTimestamps {
   id: LatentOpportunityManifestationId;
+  generationRunId: LatentGenerationRunId;
   identityId: LatentOpportunityIdentityId;
   userId: UserId;
   priorityReflectiveObjectId: ReflectiveObjectId;
@@ -155,6 +352,32 @@ export interface CreateLatentOpportunityIdentityInput {
   status?: LatentOpportunityStatus;
 }
 
+export interface CreateLatentGenerationRunInput {
+  id?: LatentGenerationRunId;
+  userId: UserId;
+  priorityReflectiveObjectId: ReflectiveObjectId;
+  status: LatentGenerationRunStatus;
+  inputFingerprint: string;
+  authorityFingerprint?: string | null;
+  authorityProvenance?: LatentAuthorityProvenance | null;
+  contextProvenance?: LatentContextProvenance | null;
+  executionProvenance?: LatentExecutionProvenance | null;
+  triggerReason?: string | null;
+  predecessorRunId?: LatentGenerationRunId | null;
+}
+
+export interface CreateLatentGenerationRunInvalidationEventInput {
+  id?: string;
+  userId: UserId;
+  priorityReflectiveObjectId: ReflectiveObjectId;
+  targetGenerationRunId: LatentGenerationRunId;
+  sourceLayer: LatentGenerationRunInvalidationSourceLayer;
+  sourceEntityType: LatentGenerationRunInvalidationSourceEntityType;
+  sourceEntityId: string;
+  sourceRevision: string;
+  reason: LatentGenerationRunInvalidationReason;
+}
+
 export interface CreateLatentOpportunityGlossaryLinkInput {
   glossaryTermId: GlossaryTermId;
   role: LatentOpportunityGlossaryLinkRole;
@@ -178,6 +401,7 @@ export interface CreateLatentOpportunityEvidenceBlockInput {
 
 export interface CreateLatentOpportunityManifestationInput {
   id?: LatentOpportunityManifestationId;
+  generationRunId: LatentGenerationRunId;
   identityId: LatentOpportunityIdentityId;
   userId: UserId;
   priorityReflectiveObjectId: ReflectiveObjectId;

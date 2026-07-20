@@ -14,7 +14,6 @@ const forbiddenMutationFns = {
   updateObject: vi.fn(),
   archiveObject: vi.fn(),
   createObservation: vi.fn(),
-  updateGlossaryTerm: vi.fn(),
   setThreadState: vi.fn(),
   updateResponse: vi.fn(),
 };
@@ -42,7 +41,6 @@ vi.mock("@/src/infrastructure/supabase/repositories/create-observation-repositor
 vi.mock("@/src/infrastructure/supabase/repositories/create-glossary-repository", () => ({
   createGlossaryRepository: () => ({
     listTerms,
-    renameTerm: forbiddenMutationFns.updateGlossaryTerm,
   }),
 }));
 
@@ -202,7 +200,6 @@ describe("/api/reflective-objects/[id]/latent-snapshots route", () => {
     expect(forbiddenMutationFns.updateObject).not.toHaveBeenCalled();
     expect(forbiddenMutationFns.archiveObject).not.toHaveBeenCalled();
     expect(forbiddenMutationFns.createObservation).not.toHaveBeenCalled();
-    expect(forbiddenMutationFns.updateGlossaryTerm).not.toHaveBeenCalled();
     expect(forbiddenMutationFns.setThreadState).not.toHaveBeenCalled();
     expect(forbiddenMutationFns.updateResponse).not.toHaveBeenCalled();
   });

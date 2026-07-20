@@ -2,9 +2,8 @@ import { notFound } from "next/navigation";
 
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
 import { createLatentOpportunityRepository } from "@/src/infrastructure/supabase/repositories/create-latent-opportunity-repository";
-import { createObservationRepository } from "@/src/infrastructure/supabase/repositories/create-observation-repository";
-import { createObservationV2Repository } from "@/src/infrastructure/supabase/repositories/create-observation-v2-repository";
 import { createOpeningRepository } from "@/src/infrastructure/supabase/repositories/create-opening-repository";
+import { createReflectionRepository } from "@/src/infrastructure/supabase/repositories/create-reflection-repository";
 import { createResponseRepository } from "@/src/infrastructure/supabase/repositories/create-response-repository";
 import { createThreadRepository } from "@/src/infrastructure/supabase/repositories/create-thread-repository";
 import { prepareLatentOpeningForReflection } from "@/src/runtime/orchestration/prepare-latent-opening-for-reflection";
@@ -60,10 +59,9 @@ export default async function DeepReflectionPage({ params, searchParams }: DeepR
     threadRepository: createThreadRepository(),
     openingRepository: createOpeningRepository(),
     responseRepository: createResponseRepository(),
-    observationRepository: createObservationRepository(),
-    observationV2Repository: createObservationV2Repository(),
     glossaryRepository: createGlossaryRepository(),
     latentOpportunityRepository: createLatentOpportunityRepository(),
+    reflectionRepository: createReflectionRepository(),
   });
 
   if (!payload) {

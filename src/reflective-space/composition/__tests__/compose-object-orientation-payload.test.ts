@@ -135,8 +135,32 @@ describe("composeObjectOrientationPayload", () => {
                 metacognition: [],
               },
             },
+            {
+              sceneId: "scene-2",
+              position: 1,
+              summary: "Water stayed under the floorboards.",
+              boundaryReasoning: [],
+              evidenceContext: {
+                snippet: "water under the floorboards",
+                spanStart: 0,
+                spanEnd: 27,
+                contextLabel: "scene",
+              },
+              observations: [],
+              derived: {
+                actors: [],
+                locations: [],
+                objects: [{ label: "Water", observationIds: ["obsv2-2"] }],
+                interactions: [],
+                affect: [],
+                agency: [],
+                phenomenology: [],
+                metacognition: [],
+              },
+            },
           ],
         }),
+        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -417,6 +441,7 @@ describe("composeObjectOrientationPayload", () => {
 
     expect(payload?.dream.title).toBe("Lantern House");
     expect(payload?.dream.editHref).toBe("/objects/obj-1/reflect");
+    expect(payload?.dream.preview).toBe("A house and doorway remain central. Water stayed under the floorboards.");
     expect(payload?.glossary.items.map((item) => item.label)).toEqual(["House", "Bridge"]);
     expect(payload?.glossary.items.map((item) => item.status)).toEqual(["new", "saved"]);
     expect(payload?.glossary.items[0]).toMatchObject({
@@ -479,6 +504,7 @@ describe("composeObjectOrientationPayload", () => {
         },
         getByBundleId: async () => null,
         getByReflectiveObjectId: async () => null,
+        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],

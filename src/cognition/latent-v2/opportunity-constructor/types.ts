@@ -14,7 +14,11 @@ import type {
   GlossaryCandidateId,
   GlossaryTermId,
   LatentOpportunityIdentityId,
+  ReflectionId,
   ReflectiveObjectId,
+  ReflectiveResponseId,
+  ThreadId,
+  OpeningId,
   UserId,
 } from "@/src/shared/types";
 
@@ -154,6 +158,18 @@ export interface OpportunityConstructorInputPacket {
       }>;
     }>;
   };
+  reflectionContext: {
+    reflections: Array<{
+      reflectionId: ReflectionId;
+      threadId: ThreadId;
+      sourceResponseId: ReflectiveResponseId;
+      sourceOpeningId: OpeningId | null;
+      sourceReflectiveObjectIds: ReflectiveObjectId[];
+      statement: string;
+      pattern: string[];
+      admittedAt: string;
+    }>;
+  };
 }
 
 export interface OpportunityConstructorOutputPacket {
@@ -275,7 +291,7 @@ export interface OpportunityRepositoryCreatePlan {
         mode: "reuse_existing";
         identityId: LatentOpportunityIdentityId;
       };
-  manifestation: CreateLatentOpportunityManifestationInput;
+  manifestation: Omit<CreateLatentOpportunityManifestationInput, "generationRunId">;
 }
 
 export interface OpportunityRepositoryCreateMapping {

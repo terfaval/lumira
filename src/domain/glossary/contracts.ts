@@ -21,7 +21,6 @@ export interface GlossaryRepository {
   listAppearanceRecordsByTerm(termId: GlossaryTermId, userId: UserId): Promise<GlossaryAppearanceRecord[]>;
   createTerm(input: CreateGlossaryTermInput): Promise<GlossaryTerm>;
   updateTerm(input: GlossaryTermUpdateInput): Promise<GlossaryTerm | null>;
-  renameTerm?(input: GlossaryTermUpdateInput): Promise<GlossaryTerm | null>;
 
   listCandidates(userId: UserId): Promise<GlossaryCandidate[]>;
   listCandidatesByReflectiveObject(userId: UserId, reflectiveObjectId: ReflectiveObjectId): Promise<GlossaryCandidate[]>;

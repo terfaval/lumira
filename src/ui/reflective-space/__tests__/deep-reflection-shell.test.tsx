@@ -49,6 +49,7 @@ const payloadWithSupport: DeepReflectionPayload = {
         details: ["doorway"],
       },
     ],
+    relatedMaterial: [],
   },
   alternateOpenings: {
     items: [
@@ -65,7 +66,7 @@ const payloadWithSupport: DeepReflectionPayload = {
 
 const payloadWithoutSupport: DeepReflectionPayload = {
   ...payloadWithSupport,
-  nearbyContext: { cards: [] },
+  nearbyContext: { cards: [], relatedMaterial: [] },
   alternateOpenings: { items: [] },
 };
 
@@ -123,5 +124,33 @@ describe("DeepReflectionShell", () => {
 
     expect(markup).toContain("entryOpeningLayer");
     expect(markup).toContain("entryUserLayer");
+  });
+
+  it("treats prior reflection related material as bounded support context", () => {
+    const payloadWithRelatedReflection: DeepReflectionPayload = {
+      ...payloadWithSupport,
+      nearbyContext: {
+        cards: [],
+        relatedMaterial: [
+          {
+            itemId: "reflection:1",
+            kind: "prior_reflection",
+            label: "I keep pausing at thresholds when change feels close.",
+            excerpt: "Threshold · Pause · Change",
+            target: null,
+          },
+        ],
+      },
+      alternateOpenings: { items: [] },
+    };
+
+    const markup = renderToStaticMarkup(
+      <DeepReflectionShell payload={payloadWithRelatedReflection} reflectiveObjectId="object-1" />,
+    );
+
+    expect(markup).toContain(">Kontextus<");
+    expect(markup).toContain("I keep pausing at thresholds when change feels close.");
+    expect(markup).toContain("Threshold");
+    expect(markup).not.toContain("threadColumnCentered");
   });
 });

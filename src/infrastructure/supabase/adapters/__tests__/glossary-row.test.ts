@@ -5,6 +5,7 @@ import {
   fromGlossaryAppearanceRecordRow,
   fromGlossaryTermRow,
   toGlossaryAppearanceRecordInsertRow,
+  toGlossaryCandidateInsertRow,
   toGlossaryCandidateLifecycleUpdateRow,
   toGlossaryTermInsertRow,
 } from "@/src/infrastructure/supabase/adapters/glossary-row";
@@ -50,7 +51,7 @@ describe("glossary term row mapping", () => {
       aliases: ["the bridge"],
       generalNote: "Recurring crossing point.",
       appearanceCount: 2,
-      notes: "Recurring crossing point.",
+      notes: "Stale compatibility note.",
     });
 
     expect(row.canonical_label).toBe("Bridge");
@@ -61,6 +62,31 @@ describe("glossary term row mapping", () => {
     expect(row.appearance_count).toBe(2);
     expect(row.notes).toBe("Recurring crossing point.");
   });
+
+  it("rehydrates historical note-only rows through generalNote authority", () => {
+    const term = fromGlossaryTermRow({
+      id: "term-legacy",
+      user_id: "user-1",
+      normalized_key: "bridge",
+      display_label: "Bridge",
+      canonical_label: "Bridge",
+      type: "place",
+      aliases: [],
+      general_note: null,
+      appearance_count: 1,
+      notes: "Legacy note only.",
+      state: "active",
+      suppression_state: "none",
+      suppression_reason: null,
+      suppressed_at: null,
+      archived_at: null,
+      created_at: "2026-06-11T00:00:00.000Z",
+      updated_at: "2026-06-11T00:00:00.000Z",
+    });
+
+    expect(term.generalNote).toBe("Legacy note only.");
+    expect(term.notes).toBe("Legacy note only.");
+  });
 });
 
 describe("toGlossaryCandidateLifecycleUpdateRow", () => {
@@ -69,6 +95,7 @@ describe("toGlossaryCandidateLifecycleUpdateRow", () => {
       id: "cand-1",
       user_id: "user-a",
       reflective_object_id: "obj-1",
+      identity_key: "father",
       normalized_key: "apa",
       display_label: "Apa",
       source_category: "actor",
@@ -89,6 +116,50 @@ describe("toGlossaryCandidateLifecycleUpdateRow", () => {
 
     expect(candidate.candidateClass).toBe("match_candidate");
     expect(candidate.proposedEntityIds).toEqual(["term-1"]);
+    expect(candidate.identityKey).toBe("father");
+  });
+
+  it("preserves missing persisted candidate identity as null-compatible", () => {
+    const candidate = fromGlossaryCandidateRow({
+      id: "cand-legacy",
+      user_id: "user-a",
+      reflective_object_id: "obj-1",
+      identity_key: null,
+      normalized_key: "apa",
+      display_label: "Apa",
+      source_category: "actor",
+      source_observation_id: null,
+      source_observation_fragment_id: null,
+      recurrence_count: 1,
+      candidate_class: "new_candidate",
+      proposed_entity_ids: [],
+      state: "candidate",
+      suppression_state: "none",
+      suppression_reason: null,
+      suppressed_at: null,
+      last_seen_at: "2026-06-12T10:00:00.000Z",
+      archived_at: null,
+      created_at: "2026-06-12T10:00:00.000Z",
+      updated_at: "2026-06-12T10:00:00.000Z",
+    });
+
+    expect(candidate.identityKey).toBeNull();
+  });
+
+  it("builds candidate insert rows with persisted advisory identity", () => {
+    const row = toGlossaryCandidateInsertRow(
+      {
+        userId: "user-a",
+        reflectiveObjectId: "obj-1",
+        identityKey: "father",
+        normalizedKey: "apa",
+        displayLabel: "Apa",
+        sourceCategory: "actor",
+      },
+      "2026-06-12T10:00:00.000Z",
+    );
+
+    expect(row.identity_key).toBe("father");
   });
 
   it("sets suppression fields when state changes to suppressed", () => {

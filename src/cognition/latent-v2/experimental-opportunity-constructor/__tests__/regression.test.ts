@@ -112,6 +112,9 @@ function createPacket(): OpportunityConstructorInputPacket {
     existingOpportunityContext: {
       identities: [],
     },
+    reflectionContext: {
+      reflections: [],
+    },
   };
 }
 
