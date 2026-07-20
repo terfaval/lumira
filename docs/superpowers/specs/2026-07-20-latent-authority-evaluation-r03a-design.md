@@ -42,6 +42,8 @@ This means `LAT-R03A` should not invent a second authority identity model.
 
 It should build a narrow comparison seam on top of the existing Authority Provenance and canonicalization primitives.
 
+Before implementation shape is finalized, `LAT-R03A` must inspect whether those pure canonicalization and fingerprint primitives should be extracted into a layer-neutral authority module so that both cognition and repository evaluation may lawfully depend on the same constitutional identity primitive.
+
 ---
 
 ## Options Considered
@@ -148,13 +150,27 @@ It must receive only lawful evidence required to represent normalized Authority 
 The exact type names may follow existing repo conventions, but the approved conceptual model is:
 
 ```ts
-type AuthorityEvidence = {
+type AcceptedAuthorityEvidence = {
+  authorityProvenance: LatentAuthorityProvenance;
+  authorityFingerprint?: string;
+};
+
+type CandidateAuthorityEvidence = {
   authorityProvenance: LatentAuthorityProvenance;
   authorityFingerprint?: string;
 };
 ```
 
-This evidence shape must exclude:
+The two evidence types may remain structurally identical, but their institutional roles should stay visible at the method boundary:
+
+```ts
+evaluateAuthoritySameness(
+  accepted: AcceptedAuthorityEvidence,
+  candidate: CandidateAuthorityEvidence,
+)
+```
+
+These evidence shapes must exclude:
 
 * generation-run status
 * `supersededAt`
@@ -176,17 +192,25 @@ type AuthoritySamenessOutcome =
   | "materially_changed";
 ```
 
-The result should preserve accepted and candidate roles explicitly:
+The result should remain as narrow as lawful consumers and constitutional review actually require.
+
+One lawful narrow form is:
 
 ```ts
 type AuthorityEvaluationResult = {
   outcome: AuthoritySamenessOutcome;
-  accepted: CanonicalAuthorityEvidence;
-  candidate: CanonicalAuthorityEvidence;
+  acceptedFingerprint: string;
+  candidateFingerprint: string;
 };
 ```
 
-The exact internal evidence payload can vary, but it must remain lifecycle-free and verification-friendly.
+Returning full canonical evidence is optional, not mandatory.
+
+The exact internal evidence payload can vary, but it must remain:
+
+* lifecycle-free
+* verification-friendly
+* narrower than a general normalization service
 
 Boolean-only APIs such as `isSame: boolean` are not preferred.
 
@@ -222,6 +246,21 @@ The candidate-side projection may consume already composed candidate authority p
 
 Neither projection may select accepted authority or compose candidate authority.
 
+Projection placement should be decided explicitly in the implementation plan.
+
+Lawful placements include:
+
+* a domain-level pure projection module
+* an authority-specific adapter module
+* a repository-adjacent mapper module
+
+Projection helpers must not:
+
+* perform repository queries
+* perform accepted-authority selection
+* silently repair invalid evidence
+* regenerate persisted fingerprint data in a way that hides stored evidence drift
+
 ---
 
 ## Canonicalization Ownership
@@ -230,7 +269,29 @@ Canonical normalization is repository-owned evaluation mechanics.
 
 Callers must not be responsible for producing pre-normalized comparison strings.
 
-The evaluator must internally canonicalize received authority provenance using the existing canonicalizer:
+The evaluator must use the existing canonical authority semantics.
+
+If the current canonicalization primitive is still located inside a cognition-owned constructor module, implementation must extract or expose that pure primitive through a layer-neutral authority module rather than introducing a repository-to-cognition dependency.
+
+The target dependency shape is:
+
+```text
+cognition constructor
+        ->
+shared authority primitive
+        <-
+repository evaluator
+```
+
+Not:
+
+```text
+repository evaluator
+        ->
+cognition constructor module
+```
+
+The evaluator must then internally canonicalize received authority provenance using that layer-neutral primitive:
 
 * `canonicalizeAuthorityProvenance(...)`
 
@@ -248,6 +309,10 @@ Normalization must:
 * remove only representational differences
 * preserve all constitutionally meaningful authority information
 * produce equivalent canonical forms for constitutionally identical authority
+
+The implementation plan must inventory existing order semantics before changing collection handling.
+
+It must not assume up front that every collection is order-insensitive.
 
 ---
 
@@ -267,6 +332,31 @@ The evaluator must either:
 
 * recompute fingerprints from the supplied `authorityProvenance`; or
 * verify that any supplied fingerprint matches the recomputed value
+
+Mismatch behavior must be explicit:
+
+```text
+supplied fingerprint absent
+        ->
+derive internally
+
+supplied fingerprint present and valid
+        ->
+continue
+
+supplied fingerprint present and mismatched
+        ->
+explicit evidence validation error
+```
+
+A supplied fingerprint mismatch is invalid evidence.
+
+It must not be treated as:
+
+* `constitutionally_identical`
+* `materially_changed`
+* silent fallback
+* lifecycle signal
 
 It must not take this path:
 
@@ -315,6 +405,10 @@ The returned canonical evidence is not required by doctrine, but it is recommend
 * transparency of what was actually compared
 
 It must not contain lifecycle instruction.
+
+Exposing canonical evidence in the repository result remains optional.
+
+The evaluator must not become a general-purpose normalization service for callers.
 
 ---
 
@@ -417,7 +511,7 @@ Prefer projection-boundary tests proving the evaluator cannot consume:
 ### Normalization
 
 * stable object-key ordering
-* stable collection ordering where order is constitutionally irrelevant
+* collection-order behavior only where current provenance contract and canonical semantics already make order irrelevance lawful
 * null versus absence behavior according to existing provenance contract
 
 ### Fingerprint
@@ -442,6 +536,7 @@ If fingerprints are used:
 * malformed accepted evidence
 * malformed candidate evidence
 * canonicalization or verification failure
+* supplied fingerprint mismatch
 
 Failure must not be converted into either substantive outcome.
 
@@ -455,8 +550,10 @@ The smallest likely implementation surface is:
   for new evidence and result types
 * [src/domain/latent-v2/contracts.ts](/abs/path/C:/mira/src/domain/latent-v2/contracts.ts)
   for the repository evaluation seam
+* a new or extracted layer-neutral authority primitive module under `src/domain/latent-v2/`
+  if repository evaluation cannot lawfully depend directly on the current cognition-owned canonicalizer location
 * [src/cognition/latent-v2/opportunity-constructor/provenance.ts](/abs/path/C:/mira/src/cognition/latent-v2/opportunity-constructor/provenance.ts)
-  as the existing canonicalization/fingerprint source
+  as the current source of canonicalization/fingerprint semantics that may need extraction or re-export
 * [src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts](/abs/path/C:/mira/src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts)
   for the repository-owned implementation
 * [src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts](/abs/path/C:/mira/src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts)
