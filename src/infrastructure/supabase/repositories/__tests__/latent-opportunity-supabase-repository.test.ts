@@ -93,22 +93,6 @@ function createGenerationRunRow(overrides: Partial<Record<string, unknown>> = {}
   };
 }
 
-function createInvalidationEventRow(overrides: Partial<Record<string, unknown>> = {}) {
-  return {
-    id: "invalidate-1",
-    user_id: "user-1",
-    priority_reflective_object_id: "object-1",
-    target_generation_run_id: "run-1",
-    source_layer: "observation",
-    source_entity_type: "observation_v2_bundle",
-    source_entity_id: "bundle-1",
-    source_revision: "archive:bundle-1",
-    reason: "observation_bundle_archived",
-    created_at: "2026-07-19T10:00:00.000Z",
-    ...overrides,
-  };
-}
-
 function createGenerationRun(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: "run-1",
@@ -153,6 +137,52 @@ function createInvalidationEvent(overrides: Partial<Record<string, unknown>> = {
     sourceRevision: "archive:bundle-1",
     reason: "observation_bundle_archived",
     createdAt: "2026-07-19T10:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function createManifestation(
+  id: string,
+  generationRunId: string,
+  identityId: string,
+  overrides: Partial<Record<string, unknown>> = {},
+) {
+  return {
+    id,
+    generationRunId,
+    identityId,
+    userId: "user-1",
+    priorityReflectiveObjectId: "object-1",
+    summary: "A transition from open movement into threat remains notable.",
+    structure: {
+      kind: "transition",
+      label: "Exploration -> danger",
+      elements: ["exploration", "danger"],
+    },
+    primaryCategory: "transition",
+    secondaryCategories: ["tension", "curiosity"],
+    credibilityScore: 0.82,
+    reflectivePotentialScore: 0.77,
+    salienceBand: "high",
+    salienceRationale: {},
+    constructionMetadata: {},
+    archivedAt: null,
+    createdAt: "2026-07-20T10:05:00.000Z",
+    updatedAt: "2026-07-20T10:05:00.000Z",
+    identity: {
+      id: identityId,
+      userId: "user-1",
+      title: "Identity",
+      primaryCategory: "transition",
+      secondaryCategories: [],
+      lifecycleState: "emerging",
+      status: "active",
+      archivedAt: null,
+      createdAt: "2026-07-20T10:05:00.000Z",
+      updatedAt: "2026-07-20T10:05:00.000Z",
+    },
+    evidenceBlocks: [],
+    glossaryLinks: [],
     ...overrides,
   };
 }
@@ -215,6 +245,438 @@ describe("SupabaseLatentOpportunityRepository", () => {
     >;
 
     expect(typeof repository.evaluateAuthoritySameness).toBe("function");
+  });
+
+  it("exposes a repository-owned staleness determination seam", () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never) as unknown as Record<
+      string,
+      unknown
+    >;
+
+    expect(typeof repository.determineAcceptedOpportunityStaleness).toBe("function");
+  });
+
+  it("returns stale when supplied authority evaluation proves material divergence", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-current-1", "identity-1"),
+    ] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness(
+        {
+          priorityReflectiveObjectId: "object-1",
+          userId: "user-1",
+        },
+        {
+          authorityEvaluation: {
+            outcome: "materially_changed",
+            acceptedFingerprint: "a".repeat(64),
+            candidateFingerprint: "b".repeat(64),
+          },
+        },
+      ),
+    ).resolves.toEqual({
+      outcome: "stale",
+      grounds: ["authority_divergence"],
+    });
+  });
+
+  it("returns stale when invalidation targets the still-current accepted basis without requiring authority evaluation", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-current-1", "identity-1"),
+    ] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([
+      createInvalidationEvent({
+        id: "invalidate-1",
+        targetGenerationRunId: "run-current-1",
+      }) as never,
+    ]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness({
+        priorityReflectiveObjectId: "object-1",
+        userId: "user-1",
+      }),
+    ).resolves.toEqual({
+      outcome: "stale",
+      grounds: ["invalidation_currentness_failure"],
+    });
+  });
+
+  it("returns current when no admitted stale ground is established", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-current-1", "identity-1"),
+    ] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness({
+        priorityReflectiveObjectId: "object-1",
+        userId: "user-1",
+      }),
+    ).resolves.toEqual({
+      outcome: "current",
+      grounds: [],
+    });
+  });
+
+  it("keeps a multi-manifestation accepted surface current when linkage remains coherent", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-current-1", "identity-1"),
+      createManifestation("man-2", "run-current-1", "identity-2"),
+    ] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness({
+        priorityReflectiveObjectId: "object-1",
+        userId: "user-1",
+      }),
+    ).resolves.toEqual({
+      outcome: "current",
+      grounds: [],
+    });
+  });
+
+  it("records additive stale grounds in deterministic audit order", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-foreign", "identity-1"),
+    ] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([
+      createInvalidationEvent({
+        id: "invalidate-1",
+        targetGenerationRunId: "run-current-1",
+      }) as never,
+    ]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness(
+        {
+          priorityReflectiveObjectId: "object-1",
+          userId: "user-1",
+        },
+        {
+          authorityEvaluation: {
+            outcome: "materially_changed",
+            acceptedFingerprint: "a".repeat(64),
+            candidateFingerprint: "b".repeat(64),
+          },
+        },
+      ),
+    ).resolves.toEqual({
+      outcome: "stale",
+      grounds: [
+        "authority_divergence",
+        "invalidation_currentness_failure",
+        "accepted_surface_divergence",
+      ],
+    });
+  });
+
+  it("does not treat constitutionally identical authority as suppressing another stale ground", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-current-1", "identity-1"),
+    ] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([
+      createInvalidationEvent({
+        id: "invalidate-1",
+        targetGenerationRunId: "run-current-1",
+      }) as never,
+    ]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness(
+        {
+          priorityReflectiveObjectId: "object-1",
+          userId: "user-1",
+        },
+        {
+          authorityEvaluation: {
+            outcome: "constitutionally_identical",
+            acceptedFingerprint: "a".repeat(64),
+            candidateFingerprint: "a".repeat(64),
+          },
+        },
+      ),
+    ).resolves.toEqual({
+      outcome: "stale",
+      grounds: ["invalidation_currentness_failure"],
+    });
+  });
+
+  it("performs no repository writes during staleness determination", async () => {
+    const from = vi.fn();
+    const repository = new SupabaseLatentOpportunityRepository({ from } as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-current-1", "identity-1"),
+    ] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([]);
+
+    await repository.determineAcceptedOpportunityStaleness({
+      priorityReflectiveObjectId: "object-1",
+      userId: "user-1",
+    });
+
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("fails explicitly when the accepted opportunity basis cannot be resolved", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(null);
+    vi.spyOn(repository, "listGenerationRunsForReflectiveObject").mockResolvedValue([]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness({
+        priorityReflectiveObjectId: "object-1",
+        userId: "user-1",
+      }),
+    ).rejects.toThrow("Accepted Opportunity basis could not be resolved.");
+  });
+
+  it("fails explicitly when repository history resolves only an accepted empty assessment", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(null);
+    vi.spyOn(repository, "listGenerationRunsForReflectiveObject").mockResolvedValue([
+      createGenerationRun({
+        id: "run-empty-1",
+        status: "empty",
+        authorityProvenance: createAuthorityProvenance(),
+        acceptedAt: "2026-07-20T09:00:00.000Z",
+      }) as never,
+    ]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness({
+        priorityReflectiveObjectId: "object-1",
+        userId: "user-1",
+      }),
+    ).rejects.toThrow("No Accepted Opportunity exists for the target.");
+  });
+
+  it("fails explicitly when the required accepted surface cannot be resolved", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness({
+        priorityReflectiveObjectId: "object-1",
+        userId: "user-1",
+      }),
+    ).rejects.toThrow("Accepted Opportunity surface could not be resolved.");
+  });
+
+  it("does not convert accepted-surface read failures into stale", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockRejectedValue(
+      new Error("surface_query_failed"),
+    );
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness({
+        priorityReflectiveObjectId: "object-1",
+        userId: "user-1",
+      }),
+    ).rejects.toThrow("surface_query_failed");
+  });
+
+  it("adds accepted_surface_divergence only when the resolved surface no longer links to the accepted opportunity", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-current-1", "identity-1"),
+      createManifestation("man-2", "run-current-1", "identity-2", {
+        priorityReflectiveObjectId: "object-foreign",
+      }),
+    ] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness({
+        priorityReflectiveObjectId: "object-1",
+        userId: "user-1",
+      }),
+    ).resolves.toEqual({
+      outcome: "stale",
+      grounds: ["accepted_surface_divergence"],
+    });
+  });
+
+  it("ignores historical invalidation once a later accepted basis is current", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    const listInvalidations = vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([]);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-2",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-current-2", "identity-1"),
+    ] as never);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness({
+        priorityReflectiveObjectId: "object-1",
+        userId: "user-1",
+      }),
+    ).resolves.toEqual({
+      outcome: "current",
+      grounds: [],
+    });
+    expect(listInvalidations).toHaveBeenCalledWith("run-current-2", "user-1");
+  });
+
+  it("treats several invalidations on the current basis as one stale ground", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-current-1", "identity-1"),
+    ] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([
+      createInvalidationEvent({
+        id: "invalidate-1",
+        targetGenerationRunId: "run-current-1",
+      }) as never,
+      createInvalidationEvent({
+        id: "invalidate-2",
+        targetGenerationRunId: "run-current-1",
+        createdAt: "2026-07-19T10:05:00.000Z",
+      }) as never,
+    ]);
+
+    await expect(
+      repository.determineAcceptedOpportunityStaleness({
+        priorityReflectiveObjectId: "object-1",
+        userId: "user-1",
+      }),
+    ).resolves.toEqual({
+      outcome: "stale",
+      grounds: ["invalidation_currentness_failure"],
+    });
+  });
+
+  it("returns the same result for repeated equivalent staleness evaluations", async () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never);
+    vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(
+      createGenerationRun({
+        id: "run-current-1",
+        status: "current",
+        acceptedAt: "2026-07-20T10:00:00.000Z",
+        authorityProvenance: createAuthorityProvenance(),
+      }) as never,
+    );
+    vi.spyOn(repository, "listManifestationsByGenerationRun").mockResolvedValue([
+      createManifestation("man-1", "run-current-1", "identity-1"),
+      createManifestation("man-2", "run-current-1", "identity-2"),
+    ] as never);
+    vi.spyOn(repository, "listGenerationRunInvalidations").mockResolvedValue([]);
+
+    const first = await repository.determineAcceptedOpportunityStaleness({
+      priorityReflectiveObjectId: "object-1",
+      userId: "user-1",
+    });
+    const second = await repository.determineAcceptedOpportunityStaleness({
+      priorityReflectiveObjectId: "object-1",
+      userId: "user-1",
+    });
+
+    expect(second).toEqual(first);
   });
 
   it("projects accepted authority evidence from an already selected generation run", () => {

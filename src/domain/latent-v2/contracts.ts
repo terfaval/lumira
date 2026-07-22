@@ -1,5 +1,7 @@
 import type {
   AcceptedAuthorityEvidence,
+  AcceptedOpportunityStalenessResult,
+  AcceptedOpportunityStalenessTarget,
   AcceptedGenerationReuseResolution,
   AuthorityEvaluationResult,
   CandidateAuthorityEvidence,
@@ -28,6 +30,12 @@ export interface LatentOpportunityRepository {
     accepted: AcceptedAuthorityEvidence,
     candidate: CandidateAuthorityEvidence,
   ): Promise<AuthorityEvaluationResult>;
+  determineAcceptedOpportunityStaleness(
+    target: AcceptedOpportunityStalenessTarget,
+    options?: {
+      authorityEvaluation?: AuthorityEvaluationResult;
+    },
+  ): Promise<AcceptedOpportunityStalenessResult>;
   // Rollback-only deletion seam for an owned pending generation run.
   deleteGenerationRun(generationRunId: LatentGenerationRunId, userId: UserId): Promise<void>;
   deleteIdentity(identityId: LatentOpportunityIdentityId, userId: UserId): Promise<void>;

@@ -4266,3 +4266,73 @@ Verification references:
   - Extracted canonical Authority Provenance normalization and SHA-256 fingerprinting into a layer-neutral Latent domain primitive so both cognition and repository evaluation depend on the same constitutional identity semantics.
   - Added a detached accepted/candidate authority-evidence repository seam that compares only Authority Provenance and treats caller-supplied fingerprints as derivative evidence subject to repository verification.
   - Kept authority evaluation read-only and lifecycle-free by returning only sameness outcomes plus repository-derived fingerprints, while preserving separation from accepted-run selection, reuse resolution, staleness, reassessment, invalidation, and Opening behavior.
+
+## 2026-07-21 - LAT-R03B Repository-Owned Staleness Determination
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/latent-v2/types.ts`
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+  - Latent repository test-double updates in:
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+    - `src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass (`1` file, `58` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with pre-existing warnings in `src/cognition/latent-v2/opportunity-constructor/provenance.ts` and `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-21T12-42-05-535Z.log`
+  - `npm.cmd test` -> pass (`143` files, `827` tests)
+- Notes:
+  - Added the first repository-owned Accepted Opportunity staleness seam with exactly two substantive outcomes: `current` and `stale`.
+  - Accepted `empty` repository semantics remain an accepted assessment outcome with no published Accepted Opportunity subject, so staleness determination now treats `empty` fallback resolution as a precondition failure rather than as an automatically stale accepted surface.
+  - Grounded accepted-basis resolution in the existing repository `current` run seam while consulting the already established eligible accepted `empty` fallback hierarchy only to distinguish `no accepted opportunity exists` from `accepted basis could not be resolved`.
+  - Kept Authority Evaluation optional, treated `grounds[]` as deterministic audit explanation only, and preserved separation from reassessment, regeneration, invalidation emission, reuse consequence, and Opening behavior.
+  - Narrowed accepted-surface divergence to resolved-surface linkage/coherence failure against the currently resolved accepted basis and Accepted Opportunity target; manifestation count, identity count, and one missing manifestation alone are not stale grounds.
+  - Implementation remains complete pending final repository review resolution rather than constitutional closure.
+
+## 2026-07-21 - LAT-R03B Constitutional Closure
+
+- Phase: CLOSURE
+- Touched boundaries:
+  - `docs/STABILIZATION_LEDGER.md`
+- Closure basis:
+  - `docs/constitution/clarifications/LATENT_STALENESS_DETERMINATION_CONSTITUTIONAL_DESIGN.md`
+  - `docs/superpowers/specs/2026-07-21-latent-staleness-determination-r03b-design.md`
+  - completed LAT-R03B implementation and repository review cycle on `main`
+  - repository review resolution and final repository review approval
+- Accepted validation evidence:
+  - Focused repository tests: `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass (`58` tests)
+  - Typecheck: `npm.cmd run typecheck` -> pass
+  - Lint: `npm.cmd run lint` -> pass with pre-existing warnings only in `src/cognition/latent-v2/opportunity-constructor/provenance.ts` and `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - Build: `npm.cmd run build` -> pass at `docs/build-logs/2026-07-21T12-54-03-147Z.log`
+  - Full test suite: `npm.cmd test` -> pass (`143` files, `827` tests)
+- Closure record:
+  - Initial repository review identified one closure-blocking accepted-surface divergence defect: staleness was being inferred from unsupported manifestation / identity cardinality assumptions.
+  - Resolution narrowed accepted-surface divergence to resolved manifestation incoherence against the currently resolved accepted basis or Accepted Opportunity target scope and clarified accepted `empty` as `accepted assessment exists, but no Accepted Opportunity subject exists`.
+  - Final repository review approved the corrected slice for constitutional closure with non-blocking observations only.
+  - `LAT-R03B` is now constitutionally closed as a repository-owned, deterministic, read-only determination of whether one existing Accepted Opportunity is `current` or `stale` from constitutionally admitted repository evidence only.
+  - The institution owns accepted-basis resolution for the target, required accepted-surface resolution, invalidation-currentness evidence for the current accepted basis, accepted-surface integrity evidence, additive stale-ground evaluation, the final `current | stale` judgment, and deterministic audit explanation.
+  - The institution does not own Candidate Authority composition, Authority Evaluation execution, reassessment, regeneration, no-change handling, reuse consequence, invalidation production or cleanup, supersession, scheduling, or lifecycle orchestration.
+- Final constitutional semantics:
+  - Subject: staleness belongs to the Accepted Opportunity; historical generation runs remain immutable evidence and do not themselves become stale.
+  - Accepted `empty`: accepted `empty` is neither `current` nor `stale`; it fails outside the substantive contract because no Accepted Opportunity subject exists and does not produce `accepted_surface_divergence`.
+  - Substantive outcomes: exactly `current | stale`; repository-resolution and precondition failures remain outside the substantive result contract.
+  - Closed stale grounds: `authority_divergence`, `invalidation_currentness_failure`, `accepted_surface_divergence`.
+  - Grounds remain independently evaluated, additive, deterministically ordered as `["authority_divergence", "invalidation_currentness_failure", "accepted_surface_divergence"]`, and derivative audit explanation rather than lifecycle instruction.
+  - `authority_divergence`: optional `AuthorityEvaluationResult` present and `outcome = materially_changed`; Authority Evaluation remains optional, externally produced, and `constitutionally_identical` does not suppress another stale ground.
+  - `invalidation_currentness_failure`: invalidation targets the currently resolved accepted basis while the Accepted Opportunity still depends on that basis; historical invalidation does not contaminate a later current accepted basis and several relevant invalidations still produce one audit ground.
+  - `accepted_surface_divergence`: established only when a resolved manifestation links to a different generation run than the resolved accepted basis, falls outside the accepted user scope, or falls outside the target reflective-object scope.
+  - Insufficient by themselves: several manifestations, several identity IDs, one missing manifestation, accepted `empty`, generic repository failure, missing fresh Authority Evaluation, or a raw invalidation unrelated to the current accepted basis.
+- Remaining non-blocking observations:
+  - Authority Evaluation same-basis verifiability remains a deferred institutional observation because the current `AuthorityEvaluationResult` contract does not expose enough identity evidence for repository-side same-basis verification. This is outside LAT-R03B closure scope.
+  - The earlier `docs/BUILD_LOG.md` touched-boundary inventory omission was non-blocking and is now corrected in the implementation entry above.
+- Next unopened constitutional responsibility:
+  - Later `reassessment consumption` is the next explicitly admitted downstream Latent responsibility in the governing doctrine, with later `regeneration policy` and `no-change handling after reassessment` remaining subsequent adjacent work rather than part of LAT-R03B.

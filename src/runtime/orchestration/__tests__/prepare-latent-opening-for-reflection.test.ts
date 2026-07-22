@@ -233,6 +233,10 @@ describe("prepareLatentOpeningForReflection", () => {
         createSnapshot: vi.fn(async () => makeLatentSnapshot("latent-generated", "obj-1")),
       } as unknown as LatentRepository,
       latentOpportunityRepository: {
+        determineAcceptedOpportunityStaleness: vi.fn(async () => ({
+          outcome: "current",
+          grounds: [],
+        })),
         resolveReusableAcceptedGenerationRun: vi.fn(async () => ({
           reusable: false,
           generationRun: null,
@@ -287,6 +291,10 @@ describe("prepareLatentOpeningForReflection", () => {
       getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
     } as unknown as ObservationV2Repository;
     repositories.latentOpportunityRepository = {
+      determineAcceptedOpportunityStaleness: vi.fn(async () => ({
+        outcome: "current",
+        grounds: [],
+      })),
       resolveReusableAcceptedGenerationRun: vi.fn(async () => ({
         reusable: true,
         generationRun: makeGenerationRun("run-1", "obj-1"),
@@ -559,6 +567,10 @@ describe("prepareLatentOpeningForReflection", () => {
       listByReflectiveObject: vi.fn(async () => [makeLegacyObservation("obj-1")]),
     } as unknown as ObservationRepository;
     repositories.latentOpportunityRepository = {
+      determineAcceptedOpportunityStaleness: vi.fn(async () => ({
+        outcome: "current",
+        grounds: [],
+      })),
       resolveReusableAcceptedGenerationRun: vi.fn(async () => ({
         reusable: true,
         generationRun: {
@@ -614,6 +626,10 @@ describe("prepareLatentOpeningForReflection", () => {
       getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
     } as unknown as ObservationV2Repository;
     repositories.latentOpportunityRepository = {
+      determineAcceptedOpportunityStaleness: vi.fn(async () => ({
+        outcome: "current",
+        grounds: [],
+      })),
       resolveReusableAcceptedGenerationRun: vi.fn(async () => ({
         reusable: false,
         generationRun: makeGenerationRun("run-invalidated-1", "obj-1"),
@@ -713,6 +729,10 @@ describe("prepareLatentOpeningForReflection", () => {
       getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
     } as unknown as ObservationV2Repository;
     repositories.latentOpportunityRepository = {
+      determineAcceptedOpportunityStaleness: vi.fn(async () => ({
+        outcome: "current",
+        grounds: [],
+      })),
       resolveReusableAcceptedGenerationRun: vi.fn(async () => ({
         reusable: false,
         generationRun: {

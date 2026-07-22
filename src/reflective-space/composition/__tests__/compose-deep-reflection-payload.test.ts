@@ -305,6 +305,10 @@ describe("composeDeepReflectionPayload", () => {
           acceptedFingerprint: "a".repeat(64),
           candidateFingerprint: "b".repeat(64),
         }),
+        determineAcceptedOpportunityStaleness: async () => ({
+          outcome: "current",
+          grounds: [],
+        }),
         resolveReusableAcceptedGenerationRun: async () => ({
           reusable: false,
           generationRun: null,
@@ -614,6 +618,10 @@ describe("composeDeepReflectionPayload", () => {
           acceptedFingerprint: "a".repeat(64),
           candidateFingerprint: "b".repeat(64),
         }),
+        determineAcceptedOpportunityStaleness: async () => ({
+          outcome: "current",
+          grounds: [],
+        }),
         resolveReusableAcceptedGenerationRun: async () => ({
           reusable: false,
           generationRun: null,
@@ -812,6 +820,10 @@ describe("composeDeepReflectionPayload", () => {
           outcome: "materially_changed",
           acceptedFingerprint: "a".repeat(64),
           candidateFingerprint: "b".repeat(64),
+        }),
+        determineAcceptedOpportunityStaleness: async () => ({
+          outcome: "current",
+          grounds: [],
         }),
         resolveReusableAcceptedGenerationRun: async () => ({
           reusable: false,

@@ -295,6 +295,10 @@ function createRepositories(input?: {
 
   const latentOpportunityRepository: LatentOpportunityRepository = {
     evaluateAuthoritySameness: vi.fn(),
+    determineAcceptedOpportunityStaleness: vi.fn().mockResolvedValue({
+      outcome: "current",
+      grounds: [],
+    }),
     resolveReusableAcceptedGenerationRun: vi.fn().mockResolvedValue({
       reusable: false,
       generationRun: null,

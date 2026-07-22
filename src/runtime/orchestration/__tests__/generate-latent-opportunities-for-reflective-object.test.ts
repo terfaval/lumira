@@ -942,6 +942,10 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
       acceptedFingerprint: "a".repeat(64),
       candidateFingerprint: "b".repeat(64),
     }),
+    determineAcceptedOpportunityStaleness: vi.fn().mockResolvedValue({
+      outcome: "current",
+      grounds: [],
+    }),
     resolveReusableAcceptedGenerationRun: vi.fn().mockResolvedValue({
       reusable: false,
       generationRun: null,

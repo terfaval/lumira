@@ -5,6 +5,9 @@ import {
 } from "@/src/domain/latent-v2/errors";
 import type {
   AcceptedAuthorityEvidence,
+  AcceptedOpportunityStaleGround,
+  AcceptedOpportunityStalenessResult,
+  AcceptedOpportunityStalenessTarget,
   AcceptedGenerationReuseResolution,
   AuthorityEvaluationResult,
   CandidateAuthorityEvidence,
@@ -57,6 +60,18 @@ const EVIDENCE_OBSERVATIONS_TABLE = "latent_opportunity_evidence_observations";
 const GLOSSARY_LINKS_TABLE = "latent_opportunity_glossary_links";
 const INVALIDATION_EVENTS_TABLE = "latent_generation_run_invalidation_events";
 
+type AcceptedOpportunityBasisEvidence = {
+  generationRun: LatentGenerationRun;
+};
+
+type AcceptedOpportunitySurfaceEvidence = {
+  manifestations: LatentOpportunityManifestation[];
+};
+
+type AcceptedOpportunitySurfaceIntegrityEvidence = {
+  coherent: boolean;
+};
+
 export function projectAcceptedAuthorityEvidence(
   selectedGenerationRun: LatentGenerationRun,
 ): AcceptedAuthorityEvidence {
@@ -88,6 +103,31 @@ export class SupabaseLatentOpportunityRepository implements LatentOpportunityRep
       acceptedFingerprint: acceptedEvidence.fingerprint,
       candidateFingerprint: candidateEvidence.fingerprint,
     };
+  }
+
+  async determineAcceptedOpportunityStaleness(
+    target: AcceptedOpportunityStalenessTarget,
+    options?: {
+      authorityEvaluation?: AuthorityEvaluationResult;
+    },
+  ): Promise<AcceptedOpportunityStalenessResult> {
+    const basis = await this.resolveAcceptedOpportunityBasisEvidence(target);
+    const surface = await this.resolveAcceptedOpportunitySurfaceEvidence(
+      basis,
+      target.userId,
+    );
+    const invalidations = await this.listGenerationRunInvalidations(
+      basis.generationRun.id,
+      target.userId,
+    );
+    const surfaceIntegrity =
+      this.deriveAcceptedOpportunitySurfaceIntegrityEvidence(target, basis, surface);
+
+    return this.applyAcceptedOpportunityStaleGrounds({
+      authorityEvaluation: options?.authorityEvaluation,
+      invalidations,
+      surfaceIntegrity,
+    });
   }
 
   async createGenerationRun(input: CreateLatentGenerationRunInput): Promise<LatentGenerationRun> {
@@ -634,6 +674,66 @@ export class SupabaseLatentOpportunityRepository implements LatentOpportunityRep
     }
   }
 
+  private async resolveAcceptedOpportunityBasisEvidence(
+    target: AcceptedOpportunityStalenessTarget,
+  ): Promise<AcceptedOpportunityBasisEvidence> {
+    const generationRun = await this.getCurrentGenerationRunForReflectiveObject(
+      target.priorityReflectiveObjectId,
+      target.userId,
+    );
+
+    if (generationRun == null) {
+      const fallbackEmpty = this.selectLatestEligibleEmptyGenerationRun(
+        await this.listGenerationRunsForReflectiveObject(
+          target.priorityReflectiveObjectId,
+          target.userId,
+        ),
+      );
+      if (fallbackEmpty != null) {
+        throw new Error("No Accepted Opportunity exists for the target.");
+      }
+
+      throw new Error("Accepted Opportunity basis could not be resolved.");
+    }
+
+    if (generationRun.authorityProvenance == null) {
+      throw new Error("Accepted Opportunity basis could not be resolved.");
+    }
+
+    return { generationRun };
+  }
+
+  private async resolveAcceptedOpportunitySurfaceEvidence(
+    basis: AcceptedOpportunityBasisEvidence,
+    userId: UserId,
+  ): Promise<AcceptedOpportunitySurfaceEvidence> {
+    const manifestations = await this.listManifestationsByGenerationRun(
+      basis.generationRun.id,
+      userId,
+    );
+
+    if (manifestations.length === 0) {
+      throw new Error("Accepted Opportunity surface could not be resolved.");
+    }
+
+    return { manifestations };
+  }
+
+  private deriveAcceptedOpportunitySurfaceIntegrityEvidence(
+    target: AcceptedOpportunityStalenessTarget,
+    basis: AcceptedOpportunityBasisEvidence,
+    surface: AcceptedOpportunitySurfaceEvidence,
+  ): AcceptedOpportunitySurfaceIntegrityEvidence {
+    return {
+      coherent: surface.manifestations.every(
+        (manifestation) =>
+          manifestation.generationRunId === basis.generationRun.id &&
+          manifestation.userId === basis.generationRun.userId &&
+          manifestation.priorityReflectiveObjectId === target.priorityReflectiveObjectId,
+      ),
+    };
+  }
+
   private selectLatestEligibleEmptyGenerationRun(
     runs: LatentGenerationRun[],
   ): LatentGenerationRun | null {
@@ -670,6 +770,31 @@ export class SupabaseLatentOpportunityRepository implements LatentOpportunityRep
     return {
       canonicalAuthority,
       fingerprint,
+    };
+  }
+
+  private applyAcceptedOpportunityStaleGrounds(input: {
+    authorityEvaluation?: AuthorityEvaluationResult;
+    invalidations: LatentGenerationRunInvalidationEvent[];
+    surfaceIntegrity: AcceptedOpportunitySurfaceIntegrityEvidence;
+  }): AcceptedOpportunityStalenessResult {
+    const grounds: AcceptedOpportunityStaleGround[] = [];
+
+    if (input.authorityEvaluation?.outcome === "materially_changed") {
+      grounds.push("authority_divergence");
+    }
+
+    if (input.invalidations.length > 0) {
+      grounds.push("invalidation_currentness_failure");
+    }
+
+    if (!input.surfaceIntegrity.coherent) {
+      grounds.push("accepted_surface_divergence");
+    }
+
+    return {
+      outcome: grounds.length > 0 ? "stale" : "current",
+      grounds,
     };
   }
 

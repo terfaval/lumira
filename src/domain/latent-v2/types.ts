@@ -288,6 +288,31 @@ export interface AuthorityEvaluationResult {
   candidateFingerprint: string;
 }
 
+export interface AcceptedOpportunityStalenessTarget {
+  priorityReflectiveObjectId: ReflectiveObjectId;
+  userId: UserId;
+}
+
+export const ACCEPTED_OPPORTUNITY_STALENESS_OUTCOMES = [
+  "current",
+  "stale",
+] as const;
+export type AcceptedOpportunityStalenessOutcome =
+  (typeof ACCEPTED_OPPORTUNITY_STALENESS_OUTCOMES)[number];
+
+export const ACCEPTED_OPPORTUNITY_STALE_GROUNDS = [
+  "authority_divergence",
+  "invalidation_currentness_failure",
+  "accepted_surface_divergence",
+] as const;
+export type AcceptedOpportunityStaleGround =
+  (typeof ACCEPTED_OPPORTUNITY_STALE_GROUNDS)[number];
+
+export interface AcceptedOpportunityStalenessResult {
+  outcome: AcceptedOpportunityStalenessOutcome;
+  grounds: AcceptedOpportunityStaleGround[];
+}
+
 export interface LatentOpportunityGlossaryLink {
   id: LatentOpportunityGlossaryLinkId;
   manifestationId: LatentOpportunityManifestationId;
