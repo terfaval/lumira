@@ -21,6 +21,8 @@
 /build
 /data/
 /docs
+/.codex
+/.agents
 
 # misc
 .DS_Store

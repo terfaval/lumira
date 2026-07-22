@@ -1,7 +1,9 @@
 import type {
   CreateLatentGenerationRunInput,
   CreateLatentGenerationRunInvalidationEventInput,
+  CreateLatentOpportunityIdentityRelationshipInput,
   CreateLatentOpportunityIdentityInput,
+  CreateLatentOpportunityLifecycleEventInput,
   CreateLatentOpportunityManifestationInput,
   LatentAuthorityProvenance,
   LatentContextProvenance,
@@ -16,7 +18,9 @@ import type {
   LatentOpportunityEvidenceObservationRole,
   LatentOpportunityEvidenceRole,
   LatentOpportunityGlossaryLinkRole,
+  LatentOpportunityIdentityRelationship,
   LatentOpportunityIdentity,
+  LatentOpportunityLifecycleEvent,
   LatentOpportunityLifecycleState,
   LatentOpportunityManifestation,
   LatentOpportunitySalienceBand,
@@ -119,6 +123,33 @@ export interface LatentGenerationRunInvalidationEventRow {
   created_at: string;
 }
 
+export interface LatentOpportunityLifecycleEventRow {
+  id: string;
+  user_id: string;
+  identity_id: string;
+  event_type: string;
+  prior_lifecycle_state: string | null;
+  resulting_lifecycle_state: string;
+  source_generation_run_id: string | null;
+  resulting_generation_run_id: string | null;
+  source_manifestation_ids: string[] | null;
+  resulting_manifestation_ids: string[] | null;
+  related_identity_ids: string[] | null;
+  triggering_reflective_object_id: string | null;
+  triggering_reflection_id: string | null;
+  created_at: string;
+}
+
+export interface LatentOpportunityIdentityRelationshipRow {
+  id: string;
+  user_id: string;
+  source_identity_id: string;
+  target_identity_id: string;
+  relationship_type: string;
+  establishing_lifecycle_event_id: string;
+  created_at: string;
+}
+
 export interface LatentOpportunityIdentityInsertRow {
   id: string;
   user_id: string;
@@ -153,6 +184,31 @@ export interface LatentGenerationRunInvalidationEventInsertRow {
   source_entity_id: string;
   source_revision: string;
   reason: LatentGenerationRunInvalidationReason;
+}
+
+export interface LatentOpportunityLifecycleEventInsertRow {
+  id: string;
+  user_id: string;
+  identity_id: string;
+  event_type: string;
+  prior_lifecycle_state: string | null;
+  resulting_lifecycle_state: string;
+  source_generation_run_id: string | null;
+  resulting_generation_run_id: string | null;
+  source_manifestation_ids: string[];
+  resulting_manifestation_ids: string[];
+  related_identity_ids: string[];
+  triggering_reflective_object_id: string | null;
+  triggering_reflection_id: string | null;
+}
+
+export interface LatentOpportunityIdentityRelationshipInsertRow {
+  id: string;
+  user_id: string;
+  source_identity_id: string;
+  target_identity_id: string;
+  relationship_type: string;
+  establishing_lifecycle_event_id: string;
 }
 
 export interface LatentOpportunityManifestationInsertRow {
@@ -388,6 +444,14 @@ function buildGenerationRunInvalidationEventId(input: CreateLatentGenerationRunI
   return input.id ?? crypto.randomUUID();
 }
 
+function buildLifecycleEventId(input: CreateLatentOpportunityLifecycleEventInput): string {
+  return input.id ?? crypto.randomUUID();
+}
+
+function buildIdentityRelationshipId(input: CreateLatentOpportunityIdentityRelationshipInput): string {
+  return input.id ?? crypto.randomUUID();
+}
+
 export function toLatentOpportunityIdentityInsertRow(
   input: CreateLatentOpportunityIdentityInput,
 ): LatentOpportunityIdentityInsertRow {
@@ -454,6 +518,39 @@ export function toLatentGenerationRunInvalidationEventInsertRow(
     source_entity_id: input.sourceEntityId,
     source_revision: input.sourceRevision,
     reason: input.reason,
+  };
+}
+
+export function toLatentOpportunityLifecycleEventInsertRow(
+  input: CreateLatentOpportunityLifecycleEventInput,
+): LatentOpportunityLifecycleEventInsertRow {
+  return {
+    id: buildLifecycleEventId(input),
+    user_id: input.userId,
+    identity_id: input.identityId,
+    event_type: input.eventType,
+    prior_lifecycle_state: input.priorLifecycleState,
+    resulting_lifecycle_state: input.resultingLifecycleState,
+    source_generation_run_id: input.sourceGenerationRunId ?? null,
+    resulting_generation_run_id: input.resultingGenerationRunId ?? null,
+    source_manifestation_ids: input.sourceManifestationIds ?? [],
+    resulting_manifestation_ids: input.resultingManifestationIds ?? [],
+    related_identity_ids: input.relatedIdentityIds ?? [],
+    triggering_reflective_object_id: input.triggeringReflectiveObjectId ?? null,
+    triggering_reflection_id: input.triggeringReflectionId ?? null,
+  };
+}
+
+export function toLatentOpportunityIdentityRelationshipInsertRow(
+  input: CreateLatentOpportunityIdentityRelationshipInput,
+): LatentOpportunityIdentityRelationshipInsertRow {
+  return {
+    id: buildIdentityRelationshipId(input),
+    user_id: input.userId,
+    source_identity_id: input.sourceIdentityId,
+    target_identity_id: input.targetIdentityId,
+    relationship_type: input.relationshipType,
+    establishing_lifecycle_event_id: input.establishingLifecycleEventId,
   };
 }
 
@@ -625,6 +722,42 @@ export function fromLatentGenerationRunInvalidationEventRow(
     sourceEntityId: row.source_entity_id,
     sourceRevision: row.source_revision,
     reason: parseGenerationRunInvalidationReason(row.reason),
+    createdAt: row.created_at,
+  };
+}
+
+export function fromLatentOpportunityLifecycleEventRow(
+  row: LatentOpportunityLifecycleEventRow,
+): LatentOpportunityLifecycleEvent {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    identityId: row.identity_id,
+    eventType: row.event_type as LatentOpportunityLifecycleEvent["eventType"],
+    priorLifecycleState: row.prior_lifecycle_state as LatentOpportunityLifecycleEvent["priorLifecycleState"],
+    resultingLifecycleState:
+      row.resulting_lifecycle_state as LatentOpportunityLifecycleEvent["resultingLifecycleState"],
+    sourceGenerationRunId: row.source_generation_run_id,
+    resultingGenerationRunId: row.resulting_generation_run_id,
+    sourceManifestationIds: parseStringArray(row.source_manifestation_ids),
+    resultingManifestationIds: parseStringArray(row.resulting_manifestation_ids),
+    relatedIdentityIds: parseStringArray(row.related_identity_ids) as LatentOpportunityIdentityRelationship["sourceIdentityId"][],
+    triggeringReflectiveObjectId: row.triggering_reflective_object_id,
+    triggeringReflectionId: row.triggering_reflection_id,
+    createdAt: row.created_at,
+  };
+}
+
+export function fromLatentOpportunityIdentityRelationshipRow(
+  row: LatentOpportunityIdentityRelationshipRow,
+): LatentOpportunityIdentityRelationship {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    sourceIdentityId: row.source_identity_id,
+    targetIdentityId: row.target_identity_id,
+    relationshipType: row.relationship_type as LatentOpportunityIdentityRelationship["relationshipType"],
+    establishingLifecycleEventId: row.establishing_lifecycle_event_id,
     createdAt: row.created_at,
   };
 }

@@ -338,6 +338,11 @@ function createRepositories(): GenerateAnchorsForReflectiveObjectRepositories {
     markGenerationRunEmpty: vi.fn(),
     markGenerationRunNoChange: vi.fn(),
     markGenerationRunSuperseded: vi.fn(),
+    createLifecycleEvent: vi.fn(),
+    createIdentityRelationship: vi.fn(),
+    listLifecycleEventsByIdentity: vi.fn().mockResolvedValue([]),
+    listIdentityRelationshipsByIdentity: vi.fn().mockResolvedValue([]),
+    acceptGenerationRunSuccessorAtomically: vi.fn(),
   };
 
   const anchorRepository: AnchorRepository = {

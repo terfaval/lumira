@@ -259,6 +259,81 @@ export interface LatentGenerationRunInvalidationEvent {
   createdAt: string;
 }
 
+export const LATENT_OPPORTUNITY_LIFECYCLE_EVENT_TYPES = [
+  "emergence",
+  "reinforcement",
+  "expansion",
+  "recontextualization",
+  "reversal",
+  "weakening",
+  "reactivation",
+  "split",
+  "merge",
+  "abandonment",
+  "superseded_by_recomposition",
+] as const;
+export type LatentOpportunityLifecycleEventType =
+  (typeof LATENT_OPPORTUNITY_LIFECYCLE_EVENT_TYPES)[number];
+
+export const LATENT_OPPORTUNITY_IDENTITY_RELATIONSHIP_TYPES = ["split", "merge"] as const;
+export type LatentOpportunityIdentityRelationshipType =
+  (typeof LATENT_OPPORTUNITY_IDENTITY_RELATIONSHIP_TYPES)[number];
+
+export interface LatentOpportunityLifecycleEvent {
+  id: string;
+  userId: UserId;
+  identityId: LatentOpportunityIdentityId;
+  eventType: LatentOpportunityLifecycleEventType;
+  priorLifecycleState: LatentOpportunityLifecycleState | null;
+  resultingLifecycleState: LatentOpportunityLifecycleState;
+  sourceGenerationRunId: LatentGenerationRunId | null;
+  resultingGenerationRunId: LatentGenerationRunId | null;
+  sourceManifestationIds: LatentOpportunityManifestationId[];
+  resultingManifestationIds: LatentOpportunityManifestationId[];
+  relatedIdentityIds: LatentOpportunityIdentityId[];
+  triggeringReflectiveObjectId: ReflectiveObjectId | null;
+  triggeringReflectionId: string | null;
+  createdAt: string;
+}
+
+export interface LatentOpportunityIdentityRelationship {
+  id: string;
+  userId: UserId;
+  sourceIdentityId: LatentOpportunityIdentityId;
+  targetIdentityId: LatentOpportunityIdentityId;
+  relationshipType: LatentOpportunityIdentityRelationshipType;
+  establishingLifecycleEventId: string;
+  createdAt: string;
+}
+
+export interface LatentHistoryDerivedLifecycleState {
+  identityId: LatentOpportunityIdentityId;
+  lifecycleState: LatentOpportunityLifecycleState;
+  orderedEventIds: string[];
+}
+
+export type LatentLifecycleEvidenceStrength =
+  | "material_support"
+  | "reduced_support"
+  | "terminal_loss"
+  | "insufficient";
+
+export type LatentLifecyclePlannedTransition =
+  | {
+      emitEvent: true;
+      eventType: Extract<
+        LatentOpportunityLifecycleEventType,
+        "emergence" | "reinforcement" | "reactivation" | "weakening" | "abandonment"
+      >;
+      priorLifecycleState: LatentOpportunityLifecycleState | null;
+      resultingLifecycleState: LatentOpportunityLifecycleState;
+    }
+  | {
+      emitEvent: false;
+      preservedLifecycleState: LatentOpportunityLifecycleState | null;
+      reason: "insufficient_evidence" | "already_abandoned";
+    };
+
 export interface AcceptedGenerationReuseResolution {
   reusable: boolean;
   generationRun: LatentGenerationRun | null;
@@ -403,6 +478,31 @@ export interface CreateLatentGenerationRunInvalidationEventInput {
   reason: LatentGenerationRunInvalidationReason;
 }
 
+export interface CreateLatentOpportunityLifecycleEventInput {
+  id?: string;
+  userId: UserId;
+  identityId: LatentOpportunityIdentityId;
+  eventType: LatentOpportunityLifecycleEventType;
+  priorLifecycleState: LatentOpportunityLifecycleState | null;
+  resultingLifecycleState: LatentOpportunityLifecycleState;
+  sourceGenerationRunId?: LatentGenerationRunId | null;
+  resultingGenerationRunId?: LatentGenerationRunId | null;
+  sourceManifestationIds?: LatentOpportunityManifestationId[];
+  resultingManifestationIds?: LatentOpportunityManifestationId[];
+  relatedIdentityIds?: LatentOpportunityIdentityId[];
+  triggeringReflectiveObjectId?: ReflectiveObjectId | null;
+  triggeringReflectionId?: string | null;
+}
+
+export interface CreateLatentOpportunityIdentityRelationshipInput {
+  id?: string;
+  userId: UserId;
+  sourceIdentityId: LatentOpportunityIdentityId;
+  targetIdentityId: LatentOpportunityIdentityId;
+  relationshipType: LatentOpportunityIdentityRelationshipType;
+  establishingLifecycleEventId: string;
+}
+
 export interface CreateLatentOpportunityGlossaryLinkInput {
   glossaryTermId: GlossaryTermId;
   role: LatentOpportunityGlossaryLinkRole;
@@ -441,4 +541,14 @@ export interface CreateLatentOpportunityManifestationInput {
   constructionMetadata?: Record<string, unknown>;
   glossaryLinks?: CreateLatentOpportunityGlossaryLinkInput[];
   evidenceBlocks: CreateLatentOpportunityEvidenceBlockInput[];
+}
+
+export interface AcceptLatentGenerationRunSuccessorAtomicallyInput {
+  userId: UserId;
+  predecessorRunId: LatentGenerationRunId;
+  successorRunId: LatentGenerationRunId;
+  identities?: CreateLatentOpportunityIdentityInput[];
+  manifestations: CreateLatentOpportunityManifestationInput[];
+  lifecycleEvents: CreateLatentOpportunityLifecycleEventInput[];
+  identityRelationships: CreateLatentOpportunityIdentityRelationshipInput[];
 }

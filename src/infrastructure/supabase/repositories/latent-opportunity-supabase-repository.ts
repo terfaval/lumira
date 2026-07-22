@@ -1,9 +1,11 @@
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
+import { projectHistoryDerivedLifecycleState } from "@/src/domain/latent-v2/lifecycle";
 import {
   LatentGenerationRunRollbackDeletionConflictError,
   LatentGenerationRunTransitionConflictError,
 } from "@/src/domain/latent-v2/errors";
 import type {
+  AcceptLatentGenerationRunSuccessorAtomicallyInput,
   AcceptedAuthorityEvidence,
   AcceptedOpportunityStaleGround,
   AcceptedOpportunityStalenessResult,
@@ -13,11 +15,15 @@ import type {
   CandidateAuthorityEvidence,
   CreateLatentGenerationRunInput,
   CreateLatentGenerationRunInvalidationEventInput,
+  CreateLatentOpportunityIdentityRelationshipInput,
   CreateLatentOpportunityIdentityInput,
+  CreateLatentOpportunityLifecycleEventInput,
   CreateLatentOpportunityManifestationInput,
   LatentGenerationRun,
   LatentGenerationRunInvalidationEvent,
+  LatentOpportunityIdentityRelationship,
   LatentOpportunityIdentity,
+  LatentOpportunityLifecycleEvent,
   LatentOpportunityManifestation,
 } from "@/src/domain/latent-v2/types";
 import type {
@@ -35,20 +41,26 @@ import {
 import {
   fromLatentGenerationRunRow,
   fromLatentGenerationRunInvalidationEventRow,
+  fromLatentOpportunityIdentityRelationshipRow,
+  fromLatentOpportunityLifecycleEventRow,
   fromLatentOpportunityRows,
   toLatentGenerationRunInsertRow,
   toLatentGenerationRunInvalidationEventInsertRow,
   toLatentOpportunityEvidenceBlockInsertRows,
   toLatentOpportunityEvidenceObservationInsertRows,
   toLatentOpportunityGlossaryLinkInsertRows,
+  toLatentOpportunityIdentityRelationshipInsertRow,
   toLatentOpportunityIdentityInsertRow,
+  toLatentOpportunityLifecycleEventInsertRow,
   toLatentOpportunityManifestationInsertRow,
   type LatentGenerationRunRow,
   type LatentGenerationRunInvalidationEventRow,
   type LatentOpportunityEvidenceBlockRow,
   type LatentOpportunityEvidenceObservationRow,
   type LatentOpportunityGlossaryLinkRow,
+  type LatentOpportunityIdentityRelationshipRow,
   type LatentOpportunityIdentityRow,
+  type LatentOpportunityLifecycleEventRow,
   type LatentOpportunityManifestationRow,
 } from "@/src/infrastructure/supabase/adapters/latent-opportunity-row";
 
@@ -59,6 +71,9 @@ const EVIDENCE_BLOCKS_TABLE = "latent_opportunity_evidence_blocks";
 const EVIDENCE_OBSERVATIONS_TABLE = "latent_opportunity_evidence_observations";
 const GLOSSARY_LINKS_TABLE = "latent_opportunity_glossary_links";
 const INVALIDATION_EVENTS_TABLE = "latent_generation_run_invalidation_events";
+const LIFECYCLE_EVENTS_TABLE = "latent_opportunity_lifecycle_events";
+const IDENTITY_RELATIONSHIPS_TABLE = "latent_opportunity_identity_relationships";
+const ACCEPT_SUCCESSOR_RPC = "accept_latent_generation_run_successor";
 
 type AcceptedOpportunityBasisEvidence = {
   generationRun: LatentGenerationRun;
@@ -484,6 +499,132 @@ export class SupabaseLatentOpportunityRepository implements LatentOpportunityRep
     return Promise.all(manifestationRows.map((row) => this.loadManifestationGraph(row)));
   }
 
+  async createLifecycleEvent(
+    input: CreateLatentOpportunityLifecycleEventInput,
+  ): Promise<LatentOpportunityLifecycleEvent> {
+    const { data, error } = await this.client
+      .from(LIFECYCLE_EVENTS_TABLE)
+      .insert(toLatentOpportunityLifecycleEventInsertRow(input))
+      .select("*")
+      .single<LatentOpportunityLifecycleEventRow>();
+
+    if (error) {
+      throw new Error(`Failed to create latent opportunity lifecycle event: ${error.message}`);
+    }
+
+    return fromLatentOpportunityLifecycleEventRow(data);
+  }
+
+  async createIdentityRelationship(
+    input: CreateLatentOpportunityIdentityRelationshipInput,
+  ): Promise<LatentOpportunityIdentityRelationship> {
+    const { data, error } = await this.client
+      .from(IDENTITY_RELATIONSHIPS_TABLE)
+      .insert(toLatentOpportunityIdentityRelationshipInsertRow(input))
+      .select("*")
+      .single<LatentOpportunityIdentityRelationshipRow>();
+
+    if (error) {
+      throw new Error(`Failed to create latent opportunity identity relationship: ${error.message}`);
+    }
+
+    return fromLatentOpportunityIdentityRelationshipRow(data);
+  }
+
+  async listLifecycleEventsByIdentity(
+    identityId: LatentOpportunityIdentityId,
+    userId: UserId,
+  ): Promise<LatentOpportunityLifecycleEvent[]> {
+    const { data, error } = await this.client
+      .from(LIFECYCLE_EVENTS_TABLE)
+      .select("*")
+      .eq("identity_id", identityId)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to list latent opportunity lifecycle events: ${error.message}`);
+    }
+
+    return ((data ?? []) as LatentOpportunityLifecycleEventRow[]).map(
+      fromLatentOpportunityLifecycleEventRow,
+    );
+  }
+
+  async listIdentityRelationshipsByIdentity(
+    identityId: LatentOpportunityIdentityId,
+    userId: UserId,
+  ): Promise<LatentOpportunityIdentityRelationship[]> {
+    const { data, error } = await this.client
+      .from(IDENTITY_RELATIONSHIPS_TABLE)
+      .select("*")
+      .eq("user_id", userId)
+      .or(`source_identity_id.eq.${identityId},target_identity_id.eq.${identityId}`)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to list latent opportunity identity relationships: ${error.message}`);
+    }
+
+    return ((data ?? []) as LatentOpportunityIdentityRelationshipRow[]).map(
+      fromLatentOpportunityIdentityRelationshipRow,
+    );
+  }
+
+  async acceptGenerationRunSuccessorAtomically(
+    input: AcceptLatentGenerationRunSuccessorAtomicallyInput,
+  ): Promise<LatentGenerationRun> {
+    const identityRows = (input.identities ?? []).map(toLatentOpportunityIdentityInsertRow);
+    const manifestationRows = input.manifestations.map((manifestationInput) => {
+      const manifestationRow = toLatentOpportunityManifestationInsertRow(manifestationInput);
+      const evidenceBlockRows = toLatentOpportunityEvidenceBlockInsertRows(
+        manifestationRow.id,
+        manifestationInput,
+      );
+      const evidenceObservationRows = toLatentOpportunityEvidenceObservationInsertRows(
+        evidenceBlockRows,
+        manifestationInput,
+      );
+      const glossaryLinkRows = toLatentOpportunityGlossaryLinkInsertRows(
+        manifestationRow.id,
+        manifestationInput,
+      );
+
+      return {
+        ...manifestationRow,
+        evidence_blocks: evidenceBlockRows.map((blockRow) => ({
+          ...blockRow,
+          observations: evidenceObservationRows.filter(
+            (observationRow) => observationRow.evidence_block_id === blockRow.id,
+          ),
+        })),
+        glossary_links: glossaryLinkRows,
+      };
+    });
+    const lifecycleEventRows = input.lifecycleEvents.map(toLatentOpportunityLifecycleEventInsertRow);
+    const identityRelationshipRows = input.identityRelationships.map(
+      toLatentOpportunityIdentityRelationshipInsertRow,
+    );
+
+    const { data, error } = await this.client.rpc(ACCEPT_SUCCESSOR_RPC, {
+      p_user_id: input.userId,
+      p_predecessor_run_id: input.predecessorRunId,
+      p_successor_run_id: input.successorRunId,
+      p_identities: identityRows,
+      p_manifestations: manifestationRows,
+      p_lifecycle_events: lifecycleEventRows,
+      p_identity_relationships: identityRelationshipRows,
+    });
+
+    if (error) {
+      throw new Error(`Failed to accept latent generation run successor atomically: ${error.message}`);
+    }
+
+    return fromLatentGenerationRunRow(data as LatentGenerationRunRow);
+  }
+
   async listRecentManifestationsByUser(userId: UserId, limit = 12): Promise<LatentOpportunityManifestation[]> {
     let request = this.client
       .from(MANIFESTATIONS_TABLE)
@@ -750,6 +891,8 @@ export class SupabaseLatentOpportunityRepository implements LatentOpportunityRep
         })[0] ?? null
     );
   }
+
+  projectHistoryDerivedLifecycleState = projectHistoryDerivedLifecycleState;
 
   private canonicalizeAuthorityEvidence(
     evidence: AcceptedAuthorityEvidence | CandidateAuthorityEvidence,

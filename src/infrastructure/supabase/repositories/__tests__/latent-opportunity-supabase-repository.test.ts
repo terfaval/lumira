@@ -256,6 +256,138 @@ describe("SupabaseLatentOpportunityRepository", () => {
     expect(typeof repository.determineAcceptedOpportunityStaleness).toBe("function");
   });
 
+  it("exposes atomic successor acceptance and history-derived posture seams", () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never) as unknown as Record<
+      string,
+      unknown
+    >;
+
+    expect(typeof repository.acceptGenerationRunSuccessorAtomically).toBe("function");
+    expect(typeof repository.listLifecycleEventsByIdentity).toBe("function");
+    expect(typeof repository.listIdentityRelationshipsByIdentity).toBe("function");
+  });
+
+  it("reconstructs posture from immutable lifecycle history in deterministic order", () => {
+    const repository = new SupabaseLatentOpportunityRepository({} as never) as unknown as {
+      projectHistoryDerivedLifecycleState: (input: {
+        identityId: string;
+        events: Array<{
+          id: string;
+          eventType: string;
+          priorLifecycleState: string | null;
+          createdAt: string;
+          resultingLifecycleState: string;
+        }>;
+      }) => { identityId: string; lifecycleState: string; orderedEventIds: string[] };
+    };
+
+    const projection = repository.projectHistoryDerivedLifecycleState({
+      identityId: "identity-1",
+      events: [
+        {
+          id: "event-2",
+          eventType: "reinforcement",
+          priorLifecycleState: "emerging",
+          createdAt: "2026-07-22T10:00:00.000Z",
+          resultingLifecycleState: "reinforced",
+        },
+        {
+          id: "event-1",
+          eventType: "emergence",
+          priorLifecycleState: null,
+          createdAt: "2026-07-22T10:00:00.000Z",
+          resultingLifecycleState: "emerging",
+        },
+      ],
+    });
+
+    expect(projection).toEqual({
+      identityId: "identity-1",
+      lifecycleState: "reinforced",
+      orderedEventIds: ["event-1", "event-2"],
+    });
+  });
+
+  it("passes materialized identity, manifestation, and lifecycle rows into atomic successor acceptance", async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: createGenerationRunRow({
+        id: "run-2",
+        status: "current",
+        predecessor_run_id: "run-1",
+        accepted_at: "2026-07-22T10:01:00.000Z",
+      }),
+      error: null,
+    });
+    const repository = new SupabaseLatentOpportunityRepository({ rpc } as never);
+
+    await repository.acceptGenerationRunSuccessorAtomically({
+      userId: "user-1",
+      predecessorRunId: "run-1",
+      successorRunId: "run-2",
+      identities: [
+        {
+          id: "identity-2",
+          userId: "user-1",
+          title: "Renewed transition",
+          primaryCategory: "transition",
+          lifecycleState: "emerging",
+        },
+      ],
+      manifestations: [
+        {
+          ...createManifestationInput(),
+          id: "manifestation-2",
+          identityId: "identity-2",
+          generationRunId: "run-2",
+        },
+      ],
+      lifecycleEvents: [
+        {
+          id: "event-2",
+          userId: "user-1",
+          identityId: "identity-2",
+          eventType: "emergence",
+          priorLifecycleState: null,
+          resultingLifecycleState: "emerging",
+          resultingGenerationRunId: "run-2",
+          resultingManifestationIds: ["manifestation-2"],
+          triggeringReflectiveObjectId: "object-1",
+        },
+      ],
+      identityRelationships: [],
+    });
+
+    expect(rpc).toHaveBeenCalledWith(
+      "accept_latent_generation_run_successor",
+      expect.objectContaining({
+        p_user_id: "user-1",
+        p_predecessor_run_id: "run-1",
+        p_successor_run_id: "run-2",
+        p_identities: [
+          expect.objectContaining({
+            id: "identity-2",
+            user_id: "user-1",
+            lifecycle_state: "emerging",
+          }),
+        ],
+        p_manifestations: [
+          expect.objectContaining({
+            id: "manifestation-2",
+            generation_run_id: "run-2",
+            identity_id: "identity-2",
+          }),
+        ],
+        p_lifecycle_events: [
+          expect.objectContaining({
+            id: "event-2",
+            identity_id: "identity-2",
+            event_type: "emergence",
+          }),
+        ],
+      }),
+    );
+  });
+
   it("returns stale when supplied authority evaluation proves material divergence", async () => {
     const repository = new SupabaseLatentOpportunityRepository({} as never);
     vi.spyOn(repository, "getCurrentGenerationRunForReflectiveObject").mockResolvedValue(

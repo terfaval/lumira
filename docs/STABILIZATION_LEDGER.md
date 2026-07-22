@@ -4336,3 +4336,34 @@ Verification references:
   - The earlier `docs/BUILD_LOG.md` touched-boundary inventory omission was non-blocking and is now corrected in the implementation entry above.
 - Next unopened constitutional responsibility:
   - Later `reassessment consumption` is the next explicitly admitted downstream Latent responsibility in the governing doctrine, with later `regeneration policy` and `no-change handling after reassessment` remaining subsequent adjacent work rather than part of LAT-R03B.
+
+## 2026-07-22 - LAT-R04B Authoritative Lifecycle Realization
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/latent-v2/lifecycle.ts`
+  - `src/domain/latent-v2/__tests__/lifecycle.test.ts`
+  - `src/domain/latent-v2/types.ts`
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+  - `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `src/shared/__tests__/latent-generation-run-hardening-migration.test.ts`
+  - `supabase/migrations/20260722_0001_latent_reflective_continuity.sql`
+  - Latent repository test-double synchronization in:
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - `npx.cmd vitest run src/shared/__tests__/latent-generation-run-hardening-migration.test.ts src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts src/domain/latent-v2/__tests__/lifecycle.test.ts` -> pass (`4` files, `99` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-22T15-18-26-262Z.log`
+- Notes:
+  - Added a repository-grounded lifecycle planner and immutable-history reconstruction seam so posture remains a derived projection rather than an independent authority source.
+  - Successor recomposition now assembles a materialized atomic acceptance package with identities, manifestations, evidence graph rows, lifecycle events, and lineage rows scoped to one authoritative repository operation.
+  - Reuse now reconstructs prior posture from immutable lifecycle history and fails closed when history is missing or inconsistent; constructor omission alone remains insufficient to emit weakening or abandonment.
+  - The continuity migration now represents append-only lifecycle history, immutable lineage history, and successor acceptance projection updates at the schema boundary rather than leaving the RPC as a placeholder.

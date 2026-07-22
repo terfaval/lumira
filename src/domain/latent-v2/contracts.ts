@@ -1,4 +1,5 @@
 import type {
+  AcceptLatentGenerationRunSuccessorAtomicallyInput,
   AcceptedAuthorityEvidence,
   AcceptedOpportunityStalenessResult,
   AcceptedOpportunityStalenessTarget,
@@ -7,11 +8,15 @@ import type {
   CandidateAuthorityEvidence,
   CreateLatentGenerationRunInput,
   CreateLatentGenerationRunInvalidationEventInput,
+  CreateLatentOpportunityIdentityRelationshipInput,
   CreateLatentOpportunityIdentityInput,
+  CreateLatentOpportunityLifecycleEventInput,
   CreateLatentOpportunityManifestationInput,
   LatentGenerationRun,
   LatentGenerationRunInvalidationEvent,
+  LatentOpportunityIdentityRelationship,
   LatentOpportunityIdentity,
+  LatentOpportunityLifecycleEvent,
   LatentOpportunityManifestation,
 } from "@/src/domain/latent-v2/types";
 import type {
@@ -76,6 +81,23 @@ export interface LatentOpportunityRepository {
     identityId: LatentOpportunityIdentityId,
     userId: UserId,
   ): Promise<LatentOpportunityManifestation[]>;
+  createLifecycleEvent(
+    input: CreateLatentOpportunityLifecycleEventInput,
+  ): Promise<LatentOpportunityLifecycleEvent>;
+  createIdentityRelationship(
+    input: CreateLatentOpportunityIdentityRelationshipInput,
+  ): Promise<LatentOpportunityIdentityRelationship>;
+  listLifecycleEventsByIdentity(
+    identityId: LatentOpportunityIdentityId,
+    userId: UserId,
+  ): Promise<LatentOpportunityLifecycleEvent[]>;
+  listIdentityRelationshipsByIdentity(
+    identityId: LatentOpportunityIdentityId,
+    userId: UserId,
+  ): Promise<LatentOpportunityIdentityRelationship[]>;
+  acceptGenerationRunSuccessorAtomically(
+    input: AcceptLatentGenerationRunSuccessorAtomicallyInput,
+  ): Promise<LatentGenerationRun>;
   listRecentManifestationsByUser(userId: UserId, limit?: number): Promise<LatentOpportunityManifestation[]>;
   markGenerationRunCurrent(generationRunId: LatentGenerationRunId, userId: UserId): Promise<LatentGenerationRun>;
   markGenerationRunFailed(generationRunId: LatentGenerationRunId, userId: UserId): Promise<LatentGenerationRun>;

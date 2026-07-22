@@ -59,4 +59,18 @@ describe("latent generation-run empty-status hardening migration", () => {
     expect(migration).toContain("add column if not exists execution_provenance jsonb null");
     expect(migration).not.toContain("update public.latent_opportunity_generation_runs");
   });
+
+  it("creates continuity tables and an atomic successor-acceptance rpc", () => {
+    const migration = readWorkspaceFile("supabase/migrations/20260722_0001_latent_reflective_continuity.sql");
+
+    expect(migration).toContain("create table if not exists public.latent_opportunity_lifecycle_events");
+    expect(migration).toContain("create table if not exists public.latent_opportunity_identity_relationships");
+    expect(migration).toContain("create or replace function public.accept_latent_generation_run_successor");
+    expect(migration).toContain("source_identity_id <> target_identity_id");
+    expect(migration).toContain("p_identities jsonb");
+    expect(migration).toContain("Lifecycle continuity history is append-only.");
+    expect(migration).toContain("jsonb_to_recordset(coalesce(p_manifestations, '[]'::jsonb))");
+    expect(migration).toContain("jsonb_to_recordset(coalesce(p_lifecycle_events, '[]'::jsonb))");
+    expect(migration).toContain("update public.latent_opportunity_identities");
+  });
 });

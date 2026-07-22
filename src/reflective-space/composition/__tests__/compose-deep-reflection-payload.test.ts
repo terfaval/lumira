@@ -423,6 +423,17 @@ describe("composeDeepReflectionPayload", () => {
         markGenerationRunSuperseded: async () => {
           throw new Error("not used");
         },
+        createLifecycleEvent: async () => {
+          throw new Error("not used");
+        },
+        createIdentityRelationship: async () => {
+          throw new Error("not used");
+        },
+        listLifecycleEventsByIdentity: async () => [],
+        listIdentityRelationshipsByIdentity: async () => [],
+        acceptGenerationRunSuccessorAtomically: async () => {
+          throw new Error("not used");
+        },
       },
       reflectionRepository: {
         admitReflection: async () => {
@@ -667,6 +678,17 @@ describe("composeDeepReflectionPayload", () => {
         markGenerationRunSuperseded: async () => {
           throw new Error("not used");
         },
+        createLifecycleEvent: async () => {
+          throw new Error("not used");
+        },
+        createIdentityRelationship: async () => {
+          throw new Error("not used");
+        },
+        listLifecycleEventsByIdentity: async () => [],
+        listIdentityRelationshipsByIdentity: async () => [],
+        acceptGenerationRunSuccessorAtomically: async () => {
+          throw new Error("not used");
+        },
       },
       reflectionRepository: {
         admitReflection: async () => {
@@ -868,6 +890,17 @@ describe("composeDeepReflectionPayload", () => {
           throw new Error("not used");
         },
         markGenerationRunSuperseded: async () => {
+          throw new Error("not used");
+        },
+        createLifecycleEvent: async () => {
+          throw new Error("not used");
+        },
+        createIdentityRelationship: async () => {
+          throw new Error("not used");
+        },
+        listLifecycleEventsByIdentity: async () => [],
+        listIdentityRelationshipsByIdentity: async () => [],
+        acceptGenerationRunSuccessorAtomically: async () => {
           throw new Error("not used");
         },
       },

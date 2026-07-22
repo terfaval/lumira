@@ -326,6 +326,11 @@ function createRepositories(input?: {
     markGenerationRunEmpty: vi.fn(),
     markGenerationRunNoChange: vi.fn(),
     markGenerationRunSuperseded: vi.fn(),
+    createLifecycleEvent: vi.fn(),
+    createIdentityRelationship: vi.fn(),
+    listLifecycleEventsByIdentity: vi.fn().mockResolvedValue([]),
+    listIdentityRelationshipsByIdentity: vi.fn().mockResolvedValue([]),
+    acceptGenerationRunSuccessorAtomically: vi.fn(),
   };
 
   return {

@@ -935,6 +935,31 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
       generationRunId: input.generationRunId,
     }),
   );
+  const listManifestationsByGenerationRun = vi.fn().mockImplementation(async (generationRunId: string) => {
+    if (generationRunId === "run-current-1") {
+      return [
+        createPersistedManifestation({
+          id: "manifestation-current-1",
+          identityId: "identity-existing-1",
+          generationRunId: "run-current-1",
+          priorityReflectiveObjectId: "object-1",
+        }),
+      ];
+    }
+
+    if (generationRunId === "run-1") {
+      return [
+        createPersistedManifestation({
+          id: "manifestation-successor-1",
+          identityId: "generated-identity-1",
+          generationRunId: "run-1",
+          priorityReflectiveObjectId: "object-1",
+        }),
+      ];
+    }
+
+    return [];
+  });
 
   const latentOpportunityRepository: LatentOpportunityRepository = {
     evaluateAuthoritySameness: vi.fn().mockResolvedValue({
@@ -973,7 +998,7 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
     getGenerationRunById: vi.fn().mockResolvedValue(null),
     getCurrentGenerationRunForReflectiveObject: vi.fn().mockResolvedValue(null),
     listGenerationRunsForReflectiveObject: vi.fn().mockResolvedValue([]),
-    listManifestationsByGenerationRun: vi.fn().mockResolvedValue([]),
+    listManifestationsByGenerationRun,
     getManifestationById: vi.fn(),
     listManifestationsByPriorityReflectiveObject: vi.fn().mockResolvedValue([]),
     listManifestationsByIdentity: vi.fn(),
@@ -1085,6 +1110,44 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
     deleteIdentity: vi.fn().mockResolvedValue(undefined),
     deleteGenerationRun: vi.fn().mockResolvedValue(undefined),
     deleteManifestation: vi.fn().mockResolvedValue(undefined),
+    createLifecycleEvent: vi.fn(),
+    createIdentityRelationship: vi.fn(),
+    listLifecycleEventsByIdentity: vi.fn().mockImplementation(async (identityId: string) => [
+      {
+        id: `${identityId}:event-1`,
+        userId: "user-1",
+        identityId,
+        eventType: "emergence",
+        priorLifecycleState: null,
+        resultingLifecycleState: "emerging",
+        sourceGenerationRunId: null,
+        resultingGenerationRunId: "run-current-1",
+        sourceManifestationIds: [],
+        resultingManifestationIds: ["manifestation-current-1"],
+        relatedIdentityIds: [],
+        triggeringReflectiveObjectId: "object-1",
+        triggeringReflectionId: null,
+        createdAt: "2026-07-18T12:00:00.000Z",
+      },
+    ]),
+    listIdentityRelationshipsByIdentity: vi.fn().mockResolvedValue([]),
+    acceptGenerationRunSuccessorAtomically: vi.fn().mockResolvedValue({
+      id: "run-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "current",
+      inputFingerprint: "fingerprint:pending",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(),
+      contextProvenance: createContextProvenance(),
+      executionProvenance: createExecutionProvenance(),
+      triggerReason: "material_authority_change",
+      predecessorRunId: "run-0",
+      acceptedAt: "2026-07-22T12:01:00.000Z",
+      supersededAt: null,
+      createdAt: "2026-07-22T12:00:00.000Z",
+      updatedAt: "2026-07-22T12:01:00.000Z",
+    }),
   };
 
   return {
@@ -1108,7 +1171,11 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       userId: "user-1",
       priorityReflectiveObjectId: "object-1",
       repositories,
-      composeInputPacket: vi.fn().mockResolvedValue(packet),
+      composeInputPacket: vi.fn().mockResolvedValue({
+        packet,
+        authorityProvenance: createAuthorityProvenance(packet),
+        contextProvenance: createContextProvenance(packet),
+      }),
       generateOutput,
     });
 
@@ -1216,7 +1283,11 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       userId: "user-1",
       priorityReflectiveObjectId: "object-1",
       repositories,
-      composeInputPacket: vi.fn().mockResolvedValue(packet),
+      composeInputPacket: vi.fn().mockResolvedValue({
+        packet,
+        authorityProvenance: createAuthorityProvenance(packet),
+        contextProvenance: createContextProvenance(packet),
+      }),
       generateOutput,
     });
 
@@ -1272,7 +1343,11 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       userId: "user-1",
       priorityReflectiveObjectId: "object-1",
       repositories,
-      composeInputPacket: vi.fn().mockResolvedValue(packet),
+      composeInputPacket: vi.fn().mockResolvedValue({
+        packet,
+        authorityProvenance: createAuthorityProvenance(packet),
+        contextProvenance: createContextProvenance(packet),
+      }),
       generateOutput,
     });
 
@@ -1285,6 +1360,108 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
     expect(generateOutput).not.toHaveBeenCalled();
     expect(repositories.latentOpportunityRepository.createGenerationRun).not.toHaveBeenCalled();
     expect(repositories.latentOpportunityRepository.markGenerationRunEmpty).not.toHaveBeenCalled();
+  });
+
+  it("short-circuits identical authority without creating a run or acceptance side effects", async () => {
+    const packet = createPacket();
+    const repositories = createActualComposerRepositories();
+    repositories.latentOpportunityRepository.getCurrentGenerationRunForReflectiveObject = vi.fn().mockResolvedValue({
+      id: "run-current-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "current",
+      inputFingerprint: "fingerprint:current",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(packet),
+      contextProvenance: createContextProvenance(packet),
+      executionProvenance: createExecutionProvenance(packet),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: "2026-07-18T12:01:00.000Z",
+      supersededAt: null,
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:01:00.000Z",
+    });
+    repositories.latentOpportunityRepository.evaluateAuthoritySameness = vi.fn().mockResolvedValue({
+      outcome: "constitutionally_identical",
+      acceptedFingerprint: "a".repeat(64),
+      candidateFingerprint: "a".repeat(64),
+    });
+    const generateOutput = vi.fn();
+
+    const result = await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket: vi.fn().mockResolvedValue({
+        packet,
+        authorityProvenance: createAuthorityProvenance(packet),
+        contextProvenance: createContextProvenance(packet),
+      }),
+      generateOutput,
+    });
+
+    expect(result).toEqual({
+      mode: "empty",
+      packet,
+      generationRunId: "run-current-1",
+      source: "existing_assessment",
+    });
+    expect(generateOutput).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.createGenerationRun).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).not.toHaveBeenCalled();
+  });
+
+  it("uses atomic successor acceptance when material authority changes against a current run", async () => {
+    const packet = createPacket();
+    const repositories = createActualComposerRepositories();
+    repositories.latentOpportunityRepository.getCurrentGenerationRunForReflectiveObject = vi.fn().mockResolvedValue({
+      id: "run-current-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "current",
+      inputFingerprint: "fingerprint:current",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(packet),
+      contextProvenance: createContextProvenance(packet),
+      executionProvenance: createExecutionProvenance(packet),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: "2026-07-18T12:01:00.000Z",
+      supersededAt: null,
+      createdAt: "2026-07-18T12:00:00.000Z",
+      updatedAt: "2026-07-18T12:01:00.000Z",
+    });
+    repositories.latentOpportunityRepository.evaluateAuthoritySameness = vi.fn().mockResolvedValue({
+      outcome: "materially_changed",
+      acceptedFingerprint: "a".repeat(64),
+      candidateFingerprint: "b".repeat(64),
+    });
+    const generateOutput = vi.fn(async ({ packet }: { packet: OpportunityConstructorInputPacket }) => ({
+      mode: "generated" as const,
+      rawOutput: JSON.stringify(createOutputForPacket(packet)),
+    }));
+
+    const result = await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket: vi.fn().mockResolvedValue({
+        packet,
+        authorityProvenance: createAuthorityProvenance(packet),
+        contextProvenance: createContextProvenance(packet),
+      }),
+      generateOutput,
+    });
+
+    expect(result.mode).toBe("persisted");
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
+      expect.objectContaining({
+        predecessorRunId: "run-current-1",
+        successorRunId: "run-1",
+      }),
+    );
+    expect(repositories.latentOpportunityRepository.markGenerationRunCurrent).not.toHaveBeenCalled();
   });
 
   it("skips accepted current-run reuse guards when Opening has already resolved reuse as blocked", async () => {
