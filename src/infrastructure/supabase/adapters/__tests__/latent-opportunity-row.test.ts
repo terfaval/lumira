@@ -457,4 +457,46 @@ describe("latent opportunity row adapters", () => {
       }),
     ).toThrow("Unsupported latent generation run invalidation reason: bundle_restored");
   });
+
+  it("fails closed on unsupported stored lifecycle posture values", () => {
+    const identityRow: LatentOpportunityIdentityRow = {
+      id: "identity-1",
+      user_id: "user-1",
+      title: "Exploration -> danger",
+      primary_category: "transition",
+      secondary_categories: ["tension", "curiosity"],
+      lifecycle_state: "corrupted_state",
+      status: "active",
+      archived_at: null,
+      created_at: "2026-06-15T08:00:00.000Z",
+      updated_at: "2026-06-15T08:00:00.000Z",
+    };
+    const manifestationRow: LatentOpportunityManifestationRow = {
+      id: "manifestation-1",
+      identity_id: "identity-1",
+      user_id: "user-1",
+      priority_reflective_object_id: "object-1",
+      generation_run_id: "run-1",
+      summary: "A transition from open movement into threat remains notable.",
+      structure_payload: {
+        kind: "transition",
+        label: "Exploration -> danger",
+        elements: ["exploration", "danger"],
+      },
+      primary_category: "transition",
+      secondary_categories: ["tension", "curiosity"],
+      credibility_score: 0.82,
+      reflective_potential_score: 0.77,
+      salience_band: "high",
+      salience_rationale: {},
+      construction_metadata: {},
+      archived_at: null,
+      created_at: "2026-06-15T08:00:00.000Z",
+      updated_at: "2026-06-15T08:00:00.000Z",
+    };
+
+    expect(() =>
+      fromLatentOpportunityRows(identityRow, manifestationRow, [], [], []),
+    ).toThrow("Unsupported latent opportunity lifecycle state: corrupted_state");
+  });
 });

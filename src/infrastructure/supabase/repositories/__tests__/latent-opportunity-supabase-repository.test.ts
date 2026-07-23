@@ -265,6 +265,11 @@ describe("SupabaseLatentOpportunityRepository", () => {
     expect(typeof repository.acceptGenerationRunSuccessorAtomically).toBe("function");
     expect(typeof repository.listLifecycleEventsByIdentity).toBe("function");
     expect(typeof repository.listIdentityRelationshipsByIdentity).toBe("function");
+    expect("deleteIdentity" in repository).toBe(false);
+    expect("deleteManifestation" in repository).toBe(false);
+    expect("createIdentity" in repository).toBe(false);
+    expect("createManifestation" in repository).toBe(false);
+    expect("deleteManifestationAfterFailure" in repository).toBe(false);
   });
 
   it("reconstructs posture from immutable lifecycle history in deterministic order", () => {
@@ -1264,64 +1269,7 @@ describe("SupabaseLatentOpportunityRepository", () => {
     expect(resolution.invalidation?.id).toBe("invalidate-2");
   });
 
-  it("creates an identity and manifestation graph, then rehydrates it", async () => {
-    const identityInsert = vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({
-          data: {
-            id: "identity-1",
-            user_id: "user-1",
-            title: "Exploration -> danger",
-            primary_category: "transition",
-            secondary_categories: ["tension", "curiosity"],
-            lifecycle_state: "emerging",
-            status: "active",
-            archived_at: null,
-            created_at: "2026-06-15T08:00:00.000Z",
-            updated_at: "2026-06-15T08:00:00.000Z",
-          },
-          error: null,
-        }),
-      }),
-    });
-    const manifestationInsert = vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({
-          data: {
-            id: "manifestation-1",
-            identity_id: "identity-1",
-            user_id: "user-1",
-            priority_reflective_object_id: "object-1",
-            summary: "A transition from open movement into threat remains notable.",
-            structure_payload: {
-              kind: "transition",
-              label: "Exploration -> danger",
-              elements: ["exploration", "danger"],
-            },
-            primary_category: "transition",
-            secondary_categories: ["tension", "curiosity"],
-            credibility_score: 0.82,
-            reflective_potential_score: 0.77,
-            salience_band: "high",
-            salience_rationale: {
-              evidenceStrength: "strong",
-            },
-            construction_metadata: {
-              source: "llm_constructor",
-              model: "gpt-test",
-              version: "latent_v2_test",
-            },
-            archived_at: null,
-            created_at: "2026-06-15T08:00:00.000Z",
-            updated_at: "2026-06-15T08:00:00.000Z",
-          },
-          error: null,
-        }),
-      }),
-    });
-    const evidenceBlockInsert = vi.fn().mockResolvedValue({ error: null });
-    const evidenceObservationInsert = vi.fn().mockResolvedValue({ error: null });
-    const glossaryLinkInsert = vi.fn().mockResolvedValue({ error: null });
+  it("rehydrates manifestation evidence and observations from repository reads", async () => {
 
     const maybeSingleIdentity = vi.fn().mockResolvedValue({
       data: {
@@ -1450,7 +1398,6 @@ describe("SupabaseLatentOpportunityRepository", () => {
     const from = vi.fn().mockImplementation((table: string) => {
       if (table === "latent_opportunity_identities") {
         return {
-          insert: identityInsert,
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
@@ -1465,7 +1412,6 @@ describe("SupabaseLatentOpportunityRepository", () => {
 
       if (table === "latent_opportunity_manifestations") {
         return {
-          insert: manifestationInsert,
           select: vi.fn().mockReturnValue({
             eq: vi.fn((column: string) => {
               if (column === "id") {
@@ -1492,7 +1438,6 @@ describe("SupabaseLatentOpportunityRepository", () => {
 
       if (table === "latent_opportunity_evidence_blocks") {
         return {
-          insert: evidenceBlockInsert,
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
@@ -1505,7 +1450,6 @@ describe("SupabaseLatentOpportunityRepository", () => {
 
       if (table === "latent_opportunity_evidence_observations") {
         return {
-          insert: evidenceObservationInsert,
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
@@ -1518,7 +1462,6 @@ describe("SupabaseLatentOpportunityRepository", () => {
 
       if (table === "latent_opportunity_glossary_links") {
         return {
-          insert: glossaryLinkInsert,
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
@@ -1533,40 +1476,33 @@ describe("SupabaseLatentOpportunityRepository", () => {
     });
 
     const repository = new SupabaseLatentOpportunityRepository({ from } as never);
+    vi.spyOn(repository, "listLifecycleEventsByIdentity").mockResolvedValue([
+      {
+        id: "identity-1:event-1",
+        userId: "user-1",
+        identityId: "identity-1",
+        eventType: "emergence",
+        priorLifecycleState: null,
+        resultingLifecycleState: "emerging",
+        sourceGenerationRunId: null,
+        resultingGenerationRunId: "run-1",
+        sourceManifestationIds: [],
+        resultingManifestationIds: ["manifestation-1"],
+        relatedIdentityIds: [],
+        triggeringReflectiveObjectId: "object-1",
+        triggeringReflectionId: null,
+        createdAt: "2026-06-15T12:00:00.000Z",
+      },
+    ] as never);
 
-    const identity = await repository.createIdentity({
-      id: "identity-1",
-      userId: "user-1",
-      title: "Exploration -> danger",
-      primaryCategory: "transition",
-      secondaryCategories: ["tension", "curiosity"],
-      lifecycleState: "emerging",
-      status: "active",
-    });
-    const manifestation = await repository.createManifestation({
-      id: "manifestation-1",
-      ...createManifestationInput(),
-    });
+    const manifestation = await repository.getManifestationById("manifestation-1", "user-1");
     const listed = await repository.listManifestationsByPriorityReflectiveObject("object-1", "user-1");
 
-    expect(identityInsert).toHaveBeenCalled();
-    expect(manifestationInsert).toHaveBeenCalled();
-    expect(evidenceBlockInsert).toHaveBeenCalled();
-    expect(evidenceObservationInsert).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({
-          observation_v2_scene_observation_id: "bundle-1:scene-1:obs-1",
-          supports_node_keys: ["issue", "action"],
-          supports_edge_indexes: [0],
-        }),
-      ]),
-    );
-    expect(glossaryLinkInsert).toHaveBeenCalled();
-    expect(identity.id).toBe("identity-1");
-    expect(manifestation.priorityReflectiveObjectId).toBe("object-1");
-    expect(manifestation.evidenceBlocks[0].observations[0].observationV2SceneObservationId).toBe("bundle-1:scene-1:obs-1");
-    expect((manifestation.evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsNodeKeys).toEqual(["issue", "action"]);
-    expect((manifestation.evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsEdgeIndexes).toEqual([0]);
+    expect(manifestation).not.toBeNull();
+    expect(manifestation?.priorityReflectiveObjectId).toBe("object-1");
+    expect(manifestation?.evidenceBlocks[0].observations[0].observationV2SceneObservationId).toBe("bundle-1:scene-1:obs-1");
+    expect((manifestation?.evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsNodeKeys).toEqual(["issue", "action"]);
+    expect((manifestation?.evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsEdgeIndexes).toEqual([0]);
     expect((listed[0].evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsNodeKeys).toEqual(["issue", "action"]);
     expect((listed[0].evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsEdgeIndexes).toEqual([0]);
     expect(listed).toHaveLength(1);

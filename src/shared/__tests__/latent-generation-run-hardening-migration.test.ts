@@ -72,5 +72,26 @@ describe("latent generation-run empty-status hardening migration", () => {
     expect(migration).toContain("jsonb_to_recordset(coalesce(p_manifestations, '[]'::jsonb))");
     expect(migration).toContain("jsonb_to_recordset(coalesce(p_lifecycle_events, '[]'::jsonb))");
     expect(migration).toContain("update public.latent_opportunity_identities");
+    expect(migration).toContain("app.latent_continuity_write_authorized");
+    expect(migration).toContain("security definer");
+    expect(migration).toContain("before insert on public.latent_opportunity_manifestations");
+    expect(migration).toContain("before update on public.latent_opportunity_generation_runs");
+    expect(migration).toContain("drop policy if exists latent_opportunity_manifestations_update_own");
+    expect(migration).toContain("drop policy if exists latent_opportunity_generation_runs_update_own");
+  });
+
+  it("adds delete guards so accepted latent authority cannot be destroyed outside bounded pending rollback", () => {
+    const deleteGuardMigration = readWorkspaceFile("supabase/migrations/20260723_0001_latent_authority_delete_hardening.sql");
+
+    expect(deleteGuardMigration).toContain("create or replace function public.guard_latent_authority_delete()");
+    expect(deleteGuardMigration).toContain("before delete on public.latent_opportunity_identities");
+    expect(deleteGuardMigration).toContain("before delete on public.latent_opportunity_manifestations");
+    expect(deleteGuardMigration).toContain("before delete on public.latent_opportunity_evidence_blocks");
+    expect(deleteGuardMigration).toContain("before delete on public.latent_opportunity_evidence_observations");
+    expect(deleteGuardMigration).toContain("before delete on public.latent_opportunity_glossary_links");
+    expect(deleteGuardMigration).toContain("Accepted latent authority deletes are not permitted.");
+    expect(deleteGuardMigration).toContain("create or replace function public.guard_latent_generation_run_delete()");
+    expect(deleteGuardMigration).toContain("before delete on public.latent_opportunity_generation_runs");
+    expect(deleteGuardMigration).toContain("Pending latent generation runs may be deleted only before accepted authority exists.");
   });
 });

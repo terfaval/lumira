@@ -16,13 +16,10 @@ import type {
   CreateLatentGenerationRunInput,
   CreateLatentGenerationRunInvalidationEventInput,
   CreateLatentOpportunityIdentityRelationshipInput,
-  CreateLatentOpportunityIdentityInput,
   CreateLatentOpportunityLifecycleEventInput,
-  CreateLatentOpportunityManifestationInput,
   LatentGenerationRun,
   LatentGenerationRunInvalidationEvent,
   LatentOpportunityIdentityRelationship,
-  LatentOpportunityIdentity,
   LatentOpportunityLifecycleEvent,
   LatentOpportunityManifestation,
 } from "@/src/domain/latent-v2/types";
@@ -159,80 +156,6 @@ export class SupabaseLatentOpportunityRepository implements LatentOpportunityRep
     return fromLatentGenerationRunRow(data);
   }
 
-  async createIdentity(input: CreateLatentOpportunityIdentityInput): Promise<LatentOpportunityIdentity> {
-    const { data, error } = await this.client
-      .from(IDENTITIES_TABLE)
-      .insert(toLatentOpportunityIdentityInsertRow(input))
-      .select("*")
-      .single<LatentOpportunityIdentityRow>();
-
-    if (error) {
-      throw new Error(`Failed to create latent opportunity identity: ${error.message}`);
-    }
-
-    return {
-      id: data.id,
-      userId: data.user_id,
-      title: data.title,
-      primaryCategory: data.primary_category as LatentOpportunityIdentity["primaryCategory"],
-      secondaryCategories: data.secondary_categories as LatentOpportunityIdentity["secondaryCategories"],
-      lifecycleState: data.lifecycle_state as LatentOpportunityIdentity["lifecycleState"],
-      status: data.status as LatentOpportunityIdentity["status"],
-      archivedAt: data.archived_at,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-    };
-  }
-
-  async createManifestation(input: CreateLatentOpportunityManifestationInput): Promise<LatentOpportunityManifestation> {
-    const manifestationRow = toLatentOpportunityManifestationInsertRow(input);
-    const { error: manifestationError } = await this.client
-      .from(MANIFESTATIONS_TABLE)
-      .insert(manifestationRow)
-      .select("*")
-      .single<LatentOpportunityManifestationRow>();
-
-    if (manifestationError) {
-      throw new Error(`Failed to create latent opportunity manifestation: ${manifestationError.message}`);
-    }
-
-    try {
-      const evidenceBlockRows = toLatentOpportunityEvidenceBlockInsertRows(manifestationRow.id, input);
-      if (evidenceBlockRows.length > 0) {
-        const { error } = await this.client.from(EVIDENCE_BLOCKS_TABLE).insert(evidenceBlockRows);
-        if (error) {
-          throw new Error(`Failed to create latent opportunity evidence blocks: ${error.message}`);
-        }
-      }
-
-      const evidenceObservationRows = toLatentOpportunityEvidenceObservationInsertRows(evidenceBlockRows, input);
-      if (evidenceObservationRows.length > 0) {
-        const { error } = await this.client.from(EVIDENCE_OBSERVATIONS_TABLE).insert(evidenceObservationRows);
-        if (error) {
-          throw new Error(`Failed to create latent opportunity evidence observations: ${error.message}`);
-        }
-      }
-
-      const glossaryLinkRows = toLatentOpportunityGlossaryLinkInsertRows(manifestationRow.id, input);
-      if (glossaryLinkRows.length > 0) {
-        const { error } = await this.client.from(GLOSSARY_LINKS_TABLE).insert(glossaryLinkRows);
-        if (error) {
-          throw new Error(`Failed to create latent opportunity glossary links: ${error.message}`);
-        }
-      }
-
-      const loaded = await this.getManifestationById(manifestationRow.id, input.userId);
-      if (!loaded) {
-        throw new Error("Latent opportunity manifestation could not be loaded after creation.");
-      }
-
-      return loaded;
-    } catch (error) {
-      await this.deleteManifestationAfterFailure(manifestationRow.id, input.userId);
-      throw error;
-    }
-  }
-
   async deleteGenerationRun(generationRunId: LatentGenerationRunId, userId: UserId): Promise<void> {
     const { error, count } = await this.client
       .from(GENERATION_RUNS_TABLE)
@@ -265,30 +188,6 @@ export class SupabaseLatentOpportunityRepository implements LatentOpportunityRep
     }
 
     throw new Error("Latent generation run rollback deletion could not be confirmed.");
-  }
-
-  async deleteIdentity(identityId: LatentOpportunityIdentityId, userId: UserId): Promise<void> {
-    const { error } = await this.client
-      .from(IDENTITIES_TABLE)
-      .delete()
-      .eq("id", identityId)
-      .eq("user_id", userId);
-
-    if (error) {
-      throw new Error(`Failed to delete latent opportunity identity: ${error.message}`);
-    }
-  }
-
-  async deleteManifestation(manifestationId: LatentOpportunityManifestationId, userId: UserId): Promise<void> {
-    const { error } = await this.client
-      .from(MANIFESTATIONS_TABLE)
-      .delete()
-      .eq("id", manifestationId)
-      .eq("user_id", userId);
-
-    if (error) {
-      throw new Error(`Failed to delete latent opportunity manifestation: ${error.message}`);
-    }
   }
 
   async getGenerationRunById(
@@ -772,13 +671,26 @@ export class SupabaseLatentOpportunityRepository implements LatentOpportunityRep
       throw new Error(`Failed to load latent opportunity glossary links: ${glossaryLinkError.message}`);
     }
 
-    return fromLatentOpportunityRows(
+    const manifestation = fromLatentOpportunityRows(
       identity,
       manifestationRow,
       evidenceBlockRows,
       evidenceObservationRows,
       (glossaryLinkData ?? []) as LatentOpportunityGlossaryLinkRow[],
     );
+    const projection = projectHistoryDerivedLifecycleState({
+      identityId: manifestation.identity.id,
+      events: await this.listLifecycleEventsByIdentity(manifestation.identity.id, manifestation.userId),
+      expectedPersistedLifecycleState: manifestation.identity.lifecycleState,
+    });
+
+    return {
+      ...manifestation,
+      identity: {
+        ...manifestation.identity,
+        lifecycleState: projection.lifecycleState,
+      },
+    };
   }
 
   private async loadIdentity(
@@ -798,21 +710,6 @@ export class SupabaseLatentOpportunityRepository implements LatentOpportunityRep
     }
 
     return data;
-  }
-
-  private async deleteManifestationAfterFailure(
-    manifestationId: LatentOpportunityManifestationId,
-    userId: UserId,
-  ): Promise<void> {
-    try {
-      await this.deleteManifestation(manifestationId, userId);
-    } catch (cleanupError) {
-      console.error("latent_opportunity_manifestation_cleanup_failed", {
-        manifestationId,
-        userId,
-        error: cleanupError instanceof Error ? cleanupError.message : "unknown_error",
-      });
-    }
   }
 
   private async resolveAcceptedOpportunityBasisEvidence(

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  classifyAcceptedEvidenceLoss,
   planLatentLifecycleTransition,
   projectHistoryDerivedLifecycleState,
 } from "@/src/domain/latent-v2/lifecycle";
@@ -105,6 +106,47 @@ describe("latent lifecycle planning", () => {
       emitEvent: false,
       preservedLifecycleState: "emerging",
       reason: "insufficient_evidence",
+    });
+  });
+});
+
+describe("latent evidence-loss classification", () => {
+  it("returns insufficient when omission lacks explicit accepted loss evidence", () => {
+    expect(
+      classifyAcceptedEvidenceLoss({
+        priorAcceptedSupportObservationIds: ["obs-1", "obs-2"],
+        currentAcceptedSupportObservationIds: [],
+        contradictoryAcceptedObservationIds: [],
+      }),
+    ).toEqual({
+      evidenceStrength: "insufficient",
+      reason: "no_explicit_loss_evidence",
+    });
+  });
+
+  it("returns reduced_support when contradiction overlaps prior support but accepted support remains", () => {
+    expect(
+      classifyAcceptedEvidenceLoss({
+        priorAcceptedSupportObservationIds: ["obs-1", "obs-2"],
+        currentAcceptedSupportObservationIds: ["obs-1"],
+        contradictoryAcceptedObservationIds: ["obs-2"],
+      }),
+    ).toEqual({
+      evidenceStrength: "reduced_support",
+      reason: "contradicted_with_remaining_support",
+    });
+  });
+
+  it("returns terminal_loss only when contradiction overlaps prior support and no accepted support remains", () => {
+    expect(
+      classifyAcceptedEvidenceLoss({
+        priorAcceptedSupportObservationIds: ["obs-1", "obs-2"],
+        currentAcceptedSupportObservationIds: [],
+        contradictoryAcceptedObservationIds: ["obs-2"],
+      }),
+    ).toEqual({
+      evidenceStrength: "terminal_loss",
+      reason: "contradicted_without_remaining_support",
     });
   });
 });

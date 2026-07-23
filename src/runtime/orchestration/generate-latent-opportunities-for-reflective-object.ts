@@ -19,6 +19,7 @@ import {
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
 import {
+  classifyAcceptedEvidenceLoss,
   planLatentLifecycleTransition,
   projectHistoryDerivedLifecycleState,
 } from "@/src/domain/latent-v2/lifecycle";
@@ -43,14 +44,6 @@ type GenerateStage = "input_packet" | "llm" | "parse" | "validation" | "mapping"
 type CleanupResource =
   | {
       kind: "generation_run";
-      id: string;
-    }
-  | {
-      kind: "identity";
-      id: string;
-    }
-  | {
-      kind: "manifestation";
       id: string;
     };
 
@@ -179,6 +172,36 @@ function dedupeIdentitiesFromManifestations(
   return [...identities.values()];
 }
 
+function collectManifestationObservationIds(
+  manifestations: Array<Pick<CreateLatentOpportunityManifestationInput, "evidenceBlocks">>,
+): string[] {
+  return manifestations.flatMap((manifestation) =>
+    manifestation.evidenceBlocks.flatMap((block) =>
+      block.observations.map((observation) => observation.observationV2SceneObservationId),
+    ),
+  );
+}
+
+function collectContradictoryAcceptedObservationIds(input: {
+  manifestations: CreateLatentOpportunityManifestationInput[];
+}): string[] {
+  const contradictoryManifestationObservationIds = input.manifestations
+    .filter(
+      (manifestation) =>
+        manifestation.primaryCategory === "contradiction" ||
+        manifestation.secondaryCategories?.includes("contradiction") ||
+        manifestation.primaryCategory === "reversal" ||
+        manifestation.secondaryCategories?.includes("reversal"),
+    )
+    .flatMap((manifestation) =>
+      manifestation.evidenceBlocks.flatMap((block) =>
+        block.observations.map((observation) => observation.observationV2SceneObservationId),
+      ),
+    );
+
+  return [...new Set(contradictoryManifestationObservationIds)];
+}
+
 async function cleanupCreatedResources(input: {
   resources: CleanupResource[];
   userId: UserId;
@@ -195,12 +218,8 @@ async function cleanupCreatedResources(input: {
   let completed = true;
   for (const resource of [...input.resources].reverse()) {
     try {
-      if (resource.kind === "manifestation") {
-        await input.repository.deleteManifestation(resource.id, input.userId);
-      } else if (resource.kind === "generation_run") {
+      if (resource.kind === "generation_run") {
         await input.repository.deleteGenerationRun(resource.id, input.userId);
-      } else {
-        await input.repository.deleteIdentity(resource.id, input.userId);
       }
     } catch (error) {
       completed = false;
@@ -417,234 +436,190 @@ export async function generateLatentOpportunitiesForReflectiveObject(
   ];
 
   try {
-    if (existingCurrentRun) {
-      const currentManifestations =
-        await repositories.latentOpportunityRepository.listManifestationsByGenerationRun(
+    const currentManifestations = existingCurrentRun
+      ? await repositories.latentOpportunityRepository.listManifestationsByGenerationRun(
           existingCurrentRun.id,
           input.userId,
-        );
-      const currentManifestationsByIdentity = groupManifestationsByIdentity(currentManifestations);
-      const successorCreates: PlannedAtomicSuccessorCreate[] = mapping.creates.map((createPlan) => {
-        const identityId =
-          createPlan.identity.mode === "create_new"
-            ? createPlan.identity.input.id ?? crypto.randomUUID()
-            : createPlan.identity.identityId;
+        )
+      : [];
+    const currentManifestationsByIdentity = groupManifestationsByIdentity(currentManifestations);
+    const successorCreates: PlannedAtomicSuccessorCreate[] = mapping.creates.map((createPlan) => {
+      const identityId =
+        createPlan.identity.mode === "create_new"
+          ? createPlan.identity.input.id ?? crypto.randomUUID()
+          : createPlan.identity.identityId;
 
-        const identityInput =
-          createPlan.identity.mode === "create_new"
-            ? {
-                ...createPlan.identity.input,
-                id: identityId,
-              }
-            : null;
+      const identityInput =
+        createPlan.identity.mode === "create_new"
+          ? {
+              ...createPlan.identity.input,
+              id: identityId,
+            }
+          : null;
 
-        return {
-          identityInput,
-          identityId,
-          manifestationInput: {
-            ...createPlan.manifestation,
-            id: createPlan.manifestation.id ?? crypto.randomUUID(),
-            generationRunId: generationRun.id,
-            identityId,
-          },
-        };
-      });
-      const successorIdentityIds = new Set(successorCreates.map((createPlan) => createPlan.identityId));
-      const currentIdentityStates = new Map<string, LatentOpportunityIdentity["lifecycleState"]>();
-      const relevantCurrentIdentityIds = [...new Set(currentManifestations.map((manifestation) => manifestation.identityId))];
-
-      for (const identityId of relevantCurrentIdentityIds) {
-        const lifecycleEvents =
-          await repositories.latentOpportunityRepository.listLifecycleEventsByIdentity(
-            identityId,
-            input.userId,
-          );
-        const persistedLifecycleState =
-          currentManifestationsByIdentity.get(identityId)?.[0]?.identity.lifecycleState;
-        const projection = projectHistoryDerivedLifecycleState({
-          identityId,
-          events: lifecycleEvents,
-          expectedPersistedLifecycleState: persistedLifecycleState,
-        });
-        currentIdentityStates.set(identityId, projection.lifecycleState);
-      }
-
-      const lifecycleEventInputs = [];
-
-      for (const createPlan of successorCreates) {
-        const priorLifecycleState = currentIdentityStates.get(createPlan.identityId);
-        const transition =
-          createPlan.identityInput != null
-            ? planLatentLifecycleTransition({
-                mode: "create_new",
-                evidenceStrength: "material_support",
-              })
-            : (() => {
-                if (priorLifecycleState == null) {
-                  throw new Error(
-                    `Lifecycle history missing for reused successor identity ${createPlan.identityId}.`,
-                  );
-                }
-
-                return planLatentLifecycleTransition({
-                  mode: "reuse_existing",
-                  priorLifecycleState,
-                  evidenceStrength: "material_support",
-                });
-              })();
-
-        if (!transition.emitEvent) {
-          throw new Error(`Lifecycle transition missing for successor identity ${createPlan.identityId}.`);
-        }
-
-        lifecycleEventInputs.push({
-          id: crypto.randomUUID(),
-          userId: input.userId,
-          identityId: createPlan.identityId,
-          eventType: transition.eventType,
-          priorLifecycleState: transition.priorLifecycleState,
-          resultingLifecycleState: transition.resultingLifecycleState,
-          sourceGenerationRunId: createPlan.identityInput ? null : existingCurrentRun.id,
-          resultingGenerationRunId: generationRun.id,
-          sourceManifestationIds:
-            createPlan.identityInput == null
-              ? (currentManifestationsByIdentity.get(createPlan.identityId) ?? []).map(
-                  (manifestation) => manifestation.id,
-                )
-              : [],
-          resultingManifestationIds: [createPlan.manifestationInput.id!],
-          relatedIdentityIds: [],
-          triggeringReflectiveObjectId: input.priorityReflectiveObjectId,
-          triggeringReflectionId: null,
-        });
-      }
-
-      for (const identityId of relevantCurrentIdentityIds) {
-        if (successorIdentityIds.has(identityId)) {
-          continue;
-        }
-
-        const transition = planLatentLifecycleTransition({
-          mode: "omitted",
-          priorLifecycleState: currentIdentityStates.get(identityId) as LatentOpportunityIdentity["lifecycleState"],
-          evidenceStrength: "insufficient",
-        });
-
-        if (!transition.emitEvent) {
-          continue;
-        }
-
-        lifecycleEventInputs.push({
-          id: crypto.randomUUID(),
-          userId: input.userId,
-          identityId,
-          eventType: transition.eventType,
-          priorLifecycleState: transition.priorLifecycleState,
-          resultingLifecycleState: transition.resultingLifecycleState,
-          sourceGenerationRunId: existingCurrentRun.id,
-          resultingGenerationRunId: generationRun.id,
-          sourceManifestationIds: (currentManifestationsByIdentity.get(identityId) ?? []).map(
-            (manifestation) => manifestation.id,
-          ),
-          resultingManifestationIds: [],
-          relatedIdentityIds: [],
-          triggeringReflectiveObjectId: input.priorityReflectiveObjectId,
-          triggeringReflectionId: null,
-        });
-      }
-
-      await repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically({
-        userId: input.userId,
-        predecessorRunId: existingCurrentRun.id,
-        successorRunId: generationRun.id,
-        identities: successorCreates
-          .map((createPlan) => createPlan.identityInput)
-          .filter((identity): identity is CreateLatentOpportunityIdentityInput => identity != null),
-        manifestations: successorCreates.map((createPlan) => createPlan.manifestationInput),
-        lifecycleEvents: lifecycleEventInputs,
-        identityRelationships: [],
-      });
-
-      const loadedManifestations =
-        await repositories.latentOpportunityRepository
-          .listManifestationsByGenerationRun(generationRun.id, input.userId)
-          .catch(() => []);
-      persistedManifestations.push(...loadedManifestations);
-      persistedIdentities.push(...dedupeIdentitiesFromManifestations(loadedManifestations));
-    } else {
-      for (const createPlan of mapping.creates) {
-        let resolvedIdentityId = createPlan.manifestation.identityId;
-        let priorLifecycleState: LatentOpportunityIdentity["lifecycleState"] | null = null;
-
-        if (createPlan.identity.mode === "create_new") {
-          const createdIdentity: LatentOpportunityIdentity = await repositories.latentOpportunityRepository.createIdentity(
-            createPlan.identity.input,
-          );
-          resolvedIdentityId = createdIdentity.id;
-          persistedIdentities.push(createdIdentity);
-          createdResources.push({
-            kind: "identity",
-            id: createdIdentity.id,
-          });
-        } else {
-          const lifecycleEvents =
-            await repositories.latentOpportunityRepository.listLifecycleEventsByIdentity(
-              createPlan.identity.identityId,
-              input.userId,
-            );
-          priorLifecycleState = projectHistoryDerivedLifecycleState({
-            identityId: createPlan.identity.identityId,
-            events: lifecycleEvents,
-          }).lifecycleState;
-        }
-
-        const manifestation = await repositories.latentOpportunityRepository.createManifestation({
+      return {
+        identityInput,
+        identityId,
+        manifestationInput: {
           ...createPlan.manifestation,
+          id: createPlan.manifestation.id ?? crypto.randomUUID(),
           generationRunId: generationRun.id,
-          identityId: resolvedIdentityId,
-        });
+          identityId,
+        },
+      };
+    });
+    const successorIdentityIds = new Set(successorCreates.map((createPlan) => createPlan.identityId));
+    const relevantCurrentIdentityIds = [...new Set(currentManifestations.map((manifestation) => manifestation.identityId))];
+    const lifecycleStateIdentityIds = new Set<string>([
+      ...relevantCurrentIdentityIds,
+      ...successorCreates
+        .filter((createPlan) => createPlan.identityInput == null)
+        .map((createPlan) => createPlan.identityId),
+    ]);
+    const currentIdentityStates = new Map<string, LatentOpportunityIdentity["lifecycleState"]>();
 
-        persistedManifestations.push(manifestation);
-        createdResources.push({
-          kind: "manifestation",
-          id: manifestation.id,
-        });
+    for (const identityId of lifecycleStateIdentityIds) {
+      const lifecycleEvents =
+        await repositories.latentOpportunityRepository.listLifecycleEventsByIdentity(
+          identityId,
+          input.userId,
+        );
+      const persistedLifecycleState =
+        currentManifestationsByIdentity.get(identityId)?.[0]?.identity.lifecycleState;
+      const projection = projectHistoryDerivedLifecycleState({
+        identityId,
+        events: lifecycleEvents,
+        expectedPersistedLifecycleState: persistedLifecycleState,
+      });
+      currentIdentityStates.set(identityId, projection.lifecycleState);
+    }
 
-        const transition =
-          createPlan.identity.mode === "create_new"
-            ? planLatentLifecycleTransition({
-                mode: "create_new",
-                evidenceStrength: "material_support",
-              })
-            : planLatentLifecycleTransition({
+    const lifecycleEventInputs = [];
+    const successorManifestationInputs = successorCreates.map(
+      (createPlan) => createPlan.manifestationInput,
+    );
+    const contradictoryAcceptedObservationIds = collectContradictoryAcceptedObservationIds({
+      manifestations: successorManifestationInputs,
+    });
+    const currentAcceptedSupportObservationIds = collectManifestationObservationIds(
+      successorManifestationInputs,
+    );
+
+    for (const createPlan of successorCreates) {
+      const priorLifecycleState = currentIdentityStates.get(createPlan.identityId);
+      const transition =
+        createPlan.identityInput != null
+          ? planLatentLifecycleTransition({
+              mode: "create_new",
+              evidenceStrength: "material_support",
+            })
+          : (() => {
+              if (priorLifecycleState == null) {
+                throw new Error(
+                  `Lifecycle history missing for reused successor identity ${createPlan.identityId}.`,
+                );
+              }
+
+              return planLatentLifecycleTransition({
                 mode: "reuse_existing",
-                priorLifecycleState: priorLifecycleState as LatentOpportunityIdentity["lifecycleState"],
+                priorLifecycleState,
                 evidenceStrength: "material_support",
               });
+            })();
 
-        if (!transition.emitEvent) {
-          throw new Error(`Lifecycle transition missing for identity ${resolvedIdentityId}.`);
-        }
-
-        await repositories.latentOpportunityRepository.createLifecycleEvent({
-          id: crypto.randomUUID(),
-          userId: input.userId,
-          identityId: resolvedIdentityId,
-          eventType: transition.eventType,
-          priorLifecycleState: transition.priorLifecycleState,
-          resultingLifecycleState: transition.resultingLifecycleState,
-          sourceGenerationRunId: createPlan.identity.mode === "create_new" ? null : null,
-          resultingGenerationRunId: generationRun.id,
-          sourceManifestationIds: [],
-          resultingManifestationIds: [manifestation.id],
-          relatedIdentityIds: [],
-          triggeringReflectiveObjectId: input.priorityReflectiveObjectId,
-          triggeringReflectionId: null,
-        });
+      if (!transition.emitEvent) {
+        throw new Error(`Lifecycle transition missing for successor identity ${createPlan.identityId}.`);
       }
 
-      await repositories.latentOpportunityRepository.markGenerationRunCurrent(generationRun.id, input.userId);
+      lifecycleEventInputs.push({
+        id: crypto.randomUUID(),
+        userId: input.userId,
+        identityId: createPlan.identityId,
+        eventType: transition.eventType,
+        priorLifecycleState: transition.priorLifecycleState,
+        resultingLifecycleState: transition.resultingLifecycleState,
+        sourceGenerationRunId:
+          createPlan.identityInput == null && existingCurrentRun ? existingCurrentRun.id : null,
+        resultingGenerationRunId: generationRun.id,
+        sourceManifestationIds:
+          createPlan.identityInput == null
+            ? (currentManifestationsByIdentity.get(createPlan.identityId) ?? []).map(
+                (manifestation) => manifestation.id,
+              )
+            : [],
+        resultingManifestationIds: [createPlan.manifestationInput.id!],
+        relatedIdentityIds: [],
+        triggeringReflectiveObjectId: input.priorityReflectiveObjectId,
+        triggeringReflectionId: null,
+      });
     }
+
+    for (const identityId of relevantCurrentIdentityIds) {
+      if (successorIdentityIds.has(identityId)) {
+        continue;
+      }
+
+      const priorLifecycleState = currentIdentityStates.get(identityId);
+      if (priorLifecycleState == null) {
+        throw new Error(`Lifecycle history missing for omitted identity ${identityId}.`);
+      }
+
+      const evidenceStrength = classifyAcceptedEvidenceLoss({
+        priorAcceptedSupportObservationIds: collectManifestationObservationIds(
+          (currentManifestationsByIdentity.get(identityId) ?? []).map((manifestation) => ({
+            evidenceBlocks: manifestation.evidenceBlocks,
+          })),
+        ),
+        currentAcceptedSupportObservationIds,
+        contradictoryAcceptedObservationIds,
+      }).evidenceStrength;
+      const transition = planLatentLifecycleTransition({
+        mode: "omitted",
+        priorLifecycleState,
+        evidenceStrength,
+      });
+
+      if (!transition.emitEvent) {
+        continue;
+      }
+
+      lifecycleEventInputs.push({
+        id: crypto.randomUUID(),
+        userId: input.userId,
+        identityId,
+        eventType: transition.eventType,
+        priorLifecycleState: transition.priorLifecycleState,
+        resultingLifecycleState: transition.resultingLifecycleState,
+        sourceGenerationRunId: existingCurrentRun?.id ?? null,
+        resultingGenerationRunId: generationRun.id,
+        sourceManifestationIds: (currentManifestationsByIdentity.get(identityId) ?? []).map(
+          (manifestation) => manifestation.id,
+        ),
+        resultingManifestationIds: [],
+        relatedIdentityIds: [],
+        triggeringReflectiveObjectId: input.priorityReflectiveObjectId,
+        triggeringReflectionId: null,
+      });
+    }
+
+    await repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically({
+      userId: input.userId,
+      predecessorRunId: existingCurrentRun?.id ?? null,
+      successorRunId: generationRun.id,
+      identities: successorCreates
+        .map((createPlan) => createPlan.identityInput)
+        .filter((identity): identity is CreateLatentOpportunityIdentityInput => identity != null),
+      manifestations: successorManifestationInputs,
+      lifecycleEvents: lifecycleEventInputs,
+      identityRelationships: [],
+    });
+
+    const loadedManifestations =
+      await repositories.latentOpportunityRepository
+        .listManifestationsByGenerationRun(generationRun.id, input.userId)
+        .catch(() => []);
+    persistedManifestations.push(...loadedManifestations);
+    persistedIdentities.push(...dedupeIdentitiesFromManifestations(loadedManifestations));
   } catch (error) {
     return {
       mode: "failed",

@@ -58,6 +58,84 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-07-23 - LAT-CLOSE-01 Latent Constitutional Closure Recording and Stewardship Synchronization
+
+- Phase: CLOSURE
+- Touched boundaries:
+  - `docs/constitution/stewardship/LATENT_CONSTITUTIONAL_CLOSURE_REVIEW_2026-07.md`
+  - `docs/constitution/stewardship/LATENT_CONSTITUTIONAL_CLOSURE_RECORD_2026-07.md`
+  - `docs/constitution/stewardship/BACKEND_V2_CONSTITUTIONAL_REALIZATION_STATE.md`
+  - `docs/constitution/stewardship/BACKEND_V2_CONSTITUTIONAL_STEWARDSHIP_PROGRAM.md`
+  - `docs/constitution/navigation/CONSTITUTIONAL_NAVIGATION.md`
+  - `docs/constitution/README.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Closure verdict:
+  - `CONSTITUTIONALLY CLOSED WITH STEWARDSHIP OBSERVATIONS`
+- Final requirement status:
+  - `LAT-R009`, `LAT-R011`, `LAT-R020`, `LAT-R021`, `LAT-R022`, `LAT-R023`, `LAT-R024`, `LAT-R027`, `LAT-R030`, `LAT-R032`, and `LAT-R033` -> `SATISFIED`
+  - `LAT-R015`, `LAT-R025`, and `LAT-R026` -> `SATISFIED WITH NON-BLOCKING VERIFICATION LIMITATION`
+- Resolved findings:
+  - authority mutability -> resolved
+  - lifecycle reachability -> resolved
+  - posture authority leakage -> resolved
+  - lineage bypass -> resolved
+  - accepted-authority delete seam -> resolved
+  - `LAT-R04C-F1-DELETE-SEAM` -> `RESOLVED`
+- Review chain:
+  - June 2026 readiness baseline
+  - Latent constitutional responsibility mapping
+  - `LAT-R02A`, `LAT-R02B`, `LAT-R02C`, `LAT-R03A`, and `LAT-R03B` realization and closure records
+  - `LAT-R04` Reflective Continuity realization
+  - `LAT-R04C` targeted resolution
+  - `LAT-R04D` accepted-authority delete-seam removal
+  - 2026-07-23 formal Latent closure review
+  - 2026-07-23 formal Latent closure record
+- Verification limitation:
+  - live SQL verification unavailable
+  - Supabase CLI unavailable
+  - Docker unavailable
+  - migration, trigger, service-role, and cascade behavior verified statically
+  - limitation preserved as non-blocking verification uncertainty only
+- Transition:
+  - Implementation complete
+  - Constitutional closure approved
+  - Live SQL verification unavailable
+  - Stewardship active
+- Notes:
+  - Latent is now entered into active constitutional stewardship without reopening implementation.
+  - Living constitutional state, navigation, and stewardship documents now reflect the reviewed closed-layer posture.
+
+## 2026-07-23 - Latent Reflective Continuity Targeted Resolution LAT-R04C
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations/20260722_0001_latent_reflective_continuity.sql`
+  - `src/domain/latent-v2/types.ts`
+  - `src/domain/latent-v2/lifecycle.ts`
+  - `src/domain/latent-v2/__tests__/lifecycle.test.ts`
+  - `src/infrastructure/supabase/adapters/latent-opportunity-row.ts`
+  - `src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+  - `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - `src/shared/__tests__/latent-generation-run-hardening-migration.test.ts`
+  - `docs/superpowers/specs/2026-07-22-latent-reflective-continuity-r04-design.md`
+  - `docs/superpowers/plans/2026-07-23-lat-r04c-targeted-resolution-addendum.md`
+  - `docs/superpowers/audits/2026-07-23-lat-r04c-targeted-resolution-record.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/shared/__tests__/latent-generation-run-hardening-migration.test.ts src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts src/domain/latent-v2/__tests__/lifecycle.test.ts` -> pass (`4` files, `105` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-23T08-06-32-421Z.log`
+  - live DB verification attempt:
+    - `supabase --version` -> command not found
+    - `docker --version` -> command not found
+- Notes:
+  - Hardened accepted-authority persistence so accepted Latent authority rows are admitted through the atomic successor-acceptance seam rather than ordinary table mutation paths.
+  - Moved first-generation acceptance onto the same atomic seam, enforced history-derived posture reads, and made unsupported persisted posture fail closed.
+  - Realized contradiction-aware weakening and abandonment while keeping omission without explicit contradictory accepted authority conservative.
+
 ## 2026-07-04 - Reflection Candidate Evidence Accumulation Slice IF-REF-002A
 
 - Phase: BUILD
@@ -4367,3 +4445,35 @@ Verification references:
   - Successor recomposition now assembles a materialized atomic acceptance package with identities, manifestations, evidence graph rows, lifecycle events, and lineage rows scoped to one authoritative repository operation.
   - Reuse now reconstructs prior posture from immutable lifecycle history and fails closed when history is missing or inconsistent; constructor omission alone remains insufficient to emit weakening or abandonment.
   - The continuity migration now represents append-only lifecycle history, immutable lineage history, and successor acceptance projection updates at the schema boundary rather than leaving the RPC as a placeholder.
+
+## 2026-07-23 - LAT-R04D Accepted Authority Delete-Seam Removal
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/latent-v2/contracts.ts`
+  - `src/infrastructure/supabase/repositories/latent-opportunity-supabase-repository.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts`
+  - `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts`
+  - latent repository test-double synchronization in:
+    - `src/cognition/anchor-v1/constructor/__tests__/input-packet-composer.test.ts`
+    - `src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts`
+    - `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`
+    - `src/runtime/orchestration/__tests__/generate-anchors-for-reflective-object.test.ts`
+  - `src/shared/__tests__/latent-generation-run-hardening-migration.test.ts`
+  - `supabase/migrations/20260723_0001_latent_authority_delete_hardening.sql`
+  - `docs/superpowers/audits/2026-07-23-lat-r04c-targeted-resolution-record.md`
+  - `docs/superpowers/plans/2026-07-23-lat-r04c-targeted-resolution-addendum.md`
+  - `docs/superpowers/audits/2026-07-23-lat-r04d-accepted-authority-delete-seam-removal.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/shared/__tests__/latent-generation-run-hardening-migration.test.ts src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts src/runtime/orchestration/__tests__/generate-latent-opportunities-for-reflective-object.test.ts src/domain/latent-v2/__tests__/lifecycle.test.ts` -> pass (`4` files, `106` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-23T11-42-43-395Z.log`
+  - `supabase --version` -> command not found
+  - `docker --version` -> command not found
+- Notes:
+  - Removed the dormant latent repository direct-create and direct-delete seams that predated atomic successor acceptance.
+  - Narrowed rollback cleanup to pending generation-run deletion only.
+  - Added trigger-based delete guards so accepted latent authority cannot be deleted through runtime seams, service-role table access, or destructive cascades from guarded parents.
+  - Preserved the admitted pending rollback boundary without widening any accepted-authority mutation path.

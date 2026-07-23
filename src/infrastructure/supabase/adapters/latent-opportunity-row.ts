@@ -302,7 +302,7 @@ function parseLifecycleState(input: string): LatentOpportunityLifecycleState {
     case "abandoned":
       return input;
     default:
-      return "emerging";
+      throw new Error(`Unsupported latent opportunity lifecycle state: ${input}`);
   }
 }
 

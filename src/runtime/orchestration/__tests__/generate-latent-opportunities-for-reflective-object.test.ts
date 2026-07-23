@@ -915,26 +915,6 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
     createAppearanceRecord: vi.fn(),
   };
 
-  const createIdentity = vi.fn().mockImplementation(async (input) => ({
-    id: input.id ?? "generated-identity-1",
-    userId: input.userId,
-    title: input.title,
-    primaryCategory: input.primaryCategory,
-    secondaryCategories: input.secondaryCategories ?? [],
-    lifecycleState: input.lifecycleState,
-    status: input.status ?? "active",
-    archivedAt: null,
-    createdAt: "2026-06-15T12:00:00.000Z",
-    updatedAt: "2026-06-15T12:00:00.000Z",
-  }));
-  const createManifestation = vi.fn().mockImplementation(async (input) =>
-    createPersistedManifestation({
-      id: input.id ?? "manifestation-1",
-      identityId: input.identityId,
-      priorityReflectiveObjectId: input.priorityReflectiveObjectId,
-      generationRunId: input.generationRunId,
-    }),
-  );
   const listManifestationsByGenerationRun = vi.fn().mockImplementation(async (generationRunId: string) => {
     if (generationRunId === "run-current-1") {
       return [
@@ -993,8 +973,6 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
       createdAt: "2026-07-18T12:00:00.000Z",
       updatedAt: "2026-07-18T12:00:00.000Z",
     }),
-    createIdentity,
-    createManifestation,
     getGenerationRunById: vi.fn().mockResolvedValue(null),
     getCurrentGenerationRunForReflectiveObject: vi.fn().mockResolvedValue(null),
     listGenerationRunsForReflectiveObject: vi.fn().mockResolvedValue([]),
@@ -1107,9 +1085,7 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
       createdAt: "2026-07-18T12:00:00.000Z",
       updatedAt: "2026-07-18T12:02:00.000Z",
     }),
-    deleteIdentity: vi.fn().mockResolvedValue(undefined),
     deleteGenerationRun: vi.fn().mockResolvedValue(undefined),
-    deleteManifestation: vi.fn().mockResolvedValue(undefined),
     createLifecycleEvent: vi.fn(),
     createIdentityRelationship: vi.fn(),
     listLifecycleEventsByIdentity: vi.fn().mockImplementation(async (identityId: string) => [
@@ -1182,42 +1158,50 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
     expect(result.mode).toBe("persisted");
     expect(generateOutput).toHaveBeenCalledTimes(1);
     expect(repositories.latentOpportunityRepository.createGenerationRun).toHaveBeenCalledTimes(1);
-    expect(repositories.latentOpportunityRepository.createIdentity).toHaveBeenCalledTimes(1);
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenCalledTimes(1);
-    expect(repositories.latentOpportunityRepository.markGenerationRunCurrent).toHaveBeenCalledWith("run-1", "user-1");
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenCalledWith(
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
       expect.objectContaining({
-        generationRunId: "run-1",
-        priorityReflectiveObjectId: "object-1",
-        glossaryLinks: [
-          {
-            glossaryTermId: "term-1",
-            role: "continuity",
-          },
-        ],
-        evidenceBlocks: [
+        predecessorRunId: null,
+        successorRunId: "run-1",
+        identities: [expect.objectContaining({ primaryCategory: "transition" })],
+        manifestations: [
           expect.objectContaining({
-            observations: [
+            generationRunId: "run-1",
+            priorityReflectiveObjectId: "object-1",
+            glossaryLinks: [
+              {
+                glossaryTermId: "term-1",
+                role: "continuity",
+              },
+            ],
+            evidenceBlocks: [
               expect.objectContaining({
-                observationV2SceneObservationId: "bundle-1:scene-1:obs-1",
-                supportsNodeKeys: ["A"],
-                supportsEdgeIndexes: [0],
-              }),
-              expect.objectContaining({
-                observationV2SceneObservationId: "bundle-1:scene-1:obs-2",
-                supportsNodeKeys: ["B"],
-                supportsEdgeIndexes: [0],
+                observations: [
+                  expect.objectContaining({
+                    observationV2SceneObservationId: "bundle-1:scene-1:obs-1",
+                    supportsNodeKeys: ["A"],
+                    supportsEdgeIndexes: [0],
+                  }),
+                  expect.objectContaining({
+                    observationV2SceneObservationId: "bundle-1:scene-1:obs-2",
+                    supportsNodeKeys: ["B"],
+                    supportsEdgeIndexes: [0],
+                  }),
+                ],
               }),
             ],
           }),
         ],
       }),
     );
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenCalledWith(
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
       expect.not.objectContaining({
-        glossaryLinks: expect.arrayContaining([
+        manifestations: expect.arrayContaining([
           expect.objectContaining({
-            glossaryTermId: "candidate-1",
+            glossaryLinks: expect.arrayContaining([
+              expect.objectContaining({
+                glossaryTermId: "candidate-1",
+              }),
+            ]),
           }),
         ]),
       }),
@@ -1258,6 +1242,209 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
     expect(result.persistedManifestations).toHaveLength(1);
     expect((result.persistedManifestations[0].evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsNodeKeys).toEqual(["A"]);
     expect((result.persistedManifestations[0].evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsEdgeIndexes).toEqual([0]);
+  });
+
+  it("uses atomic acceptance for first-generation persistence instead of direct authority writes", async () => {
+    const repositories = createActualComposerRepositories();
+    const packet = createPacket();
+
+    const result = await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket: vi.fn().mockResolvedValue({
+        packet,
+        authorityProvenance: createAuthorityProvenance(packet),
+        contextProvenance: createContextProvenance(packet),
+      }),
+      generateOutput: vi.fn().mockResolvedValue({
+        mode: "generated",
+        rawOutput: JSON.stringify(createOutputForPacket(packet)),
+      }),
+    });
+
+    expect(result.mode).toBe("persisted");
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
+      expect.objectContaining({
+        predecessorRunId: null,
+        successorRunId: "run-1",
+      }),
+    );
+    expect(repositories.latentOpportunityRepository.createLifecycleEvent).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.markGenerationRunCurrent).not.toHaveBeenCalled();
+  });
+
+  it("weakens an omitted prior identity only when accepted contradiction still leaves remaining support", async () => {
+    const repositories = createActualComposerRepositories();
+    const packet = createPacket();
+    (
+      repositories.latentOpportunityRepository.getCurrentGenerationRunForReflectiveObject as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      id: "run-current-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "current",
+      inputFingerprint: "fingerprint:current",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(packet),
+      contextProvenance: createContextProvenance(packet),
+      executionProvenance: createExecutionProvenance(packet),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: "2026-07-22T12:00:00.000Z",
+      supersededAt: null,
+      createdAt: "2026-07-22T12:00:00.000Z",
+      updatedAt: "2026-07-22T12:00:00.000Z",
+    });
+
+    const output = createOutputForPacket(packet);
+    output.opportunities[0].opportunityStructure.primaryCategory = "contradiction";
+    output.opportunities[0].evidenceBlocks[0].observationRefs = [
+      {
+        observationV2SceneObservationId: packet.observations[0].observationV2SceneObservationId,
+        sceneRowId: packet.observations[0].sceneRowId,
+        observationStableId: packet.observations[0].observationStableId,
+        role: "primary_support",
+        supportsNodeKeys: ["A"],
+        supportsEdgeIndexes: [0],
+      },
+    ];
+    output.opportunities.push({
+      ...createOutputForPacket(packet).opportunities[0],
+      clientOpportunityKey: "op-2",
+      opportunityStructure: {
+        ...createOutputForPacket(packet).opportunities[0].opportunityStructure,
+        primaryCategory: "gap",
+      },
+      evidenceBlocks: [
+        {
+          ...createOutputForPacket(packet).opportunities[0].evidenceBlocks[0],
+          clientBlockKey: "block-priority-2",
+          observationRefs: [
+            {
+              observationV2SceneObservationId: packet.observations[1].observationV2SceneObservationId,
+              sceneRowId: packet.observations[1].sceneRowId,
+              observationStableId: packet.observations[1].observationStableId,
+              role: "primary_support",
+              supportsNodeKeys: ["B"],
+              supportsEdgeIndexes: [0],
+            },
+          ],
+        },
+      ],
+    });
+
+    await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket: vi.fn().mockResolvedValue({
+        packet,
+        authorityProvenance: createAuthorityProvenance(packet),
+        contextProvenance: createContextProvenance(packet),
+      }),
+      generateOutput: vi.fn().mockResolvedValue({
+        mode: "generated",
+        rawOutput: JSON.stringify(output),
+      }),
+    });
+
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lifecycleEvents: expect.arrayContaining([
+          expect.objectContaining({
+            identityId: "identity-existing-1",
+            eventType: "weakening",
+            resultingLifecycleState: "weakening",
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("abandons an omitted prior identity only when accepted contradiction removes remaining support", async () => {
+    const repositories = createActualComposerRepositories();
+    const packet = createPacket({
+      observations: [
+        createPacket().observations[0],
+        {
+          observationV2SceneObservationId: "bundle-1:scene-1:obs-3",
+          sceneRowId: "bundle-1:scene-1",
+          sceneStableId: "scene-1",
+          observationStableId: "obs-3",
+          position: 3,
+          text: "A different current movement now dominates the scene.",
+          category: "other",
+          evidence: [
+            {
+              snippet: "different current movement",
+              spanStart: 0,
+              spanEnd: 26,
+            },
+          ],
+          uncertaintyNote: null,
+        },
+      ],
+    });
+    (
+      repositories.latentOpportunityRepository.getCurrentGenerationRunForReflectiveObject as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      id: "run-current-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "current",
+      inputFingerprint: "fingerprint:current",
+      authorityFingerprint: "a".repeat(64),
+      authorityProvenance: createAuthorityProvenance(packet),
+      contextProvenance: createContextProvenance(packet),
+      executionProvenance: createExecutionProvenance(packet),
+      triggerReason: null,
+      predecessorRunId: null,
+      acceptedAt: "2026-07-22T12:00:00.000Z",
+      supersededAt: null,
+      createdAt: "2026-07-22T12:00:00.000Z",
+      updatedAt: "2026-07-22T12:00:00.000Z",
+    });
+
+    const output = createOutputForPacket(packet);
+    output.opportunities[0].opportunityStructure.primaryCategory = "contradiction";
+    output.opportunities[0].evidenceBlocks[0].observationRefs = [
+      {
+        observationV2SceneObservationId: "bundle-1:scene-1:obs-1",
+        sceneRowId: packet.observations[0].sceneRowId,
+        observationStableId: packet.observations[0].observationStableId,
+        role: "primary_support",
+        supportsNodeKeys: ["A"],
+        supportsEdgeIndexes: [0],
+      },
+    ];
+
+    await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      repositories,
+      composeInputPacket: vi.fn().mockResolvedValue({
+        packet,
+        authorityProvenance: createAuthorityProvenance(packet),
+        contextProvenance: createContextProvenance(packet),
+      }),
+      generateOutput: vi.fn().mockResolvedValue({
+        mode: "generated",
+        rawOutput: JSON.stringify(output),
+      }),
+    });
+
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lifecycleEvents: expect.arrayContaining([
+          expect.objectContaining({
+            identityId: "identity-existing-1",
+            eventType: "abandonment",
+            resultingLifecycleState: "abandoned",
+          }),
+        ]),
+      }),
+    );
   });
 
   it("records an assessed-empty run when the constructor accepts no opportunities", async () => {
@@ -1310,8 +1497,7 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
         },
       }),
     });
-    expect(repositories.latentOpportunityRepository.createIdentity).not.toHaveBeenCalled();
-    expect(repositories.latentOpportunityRepository.createManifestation).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).not.toHaveBeenCalled();
     expect(repositories.latentOpportunityRepository.markGenerationRunCurrent).not.toHaveBeenCalled();
     expect(repositories.latentOpportunityRepository.markGenerationRunNoChange).not.toHaveBeenCalled();
     expect(repositories.latentOpportunityRepository.markGenerationRunEmpty).toHaveBeenCalledWith("run-1", "user-1");
@@ -1559,7 +1745,7 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       packet,
       rawOutput: "{",
     });
-    expect(repositories.latentOpportunityRepository.createIdentity).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).not.toHaveBeenCalled();
   });
 
   it("returns a validation failure without persisting", async () => {
@@ -1595,31 +1781,16 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
         },
       }),
     });
-    expect(repositories.latentOpportunityRepository.createIdentity).not.toHaveBeenCalled();
-    expect(repositories.latentOpportunityRepository.createManifestation).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).not.toHaveBeenCalled();
   });
 
   it("returns a persistence failure and cleans up a create_new identity", async () => {
     const packet = createPacket();
     const repositories = createActualComposerRepositories();
-    const createIdentity = repositories.latentOpportunityRepository.createIdentity as ReturnType<typeof vi.fn>;
-    const createManifestation = repositories.latentOpportunityRepository.createManifestation as ReturnType<typeof vi.fn>;
-    const deleteIdentity = repositories.latentOpportunityRepository.deleteIdentity as ReturnType<typeof vi.fn>;
+    const acceptGenerationRunSuccessorAtomically =
+      repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically as ReturnType<typeof vi.fn>;
     const deleteGenerationRun = repositories.latentOpportunityRepository.deleteGenerationRun as ReturnType<typeof vi.fn>;
-
-    createIdentity.mockResolvedValueOnce({
-      id: "identity-new-1",
-      userId: "user-1",
-      title: "house search -> uncertainty",
-      primaryCategory: "transition",
-      secondaryCategories: ["tension"],
-      lifecycleState: "emerging",
-      status: "active",
-      archivedAt: null,
-      createdAt: "2026-06-15T12:00:00.000Z",
-      updatedAt: "2026-06-15T12:00:00.000Z",
-    });
-    createManifestation.mockRejectedValueOnce(new Error("manifestation_write_failed"));
+    acceptGenerationRunSuccessorAtomically.mockRejectedValueOnce(new Error("manifestation_write_failed"));
 
     const result = await generateLatentOpportunitiesForReflectiveObject({
       userId: "user-1",
@@ -1660,10 +1831,9 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       cleanup: {
         attempted: true,
         completed: true,
-        resourceCount: 2,
+        resourceCount: 1,
       },
     });
-    expect(deleteIdentity).toHaveBeenCalledWith("identity-new-1", "user-1");
     expect(deleteGenerationRun).toHaveBeenCalledWith("run-1", "user-1");
   });
 
@@ -1682,11 +1852,15 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       }),
     });
 
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenCalledWith(
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
       expect.not.objectContaining({
-        glossaryLinks: expect.arrayContaining([
+        manifestations: expect.arrayContaining([
           expect.objectContaining({
-            glossaryTermId: "candidate-1",
+            glossaryLinks: expect.arrayContaining([
+              expect.objectContaining({
+                glossaryTermId: "candidate-1",
+              }),
+            ]),
           }),
         ]),
       }),
@@ -1830,13 +2004,17 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       }),
     });
 
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenCalledWith(
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
       expect.objectContaining({
-        glossaryLinks: [
-          {
-            glossaryTermId: "term-1",
-            role: "continuity",
-          },
+        manifestations: [
+          expect.objectContaining({
+            glossaryLinks: [
+              {
+                glossaryTermId: "term-1",
+                role: "continuity",
+              },
+            ],
+          }),
         ],
       }),
     );
@@ -1857,7 +2035,11 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       }),
     });
 
-    expect(repositories.latentOpportunityRepository.createIdentity).toHaveBeenCalledTimes(1);
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
+      expect.objectContaining({
+        identities: [expect.objectContaining({ primaryCategory: "transition" })],
+      }),
+    );
   });
 
   it("persists multiple materially distinct opportunities from one priority object", async () => {
@@ -1881,27 +2063,28 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       }),
     });
 
-    expect(repositories.latentOpportunityRepository.createIdentity).toHaveBeenCalledTimes(4);
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenCalledTimes(4);
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenNthCalledWith(
-      2,
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
       expect.objectContaining({
-        primaryCategory: "gap",
-        summary: "A felt presence remains structurally stronger than what is visibly present.",
-      }),
-    );
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenNthCalledWith(
-      3,
-      expect.objectContaining({
-        primaryCategory: "transition",
-        summary: "An accidental disruption moves into repair and then reassurance.",
-      }),
-    );
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenNthCalledWith(
-      4,
-      expect.objectContaining({
-        primaryCategory: "salience_signal",
-        summary: "A strong felt presence and altered self-state stand out as phenomenologically salient.",
+        identities: expect.arrayContaining([
+          expect.objectContaining({ primaryCategory: "transition" }),
+          expect.objectContaining({ primaryCategory: "gap" }),
+          expect.objectContaining({ primaryCategory: "transition" }),
+          expect.objectContaining({ primaryCategory: "salience_signal" }),
+        ]),
+        manifestations: expect.arrayContaining([
+          expect.objectContaining({
+            primaryCategory: "gap",
+            summary: "A felt presence remains structurally stronger than what is visibly present.",
+          }),
+          expect.objectContaining({
+            primaryCategory: "transition",
+            summary: "An accidental disruption moves into repair and then reassurance.",
+          }),
+          expect.objectContaining({
+            primaryCategory: "salience_signal",
+            summary: "A strong felt presence and altered self-state stand out as phenomenologically salient.",
+          }),
+        ]),
       }),
     );
   });
@@ -1930,16 +2113,20 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
     });
 
     expect(result.mode).toBe("persisted");
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenCalledWith(
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
       expect.objectContaining({
-        evidenceBlocks: [
+        manifestations: [
           expect.objectContaining({
-            observations: expect.arrayContaining([
+            evidenceBlocks: [
               expect.objectContaining({
-                observationV2SceneObservationId: packet.observations[0].observationV2SceneObservationId,
-                sceneId: packet.observations[0].sceneRowId,
+                observations: expect.arrayContaining([
+                  expect.objectContaining({
+                    observationV2SceneObservationId: packet.observations[0].observationV2SceneObservationId,
+                    sceneId: packet.observations[0].sceneRowId,
+                  }),
+                ]),
               }),
-            ]),
+            ],
           }),
         ],
       }),
@@ -1984,10 +2171,14 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       }),
     });
 
-    expect(repositories.latentOpportunityRepository.createIdentity).not.toHaveBeenCalled();
-    expect(repositories.latentOpportunityRepository.createManifestation).toHaveBeenCalledWith(
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
       expect.objectContaining({
-        identityId: "identity-existing-1",
+        identities: [],
+        manifestations: [
+          expect.objectContaining({
+            identityId: "identity-existing-1",
+          }),
+        ],
       }),
     );
   });
@@ -2041,47 +2232,10 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       ],
     });
 
-    const createIdentity = repositories.latentOpportunityRepository.createIdentity as ReturnType<typeof vi.fn>;
-    const createManifestation = repositories.latentOpportunityRepository.createManifestation as ReturnType<typeof vi.fn>;
-    const deleteIdentity = repositories.latentOpportunityRepository.deleteIdentity as ReturnType<typeof vi.fn>;
-    const deleteManifestation = repositories.latentOpportunityRepository.deleteManifestation as ReturnType<typeof vi.fn>;
+    const acceptGenerationRunSuccessorAtomically =
+      repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically as ReturnType<typeof vi.fn>;
     const deleteGenerationRun = repositories.latentOpportunityRepository.deleteGenerationRun as ReturnType<typeof vi.fn>;
-
-    createIdentity
-      .mockResolvedValueOnce({
-        id: "identity-new-1",
-        userId: "user-1",
-        title: "house search -> uncertainty",
-        primaryCategory: "transition",
-        secondaryCategories: ["tension"],
-        lifecycleState: "emerging",
-        status: "active",
-        archivedAt: null,
-        createdAt: "2026-06-15T12:00:00.000Z",
-        updatedAt: "2026-06-15T12:00:00.000Z",
-      })
-      .mockResolvedValueOnce({
-        id: "identity-new-2",
-        userId: "user-1",
-        title: "unresolved absence",
-        primaryCategory: "gap",
-        secondaryCategories: ["tension"],
-        lifecycleState: "emerging",
-        status: "active",
-        archivedAt: null,
-        createdAt: "2026-06-15T12:00:10.000Z",
-        updatedAt: "2026-06-15T12:00:10.000Z",
-      });
-
-    createManifestation
-      .mockResolvedValueOnce(
-        createPersistedManifestation({
-          id: "manifestation-1",
-          identityId: "identity-new-1",
-          priorityReflectiveObjectId: "object-1",
-        }),
-      )
-      .mockRejectedValueOnce(new Error("second_manifestation_failed"));
+    acceptGenerationRunSuccessorAtomically.mockRejectedValueOnce(new Error("second_manifestation_failed"));
 
     const result = await generateLatentOpportunitiesForReflectiveObject({
       userId: "user-1",
@@ -2125,36 +2279,19 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       cleanup: {
         attempted: true,
         completed: true,
-        resourceCount: 4,
+        resourceCount: 1,
       },
     });
-    expect(deleteIdentity).toHaveBeenCalledWith("identity-new-2", "user-1");
-    expect(deleteManifestation).toHaveBeenCalledWith("manifestation-1", "user-1");
-    expect(deleteIdentity).toHaveBeenCalledWith("identity-new-1", "user-1");
     expect(deleteGenerationRun).toHaveBeenCalledWith("run-1", "user-1");
   });
 
   it("preserves the primary persistence failure when rollback cleanup also fails", async () => {
     const packet = createPacket();
     const repositories = createActualComposerRepositories();
-    const createIdentity = repositories.latentOpportunityRepository.createIdentity as ReturnType<typeof vi.fn>;
-    const createManifestation = repositories.latentOpportunityRepository.createManifestation as ReturnType<typeof vi.fn>;
-    const deleteIdentity = repositories.latentOpportunityRepository.deleteIdentity as ReturnType<typeof vi.fn>;
+    const acceptGenerationRunSuccessorAtomically =
+      repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically as ReturnType<typeof vi.fn>;
     const deleteGenerationRun = repositories.latentOpportunityRepository.deleteGenerationRun as ReturnType<typeof vi.fn>;
-
-    createIdentity.mockResolvedValueOnce({
-      id: "identity-new-1",
-      userId: "user-1",
-      title: "house search -> uncertainty",
-      primaryCategory: "transition",
-      secondaryCategories: ["tension"],
-      lifecycleState: "emerging",
-      status: "active",
-      archivedAt: null,
-      createdAt: "2026-06-15T12:00:00.000Z",
-      updatedAt: "2026-06-15T12:00:00.000Z",
-    });
-    createManifestation.mockRejectedValueOnce(new Error("manifestation_write_failed"));
+    acceptGenerationRunSuccessorAtomically.mockRejectedValueOnce(new Error("manifestation_write_failed"));
     deleteGenerationRun.mockRejectedValueOnce(new Error("rollback_delete_failed"));
 
     const result = await generateLatentOpportunitiesForReflectiveObject({
@@ -2196,10 +2333,9 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       cleanup: {
         attempted: true,
         completed: false,
-        resourceCount: 2,
+        resourceCount: 1,
       },
     });
-    expect(deleteIdentity).toHaveBeenCalledWith("identity-new-1", "user-1");
     expect(deleteGenerationRun).toHaveBeenCalledWith("run-1", "user-1");
   });
 
@@ -2244,7 +2380,6 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       packet,
       rawOutput: expect.any(String),
     });
-    expect(repositories.latentOpportunityRepository.createIdentity).not.toHaveBeenCalled();
-    expect(repositories.latentOpportunityRepository.createManifestation).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).not.toHaveBeenCalled();
   });
 });

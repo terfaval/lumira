@@ -9,13 +9,10 @@ import type {
   CreateLatentGenerationRunInput,
   CreateLatentGenerationRunInvalidationEventInput,
   CreateLatentOpportunityIdentityRelationshipInput,
-  CreateLatentOpportunityIdentityInput,
   CreateLatentOpportunityLifecycleEventInput,
-  CreateLatentOpportunityManifestationInput,
   LatentGenerationRun,
   LatentGenerationRunInvalidationEvent,
   LatentOpportunityIdentityRelationship,
-  LatentOpportunityIdentity,
   LatentOpportunityLifecycleEvent,
   LatentOpportunityManifestation,
 } from "@/src/domain/latent-v2/types";
@@ -29,8 +26,6 @@ import type {
 
 export interface LatentOpportunityRepository {
   createGenerationRun(input: CreateLatentGenerationRunInput): Promise<LatentGenerationRun>;
-  createIdentity(input: CreateLatentOpportunityIdentityInput): Promise<LatentOpportunityIdentity>;
-  createManifestation(input: CreateLatentOpportunityManifestationInput): Promise<LatentOpportunityManifestation>;
   evaluateAuthoritySameness(
     accepted: AcceptedAuthorityEvidence,
     candidate: CandidateAuthorityEvidence,
@@ -43,8 +38,6 @@ export interface LatentOpportunityRepository {
   ): Promise<AcceptedOpportunityStalenessResult>;
   // Rollback-only deletion seam for an owned pending generation run.
   deleteGenerationRun(generationRunId: LatentGenerationRunId, userId: UserId): Promise<void>;
-  deleteIdentity(identityId: LatentOpportunityIdentityId, userId: UserId): Promise<void>;
-  deleteManifestation(manifestationId: LatentOpportunityManifestationId, userId: UserId): Promise<void>;
   getGenerationRunById(generationRunId: LatentGenerationRunId, userId: UserId): Promise<LatentGenerationRun | null>;
   createGenerationRunInvalidationIfAbsent(
     input: CreateLatentGenerationRunInvalidationEventInput,

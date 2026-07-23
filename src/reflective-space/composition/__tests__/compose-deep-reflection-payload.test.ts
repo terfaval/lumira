@@ -317,15 +317,7 @@ describe("composeDeepReflectionPayload", () => {
         createGenerationRun: async () => {
           throw new Error("not used");
         },
-        createIdentity: async () => {
-          throw new Error("not used");
-        },
-        createManifestation: async () => {
-          throw new Error("not used");
-        },
         deleteGenerationRun: async () => undefined,
-        deleteIdentity: async () => undefined,
-        deleteManifestation: async () => undefined,
         getGenerationRunById: async () => null,
         getCurrentGenerationRunForReflectiveObject: async () => null,
         getManifestationById: async () => ({
@@ -641,15 +633,7 @@ describe("composeDeepReflectionPayload", () => {
         createGenerationRun: async () => {
           throw new Error("not used");
         },
-        createIdentity: async () => {
-          throw new Error("not used");
-        },
-        createManifestation: async () => {
-          throw new Error("not used");
-        },
         deleteGenerationRun: async () => undefined,
-        deleteIdentity: async () => undefined,
-        deleteManifestation: async () => undefined,
         getGenerationRunById: async () => null,
         getCurrentGenerationRunForReflectiveObject: async () => null,
         getManifestationById: async () => null,
@@ -855,15 +839,7 @@ describe("composeDeepReflectionPayload", () => {
         createGenerationRun: async () => {
           throw new Error("not used");
         },
-        createIdentity: async () => {
-          throw new Error("not used");
-        },
-        createManifestation: async () => {
-          throw new Error("not used");
-        },
         deleteGenerationRun: async () => undefined,
-        deleteIdentity: async () => undefined,
-        deleteManifestation: async () => undefined,
         getGenerationRunById: async () => null,
         getCurrentGenerationRunForReflectiveObject: async () => null,
         getManifestationById: async () => null,

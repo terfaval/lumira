@@ -545,7 +545,7 @@ export interface CreateLatentOpportunityManifestationInput {
 
 export interface AcceptLatentGenerationRunSuccessorAtomicallyInput {
   userId: UserId;
-  predecessorRunId: LatentGenerationRunId;
+  predecessorRunId: LatentGenerationRunId | null;
   successorRunId: LatentGenerationRunId;
   identities?: CreateLatentOpportunityIdentityInput[];
   manifestations: CreateLatentOpportunityManifestationInput[];

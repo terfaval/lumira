@@ -112,6 +112,72 @@ for insert
 to authenticated
 with check (auth.uid() = user_id);
 
+drop policy if exists latent_opportunity_identities_update_own on public.latent_opportunity_identities;
+drop policy if exists latent_opportunity_manifestations_update_own on public.latent_opportunity_manifestations;
+drop policy if exists latent_opportunity_evidence_blocks_update_own on public.latent_opportunity_evidence_blocks;
+drop policy if exists latent_opportunity_evidence_observations_update_own on public.latent_opportunity_evidence_observations;
+drop policy if exists latent_opportunity_glossary_links_update_own on public.latent_opportunity_glossary_links;
+drop policy if exists latent_opportunity_generation_runs_update_own on public.latent_opportunity_generation_runs;
+
+create or replace function public.latent_continuity_write_authorized()
+returns boolean
+language sql
+stable
+as $$
+  select current_setting('app.latent_continuity_write_authorized', true) = 'accept_generation_run';
+$$;
+
+create or replace function public.guard_latent_authority_insert()
+returns trigger
+language plpgsql
+as $$
+begin
+  if not public.latent_continuity_write_authorized() then
+    raise exception 'Accepted latent authority writes must occur through the accepted continuity seam.';
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.guard_latent_identity_authority_update()
+returns trigger
+language plpgsql
+as $$
+begin
+  if not public.latent_continuity_write_authorized() then
+    raise exception 'Latent identity authority updates must occur through the accepted continuity seam.';
+  end if;
+
+  if row_to_json(new)::jsonb - array['lifecycle_state', 'updated_at'] <> row_to_json(old)::jsonb - array['lifecycle_state', 'updated_at'] then
+    raise exception 'Latent identity authority fields are immutable outside accepted continuity projection updates.';
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.guard_latent_generation_run_authority_update()
+returns trigger
+language plpgsql
+as $$
+begin
+  if old.status = 'pending' and new.status in ('failed', 'rejected', 'empty', 'no_change') then
+    return new;
+  end if;
+
+  if not public.latent_continuity_write_authorized() then
+    raise exception 'Latent generation-run authority updates must occur through the accepted continuity seam.';
+  end if;
+
+  if row_to_json(new)::jsonb - array['status', 'accepted_at', 'superseded_at', 'updated_at'] <> row_to_json(old)::jsonb - array['status', 'accepted_at', 'superseded_at', 'updated_at'] then
+    raise exception 'Latent generation-run authority fields are immutable outside accepted continuity projection updates.';
+  end if;
+
+  return new;
+end;
+$$;
+
 create or replace function public.raise_latent_continuity_history_immutable()
 returns trigger
 language plpgsql
@@ -127,11 +193,65 @@ before update or delete on public.latent_opportunity_lifecycle_events
 for each row
 execute function public.raise_latent_continuity_history_immutable();
 
+drop trigger if exists trg_latent_opportunity_identities_insert_guard on public.latent_opportunity_identities;
+create trigger trg_latent_opportunity_identities_insert_guard
+before insert on public.latent_opportunity_identities
+for each row
+execute function public.guard_latent_authority_insert();
+
+drop trigger if exists trg_latent_opportunity_manifestations_insert_guard on public.latent_opportunity_manifestations;
+create trigger trg_latent_opportunity_manifestations_insert_guard
+before insert on public.latent_opportunity_manifestations
+for each row
+execute function public.guard_latent_authority_insert();
+
+drop trigger if exists trg_latent_opportunity_evidence_blocks_insert_guard on public.latent_opportunity_evidence_blocks;
+create trigger trg_latent_opportunity_evidence_blocks_insert_guard
+before insert on public.latent_opportunity_evidence_blocks
+for each row
+execute function public.guard_latent_authority_insert();
+
+drop trigger if exists trg_latent_opportunity_evidence_observations_insert_guard on public.latent_opportunity_evidence_observations;
+create trigger trg_latent_opportunity_evidence_observations_insert_guard
+before insert on public.latent_opportunity_evidence_observations
+for each row
+execute function public.guard_latent_authority_insert();
+
+drop trigger if exists trg_latent_opportunity_glossary_links_insert_guard on public.latent_opportunity_glossary_links;
+create trigger trg_latent_opportunity_glossary_links_insert_guard
+before insert on public.latent_opportunity_glossary_links
+for each row
+execute function public.guard_latent_authority_insert();
+
+drop trigger if exists trg_latent_opportunity_lifecycle_events_insert_guard on public.latent_opportunity_lifecycle_events;
+create trigger trg_latent_opportunity_lifecycle_events_insert_guard
+before insert on public.latent_opportunity_lifecycle_events
+for each row
+execute function public.guard_latent_authority_insert();
+
 drop trigger if exists trg_latent_opportunity_identity_relationships_immutable on public.latent_opportunity_identity_relationships;
 create trigger trg_latent_opportunity_identity_relationships_immutable
 before update or delete on public.latent_opportunity_identity_relationships
 for each row
 execute function public.raise_latent_continuity_history_immutable();
+
+drop trigger if exists trg_latent_opportunity_identity_relationships_insert_guard on public.latent_opportunity_identity_relationships;
+create trigger trg_latent_opportunity_identity_relationships_insert_guard
+before insert on public.latent_opportunity_identity_relationships
+for each row
+execute function public.guard_latent_authority_insert();
+
+drop trigger if exists trg_latent_opportunity_identities_update_guard on public.latent_opportunity_identities;
+create trigger trg_latent_opportunity_identities_update_guard
+before update on public.latent_opportunity_identities
+for each row
+execute function public.guard_latent_identity_authority_update();
+
+drop trigger if exists trg_latent_opportunity_generation_runs_update_guard on public.latent_opportunity_generation_runs;
+create trigger trg_latent_opportunity_generation_runs_update_guard
+before update on public.latent_opportunity_generation_runs
+for each row
+execute function public.guard_latent_generation_run_authority_update();
 
 create or replace function public.accept_latent_generation_run_successor(
   p_user_id uuid,
@@ -144,22 +264,27 @@ create or replace function public.accept_latent_generation_run_successor(
 )
 returns public.latent_opportunity_generation_runs
 language plpgsql
+security definer
 as $$
 declare
   v_predecessor public.latent_opportunity_generation_runs%rowtype;
   v_successor public.latent_opportunity_generation_runs%rowtype;
 begin
-  select *
-  into v_predecessor
-  from public.latent_opportunity_generation_runs
-  where id = p_predecessor_run_id
-    and user_id = p_user_id
-    and status = 'current'
-    and superseded_at is null
-  for update;
+  perform set_config('app.latent_continuity_write_authorized', 'accept_generation_run', true);
 
-  if not found then
-    raise exception 'Predecessor run is not the current accepted run.';
+  if p_predecessor_run_id is not null then
+    select *
+    into v_predecessor
+    from public.latent_opportunity_generation_runs
+    where id = p_predecessor_run_id
+      and user_id = p_user_id
+      and status = 'current'
+      and superseded_at is null
+    for update;
+
+    if not found then
+      raise exception 'Predecessor run is not the current accepted run.';
+    end if;
   end if;
 
   select *
@@ -167,7 +292,10 @@ begin
   from public.latent_opportunity_generation_runs
   where id = p_successor_run_id
     and user_id = p_user_id
-    and priority_reflective_object_id = v_predecessor.priority_reflective_object_id
+    and (
+      p_predecessor_run_id is null
+      or priority_reflective_object_id = v_predecessor.priority_reflective_object_id
+    )
     and status = 'pending'
   for update;
 
@@ -519,7 +647,8 @@ begin
   update public.latent_opportunity_generation_runs
   set status = 'superseded',
       superseded_at = now()
-  where id = v_predecessor.id
+  where p_predecessor_run_id is not null
+    and id = v_predecessor.id
     and user_id = p_user_id
     and status = 'current'
     and superseded_at is null;

@@ -47,6 +47,46 @@ function sortLifecycleEvents<T extends Pick<LatentOpportunityLifecycleEvent, "id
   });
 }
 
+export function classifyAcceptedEvidenceLoss(input: {
+  priorAcceptedSupportObservationIds: string[];
+  currentAcceptedSupportObservationIds: string[];
+  contradictoryAcceptedObservationIds: string[];
+}): {
+  evidenceStrength: Exclude<LatentLifecycleEvidenceStrength, "material_support">;
+  reason:
+    | "no_explicit_loss_evidence"
+    | "contradicted_with_remaining_support"
+    | "contradicted_without_remaining_support";
+} {
+  const priorSupport = new Set(input.priorAcceptedSupportObservationIds);
+  const contradictoryOverlap = input.contradictoryAcceptedObservationIds.filter((id) =>
+    priorSupport.has(id),
+  );
+  const contradictoryOverlapSet = new Set(contradictoryOverlap);
+  const currentSupportOverlap = input.currentAcceptedSupportObservationIds.filter(
+    (id) => priorSupport.has(id) && !contradictoryOverlapSet.has(id),
+  );
+
+  if (contradictoryOverlap.length === 0) {
+    return {
+      evidenceStrength: "insufficient",
+      reason: "no_explicit_loss_evidence",
+    };
+  }
+
+  if (currentSupportOverlap.length > 0) {
+    return {
+      evidenceStrength: "reduced_support",
+      reason: "contradicted_with_remaining_support",
+    };
+  }
+
+  return {
+    evidenceStrength: "terminal_loss",
+    reason: "contradicted_without_remaining_support",
+  };
+}
+
 export function planLatentLifecycleTransition(input:
   | {
       mode: "create_new";

@@ -305,11 +305,7 @@ function createRepositories(input?: {
       invalidation: null,
     }),
     createGenerationRun: vi.fn(),
-    createIdentity: vi.fn(),
-    createManifestation: vi.fn(),
     deleteGenerationRun: vi.fn(),
-    deleteIdentity: vi.fn(),
-    deleteManifestation: vi.fn(),
     getGenerationRunById: vi.fn(),
     getCurrentGenerationRunForReflectiveObject: vi.fn(),
     getManifestationById: vi.fn(),
@@ -426,8 +422,7 @@ describe("composeAnchorConstructorInputPacket", () => {
     expect(repositories.observationV2Repository.create).not.toHaveBeenCalled();
     expect(repositories.glossaryRepository.createTerm).not.toHaveBeenCalled();
     expect(repositories.glossaryRepository.upsertCandidates).not.toHaveBeenCalled();
-    expect(repositories.latentOpportunityRepository.createIdentity).not.toHaveBeenCalled();
-    expect(repositories.latentOpportunityRepository.createManifestation).not.toHaveBeenCalled();
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).not.toHaveBeenCalled();
     expect(repositories.glossaryRepository.listCandidates).not.toHaveBeenCalled();
     expect(repositories.glossaryRepository.listCandidatesByReflectiveObject).not.toHaveBeenCalled();
   });
