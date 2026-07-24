@@ -151,10 +151,16 @@ A thread may start from:
 - dream-to-dream continuity hint
 - dream-to-life bridge prompt (user-led)
 - user-initiated anchor (highlight/note/response)
+- accepted Opening selection
 
 Start condition:
 - enough reflective gravity for a bounded center candidate,
-- or explicit user salience action.
+- or explicit user salience action,
+- or explicit acceptance of a bounded Opening invitation.
+
+Constitutive boundary:
+- when an Opening is selected, Thread becomes constitutionally real
+- the first user-authored contribution begins reflective participation; it does not constitute thread identity
 
 ### 2) Thread Deepening
 
@@ -164,6 +170,7 @@ A thread deepens when additional locally relevant material enters:
 - user responses
 - previous dreams / reflective objects
 - previous openings and opening lifecycle history
+- prior accepted or dismissed invitation history where implementation retains it as evidence
 - dialogue trace context
 
 Deepening behavior:
@@ -262,7 +269,7 @@ Current architecture already provides:
 - continuity/recurrence signal generation
 - reflective center candidacy and no-center handling
 - uncertainty-aware suppression of weak surfacing
-- opening lifecycle with activation/defer/dismiss/suppression behavior
+- opening invitation behavior with activation/selection, dismissal, and suppression behavior
 - response lineage and bounded dialogue read-model traces
 - locality-aware resurfacing controls
 
@@ -270,7 +277,7 @@ Current architecture already provides:
 
 Still partial/missing at thread-system level:
 - explicit canonical thread identity resolution across branching/merging
-- full lifecycle parity between conceptual and active simplified states
+- repository-wide authority normalization after the constitutive-boundary clarification
 - robust neighborhood topology orchestration
 - richer cross-material continuity weighting beyond bounded heuristics
 - explicit orientation-to-deep-reflection focus-state contract
@@ -330,12 +337,11 @@ Boundary rule:
 
 ## Final Question - Architecture Conclusion
 
-If Lumira were used tomorrow, the user should be understood as entering a reflective thread, even when the immediate UI action is selecting a reflective direction.
+If Lumira were used tomorrow, the user should be understood as entering a reflective thread when they accept an Opening through explicit selection.
 
 Why:
-- direction is only the initial attentional doorway,
+- opening selection is the constitutive entry boundary now reflected by Backend V2,
 - thread is the continuity-bearing unit of reflective experience,
-- and meaningful reflection naturally crosses multiple directions while remaining one unfolding inquiry.
+- and the first authored response belongs to the already-real thread rather than creating it.
 
 This preserves Lumira's core principle: continuity over mode purity, orientation over interpretation, and user-owned meaning over system authority.
-

@@ -75,10 +75,14 @@ A reflective thread is one continuity trajectory inside one session-scoped refle
 
 Thread identity is established by:
 
+- accepted Opening selection when a legitimate bounded invitation is chosen into thread reality
 - continuity lineage coherence (source/evidence/salience lineage remains connected)
 - center-of-gravity continuity over time (even if center expression shifts)
 - stable attachment neighborhood (responses/openings/highlights/motifs remain coherently related)
 - user-action history coherence (defer/dismiss/revisit actions refer to the same reflective line)
+
+The first user-authored contribution does not constitute thread identity.
+It begins reflective participation inside the already-real thread.
 
 ### 1.2 What does not create thread identity
 

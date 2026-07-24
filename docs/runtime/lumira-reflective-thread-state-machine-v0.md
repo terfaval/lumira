@@ -96,36 +96,33 @@ Dormant/reactivation logic:
 
 ## 3. Opening Lifecycle Model
 
-Canonical opening states for v0:
+Constitutional opening postures for v0:
 
-- `generated`
-- `candidate`
-- `surfaced`
-- `engaged`
-- `deferred`
-- `revisited`
-- `expired`
+- `silence`
+- `invitation_exists`
+
+Terminal constitutional outcomes:
+
+- `accepted`
 - `dismissed`
-- `archived`
 
 Opening vs question:
 
 - opening: reflective possibility object with context and attachment graph
 - question: one possible phrasing of an opening in dialogue
 
-### Opening state semantics
+### Opening posture semantics
 
-| State | Meaning | Visibility | Typical next states |
+| Posture / outcome | Meaning | Visibility | Typical transition |
 | --- | --- | --- | --- |
-| `generated` | model-produced opening draft | internal-only | `candidate`, `expired` |
-| `candidate` | validated enough to queue for possible surfacing | internal/ambient | `surfaced`, `expired`, `dismissed` |
-| `surfaced` | shown as optional invitation | visible | `engaged`, `deferred`, `dismissed`, `expired` |
-| `engaged` | user interaction occurred (response, note, highlight linkage) | visible | `revisited`, `archived` |
-| `deferred` | user postponed invitation | low visibility | `revisited`, `expired`, `dismissed` |
-| `revisited` | resurfaced post-deferral/age when context renewed | visible | `engaged`, `deferred`, `dismissed`, `expired` |
-| `expired` | stale opening, no longer contextually strong | hidden from default | `archived` |
-| `dismissed` | user suppression | hidden/suppressed | `archived` |
-| `archived` | historical record | hidden | none by default |
+| `silence` | no legitimate invitation is surfaced | none | `invitation_exists` when a valid Opening is surfaced |
+| `invitation_exists` | optional bounded invitation is available | visible | `accepted` or `dismissed` |
+| `accepted` | user selected the Opening | selection handoff | Thread becomes constitutionally real |
+| `dismissed` | user suppression | hidden/suppressed | manual restore or continued silence |
+
+Implementation note:
+- richer statuses such as generated, candidate, revisited, expired, or archived may remain useful internally
+- they are not additional constitutional institutions
 
 ### Opening attachment semantics
 
@@ -159,12 +156,19 @@ Potential thread origins:
 - latent tension line
 - recurring relational pattern
 - user-created thread
+- accepted Opening selection
 
 Identity rules:
 
 - thread identity is continuity-based, not object-ID-based
 - a new object attachment does not automatically create a new thread
 - identity persists when reflective center shifts but evidence lineage remains coherent
+- when an Opening is accepted, that selection constitutes thread identity at the invitation boundary
+
+Participation boundary:
+
+- the first user-authored response deepens or begins participation inside the already-real thread
+- it does not constitute thread identity
 
 Deepen existing vs create new:
 

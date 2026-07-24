@@ -58,6 +58,31 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-07-24 - OPN-S01 Opening Constitutional Lifecycle Simplification and Thread Identity Alignment
+
+- Phase: BUILD
+- Touched boundaries:
+  - `docs/canon/opening-interaction-principles-v1.md`
+  - `docs/runtime/opening-philosophy-and-reflective-invitation-model-v1.md`
+  - `docs/runtime/reflective-thread-model-v1.md`
+  - `docs/runtime/latent-opening-dialogue-boundary-contract-v1.md`
+  - `docs/runtime/lumira-reflective-opening-lifecycle-api-contract-v0.md`
+  - `docs/runtime/lumira-reflective-opening-canonical-data-model-v0.md`
+  - `docs/runtime/lumira-reflective-thread-state-machine-v0.md`
+  - `docs/runtime/lumira-reflective-thread-canonical-data-model-v0.md`
+  - `docs/runtime/lumira-reflective-thread-transition-invariants-v0.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - repository implementation audit of Opening and Thread boundaries -> runtime already resolves or creates thread identity at Opening selection
+  - `git diff -- src/domain/openings/types.ts src/domain/openings/README.md src/domain/threads/types.ts src/domain/threads/README.md src/reflective-space/resolve-opening-thread.ts src/reflective-space/README.md` -> no implementation changes required
+  - targeted constitutional consistency audit across updated Opening and Thread authorities -> pass
+  - no build, lint, typecheck, or test run; ticket landed as documentation authority normalization only
+- Notes:
+  - Simplified Opening constitutional doctrine to the two primary postures `silence` and `invitation exists`, with only `accepted` and `dismissed` as terminal constitutional outcomes.
+  - Demoted richer opening lifecycle vocabularies such as `generated`, `candidate`, `engaged`, `revisited`, `expired`, and `archived` to implementation detail in the living runtime authority set.
+  - Aligned Opening and Thread doctrine on one constitutive boundary: accepted Opening selection makes Thread constitutionally real, and the first user-authored contribution begins reflective participation rather than creating thread identity.
+  - Preserved the existing implementation because the active Backend V2 reflective-space runtime already follows the clarified Architecture Council model.
+
 ## 2026-07-23 - LAT-CLOSE-01 Latent Constitutional Closure Recording and Stewardship Synchronization
 
 - Phase: CLOSURE

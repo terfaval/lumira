@@ -2,19 +2,19 @@
 
 ## 1. Purpose
 
-This contract defines canonical lifecycle semantics for reflective openings as runtime objects.
+This contract defines the simplified constitutional lifecycle baseline for reflective openings as runtime objects.
 
 Why this is needed:
 
-- openings coordinate cognition surfacing, thread continuity, and re-entry pacing
+- openings coordinate bounded invitation surfacing and re-entry pacing
 - without explicit lifecycle semantics, implementation can drift into pressure loops and unsafe resurfacing
 - openings must be stable runtime entities, not ephemeral chatbot prompts
 
 Required distinction:
 
-- opening object: persistent lifecycle-tracked runtime entity
+- opening institution: bounded invitation posture governed by silence vs invitation existence
 - surfaced invitation: temporary visible representation of an opening
-- latent/internal candidate: non-user-visible precursor signal, not yet surfaced
+- latent/internal candidate: non-user-visible implementation precursor, not a constitutional opening
 
 ## 2. Opening Runtime Philosophy
 
@@ -28,46 +28,40 @@ Core philosophy:
 - openings preserve calmness through bounded surfacing
 - silence is a valid runtime outcome
 
+Opening does not own workflow, thread continuity, or reflection itself.
+
 Lifecycle semantics must prevent:
 
 - coercive progression
 - urgency escalation
 - overprompting
 
-## 3. Canonical Opening Lifecycle States
+## 3. Constitutional Opening Lifecycle
 
-Canonical states:
+Primary constitutional postures:
 
-- `generated`
-- `candidate`
-- `surfaced`
-- `engaged`
-- `deferred`
-- `revisited`
-- `expired`
-- `dismissed`
-- `archived`
+- `silence`: no legitimate invitation exists
+- `invitation_exists`: a legitimate Opening has been surfaced and remains available
 
-### State semantics table
+Terminal constitutional outcomes:
 
-| State | Meaning | Visibility | Persistence | Resurfacing eligibility | Cooldown behavior | Suppression behavior | Allowed transitions | Orchestration implications | Ownership semantics |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `generated` | internal model-produced opening draft | internal only | persisted or ephemeral per policy | no direct resurfacing | n/a | n/a | `candidate`, `expired` | generation stage output | system-owned |
-| `candidate` | validated internal opening awaiting surfacing decision | internal/ambient | durable short-medium | yes if quality remains valid | pre-surface pacing gate applies | can be dropped before surfacing | `surfaced`, `expired`, `dismissed` | gating stage input | system-owned, user-not-yet-involved |
-| `surfaced` | visible optional invitation | visible | durable | yes | visibility cooldown applies after interaction | suppression may apply via dismiss | `engaged`, `deferred`, `dismissed`, `expired` | surfacing stage active | shared; user response governs next state |
-| `engaged` | user interacted (response/note/highlight link) | visible/contextual | durable | yes via revisit logic | no immediate resurfacing need | no suppression unless explicit action | `revisited`, `archived`, `deferred`, `dismissed` | continuity strengthening input | user action dominant |
-| `deferred` | user indicates "not now" | low visibility | durable | yes, only post-cooldown + fresh context | mandatory defer cooldown | temporary suppression from foreground | `revisited`, `expired`, `dismissed`, `archived` | pacing/saturation demotion | user-owned pacing control |
-| `revisited` | previously non-foreground opening reactivated with legitimacy | visible | durable | yes | revisit cooldown applies | may be suppressed again | `engaged`, `deferred`, `dismissed`, `expired`, `archived` | reactivation stage output | shared with user precedence |
-| `expired` | opening stale in current context | hidden | durable historical | limited; only via contextual regeneration path | expires out of active queue | implicit non-surfacing | `archived` | lifecycle cleanup signal | system-managed |
-| `dismissed` | explicit user suppression | suppressed | durable | no auto-resurface | strong suppression window | hard suppression until explicit restore | `archived`, `revisited` (manual restore only) | suppression guardrail state | user-owned |
-| `archived` | historical lifecycle endpoint | historical | durable | none by default | n/a | remains non-active | none by default | retention/audit only | system + user historical ownership |
+- `accepted`: the user selects the Opening, Opening responsibility ends, and Thread becomes constitutionally real
+- `dismissed`: the user explicitly refuses the invitation
 
-### State ownership rules
+Everything else is implementation detail rather than constitutional state.
 
-- system-owned states: `generated`, `candidate`
-- shared states: `surfaced`, `engaged`, `revisited`
-- user-governed suppression states: `deferred`, `dismissed`
-- terminal historical state: `archived` (and `expired -> archived`)
+### Constitutional semantics table
+
+| Posture / outcome | Meaning | Visibility | Ownership semantics |
+| --- | --- | --- | --- |
+| `silence` | no legitimate invitation is surfaced | none | system restraint |
+| `invitation_exists` | an optional bounded invitation is available | visible if surfaced | shared until user action |
+| `accepted` | the user selected the invitation and Opening responsibility ended | selection event, then handoff | user action constitutes Thread boundary |
+| `dismissed` | the user explicitly refused the invitation | hidden/suppressed | user-owned refusal |
+
+Implementation note:
+- `generated`, `candidate`, `viewed`, `engaged`, `revisited`, `expired`, and `archived` may still exist internally if useful.
+- They must not be treated as additional constitutional institutions.
 
 ## 4. Opening Object Model
 
@@ -79,11 +73,11 @@ Conceptual runtime object categories:
 - `opening_type`
 - `confidence_posture`
 - `surfaced_state`
-- `lifecycle_state`
+- `constitutional_posture`
 - `cooldown_metadata`
 - `suppression_metadata`
 - `continuity_lineage`
-- `resurfacing_eligibility`
+- `implementation_resurfacing_metadata`
 - `salience_relationship`
 - `creation_context`
 - `evidence_references`
@@ -95,24 +89,23 @@ Contract note:
 
 ## 5. Opening Generation vs Surfacing
 
-Generation and surfacing are separate lifecycle phases.
+Generation and surfacing are separate implementation phases.
 
 Generation stages:
 
-- internal `generated` output
-- internal `candidate` validation
+- internal generation output
+- internal validation/gating
 
 Surfacing stages:
 
-- `candidate -> surfaced` only after calmness/pacing/evidence gates
-- `surfaced` can remain visible, be deferred/dismissed, or expire
+- surfacing occurs only after calmness/pacing/evidence gates
+- once surfaced, the constitutional institution is simply `invitation_exists` until acceptance or dismissal
 
 Runtime visibility categories:
 
-- internal/runtime-only: `generated`
-- ambient/internal queue: `candidate`
-- foreground invitation: `surfaced`/`revisited`
-- suppressed: `deferred`/`dismissed`
+- internal/runtime-only: implementation precursor stages
+- foreground invitation: `invitation_exists`
+- suppressed: dismissal or implementation-level suppression behavior
 
 Required outcomes:
 
@@ -124,10 +117,8 @@ Required outcomes:
 
 Legitimate triggers:
 
-- explicit user engagement
+- explicit user selection/acceptance
 - explicit dismiss action
-- explicit defer action
-- explicit revisit action
 - validated resurfacing evidence
 - glossary recurrence with contextual support
 - thread activation context change
@@ -152,27 +143,24 @@ Prohibited trigger class:
 
 - engagement-maximization transitions
 
-## 7. Defer / Dismiss / Expire Semantics
+## 7. Dismissal and Implementation Decay Semantics
 
-Semantics must remain distinct:
+Constitutionally meaningful refusal is:
 
-- `deferred`: temporary "not now"
-- `dismissed`: explicit suppression
-- `expired`: context-stale lifecycle decay
-- `archived`: historical end state
+- `dismissed`: explicit suppression/refusal
+
+Implementation-level decay or revisit behaviors may remain distinct internally, but they are not additional constitutional states.
 
 Behavior rules:
 
 - dismiss is not a hidden retry queue
-- defer is not unresolved obligation
-- expire is not silent reactivation permission
-- archive is not active resurfacing source
+- implementation revisit behavior is not unresolved obligation
+- implementation decay is not silent reactivation permission
 
 Restoration and resurfacing:
 
-- `deferred` may re-enter via legitimate revisit conditions after cooldown
 - `dismissed` requires explicit restore intent
-- `expired` requires new contextual legitimacy, not repetition
+- any internal revisit path requires new contextual legitimacy, not repetition
 
 ## 8. Resurfacing Eligibility Rules
 
@@ -202,8 +190,8 @@ Attachment semantics:
 
 Continuity influence boundaries:
 
-- openings can influence thread salience only through legitimate engagement signals
-- openings cannot force canonical thread identity changes
+- openings can influence thread salience only through legitimate user selection and later participation signals
+- accepted Opening selection constitutes thread reality when the runtime resolves that invitation into a thread
 - opening lineage must remain traceable to thread continuity context
 
 Ownership relationship:
@@ -215,17 +203,15 @@ Ownership relationship:
 
 Visibility layers:
 
-- internal/runtime-only
-- ambient
-- surfaced
-- active foreground
-- suppressed
-- archived/historical
+- internal/runtime-only implementation detail
+- surfaced invitation
+- suppressed/hidden implementation detail
+- historical/audit implementation detail
 
 Visibility transition rules:
 
 - internal -> ambient/surfaced only by policy gates
-- surfaced -> suppressed/historical via user action or decay
+- surfaced invitation -> suppressed/historical via user action or implementation decay
 - suppressed -> surfaced only through explicit/legitimate reactivation paths
 
 Re-entry implications:
@@ -309,7 +295,7 @@ Compat alignment:
 
 Alpha-safe simplicity:
 
-- prioritize clear, conservative lifecycle behavior over advanced adaptation.
+- prioritize the constitutional baseline of silence vs invitation existence over richer state vocabularies.
 
 ## 15. Failure Modes / Anti-patterns
 
@@ -321,7 +307,7 @@ Prohibited failure patterns:
 - hidden urgency escalation
 - pseudo-therapy behavior
 - perpetual unfinished-state pressure
-- silent opening resurrection
+- silent invitation resurrection after dismissal
 - density explosion
 - opening inflation
 - hidden canonicalization
@@ -335,7 +321,7 @@ Warning indicators:
 
 Implementation cautions:
 
-- do not conflate opening lifecycle with workflow progression
+- do not conflate Opening constitutional posture with workflow progression
 - do not allow ranking systems to become authority systems
 - do not bypass suppression/cooldown logic in fallback paths
 

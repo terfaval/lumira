@@ -152,7 +152,8 @@ Density invariants:
 
 Opening-thread invariants:
 
-- openings cannot force thread activation
+- opening presence alone cannot force thread activation
+- accepted Opening selection can constitute thread reality when continuity legitimacy is present
 - unanswered openings do not imply unresolved failure
 - opening dismissal does not delete thread identity
 - weak openings cannot establish canonical continuity
@@ -160,7 +161,7 @@ Opening-thread invariants:
 
 Activation safety rules:
 
-- thread activation requires continuity evidence or explicit user engagement
+- thread activation requires continuity evidence plus explicit user selection/acceptance when initiated from Opening
 - opening presence alone is insufficient
 
 Anti-pressure safeguards:

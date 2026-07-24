@@ -40,6 +40,13 @@ The Opening exists to:
 Not:
 # direct interpretation.
 
+Opening is a bounded invitation institution.
+
+It does not own:
+- workflow
+- thread continuity
+- reflection itself
+
 ---
 
 # 2. Opening as Reflective Utterance
@@ -66,7 +73,7 @@ The system:
 The user:
 - interprets,
 - ignores,
-- revisits,
+- dismisses,
 - or responds.
 
 ---
@@ -238,6 +245,13 @@ Openings should NOT appear when:
 A good reflective system must tolerate:
 # absence.
 
+Constitutional posture is intentionally minimal:
+
+- `silence`
+- `invitation exists`
+
+Additional runtime states may exist for implementation purposes, but they are not constitutional institutions.
+
 ---
 
 # 10. Provenance Awareness
@@ -311,6 +325,10 @@ The system participates in:
 
 It does not:
 # lead the user through a program.
+
+When an Opening is accepted through explicit user selection, Thread becomes constitutionally real.
+
+The first user-authored contribution begins reflective participation inside that thread; it does not constitute thread identity.
 
 ---
 
@@ -394,6 +412,11 @@ The user:
 - owns pacing
 - owns revisitation
 - owns silence
+
+If an invitation exists, it remains available until one of two terminal constitutional outcomes occurs:
+
+- accepted
+- dismissed
 
 Lumira may:
 # accompany reflective movement.

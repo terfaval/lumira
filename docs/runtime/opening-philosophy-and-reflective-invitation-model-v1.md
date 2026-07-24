@@ -61,10 +61,12 @@ An Opening is a bounded, optional reflective invitation that translates internal
 
 An Opening:
 - invites attention,
-- can activate or deepen reflective movement,
-- is lifecycle-tracked,
+- can invite entry into or continued attention within reflection,
 - preserves user pacing and refusal,
 - remains uncertainty-aware.
+
+Constitutionally, Opening is a bounded invitation institution.
+It does not own workflow, reflection, or thread continuity.
 
 An Opening is not:
 - a task,
@@ -78,8 +80,8 @@ An Opening is not:
 | Object | What it is | How it differs from Opening |
 |---|---|---|
 | Direction | attentional entry lens | direction selects angle of entry; opening is the invitation moment |
-| Thread | continuity trajectory | thread is the journey; opening is one possible activation/deepening event |
-| Dialogue | bounded read-model trace | dialogue records interaction lineage; opening is a lifecycle object within it |
+| Thread | continuity trajectory | thread is the journey; opening is the bounded invitation that may be accepted into thread reality |
+| Dialogue | bounded read-model trace | dialogue records interaction lineage; opening may contribute lineage but does not own dialogue workflow |
 | Response | user-authored reflective artifact | response is authored meaning work; opening is pre-response invitation |
 
 ### Opening = invitation, Opening != question
@@ -203,7 +205,9 @@ Taxonomy notes:
 
 ### How an Opening starts a thread
 
-When continuity evidence is present but no active thread is foregrounded, an opening can become the first user-facing activation event for a new thread candidate.
+When continuity evidence is present and the user selects the invitation, Thread becomes constitutionally real at that moment.
+
+The first user-authored contribution does not create thread identity; it begins reflective participation within the selected thread.
 
 ### How an Opening deepens a thread
 
@@ -224,6 +228,10 @@ An opening reconnects a dormant thread only when:
 Model rule:
 - opening identity is invitation-layer;
 - thread identity is continuity-layer.
+
+Constitutive boundary rule:
+- opening selected = thread constituted
+- first authored response = reflective participation begins
 
 ---
 
@@ -277,6 +285,13 @@ Design principle:
 - no opening is better than weak opening,
 - and silence is often safer than forced invitation.
 
+Constitutional posture is intentionally small:
+
+- `silence`: no legitimate invitation exists
+- `invitation exists`: a legitimate opening has been surfaced and remains available
+
+No additional constitutional substates are required for viewed, engaged, revisited, archived, expired, generated, or candidate posture.
+
 ---
 
 ## Part G - Orientation vs Opening
@@ -298,9 +313,8 @@ Orientation answers:
 
 Opening may:
 - invite engagement
-- activate movement into thread focus
-- deepen active reflection
-- reconnect legitimate dormant continuity
+- preserve bounded invitation availability
+- end through acceptance or explicit dismissal
 
 Opening answers:
 - "Would you like to enter or stay with this line now?"
@@ -318,10 +332,10 @@ Boundary rule:
 ### Already exists
 
 1. Opening as optional invitation posture (contractually explicit)
-2. Lifecycle framing (generated/candidate/surfaced/engaged/deferred/dismissed/etc.)
+2. Silence legitimacy and no-opening allowance
 3. Suppression/cooldown and anti-overprompting boundaries
 4. Non-authoritative transformation boundary from latent -> opening
-5. Silence legitimacy and no-opening allowance
+5. Thread-first reflective runtime entry through explicit user selection
 
 ### Partially implemented / constrained
 
@@ -329,11 +343,11 @@ Boundary rule:
 2. Rich thread-identity-aware opening attachment behavior
 3. Multi-thread candidate handling with primary vs ambient separation
 4. Orientation-opening choreography in user experience
-5. Lifecycle parity between canonical richness and simplified active states
+5. Dismissal capability independent of any specific UI affordance
 
 ### Missing (as mature architecture capability)
 
-1. Fully explicit, stable opening-to-thread identity resolution policy
+1. Complete repository authority normalization for Opening constitutional docs vs historical runtime planning docs
 2. Complete focus-state contract linking orientation and deep reflection movement
 3. Mature continuity topology orchestration for opening competition/arbitration
 4. Longitudinal invitation quality governance beyond bounded heuristics
@@ -363,4 +377,3 @@ Why:
 
 The best immediate outcome is:
 - an optional, calm thread-activation invitation with clear local context and an equally valid no-response path.
-

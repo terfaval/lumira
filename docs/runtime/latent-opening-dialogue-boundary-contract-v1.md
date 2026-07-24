@@ -72,7 +72,7 @@ Observation -> Latent -> Opening -> Dialogue -> Response
 |---|---|---|---|---|---|
 | Observation | descriptive, evidence-linked orientation substrate | Observation domain + semantic policy ingress | durable (`observations`, `observation_fragments`) | visible as descriptive material | fully visible to cognition/runtime |
 | Latent | internal reflective organization (continuity, salience, uncertainty, center selection) | Latent cognition engine + latent repository | durable (`latent_snapshots`, `latent_signals`, `latent_suggestions`, lifecycle payload) | bounded transport projection only | full internal payload |
-| Opening | optional reflective invitation object and lifecycle | Openings cognition + openings repository | durable (`openings`, suppressions/events) | visible as invitation surfaces | full lifecycle + provenance |
+| Opening | optional bounded invitation institution | Openings cognition + openings repository | durable (`openings`, suppressions/events) | visible as invitation surfaces | implementation lifecycle detail + provenance |
 | Dialogue | bounded reflective read model from opening activation lineage | Reflective-space composition + response/opening repos | derived view; source-of-truth is activation/association/response persistence | visible as bounded dialogue traces | composition internals visible server-side |
 | Response | user-authored reflective artifact | Responses domain + response repository | durable (`reflective_responses`, associations, opening bridge tables) | visible user-authored text | full state/association metadata |
 
@@ -130,8 +130,11 @@ Deliverable:
 
 Opening is the first user-facing reflective primitive:
 - an optional reflective invitation object
-- lifecycle-tracked
-- user-agency-governed (activate, suppress, dismiss, reactivate)
+- user-agency-governed (accept/select, suppress, dismiss, reactivate)
+
+Constitutionally, Opening has only two primary postures:
+- silence
+- invitation exists
 
 Opening is not merely a question string.
 
@@ -140,9 +143,15 @@ Opening is not merely a question string.
 Minimum lifecycle/agency expectations:
 - creation from bounded latent suggestion transformations
 - cadence gating (cooldown/repetition/suppression overlap controls)
-- explicit activation boundary
+- explicit acceptance/selection boundary
 - suppression and silence legitimacy
 - optional response authorship (not mandatory)
+
+Terminal constitutional outcomes:
+- accepted
+- dismissed
+
+Additional runtime states may exist for implementation purposes, but they are not constitutional institutions.
 
 ## C.3 Ownership and transport
 
@@ -160,7 +169,7 @@ Deliverable:
 ## D.1 What dialogue is
 
 Dialogue is a bounded reflective read model composed from:
-- opening activation events
+- opening acceptance/selection events
 - opening state/provenance
 - optional associated response artifacts
 
@@ -222,6 +231,10 @@ In v1 chain semantics, first reflective interaction primitive is:
 Reason:
 - latent is internal cognition/orchestration
 - opening is the first transformed invitation object explicitly designed for user-facing reflective language
+
+Thread boundary:
+- Thread becomes constitutionally real when an Opening is accepted/selected.
+- The first user-authored response begins reflective participation inside that thread.
 
 ## F.2 Why latent is not user-facing
 
@@ -320,14 +333,14 @@ Deliverable:
 
 - Observation descriptive boundary and semantic guardrails
 - Latent internal orchestration boundary with public-safe projection defaults
-- Opening lifecycle and suppression/cadence controls
+- Opening invitation behavior and suppression/cadence controls
 - Opening-response bridge persistence and activation lineage
 - Bounded dialogue read-model composition pattern
 
 ## I.2 Unsolved or partially solved
 
 - explicit versioned boundary contracts across all handoffs (formalized by this doc, pending implementation adoption)
-- richer lifecycle parity between canonical intent and active simplified states in some domains
+- repository-wide authority normalization so historical runtime vocabulary does not outrank the simplified constitutional Opening model
 - stronger formal adapter interfaces for boundary enforcement reuse
 
 ## I.3 What future dialogue work should build on
@@ -351,4 +364,3 @@ This boundary contract is successful when contributors can answer, without readi
 - what may cross each boundary
 - what may never cross each boundary
 - who owns each responsibility
-

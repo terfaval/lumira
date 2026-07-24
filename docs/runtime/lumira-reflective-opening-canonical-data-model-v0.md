@@ -32,32 +32,33 @@ Missing required inputs: none.
 
 ### 1.1 What an opening is
 
-A reflective opening is one lifecycle-tracked reflective invitation object, linked to continuity context, with optional user-visible phrasing. It is not just rendered text.
+A reflective opening is one bounded reflective invitation object, linked to continuity context, with optional user-visible phrasing. It is not just rendered text.
 
 Opening identity is established by:
 
-- lifecycle lineage continuity (generated/candidate/surfaced/etc. history)
+- invitation lineage continuity across silence/surfacing/dismissal handling
 - stable source/evidence provenance
 - attachment context (thread, highlight, motif, entry, response) where applicable
 - suppression/cooldown history tied to the same invitation object
 
 ### 1.2 Opening object vs displayed question text
 
-- Opening object: canonical runtime entity with lifecycle, provenance, visibility, suppression, and audit.
+- Opening object: canonical runtime entity with invitation posture, provenance, visibility, suppression, and audit.
 - Displayed question text: one surface phrasing variant of an opening at a time.
 - Multiple phrasing variants may correspond to the same opening identity.
 
 ### 1.3 Generated candidate vs surfaced invitation
 
-- `generated`/`candidate`: internal lifecycle stages; may remain unsurfaced.
-- `surfaced`/`revisited`: user-facing invitation posture.
+- implementation precursors may remain unsurfaced.
+- surfaced invitation is the user-facing constitutional posture.
 - Surfacing is a gated transition, not identity creation.
 
 ### 1.4 Why openings are subordinate to thread continuity
 
 - Thread continuity is the primary reflective structure.
 - Openings are invitation-layer instruments attached to continuity context.
-- Openings cannot force canonical thread identity or thread activation by themselves.
+- Accepted Opening selection can constitute a thread when the runtime resolves that invitation into a continuity center.
+- Openings do not own thread continuity after that handoff.
 
 ### 1.5 What does not create opening identity
 
@@ -76,7 +77,7 @@ Conceptual fields only, not SQL.
 | `opening_id` | canonical opening identity key | session-scoped in alpha |
 | `session_id` | parent reflective session/space | required |
 | `thread_id` (nullable) | linked canonical thread | optional in alpha, preferred when center exists |
-| `lifecycle_state` | canonical opening lifecycle state | uses lifecycle contract vocabulary |
+| `constitutional_posture` | canonical opening constitutional posture | `silence` or `invitation_exists` |
 | `opening_type` | invitation class (`question|continuity_noticing|motif_resonance|scene_return|gentle_recall|reframe`) | exact enum can be refined later |
 | `source_kind` | primary generation source (`work|frame|highlight|motif|response|continuity_signal|mixed`) | bridge-compatible |
 | `source_references[]` | typed source refs (work/frame/entry/etc.) | deterministic provenance |
@@ -90,8 +91,8 @@ Conceptual fields only, not SQL.
 | `visibility_layer` | current visibility posture | see section 4 |
 | `suppression_metadata` | defer/dismiss/suppress fields and reasons | user-governed binding inputs |
 | `cooldown_metadata` | cooldown windows and counters | anti-spam and pacing |
-| `resurfacing_metadata` | revisit eligibility, attempt history, freshness markers | bounded legitimacy gates |
-| `timestamps` | `created_at`, `updated_at`, state timestamps, surfaced/engaged/deferred/dismissed/expired markers | chronology integrity |
+| `implementation_resurfacing_metadata` | revisit eligibility, attempt history, freshness markers | bounded legitimacy gates |
+| `timestamps` | `created_at`, `updated_at`, surfaced/accepted/dismissed markers plus optional implementation timestamps | chronology integrity |
 | `audit_lineage` | transition actor/source, bridge provenance, invariant checks | rollback + auditability |
 
 Field boundary rules:
@@ -102,35 +103,28 @@ Field boundary rules:
 
 ## 3. Lifecycle State Model
 
-Canonical opening lifecycle states:
+Canonical opening constitutional postures:
 
-- `generated`
-- `candidate`
-- `surfaced`
-- `engaged`
-- `deferred`
-- `revisited`
-- `expired`
+- `silence`
+- `invitation_exists`
+
+Terminal constitutional outcomes:
+
+- `accepted`
 - `dismissed`
-- `archived`
 
 State posture summary:
 
-- `generated`: internal draft output.
-- `candidate`: validated internal invitation candidate.
-- `surfaced`: visible optional invitation.
-- `engaged`: user interaction occurred.
-- `deferred`: user “not now”.
-- `revisited`: legitimate reactivation after prior non-foreground state.
-- `expired`: stale context decay.
-- `dismissed`: explicit suppression.
-- `archived`: historical endpoint.
+- `silence`: no legitimate invitation is surfaced.
+- `invitation_exists`: visible optional invitation exists.
+- `accepted`: user selected the invitation and Opening responsibility ended.
+- `dismissed`: explicit suppression/refusal.
 
 ### Alpha simplification posture
 
-- Keep the full canonical state vocabulary in the conceptual model.
-- Allow simplified operational policy first (strict evidence + deterministic cooldown baseline).
-- Keep complete transition lineage even when some intermediate states are short-lived.
+- Keep the constitutional model minimal.
+- Allow richer operational policy internally where needed.
+- Keep complete lineage/audit even when implementation-level intermediate states exist.
 
 ## 4. Surfacing and Visibility Model
 
@@ -145,13 +139,10 @@ Visibility layers:
 
 ### Lifecycle-to-visibility interaction
 
-- `generated` -> typically `internal/runtime-only`
-- `candidate` -> typically `ambient` (internal queue)
-- `surfaced` -> `surfaced` or `active_foreground` (bounded caps)
-- `engaged` -> `surfaced` or contextual `active_foreground`
-- `deferred`/`dismissed` -> `suppressed`
-- `expired` -> `archived/historical` or hidden non-active
-- `archived` -> `archived/historical`
+- implementation precursors -> typically `internal/runtime-only`
+- `invitation_exists` -> `surfaced` or `active_foreground` (bounded caps)
+- `dismissed` -> `suppressed`
+- accepted/historical traces -> `archived/historical` where retained
 
 Rules:
 
@@ -168,23 +159,20 @@ Opening lifecycle mutation owner is the reflective opening runtime domain/servic
 
 ### 5.2 Transitions requiring explicit user action
 
-- `surfaced|engaged -> deferred`
-- `surfaced|engaged|revisited -> dismissed`
+- `invitation_exists -> dismissed`
 - explicit restore/reactivation from dismissed suppression
-- explicit engagement action leading to `engaged`
+- explicit selection/acceptance action leading to `accepted`
 
 ### 5.3 System-gated transitions
 
-- `generated -> candidate` via internal validation gates
-- `candidate -> surfaced` via evidence/salience/pacing/calmness gates
-- `candidate|surfaced|deferred -> expired` via contextual staleness policy
-- `deferred|expired -> revisited` only with cooldown satisfied + fresh contextual legitimacy
-- `expired|dismissed -> archived` by lifecycle cleanup policy
+- internal precursor stages may exist via validation and gating
+- surfaced invitation enters `invitation_exists` via evidence/salience/pacing/calmness gates
+- internal revisit or cleanup behavior may exist after dismissal or staleness handling
 
 ### 5.4 Binding suppression/cooldown rules
 
 - `dismissed` never auto-resurfaces.
-- `deferred` requires cooldown expiration and fresh context.
+- any implementation revisit requires cooldown expiration and fresh context.
 - repeated non-engagement lowers resurfacing priority.
 - repeated resurfacing without new evidence must demote eligibility.
 - no duplicate suppression stores with competing truth.
@@ -195,7 +183,7 @@ Canonical relationships:
 
 - `reflective_threads`:
   - optional `thread_id` link; preferred when center exists.
-  - opening cannot force thread activation or identity mutation.
+  - accepted Opening selection may constitute the thread boundary when a legitimate center is resolved.
 - `dream_entries`:
   - entry-scene/span anchoring via attachment refs/evidence refs.
 - `highlights`:
@@ -270,8 +258,8 @@ Must preserve:
 - generated candidate may remain unsurfaced
 - weak evidence prefers omission
 - dismissed openings never auto-resurface
-- deferred openings require cooldown and fresh context
-- openings cannot force thread activation
+- internal revisit paths require cooldown and fresh context
+- accepted Opening selection can constitute thread reality, but Opening does not own thread continuity afterward
 - latent cognition cannot directly surface as certainty
 - silence is valid
 
