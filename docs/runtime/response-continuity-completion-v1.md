@@ -6,9 +6,9 @@ Phase: Reflection MVP Build Plan v1 - Phase 4
 
 ## Goal
 
-Close the first usable loop:
+Close the first usable reflective loop:
 
-`Opening -> User Response -> Persisted Reflection -> Continuity Cue`
+`Opening -> User Response -> Reflection Candidate / Admitted Reflection -> Continuity Cue`
 
 ## Response Save Path
 
@@ -22,7 +22,13 @@ API path:
   2. creates `reflective_responses` row,
   3. creates response-object association(s) from opening provenance object context,
   4. creates opening activation event (`opening_activation_events`),
-  5. creates opening-response association (`opening_response_associations`).
+  5. creates opening-response association (`opening_response_associations`),
+  6. creates or strengthens a `reflection_candidate`,
+  7. optionally admits a durable `reflection` when explicit admission payload is present.
+
+Reflection authority note:
+- response authorship does not automatically create an admitted Reflection;
+- admitted Reflection is a separate constitutional event that changes the state of reflective work without changing Thread identity.
 
 ## Opening Association Path
 

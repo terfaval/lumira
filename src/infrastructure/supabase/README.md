@@ -39,7 +39,7 @@ Suppression state prevents aggressive resurfacing without introducing symbolic i
 
 ## Thread Boundary Rule
 
-Thread persistence stores continuity trajectories and associations.
+Thread persistence stores durable thread trajectories and associations.
 It does not create narrative progression, completion semantics, or hidden continuity scoring.
 
 ## Response Boundary Rule

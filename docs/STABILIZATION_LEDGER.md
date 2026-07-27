@@ -58,6 +58,65 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-07-27 - CONT-I01D Exactness Seam Runtime Resolution
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/anchor-v1/continuity-neighborhood-reader.ts`
+  - `src/infrastructure/supabase/repositories/anchor-continuity-neighborhood-reader.ts`
+  - `src/infrastructure/supabase/repositories/create-continuity-neighborhood-reader.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/anchor-opportunity-identity-classifier.test.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/anchor-continuity-neighborhood-reader.test.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/create-continuity-neighborhood-reader.test.ts`
+  - `src/reflective-space/__tests__/resolve-opening-thread.test.ts`
+  - `src/shared/__tests__/opportunity-identity-exact-classification-migration.test.ts`
+  - `docs/BUILD_LOG.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/anchor-opportunity-identity-classifier.test.ts src/infrastructure/supabase/repositories/__tests__/anchor-continuity-neighborhood-reader.test.ts src/infrastructure/supabase/repositories/__tests__/create-continuity-neighborhood-reader.test.ts src/reflective-space/__tests__/resolve-opening-thread.test.ts src/reflective-space/__tests__/resolve-opening-continuity-neighborhood-lookup.test.ts` -> pass (`5` files, `50` tests)
+  - `npx.cmd vitest run -c vitest.config.ts --dir app/api/openings/[id]/select/__tests__` -> pass (`1` file, `3` tests)
+  - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/anchor-supabase-repository.test.ts src/shared/__tests__/anchor-foundation-migration.test.ts src/shared/__tests__/opportunity-identity-exact-classification-migration.test.ts` -> pass (`3` files, `8` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with pre-existing warnings only in `src/cognition/latent-v2/opportunity-constructor/provenance.ts` and `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-27T15-32-01-052Z.log`
+  - `supabase --version` -> command not found
+- Notes:
+  - Corrected the exact classifier runtime seam to require a one-row table-return RPC payload and to reject malformed or contradictory classification output instead of silently degrading to `none`.
+  - Reserved `ContinuityNeighborhoodOperationalError` for transport/query failures and introduced `ContinuityNeighborhoodContractError` for malformed RPC payloads and exactness/materialization invariant failures.
+  - Added dedicated structural validation for `20260727_0001_opportunity_identity_exact_classification.sql` plus a factory-level reader test that exercises the production constructor path against the exact RPC seam.
+  - Left unrelated pre-existing working-tree edits outside the CONT-I01 closure slice, including unrelated canon/runtime docs and legacy absolute local-path links in older spec documents.
+
+## 2026-07-27 - CONT-I01C Exact Opportunity Continuity Classification
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/domain/anchor-v1/continuity-neighborhood.ts`
+  - `src/infrastructure/supabase/repositories/anchor-continuity-neighborhood-reader.ts`
+  - `src/infrastructure/supabase/repositories/create-continuity-neighborhood-reader.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/anchor-opportunity-identity-classifier.test.ts`
+  - `src/infrastructure/supabase/repositories/__tests__/anchor-continuity-neighborhood-reader.test.ts`
+  - `src/reflective-space/__tests__/resolve-opening-thread.test.ts`
+  - `docs/v2-build/continuity/Continuity-Neighborhood-Contract-v1.md`
+  - `supabase/migrations/20260727_0001_opportunity_identity_exact_classification.sql`
+  - `docs/BUILD_LOG.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/anchor-opportunity-identity-classifier.test.ts` -> pass (`1` file, `6` tests)
+  - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/anchor-continuity-neighborhood-reader.test.ts` -> pass (`1` file, `17` tests)
+  - `npx.cmd vitest run src/reflective-space/__tests__/resolve-opening-thread.test.ts` -> pass (`1` file, `9` tests)
+  - `npx.cmd vitest run src/reflective-space/__tests__/resolve-opening-continuity-neighborhood-lookup.test.ts` -> pass (`1` file, `4` tests)
+  - `npx.cmd vitest run -c vitest.config.ts --dir app/api/openings/[id]/select/__tests__` -> pass (`1` file, `3` tests)
+  - `npx.cmd vitest run src/infrastructure/supabase/repositories/__tests__/anchor-supabase-repository.test.ts src/shared/__tests__/anchor-foundation-migration.test.ts` -> pass (`2` files, `5` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint -- src/domain/anchor-v1/continuity-neighborhood.ts src/infrastructure/supabase/repositories/anchor-continuity-neighborhood-reader.ts src/infrastructure/supabase/repositories/__tests__/anchor-continuity-neighborhood-reader.test.ts src/infrastructure/supabase/repositories/__tests__/anchor-opportunity-identity-classifier.test.ts src/reflective-space/__tests__/resolve-opening-thread.test.ts` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-27T14-57-30-742Z.log`
+  - `supabase --version` -> command not found
+- Notes:
+  - Replaced ordinary opportunity-side participation scans with a repository-owned exact classification seam that returns `none | unique | ambiguous` before bounded cluster materialization begins.
+  - Added a database-owned exact classification function plus user-scoped opportunity and opportunity-manifestation indexes so transport-layer row caps cannot hide a second Anchor identity cluster.
+  - Narrowed ambiguity evidence to representative anchor identities instead of claiming exhaustive participation evidence.
+  - Removed the unrelated `OPN-CLOSE-01` ledger drift from this build-ticket history.
+
 ## 2026-07-24 - OPN-S01 Opening Constitutional Lifecycle Simplification and Thread Identity Alignment
 
 - Phase: BUILD

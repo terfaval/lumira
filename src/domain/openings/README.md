@@ -1,12 +1,14 @@
 # Openings Domain
 
-## Legacy Backend V1 Quarantine
+## Active Opening Runtime Authority
 
-The current openings backend/domain shape is legacy scaffolding retained for protected surface compatibility.
+The current openings backend/domain shape is the active Opening runtime authority used by the realized Backend V2 Opening institution.
 
-Do not extend the current source-array/provenance model as Backend V2 authority.
+It still contains bounded compatibility-era structures retained for protected surface continuity.
 
-Openings are optional reflective invitations.
+Do not extend the current source-array/provenance model as long-term target architecture without a separate architecture decision.
+
+Openings are optional reflective invitations and a constitutionally realized Backend V2 layer.
 
 This domain preserves:
 - user-gated activation

@@ -1,7 +1,9 @@
 # Openings Cognition
 
-## Legacy Backend V1 Quarantine
+## Active Opening Cognition
 
-This folder contains legacy opening-derivation scaffolding kept only for protected compatibility surfaces.
+This folder contains the active cognition used by the realized Backend V2 Opening institution.
 
-It must not be treated as the canonical starting point for Backend V2 openings work.
+Some files remain bounded compatibility scaffolding for protected surfaces and convergence bridges.
+
+Treat the active Opening V2 constructor and current runtime entrypoints as the live authority, not the older compatibility helpers as target architecture.

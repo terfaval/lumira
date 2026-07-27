@@ -165,6 +165,8 @@ The reflective center is:
 
 # the best current candidate for sustained reflective attention.
 
+It is a constitutional primitive of reflective attention, not a Latent-owned institution.
+
 This attention may be:
 
 - emotional,

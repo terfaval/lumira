@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ContinuityNeighborhoodOperationalError } from "@/src/domain/anchor-v1/continuity-neighborhood-reader";
+
 const resolveRequestUserContext = vi.fn();
 const getOpeningById = vi.fn();
 const activateOpening = vi.fn();
@@ -12,6 +14,7 @@ const getThreadById = vi.fn();
 const createThreadObjectAssociation = vi.fn();
 const createThreadGlossaryAssociation = vi.fn();
 const listAssociationsByThread = vi.fn();
+const readNeighborhood = vi.fn();
 
 vi.mock("@/src/infrastructure/supabase/auth/resolve-request-user-context", () => ({
   DEV_FALLBACK_HEADER: "x-lumira-user-id",
@@ -44,6 +47,12 @@ vi.mock("@/src/infrastructure/supabase/repositories/create-thread-repository", (
   }),
 }));
 
+vi.mock("@/src/infrastructure/supabase/repositories/create-continuity-neighborhood-reader", () => ({
+  createContinuityNeighborhoodReader: () => ({
+    readNeighborhood,
+  }),
+}));
+
 describe("/api/openings/[id]/select route", () => {
   beforeEach(() => {
     resolveRequestUserContext.mockReset();
@@ -59,6 +68,7 @@ describe("/api/openings/[id]/select route", () => {
     createThreadObjectAssociation.mockReset();
     createThreadGlossaryAssociation.mockReset();
     listAssociationsByThread.mockReset();
+    readNeighborhood.mockReset();
   });
 
   it("activates a new opening, creates a durable thread center, and returns the thread route", async () => {
@@ -161,6 +171,43 @@ describe("/api/openings/[id]/select route", () => {
     await expect(response.json()).resolves.toMatchObject({
       thread: { id: "thread-existing" },
       href: "/objects/obj-1/reflect/thread-existing?centerStatus=reentered&resolution=reentered",
+    });
+  });
+
+  it("falls back to thread-owned evidence when continuity reading fails during opening selection", async () => {
+    resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
+    getOpeningById.mockResolvedValue({
+      id: "opening-1",
+      state: "available",
+      suppressionState: "none",
+      suppressionRevisitEligibility: "revisitable_dormant",
+      utterance: "Return to the same threshold.",
+      provenance: {
+        sourceObjects: ["obj-1"],
+        sourceGlossaryTerms: [],
+        sourceThreads: ["thread-existing"],
+        sourceOpportunityManifestationId: "opp-man-1",
+      },
+    });
+    activateOpening.mockResolvedValue({ id: "opening-1", state: "activated" });
+    createOpeningActivationEvent.mockResolvedValue({ id: "event-1" });
+    readNeighborhood.mockRejectedValue(new ContinuityNeighborhoodOperationalError("continuity unavailable"));
+    getThreadById.mockResolvedValue({ id: "thread-existing" });
+    listAssociationsByThread.mockResolvedValue([{ reflectiveObjectId: "obj-1" }]);
+
+    const { POST } = await import("@/app/api/openings/[id]/select/route");
+    const response = await POST(
+      new Request("http://localhost/api/openings/opening-1/select", {
+        method: "POST",
+      }),
+      { params: Promise.resolve({ id: "opening-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(createThread).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toMatchObject({
+      thread: { id: "thread-existing" },
+      href: "/objects/obj-1/reflect/thread-existing?centerStatus=new&resolution=created",
     });
   });
 });

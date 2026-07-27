@@ -268,7 +268,7 @@ Question:
 
 > What reflective path is unfolding?
 
-Threads are reflective continuity structures.
+Threads are reflective process structures that can participate in continuity across time.
 
 A thread begins when an Opening, dream element, motif, highlight, memory, or user question gains reflective gravity.
 
@@ -393,7 +393,7 @@ Future dreams may influence:
 
 * latent reasoning
 * glossary relevance
-* thread continuity
+* thread persistence and re-entry coherence
 * salience weighting
 
 The architecture is recursive rather than sequential.
@@ -470,7 +470,7 @@ Openings:
 
 Threads:
 
-* deeper reflective continuity
+* deeper reflective continuity through durable reflective work
 
 Glossary:
 

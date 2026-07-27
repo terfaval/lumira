@@ -87,6 +87,8 @@ A reflective center is:
 
 # the current gravitational focus of reflection
 
+It is a constitutional primitive operationalized through runtime selection rather than an independent institution.
+
 It should feel like:
 
 # stay with this
@@ -432,6 +434,7 @@ Review must verify:
 - silence/no-center remains viable
 - local-before-global discipline is enforceable
 - latent remains orchestration, not interpretation
+- no institution is implicitly treated as the constitutional owner of the Reflective Center
 
 ---
 

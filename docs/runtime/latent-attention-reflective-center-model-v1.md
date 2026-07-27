@@ -86,6 +86,8 @@ A reflective center is:
 
 # the current gravitational focus of reflection.
 
+It is a constitutional primitive operationalized by multiple institutions, including Latent, Thread, and Deep Reflection.
+
 It may be:
 
 - a dream scene,

@@ -57,7 +57,7 @@ Audit context:
 
 ## Reflective Thread Definition
 
-A reflective thread is a continuity trajectory of sustained attention around a living reflective center.
+A reflective thread is a reflective process trajectory of sustained attention around a living reflective center.
 
 A thread:
 - organizes reflective movement across time,
@@ -76,9 +76,9 @@ A reflective thread is not:
 
 | Object | What it is | How it differs from thread |
 |---|---|---|
-| Direction | attentional entry lens | direction chooses initial angle; thread holds continuity over time |
+| Direction | attentional entry lens | direction chooses initial angle; thread preserves the active reflective line over time |
 | Opening | optional invitation unit | opening may activate or deepen a thread but is not the thread itself |
-| Dialogue | bounded read-model trace | dialogue is an interaction record; thread is continuity identity |
+| Dialogue | bounded read-model trace | dialogue is an interaction record; thread is durable reflective identity |
 | Response | user-authored artifact | response contributes evidence/meaning to thread but does not define thread alone |
 | Reflective Object | domain container/context anchor | object is storage/context substrate; thread is cross-material reflective trajectory |
 
@@ -103,7 +103,7 @@ Direction answers: "Where can I begin looking?"
 
 ### Thread = unfolding inquiry
 
-Thread is the continuity line that unfolds after entry.
+Thread is the reflective line that unfolds after entry.
 
 Thread answers: "What reflective line am I now staying with?"
 
@@ -117,14 +117,14 @@ Directions are not modes because modes imply:
 Lumira requires reflective relevance over lens purity:
 - material can shift from emotional to relational to continuity without losing thread identity,
 - interpretation remains prohibited,
-- continuity remains primary.
+- continuity remains primary at the ecological level rather than inside a single institution.
 
-### Why thread continuity outranks direction purity
+### Why thread coherence outranks direction purity
 
 Direction purity fragments reflection into separate tracks.  
-Thread continuity preserves lived reflective coherence.
+Thread coherence preserves lived reflective movement.
 
-If continuity is preserved, changing dominant lens is healthy reflective movement, not drift.
+If coherence is preserved, changing dominant lens is healthy reflective movement, not drift.
 
 ### Example
 
@@ -323,10 +323,10 @@ Reflection should handle:
 - question/opening engagement
 - contextual material retrieval
 - thread deepening and revisitation
-- response authorship inside continuity context
+- response authorship inside thread context
 
 Reflection purpose:
-- sustain one continuity line with bounded nearby context,
+- sustain one reflective line with bounded nearby context,
 - not switch into route/workflow progression.
 
 Boundary rule:
@@ -341,7 +341,7 @@ If Lumira were used tomorrow, the user should be understood as entering a reflec
 
 Why:
 - opening selection is the constitutive entry boundary now reflected by Backend V2,
-- thread is the continuity-bearing unit of reflective experience,
+- thread is the durable reflective unit of experience that can participate in wider continuity infrastructure,
 - and the first authored response belongs to the already-real thread rather than creating it.
 
 This preserves Lumira's core principle: continuity over mode purity, orientation over interpretation, and user-owned meaning over system authority.

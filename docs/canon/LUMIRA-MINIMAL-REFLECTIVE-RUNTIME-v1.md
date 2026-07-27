@@ -63,7 +63,7 @@ But the primary ontology is:
 
 # Reflective Space
 
-Reflective Space is the living continuity environment within which:
+Reflective Space is the living reflective environment within which continuity can emerge:
 - dreams,
 - threads,
 - motifs,
@@ -216,7 +216,7 @@ Latent cognition must remain:
 
 ## 4.4 Reflective Threads
 
-Reflective threads are continuity trajectories.
+Reflective threads are revisitable reflective trajectories.
 
 Threads are not:
 
@@ -225,7 +225,7 @@ Threads are not:
 * progression tracks,
 * or mandatory journeys.
 
-Threads are living continuity structures.
+Threads are living reflective structures that can participate in continuity through the wider ecology.
 
 A thread may:
 
