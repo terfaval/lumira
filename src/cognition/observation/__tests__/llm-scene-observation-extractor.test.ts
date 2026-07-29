@@ -961,9 +961,12 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
       structured: buildUndercoveredStructuredScene(),
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       mode: "fallback",
       reason: "coverage_guard_failed",
+      diagnostics: {
+        fallbackReason: "coverage_guard_failed",
+      },
     });
   });
 
@@ -975,9 +978,12 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
       structured: buildTransitionHeavyMacroScene(),
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       mode: "fallback",
       reason: "overmerge_guard_failed",
+      diagnostics: {
+        fallbackReason: "overmerge_guard_failed",
+      },
     });
   });
 
@@ -1017,9 +1023,12 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
       structured: buildEndingCompressedStructuredDream(longDream),
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       mode: "fallback",
       reason: "late_section_guard_failed",
+      diagnostics: {
+        fallbackReason: "late_section_guard_failed",
+      },
     });
   });
 
@@ -1126,9 +1135,12 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
       dreamText: buildLongDreamText(),
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       mode: "fallback",
       reason: "coverage_guard_failed_after_retry",
+      diagnostics: {
+        fallbackReason: "coverage_guard_failed_after_retry",
+      },
     });
     expect(responsesCreateMock).toHaveBeenCalledTimes(2);
   });
@@ -1148,9 +1160,12 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
       dreamText: buildLongDreamText(),
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       mode: "fallback",
       reason: "overmerge_guard_failed_after_retry",
+      diagnostics: {
+        fallbackReason: "overmerge_guard_failed_after_retry",
+      },
     });
     expect(responsesCreateMock).toHaveBeenCalledTimes(2);
   });
@@ -1172,9 +1187,12 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
       dreamText: longDream,
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       mode: "fallback",
       reason: "late_section_guard_failed_after_retry",
+      diagnostics: {
+        fallbackReason: "late_section_guard_failed_after_retry",
+      },
     });
     expect(responsesCreateMock).toHaveBeenCalledTimes(2);
   });

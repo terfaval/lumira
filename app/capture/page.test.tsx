@@ -13,6 +13,7 @@ const buildLlmSceneObservationExtractionMock = vi.fn();
 const constructDerivedStructuresFromObservationBundleMock = vi.fn();
 const generateDreamTitleSuggestionMock = vi.fn();
 const randomUuidMock = vi.fn();
+const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
 vi.mock("next/navigation", () => ({
   redirect: redirectMock,
@@ -122,6 +123,7 @@ describe("CapturePage", () => {
     constructDerivedStructuresFromObservationBundleMock.mockReset();
     generateDreamTitleSuggestionMock.mockReset();
     randomUuidMock.mockReset();
+    consoleWarnSpy.mockClear();
 
     requireAuthenticatedUserIdMock.mockResolvedValue("user-1");
     createReflectiveObjectMock.mockResolvedValue({ id: "obj-123" });
@@ -143,7 +145,13 @@ describe("CapturePage", () => {
       mode: "generated",
       title: "The Lantern House",
     });
-    createObservationFromBundleMock.mockResolvedValue({ id: "obs-1" });
+    createObservationFromBundleMock.mockResolvedValue({
+      bundleId: "bundle-1",
+      reflectiveObjectId: "obj-123",
+      userId: "user-1",
+      source: "system_llm_extract",
+      scenes: [],
+    });
     generateGlossaryCandidatesForReflectiveObjectMock.mockResolvedValue([]);
     vi.stubGlobal("crypto", { randomUUID: randomUuidMock });
     randomUuidMock.mockReturnValue("obj-123");
@@ -268,6 +276,132 @@ describe("CapturePage", () => {
     );
     expect(generateGlossaryCandidatesForReflectiveObjectMock.mock.invocationCallOrder[0]).toBeLessThan(
       redirectMock.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("logs a structured persistence diagnostic after the native V2 bundle is rehydrated", async () => {
+    constructDerivedStructuresFromObservationBundleMock.mockResolvedValue({
+      reflectiveObjectId: "obj-123",
+      userId: "user-1",
+      source: "system_llm_extract",
+      scenes: [
+        {
+          sceneId: "scene-1",
+          position: 0,
+          summary: "An ending shoreline scene.",
+          boundaryReasoning: [],
+          evidenceContext: {
+            snippet: "At the end they reach the shoreline",
+            spanStart: 4200,
+            spanEnd: 4260,
+            contextLabel: "scene",
+          },
+          observations: [
+            {
+              observationId: "obs-1",
+              position: 0,
+              text: "At the end they reach the shoreline.",
+              evidence: [
+                {
+                  snippet: "At the end they reach the shoreline",
+                  spanStart: 4200,
+                  spanEnd: 4260,
+                  contextLabel: "quoted_support",
+                },
+              ],
+              uncertaintyNote: null,
+            },
+          ],
+          derived: {
+            actors: [],
+            locations: [],
+            objects: [],
+            interactions: [],
+            affect: [],
+            agency: [],
+            phenomenology: [],
+            metacognition: [],
+          },
+        },
+      ],
+    });
+    createObservationFromBundleMock.mockResolvedValue({
+      bundleId: "bundle-1",
+      reflectiveObjectId: "obj-123",
+      userId: "user-1",
+      source: "system_llm_extract",
+      scenes: [
+        {
+          sceneId: "scene-1",
+          position: 0,
+          summary: "An ending shoreline scene.",
+          boundaryReasoning: [],
+          evidenceContext: {
+            snippet: "At the end they reach the shoreline",
+            spanStart: 4200,
+            spanEnd: 4260,
+            contextLabel: "scene",
+          },
+          observations: [
+            {
+              observationId: "obs-1",
+              position: 0,
+              text: "At the end they reach the shoreline.",
+              evidence: [
+                {
+                  snippet: "At the end they reach the shoreline",
+                  spanStart: 4200,
+                  spanEnd: 4260,
+                  contextLabel: "quoted_support",
+                },
+              ],
+              uncertaintyNote: null,
+            },
+          ],
+          derived: {
+            actors: [],
+            locations: [],
+            objects: [],
+            interactions: [],
+            affect: [],
+            agency: [],
+            phenomenology: [],
+            metacognition: [],
+          },
+        },
+      ],
+    });
+    buildLlmSceneObservationExtractionMock.mockResolvedValue({
+      mode: "validated_llm",
+      bundle: {
+        reflectiveObjectId: "obj-123",
+        userId: "user-1",
+        source: "system_llm_extract",
+        scenes: [],
+      },
+      diagnostics: {
+        acceptedAttempt: 2,
+      },
+    });
+
+    const pageModule = await import("./page");
+    const page = await pageModule.default();
+    const submitCapture = findFormAction(page);
+
+    const formData = new FormData();
+    formData.set("dreamText", "At the end they reach the shoreline and a helper appears.");
+
+    await submitCapture?.(formData);
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      "observation_v2_capture_diagnostic",
+      expect.objectContaining({
+        reflectiveObjectId: "obj-123",
+        attempt: 2,
+        stage: "persistence",
+        persistedSceneCount: 1,
+        persistedObservationCount: 1,
+      }),
     );
   });
 

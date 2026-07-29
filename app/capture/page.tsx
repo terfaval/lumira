@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { constructDerivedStructuresFromObservationBundle } from "@/src/cognition/observation/llm-derived-structure-constructor";
+import { countBundleObservations } from "@/src/cognition/observation/llm-scene-observation-diagnostics";
 import { buildLlmSceneObservationExtraction } from "@/src/cognition/observation/llm-scene-observation-extractor";
 import { generateDreamTitleSuggestion } from "@/src/cognition/title/llm-dream-title-generator";
 import { createObservationV2WriteStore } from "@/src/infrastructure/persistence/observation-v2-write-store";
@@ -75,7 +76,14 @@ async function submitCapture(formData: FormData) {
 
   const enrichedBundle = await constructDerivedStructuresFromObservationBundle(extraction.bundle);
   const observationWriteStore = createObservationV2WriteStore();
-  await observationWriteStore.createFromBundle(enrichedBundle);
+  const persistedBundle = await observationWriteStore.createFromBundle(enrichedBundle);
+  console.warn("observation_v2_capture_diagnostic", {
+    reflectiveObjectId,
+    attempt: extraction.diagnostics?.acceptedAttempt ?? 1,
+    stage: "persistence",
+    persistedSceneCount: persistedBundle.scenes.length,
+    persistedObservationCount: countBundleObservations(persistedBundle),
+  });
   await generateGlossaryCandidatesForReflectiveObject({
     userId,
     reflectiveObjectId: reflectiveObject.id,

@@ -4561,3 +4561,29 @@ Verification references:
   - Narrowed rollback cleanup to pending generation-run deletion only.
   - Added trigger-based delete guards so accepted latent authority cannot be deleted through runtime seams, service-role table access, or destructive cascades from guarded parents.
   - Preserved the admitted pending rollback boundary without widening any accepted-authority mutation path.
+
+## 2026-07-29 - RO-010-INV Long-Dream Extraction Completeness Investigation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/capture/page.tsx`
+  - `app/capture/page.test.tsx`
+  - `docs/BUILD_LOG.md`
+  - `src/cognition/observation/llm-scene-observation-diagnostics.ts`
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-diagnostics.test.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts`
+  - `src/cognition/observation/__tests__/scene-discovery-projection.test.ts`
+  - `docs/v2-build/observation/RO-010-Long-Dream-Extraction-Investigation.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation/__tests__/llm-scene-observation-diagnostics.test.ts src/cognition/observation/__tests__/scene-discovery-projection.test.ts app/capture/page.test.tsx src/infrastructure/persistence/__tests__/observation-v2-write-store.test.ts src/infrastructure/supabase/repositories/__tests__/observation-v2-supabase-repository.test.ts src/infrastructure/supabase/adapters/__tests__/observation-v2-row.test.ts` -> pass (`7` files, `47` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in latent V2 files
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-29T11-35-21-192Z.log`
+  - `npm.cmd test` -> pass (full Vitest suite, exit `0`)
+- Notes:
+  - Added attempt-scoped structured diagnostics for provider response, parsed structured output, normalized bundle, guard evaluation, projection, and capture-route persistence counts without logging full dream content.
+  - Distinguished raw structured counts from normalized counts and surfaced default-insertion metrics so normalization cannot masquerade as retained extraction completeness.
+  - Preserved fail-closed guard semantics and one-retry behavior while making retry stochastic variation observable.
+  - Repository evidence now rejects projection and native V2 persistence as the primary late-section loss point for the characterized long-dream failures.
