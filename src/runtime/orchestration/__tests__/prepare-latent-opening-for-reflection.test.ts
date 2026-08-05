@@ -812,6 +812,101 @@ describe("prepareLatentOpeningForReflection", () => {
     expect(repositories.openingRepository.createOpening).toHaveBeenCalledTimes(1);
   });
 
+  it("uses freshly persisted manifestations when the immediate current-run reload is still empty", async () => {
+    const repositories = baseRepositories();
+    repositories.reflectiveObjectRepository = {
+      getById: vi.fn(async () => ({
+        id: "obj-1",
+        userId: "user-1",
+        objectType: "dream",
+        title: "title",
+        primaryContent: "content",
+        sourceContext: "manual",
+        state: "active",
+        metadata: {},
+        createdAt: "2026-06-01T00:00:00.000Z",
+        updatedAt: "2026-06-01T00:00:00.000Z",
+      })),
+    } as unknown as ReflectiveObjectRepository;
+    repositories.observationV2Repository = {
+      getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
+    } as unknown as ObservationV2Repository;
+    repositories.latentOpportunityRepository = {
+      determineAcceptedOpportunityStaleness: vi.fn(async () => ({
+        outcome: "current",
+        grounds: [],
+      })),
+      resolveReusableAcceptedGenerationRun: vi.fn(async () => ({
+        reusable: false,
+        generationRun: null,
+        invalidation: null,
+      })),
+      getCurrentGenerationRunForReflectiveObject: vi.fn(async () => makeGenerationRun("run-fresh-1", "obj-1")),
+      listGenerationRunsForReflectiveObject: vi.fn(async () => []),
+      listManifestationsByGenerationRun: vi.fn(async () => []),
+      listManifestationsByPriorityReflectiveObject: vi.fn(async () => []),
+    } as unknown as LatentOpportunityRepository;
+
+    generateLatentOpportunitiesForReflectiveObject.mockResolvedValue({
+      mode: "persisted",
+      packet: {} as never,
+      rawOutput: "{}",
+      parsedOutput: {} as never,
+      validatedOutput: {} as never,
+      mappedPayload: { creates: [] } as never,
+      persistedIdentities: [],
+      persistedManifestations: [makeManifestation("man-fresh-3", "obj-1")],
+    });
+    generateOpeningV2CreateInputFromManifestation.mockResolvedValue({
+      mode: "generated",
+      packet: {},
+      rawOutput: "{}",
+      opening: {
+        userId: "user-1",
+        openingType: "reflective_question",
+        tone: "gentle",
+        utterance: "A fresh opening remains available here.",
+        visibility: "invitation_surface",
+        provenance: {
+          sourceObjects: ["obj-1"],
+          sourceObservations: ["bundle-1:scene-1:obs-1"],
+          sourceGlossaryTerms: ["term-1"],
+          sourceThreads: [],
+          sourceResponses: [],
+          latentSnapshotReference: null,
+          confidenceBand: "moderate",
+          openingGenerationContext: "opening_v2_constructor_mvp",
+          sourceOpportunityManifestationId: "man-fresh-3",
+        },
+      },
+    });
+
+    await prepareLatentOpeningForReflection({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      repositories,
+    });
+
+    expect(repositories.latentOpportunityRepository.getCurrentGenerationRunForReflectiveObject).toHaveBeenCalledWith(
+      "obj-1",
+      "user-1",
+    );
+    expect(repositories.latentOpportunityRepository.listManifestationsByGenerationRun).toHaveBeenCalledWith(
+      "run-fresh-1",
+      "user-1",
+    );
+    expect(repositories.openingRepository.createOpening).toHaveBeenCalledTimes(1);
+    expect(repositories.openingRepository.createOpening).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provenance: expect.objectContaining({
+          sourceOpportunityManifestationId: "man-fresh-3",
+        }),
+      }),
+    );
+    expect(repositories.observationRepository.listByReflectiveObject).not.toHaveBeenCalled();
+    expect(repositories.latentRepository.createSnapshot).not.toHaveBeenCalled();
+  });
+
   it("reuses existing latent and opening artifacts without duplicate creation", async () => {
     const repositories = baseRepositories();
     repositories.reflectiveObjectRepository = {

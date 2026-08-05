@@ -24,6 +24,8 @@ import {
   buildLlmSceneObservationExtraction,
   buildSceneObservationExtractionFromStructuredResult,
 } from "@/src/cognition/observation/llm-scene-observation-extractor";
+import type { CompletenessAnalysisShadowResult } from "@/src/cognition/observation-v3/completeness-analysis";
+import type { SourceAnalysisShadowResult } from "@/src/cognition/observation-v3/source-analysis";
 
 function buildLongDreamText(): string {
   return [
@@ -954,11 +956,15 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
     );
   });
   it("fails closed for obvious long-dream undercoverage in structured extraction", async () => {
+    const attemptEvidence: unknown[] = [];
     const result = await buildSceneObservationExtractionFromStructuredResult({
       userId: "user-1",
       reflectiveObjectId: "object-1",
       dreamText: buildLongDreamText(),
       structured: buildUndercoveredStructuredScene(),
+      onAttemptEvidence: (evidence) => {
+        attemptEvidence.push(evidence);
+      },
     });
 
     expect(result).toMatchObject({
@@ -968,6 +974,21 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
         fallbackReason: "coverage_guard_failed",
       },
     });
+    expect(attemptEvidence).toEqual([
+      expect.objectContaining({
+        attempt: 1,
+        status: "candidate_rejected",
+        acceptedAttempt: false,
+        causedFinalFallback: true,
+        candidateBundle: expect.objectContaining({
+          scenes: expect.any(Array),
+        }),
+        diagnostics: expect.objectContaining({
+          guardVerdict: "coverage_guard_failed",
+          fallbackReason: "coverage_guard_failed",
+        }),
+      }),
+    ]);
   });
 
   it("fails closed for obvious long-dream macro-scene over-merge in structured extraction", async () => {
@@ -1079,6 +1100,7 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
 
   it("retries once through the same extractor path when the first response is undercovered", async () => {
     const longDream = buildLongDreamText();
+    const attemptEvidence: unknown[] = [];
     responsesCreateMock
       .mockResolvedValueOnce({
         output_text: JSON.stringify(buildUndercoveredStructuredScene()),
@@ -1091,11 +1113,26 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
       userId: "user-1",
       reflectiveObjectId: "object-1",
       dreamText: longDream,
+      onAttemptEvidence: (evidence) => {
+        attemptEvidence.push(evidence);
+      },
     });
 
     expect(result.mode).toBe("validated_llm");
     expect(result.bundle?.scenes).toHaveLength(2);
     expect(responsesCreateMock).toHaveBeenCalledTimes(2);
+    expect(attemptEvidence).toEqual([
+      expect.objectContaining({
+        attempt: 1,
+        status: "candidate_rejected",
+        acceptedAttempt: false,
+      }),
+      expect.objectContaining({
+        attempt: 2,
+        status: "candidate_accepted",
+        acceptedAttempt: true,
+      }),
+    ]);
   });
 
   it("retries once through the same extractor path when the first response is obviously over-merged", async () => {
@@ -1121,6 +1158,7 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
   });
 
   it("fails closed after a retry when repeated responses remain severely undercovered", async () => {
+    const attemptEvidence: unknown[] = [];
     responsesCreateMock
       .mockResolvedValueOnce({
         output_text: JSON.stringify(buildUndercoveredStructuredScene()),
@@ -1133,6 +1171,9 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
       userId: "user-1",
       reflectiveObjectId: "object-1",
       dreamText: buildLongDreamText(),
+      onAttemptEvidence: (evidence) => {
+        attemptEvidence.push(evidence);
+      },
     });
 
     expect(result).toMatchObject({
@@ -1143,6 +1184,190 @@ describe("buildSceneObservationExtractionFromStructuredResult", () => {
       },
     });
     expect(responsesCreateMock).toHaveBeenCalledTimes(2);
+    expect(attemptEvidence).toEqual([
+      expect.objectContaining({
+        attempt: 1,
+        status: "candidate_rejected",
+        acceptedAttempt: false,
+        causedFinalFallback: false,
+      }),
+      expect.objectContaining({
+        attempt: 2,
+        status: "candidate_rejected",
+        acceptedAttempt: false,
+        causedFinalFallback: true,
+      }),
+    ]);
+  });
+
+  it("does not let attempt evidence collection failures change extraction behavior", async () => {
+    const longDream = buildLongDreamText();
+    responsesCreateMock
+      .mockResolvedValueOnce({
+        output_text: JSON.stringify(buildUndercoveredStructuredScene()),
+      })
+      .mockResolvedValueOnce({
+        output_text: JSON.stringify(buildMeaningfullyRetainedEndingStructuredDream(longDream)),
+      });
+
+    const result = await buildLlmSceneObservationExtraction({
+      userId: "user-1",
+      reflectiveObjectId: "object-1",
+      dreamText: longDream,
+      onAttemptEvidence: () => {
+        throw new Error("collector exploded");
+      },
+    });
+
+    expect(result.mode).toBe("validated_llm");
+    expect(result.bundle?.scenes).toHaveLength(2);
+    expect(responsesCreateMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("emits a source profile through the shadow hook without changing extraction output", async () => {
+    const sourceAnalysisEvents: SourceAnalysisShadowResult[] = [];
+    responsesCreateMock.mockResolvedValueOnce({
+      output_text: JSON.stringify({
+        dreamLanguage: "en",
+        scenes: [
+          {
+            sceneId: "scene-1",
+            position: 0,
+            summary: "A guide leads the dreamer up a staircase.",
+            boundaryReasoning: [],
+            evidenceContext: {
+              snippet: "A guide leads the dreamer up a staircase.",
+              spanStart: 0,
+              spanEnd: 40,
+              contextLabel: "scene",
+            },
+            observations: [
+              {
+                observationId: "obs-1",
+                position: 0,
+                text: "A guide leads the dreamer up a staircase.",
+                evidence: [
+                  {
+                    snippet: "A guide leads the dreamer up a staircase.",
+                    spanStart: 0,
+                    spanEnd: 40,
+                    contextLabel: "quoted_support",
+                  },
+                ],
+                uncertaintyNote: null,
+              },
+            ],
+            derived: {
+              actors: [],
+              locations: [],
+              objects: [],
+              interactions: [],
+              affect: [],
+              agency: [],
+              phenomenology: [],
+              metacognition: [],
+            },
+          },
+        ],
+      }),
+    });
+
+    const result = await buildLlmSceneObservationExtraction({
+      userId: "user-1",
+      reflectiveObjectId: "object-1",
+      dreamText: "A guide leads the dreamer up a staircase.",
+      onSourceAnalysis: async (event) => {
+        sourceAnalysisEvents.push(event);
+      },
+    });
+
+    expect(result.mode).toBe("validated_llm");
+    expect(result.bundle?.scenes).toHaveLength(1);
+    expect(sourceAnalysisEvents).toEqual([
+      expect.objectContaining({
+        status: "available",
+        profile: expect.objectContaining({
+          sourceMetrics: expect.objectContaining({
+            characterCount: "A guide leads the dreamer up a staircase.".length,
+          }),
+        }),
+      }),
+    ]);
+    expect(responsesCreateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("emits a completeness report through the shadow hook without changing extraction output", async () => {
+    const completenessEvents: CompletenessAnalysisShadowResult[] = [];
+    responsesCreateMock.mockResolvedValueOnce({
+      output_text: JSON.stringify({
+        dreamLanguage: "en",
+        scenes: [
+          {
+            sceneId: "scene-1",
+            position: 0,
+            summary: "A guide leads the dreamer up a staircase.",
+            boundaryReasoning: [],
+            evidenceContext: {
+              snippet: "A guide leads the dreamer up a staircase.",
+              spanStart: 0,
+              spanEnd: 40,
+              contextLabel: "scene",
+            },
+            observations: [
+              {
+                observationId: "obs-1",
+                position: 0,
+                text: "A guide leads the dreamer up a staircase.",
+                evidence: [
+                  {
+                    snippet: "A guide leads the dreamer up a staircase.",
+                    spanStart: 0,
+                    spanEnd: 40,
+                    contextLabel: "quoted_support",
+                  },
+                ],
+                uncertaintyNote: null,
+              },
+            ],
+            derived: {
+              actors: [],
+              locations: [],
+              objects: [],
+              interactions: [],
+              affect: [],
+              agency: [],
+              phenomenology: [],
+              metacognition: [],
+            },
+          },
+        ],
+      }),
+    });
+
+    const result = await buildLlmSceneObservationExtraction({
+      userId: "user-1",
+      reflectiveObjectId: "object-1",
+      dreamText: "A guide leads the dreamer up a staircase.",
+      onCompletenessAnalysis: async (event) => {
+        completenessEvents.push(event);
+      },
+    });
+
+    expect(result.mode).toBe("validated_llm");
+    expect(result.bundle?.scenes).toHaveLength(1);
+    expect(completenessEvents).toEqual([
+      expect.objectContaining({
+        status: "available",
+        attemptNumber: 1,
+        report: expect.objectContaining({
+          adequacy: "adequate",
+        }),
+        equivalence: expect.objectContaining({
+          classification: expect.any(String),
+        }),
+      }),
+    ]);
+    expect(responsesCreateMock).toHaveBeenCalledTimes(1);
   });
 
   it("fails closed after a retry when repeated responses remain obviously over-merged", async () => {

@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "benchmark:observation:manifest": "node --experimental-strip-types scripts/generate-observation-benchmark-manifest.mjs",
+    "benchmark:observation:run": "npx tsx scripts/run-observation-benchmark.ts",
+    "benchmark:observation:experiment": "npx tsx scripts/run-observation-topology-experiment.ts",
+    "benchmark:observation:blind-review-set": "npx tsx scripts/generate-observation-topology-blind-review-set.ts",
+    "benchmark:observation:expanded-baseline": "npx tsx scripts/run-observation-expanded-targeted-recovery-baseline.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

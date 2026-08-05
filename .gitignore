@@ -23,6 +23,7 @@
 /docs
 /.codex
 /.agents
+/.validation/
 
 # misc
 .DS_Store

@@ -1,145 +1,31 @@
-import OpenAI from "openai";
-
-import { inferDreamLanguage } from "@/src/cognition/language/infer-dream-language";
 import {
-  buildAttemptDiagnostics,
-  buildNormalizedBundleMetrics,
-  buildRawStructuredMetrics,
-  createNormalizationStats,
   emitSceneObservationAttemptDiagnostics,
-  normalizeSceneWithStats,
-  readResponseUsageMetrics,
   type SceneObservationAttemptDiagnostics,
   type SceneObservationExtractionDiagnostics,
 } from "@/src/cognition/observation/llm-scene-observation-diagnostics";
-import { createSceneDiscoveryBundle } from "@/src/cognition/observation/scene-discovery";
-import { projectObservationV2BundleToCreateObservationInput } from "@/src/cognition/observation/scene-discovery-projection";
-import type { CreateObservationInput } from "@/src/domain/observation/types";
 import type {
-  ObservationLanguage,
-  ObservationV2Bundle,
-  ObservationV2Scene,
-} from "@/src/domain/observation/v2-runtime";
-import { readRuntimeEnvironment } from "@/src/infrastructure/environment/env";
-
-const OPENAI_REQUEST_TIMEOUT_MS = 180_000;
-const OBSERVATION_SCENE_EXTRACTION_MODEL = "gpt-4.1-mini";
-
-const SCENE_EXTRACTION_JSON_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: ["dreamLanguage", "scenes"],
-  properties: {
-    dreamLanguage: { type: "string", enum: ["hu", "en", "unknown"] },
-    scenes: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["sceneId", "position", "summary", "boundaryReasoning", "evidenceContext", "observations", "derived"],
-        properties: {
-          sceneId: { type: "string" },
-          position: { type: "integer", minimum: 0 },
-          summary: { type: "string" },
-          boundaryReasoning: {
-            type: "array",
-            items: {
-              type: "object",
-              additionalProperties: false,
-              required: ["kind", "note"],
-              properties: {
-                kind: {
-                  type: "string",
-                  enum: [
-                    "spatial_change",
-                    "temporal_change",
-                    "actor_change",
-                    "goal_change",
-                    "narrative_change",
-                    "perspective_change",
-                    "world_rule_change",
-                  ],
-                },
-                note: { type: "string" },
-              },
-            },
-          },
-          evidenceContext: {
-            type: "object",
-            additionalProperties: false,
-            required: ["snippet", "spanStart", "spanEnd", "contextLabel"],
-            properties: {
-              snippet: { type: "string" },
-              spanStart: { type: ["integer", "null"] },
-              spanEnd: { type: ["integer", "null"] },
-              contextLabel: { type: ["string", "null"] },
-            },
-          },
-          observations: {
-            type: "array",
-            items: {
-              type: "object",
-              additionalProperties: false,
-              required: ["observationId", "position", "text", "evidence", "uncertaintyNote"],
-              properties: {
-                observationId: { type: "string" },
-                position: { type: "integer", minimum: 0 },
-                text: { type: "string" },
-                evidence: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    additionalProperties: false,
-                    required: ["snippet", "spanStart", "spanEnd", "contextLabel"],
-                    properties: {
-                      snippet: { type: "string" },
-                      spanStart: { type: ["integer", "null"] },
-                      spanEnd: { type: ["integer", "null"] },
-                      contextLabel: { type: ["string", "null"] },
-                    },
-                  },
-                },
-                uncertaintyNote: { type: ["string", "null"] },
-              },
-            },
-          },
-          derived: {
-            type: "object",
-            additionalProperties: false,
-            required: ["actors", "locations", "objects", "interactions", "affect", "agency", "phenomenology", "metacognition"],
-            properties: {
-              actors: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              locations: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              objects: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              interactions: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              affect: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              agency: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              phenomenology: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              metacognition: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-            },
-          },
-        },
-      },
-    },
-  },
-  $defs: {
-    derivedItem: {
-      type: "object",
-      additionalProperties: false,
-      required: ["identityKey", "displayLabel", "sourceLanguage", "label", "observationIds"],
-      properties: {
-        identityKey: { type: "string" },
-        displayLabel: { type: "string" },
-        sourceLanguage: { type: "string", enum: ["hu", "en", "unknown"] },
-        label: { type: "string" },
-        observationIds: {
-          type: "array",
-          items: { type: "string" },
-        },
-      },
-    },
-  },
-} as const;
+  ObservationExtractionAttemptEvidence,
+  ObservationExtractionAttemptEvidenceSink,
+} from "@/src/cognition/observation/observation-extraction-attempt-evidence";
+import {
+  runShadowCompletenessAnalysis,
+  type CompletenessAnalysisShadowResult,
+} from "@/src/cognition/observation-v3/completeness-analysis";
+import {
+  buildDescriptiveExtractionCandidateFromStructuredResult,
+  executeDescriptiveExtractionAttempt,
+} from "@/src/cognition/observation-v3/descriptive-extraction";
+import {
+  buildDescriptiveExtractionAttemptIdentity,
+  type DescriptiveExtractionProviderEvidence,
+} from "@/src/cognition/observation-v3/provider-evidence";
+import {
+  runShadowSourceAnalysis,
+  type SourceAnalysisShadowResult,
+  type SourceProfile,
+} from "@/src/cognition/observation-v3/source-analysis";
+import type { CreateObservationInput } from "@/src/domain/observation/types";
+import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
 
 export interface LlmSceneObservationExtractionResult {
   mode: "validated_llm" | "fallback";
@@ -149,49 +35,33 @@ export interface LlmSceneObservationExtractionResult {
   diagnostics?: SceneObservationExtractionDiagnostics;
 }
 
-function buildPrompt(dreamText: string): string {
-  const inferredDreamLanguage = inferDreamLanguage(dreamText);
+async function recordAttemptEvidenceSafely(input: {
+  evidenceSink?: ObservationExtractionAttemptEvidenceSink;
+  onAttemptEvidence?: (evidence: ObservationExtractionAttemptEvidence) => void | Promise<void>;
+  evidence: ObservationExtractionAttemptEvidence;
+}): Promise<void> {
+  try {
+    await input.evidenceSink?.recordAttempt(input.evidence);
+    await input.onAttemptEvidence?.(input.evidence);
+  } catch (error) {
+    console.warn("llm_scene_observation_attempt_evidence_capture_failed", {
+      attempt: input.evidence.attempt,
+      status: input.evidence.status,
+      errorMessage: error instanceof Error ? error.message : "unknown_error",
+    });
+  }
+}
 
-  return [
-    "Extract scene-first dream observations only.",
-    "Do not interpret, diagnose, explain, symbolize, or infer hidden meaning.",
-    "Return JSON matching the provided schema.",
-    "Set dreamLanguage to hu, en, or unknown.",
-    `Use this inferred dream-language hint unless the dream text clearly contradicts it: ${inferredDreamLanguage}.`,
-    "Organize the dream into Scenes first, then Observations inside each Scene, then Derived Structures.",
-    "Preserve meaningful material from the beginning, middle, and end of the dream when it is present.",
-    "Do not let the ending collapse into a thin or summary-only trace when the later dream contains meaningful transitions, encounters, emotional shifts, dream-state changes, or unresolved ending states.",
-    "Do not force equal detail across beginning, middle, and end. Preserve what is meaningfully present without padding sparse sections.",
-    "Scene = coherent situation.",
-    "Do not rely only on location change when deciding scene boundaries.",
-    "Situational shifts, relational shifts, goal-state shifts, and dream-logic shifts may require a new scene even when the location remains similar.",
-    "Examples of meaningful scene-boundary signals include: a new activity, a new social situation, a new objective, a new problem, a relational reversal, or a change in world rules.",
-    "Treat ordinary reality to impossible event, known place to transformed place, searching to escaping, exclusion to inclusion, and guidance to threat as strong possible scene-boundary signals when clearly present.",
-    "Do not create a new scene for every small action. Preserve meaningful scenes, not micro-scenes.",
-    "Observation = the smallest evidence-linked descriptive unit that preserves one coherent appearance, relation, change, or lived experience.",
-    "Observation boundaries are based on distinct observable units, not sentence boundaries.",
-    "Multiple Observations may exist inside one Scene.",
-    "Derived structures remain secondary and are generated from Observations.",
-    "Derived categories: actors, locations, objects, interactions, affect, agency, phenomenology, metacognition.",
-    "Actors = who appears. Locations = where the scene takes place. Objects = notable things present in the scene.",
-    "Interactions = observable exchanges or relational behaviors between actors such as helping, guiding, following, avoiding, arguing, comforting, pursuing, or cooperating.",
-    "Affect = emotional states directly present in the dream material or strongly implied by directly described dream action, such as anxiety, embarrassment, relief, frustration, excitement, sadness, or curiosity.",
-    "Agency = observable control, action, inability, resistance, compliance, influence, being guided, being prevented, or being unable.",
-    "Phenomenology = experiential dream qualities and reality-behavior anomalies such as impossible space, transformed environments, altered scale, altered identity, discontinuity, impossible causality, strange reflections, unusual realism, sensory emphasis, or distorted time.",
-    "Metacognition = explicit dreamer awareness states such as noticing something strange, realizing something changed, recognizing the dream state, awareness of uncertainty, awareness of remembering, awareness of not knowing, self-observation, or lucid awareness.",
-    "Extract these categories only when supported by explicit dream evidence or strongly implied by directly described dream action.",
-    "Capture anomalies and awareness only as described in the dream. Do not interpret them as symbolism, psychology, hidden meaning, or diagnosis.",
-    "Do not infer metacognition from unusual events alone, and do not force phenomenology or metacognition when the evidence is weak or absent.",
-    "Leave a derived category empty when that category is genuinely absent or unsupported.",
-    "Do not generate meanings, hypotheses, reflective questions, opportunities, tensions, or latent reasoning.",
-    "Every derived item must include a stable identityKey, a language-appropriate displayLabel, and sourceLanguage.",
-    "identityKey must stay stable across languages as a short normalized concept key.",
-    "displayLabel should be in the dream's language when that language is clear.",
-    "Each observation must stay close to the dream material and include evidence quotes.",
-    "Each scene should preserve boundary reasoning only when a situational shift is evident.",
-    "Dream text:",
-    dreamText,
-  ].join("\n");
+function countBundleObservations(bundle: ObservationV2Bundle): number {
+  return bundle.scenes.reduce((count, scene) => count + scene.observations.length, 0);
+}
+
+function countBundleEvidenceSpans(bundle: ObservationV2Bundle): number {
+  return bundle.scenes.reduce((sceneCount, scene) => {
+    return sceneCount + scene.observations.reduce((observationCount, observation) => {
+      return observationCount + observation.evidence.length;
+    }, 0);
+  }, 0);
 }
 
 function buildFallback(reason: string): LlmSceneObservationExtractionResult {
@@ -242,7 +112,7 @@ function readProviderErrorDiagnostics(error: unknown): {
     errorMessage: error.message,
     errorStatus: typeof errorWithMetadata.status === "number" ? errorWithMetadata.status : undefined,
     errorCode: typeof errorWithMetadata.code === "string" ? errorWithMetadata.code : undefined,
-    timeoutMs: isProviderTimeoutError(error) ? OPENAI_REQUEST_TIMEOUT_MS : undefined,
+    timeoutMs: isProviderTimeoutError(error) ? 180_000 : undefined,
   };
 }
 
@@ -259,62 +129,136 @@ function buildExtractionDiagnostics(input: {
   };
 }
 
-function buildMissingScenesDiagnostics(input: {
+async function finalizeCandidateAttempt(input: {
   attempt: 1 | 2;
+  reflectiveObjectId: string;
   dreamText: string;
-  model?: string;
-  providerDiagnostics?: Pick<
-    SceneObservationAttemptDiagnostics,
-    | "elapsedMs"
-    | "providerStatus"
-    | "providerIncompleteReason"
-    | "inputTokenUsage"
-    | "outputTokenUsage"
-    | "totalTokenUsage"
-    | "providerReturnedStructuredOutput"
-  >;
-}): SceneObservationExtractionDiagnostics {
+  bundle: ObservationV2Bundle;
+  payload: CreateObservationInput;
+  attemptDiagnostics: SceneObservationAttemptDiagnostics;
+  evidenceSink?: ObservationExtractionAttemptEvidenceSink;
+  onAttemptEvidence?: (evidence: ObservationExtractionAttemptEvidence) => void | Promise<void>;
+  onCompletenessAnalysis?: (result: CompletenessAnalysisShadowResult) => void | Promise<void>;
+}): Promise<LlmSceneObservationExtractionResult> {
+  const attemptStartedAt = new Date();
+  const shadowCompleteness = await runShadowCompletenessAnalysis({
+    dreamText: input.dreamText,
+    bundle: input.bundle,
+    attemptNumber: input.attempt,
+    v2AttemptDiagnostics: {
+      guardVerdict: input.attemptDiagnostics.guardVerdict,
+      fallbackReason: input.attemptDiagnostics.fallbackReason,
+      coverageRatio: input.attemptDiagnostics.coverageRatio,
+      uncoveredTailChars: input.attemptDiagnostics.uncoveredTailChars,
+      lateSectionObservationCount: input.attemptDiagnostics.lateSectionObservationCount,
+      overmergeMatchedCueGroups: input.attemptDiagnostics.overmergeMatchedCueGroups,
+      overmergeTotalCueMatches: input.attemptDiagnostics.overmergeTotalCueMatches,
+    },
+    onResult: input.onCompletenessAnalysis,
+  });
+
+  if (shadowCompleteness.status === "unavailable") {
+    console.warn("observation_v3_completeness_shadow_failed", {
+      reflectiveObjectId: input.reflectiveObjectId,
+      attempt: input.attempt,
+      failureCode: shadowCompleteness.failure.code,
+      errorMessage: shadowCompleteness.failure.message,
+    });
+  } else {
+    console.warn("observation_v3_completeness_shadow_diagnostic", {
+      reflectiveObjectId: input.reflectiveObjectId,
+      attempt: input.attempt,
+      adequacy: shadowCompleteness.report.adequacy,
+      physicalGapCount: shadowCompleteness.report.gaps.canonicalGapCount,
+      recoveryRecommendation: shadowCompleteness.report.recoveryRecommendation.disposition,
+      equivalenceClassification: shadowCompleteness.equivalence.classification,
+      discrepancyCount: shadowCompleteness.report.metricDiscrepancies.length,
+      elapsedMs: shadowCompleteness.elapsedMs,
+    });
+  }
+
+  const baseAttemptEvidence = {
+    attempt: input.attempt,
+    startedAt: attemptStartedAt.toISOString(),
+    completedAt: new Date().toISOString(),
+    elapsedMs: input.attemptDiagnostics.elapsedMs,
+    providerStatus: input.attemptDiagnostics.providerStatus,
+    providerIncompleteReason: input.attemptDiagnostics.providerIncompleteReason,
+    providerReturnedStructuredOutput: input.attemptDiagnostics.providerReturnedStructuredOutput,
+    parseStatus: "parsed" as const,
+    schemaValidationStatus: "passed" as const,
+    candidateBundle: input.bundle,
+    diagnostics: input.attemptDiagnostics,
+    sceneCount: input.bundle.scenes.length,
+    observationCount: countBundleObservations(input.bundle),
+    evidenceSpanCount: countBundleEvidenceSpans(input.bundle),
+    guardVerdict: input.attemptDiagnostics.guardVerdict,
+    inputTokenUsage: input.attemptDiagnostics.inputTokenUsage,
+    outputTokenUsage: input.attemptDiagnostics.outputTokenUsage,
+    totalTokenUsage: input.attemptDiagnostics.totalTokenUsage,
+    rawProviderResponsePreserved: false as const,
+    errorMessage: null,
+  };
+
+  if (input.attemptDiagnostics.guardVerdict !== "pass") {
+    await recordAttemptEvidenceSafely({
+      evidenceSink: input.evidenceSink,
+      onAttemptEvidence: input.onAttemptEvidence,
+      evidence: {
+        ...baseAttemptEvidence,
+        status: "candidate_rejected",
+        rejectionReasons: [input.attemptDiagnostics.guardVerdict],
+        retryReason: input.attemptDiagnostics.guardVerdict,
+        acceptedAttempt: false,
+        causedFinalFallback: true,
+        causedRetry: false,
+      },
+    });
+    return {
+      mode: "fallback",
+      reason: input.attemptDiagnostics.guardVerdict,
+      diagnostics: {
+        attempts: [input.attemptDiagnostics],
+        fallbackReason: input.attemptDiagnostics.guardVerdict,
+      },
+    };
+  }
+
+  await recordAttemptEvidenceSafely({
+    evidenceSink: input.evidenceSink,
+    onAttemptEvidence: input.onAttemptEvidence,
+    evidence: {
+      ...baseAttemptEvidence,
+      status: "candidate_accepted",
+      rejectionReasons: [],
+      retryReason: null,
+      acceptedAttempt: true,
+      causedFinalFallback: false,
+      causedRetry: false,
+    },
+  });
+
   return {
-    attempts: [
-      buildAttemptDiagnostics({
-        attempt: input.attempt,
-        model: input.model ?? OBSERVATION_SCENE_EXTRACTION_MODEL,
-        elapsedMs: input.providerDiagnostics?.elapsedMs ?? 0,
-        providerStatus: input.providerDiagnostics?.providerStatus ?? null,
-        providerIncompleteReason: input.providerDiagnostics?.providerIncompleteReason ?? null,
-        inputTokenUsage: input.providerDiagnostics?.inputTokenUsage ?? null,
-        outputTokenUsage: input.providerDiagnostics?.outputTokenUsage ?? null,
-        totalTokenUsage: input.providerDiagnostics?.totalTokenUsage ?? null,
-        providerReturnedStructuredOutput: input.providerDiagnostics?.providerReturnedStructuredOutput ?? true,
-        rawMetrics: {
-          rawSceneCount: 0,
-          rawObservationCount: 0,
-          rawEvidenceSpanCount: 0,
-          rawLargestCoveredSpanEnd: null,
-          rawLateSectionObservationCount: 0,
-        },
-        normalizedMetrics: {
-          dreamTextLength: input.dreamText.length,
-          normalizedSceneCount: 0,
-          normalizedObservationCount: 0,
-          normalizedEvidenceSpanCount: 0,
-          defaultedFieldCount: 0,
-          largestCoveredSpanEnd: null,
-          coverageRatio: null,
-          uncoveredTailChars: null,
-          lateSectionStart: 0,
-          lateSectionSentenceUnits: 0,
-          lateSectionObservationCount: 0,
-          overmergeMatchedCueGroups: 0,
-          overmergeTotalCueMatches: 0,
-          projectedFragmentCount: 0,
-          projectedSummaryTraceCount: 0,
-          guardVerdict: "pass",
-          fallbackReason: "missing_scenes",
-        },
-      }),
-    ],
-    fallbackReason: "missing_scenes",
+    mode: "validated_llm",
+    bundle: input.bundle,
+    payload: input.payload,
+    diagnostics: {
+      attempts: [input.attemptDiagnostics],
+      acceptedAttempt: input.attempt,
+    },
+  };
+}
+
+function buildAttemptFallback(input: {
+  reason: "missing_scenes" | "empty_response";
+  attemptDiagnostics: SceneObservationAttemptDiagnostics;
+}): LlmSceneObservationExtractionResult {
+  return {
+    ...buildFallback(input.reason),
+    diagnostics: {
+      attempts: [input.attemptDiagnostics],
+      fallbackReason: input.reason,
+    },
   };
 }
 
@@ -325,6 +269,10 @@ export async function buildSceneObservationExtractionFromStructuredResult(input:
   structured: unknown;
   attempt?: 1 | 2;
   model?: string;
+  evidenceSink?: ObservationExtractionAttemptEvidenceSink;
+  onAttemptEvidence?: (evidence: ObservationExtractionAttemptEvidence) => void | Promise<void>;
+  onCompletenessAnalysis?: (result: CompletenessAnalysisShadowResult) => void | Promise<void>;
+  sourceProfile?: SourceProfile;
   providerDiagnostics?: Pick<
     SceneObservationAttemptDiagnostics,
     | "elapsedMs"
@@ -336,91 +284,70 @@ export async function buildSceneObservationExtractionFromStructuredResult(input:
     | "providerReturnedStructuredOutput"
   >;
 }): Promise<LlmSceneObservationExtractionResult> {
-  const attempt = input.attempt ?? 1;
-  const structured = input.structured as {
-    dreamLanguage?: ObservationLanguage;
-    scenes?: Array<Partial<ObservationV2Scene>>;
-  };
-  const rawMetrics = buildRawStructuredMetrics({
+  void input.sourceProfile;
+
+  const candidateResult = await buildDescriptiveExtractionCandidateFromStructuredResult({
+    userId: input.userId,
+    reflectiveObjectId: input.reflectiveObjectId,
     dreamText: input.dreamText,
     structured: input.structured,
+    attempt: input.attempt,
+    model: input.model,
+    providerDiagnostics: input.providerDiagnostics,
   });
 
-  if (!Array.isArray(structured.scenes) || structured.scenes.length === 0) {
-    return {
-      mode: "fallback",
+  if (candidateResult.status === "missing_scenes") {
+    return buildAttemptFallback({
       reason: "missing_scenes",
-      diagnostics: buildMissingScenesDiagnostics({
-        attempt,
-        dreamText: input.dreamText,
-        model: input.model,
-        providerDiagnostics: input.providerDiagnostics,
-      }),
-    };
+      attemptDiagnostics: candidateResult.diagnostics,
+    });
   }
 
-  const normalizationStats = createNormalizationStats();
-  const bundle = createSceneDiscoveryBundle({
+  return finalizeCandidateAttempt({
+    attempt: input.attempt ?? 1,
     reflectiveObjectId: input.reflectiveObjectId,
-    userId: input.userId,
-    source: "system_llm_extract",
-    provenance: {
-      provenanceTier: "system_extract",
-      semanticPolicyResult: "accept_with_uncertainty",
-      semanticPolicyReasons: ["scene_first_projection"],
-      latentBackflowGuard: "observation_only",
-      boundaryVersion: "observation_v2_phase1",
-      dreamLanguage: structured.dreamLanguage ?? inferDreamLanguage(input.dreamText),
-    },
-    scenes: structured.scenes.map((scene, index) => normalizeSceneWithStats(scene, index, normalizationStats)),
+    dreamText: input.dreamText,
+    bundle: candidateResult.bundle!,
+    payload: candidateResult.payload!,
+    attemptDiagnostics: candidateResult.diagnostics,
+    evidenceSink: input.evidenceSink,
+    onAttemptEvidence: input.onAttemptEvidence,
+    onCompletenessAnalysis: input.onCompletenessAnalysis,
   });
+}
 
-  const payload = projectObservationV2BundleToCreateObservationInput(bundle, {
-    provenanceTier: "system_extract",
-    semanticPolicyResult: "accept_with_uncertainty",
-    semanticPolicyReasons: ["scene_first_projection"],
-    latentBackflowGuard: "observation_only",
-    boundaryVersion: "observation_v2_phase1",
-  });
-
-  const attemptDiagnostics = buildAttemptDiagnostics({
-    attempt,
-    model: input.model ?? OBSERVATION_SCENE_EXTRACTION_MODEL,
-    elapsedMs: input.providerDiagnostics?.elapsedMs ?? 0,
-    providerStatus: input.providerDiagnostics?.providerStatus ?? null,
-    providerIncompleteReason: input.providerDiagnostics?.providerIncompleteReason ?? null,
-    inputTokenUsage: input.providerDiagnostics?.inputTokenUsage ?? null,
-    outputTokenUsage: input.providerDiagnostics?.outputTokenUsage ?? null,
-    totalTokenUsage: input.providerDiagnostics?.totalTokenUsage ?? null,
-    providerReturnedStructuredOutput: input.providerDiagnostics?.providerReturnedStructuredOutput ?? true,
-    rawMetrics,
-    normalizedMetrics: buildNormalizedBundleMetrics({
-      dreamText: input.dreamText,
-      bundle,
-      normalizationStats,
-      payload,
-    }),
-  });
-
-  if (attemptDiagnostics.guardVerdict !== "pass") {
-    return {
-      mode: "fallback",
-      reason: attemptDiagnostics.guardVerdict,
-      diagnostics: {
-        attempts: [attemptDiagnostics],
-        fallbackReason: attemptDiagnostics.guardVerdict,
-      },
-    };
-  }
-
+function buildProviderIncompleteAttemptEvidence(input: {
+  attempt: 1 | 2;
+  attemptStartedAt: Date;
+  diagnostics: SceneObservationAttemptDiagnostics;
+}): ObservationExtractionAttemptEvidence {
   return {
-    mode: "validated_llm",
-    bundle,
-    payload,
-    diagnostics: {
-      attempts: [attemptDiagnostics],
-      acceptedAttempt: attempt,
-    },
+    attempt: input.attempt,
+    status: "provider_incomplete",
+    startedAt: input.attemptStartedAt.toISOString(),
+    completedAt: new Date().toISOString(),
+    elapsedMs: input.diagnostics.elapsedMs,
+    providerStatus: input.diagnostics.providerStatus,
+    providerIncompleteReason: input.diagnostics.providerIncompleteReason,
+    providerReturnedStructuredOutput: input.diagnostics.providerReturnedStructuredOutput,
+    parseStatus: "not_attempted",
+    schemaValidationStatus: "not_applicable",
+    candidateBundle: null,
+    diagnostics: input.diagnostics,
+    sceneCount: null,
+    observationCount: null,
+    evidenceSpanCount: null,
+    guardVerdict: null,
+    rejectionReasons: ["empty_response"],
+    retryReason: "empty_response",
+    inputTokenUsage: input.diagnostics.inputTokenUsage,
+    outputTokenUsage: input.diagnostics.outputTokenUsage,
+    totalTokenUsage: input.diagnostics.totalTokenUsage,
+    acceptedAttempt: false,
+    causedFinalFallback: true,
+    causedRetry: false,
+    rawProviderResponsePreserved: false,
+    errorMessage: null,
   };
 }
 
@@ -428,93 +355,171 @@ export async function buildLlmSceneObservationExtraction(input: {
   userId: string;
   reflectiveObjectId: string;
   dreamText: string;
+  sourceIdentity?: string;
+  extractionRequestId?: string;
+  evidenceSink?: ObservationExtractionAttemptEvidenceSink;
+  onAttemptEvidence?: (evidence: ObservationExtractionAttemptEvidence) => void | Promise<void>;
+  onDescriptiveProviderEvidence?: (evidence: DescriptiveExtractionProviderEvidence) => void | Promise<void>;
+  onSourceAnalysis?: (result: SourceAnalysisShadowResult) => void | Promise<void>;
+  onCompletenessAnalysis?: (result: CompletenessAnalysisShadowResult) => void | Promise<void>;
 }): Promise<LlmSceneObservationExtractionResult> {
-  const env = readRuntimeEnvironment();
-  if (!env.openAiApiKey) {
-    return buildFallback("missing_openai_api_key");
+  const shadowSourceAnalysis = await runShadowSourceAnalysis({
+    dreamText: input.dreamText,
+    onResult: input.onSourceAnalysis,
+  });
+
+  if (shadowSourceAnalysis.status === "unavailable") {
+    console.warn("observation_v3_source_analysis_shadow_failed", {
+      reflectiveObjectId: input.reflectiveObjectId,
+      failureCode: shadowSourceAnalysis.failure.code,
+      errorMessage: shadowSourceAnalysis.failure.message,
+    });
   }
 
-  const client = new OpenAI({ apiKey: env.openAiApiKey });
   const startedAtMs = Date.now();
+  const capturedAttemptEvidence = new Map<1 | 2, ObservationExtractionAttemptEvidence>();
 
   const requestStructuredExtraction = async (attempt: 1 | 2): Promise<LlmSceneObservationExtractionResult> => {
-    const response = await client.responses.create({
-      model: OBSERVATION_SCENE_EXTRACTION_MODEL,
-      input: buildPrompt(input.dreamText),
-      text: {
-        format: {
-          type: "json_schema",
-          name: "lumira_scene_observation_extraction",
-          schema: SCENE_EXTRACTION_JSON_SCHEMA,
-          strict: true,
-        },
-      },
-    }, {
-      signal: AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS),
-      timeout: OPENAI_REQUEST_TIMEOUT_MS,
-    });
+    const attemptStartedAt = new Date();
+    const sourceIdentity = input.sourceIdentity ?? input.reflectiveObjectId;
+    const extractionRequestId = input.extractionRequestId ?? `${sourceIdentity}:descriptive-extraction`;
 
-    const providerDiagnostics = {
-      elapsedMs: Date.now() - startedAtMs,
-      providerStatus: response.status ?? null,
-      providerIncompleteReason: response.incomplete_details?.reason ?? null,
-      providerReturnedStructuredOutput: Boolean(response.output_text),
-      ...readResponseUsageMetrics(response),
-    };
+    try {
+      const extractionAttempt = await executeDescriptiveExtractionAttempt({
+        userId: input.userId,
+        reflectiveObjectId: input.reflectiveObjectId,
+        dreamText: input.dreamText,
+        attempt,
+        startedAtMs,
+        sourceIdentity,
+        extractionRequestId,
+        retryParentAttemptIdentity: attempt === 2
+          ? buildDescriptiveExtractionAttemptIdentity({
+            sourceIdentity,
+            extractionRequestId,
+            attemptNumber: 1,
+          }).identity
+          : null,
+        onProviderEvidence: input.onDescriptiveProviderEvidence,
+      });
 
-    if (!response.output_text) {
-      return {
-        ...buildFallback("empty_response"),
-        diagnostics: {
-          attempts: [
-            buildAttemptDiagnostics({
-              attempt,
-              model: OBSERVATION_SCENE_EXTRACTION_MODEL,
-              ...providerDiagnostics,
-              rawMetrics: {
-                rawSceneCount: 0,
-                rawObservationCount: 0,
-                rawEvidenceSpanCount: 0,
-                rawLargestCoveredSpanEnd: null,
-                rawLateSectionObservationCount: 0,
-              },
-              normalizedMetrics: {
-                dreamTextLength: input.dreamText.length,
-                normalizedSceneCount: 0,
-                normalizedObservationCount: 0,
-                normalizedEvidenceSpanCount: 0,
-                defaultedFieldCount: 0,
-                largestCoveredSpanEnd: null,
-                coverageRatio: null,
-                uncoveredTailChars: null,
-                lateSectionStart: 0,
-                lateSectionSentenceUnits: 0,
-                lateSectionObservationCount: 0,
-                overmergeMatchedCueGroups: 0,
-                overmergeTotalCueMatches: 0,
-                projectedFragmentCount: 0,
-                projectedSummaryTraceCount: 0,
-                guardVerdict: "pass",
-                fallbackReason: "empty_response",
-              },
-            }),
-          ],
-          fallbackReason: "empty_response",
+      if (extractionAttempt.status === "missing_openai_api_key") {
+        return buildFallback("missing_openai_api_key");
+      }
+
+      if (extractionAttempt.status === "empty_response") {
+        const diagnostics = extractionAttempt.diagnostics;
+        if (!diagnostics) {
+          return buildFallback("empty_response");
+        }
+
+        capturedAttemptEvidence.set(
+          attempt,
+          buildProviderIncompleteAttemptEvidence({
+            attempt,
+            attemptStartedAt,
+            diagnostics,
+          }),
+        );
+
+        return buildAttemptFallback({
+          reason: "empty_response",
+          attemptDiagnostics: diagnostics,
+        });
+      }
+
+      if (extractionAttempt.status === "missing_scenes") {
+        return buildAttemptFallback({
+          reason: "missing_scenes",
+          attemptDiagnostics: extractionAttempt.diagnostics!,
+        });
+      }
+
+      return finalizeCandidateAttempt({
+        attempt,
+        reflectiveObjectId: input.reflectiveObjectId,
+        dreamText: input.dreamText,
+        bundle: extractionAttempt.bundle!,
+        payload: extractionAttempt.payload!,
+        attemptDiagnostics: extractionAttempt.diagnostics!,
+        onCompletenessAnalysis: input.onCompletenessAnalysis,
+        evidenceSink: {
+          async recordAttempt(evidence) {
+            capturedAttemptEvidence.set(attempt, evidence);
+          },
         },
-      };
+      });
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        capturedAttemptEvidence.set(attempt, {
+          attempt,
+          status: "parse_failed",
+          startedAt: attemptStartedAt.toISOString(),
+          completedAt: new Date().toISOString(),
+          elapsedMs: Date.now() - attemptStartedAt.getTime(),
+          providerStatus: null,
+          providerIncompleteReason: null,
+          providerReturnedStructuredOutput: true,
+          parseStatus: "failed",
+          schemaValidationStatus: "not_applicable",
+          candidateBundle: null,
+          diagnostics: null,
+          sceneCount: null,
+          observationCount: null,
+          evidenceSpanCount: null,
+          guardVerdict: null,
+          rejectionReasons: ["invalid_json"],
+          retryReason: "invalid_json",
+          inputTokenUsage: null,
+          outputTokenUsage: null,
+          totalTokenUsage: null,
+          acceptedAttempt: false,
+          causedFinalFallback: true,
+          causedRetry: false,
+          rawProviderResponsePreserved: false,
+          errorMessage: error.message,
+        });
+
+        throw error;
+      }
+
+      capturedAttemptEvidence.set(attempt, {
+        attempt,
+        status: isProviderTimeoutError(error) ? "provider_failed" : "unexpected_error",
+        startedAt: attemptStartedAt.toISOString(),
+        completedAt: new Date().toISOString(),
+        elapsedMs: Date.now() - attemptStartedAt.getTime(),
+        providerStatus: null,
+        providerIncompleteReason: null,
+        providerReturnedStructuredOutput: null,
+        parseStatus: "not_attempted",
+        schemaValidationStatus: "not_applicable",
+        candidateBundle: null,
+        diagnostics: null,
+        sceneCount: null,
+        observationCount: null,
+        evidenceSpanCount: null,
+        guardVerdict: null,
+        rejectionReasons: [isProviderTimeoutError(error) ? "provider_timeout" : "provider_error"],
+        retryReason: isProviderTimeoutError(error) ? "provider_timeout" : "provider_error",
+        inputTokenUsage: null,
+        outputTokenUsage: null,
+        totalTokenUsage: null,
+        acceptedAttempt: false,
+        causedFinalFallback: true,
+        causedRetry: false,
+        rawProviderResponsePreserved: false,
+        errorMessage: error instanceof Error ? error.message : "unknown_error",
+      });
+
+      throw error;
     }
-
-    return buildSceneObservationExtractionFromStructuredResult({
-      ...input,
-      attempt,
-      model: OBSERVATION_SCENE_EXTRACTION_MODEL,
-      providerDiagnostics,
-      structured: JSON.parse(response.output_text) as unknown,
-    });
   };
 
   try {
     const firstAttempt = await requestStructuredExtraction(1);
+    const firstAttemptEvidence = capturedAttemptEvidence.get(1);
+
     if (firstAttempt.diagnostics?.attempts[0]) {
       emitSceneObservationAttemptDiagnostics({
         reflectiveObjectId: input.reflectiveObjectId,
@@ -530,7 +535,14 @@ export async function buildLlmSceneObservationExtraction(input: {
         firstAttempt.reason === "late_section_guard_failed"
       )
     ) {
+      if (firstAttemptEvidence) {
+        firstAttemptEvidence.causedRetry = true;
+        firstAttemptEvidence.causedFinalFallback = false;
+      }
+
       const retryAttempt = await requestStructuredExtraction(2);
+      const retryAttemptEvidence = capturedAttemptEvidence.get(2);
+
       if (retryAttempt.diagnostics?.attempts[0]) {
         emitSceneObservationAttemptDiagnostics({
           reflectiveObjectId: input.reflectiveObjectId,
@@ -543,7 +555,30 @@ export async function buildLlmSceneObservationExtraction(input: {
         ...(retryAttempt.diagnostics?.attempts ?? []),
       ];
 
+      const emitRetryAttemptEvidence = async (): Promise<void> => {
+        if (firstAttemptEvidence) {
+          await recordAttemptEvidenceSafely({
+            evidenceSink: input.evidenceSink,
+            onAttemptEvidence: input.onAttemptEvidence,
+            evidence: firstAttemptEvidence,
+          });
+        }
+
+        if (retryAttemptEvidence) {
+          await recordAttemptEvidenceSafely({
+            evidenceSink: input.evidenceSink,
+            onAttemptEvidence: input.onAttemptEvidence,
+            evidence: retryAttemptEvidence,
+          });
+        }
+      };
+
       if (retryAttempt.mode === "fallback" && retryAttempt.reason === "coverage_guard_failed") {
+        if (retryAttemptEvidence) {
+          retryAttemptEvidence.causedFinalFallback = true;
+          retryAttemptEvidence.acceptedAttempt = false;
+        }
+        await emitRetryAttemptEvidence();
         return {
           ...buildFallback("coverage_guard_failed_after_retry"),
           diagnostics: {
@@ -554,6 +589,11 @@ export async function buildLlmSceneObservationExtraction(input: {
       }
 
       if (retryAttempt.mode === "fallback" && retryAttempt.reason === "overmerge_guard_failed") {
+        if (retryAttemptEvidence) {
+          retryAttemptEvidence.causedFinalFallback = true;
+          retryAttemptEvidence.acceptedAttempt = false;
+        }
+        await emitRetryAttemptEvidence();
         return {
           ...buildFallback("overmerge_guard_failed_after_retry"),
           diagnostics: {
@@ -564,6 +604,11 @@ export async function buildLlmSceneObservationExtraction(input: {
       }
 
       if (retryAttempt.mode === "fallback" && retryAttempt.reason === "late_section_guard_failed") {
+        if (retryAttemptEvidence) {
+          retryAttemptEvidence.causedFinalFallback = true;
+          retryAttemptEvidence.acceptedAttempt = false;
+        }
+        await emitRetryAttemptEvidence();
         return {
           ...buildFallback("late_section_guard_failed_after_retry"),
           diagnostics: {
@@ -572,6 +617,13 @@ export async function buildLlmSceneObservationExtraction(input: {
           },
         };
       }
+
+      if (retryAttemptEvidence) {
+        retryAttemptEvidence.acceptedAttempt = true;
+        retryAttemptEvidence.causedFinalFallback = false;
+      }
+
+      await emitRetryAttemptEvidence();
 
       return {
         ...retryAttempt,
@@ -582,8 +634,25 @@ export async function buildLlmSceneObservationExtraction(input: {
       };
     }
 
+    if (firstAttemptEvidence) {
+      await recordAttemptEvidenceSafely({
+        evidenceSink: input.evidenceSink,
+        onAttemptEvidence: input.onAttemptEvidence,
+        evidence: firstAttemptEvidence,
+      });
+    }
+
     return firstAttempt;
   } catch (error) {
+    const lastAttempt = capturedAttemptEvidence.get(2) ?? capturedAttemptEvidence.get(1);
+    if (lastAttempt) {
+      await recordAttemptEvidenceSafely({
+        evidenceSink: input.evidenceSink,
+        onAttemptEvidence: input.onAttemptEvidence,
+        evidence: lastAttempt,
+      });
+    }
+
     if (error instanceof SyntaxError) {
       return buildFallback("invalid_json");
     }

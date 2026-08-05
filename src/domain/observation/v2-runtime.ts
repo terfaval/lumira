@@ -210,6 +210,30 @@ function normalizeUncertaintyNotes(notes: string[] | undefined): string[] {
   return notes.map((note) => note.trim()).filter(Boolean);
 }
 
+function deriveBundleUncertaintyNotes(input: ObservationV2Bundle): string[] {
+  const explicitNotes = normalizeUncertaintyNotes(input.uncertaintyNotes);
+  if (explicitNotes.length > 0) {
+    return explicitNotes;
+  }
+
+  const aggregated = new Set<string>();
+
+  for (const scene of input.scenes) {
+    for (const note of normalizeUncertaintyNotes(scene.uncertaintyNotes)) {
+      aggregated.add(note);
+    }
+
+    for (const observation of scene.observations) {
+      const note = observation.uncertaintyNote?.trim();
+      if (note) {
+        aggregated.add(note);
+      }
+    }
+  }
+
+  return [...aggregated];
+}
+
 function compareScenes(left: ObservationV2Scene, right: ObservationV2Scene): number {
   if (left.position !== right.position) {
     return left.position - right.position;
@@ -247,7 +271,7 @@ export function buildObservationV2Bundle(input: ObservationV2Bundle): Observatio
         uncertaintyNotes: normalizeUncertaintyNotes(scene.uncertaintyNotes),
         derived: normalizeDerivedStructures(scene.derived),
       })),
-    uncertaintyNotes: normalizeUncertaintyNotes(input.uncertaintyNotes),
+    uncertaintyNotes: deriveBundleUncertaintyNotes(input),
     runtimeVersion,
   };
 }

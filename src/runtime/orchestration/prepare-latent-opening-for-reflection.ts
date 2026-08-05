@@ -294,8 +294,11 @@ async function tryPrepareOpeningsFromLatentV2(
       input.reflectiveObjectId,
       input.userId,
     );
-    manifestations = currentRun
+    const currentManifestations = currentRun
       ? await repositories.latentOpportunityRepository.listManifestationsByGenerationRun(currentRun.id, input.userId)
+      : [];
+    manifestations = currentManifestations.length > 0
+      ? currentManifestations
       : generation.persistedManifestations;
   }
 

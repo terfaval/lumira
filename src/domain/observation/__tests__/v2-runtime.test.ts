@@ -214,6 +214,60 @@ describe("buildObservationV2Bundle", () => {
     expect(bundle.scenes[1].uncertaintyNotes).toEqual(["Threshold identity remains uncertain."]);
   });
 
+  it("derives bundle-level uncertainty notes from scene and observation uncertainty when bundle notes are omitted", () => {
+    const bundle = buildObservationV2Bundle({
+      reflectiveObjectId: "object-1",
+      userId: "user-1",
+      source: "system_llm_extract",
+      scenes: [
+        {
+          sceneId: "scene-1",
+          position: 0,
+          summary: "A threshold stays hard to identify.",
+          boundaryReasoning: [],
+          uncertaintyNotes: ["The scene boundary may remain fuzzy."],
+          evidenceContext: {
+            snippet: "it may have been a doorway or a window",
+            spanStart: 0,
+            spanEnd: 37,
+            contextLabel: "scene_opening",
+          },
+          observations: [
+            {
+              observationId: "obs-1",
+              position: 0,
+              text: "The dreamer is not fully sure whether it is a doorway or a window.",
+              evidence: [
+                {
+                  snippet: "it may have been a doorway or a window",
+                  spanStart: 0,
+                  spanEnd: 37,
+                  contextLabel: "quoted_support",
+                },
+              ],
+              uncertaintyNote: "The threshold identity remains uncertain.",
+            },
+          ],
+          derived: {
+            actors: [],
+            locations: [],
+            objects: [],
+            interactions: [],
+            affect: [],
+            agency: [],
+            phenomenology: [],
+            metacognition: [],
+          },
+        },
+      ],
+    });
+
+    expect(bundle.uncertaintyNotes).toEqual([
+      "The scene boundary may remain fuzzy.",
+      "The threshold identity remains uncertain.",
+    ]);
+  });
+
   it("preserves explicit dream language and legacy derived label compatibility", () => {
     const bundle = buildObservationV2Bundle({
       reflectiveObjectId: "object-1",

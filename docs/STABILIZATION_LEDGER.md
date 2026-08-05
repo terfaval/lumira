@@ -58,6 +58,532 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-08-03 - OBS-V3-VAL-01 Full Native Benchmark Baseline and End-to-End Semantic Validation
+
+- Phase: VALIDATION
+- Touched boundaries:
+  - `src/cognition/observation-v3/validation/`
+  - `scripts/run-observation-v3-full-benchmark-baseline.ts`
+  - `.validation/observation-v3/full-benchmark-baseline/20260803T081500Z-obs-v3-full-benchmark-baseline/`
+  - `docs/v2-build/observation/Observation-V3-Full-Benchmark-Baseline-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-End-to-End-Semantic-Validation-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-V2-Comparison-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Production-Candidacy-Assessment.md`
+  - `docs/v2-build/observation/Observation-V3-Architecture.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused validation test:
+    - `npx.cmd vitest run src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts` -> pass
+  - benchmark execution:
+    - `npx.cmd tsx scripts/run-observation-benchmark.ts --all` -> completed with fresh artifact root `20260802T220955Z-39b3730-all`, `15` successes and `2` failures (`OBS-C-002`, `OBS-H-002`)
+    - `npx.cmd tsx scripts/run-observation-benchmark.ts --id OBS-C-002` -> completed with fresh artifact root `20260802T222720Z-39b3730-OBS-C-002`
+    - `npx.cmd tsx scripts/run-observation-benchmark.ts --id OBS-H-002` -> completed with fresh artifact root `20260802T222720Z-39b3730-OBS-H-002`
+    - `npx.cmd tsx scripts/run-observation-topology-experiment.ts --benchmark <17 ids> --configuration C_TARGETED_RECOVERY --repeat 1` -> completed with fresh artifact root `20260802T223051Z-39b3730-subset-17-C_TARGETED_RECOVERY-r1`, `16` successes and `1` failure (`OBS-H-002`)
+  - native V3 baseline materialization:
+    - `npx.cmd tsx scripts/run-observation-v3-full-benchmark-baseline.ts --validation-root .validation --baseline-id 20260803T081500Z-obs-v3-full-benchmark-baseline` -> pass, `17` of `17` cases fully replayable
+  - determinism comparison:
+    - compared `20260803T073327Z-obs-v3-full-benchmark-baseline` vs `20260803T081500Z-obs-v3-full-benchmark-baseline` -> `17/17` same provisional IDs, canonical IDs, canonical hashes, lineage classifications, and replay outcomes
+  - repository verification:
+    - `npm.cmd run typecheck` -> pass
+    - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in `src/cognition/latent-v2/opportunity-constructor/provenance.ts` and `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+    - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-03T07-48-53-606Z.log`
+- Notes:
+  - Established the first complete native Observation V3 benchmark baseline with stage-complete artifacts for all 17 preserved benchmark cases.
+  - Completed the first end-to-end semantic comparison against Observation V2 and found V3 better in 14 cases, equivalent in 1 case, and worse in 2 cases.
+  - Concluded that V3 is suitable for expanded shadow but not yet suitable for limited production because zero benchmark cases were admitted and overlap-heavy edge cases remain governance-sensitive.
+
+## 2026-08-02 - OBS-V3-ARCH-02 Native Provisional Candidate and Admission Boundary Constitutional Hardening
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/memory-composition/`
+  - `src/cognition/observation-v3/memory-realization/`
+  - `src/cognition/observation-v3/authority-admission/`
+  - `src/cognition/observation-v3/pipeline/`
+  - `docs/v2-build/observation/Observation-V3-Native-Provisional-Memory-Candidate.md`
+  - `docs/v2-build/observation/Observation-V3-Canonical-Admission-Boundary.md`
+  - `docs/v2-build/observation/Observation-V3-Constitutional-Hardening-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Architecture.md`
+  - `docs/v2-build/observation/Observation-V3-Memory-Composition-Contract.md`
+  - `docs/v2-build/observation/Observation-V3-Memory-Realization-Contract.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Contract.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused subsystem suites:
+    - `npx.cmd vitest run src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/memory-realization/__tests__/memory-realization.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/authority-admission/__tests__/admission-evaluator.test.ts src/cognition/observation-v3/authority-admission/__tests__/shadow-authority-admission.test.ts` -> pass
+  - pipeline and replay suites:
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts src/cognition/observation-v3/authority-admission/__tests__/calibration-review.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts` -> pass
+  - repository verification:
+    - `npm.cmd run typecheck` -> pass
+    - `npm.cmd run lint -- src/cognition/observation-v3 src/cognition/observation/benchmark src/cognition/observation` -> pass
+    - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T20-22-13-846Z.log`
+  - preserved corpus replay:
+    - `npx.cmd tsx --eval "<runObservationV3CorpusReplay against OBSERVATION_BENCHMARK_CORPUS_V1_PATH and .validation>"` -> completed with summary `{ benchmarkCount: 17, executedCount: 5, classifications: { fully_replayable: 5, artifact_incomplete: 12 }, dispositions: { deferred_for_supplemental_realization: 4, rejected_governance_failure: 1, not_executed: 12 } }`
+- Notes:
+  - Introduced the native `ComposedProvisionalMemoryCandidate` as the V3-owned constitutional carrier between Memory Composition and Memory Realization.
+  - Removed the preferred native-path dependence on `ObservationV2Bundle` as the provisional memory carrier while preserving explicit shadow compatibility and comparison seams.
+  - Changed Authority Admission so the full `CanonicalMemoryCandidate` is the request-contract input.
+  - Added `provisional-identity-transition.json`, `canonical-identity-transition.json`, `admission-identity-input-comparison.json`, and `native-identity-lineage-comparison.json` as hardening evidence artifacts.
+
+## 2026-08-02 - OBS-V3-ARCH-01 Observation V3 Constitutional Architecture Review
+
+- Phase: AUDIT
+- Touched boundaries:
+  - `docs/v2-build/observation/Observation-V3-Constitutional-Architecture-Review-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Architectural-Improvement-Catalog.md`
+  - `docs/v2-build/observation/Observation-V3-Technical-Debt-Register.md`
+  - `docs/v2-build/observation/Observation-V3-Architecture.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - architectural consistency review against implemented subsystem seams in `src/cognition/observation-v3/`
+  - subsystem contract review against:
+    - `docs/v2-build/observation/Observation-V3-Architecture.md`
+    - `docs/v2-build/observation/Observation-V3-Subsystem-Contracts.md`
+    - `docs/v2-build/observation/Observation-V3-Dataflow.md`
+    - `docs/v2-build/observation/Observation-V3-Replay-Ready-Artifact-Model.md`
+    - `docs/v2-build/observation/Observation-V3-End-to-End-Replay-Completion.md`
+  - dependency review across the active native shadow seams in:
+    - `src/cognition/observation-v3/descriptive-extraction/`
+    - `src/cognition/observation-v3/completeness-analysis/`
+    - `src/cognition/observation-v3/supplemental-realization/`
+    - `src/cognition/observation-v3/memory-composition/`
+    - `src/cognition/observation-v3/memory-realization/`
+    - `src/cognition/observation-v3/authority-admission/`
+    - `src/cognition/observation-v3/pipeline/`
+    - `src/cognition/observation-v3/pipeline/replay/`
+  - documentation consistency review across the new review deliverables and the updated architecture document
+  - no runtime tests or build run; ticket scope was architecture review and documentation only
+- Notes:
+  - Concluded that Observation V3 has the right overall decomposition direction, especially around deterministic governance, explicit admission, and replay-ready evidence retention.
+  - Identified two pre-adoption constitutional blockers: V3 still uses `ObservationV2Bundle` as its effective internal provisional memory carrier, and Authority Admission currently evaluates a reduced native candidate summary instead of the full canonical realized candidate.
+  - Standardized the reviewed architectural direction around the implemented stage names `Supplemental Realization` and `Memory Composition`, replacing the older `Recovery` and `Reconciliation` terminology as the preferred long-term description.
+
+## 2026-08-02 - OBS-V3-E2E-03 Provider Evidence Retention
+
+- Touched boundaries:
+- `src/cognition/observation-v3/provider-evidence/`
+- `src/cognition/observation-v3/descriptive-extraction/`
+- `src/cognition/observation-v3/supplemental-realization/`
+- `src/cognition/observation-v3/pipeline/replay/`
+- `src/cognition/observation/llm-scene-observation-extractor.ts`
+- `src/cognition/observation/benchmark/`
+- `src/cognition/observation/experiment/configurations/`
+- `docs/v2-build/observation/Observation-V3-Provider-Evidence-Retention.md`
+- `docs/v2-build/observation/Observation-V3-Replay-Ready-Artifact-Model.md`
+- `docs/v2-build/observation/Observation-V3-Provider-Evidence-Validation-Report-2026-08.md`
+
+- Summary:
+- Added a shared provider-evidence ownership module for canonical attempt evidence, stable identities, serialization, hashing, compatibility, and atomic receipts.
+- Integrated descriptive provider evidence capture into the native extraction path without changing semantic extraction behavior.
+- Integrated supplemental provider evidence capture per bounded target execution and persisted those artifacts through topology experiment writers.
+- Extended replay loading so fresh canonical evidence artifacts are consumable while historical roots remain explicitly classifiable as non-replayable.
+
+- Verification:
+- `npx.cmd vitest run src/cognition/observation-v3/provider-evidence/__tests__/provider-evidence.test.ts` -> pass
+- `npx.cmd vitest run src/cognition/observation-v3/descriptive-extraction/__tests__/descriptive-extraction.test.ts src/cognition/observation-v3/supplemental-realization/__tests__/supplemental-realization.test.ts src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts src/cognition/observation-v3/pipeline/__tests__/pipeline-runner.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts` -> pass (`10` files, `81` tests)
+- `npx.cmd tsc --noEmit` -> pass
+- `npm.cmd run lint -- src/cognition/observation src/cognition/observation-v3` -> pass
+- `npm.cmd run build` -> pass
+
+- Validation note:
+- Fresh August 2, 2026 benchmark and topology roots now preserve provider-boundary evidence. Fresh replay still terminates later at `failed_supplemental_realization`, so evidence retention is complete but end-to-end fresh replay remains partially blocked.
+
+## 2026-08-02 - OBS-V3-E2E-02 Preserved Benchmark Matrix Loader and Full Native V3 Corpus Replay
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/pipeline/`
+  - `src/cognition/observation-v3/pipeline/replay/`
+  - `docs/v2-build/observation/Observation-V3-Corpus-Replay.md`
+  - `docs/v2-build/observation/Observation-V3-Corpus-Replay-Validation-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-End-to-End-Shadow-Pipeline.md`
+  - `docs/v2-build/observation/Observation-V3-Architecture.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused replay and pipeline tests:
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts` -> pass (`2` files, `6` tests)
+  - `npx.cmd tsc --noEmit` -> pass
+  - `npm.cmd run lint -- src/cognition/observation-v3/pipeline src/cognition/observation-v3/pipeline/replay` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T14-59-46-708Z.log`
+  - repository corpus replay:
+    - `npx.cmd tsx --eval "<runObservationV3CorpusReplay against OBSERVATION_BENCHMARK_CORPUS_V1_PATH and .validation>"` -> completed, summary `{ benchmarkCount: 17, executionCount: 0, classifications: { artifact_incomplete: 8, unsupported: 9 }, failures: { missing_replay_evidence: 8, missing_lineage: 9 } }`
+- Notes:
+  - Added a new preserved benchmark replay layer that discovers validation roots, builds deterministic replay packages, verifies lineage compatibility, fingerprints orchestration-only replay logic, and invokes the native V3 shadow pipeline only when provider-boundary replay evidence exists.
+  - Tightened the replay seam so Descriptive Extraction and Supplemental Realization now consume preserved provider-response objects rather than downstream reconstructed payloads, and missing supplemental replay is now an explicit failure instead of a silent empty fallback.
+  - Real repository replay on Sunday, August 2, 2026 proved the orchestration and classification layer but also exposed the current preservation ceiling: none of the 17 corpus entries can execute end-to-end because the preserved July-August roots do not retain provider-boundary generative evidence.
+
+## 2026-08-02 - OBS-V3-E2E-01 Native Observation V3 End-to-End Shadow Pipeline
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/pipeline/`
+  - `docs/v2-build/observation/Observation-V3-End-to-End-Shadow-Pipeline.md`
+  - `docs/v2-build/observation/Observation-V3-End-to-End-Validation-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Architecture.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused pipeline tests:
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/__tests__/pipeline-runner.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass (`2` files, `5` tests)
+  - `npx.cmd tsc --noEmit` -> pass
+  - `npm.cmd run lint -- src/cognition/observation-v3/pipeline src/cognition/observation-v3/source-analysis src/cognition/observation-v3/descriptive-extraction src/cognition/observation-v3/completeness-analysis src/cognition/observation-v3/supplemental-realization src/cognition/observation-v3/memory-composition src/cognition/observation-v3/memory-realization src/cognition/observation-v3/authority-admission` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T14-33-12-404Z.log`
+- Notes:
+  - Implemented the first native Observation V3 pipeline core as a separate orchestration boundary that owns stage order, skip logic, failure propagation, pipeline fingerprinting, and orchestration artifact packaging without changing active Observation V2 routing or authority.
+  - Added a preserved replay primary runner that injects generative evidence only at the Descriptive Extraction and Supplemental Realization provider seams while keeping Source Analysis, Completeness Analysis, Memory Composition, Memory Realization, and Authority Admission native and deterministic.
+  - Recorded the present limitation explicitly: the end-to-end spine exists and is verified by focused tests, but a full preserved benchmark matrix replay harness over repository-preserved cases remains the recommended next ticket because older preserved roots do not consistently retain raw structured extraction payloads.
+
+## 2026-08-02 - OBS-V3-04C Native Memory Composition Engine
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/memory-composition/`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused native-engine and regression tests:
+    - `npx.cmd vitest run src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-artifact-writer.test.ts src/cognition/observation/benchmark/__tests__/observation-expanded-targeted-recovery-baseline.test.ts` -> pass (`5` files, `46` tests)
+  - preserved artifact replay:
+    - `npx.cmd tsx --eval "<preserved topology replay against .validation/observation-topology-experiments/runs>"` -> completed, `36` preserved targeted-recovery artifact directories compared, all classified `equivalent_with_representation_difference`
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in latent V2/runtime files
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T12-30-35-004Z.log`
+- Notes:
+  - Replaced the V3 Memory Composition subsystem’s internal delegation to `reconcileTargetedRecoveryCandidate` with a native deterministic stage pipeline covering normalization, duplicate/coexistence analysis, locality composition, chronology ordering, and coverage derivation.
+  - Added stage-level exports and audit artifacts including `duplicate-decisions`, `coexistence-analysis`, `locality-decisions`, `transition-decisions`, `provenance-map`, and `composition-trace` while preserving the public `composeMemoryPackages` boundary introduced in `OBS-V3-04B`.
+  - Preserved July-August targeted-recovery replay remained within the accepted equivalence envelope: no `composition_stricter`, `composition_more_permissive`, or `semantically_incomparable` results appeared.
+
+## 2026-08-02 - OBS-V3-04B Memory Composition Shadow Implementation and Experimental Reconciliation Equivalence
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/memory-composition/`
+  - `src/cognition/observation/experiment/configurations/targeted-recovery.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-fingerprint.ts`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused Memory Composition and targeted-recovery tests:
+    - `npx.cmd vitest run src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-artifact-writer.test.ts src/cognition/observation/benchmark/__tests__/observation-expanded-targeted-recovery-baseline.test.ts` -> pass (`5` files, `42` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in latent V2/runtime files
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T11-05-33-213Z.log`
+- Notes:
+  - Introduced a live V3 shadow Memory Composition subsystem with a pure composition API, deterministic fingerprinting, composition artifact packaging, and a comparison-grade equivalence classifier for experimental reconciliation outputs.
+  - Switched the targeted-recovery experimental seam to call V3 Memory Composition and emit composition artifacts such as `composition-inputs`, `duplicate-analysis`, `locality-composition`, `chronology-composition`, `transition-composition`, `provenance-composition`, and `composition-summary` while preserving the existing benchmark-facing reconciliation result shape.
+  - Extended topology fingerprint capture so targeted-recovery implementation fingerprints now include the V3 Memory Composition files, keeping preserved experiment evidence sensitive to subsystem changes without altering active V2 Observation behavior.
+
+## 2026-08-02 - OBS-V3-03A Descriptive Extraction Structural Extraction Refactor
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/descriptive-extraction/`
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `src/cognition/observation/benchmark/observation-benchmark-fingerprint.ts`
+  - `docs/v2-build/observation/Observation-V3-Descriptive-Extraction.md`
+  - `docs/v2-build/observation/Observation-V3-Descriptive-Extraction-Structural-Refactor.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused extraction tests:
+    - `npx.cmd vitest run src/cognition/observation-v3/descriptive-extraction/__tests__/descriptive-extraction.test.ts src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation/__tests__/llm-scene-observation-diagnostics.test.ts src/cognition/observation/__tests__/observation-extraction-validation.test.ts` -> pass (`4` files, `34` tests)
+  - benchmark runner and regression tests:
+    - `npx.cmd vitest run src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts` -> pass (`2` files, `25` tests)
+    - benchmark runner coverage includes:
+      - one successful benchmark path via `runs the isolated extractor and derived constructor for a selected benchmark`
+      - one retry-success benchmark path via `continues through all benchmarks when one extraction fails` where the second benchmark succeeds with `accepted_after_attempt_2`
+      - one failed benchmark path via the same regression and the explicit configuration-failure case
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint -- src/cognition/observation/llm-scene-observation-extractor.ts src/cognition/observation-v3/descriptive-extraction src/cognition/observation/benchmark/observation-benchmark-fingerprint.ts` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T10-52-27-357Z.log`
+- Notes:
+  - Extracted first-pass descriptive realization into a new live V3 subsystem that now owns prompt execution, schema application, provider interaction, structured parsing, normalization, and provisional candidate construction.
+  - Preserved the active V2 orchestration boundary in `llm-scene-observation-extractor.ts`, which still owns Source Analysis shadow invocation, Completeness Analysis shadow invocation, existing guard interpretation, retry sequencing, fallback mapping, and attempt-evidence emission.
+  - Updated benchmark fingerprint capture so prompt/schema/model/timeout evidence now points to the extracted V3 descriptive-extraction subsystem while retry-policy evidence remains attached to the orchestration seam.
+
+## 2026-08-02 - OBS-V3-04A Memory Composition Responsibility Scout and Constitutional Contract
+
+- Phase: BUILD
+- Touched boundaries:
+  - `docs/v2-build/observation/Observation-V3-Memory-Composition-Responsibility-Scout.md`
+  - `docs/v2-build/observation/Observation-V3-Memory-Composition-Contract.md`
+  - `docs/v2-build/observation/Observation-V3-Memory-Composition-V2-Equivalence-Plan.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - documentation consistency review against:
+    - `docs/v2-build/observation/Observation-V3-Architecture.md`
+    - `docs/v2-build/observation/Observation-V3-Subsystem-Contracts.md`
+    - `docs/v2-build/observation/Observation-V3-Dataflow.md`
+    - `docs/v2-build/observation/Observation-V3-Memory-Construction-Philosophy.md`
+    - `docs/v2-build/observation/Observation-V3-Supplemental-Realization-Contract.md`
+    - `docs/v2-build/observation/Observation-V3-Authority-Admission-Contract.md`
+    - `docs/v2-build/observation/Observation-Architectural-Responsibility-Map.md`
+    - `docs/v2-build/observation/Observation-Ideal-Subsystem-Boundaries.md`
+    - `docs/v2-build/validation-benchmark/Observation-Targeted-Recovery-Refinement-Guide-v1.md`
+    - `docs/v2-build/validation-benchmark/Observation-Targeted-Recovery-Reconciliation-Repair-Guide-v1.md`
+    - `docs/v2-build/validation-benchmark/Observation-Candidate-Topology-Experiment-Guide-v1.md`
+    - `docs/v2-build/validation-benchmark/Observation-Expanded-Targeted-Recovery-Experimental-Baseline-Report-2026-07.md`
+    - repository seams in `src/cognition/observation/experiment/configurations/targeted-recovery.ts`, `src/cognition/observation/experiment/targeted-recovery-refinement.ts`, `src/cognition/observation/benchmark/observation-topology-experiment-runner.ts`, and `src/cognition/observation/benchmark/observation-topology-experiment-types.ts`
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint -- src/cognition/observation/experiment src/cognition/observation/benchmark src/cognition/observation-v3` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T10-13-08-842Z.log`
+- Notes:
+  - Defined Memory Composition as the constitutional subsystem that composes baseline and supplemental provisional realization packages into one coherent provisional memory candidate without performing realization, canonicalization, authority admission, or persistence.
+  - Mapped the current experimental `reconciliation` seam into its proper V3 ownership boundaries, separating package creation from composition and separating composition from later Memory Realization and Authority Admission.
+  - Established a future shadow-equivalence seam that compares V3 composition against current experimental reconciliation behavior while preserving provisionality, provenance lineage, and complete V2 behavioral invariance.
+
+## 2026-08-02 - OBS-V3-03A Supplemental Realization Responsibility Scout and Contract Design
+
+- Phase: BUILD
+- Touched boundaries:
+  - `docs/v2-build/observation/Observation-V3-Supplemental-Realization-Responsibility-Scout.md`
+  - `docs/v2-build/observation/Observation-V3-Supplemental-Realization-Contract.md`
+  - `docs/v2-build/observation/Observation-V3-Supplemental-Realization-V2-Equivalence-Plan.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - documentation consistency review against:
+    - `docs/v2-build/observation/Observation-V3-Architecture.md`
+    - `docs/v2-build/observation/Observation-V3-Subsystem-Contracts.md`
+    - `docs/v2-build/observation/Observation-V3-Dataflow.md`
+    - `docs/v2-build/observation/Observation-V3-Memory-Construction-Philosophy.md`
+    - `docs/v2-build/observation/Observation-V3-Completeness-Analysis-Contract.md`
+    - `docs/v2-build/observation/Observation-V3-Authority-Admission-Contract.md`
+    - `docs/v2-build/validation-benchmark/Observation-Targeted-Recovery-Refinement-Guide-v1.md`
+    - `docs/v2-build/validation-benchmark/Observation-Targeted-Recovery-Reconciliation-Repair-Guide-v1.md`
+    - `docs/v2-build/validation-benchmark/Observation-Candidate-Topology-Experiment-Guide-v1.md`
+    - `docs/v2-build/validation-benchmark/Observation-Expanded-Targeted-Recovery-Experimental-Baseline-Report-2026-07.md`
+    - repository seams in `src/cognition/observation/llm-scene-observation-extractor.ts`, `src/cognition/observation/experiment/configurations/targeted-recovery.ts`, `src/cognition/observation/experiment/targeted-recovery-refinement.ts`, and `src/cognition/observation/benchmark/observation-topology-experiment-runner.ts`
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint -- src/cognition/observation-v3/authority-admission src/cognition/observation-v3/completeness-analysis src/cognition/observation-v3/source-analysis` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T10-00-54-911Z.log`
+- Notes:
+  - Defined Supplemental Realization as the bounded continuation of descriptive memory construction after Completeness demonstrates material under-realization and before Memory Composition or Authority Admission.
+  - Separated current experimental targeted-recovery responsibilities into their proper V3 owners: Completeness for measurement and justification, Supplemental Realization for bounded additional realization, Memory Composition for duplicate and locality merge policy, and benchmark infrastructure for blind-review and comparison packaging.
+  - Established a future shadow-equivalence seam that preserves provisionality, prohibits authority leakage, and compares V3 bounded realization packages against the current benchmark-only targeted-recovery prototype rather than against V2 production persistence.
+
+## 2026-08-02 - OBS-V3-06D Authority Admission Shadow Stability Review
+
+- Phase: BUILD
+- Touched boundaries:
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Stability-Review-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Implementation.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/authority-admission/__tests__/admission-evaluator.test.ts src/cognition/observation-v3/authority-admission/__tests__/shadow-authority-admission.test.ts src/cognition/observation-v3/authority-admission/__tests__/calibration-review.test.ts` -> pass (`3` files, `34` tests)
+  - preserved evidence review against:
+    - `.validation/observation-v3/authority-admission-shadow/20260802T091000Z-obs-v3-authority-admission-shadow/`
+    - `.validation/observation-v3/authority-admission-calibration/20260802T112200Z-obs-v3-authority-admission-calibration/`
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint -- src/cognition/observation-v3/authority-admission scripts/run-observation-v3-authority-admission-calibration.ts scripts/run-observation-v3-authority-admission-shadow.ts` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T09-47-03-729Z.log`
+- Notes:
+  - Confirmed that the calibrated `shadow-v2` admission evaluator is deterministic, replay-stable, policy-consistent, governance-consistent, and evidence-independent on the preserved benchmark roots.
+  - Found no benchmark-ID, V2-outcome, or reviewer-label dependency in the evaluator, and no contradictory or unstable branches requiring policy repair.
+  - Recorded only non-blocking documentation clarifications: two reserved policy fields and one reserved reason code are currently present in the policy or contract shape but not used as active evaluator branches.
+
+## 2026-08-02 - OBS-V3-06C Authority Admission Shadow Validation and Policy Calibration
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/authority-admission/`
+  - `scripts/run-observation-v3-authority-admission-calibration.ts`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Validation-Plan.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Policy-Calibration.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Validation-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Implementation.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Equivalence-Plan.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/authority-admission/__tests__/admission-evaluator.test.ts src/cognition/observation-v3/authority-admission/__tests__/shadow-authority-admission.test.ts src/cognition/observation-v3/authority-admission/__tests__/calibration-review.test.ts` -> pass (`3` files, `34` tests)
+  - `npx.cmd tsx scripts/run-observation-v3-authority-admission-calibration.ts --shadow-review-root .validation/observation-v3/authority-admission-shadow/20260802T091000Z-obs-v3-authority-admission-shadow --calibration-id 20260802T112200Z-obs-v3-authority-admission-calibration` -> completed, calibration root `.validation/observation-v3/authority-admission-calibration/20260802T112200Z-obs-v3-authority-admission-calibration`
+  - `npx.cmd vitest run src/cognition/observation-v3/completeness-analysis/__tests__/completeness-analysis.test.ts src/cognition/observation-v3/completeness-analysis/__tests__/completeness-calibration.test.ts src/cognition/observation-v3/completeness-analysis/__tests__/stability-review.test.ts` -> pass (`3` files, `29` tests)
+  - `npx.cmd vitest run src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation/__tests__/observation-extraction-validation.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-artifact-writer.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts` -> pass (`4` files, `46` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint -- src/cognition/observation-v3/authority-admission scripts/run-observation-v3-authority-admission-calibration.ts scripts/run-observation-v3-authority-admission-shadow.ts` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T09-22-10-175Z.log`
+- Notes:
+  - Added a preserved-evidence calibration harness that replays frozen `shadow-v1`, evaluates a calibrated `shadow-v2` policy, emits semantic-review and pre/post comparison artifacts, and remains fully side-effect-free.
+  - Preserved severe-failure blocking while correcting the one preserved false deferral by escalating uncovered prefix loss to candidate rejection instead of supplemental-realization deferral.
+  - Added an admission-level materiality classifier so future source-shape-sensitive recoverable weakness can remain non-blocking when preserved evidence does not show material omission, without weakening provenance, evidence integrity, or realization fail-closed behavior.
+
+## 2026-08-02 - OBS-V3-06B Authority Admission Shadow Implementation and V2 Authority Equivalence
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/authority-admission/`
+  - `scripts/run-observation-v3-authority-admission-shadow.ts`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Implementation.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Equivalence-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Equivalence-Plan.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/authority-admission/__tests__/admission-evaluator.test.ts src/cognition/observation-v3/authority-admission/__tests__/shadow-authority-admission.test.ts` -> pass (`2` files, `29` tests)
+  - `npx.cmd tsx scripts/run-observation-v3-authority-admission-shadow.ts --calibration-root .validation/observation-v3/completeness-calibration/20260801T100214Z-obs-v3-completeness-calibration --review-id 20260802T091000Z-obs-v3-authority-admission-shadow` -> completed, review root `.validation/observation-v3/authority-admission-shadow/20260802T091000Z-obs-v3-authority-admission-shadow`
+  - `npx.cmd vitest run src/cognition/observation-v3/completeness-analysis/__tests__/completeness-analysis.test.ts src/cognition/observation-v3/completeness-analysis/__tests__/completeness-calibration.test.ts src/cognition/observation-v3/completeness-analysis/__tests__/stability-review.test.ts` -> pass (`3` files, `29` tests)
+  - `npx.cmd vitest run src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation/__tests__/observation-extraction-validation.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-artifact-writer.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts` -> pass (`4` files, `46` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint -- src/cognition/observation-v3/authority-admission scripts/run-observation-v3-authority-admission-shadow.ts` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T07-12-59-535Z.log`
+- Notes:
+  - Implemented a deterministic, side-effect-free authority-admission shadow evaluator with structured findings, policy fingerprinting, deterministic shadow authority identities, and V2-equivalence comparison.
+  - Chose a preserved-artifact benchmark seam rather than live runtime interception so accepted and rejected parseable candidates could be reviewed without altering active Observation behavior.
+  - The initial `shadow-v1` policy proved replay-stable but remains intentionally conservative, producing broad recovery deferral rather than authority admission across most preserved accepted V2 candidates.
+
+## 2026-08-02 - OBS-V3-06A Authority Admission Contract Design
+
+- Phase: BUILD
+- Touched boundaries:
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Responsibility-Scout.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Contract.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Equivalence-Plan.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - documentation consistency review against:
+    - `docs/v2-build/observation/Observation-V3-Architecture.md`
+    - `docs/v2-build/observation/Observation-V3-Subsystem-Contracts.md`
+    - `docs/v2-build/observation/Observation-V3-Dataflow.md`
+    - `docs/v2-build/observation/Observation-V3-Memory-Construction-Philosophy.md`
+    - `docs/v2-build/observation/Observation-V3-Core-Concepts.md`
+    - `docs/v2-build/observation/Observation-V3-Completeness-Analysis-Contract.md`
+    - `docs/v2-build/observation/Observation-V3-Completeness-Admission-Relevance-Assessment.md`
+    - `docs/v2-build/observation/Observation-V3-Completeness-Stability-Review-2026-08.md`
+    - current V2 authority path in `app/capture/page.tsx`, `src/cognition/observation/llm-scene-observation-extractor.ts`, and `src/infrastructure/persistence/observation-v2-write-store.ts`
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T06-43-30-231Z.log`
+- Notes:
+  - Authored the proposal-stage V3 Authority Admission responsibility scout, contract, and shadow-equivalence plan without introducing any runtime admission behavior.
+  - Defined a deterministic admission vocabulary that separates canonical descriptive candidates from authoritative Memory Truth and explicitly decouples authority from persistence.
+  - Recorded the major V2 migration hazard that persisted V2 bundles currently imply practical authority while several downstream readers can still blur missing V3 authority through legacy fallback.
+
+## 2026-08-02 - OBS-V3-02D Completeness Stability and Admission-Relevance Review
+
+- Phase: BUILD
+- Touched boundaries:
+  - `scripts/run-observation-v3-completeness-stability-review.ts`
+  - `src/cognition/observation-v3/completeness-analysis/stability-review.ts`
+  - `src/cognition/observation-v3/completeness-analysis/__tests__/stability-review.test.ts`
+  - `docs/v2-build/observation/Observation-V3-Completeness-Stability-Review-Plan.md`
+  - `docs/v2-build/observation/Observation-V3-Completeness-Admission-Relevance-Assessment.md`
+  - `docs/v2-build/observation/Observation-V3-Completeness-Stability-Review-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Completeness-Analysis-Shadow-Implementation.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/completeness-analysis/__tests__/stability-review.test.ts` -> pass (`1` file, `5` tests)
+  - `npx.cmd vitest run src/cognition/observation-v3/completeness-analysis/__tests__/completeness-analysis.test.ts src/cognition/observation-v3/completeness-analysis/__tests__/completeness-calibration.test.ts src/cognition/observation-v3/completeness-analysis/__tests__/stability-review.test.ts` -> pass (`3` files, `29` tests)
+  - `npx.cmd vitest run src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation/__tests__/observation-extraction-validation.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-artifact-writer.test.ts` -> pass (`3` files, `29` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint -- src/cognition/observation-v3/completeness-analysis/stability-review.ts src/cognition/observation-v3/completeness-analysis/__tests__/stability-review.test.ts scripts/run-observation-v3-completeness-stability-review.ts` -> pass
+  - `npx.cmd tsx scripts/run-observation-v3-completeness-stability-review.ts --calibration-root .validation/observation-v3/completeness-calibration/20260801T100214Z-obs-v3-completeness-calibration --review-id 20260802T062612Z-obs-v3-completeness-stability-review` -> completed, review root `.validation/observation-v3/completeness-stability/20260802T062612Z-obs-v3-completeness-stability-review`
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T06-28-49-311Z.log`
+- Notes:
+  - Added a deterministic review harness that replays preserved completeness candidates, aggregates cross-run/source-shape stability, classifies governance roles for completeness signals, and emits the full Phase A-H artifact set without invoking recovery or admission behavior.
+  - Confirmed deterministic replay equality across `90` calibrated analyzer replays over the preserved `30` candidates while preserving the V2-active runtime boundary.
+  - Recorded the current governance position as `STABLE WITH SOURCE-SHAPE OBSERVATIONS` and `READY WITH GOVERNANCE LIMITATIONS`, with Authority Admission contract design now the recommended next ticket and no contract change required in the completeness analyzer itself.
+
+## 2026-07-31 - EXP-05C Expanded Targeted Recovery Experimental Baseline
+
+- Phase: BUILD
+- Touched boundaries:
+  - `package.json`
+  - `scripts/run-observation-expanded-targeted-recovery-baseline.ts`
+  - `src/cognition/observation/benchmark/observation-expanded-targeted-recovery-baseline.ts`
+  - `src/cognition/observation/benchmark/__tests__/observation-expanded-targeted-recovery-baseline.test.ts`
+  - `docs/v2-build/validation-benchmark/Observation-Candidate-Topology-Experiment-Guide-v1.md`
+  - `docs/v2-build/validation-benchmark/Observation-Targeted-Recovery-Refinement-Guide-v1.md`
+  - `docs/v2-build/validation-benchmark/Observation-Targeted-Recovery-Reconciliation-Repair-Guide-v1.md`
+  - `docs/v2-build/validation-benchmark/Observation-Expanded-Targeted-Recovery-Sample-Plan-v1.md`
+  - `docs/v2-build/validation-benchmark/Observation-Expanded-Targeted-Recovery-Experimental-Baseline-Guide-v1.md`
+  - `docs/v2-build/validation-benchmark/Observation-Expanded-Targeted-Recovery-Experimental-Baseline-Report-2026-07.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation/benchmark/__tests__/observation-expanded-targeted-recovery-baseline.test.ts` -> pass (`1` file, `10` tests)
+  - `npx.cmd vitest run src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation/benchmark/__tests__/observation-expanded-targeted-recovery-baseline.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-blind-review-set.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts` -> pass (`5` files, `54` tests)
+  - `npx.cmd tsc --noEmit` -> pass
+  - `npm.cmd run lint -- src/cognition/observation/benchmark/observation-expanded-targeted-recovery-baseline.ts src/cognition/observation/benchmark/__tests__/observation-expanded-targeted-recovery-baseline.test.ts scripts/run-observation-expanded-targeted-recovery-baseline.ts` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-31T08-36-40-215Z.log`
+  - `npx.cmd tsx scripts/run-observation-expanded-targeted-recovery-baseline.ts` -> completed, run group `20260731T072311Z-39b3730-subset-9-A-vs-C-r3`, baseline run `20260731T072311Z-39b3730-subset-9-A_CURRENT_BASELINE-r3`, repaired-C run `20260731T075248Z-39b3730-subset-9-C_TARGETED_RECOVERY-r3`, review set `20260731T082753Z-reviewset-expanded-targeted-recovery-baseline`
+  - `npx.cmd tsx scripts/run-observation-expanded-targeted-recovery-baseline.ts --refresh .validation/observation-topology-experiments/expanded-baseline/20260731T072311Z-39b3730-subset-9-A-vs-C-r3 .validation/observation-topology-experiments/runs/20260731T072311Z-39b3730-subset-9-A_CURRENT_BASELINE-r3 20260731T072311Z-39b3730-subset-9-A_CURRENT_BASELINE-r3 .validation/observation-topology-experiments/runs/20260731T075248Z-39b3730-subset-9-C_TARGETED_RECOVERY-r3 20260731T075248Z-39b3730-subset-9-C_TARGETED_RECOVERY-r3 .validation/observation-topology-experiments/review-sets/20260731T082753Z-reviewset-expanded-targeted-recovery-baseline` -> completed, corrected run-group aggregation without rerunning model experiments
+- Notes:
+  - Added a stratified expanded-baseline harness that selects a bounded `9`-item benchmark sample, schedules an `A` versus repaired-`C` three-run matrix, preserves all scheduled runs, and emits repeated-run stability, recovery-discipline, cost-latency, and discrepancy-ledger artifacts under `.validation/observation-topology-experiments/expanded-baseline/`.
+  - Preserved identity-safe cross-run review packaging with opaque candidate references and separate private mapping, and extended tests to guard against configuration, path, and run-number leakage.
+  - Corrected expanded-baseline cost aggregation so baseline operational summaries derive model-call counts from preserved retry-or-attempt evidence when the baseline configuration emits no stage artifacts.
+  - The expanded sample showed repaired `C_TARGETED_RECOVERY` as a consistent advantage on `OBS-C-002` and `OBS-H-002`, neutrality on the short controls, and mixed or run-dependent behavior on the remaining broader sample, leaving stability investigation as the next evidence step rather than production-candidacy review.
+
+## 2026-07-30 - EXP-04C-R1 Targeted Recovery Reconciliation Defect Resolution
+
+- Phase: BUILD
+- Touched boundaries:
+  - `package.json`
+  - `scripts/generate-observation-topology-blind-review-set.ts`
+  - `src/cognition/observation/benchmark/observation-topology-blind-review-set.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-types.ts`
+  - `src/cognition/observation/benchmark/__tests__/observation-topology-blind-review-set.test.ts`
+  - `src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts`
+  - `src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts`
+  - `src/cognition/observation/experiment/configurations/targeted-recovery.ts`
+  - `src/cognition/observation/experiment/targeted-recovery-refinement.ts`
+  - `docs/v2-build/validation-benchmark/Observation-Candidate-Topology-Experiment-Guide-v1.md`
+  - `docs/v2-build/validation-benchmark/Observation-Targeted-Recovery-Refinement-Guide-v1.md`
+  - `docs/v2-build/validation-benchmark/Observation-Targeted-Recovery-Reconciliation-Repair-Guide-v1.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts` -> pass (`1` file, `15` tests)
+  - `npx.cmd vitest run src/cognition/observation/benchmark/__tests__/observation-topology-blind-review-set.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts` -> pass (`2` files, `9` tests)
+  - `npx.cmd vitest run src/cognition/observation/benchmark/__tests__/observation-topology-blind-review-set.test.ts src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts` -> pass (`4` files, `44` tests)
+  - `npx.cmd tsc --noEmit` -> pass
+  - `npm.cmd run lint -- src/cognition/observation/benchmark src/cognition/observation/experiment/configurations/targeted-recovery.ts src/cognition/observation/experiment/targeted-recovery-refinement.ts scripts/generate-observation-topology-blind-review-set.ts` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-30T19-01-30-228Z.log`
+  - `npx.cmd tsx scripts/run-observation-topology-experiment.ts --benchmark OBS-A-002 --benchmark OBS-C-002 --benchmark OBS-D-001 --configuration C_TARGETED_RECOVERY` -> completed, run `20260730T190500Z-39b3730-subset-3-C_TARGETED_RECOVERY-r1`
+  - `npx.cmd tsx scripts/generate-observation-topology-blind-review-set.ts --spec .validation/observation-topology-experiments/review-sets/20260730-targeted-recovery-repair-review-spec.json` -> completed, review set `20260730T191002Z-reviewset-targeted-recovery-repair-review`
+- Notes:
+  - Added canonical physical-gap normalization and canonical recovery-window normalization so one uncovered tail can preserve multiple diagnostic reasons without creating duplicate recovery requests.
+  - Strengthened deterministic reconciliation with recovery-window provenance, cross-recovery duplicate comparison, duplicate-locality merge analysis, and evidence-ordered locality assembly so repaired Configuration C no longer prepends late recovery localities ahead of earlier baseline material.
+  - Added a legacy-compatible blind review set generator that consumes both modern opaque candidate artifacts and older `artifactDirectory`-based runs while emitting a clean public blind index and a separate private reversal map.
+  - Preserved the experiment-only isolation boundary: repaired reconciliation remains in validation-only topology modules and generated artifacts stay under `.validation/observation-topology-experiments/`.
+
+## 2026-07-30 - EXP-03C Targeted Recovery Fidelity and Reconciliation Refinement
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation/benchmark/observation-topology-experiment-artifact-writer.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-types.ts`
+  - `src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts`
+  - `src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts`
+  - `src/cognition/observation/experiment/configurations/targeted-recovery.ts`
+  - `src/cognition/observation/experiment/targeted-recovery-refinement.ts`
+  - `docs/v2-build/validation-benchmark/Observation-Candidate-Topology-Experiment-Guide-v1.md`
+  - `docs/v2-build/validation-benchmark/Observation-Targeted-Recovery-Refinement-Guide-v1.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts` -> pass (`1` file, `9` tests)
+  - `npx.cmd vitest run src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts` -> pass (`1` file, `8` tests)
+  - `npx.cmd vitest run src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts` -> pass (`3` files, `37` tests)
+  - `npx.cmd tsc --noEmit` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in `src/cognition/latent-v2/opportunity-constructor/provenance.ts` and `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-30T17-10-45-726Z.log`
+  - `npx.cmd tsx scripts/run-observation-topology-experiment.ts --benchmark OBS-A-002 --benchmark OBS-C-002 --benchmark OBS-D-001 --configuration A_CURRENT_BASELINE` -> completed with failures, run `20260730T171751Z-39b3730-subset-3-A_CURRENT_BASELINE-r1`
+  - `npx.cmd tsx scripts/run-observation-topology-experiment.ts --benchmark OBS-A-002 --benchmark OBS-C-002 --benchmark OBS-D-001 --configuration C_TARGETED_RECOVERY` -> completed, run `20260730T172127Z-39b3730-subset-3-C_TARGETED_RECOVERY-r1`
+- Notes:
+  - Replaced the prototype Configuration C concatenation flow with a structured reconciliation layer that admits the best parseable baseline candidate provisionally, separates recovery gaps from bounded recovery windows, and preserves source-grounded baseline units unless deterministic overlap analysis justifies replacement.
+  - Added auditable duplicate classification, replacement decisions, locality reconstruction, provenance fields, and completeness diagnostics so rejected-but-parseable baseline material can survive recovery without implying production acceptance.
+  - Removed public blind-index configuration leakage by switching reviewer artifacts to opaque candidate references and keeping the anonymization mapping private.
+  - Historical prototype-C comparison artifacts remain available for `OBS-A-002` and `OBS-C-002`; no preserved original prototype-C run exists for the newly added `OBS-D-001` comparator item.
+
 ## 2026-07-27 - CONT-I01D Exactness Seam Runtime Resolution
 
 - Phase: BUILD
@@ -4587,3 +5113,223 @@ Verification references:
   - Distinguished raw structured counts from normalized counts and surfaced default-insertion metrics so normalization cannot masquerade as retained extraction completeness.
   - Preserved fail-closed guard semantics and one-retry behavior while making retry stochastic variation observable.
   - Repository evidence now rejects projection and native V2 persistence as the primary late-section loss point for the characterized long-dream failures.
+
+## 2026-07-30 - EXP-01 Observation Candidate Topology Experiment Harness
+
+- Phase: BUILD
+- Touched boundaries:
+  - `package.json`
+  - `scripts/run-observation-topology-experiment.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-artifact-writer.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-fingerprint.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-metrics.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-runner.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-types.ts`
+  - `src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts`
+  - `src/cognition/observation/experiment/openai-structured-experiment.ts`
+  - `src/cognition/observation/experiment/observation-topology-configuration-helpers.ts`
+  - `src/cognition/observation/experiment/configurations/current-baseline.ts`
+  - `src/cognition/observation/experiment/configurations/targeted-recovery.ts`
+  - `src/cognition/observation/experiment/configurations/hierarchical-local-extraction.ts`
+  - `src/cognition/observation/experiment/configurations/layered-output.ts`
+  - `docs/v2-build/validation-benchmark/Observation-Candidate-Topology-Experiment-Guide-v1.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd run typecheck` -> pass
+  - `.\\node_modules\\.bin\\eslint.cmd src\\cognition\\observation\\benchmark src\\cognition\\observation\\experiment scripts\\run-observation-topology-experiment.ts` -> pass
+  - `npx.cmd vitest run src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts` -> pass (`2` files, `21` tests)
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-07-30T16-10-45-995Z.log`
+  - `npx.cmd tsx scripts/run-observation-topology-experiment.ts --benchmark OBS-C-002 --benchmark OBS-A-002 --benchmark OBS-D-001 --configuration A_CURRENT_BASELINE` -> completed with failures, run `20260730T154906Z-39b3730-subset-3-A_CURRENT_BASELINE-r1`
+  - `npx.cmd tsx scripts/run-observation-topology-experiment.ts --benchmark OBS-C-002 --benchmark OBS-A-002 --configuration C_TARGETED_RECOVERY --configuration D_HIERARCHICAL_LOCAL_EXTRACTION --configuration F_LAYERED_OUTPUT` -> completed, run `20260730T161328Z-39b3730-subset-2-configs-3-r1`
+- Notes:
+  - Added a benchmark-only experiment harness under `.validation/observation-topology-experiments/runs/` with stable configuration IDs, independent prompt/schema fingerprints, stage artifacts, and blind-review mappings.
+  - Preserved production extractor routing by wrapping the active extractor for Configuration A and keeping C/D/F in validation-only modules outside capture and persistence seams.
+  - Added a first layered experimental representation with regions, observations, transitions, uncertainty, completeness, and provenance.
+
+## 2026-08-01 - OBS-V3-01 Source Analysis Shadow Seam
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/source-analysis/`
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts`
+  - `src/cognition/observation/benchmark/observation-benchmark-fingerprint.ts`
+  - `src/cognition/observation/benchmark/observation-benchmark-runner.ts`
+  - `src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts`
+  - `docs/v2-build/observation/Observation-V3-Source-Analysis.md`
+  - `docs/v2-build/observation/Observation-V3-Source-Analysis-Responsibility-Scout.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npm.cmd test -- src/cognition/observation-v3/source-analysis/__tests__/source-analysis.test.ts src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts` -> pass (`3` files, `42` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in latent V2/runtime files
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-01T07-15-01-516Z.log`
+  - `npm.cmd run benchmark:observation:run -- --id OBS-A-001 --output-root .validation/observation-benchmark/source-analysis-shadow-check` -> completed, run `20260801T074516Z-39b3730-OBS-A-001`
+  - `npm.cmd run benchmark:observation:run -- --id OBS-C-002 --output-root .validation/observation-benchmark/source-analysis-shadow-check` -> completed with failures, run `20260801T074515Z-39b3730-OBS-C-002`
+  - `npm.cmd run benchmark:observation:run -- --id OBS-D-001 --output-root .validation/observation-benchmark/source-analysis-shadow-check` -> completed, run `20260801T072639Z-39b3730-OBS-D-001`
+- Notes:
+  - Introduced the first real Observation V3 subsystem boundary in shadow mode without changing the active V2 Observation authority path.
+  - Added deterministic source profiling, isolated failure handling, benchmark artifact preservation via `source-profile.json`, and separate contract/analyzer fingerprints.
+  - Verified representative short, long-tail, and fragmented benchmark items all emitted source-profile artifacts while preserving normal extraction routing and final benchmark verdict behavior.
+
+## 2026-08-01 - OBS-V3-02B Completeness Analysis Shadow Implementation and V2 Guard Equivalence
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/completeness-analysis/`
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts`
+  - `src/cognition/observation/benchmark/observation-benchmark-fingerprint.ts`
+  - `src/cognition/observation/benchmark/observation-benchmark-runner.ts`
+  - `src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts`
+  - `src/cognition/observation/experiment/configurations/current-baseline.ts`
+  - `src/cognition/observation/experiment/configurations/targeted-recovery.ts`
+  - `docs/v2-build/observation/Observation-V3-Completeness-Analysis-Shadow-Implementation.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/completeness-analysis/__tests__/completeness-analysis.test.ts src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts` -> pass (`4` files, `62` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in latent V2/runtime files
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-01T09-25-14-526Z.log`
+  - `npm.cmd run benchmark:observation:run -- --id OBS-A-001 --output-root .validation/observation-benchmark/completeness-shadow-check` -> completed, run `20260801T092717Z-39b3730-OBS-A-001`
+  - `npm.cmd run benchmark:observation:run -- --id OBS-C-002 --output-root .validation/observation-benchmark/completeness-shadow-check` -> completed with failures, run `20260801T092826Z-39b3730-OBS-C-002`
+  - `npm.cmd run benchmark:observation:run -- --id OBS-H-002 --output-root .validation/observation-benchmark/completeness-shadow-check` -> completed with failures, run `20260801T092828Z-39b3730-OBS-H-002`
+  - `npm.cmd run benchmark:observation:run -- --id OBS-D-001 --output-root .validation/observation-benchmark/completeness-shadow-check` -> completed, run `20260801T093055Z-39b3730-OBS-D-001`
+  - `npm.cmd run benchmark:observation:run -- --id OBS-E-002 --output-root .validation/observation-benchmark/completeness-shadow-check` -> completed, run `20260801T093053Z-39b3730-OBS-E-002`
+- Notes:
+  - Introduced the V3 Completeness Analysis subsystem as a deterministic, LLM-free shadow evaluator without changing V2 extraction authority, guard behavior, retry routing, fallback behavior, persistence, or final Observation output.
+  - Added canonical physical gaps, conservative adequacy classification, authority-neutral recovery recommendations, attempt-level equivalence comparison, and benchmark preservation via `completeness-report.json`.
+  - Live shadow validation showed V3 matched failure direction on known omission failures and was materially stricter than active V2 on several currently successful controls, primarily because of tail-gap, missing late-section, and ending-retention rules.
+
+## 2026-08-01 - OBS-V3-02C Completeness Shadow Validation and Rule Calibration
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/completeness-analysis/`
+  - `scripts/run-observation-v3-completeness-calibration.ts`
+  - `src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts`
+  - `docs/v2-build/observation/Observation-V3-Completeness-Shadow-Validation-Plan.md`
+  - `docs/v2-build/observation/Observation-V3-Completeness-Rule-Calibration.md`
+  - `docs/v2-build/observation/Observation-V3-Completeness-Shadow-Validation-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Completeness-Analysis-Shadow-Implementation.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/completeness-analysis/__tests__/completeness-analysis.test.ts src/cognition/observation-v3/completeness-analysis/__tests__/completeness-calibration.test.ts src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts` -> pass (`5` files, `71` tests)
+  - `npx.cmd tsc --noEmit` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in latent V2/runtime files
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-01T10-41-01-711Z.log`
+  - `npx.cmd tsx scripts/run-observation-v3-completeness-calibration.ts` -> executed the full preserved `8x3` matrix, validation root `.validation/observation-v3/completeness-calibration/20260801T100214Z-obs-v3-completeness-calibration/`
+  - `npx.cmd tsx scripts/run-observation-v3-completeness-calibration.ts --existing-root .validation/observation-v3/completeness-calibration/20260801T100214Z-obs-v3-completeness-calibration` -> pass, regenerated post-calibration replay summaries against preserved candidate bundles
+- Notes:
+  - Preserved Observation V2 as the active authority path while calibrating only deterministic V3 completeness rules.
+  - Added a frozen pre-calibration replay analyzer so pre/post adequacy can be compared on identical preserved candidate bundles without rerunning provider extraction.
+  - Calibration corrected short coherent false positives such as `OBS-A-002` while preserving severe omission sensitivity on `OBS-C-002` and `OBS-H-002`.
+  - Accepted multi-scene, fragmented, and uncertainty-heavy controls still show unresolved strictness, so V3 remains shadow-only and not admission-relevant.
+
+## 2026-08-02 - OBS-V3-03B Supplemental Realization Shadow Implementation and Targeted-Recovery Equivalence
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/supplemental-realization/`
+  - `src/cognition/observation/experiment/configurations/targeted-recovery.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-fingerprint.ts`
+  - `src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts`
+  - `src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts`
+  - `src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts`
+  - `src/cognition/observation/benchmark/__tests__/observation-expanded-targeted-recovery-baseline.test.ts`
+  - `src/cognition/observation/benchmark/__tests__/observation-benchmark-artifact-writer.test.ts`
+  - `docs/v2-build/observation/Observation-V3-Supplemental-Realization-Shadow-Implementation.md`
+  - `docs/v2-build/observation/Observation-V3-Supplemental-Realization-Equivalence-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Supplemental-Realization-V2-Equivalence-Plan.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/supplemental-realization/__tests__/supplemental-realization.test.ts src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts src/cognition/observation/benchmark/__tests__/targeted-recovery-refinement.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-expanded-targeted-recovery-baseline.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-artifact-writer.test.ts` -> pass (`6` files, `52` tests)
+  - `npx.cmd tsx --eval "<preserved supplemental replay summary>"` -> pass, preserved replay summary `{ total: 23, windowExact: 23, windowDiff: 0, comparisonCounts: { equivalent: 23, equivalent_with_representation_difference: 0, realization_stricter: 0, realization_more_permissive: 0, semantically_incomparable: 0 } }`
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in latent V2/runtime files
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T12-53-26-309Z.log`
+- Notes:
+  - Established `src/cognition/observation-v3/supplemental-realization/` as the live shadow owner of bounded supplemental realization planning, prompt preparation, supplemental package construction, provenance, diagnostics, and artifact generation.
+  - Rewired the experimental targeted-recovery configuration to delegate bounded supplemental generation to the V3 subsystem while preserving the existing experiment output shape and leaving all production Observation behavior unchanged.
+  - Preserved replay showed exact recovery-window equivalence on all `23` replayable preserved canonical-window cases reviewed in this ticket.
+
+## 2026-08-02 - OBS-V3-05A Memory Realization Responsibility Scout and Constitutional Contract
+
+- Phase: BUILD
+- Touched boundaries:
+  - `docs/v2-build/observation/Observation-V3-Memory-Realization-Responsibility-Scout.md`
+  - `docs/v2-build/observation/Observation-V3-Memory-Realization-Contract.md`
+  - `docs/v2-build/observation/Observation-V3-Memory-Realization-V2-Equivalence-Plan.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - Documentation consistency review against:
+    - `Observation-V3-Architecture.md`
+    - `Observation-V3-Subsystem-Contracts.md`
+    - `Observation-V3-Dataflow.md`
+    - `Observation-V3-Memory-Construction-Philosophy.md`
+    - `Observation-V3-Implementation-Blueprint.md`
+    - `Observation-V3-Memory-Composition-Contract.md`
+    - `Observation-V3-Supplemental-Realization-Contract.md`
+    - `Observation-V3-Authority-Admission-Contract.md`
+  - Repository scout against current implicit canonicalization and persistence seams in:
+    - `src/domain/observation/v2-runtime.ts`
+    - `src/cognition/observation/scene-discovery.ts`
+    - `src/cognition/observation/experiment/observation-topology-configuration-helpers.ts`
+    - `src/infrastructure/persistence/observation-v2-write-store.ts`
+    - `src/infrastructure/supabase/adapters/observation-v2-row.ts`
+    - `src/infrastructure/supabase/repositories/observation-v2-supabase-repository.ts`
+    - `src/cognition/observation-v3/authority-admission/shadow-authority-admission.ts`
+    - `app/capture/page.tsx`
+- Notes:
+  - Defined Memory Realization as the missing canonicalization subsystem between `Memory Composition` and `Authority Admission`.
+  - Documented that V2 currently spreads canonicalization across bundle hardening, persistence/row adapters, and the Authority Admission canonical-equivalent shadow adapter.
+  - Established that canonical status is structural and admission-ready, but still non-authoritative and not persistence-authorized by itself.
+
+## 2026-08-02 - OBS-V3-05B Memory Realization Shadow Implementation and Canonical-Equivalent Replacement
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/memory-realization/`
+  - `src/cognition/observation-v3/authority-admission/`
+  - `docs/v2-build/observation/Observation-V3-Memory-Realization-Shadow-Implementation.md`
+  - `docs/v2-build/observation/Observation-V3-Memory-Realization-Equivalence-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Memory-Realization-V2-Equivalence-Plan.md`
+  - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Implementation.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/memory-realization/__tests__/memory-realization.test.ts src/cognition/observation-v3/authority-admission/__tests__/admission-evaluator.test.ts src/cognition/observation-v3/authority-admission/__tests__/shadow-authority-admission.test.ts` -> pass (`3` files, `40` tests)
+  - `npx.cmd vitest run src/cognition/observation-v3/memory-realization/__tests__/memory-realization.test.ts src/cognition/observation-v3/authority-admission/__tests__/shadow-authority-admission.test.ts src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts src/cognition/observation-v3/supplemental-realization/__tests__/supplemental-realization.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-artifact-writer.test.ts` -> pass (`5` files, `34` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in latent V2/runtime files
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T13-31-06-623Z.log`
+  - `npx.cmd tsx scripts/run-observation-v3-authority-admission-shadow.ts --review-id 20260802T133200Z-obs-v3-authority-admission-shadow-native-default` -> pass, preserved replay root `.validation/observation-v3/authority-admission-shadow/20260802T133200Z-obs-v3-authority-admission-shadow-native-default/`
+- Notes:
+  - Implemented native Memory Realization as the default shadow source for canonical candidate identity, canonical hash, realization validation, canonical provenance, and Authority Admission shadow input.
+  - Retained the legacy canonical-equivalent adapter only for dual-path comparison and backward readability of older review roots.
+  - Applied one bounded contract repair so Authority Admission compares Completeness against upstream candidate lineage hash rather than falsely equating pre-realization candidate hash with post-realization canonical hash.
+
+## 2026-08-02 - OBS-V3-E2E-04 Supplemental Replay Investigation and Native Replay Completion
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/pipeline/replay/`
+  - `src/cognition/observation-v3/supplemental-realization/package-builder.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-artifact-writer.ts`
+  - `src/cognition/observation/benchmark/observation-topology-experiment-runner.ts`
+  - `docs/v2-build/observation/Observation-V3-Supplemental-Replay-Investigation.md`
+  - `docs/v2-build/observation/Observation-V3-End-to-End-Replay-Completion.md`
+  - `docs/v2-build/observation/Observation-V3-Native-Replay-Validation-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-End-to-End-Shadow-Pipeline.md`
+  - `docs/v2-build/observation/Observation-V3-Corpus-Replay.md`
+  - `docs/v2-build/observation/Observation-V3-Architecture.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/memory-realization/__tests__/memory-realization.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts src/cognition/observation-v3/pipeline/__tests__/pipeline-runner.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts src/cognition/observation/__tests__/llm-scene-observation-extractor.test.ts src/cognition/observation-v3/supplemental-realization/__tests__/supplemental-realization.test.ts` -> pass (`9` files, `79` tests)
+  - `npx.cmd tsc --noEmit` -> pass
+  - `npm.cmd run lint -- src/cognition/observation src/cognition/observation-v3` -> pass
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-02T19-05-50-768Z.log`
+  - `npx.cmd tsx --eval ...runObservationV3CorpusReplay(...)` -> pass for deterministic preserved-evidence native replay on `OBS-A-001`, `OBS-C-002`, and `OBS-D-001`
+- Notes:
+  - Repaired preserved supplemental replay by recovering canonical gap identity from preserved recovery-selection lineage, selecting the newest compatible topology root, and allowing coherent topology extraction replay when standalone benchmark extraction and supplemental lineage diverged.
+  - Repaired two native supplemental package-construction defects surfaced by downstream Memory Realization: unclamped recovery-region evidence spans and double-shifting of already-absolute preserved evidence spans.
+  - Added checkpointed topology experiment finalization and `--resume-run` support so interrupted experiment runs can continue or finalize without rewriting completed item artifacts.
