@@ -111,6 +111,16 @@ function makeCompletenessReport(gaps: PhysicalGap[]): CompletenessReport {
   };
 }
 
+function makeCompletenessReportWithOverrides(
+  gaps: PhysicalGap[],
+  overrides: Partial<CompletenessReport>,
+): CompletenessReport {
+  return {
+    ...makeCompletenessReport(gaps),
+    ...overrides,
+  };
+}
+
 describe("supplemental realization", () => {
   it("does not plan supplemental work when recovery is not required", () => {
     const completeness = {
@@ -151,14 +161,14 @@ describe("supplemental realization", () => {
     expect(plan.realizationContext).toEqual([]);
   });
 
-  it("plans bounded supplemental realization from canonical physical gaps", () => {
+  it("builds an ending-biased bounded window for large terminal tail gaps", () => {
     const completeness = makeCompletenessReport([
       makeGap({
         id: "physical-gap-1",
         sourceStart: 2375,
         sourceEnd: 4614,
         kind: "tail",
-        reasons: ["coverage_tail_loss_detected", "late_section_missing"],
+        reasons: ["coverage_tail_loss_detected", "late_section_missing", "ending_not_retained"],
         confidence: "high",
       }),
     ]);
@@ -179,8 +189,69 @@ describe("supplemental realization", () => {
     expect(plan.selectedGaps).toHaveLength(1);
     expect(plan.selectedGaps[0]?.physicalGapId).toBe("physical-gap-1");
     expect(plan.selectedGaps[0]?.sourceStart).toBe(2375);
-    expect(plan.realizationContext[0]?.contextStart).toBe(2115);
+    expect(plan.realizationContext[0]?.contextEnd).toBe(4614);
+    expect(plan.realizationContext[0]?.contextStart).toBe(3190);
+    expect(plan.realizationContext[0]?.contextEnd - plan.realizationContext[0]!.contextStart).toBeLessThan(3200);
     expect(plan.realizationContext[0]?.wholeSourceForbidden).toBe(true);
+  });
+
+  it("does not apply ending-biased targeting to non-terminal recovery gaps", () => {
+    const sourceText = "x".repeat(2400);
+    const completeness = makeCompletenessReportWithOverrides([
+      makeGap({
+        id: "physical-gap-1",
+        sourceStart: 600,
+        sourceEnd: 1000,
+        kind: "internal",
+        reasons: ["coverage_internal_gap_detected"],
+        confidence: "medium",
+      }),
+    ], {
+      coverage: {
+        largestCoveredSpanEnd: 2200,
+        coverageRatio: 0.75,
+        uncoveredPrefix: null,
+        uncoveredTail: null,
+        internalUncoveredRegions: [{ start: 600, end: 1000 }],
+        measurementAvailability: "full",
+      },
+      lateRetention: {
+        lateSectionStart: 1800,
+        lateSectionSentenceUnits: 3,
+        lateSectionObservationCount: 2,
+        status: "retained",
+      },
+      endingRetention: {
+        endingStart: 2250,
+        retained: true,
+        status: "retained",
+      },
+      recoveryRecommendation: {
+        disposition: "required_before_admission",
+        targetedPhysicalGapIds: ["physical-gap-1"],
+        eligibility: "eligible",
+        advisoryClass: "admission_relevant",
+        reasons: ["physical_gap_detected"],
+      },
+      diagnosticReasons: ["coverage_internal_gap_detected", "recovery_required_for_admission"],
+    });
+
+    const plan = planSupplementalRealization({
+      sourceText,
+      completeness,
+      baseline: {
+        candidateId: "candidate-1",
+        candidateHash: "candidate-hash",
+        regions: [],
+        units: [],
+      },
+      contextPadding: 260,
+      maximumWindowLength: 3200,
+    });
+
+    expect(plan.selectedGaps).toHaveLength(1);
+    expect(plan.realizationContext[0]?.contextStart).toBe(340);
+    expect(plan.realizationContext[0]?.contextEnd).toBe(1260);
   });
 
   it("builds a provenance-tagged supplemental package from structured bounded output", () => {
@@ -513,6 +584,54 @@ describe("supplemental realization", () => {
         parsing: expect.objectContaining({
           status: "parsed",
           structuredOutputHash: expect.any(String),
+        }),
+      }),
+    ]);
+  });
+
+  it("captures supplemental provider latency in evidence when available", async () => {
+    const evidenceEvents: unknown[] = [];
+
+    await runShadowSupplementalRealization({
+      sourceText: "x".repeat(4614),
+      completeness: makeCompletenessReport([
+        makeGap({
+          id: "physical-gap-1",
+          sourceStart: 2375,
+          sourceEnd: 4614,
+          kind: "tail",
+          reasons: ["coverage_tail_loss_detected", "late_section_missing", "ending_not_retained"],
+          confidence: "high",
+        }),
+      ]),
+      baseline: {
+        candidateId: "candidate-1",
+        candidateHash: "candidate-hash",
+        regions: [],
+        units: [],
+      },
+      contextPadding: 260,
+      maximumWindowLength: 3200,
+      onProviderEvidence: async (evidence) => {
+        evidenceEvents.push(evidence);
+      },
+      executeStructuredRealization: async () => ({
+        outputText: JSON.stringify({ regions: [] }),
+        providerStatus: "completed",
+        providerIncompleteReason: null,
+        tokenUsage: {
+          input: 1,
+          output: 1,
+          total: 2,
+        },
+        latencyMs: 42,
+      } as never),
+    });
+
+    expect(evidenceEvents).toEqual([
+      expect.objectContaining({
+        providerBoundary: expect.objectContaining({
+          latencyMs: 42,
         }),
       }),
     ]);

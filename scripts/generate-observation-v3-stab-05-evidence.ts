@@ -38,6 +38,31 @@ async function readJson(filePath: string): Promise<unknown> {
   return JSON.parse(await fs.readFile(filePath, "utf8"));
 }
 
+interface PipelineResultLike {
+  summary: {
+    finalOutcome: string;
+  };
+  stageResults: Array<{
+    stage: string;
+    payload?: {
+      result?: {
+        duplicateAnalysis?: {
+          unresolvedOverlaps?: unknown[];
+        };
+        canonicalCandidate?: {
+          uncertaintyRecords?: Array<{
+            uncertaintyType: string;
+          }>;
+        };
+      };
+    };
+  }>;
+}
+
+function findStage(result: PipelineResultLike, stage: string) {
+  return result.stageResults.find((entry) => entry.stage === stage);
+}
+
 function buildHistoricalObsE001Regression() {
   return composeMemoryPackages({
     dreamTextLength: 720,
@@ -321,8 +346,8 @@ async function main() {
   const runId = readArg("--run-id") ?? "run-1";
   const runRoot = path.join(root, "runs", runId);
 
-  const currentObsE001 = await readJson(path.join(runRoot, "cases", "OBS-E-001", "pipeline-result.json"));
-  const currentObsH002 = await readJson(path.join(runRoot, "cases", "OBS-H-002", "pipeline-result.json"));
+  const currentObsE001 = await readJson(path.join(runRoot, "cases", "OBS-E-001", "pipeline-result.json")) as PipelineResultLike;
+  const currentObsH002 = await readJson(path.join(runRoot, "cases", "OBS-H-002", "pipeline-result.json")) as PipelineResultLike;
   const currentObsE001Governance = await readJson(path.join(runRoot, "cases", "OBS-E-001", "stages", "memory_composition", "artifacts", "overlap-governance"));
   const currentObsH002Governance = await readJson(path.join(runRoot, "cases", "OBS-H-002", "stages", "memory_composition", "artifacts", "overlap-governance"));
 
@@ -357,14 +382,15 @@ async function main() {
       },
       current_obs_e_001_main: {
         finalOutcome: currentObsE001.summary.finalOutcome,
-        supplementalStage: currentObsE001.stageResults.find((stage: { stage: string }) => stage.stage === "supplemental_realization"),
+        supplementalStage: findStage(currentObsE001, "supplemental_realization") ?? null,
         memoryCompositionGovernance: currentObsE001Governance,
       },
       current_obs_h_002_main: {
         finalOutcome: currentObsH002.summary.finalOutcome,
-        unresolvedOverlapCount: currentObsH002.stageResults.find((stage: { stage: string }) => stage.stage === "memory_composition").payload.result.duplicateAnalysis.unresolvedOverlaps.length,
-        alternativeUncertaintyCount: currentObsH002.stageResults.find((stage: { stage: string }) => stage.stage === "memory_realization").payload.result.canonicalCandidate.uncertaintyRecords
-          .filter((record: { uncertaintyType: string }) => record.uncertaintyType === "alternative_preserved").length,
+        unresolvedOverlapCount: findStage(currentObsH002, "memory_composition")?.payload?.result?.duplicateAnalysis?.unresolvedOverlaps?.length ?? 0,
+        alternativeUncertaintyCount: (
+          findStage(currentObsH002, "memory_realization")?.payload?.result?.canonicalCandidate?.uncertaintyRecords ?? []
+        ).filter((record) => record.uncertaintyType === "alternative_preserved").length,
         overlapGovernance: currentObsH002Governance,
       },
     },

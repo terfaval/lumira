@@ -15,12 +15,73 @@ function sha256Hex(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function hasReason(gap: PhysicalGap, reason: string): boolean {
+  return gap.reasons.includes(reason as PhysicalGap["reasons"][number]);
+}
+
+function shouldUseEndingBiasedWindow(input: {
+  gap: PhysicalGap;
+  completeness: CompletenessReport;
+  contextPadding: number;
+  maximumWindowLength: number;
+}): boolean {
+  if (input.gap.kind !== "tail" || input.gap.confidence !== "high") {
+    return false;
+  }
+
+  const hasTailCoverageLoss = hasReason(input.gap, "coverage_tail_loss_detected");
+  const hasTerminalOmission =
+    input.completeness.lateRetention.status === "missing"
+    || input.completeness.endingRetention.status === "not_retained"
+    || hasReason(input.gap, "late_section_missing")
+    || hasReason(input.gap, "ending_not_retained");
+  if (!hasTailCoverageLoss || !hasTerminalOmission) {
+    return false;
+  }
+
+  const gapLength = input.gap.sourceEnd - input.gap.sourceStart;
+  const minimumTerminalGapLength = Math.max(
+    Math.floor(input.maximumWindowLength * 0.4),
+    input.contextPadding * 3,
+  );
+
+  return gapLength > minimumTerminalGapLength;
+}
+
 function buildContextWindow(input: {
   sourceLength: number;
   gap: PhysicalGap;
+  completeness: CompletenessReport;
   contextPadding: number;
   maximumWindowLength: number;
 }): { contextStart: number; contextEnd: number } {
+  if (shouldUseEndingBiasedWindow(input)) {
+    const terminalAnchors = [
+      input.completeness.lateRetention.status === "missing"
+      || input.completeness.lateRetention.status === "thin"
+        ? input.completeness.lateRetention.lateSectionStart
+        : null,
+      input.completeness.endingRetention.status === "not_retained"
+        ? input.completeness.endingRetention.endingStart
+        : null,
+    ].filter((value): value is number => typeof value === "number");
+    const prioritizedGapStart = Math.max(
+      input.gap.sourceStart,
+      terminalAnchors.length > 0 ? Math.min(...terminalAnchors) : input.gap.sourceStart,
+    );
+    let contextStart = Math.max(0, prioritizedGapStart - input.contextPadding);
+    const contextEnd = input.gap.sourceEnd;
+
+    if (contextEnd - contextStart > input.maximumWindowLength) {
+      contextStart = Math.max(0, contextEnd - input.maximumWindowLength);
+    }
+
+    return {
+      contextStart,
+      contextEnd,
+    };
+  }
+
   let contextStart = Math.max(0, input.gap.sourceStart - input.contextPadding);
   let contextEnd = Math.min(input.sourceLength, input.gap.sourceEnd + input.contextPadding);
 
@@ -76,6 +137,7 @@ export function planSupplementalRealization(input: {
       const { contextStart, contextEnd } = buildContextWindow({
         sourceLength: input.sourceText.length,
         gap,
+        completeness: input.completeness,
         contextPadding: input.contextPadding,
         maximumWindowLength: input.maximumWindowLength,
       });

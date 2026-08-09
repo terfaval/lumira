@@ -110,7 +110,7 @@ async function executeTarget(input: {
       tokenUsage: response.tokenUsage,
     },
     tokenUsage: response.tokenUsage,
-    latencyMs: null,
+    latencyMs: response.latencyMs ?? null,
     providerMetadata: {
       providerStatus: response.providerStatus,
       modelIdentifier: SUPPLEMENTAL_REALIZATION_MODEL,
@@ -199,6 +199,7 @@ export async function runShadowSupplementalRealization(
       packageId: pkg.packageId,
       providerStatus: realized.response.providerStatus,
       providerIncompleteReason: realized.response.providerIncompleteReason,
+      latencyMs: realized.response.latencyMs ?? null,
       tokenUsage: realized.response.tokenUsage,
       structured: realized.structured,
     });

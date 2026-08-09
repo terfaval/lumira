@@ -58,6 +58,36 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-08-09 - OBS-V3-STAB-06 Targeted Tail-Recovery Reliability and Cost-Latency Hardening
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/supplemental-realization/`
+  - `src/cognition/observation/experiment/openai-structured-experiment.ts`
+  - `scripts/generate-observation-v3-stab-05-evidence.ts`
+  - `.validation/observation-v3/stabilization/stab-06/20260809T142000Z-tail-window-hardening/`
+  - `docs/v2-build/observation/Observation-V3-Remaining-Issue-Register.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused subsystem suites:
+    - `npx.cmd vitest run src/cognition/observation-v3/supplemental-realization/__tests__/supplemental-realization.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/__tests__/pipeline-runner.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts` -> pass
+  - repository verification:
+    - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in `src/cognition/latent-v2/opportunity-constructor/provenance.ts` and `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+    - `npm.cmd run typecheck` -> pass
+    - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-09T13-26-32-887Z.log`
+  - fresh provider-backed validation:
+    - `npx.cmd tsx scripts/run-observation-topology-experiment.ts --benchmark OBS-H-002 --configuration C_TARGETED_RECOVERY --repeat 3 --output-root .validation/observation-topology-experiments/stab-06-postfix` -> completed with one descriptive-provider timeout before Supplemental on `repeat-01`, plus two successful recovery executions
+    - `npx.cmd tsx scripts/run-observation-topology-experiment.ts --benchmark OBS-H-002 --configuration C_TARGETED_RECOVERY --repeat 1 --output-root .validation/observation-topology-experiments/stab-06-postfix` -> pass, supplying a third successful post-fix recovery execution
+    - `npx.cmd tsx scripts/run-observation-topology-experiment.ts --benchmark OBS-B-001 --configuration C_TARGETED_RECOVERY --repeat 3 --output-root .validation/observation-topology-experiments/stab-06-postfix` -> pass
+    - `npx.cmd tsx scripts/run-observation-topology-experiment.ts --benchmark OBS-A-002 --benchmark OBS-E-001 --configuration C_TARGETED_RECOVERY --repeat 1 --output-root .validation/observation-topology-experiments/stab-06-postfix` -> pass
+- Notes:
+  - Repaired the primary `OBS-H-002` failure at the intended upstream seam: large high-confidence terminal tail gaps with `coverage_tail_loss_detected`, `late_section_missing`, and `ending_not_retained` now build an ending-biased bounded window that always includes the source ending instead of spending most of the budget on already-covered earlier material.
+  - Fresh `OBS-H-002` recovery windows moved from roughly `3161-3200` characters to a stable `1225`-character terminal window (`2632..3857`), while average supplemental extraction tokens dropped from `4689.33` to `2629.33` and average uncovered tail shrank from `1892.33` to `616.33`.
+  - `OBS-B-001` remained recovery-functional under the same bounded planner, `OBS-A-002` still skipped Supplemental under `not_required`, and the fresh `OBS-E-001` activation remained consistent with `required_before_admission`, so no `STAB-04` or `STAB-05` regression was introduced by this repair.
+  - Added evidence-only per-attempt Supplemental provider latency capture through the existing provider evidence path; machine-readable STAB-06 results are recorded at `.validation/observation-v3/stabilization/stab-06/20260809T142000Z-tail-window-hardening/stab-06-evidence.json`.
+
 ## 2026-08-09 - OBS-V3-STAB-05 Uncertainty-Aware Overlap Governance
 
 - Phase: BUILD

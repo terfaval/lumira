@@ -6,6 +6,7 @@ export interface StructuredExperimentResponse {
   outputText: string | null;
   providerStatus: string | null;
   providerIncompleteReason: string | null;
+  latencyMs?: number | null;
   tokenUsage: {
     input: number | null;
     output: number | null;
@@ -26,6 +27,7 @@ export async function runStructuredObservationExperiment(input: {
   }
 
   const client = new OpenAI({ apiKey: env.openAiApiKey });
+  const startedAt = Date.now();
   const response = await client.responses.create({
     model: input.model,
     input: input.prompt,
@@ -46,6 +48,7 @@ export async function runStructuredObservationExperiment(input: {
     outputText: response.output_text ?? null,
     providerStatus: response.status ?? null,
     providerIncompleteReason: response.incomplete_details?.reason ?? null,
+    latencyMs: Date.now() - startedAt,
     tokenUsage: {
       input: typeof response.usage?.input_tokens === "number" ? response.usage.input_tokens : null,
       output: typeof response.usage?.output_tokens === "number" ? response.usage.output_tokens : null,

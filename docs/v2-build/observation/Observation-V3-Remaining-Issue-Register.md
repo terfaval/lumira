@@ -204,6 +204,7 @@ Classification: `OPERATIONAL HARDENING`
 Evidence:
 
 - [Observation-V3-Production-Candidacy-Assessment.md](C:/mira/docs/v2-build/observation/Observation-V3-Production-Candidacy-Assessment.md:45)
+- [.validation/observation-v3/stabilization/stab-06/20260809T142000Z-tail-window-hardening/stab-06-evidence.json](C:/mira/.validation/observation-v3/stabilization/stab-06/20260809T142000Z-tail-window-hardening/stab-06-evidence.json)
 
 Owner subsystem: `supplemental-realization`
 
@@ -218,12 +219,14 @@ Prerequisites: `OV3-RI-01`
 Proposed resolution:
 
 - harden targeted-recovery reliability and bounded cost/latency behavior
+- bias large high-confidence terminal tail recovery windows toward the actual ending while keeping only enough preceding context for coherence
+- record per-attempt Supplemental provider latency in the existing evidence path
 
 Validation requirement:
 
 - repeated fresh `OBS-H-002` runs with cost/latency summaries
 
-Status: open
+Status: resolved on shadow path by `STAB-06` for the primary tail-targeting failure; `OBS-H-002` now uses a deterministic ending-biased bounded window with materially improved tail reach and lower supplemental token spend, while one fresh descriptive-provider timeout remains separately observable outside the repaired recovery-window boundary
 
 ## OV3-RI-07
 

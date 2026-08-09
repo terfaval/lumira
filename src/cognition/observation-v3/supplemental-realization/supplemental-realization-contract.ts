@@ -91,6 +91,7 @@ export interface SupplementalRealizationExecutionResponse {
   outputText: string | null;
   providerStatus: string | null;
   providerIncompleteReason: string | null;
+  latencyMs?: number | null;
   tokenUsage: {
     input: number | null;
     output: number | null;
@@ -114,6 +115,7 @@ export interface SupplementalRealizationRunResult {
     packageId: string | null;
     providerStatus: string | null;
     providerIncompleteReason: string | null;
+    latencyMs?: number | null;
     tokenUsage: {
       input: number | null;
       output: number | null;
