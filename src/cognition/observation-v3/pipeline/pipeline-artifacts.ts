@@ -158,16 +158,24 @@ export function buildObservationV3PipelineArtifacts(
       dependencies: [
         { stage: "source_analysis", downstream: ["descriptive_extraction"] },
         { stage: "descriptive_extraction", downstream: ["completeness_analysis"] },
-        { stage: "completeness_analysis", downstream: ["supplemental_realization", "memory_composition", "authority_admission"] },
+        { stage: "completeness_analysis", downstream: ["supplemental_realization", "memory_composition"] },
         { stage: "supplemental_realization", downstream: ["memory_composition"] },
-        { stage: "memory_composition", downstream: ["memory_realization"] },
+        { stage: "memory_composition", downstream: ["memory_realization", "authority_admission"] },
         { stage: "memory_realization", downstream: ["authority_admission"] },
       ],
     },
     "pipeline-failure-propagation.json": result.failurePropagation,
     "pipeline-governance.json": {
       finalOutcome: result.summary.finalOutcome,
+      completenessLifecycle: {
+        initialStage: "completeness_analysis",
+        finalStage: "memory_composition",
+        admissionConsumesFinalCompleteness: true,
+      },
       admissionStage: result.stageResults.find((stage) => stage.stage === "authority_admission") ?? null,
+      initialCompletenessStage: result.stageResults.find((stage) => stage.stage === "completeness_analysis") ?? null,
+      finalCompleteness:
+        (findStagePayload(result, "memory_composition")?.finalCompleteness as Record<string, unknown> | undefined) ?? null,
       memoryRealizationStage: result.stageResults.find((stage) => stage.stage === "memory_realization") ?? null,
     },
     ...(nativeIdentityLineageComparison

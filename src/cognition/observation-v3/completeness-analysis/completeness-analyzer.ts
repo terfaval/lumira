@@ -1,5 +1,10 @@
-import { adaptObservationBundle } from "@/src/cognition/observation-v3/completeness-analysis/candidate-adapter";
+import {
+  adaptObservationBundle,
+  adaptComposedCandidate,
+  type AdaptedObservationCandidate,
+} from "@/src/cognition/observation-v3/completeness-analysis/candidate-adapter";
 import type {
+  CandidateIdentity,
   CompletenessAdequacy,
   CompletenessReason,
   CompletenessReport,
@@ -23,29 +28,31 @@ import { analyzeLateRetention } from "@/src/cognition/observation-v3/completenes
 import { analyzePhysicalGaps } from "@/src/cognition/observation-v3/completeness-analysis/physical-gap-analysis";
 import { buildRecoveryRecommendation } from "@/src/cognition/observation-v3/completeness-analysis/recovery-recommendation";
 import { analyzeStructuralAssessment } from "@/src/cognition/observation-v3/completeness-analysis/structural-assessment";
+import type { ComposedProvisionalMemoryCandidate } from "@/src/cognition/observation-v3/memory-composition/memory-composition-contract";
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
 
 function buildIndeterminateReport(input: {
   dreamText: string;
-  bundle: ObservationV2Bundle;
+  candidate: AdaptedObservationCandidate;
+  candidateIdentity: CandidateIdentity;
+  sourceIdentity?: {
+    sourceHash: string;
+    sourceLength: number;
+  };
   code: "candidate_unavailable" | "evidence_spans_unavailable";
   message: string;
   reasons: CompletenessReason[];
 }): CompletenessReport {
   const sourceHash = hashStableValue(input.dreamText);
-  const candidateHash = hashStableValue(input.bundle);
 
   return {
     schemaVersion: COMPLETENESS_ANALYSIS_SCHEMA_VERSION,
     analyzerVersion: COMPLETENESS_ANALYZER_VERSION,
-    sourceIdentity: {
+    sourceIdentity: input.sourceIdentity ?? {
       sourceHash,
       sourceLength: input.dreamText.length,
     },
-    candidateIdentity: {
-      candidateHash,
-      candidateKind: "primary_extraction",
-    },
+    candidateIdentity: input.candidateIdentity,
     status: input.code,
     adequacy: "indeterminate",
     coverage: {
@@ -72,8 +79,8 @@ function buildIndeterminateReport(input: {
       status: "indeterminate",
     },
     structuralAssessment: {
-      sceneOrLocalityCount: input.bundle.scenes.length,
-      observationCount: input.bundle.scenes.reduce((count, scene) => count + scene.observations.length, 0),
+      sceneOrLocalityCount: input.candidate.scenes.length,
+      observationCount: input.candidate.observations.length,
       overmergeCueGroups: null,
       repeatedSpanRealizationCount: null,
       outOfOrderLocalityCount: null,
@@ -255,11 +262,34 @@ export function analyzeObservationCompleteness(input: {
   dreamText: string;
   bundle: ObservationV2Bundle;
 }): CompletenessReport {
-  const candidate = adaptObservationBundle(input.bundle);
+  const candidateIdentity: CandidateIdentity = {
+    candidateHash: hashStableValue(input.bundle),
+    candidateKind: "primary_extraction",
+  };
+
+  return analyzeObservationCandidateCompleteness({
+    dreamText: input.dreamText,
+    candidate: adaptObservationBundle(input.bundle),
+    candidateIdentity,
+  });
+}
+
+export function analyzeObservationCandidateCompleteness(input: {
+  dreamText: string;
+  candidate: AdaptedObservationCandidate;
+  candidateIdentity: CandidateIdentity;
+  sourceIdentity?: {
+    sourceHash: string;
+    sourceLength: number;
+  };
+}): CompletenessReport {
+  const candidate = input.candidate;
   if (candidate.observations.length === 0) {
     return buildIndeterminateReport({
       dreamText: input.dreamText,
-      bundle: input.bundle,
+      candidate,
+      candidateIdentity: input.candidateIdentity,
+      sourceIdentity: input.sourceIdentity,
       code: "candidate_unavailable",
       message: "candidate_contains_no_observations",
       reasons: ["evidence_spans_missing"],
@@ -273,7 +303,9 @@ export function analyzeObservationCompleteness(input: {
   if (evidenceRanges.normalizedRanges.length === 0) {
     return buildIndeterminateReport({
       dreamText: input.dreamText,
-      bundle: input.bundle,
+      candidate,
+      candidateIdentity: input.candidateIdentity,
+      sourceIdentity: input.sourceIdentity,
       code: "evidence_spans_unavailable",
       message: "candidate_contains_no_valid_evidence_ranges",
       reasons: ["evidence_spans_missing"],
@@ -282,7 +314,9 @@ export function analyzeObservationCompleteness(input: {
   if (evidenceRanges.measurementAvailability === "unavailable") {
     return buildIndeterminateReport({
       dreamText: input.dreamText,
-      bundle: input.bundle,
+      candidate,
+      candidateIdentity: input.candidateIdentity,
+      sourceIdentity: input.sourceIdentity,
       code: "evidence_spans_unavailable",
       message: "candidate_contains_no_valid_observation_evidence_ranges",
       reasons: ["evidence_spans_missing"],
@@ -386,14 +420,11 @@ export function analyzeObservationCompleteness(input: {
   return {
     schemaVersion: COMPLETENESS_ANALYSIS_SCHEMA_VERSION,
     analyzerVersion: COMPLETENESS_ANALYZER_VERSION,
-    sourceIdentity: {
+    sourceIdentity: input.sourceIdentity ?? {
       sourceHash: hashStableValue(input.dreamText),
       sourceLength: input.dreamText.length,
     },
-    candidateIdentity: {
-      candidateHash: hashStableValue(input.bundle),
-      candidateKind: "primary_extraction",
-    },
+    candidateIdentity: input.candidateIdentity,
     status: "available",
     adequacy,
     coverage: {
@@ -412,4 +443,25 @@ export function analyzeObservationCompleteness(input: {
     metricDiscrepancies,
     diagnosticReasons: [...diagnosticReasons].sort((left, right) => left.localeCompare(right)),
   };
+}
+
+export function analyzeComposedCandidateCompleteness(input: {
+  dreamText: string;
+  composedCandidate: ComposedProvisionalMemoryCandidate;
+  composedCandidateHash: string;
+  sourceIdentity?: {
+    sourceHash: string;
+    sourceLength: number;
+  };
+}): CompletenessReport {
+  return analyzeObservationCandidateCompleteness({
+    dreamText: input.dreamText,
+    candidate: adaptComposedCandidate(input.composedCandidate),
+    candidateIdentity: {
+      candidateHash: input.composedCandidateHash,
+      candidateKind: "composed_candidate",
+      candidateVersionLabel: "post_composition",
+    },
+    sourceIdentity: input.sourceIdentity,
+  });
 }

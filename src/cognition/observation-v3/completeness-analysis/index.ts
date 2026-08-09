@@ -26,7 +26,18 @@ export {
   type StructuralCompletenessAssessment,
   type StructuralWeaknessSignal,
 } from "@/src/cognition/observation-v3/completeness-analysis/completeness-analysis-contract";
-export { analyzeObservationCompleteness } from "@/src/cognition/observation-v3/completeness-analysis/completeness-analyzer";
+export {
+  analyzeComposedCandidateCompleteness,
+  analyzeObservationCompleteness,
+  analyzeObservationCandidateCompleteness,
+} from "@/src/cognition/observation-v3/completeness-analysis/completeness-analyzer";
+export {
+  adaptComposedCandidate,
+  adaptObservationBundle,
+  type AdaptedCandidateObservation,
+  type AdaptedCandidateScene,
+  type AdaptedObservationCandidate,
+} from "@/src/cognition/observation-v3/completeness-analysis/candidate-adapter";
 export {
   analyzeObservationCompletenessPreCalibration,
 } from "@/src/cognition/observation-v3/completeness-analysis/pre-calibration-analyzer";

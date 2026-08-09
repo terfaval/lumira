@@ -254,6 +254,99 @@ describe("runObservationV3ShadowPipeline", () => {
     });
   });
 
+  it("keeps initial completeness as the supplemental trigger while emitting final composed-candidate completeness", async () => {
+    const replay = buildRecoverableReplay();
+
+    const result = await runObservationV3ShadowPipeline({
+      userId: "user-1",
+      reflectiveObjectId: "object-1",
+      dreamText: replay.dreamText,
+      replay: replay.replay,
+    });
+
+    const initialCompleteness = result.stageResults.find((stage) => stage.stage === "completeness_analysis");
+    const composition = result.stageResults.find((stage) => stage.stage === "memory_composition");
+
+    expect(initialCompleteness).toMatchObject({
+      status: "success",
+      payload: expect.objectContaining({
+        candidateIdentity: expect.objectContaining({
+          candidateKind: "primary_extraction",
+        }),
+        adequacy: "inadequate_recoverable",
+      }),
+    });
+    expect(result.stageResults.find((stage) => stage.stage === "supplemental_realization")).toMatchObject({
+      status: "success",
+    });
+    expect(composition).toMatchObject({
+      status: "success",
+      payload: expect.objectContaining({
+        finalCompleteness: expect.objectContaining({
+          candidateIdentity: expect.objectContaining({
+            candidateKind: "composed_candidate",
+            candidateVersionLabel: "post_composition",
+          }),
+        }),
+      }),
+    });
+    expect(
+      (composition?.payload?.finalCompleteness as { candidateIdentity?: { candidateHash?: string } } | undefined)
+        ?.candidateIdentity?.candidateHash,
+    ).toBe(
+      (composition?.payload?.result as { composedCandidateIdentity?: { composedCandidateHash?: string } } | undefined)
+        ?.composedCandidateIdentity?.composedCandidateHash,
+    );
+  });
+
+  it("routes final composed-candidate completeness into authority admission with authoritative source identity", async () => {
+    const replay = buildRecoverableReplay();
+
+    const result = await runObservationV3ShadowPipeline({
+      userId: "user-1",
+      reflectiveObjectId: "object-1",
+      dreamText: replay.dreamText,
+      replay: replay.replay,
+    });
+
+    const composition = result.stageResults.find((stage) => stage.stage === "memory_composition");
+    const admission = result.stageResults.find((stage) => stage.stage === "authority_admission");
+    const memoryRealization = result.stageResults.find((stage) => stage.stage === "memory_realization");
+
+    expect(admission).toMatchObject({
+      status: "success",
+      payload: expect.objectContaining({
+        request: expect.objectContaining({
+          completeness: expect.objectContaining({
+            status: "available",
+            report: expect.objectContaining({
+              candidateIdentity: expect.objectContaining({
+                candidateKind: "composed_candidate",
+                candidateVersionLabel: "post_composition",
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+    expect(
+      (admission?.payload?.request as { sourceIdentity?: { sourceHash?: string } } | undefined)?.sourceIdentity?.sourceHash,
+    ).toBe(
+      (admission?.payload?.request as { completeness?: { report?: { sourceIdentity?: { sourceHash?: string } } } } | undefined)
+        ?.completeness?.report?.sourceIdentity?.sourceHash,
+    );
+    expect(
+      (admission?.payload?.request as {
+        completeness?: { report?: { candidateIdentity?: { candidateHash?: string } } };
+      } | undefined)?.completeness?.report?.candidateIdentity?.candidateHash,
+    ).toBe(
+      (memoryRealization?.payload?.result as {
+        canonicalCandidate?: { composedCandidateIdentity?: { composedCandidateHash?: string } };
+      } | undefined)?.canonicalCandidate?.composedCandidateIdentity?.composedCandidateHash,
+    );
+    expect((composition?.payload?.artifacts as Record<string, unknown> | undefined)?.["final-completeness-report"]).toBeDefined();
+  });
+
   it("fails supplemental realization explicitly when required preserved replay evidence is missing", async () => {
     const replay = buildRecoverableReplay();
     replay.replay.supplementalRealization = {

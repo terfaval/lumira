@@ -58,6 +58,110 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-08-08 - OBS-V3-STAB-03 Final-Candidate Completeness Lifecycle Repair
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/completeness-analysis/`
+  - `src/cognition/observation-v3/pipeline/`
+  - `src/cognition/observation-v3/stabilization/__tests__/`
+  - `.validation/observation-v3/stabilization/stab-03/20260808T133700Z-final-completeness-lifecycle-repair/`
+  - `docs/v2-build/observation/Observation-V3-Remaining-Issue-Register.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused subsystem suites:
+    - `npx.cmd vitest run src/cognition/observation-v3/completeness-analysis/__tests__/completeness-analysis.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/stabilization/__tests__/stab-02-admission-lifecycle-diagnosis.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts` -> pass
+  - repository verification:
+    - `npm.cmd run typecheck` -> pass
+    - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in `src/cognition/latent-v2/opportunity-constructor/provenance.ts` and `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+    - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-08T11-34-15-614Z.log`
+  - representative benchmark replay:
+    - `npx.cmd tsx --eval "<stab-03 representative slice runner>"` -> completed with artifact root `.validation/observation-v3/stabilization/stab-03/20260808T133700Z-final-completeness-lifecycle-repair/`
+- Notes:
+  - Added explicit `post_composition` final Completeness on the native shadow path while preserving the initial `C0` Completeness report as the Supplemental Realization trigger.
+  - Routed Authority Admission to consume the final `C2` Completeness report and aligned final Completeness source identity with the authoritative pipeline source identity.
+  - Representative benchmark evidence now shows `OBS-A-002` admitted, `OBS-E-001` admitted with observations, and `OBS-H-002` still deferred for genuine recoverable omission, with deterministic rerun stability across all three cases.
+
+## 2026-08-08 - OBS-V3-STAB-02 Admission Lifecycle Diagnosis and Final-Candidate Completeness Decision
+
+- Phase: AUDIT
+- Touched boundaries:
+  - `src/cognition/observation-v3/completeness-analysis/`
+  - `src/cognition/observation-v3/stabilization/`
+  - `src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts`
+  - `.validation/observation-v3/stabilization/stab-02/20260808T073544Z-obs-v3-stab-02/`
+  - `docs/v2-build/observation/Observation-V3-Admission-Lifecycle-Diagnosis-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Final-Candidate-Completeness-Lifecycle-Decision.md`
+  - `docs/v2-build/observation/Observation-V3-Universal-Deferral-Root-Cause-Matrix.md`
+  - `docs/v2-build/observation/Observation-V3-Remaining-Issue-Register.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - focused tests:
+    - `npx.cmd vitest run src/cognition/observation-v3/stabilization/__tests__/stab-02-admission-lifecycle-diagnosis.test.ts src/cognition/observation-v3/completeness-analysis/__tests__/completeness-analysis.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass
+  - repository verification:
+    - `npm.cmd run typecheck` -> pass
+    - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in `src/cognition/latent-v2/opportunity-constructor/provenance.ts` and `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+    - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-08T07-36-02-890Z.log`
+  - corpus diagnosis:
+    - `npx.cmd tsx --eval "<createObservationV3Stab02Diagnosis>"` -> completed with artifact root `.validation/observation-v3/stabilization/stab-02/20260808T073544Z-obs-v3-stab-02/`
+- Notes:
+  - Diagnosed that the active native shadow path reuses `C0` Completeness for Admission and therefore lacks a constitutionally sufficient final-candidate Completeness lifecycle.
+  - Proved that `post_composition` is the smallest correct final lifecycle model because Admission already binds Completeness identity to the composed-candidate hash.
+  - Partitioned the `0/17` non-admission outcome into `12` genuine omissions, `2` stale deferrals, `2` overlap/uncertainty quality regressions, and `1` governance-only rejection path.
+  - Exposed a second governance defect: Completeness source identity hashing is inconsistent with the authoritative pipeline source identity and must be repaired together with the lifecycle in `OBS-V3-STAB-03`.
+
+## 2026-08-08 - OBS-V3-STAB-01 Observation V3 Stabilization Readiness Review and Ordered Completion Program
+
+- Phase: AUDIT
+- Touched boundaries:
+  - `docs/v2-build/observation/Observation-V3-Stabilization-Readiness-Review-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Ordered-Completion-Program.md`
+  - `docs/v2-build/observation/Observation-V3-Remaining-Issue-Register.md`
+  - `docs/v2-build/observation/Observation-V3-Constitutional-Closure-Criteria.md`
+  - `docs/v2-build/observation/Observation-V3-Runtime-Cutover-Prerequisites.md`
+  - `docs/v2-build/observation/Observation-V3-Architecture.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - required evidence review against:
+    - `docs/v2-build/observation/Observation-V3-Constitutional-Architecture-Review-2026-08.md`
+    - `docs/v2-build/observation/Observation-V3-Architectural-Improvement-Catalog.md`
+    - `docs/v2-build/observation/Observation-V3-Technical-Debt-Register.md`
+    - `docs/v2-build/observation/Observation-V3-Constitutional-Hardening-Report-2026-08.md`
+    - `docs/v2-build/observation/Observation-V3-Full-Benchmark-Baseline-2026-08.md`
+    - `docs/v2-build/observation/Observation-V3-End-to-End-Semantic-Validation-2026-08.md`
+    - `docs/v2-build/observation/Observation-V3-V2-Comparison-Report-2026-08.md`
+    - `docs/v2-build/observation/Observation-V3-Production-Candidacy-Assessment.md`
+    - `docs/v2-build/observation/Observation-V3-Authority-Admission-Contract.md`
+    - `docs/v2-build/observation/Observation-V3-Authority-Admission-Policy-Calibration.md`
+    - `docs/v2-build/observation/Observation-V3-Authority-Admission-Shadow-Stability-Review-2026-08.md`
+    - `docs/v2-build/observation/Observation-V3-Completeness-Rule-Calibration.md`
+    - `docs/v2-build/observation/Observation-V3-Completeness-Stability-Review-2026-08.md`
+    - `docs/v2-build/observation/Observation-V3-Supplemental-Realization-Shadow-Implementation.md`
+    - `docs/v2-build/observation/Observation-V3-Supplemental-Realization-Equivalence-Report-2026-08.md`
+    - `docs/v2-build/observation/Observation-V3-Memory-Composition-Contract.md`
+    - `docs/v2-build/observation/Observation-V3-Memory-Realization-Contract.md`
+    - `docs/v2-build/observation/Observation-V3-Corpus-Replay.md`
+    - `docs/v2-build/observation/Observation-V3-Native-Replay-Validation-Report-2026-08.md`
+  - implementation scout against:
+    - `src/cognition/observation-v3/pipeline/pipeline-runner.ts`
+    - `src/cognition/observation-v3/pipeline/pipeline-summary.ts`
+    - `src/cognition/observation-v3/pipeline/shadow-pipeline.ts`
+    - `src/cognition/observation-v3/completeness-analysis/completeness-analyzer.ts`
+    - `src/cognition/observation-v3/authority-admission/admission-evaluator.ts`
+    - `src/cognition/observation-v3/authority-admission/admission-policy.ts`
+    - `src/domain/observation/README.md`
+    - `src/domain/observation/contracts.ts`
+  - no runtime code changes, tests, or build run; scope was assessment, issue registration, and program authoring
+- Notes:
+  - Concluded that the highest-confidence remaining closure blocker is the absence of a final-candidate completeness lifecycle between Supplemental Realization and Authority Admission on the active native shadow path.
+  - Distinguished constitutional closure from runtime cutover and authored explicit closure criteria plus separate runtime prerequisites.
+  - Established the ordered stabilization sequence around lifecycle diagnosis first, then semantic repair, then admission recalibration, then baseline refresh, then closure review, then runtime readiness.
+
 ## 2026-08-03 - OBS-V3-VAL-01 Full Native Benchmark Baseline and End-to-End Semantic Validation
 
 - Phase: VALIDATION

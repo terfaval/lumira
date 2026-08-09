@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import {
+  analyzeComposedCandidateCompleteness,
   analyzeObservationCompleteness,
   fingerprintCompletenessAnalysis,
   type CompletenessReport,
@@ -450,9 +451,18 @@ export async function runObservationV3ShadowPipeline(
         }
 
         const packages = (upstream.supplemental_realization?.packages as SupplementalRealizationPackage[] | undefined) ?? [];
-        const completeness = upstream.completeness_analysis as CompletenessReport | undefined;
-        const compositionRequest = toCompositionRequest(sourceText, bundle, packages, sourceIdentity, completeness);
+        const initialCompleteness = upstream.completeness_analysis as CompletenessReport | undefined;
+        const compositionRequest = toCompositionRequest(sourceText, bundle, packages, sourceIdentity, initialCompleteness);
         const compositionRun = runShadowMemoryComposition(compositionRequest);
+        const finalCompleteness = analyzeComposedCandidateCompleteness({
+          dreamText: sourceText,
+          composedCandidate: compositionRun.result.composedCandidate,
+          composedCandidateHash: compositionRun.result.composedCandidateIdentity.composedCandidateHash,
+          sourceIdentity: {
+            sourceHash: sourceIdentity.sourceHash,
+            sourceLength: sourceIdentity.sourceLength,
+          },
+        });
 
         return {
           status: "success",
@@ -461,11 +471,20 @@ export async function runObservationV3ShadowPipeline(
           adapterFingerprint: null,
           subsystemFingerprint: sha256Hex(stableJson(subsystemFingerprints.memory_composition)),
           inputHash: sha256Hex(stableJson(compositionRequest)),
-          outputHash: sha256Hex(stableJson(compositionRun.result)),
+          outputHash: sha256Hex(stableJson({
+            composition: compositionRun.result,
+            finalCompleteness,
+          })),
           payload: {
             request: compositionRequest,
             result: compositionRun.result,
-            artifacts: compositionRun.artifacts,
+            finalCompleteness,
+            artifacts: {
+              ...compositionRun.artifacts,
+              "initial-completeness-stage": "completeness_analysis",
+              "final-completeness-stage": "memory_composition",
+              "final-completeness-report": finalCompleteness,
+            },
             fingerprint: fingerprintMemoryComposition(compositionRun.result),
           },
         };
@@ -536,8 +555,8 @@ export async function runObservationV3ShadowPipeline(
       },
       authorityAdmission: async ({ upstream }) => {
         const memoryRealization = upstream.memory_realization?.result as ReturnType<typeof realizeCanonicalMemoryCandidate> | undefined;
-        const completeness = upstream.completeness_analysis as CompletenessReport | undefined;
-        if (!memoryRealization || !completeness) {
+        const finalCompleteness = upstream.memory_composition?.finalCompleteness as CompletenessReport | undefined;
+        if (!memoryRealization || !finalCompleteness) {
           return {
             status: "failed",
             executionMode: "native_deterministic",
@@ -548,7 +567,7 @@ export async function runObservationV3ShadowPipeline(
             outputHash: null,
             failure: {
               code: "admission_prerequisites_unavailable",
-              message: "admission_prerequisites_unavailable",
+              message: "final_completeness_unavailable_for_admission",
             },
           };
         }
@@ -557,8 +576,8 @@ export async function runObservationV3ShadowPipeline(
           nativeResult: memoryRealization,
           completeness: {
             status: "available",
-            reportId: `completeness:${sourceIdentity.sourceHash.slice(0, 12)}`,
-            report: completeness,
+            reportId: `final-completeness:${sourceIdentity.sourceHash.slice(0, 12)}`,
+            report: finalCompleteness,
           },
         });
         if (!request) {
@@ -607,6 +626,7 @@ export async function runObservationV3ShadowPipeline(
             request,
             artifacts: {
               "admission-identity-input-comparison": request.admissionIdentityInputComparison,
+              "final-completeness-report": finalCompleteness,
             },
             disposition: decision.decision.disposition,
             authorityIdentity: decision.decision.authorityIdentity,

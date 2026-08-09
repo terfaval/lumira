@@ -1,4 +1,5 @@
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
+import type { ComposedProvisionalMemoryCandidate } from "@/src/cognition/observation-v3/memory-composition/memory-composition-contract";
 
 export interface AdaptedCandidateScene {
   sceneId: string;
@@ -53,5 +54,65 @@ export function adaptObservationBundle(bundle: ObservationV2Bundle): AdaptedObse
         })),
       })),
     ),
+  };
+}
+
+function buildSyntheticSceneRange(input: {
+  evidence: Array<{ spanStart: number | null; spanEnd: number | null }>;
+}): { spanStart: number | null; spanEnd: number | null } {
+  const starts = input.evidence
+    .map((entry) => entry.spanStart)
+    .filter((value): value is number => typeof value === "number");
+  const ends = input.evidence
+    .map((entry) => entry.spanEnd)
+    .filter((value): value is number => typeof value === "number");
+
+  return {
+    spanStart: starts.length > 0 ? Math.min(...starts) : null,
+    spanEnd: ends.length > 0 ? Math.max(...ends) : null,
+  };
+}
+
+export function adaptComposedCandidate(
+  candidate: ComposedProvisionalMemoryCandidate,
+): AdaptedObservationCandidate {
+  const localityOrder = new Map(candidate.localityRecords.map((locality, index) => [locality.localityId, index]));
+  const syntheticEvidence = candidate.descriptiveUnits
+    .filter((unit) => unit.localityId === null)
+    .flatMap((unit) => unit.evidenceRefs);
+  const syntheticSceneRange = buildSyntheticSceneRange({ evidence: syntheticEvidence });
+
+  return {
+    scenes: [
+      ...candidate.localityRecords.map((locality, index) => ({
+        sceneId: locality.localityId,
+        position: index,
+        summary: locality.label ?? locality.localityId,
+        sceneRange: {
+          spanStart: locality.sourceStart,
+          spanEnd: locality.sourceEnd,
+        },
+      })),
+      ...(syntheticEvidence.length > 0
+        ? [{
+            sceneId: "__unassigned__",
+            position: candidate.localityRecords.length,
+            summary: "Unassigned units",
+            sceneRange: syntheticSceneRange,
+          }]
+        : []),
+    ],
+    observations: candidate.descriptiveUnits.map((unit, index) => ({
+      observationId: unit.unitId,
+      sceneId: unit.localityId ?? "__unassigned__",
+      scenePosition: localityOrder.get(unit.localityId ?? "") ?? candidate.localityRecords.length,
+      position: index,
+      text: unit.statement,
+      evidence: unit.evidenceRefs.map((entry) => ({
+        spanStart: entry.spanStart,
+        spanEnd: entry.spanEnd,
+        contextLabel: entry.contextLabel,
+      })),
+    })),
   };
 }
