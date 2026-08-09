@@ -163,6 +163,65 @@ describe("runObservationV3PipelineCore", () => {
     expect(result.summary.skippedStages).toEqual(["supplemental_realization"]);
   });
 
+  it("does not execute supplemental realization when completeness says recovery is not required but still eligible", async () => {
+    const input = makeCoreInput({
+      stages: {
+        ...makeCoreInput({}).stages,
+        completenessAnalysis: vi.fn(async () => success({
+          adequacy: "adequate_with_observations",
+          recoveryRecommendation: {
+            eligibility: "eligible",
+            disposition: "not_required",
+          },
+        }, {
+          executionMode: "native_deterministic",
+          sourceArtifactRef: "completeness-report.json",
+          adapterFingerprint: null,
+          subsystemFingerprint: "completeness-analysis-fingerprint",
+          inputHash: "completeness-input-hash",
+          outputHash: "completeness-output-hash",
+        })),
+      },
+    });
+
+    const result = await runObservationV3PipelineCore(input);
+
+    expect(input.stages.supplementalRealization).not.toHaveBeenCalled();
+    expect(result.stageResults.find((stage) => stage.stage === "supplemental_realization")).toMatchObject({
+      status: "skipped",
+      skippedReason: "not_required",
+    });
+  });
+
+  it("executes supplemental realization when completeness says recovery is required", async () => {
+    const input = makeCoreInput({
+      stages: {
+        ...makeCoreInput({}).stages,
+        completenessAnalysis: vi.fn(async () => success({
+          adequacy: "inadequate_recoverable",
+          recoveryRecommendation: {
+            eligibility: "eligible",
+            disposition: "required_before_admission",
+          },
+        }, {
+          executionMode: "native_deterministic",
+          sourceArtifactRef: "completeness-report.json",
+          adapterFingerprint: null,
+          subsystemFingerprint: "completeness-analysis-fingerprint",
+          inputHash: "completeness-input-hash",
+          outputHash: "completeness-output-hash",
+        })),
+      },
+    });
+
+    const result = await runObservationV3PipelineCore(input);
+
+    expect(input.stages.supplementalRealization).toHaveBeenCalledTimes(1);
+    expect(result.stageResults.find((stage) => stage.stage === "supplemental_realization")).toMatchObject({
+      status: "success",
+    });
+  });
+
   it("stops deterministically when source analysis fails and marks all downstream stages skipped", async () => {
     const input = makeCoreInput({
       stages: {

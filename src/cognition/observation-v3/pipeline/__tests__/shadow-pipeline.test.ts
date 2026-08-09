@@ -199,7 +199,7 @@ describe("runObservationV3ShadowPipeline", () => {
       ["source_analysis", "success", "native_deterministic"],
       ["descriptive_extraction", "success", "preserved_replay"],
       ["completeness_analysis", "success", "native_deterministic"],
-      ["supplemental_realization", "success", "preserved_replay"],
+      ["supplemental_realization", "skipped", "skipped"],
       ["memory_composition", "success", "native_deterministic"],
       ["memory_realization", "success", "native_deterministic"],
       ["authority_admission", "success", "native_deterministic"],
@@ -223,6 +223,38 @@ describe("runObservationV3ShadowPipeline", () => {
         ]),
       }),
     );
+  });
+
+  it("skips supplemental realization when completeness is observational and recovery is not required", async () => {
+    const replay = buildAdequateExtractionReplay();
+
+    const result = await runObservationV3ShadowPipeline({
+      userId: "user-1",
+      reflectiveObjectId: "object-1",
+      dreamText: replay.dreamText,
+      replay: replay.replay,
+    });
+
+    expect(result.stageResults.find((stage) => stage.stage === "completeness_analysis")).toMatchObject({
+      status: "success",
+      payload: expect.objectContaining({
+        adequacy: "adequate",
+        recoveryRecommendation: expect.objectContaining({
+          disposition: "not_required",
+          eligibility: "eligible",
+        }),
+      }),
+    });
+    expect(result.stageResults.find((stage) => stage.stage === "supplemental_realization")).toMatchObject({
+      status: "skipped",
+      skippedReason: "not_required",
+    });
+    expect(result.stageResults.find((stage) => stage.stage === "memory_composition")).toMatchObject({
+      status: "success",
+      payload: expect.objectContaining({
+        finalCompleteness: expect.any(Object),
+      }),
+    });
   });
 
   it("executes supplemental realization through preserved replay while keeping downstream stages native", async () => {

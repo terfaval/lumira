@@ -181,7 +181,7 @@ function shouldSkipSupplemental(
   completenessPayload: Record<string, unknown> | undefined,
 ): boolean {
   const recommendation = completenessPayload?.recoveryRecommendation as Record<string, unknown> | undefined;
-  return recommendation?.eligibility !== "eligible";
+  return recommendation?.disposition !== "required_before_admission";
 }
 
 export async function runObservationV3PipelineCore(

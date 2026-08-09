@@ -58,6 +58,37 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-08-09 - OBS-V3-STAB-04 Recovery Abstention and Short-Dream Activation Hardening
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/pipeline/`
+  - `src/cognition/observation-v3/supplemental-realization/`
+  - `src/cognition/observation-v3/validation/__tests__/`
+  - `src/cognition/observation-v3/pipeline/replay/__tests__/`
+  - `.validation/observation-v3/stabilization/stab-04/20260809T080500Z-recovery-abstention-short-dream-activation-hardening/`
+  - `docs/v2-build/observation/Observation-V3-Remaining-Issue-Register.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused subsystem suites:
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/__tests__/pipeline-runner.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/supplemental-realization/__tests__/supplemental-realization.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts` -> pass
+  - repository verification:
+    - `npm.cmd run typecheck` -> pass
+    - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in `src/cognition/latent-v2/opportunity-constructor/provenance.ts` and `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+    - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-09T08-00-45-006Z.log`
+  - representative benchmark replay:
+    - `npx.cmd tsx scripts/run-observation-v3-full-benchmark-baseline.ts --validation-root .validation --output-root .validation/observation-v3/stabilization/stab-04/20260809T080500Z-recovery-abstention-short-dream-activation-hardening/runs --baseline-id run-1` -> pass
+    - `npx.cmd tsx scripts/run-observation-v3-full-benchmark-baseline.ts --validation-root .validation --output-root .validation/observation-v3/stabilization/stab-04/20260809T080500Z-recovery-abstention-short-dream-activation-hardening/runs --baseline-id run-2` -> pass
+- Notes:
+  - Repaired the Supplemental Realization activation contract so `recoveryRecommendation.disposition` controls execution and `eligibility` remains capability metadata.
+  - Added planner defense-in-depth so `not_required` cannot independently produce supplemental work even if invoked.
+  - Representative artifact summary at `.validation/observation-v3/stabilization/stab-04/20260809T080500Z-recovery-abstention-short-dream-activation-hardening/stab-04-summary.json` shows `OBS-A-001`, `OBS-A-002`, and `OBS-E-001` abstaining from Supplemental while `OBS-C-002` still executes it, with deterministic rerun equality across both runs.
+
 ## 2026-08-08 - OBS-V3-STAB-03 Final-Candidate Completeness Lifecycle Repair
 
 - Phase: BUILD

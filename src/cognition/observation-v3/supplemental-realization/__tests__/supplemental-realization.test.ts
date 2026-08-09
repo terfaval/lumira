@@ -112,6 +112,45 @@ function makeCompletenessReport(gaps: PhysicalGap[]): CompletenessReport {
 }
 
 describe("supplemental realization", () => {
+  it("does not plan supplemental work when recovery is not required", () => {
+    const completeness = {
+      ...makeCompletenessReport([
+        makeGap({
+          id: "physical-gap-1",
+          sourceStart: 2375,
+          sourceEnd: 4614,
+          kind: "tail",
+          reasons: ["coverage_tail_loss_detected", "late_section_missing"],
+          confidence: "high",
+        }),
+      ]),
+      adequacy: "adequate_with_observations" as const,
+      recoveryRecommendation: {
+        disposition: "not_required" as const,
+        targetedPhysicalGapIds: [],
+        eligibility: "eligible" as const,
+        advisoryClass: "advisory" as const,
+        reasons: [],
+      },
+    };
+
+    const plan = planSupplementalRealization({
+      sourceText: "x".repeat(4614),
+      completeness,
+      baseline: {
+        candidateId: "candidate-1",
+        candidateHash: "candidate-hash",
+        regions: [],
+        units: [],
+      },
+      contextPadding: 260,
+      maximumWindowLength: 3200,
+    });
+
+    expect(plan.selectedGaps).toEqual([]);
+    expect(plan.realizationContext).toEqual([]);
+  });
+
   it("plans bounded supplemental realization from canonical physical gaps", () => {
     const completeness = makeCompletenessReport([
       makeGap({

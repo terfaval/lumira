@@ -68,7 +68,8 @@ export function planSupplementalRealization(input: {
   contextPadding: number;
   maximumWindowLength: number;
 }): PlannedSupplementalRealization {
-  const selectedGaps = [...input.completeness.gaps.gaps]
+  const recoveryRequired = input.completeness.recoveryRecommendation.disposition === "required_before_admission";
+  const selectedGaps = (recoveryRequired ? [...input.completeness.gaps.gaps] : [])
     .filter((gap) => gap.sourceStart >= 0 && gap.sourceEnd > gap.sourceStart && gap.sourceEnd <= input.sourceText.length)
     .sort((left, right) => left.sourceStart - right.sourceStart || left.sourceEnd - right.sourceEnd || left.id.localeCompare(right.id))
     .map((gap, index): PlannedSupplementalGap => {
