@@ -235,6 +235,7 @@ export function composeMemoryPackages(request: MemoryCompositionRequest): Memory
       replacementDecisions: nativeComposition.replacementDecisions,
       duplicateResolution: nativeComposition.duplicateResolution,
       unresolvedOverlaps: nativeComposition.unresolvedOverlaps,
+      overlapGovernance: nativeComposition.overlapGovernance,
     },
     locality: {
       overlapAnalysis: nativeComposition.localityOverlapAnalysis,

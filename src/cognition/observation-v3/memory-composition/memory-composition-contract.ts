@@ -46,8 +46,29 @@ export interface ReconciliationReplacementDecision {
 export interface DuplicateResolutionDecision {
   retainedObservationId: string;
   discardedObservationId: string;
-  classification: "confirmed_duplicate" | "partial_overlap" | "conflict";
+  classification: "confirmed_duplicate" | "possible_duplicate" | "partial_overlap" | "conflict";
   rationale: string;
+}
+
+export interface OverlapGovernanceDecision {
+  supplementalObservationId: string;
+  baselineObservationIds: string[];
+  overlapClassifications: Array<{
+    baselineObservationId: string;
+    classification: ObservationOverlapClassification["classification"];
+    evidenceOverlapRatio: number;
+    semanticSimilarity: number;
+    entityOverlapRatio: number;
+  }>;
+  decision:
+    | "merged_duplicate"
+    | "retain_distinct"
+    | "retain_as_unresolved_alternative"
+    | "abstain_redundant_supplemental";
+  rationale: string;
+  supplementalUncertainty: string | null;
+  baselineUncertainties: string[];
+  independentlySurvives: boolean;
 }
 
 export interface LocalityOverlapAnalysis {
@@ -84,6 +105,7 @@ export interface NativeCompositionLegacyResult {
   replacementDecisions: ReconciliationReplacementDecision[];
   duplicateResolution: DuplicateResolutionDecision[];
   unresolvedOverlaps: ObservationOverlapClassification[];
+  overlapGovernance: OverlapGovernanceDecision[];
   localityOverlapAnalysis: LocalityOverlapAnalysis[];
   localityMergeDecisions: LocalityMergeDecision[];
   sourceOrderAssembly: SourceOrderAssemblyRecord;
@@ -193,6 +215,7 @@ export interface MemoryCompositionDuplicateAnalysis {
   replacementDecisions: ReconciliationReplacementDecision[];
   duplicateResolution: DuplicateResolutionDecision[];
   unresolvedOverlaps: ObservationOverlapClassification[];
+  overlapGovernance: OverlapGovernanceDecision[];
 }
 
 export interface MemoryCompositionCoverage {

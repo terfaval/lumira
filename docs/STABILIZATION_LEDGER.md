@@ -58,6 +58,37 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-08-09 - OBS-V3-STAB-05 Uncertainty-Aware Overlap Governance
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/memory-composition/`
+  - `scripts/generate-observation-v3-stab-05-evidence.ts`
+  - `.validation/observation-v3/stabilization/stab-05/20260809T123211Z-overlap-governance-hardening/`
+  - `docs/v2-build/observation/Observation-V3-Remaining-Issue-Register.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused subsystem suites:
+    - `npx.cmd vitest run src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/memory-realization/__tests__/memory-realization.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts` -> pass
+    - `npx.cmd vitest run src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts src/cognition/observation-v3/memory-realization/__tests__/memory-realization.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts` -> pass
+  - repository verification:
+    - `npm.cmd run typecheck` -> pass
+    - `npm.cmd run lint -- src/cognition/observation-v3/memory-composition src/cognition/observation-v3/memory-realization src/cognition/observation-v3/pipeline src/cognition/observation-v3/validation scripts/generate-observation-v3-stab-05-evidence.ts` -> pass
+    - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-09T10-39-43-606Z.log`
+  - representative benchmark replay:
+    - `npx.cmd tsx scripts/run-observation-v3-full-benchmark-baseline.ts --validation-root .validation --output-root .validation/observation-v3/stabilization/stab-05/20260809T123211Z-overlap-governance-hardening/runs --baseline-id run-1` -> pass
+    - `npx.cmd tsx scripts/generate-observation-v3-stab-05-evidence.ts --stabilization-root .validation/observation-v3/stabilization/stab-05/20260809T123211Z-overlap-governance-hardening --run-id run-1` -> pass
+- Notes:
+  - Hardened Memory Composition so recovery-origin overlap is no longer treated as safely additive whenever it is merely non-duplicate; low-novelty, high-overlap redundant Supplemental restatements are now abstained instead of surviving as stronger parallel facts.
+  - Duplicate collapse remains intact, legitimate coexistence remains intact, and unresolved alternatives remain preserved when the overlap is not safely redundant.
+  - Historical `OBS-E-001`-style overlap regression evidence is captured in `.validation/observation-v3/stabilization/stab-05/20260809T123211Z-overlap-governance-hardening/stab-05-evidence.json`, while current main still skips Supplemental for `OBS-E-001` under `STAB-04`.
+  - `OBS-H-002` continues to preserve unresolved alternatives on fresh replay; targeted-recovery execution reliability remains deferred to `STAB-06`.
+
 ## 2026-08-09 - OBS-V3-STAB-04 Recovery Abstention and Short-Dream Activation Hardening
 
 - Phase: BUILD

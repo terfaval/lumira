@@ -224,6 +224,260 @@ describe("composeMemoryPackages", () => {
     );
   });
 
+  it("abstains from redundant supplemental overlap that only restates clustered baseline material", () => {
+    const result = composeMemoryPackages({
+      dreamTextLength: 720,
+      baseline: {
+        regions: [
+          makeRegion({
+            regionId: "scene-1",
+            order: 0,
+            heading: "Money exchange",
+            spanStart: 219,
+            spanEnd: 399,
+            evidence: [{ snippet: "money exchange", spanStart: 219, spanEnd: 399, contextLabel: "window" }],
+          }),
+          makeRegion({
+            regionId: "scene-2",
+            order: 1,
+            heading: "Food complaint",
+            spanStart: 400,
+            spanEnd: 472,
+            evidence: [{ snippet: "gomboc", spanStart: 400, spanEnd: 472, contextLabel: "window" }],
+          }),
+        ],
+        units: [
+          {
+            ...makeUnit({
+              observationId: "obs-money-1",
+              regionId: "scene-1",
+              order: 0,
+              statement: "Jozsi took Milan shopping but gave him 5000 less, which upset him.",
+              evidence: [{ snippet: "shopping 5000 less", spanStart: 219, spanEnd: 295, contextLabel: "window" }],
+            }),
+            admissionStatus: "accepted" as const,
+          },
+          {
+            ...makeUnit({
+              observationId: "obs-money-2",
+              regionId: "scene-1",
+              order: 1,
+              statement: "The dreamer gave Milan the missing money, though would not have done so while awake.",
+              evidence: [{ snippet: "gave him the money", spanStart: 296, spanEnd: 370, contextLabel: "window" }],
+            }),
+            admissionStatus: "accepted" as const,
+          },
+          {
+            ...makeUnit({
+              observationId: "obs-money-3",
+              regionId: "scene-1",
+              order: 2,
+              statement: "The dreamer told Milan to keep asking for the missing amount.",
+              evidence: [{ snippet: "keep asking", spanStart: 371, spanEnd: 399, contextLabel: "window" }],
+            }),
+            admissionStatus: "accepted" as const,
+          },
+          {
+            ...makeUnit({
+              observationId: "obs-food-1",
+              regionId: "scene-2",
+              order: 0,
+              statement: "Mama cooked, but the dreamer could only eat dumplings.",
+              evidence: [{ snippet: "could only eat dumplings", spanStart: 400, spanEnd: 436, contextLabel: "window" }],
+              uncertainty: "The exact food detail is somewhat uncertain.",
+            }),
+            admissionStatus: "accepted" as const,
+          },
+          {
+            ...makeUnit({
+              observationId: "obs-food-2",
+              regionId: "scene-2",
+              order: 1,
+              statement: "The dreamer complained that Mama always cooks in a way they cannot eat.",
+              evidence: [{ snippet: "always cooks in a way", spanStart: 437, spanEnd: 472, contextLabel: "window" }],
+            }),
+            admissionStatus: "accepted" as const,
+          },
+        ],
+      },
+      supplemental: {
+        regions: [
+          makeRegion({
+            regionId: "recovery-1",
+            order: 0,
+            heading: "Money restatement",
+            spanStart: 219,
+            spanEnd: 399,
+            evidence: [{ snippet: "money exchange", spanStart: 219, spanEnd: 399, contextLabel: "window" }],
+          }),
+          makeRegion({
+            regionId: "recovery-2",
+            order: 1,
+            heading: "Food restatement",
+            spanStart: 400,
+            spanEnd: 472,
+            evidence: [{ snippet: "gomboc", spanStart: 400, spanEnd: 472, contextLabel: "window" }],
+          }),
+        ],
+        units: [
+          {
+            ...makeUnit({
+              observationId: "recovery-money",
+              regionId: "recovery-1",
+              order: 0,
+              statement: "Jozsi took Milan shopping, gave him 5000 less, and the dreamer ended up giving Milan the missing money even though they would not have done so while awake.",
+              source: "recovery",
+              evidence: [{ snippet: "shopping and gave money", spanStart: 296, spanEnd: 370, contextLabel: "window" }],
+              recoveryProvenance: {
+                canonicalRecoveryWindowId: "window-money-1",
+                physicalGapId: "gap-money-1",
+                extractionLocalRegionId: "recovery-1",
+                semanticSignature: "jozsi took milan shopping gave him 5000 less and the dreamer gave the missing money",
+                entitySignature: ["dreamer", "jozsi", "milan", "money"],
+                eventStateType: "event",
+              },
+            }),
+            admissionStatus: "accepted" as const,
+          },
+          {
+            ...makeUnit({
+              observationId: "recovery-food",
+              regionId: "recovery-2",
+              order: 0,
+              statement: "Mama cooked, but the dreamer could only eat dumplings and complained that Mama always cooks in a way they cannot eat.",
+              source: "recovery",
+              evidence: [{ snippet: "dumplings and complaint", spanStart: 400, spanEnd: 472, contextLabel: "window" }],
+              recoveryProvenance: {
+                canonicalRecoveryWindowId: "window-food-1",
+                physicalGapId: "gap-food-1",
+                extractionLocalRegionId: "recovery-2",
+                semanticSignature: "mama cooked but the dreamer could only eat dumplings and complained",
+                entitySignature: ["complained", "dreamer", "dumplings", "mama"],
+                eventStateType: "state",
+              },
+            }),
+            admissionStatus: "accepted" as const,
+          },
+        ],
+      },
+    });
+
+    expect(result.composedUnits.map((unit) => unit.observationId)).not.toContain("recovery-money");
+    expect(result.composedUnits.map((unit) => unit.observationId)).not.toContain("recovery-food");
+    expect(result.composedUnits.map((unit) => unit.observationId)).toEqual([
+      "obs-money-1",
+      "obs-money-2",
+      "obs-money-3",
+      "obs-food-1",
+      "obs-food-2",
+    ]);
+    expect(result.duplicateAnalysis.unresolvedOverlaps).toEqual([]);
+    expect(result.duplicateAnalysis.overlapGovernance).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          supplementalObservationId: "recovery-money",
+          decision: "abstain_redundant_supplemental",
+          independentlySurvives: false,
+        }),
+      ]),
+    );
+    expect(result.composedUnits.find((unit) => unit.observationId === "obs-food-1")?.uncertainty).toBe(
+      "The exact food detail is somewhat uncertain.",
+    );
+  });
+
+  it("preserves unresolved coexistence when supplemental overlap adds materially distinct detail", () => {
+    const result = composeMemoryPackages({
+      dreamTextLength: 1800,
+      baseline: {
+        regions: [
+          makeRegion({
+            regionId: "room",
+            order: 0,
+            heading: "Upper room",
+            spanStart: 600,
+            spanEnd: 980,
+            evidence: [{ snippet: "upper room", spanStart: 600, spanEnd: 980, contextLabel: "room" }],
+          }),
+        ],
+        units: [
+          {
+            ...makeUnit({
+              observationId: "obs-bed",
+              regionId: "room",
+              order: 0,
+              statement: "There was a bizarre bed high on the wall.",
+              evidence: [{ snippet: "bizarre bed", spanStart: 730, spanEnd: 780, contextLabel: "room" }],
+            }),
+            admissionStatus: "accepted" as const,
+          },
+          {
+            ...makeUnit({
+              observationId: "obs-ladder",
+              regionId: "room",
+              order: 1,
+              statement: "A slanted ladder could be used like stairs to reach it.",
+              evidence: [{ snippet: "slanted ladder", spanStart: 781, spanEnd: 840, contextLabel: "room" }],
+            }),
+            admissionStatus: "accepted" as const,
+          },
+        ],
+      },
+      supplemental: {
+        regions: [
+          makeRegion({
+            regionId: "recovery-room",
+            order: 0,
+            heading: "Recovered room detail",
+            spanStart: 730,
+            spanEnd: 1120,
+            evidence: [{ snippet: "room detail", spanStart: 730, spanEnd: 1120, contextLabel: "room" }],
+          }),
+        ],
+        units: [
+          {
+            ...makeUnit({
+              observationId: "recovery-room-1",
+              regionId: "recovery-room",
+              order: 0,
+              statement: "The high wall bed used an unusual slanted ladder that had to be made rigid and hooked into place as shown on the first night.",
+              source: "recovery",
+              evidence: [{ snippet: "rigid and hooked into place", spanStart: 760, spanEnd: 910, contextLabel: "room" }],
+              recoveryProvenance: {
+                canonicalRecoveryWindowId: "window-room-1",
+                physicalGapId: "gap-room-1",
+                extractionLocalRegionId: "recovery-room",
+                semanticSignature: "high wall bed slanted ladder made rigid and hooked into place on the first night",
+                entitySignature: ["first", "hooked", "ladder", "night", "place", "rigid"],
+                eventStateType: "event",
+              },
+            }),
+            admissionStatus: "accepted" as const,
+          },
+        ],
+      },
+    });
+
+    expect(result.composedUnits.map((unit) => unit.observationId)).toContain("recovery-room-1");
+    expect(result.duplicateAnalysis.unresolvedOverlaps).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          rightObservationId: "recovery-room-1",
+          classification: "partial_overlap",
+        }),
+      ]),
+    );
+    expect(result.duplicateAnalysis.overlapGovernance).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          supplementalObservationId: "recovery-room-1",
+          decision: "retain_as_unresolved_alternative",
+          independentlySurvives: true,
+        }),
+      ]),
+    );
+  });
+
   it("replays deterministically and preserves stable reason ordering", () => {
     const request = {
       dreamTextLength: 1651,
@@ -392,7 +646,10 @@ describe("composeMemoryPackages", () => {
     });
 
     const comparison = compareMemoryCompositionOutputs({
-      experimental,
+      experimental: {
+        ...experimental,
+        overlapGovernance: [],
+      },
       composition,
     });
 
@@ -434,6 +691,7 @@ describe("composeMemoryPackages", () => {
       "duplicate-decisions",
       "locality-composition",
       "locality-decisions",
+      "overlap-governance",
       "provenance-composition",
       "provenance-map",
       "provisional-identity-transition",

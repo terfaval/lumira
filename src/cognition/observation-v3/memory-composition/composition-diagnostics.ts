@@ -37,8 +37,10 @@ export function buildMemoryCompositionArtifacts(input: {
       duplicateResolution: input.result.duplicateAnalysis.duplicateResolution,
       replacementDecisions: input.result.duplicateAnalysis.replacementDecisions,
       unresolvedOverlaps: input.result.duplicateAnalysis.unresolvedOverlaps,
+      overlapGovernance: input.result.duplicateAnalysis.overlapGovernance,
     },
     "coexistence-analysis": input.result.duplicateAnalysis.unresolvedOverlaps,
+    "overlap-governance": input.result.duplicateAnalysis.overlapGovernance,
     "locality-decisions": input.result.locality.mergeDecisions,
     "locality-composition": {
       finalRegions: input.result.composedRegions.map((region) => ({
@@ -88,6 +90,7 @@ export function buildMemoryCompositionArtifacts(input: {
       ],
       duplicateDecisionCount: input.result.duplicateAnalysis.duplicateResolution.length,
       coexistenceObservationCount: input.result.duplicateAnalysis.unresolvedOverlaps.length,
+      overlapGovernanceDecisionCount: input.result.duplicateAnalysis.overlapGovernance.length,
       localityMergeCount: input.result.locality.mergeDecisions.length,
       composedRegionCount: input.result.composedRegions.length,
       composedUnitCount: input.result.composedUnits.length,

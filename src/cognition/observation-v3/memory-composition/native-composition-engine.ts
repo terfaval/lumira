@@ -12,6 +12,7 @@ import type {
   MemoryCompositionRequest,
   NativeCompositionLegacyResult,
   ObservationOverlapClassification,
+  OverlapGovernanceDecision,
   ReconciliationReplacementDecision,
   SourceOrderAssemblyRecord,
 } from "@/src/cognition/observation-v3/memory-composition/memory-composition-contract";
@@ -30,6 +31,7 @@ export interface DuplicateAndCoexistenceStage {
   replacementDecisions: ReconciliationReplacementDecision[];
   duplicateResolution: DuplicateResolutionDecision[];
   unresolvedOverlaps: ObservationOverlapClassification[];
+  overlapGovernance: OverlapGovernanceDecision[];
   retainedUnits: ExperimentalReconciledObservationUnit[];
 }
 
@@ -135,6 +137,31 @@ function computeEntityOverlap(left: string[], right: string[]): number {
   return intersection / Math.min(leftSet.size, rightSet.size);
 }
 
+function uncertaintyStrength(value: string | null | undefined): number {
+  const normalized = normalizeText(value ?? "");
+  if (!normalized) {
+    return 0;
+  }
+  if (/\b(low|slight|minor|minimal|small)\b/.test(normalized)) {
+    return 1;
+  }
+  if (/\b(high|severe|strong|major|very)\b/.test(normalized)) {
+    return 3;
+  }
+  return 2;
+}
+
+function computeSemanticNovelty(statement: string, supportingStatements: string[]): number {
+  const supplementalTokens = new Set(tokenize(statement));
+  if (supplementalTokens.size === 0) {
+    return 0;
+  }
+
+  const supportingTokens = new Set(supportingStatements.flatMap((entry) => tokenize(entry)));
+  const novelTokens = [...supplementalTokens].filter((token) => !supportingTokens.has(token)).length;
+  return novelTokens / supplementalTokens.size;
+}
+
 function toComparableUnit(
   unit: ExperimentalObservationUnit & Partial<Pick<
     ExperimentalReconciledObservationUnit,
@@ -165,6 +192,18 @@ function unitEarliestStart(unit: { evidence: ExperimentalEvidenceSpan[] }): numb
 
 function unitLatestEnd(unit: { evidence: ExperimentalEvidenceSpan[] }): number {
   return evidenceRange(unit).end ?? Number.MAX_SAFE_INTEGER;
+}
+
+function rangesAreNear(
+  left: { start: number | null; end: number | null },
+  right: { start: number | null; end: number | null },
+  padding: number,
+): boolean {
+  if (left.start === null || left.end === null || right.start === null || right.end === null) {
+    return false;
+  }
+
+  return right.start <= left.end + padding && right.end >= left.start - padding;
 }
 
 function sortUnitsByEvidence<T extends { observationId?: string; order: number; evidence: ExperimentalEvidenceSpan[] }>(units: T[]): T[] {
@@ -395,6 +434,15 @@ function buildDuplicateResolutionRationale(
   return "deterministic_duplicate_tie_break";
 }
 
+function toResolutionClassification(
+  classification: ObservationOverlapClassification["classification"],
+): DuplicateResolutionDecision["classification"] {
+  if (classification === "confirmed_duplicate" || classification === "possible_duplicate" || classification === "partial_overlap" || classification === "conflict") {
+    return classification;
+  }
+  return "partial_overlap";
+}
+
 function regionIdForUnit(unit: ExperimentalReconciledObservationUnit, regionMap: Map<string, ExperimentalRegionDecision>): ExperimentalRegionDecision {
   const existing = regionMap.get(unit.regionId);
   if (existing) {
@@ -493,6 +541,148 @@ export function classifyCompositionOverlaps(allUnits: ExperimentalReconciledObse
     }
   }
 
+  const recoveryUnits = allUnits.filter((unit) => unit.origin === "recovery");
+  for (const recoveryUnit of recoveryUnits) {
+    if (discardedObservationIds.has(recoveryUnit.observationId)) {
+      continue;
+    }
+
+    const relatedOverlaps = unresolvedOverlaps.filter((entry) =>
+      entry.leftObservationId === recoveryUnit.observationId || entry.rightObservationId === recoveryUnit.observationId,
+    );
+    if (relatedOverlaps.length === 0) {
+      continue;
+    }
+
+    const matchedBaselineUnits = relatedOverlaps
+      .map((entry) => entry.leftObservationId === recoveryUnit.observationId ? entry.rightObservationId : entry.leftObservationId)
+      .map((observationId) => allUnits.find((unit) => unit.observationId === observationId))
+      .filter((unit): unit is ExperimentalReconciledObservationUnit => Boolean(unit && unit.origin === "baseline"));
+    if (matchedBaselineUnits.length === 0) {
+      continue;
+    }
+
+    const matchedRanges = matchedBaselineUnits.map((unit) => evidenceRange(unit));
+    const clusterStart = matchedRanges
+      .map((range) => range.start)
+      .filter((value): value is number => typeof value === "number");
+    const clusterEnd = matchedRanges
+      .map((range) => range.end)
+      .filter((value): value is number => typeof value === "number");
+    const supportingClusterUnits = allUnits.filter((unit) =>
+      unit.origin === "baseline"
+      && matchedBaselineUnits.some((matched) => matched.regionId === unit.regionId)
+      && rangesAreNear(
+        {
+          start: clusterStart.length > 0 ? Math.min(...clusterStart) : null,
+          end: clusterEnd.length > 0 ? Math.max(...clusterEnd) : null,
+        },
+        evidenceRange(unit),
+        80,
+      ),
+    );
+    if (supportingClusterUnits.length < 2) {
+      continue;
+    }
+
+    const semanticNovelty = computeSemanticNovelty(
+      recoveryUnit.statement,
+      supportingClusterUnits.map((unit) => unit.statement),
+    );
+    const aggregateEvidenceOverlap = relatedOverlaps.reduce((sum, overlap) => sum + overlap.evidenceOverlapRatio, 0);
+    const maxEntityOverlap = relatedOverlaps.reduce((max, overlap) => Math.max(max, overlap.entityOverlapRatio), 0);
+    const maxSemanticSimilarity = relatedOverlaps.reduce((max, overlap) => Math.max(max, overlap.semanticSimilarity), 0);
+    const uncertaintyStrengthened = supportingClusterUnits.some((unit) =>
+      uncertaintyStrength(recoveryUnit.uncertainty) < uncertaintyStrength(unit.uncertainty),
+    );
+
+    const shouldSuppressRedundantSupplement = semanticNovelty <= 0.35
+      && (aggregateEvidenceOverlap >= 0.9 || uncertaintyStrengthened)
+      && (maxEntityOverlap >= 0.5 || maxSemanticSimilarity >= 0.45);
+
+    if (!shouldSuppressRedundantSupplement) {
+      continue;
+    }
+
+    recoveryUnit.reconciliationStatus = "discarded";
+    discardedObservationIds.add(recoveryUnit.observationId);
+
+    for (const overlap of relatedOverlaps) {
+      const baselineObservationId = overlap.leftObservationId === recoveryUnit.observationId
+        ? overlap.rightObservationId
+        : overlap.leftObservationId;
+      duplicateResolution.push({
+        retainedObservationId: baselineObservationId,
+        discardedObservationId: recoveryUnit.observationId,
+        classification: toResolutionClassification(overlap.classification),
+        rationale: uncertaintyStrengthened
+          ? "redundant_recovery_overlap_abstained_without_strengthening_uncertainty"
+          : "redundant_recovery_overlap_abstained_due_to_low_novelty",
+      });
+    }
+  }
+
+  const filteredUnresolvedOverlaps = unresolvedOverlaps.filter((overlap) =>
+    !discardedObservationIds.has(overlap.leftObservationId) && !discardedObservationIds.has(overlap.rightObservationId),
+  );
+  const overlapGovernance = recoveryUnits.map((recoveryUnit): OverlapGovernanceDecision => {
+    const baselineOverlaps = duplicateAnalysis.filter((entry) => {
+      const otherObservationId = entry.leftObservationId === recoveryUnit.observationId
+        ? entry.rightObservationId
+        : entry.rightObservationId === recoveryUnit.observationId
+          ? entry.leftObservationId
+          : null;
+      if (!otherObservationId) {
+        return false;
+      }
+      return allUnits.some((unit) => unit.observationId === otherObservationId && unit.origin === "baseline");
+    });
+    const baselineObservationIds = uniqueSorted(
+      baselineOverlaps.map((entry) => entry.leftObservationId === recoveryUnit.observationId ? entry.rightObservationId : entry.leftObservationId),
+    );
+    const baselineUnits = baselineObservationIds
+      .map((observationId) => allUnits.find((unit) => unit.observationId === observationId))
+      .filter((unit): unit is ExperimentalReconciledObservationUnit => Boolean(unit));
+    const redundancyResolution = duplicateResolution.find((entry) =>
+      entry.discardedObservationId === recoveryUnit.observationId
+      && entry.rationale.startsWith("redundant_recovery_overlap_abstained"),
+    );
+    const duplicateResolutionEntry = duplicateResolution.find((entry) =>
+      entry.discardedObservationId === recoveryUnit.observationId
+      && entry.classification === "confirmed_duplicate",
+    );
+    const unresolvedAlternative = filteredUnresolvedOverlaps.some((entry) =>
+      entry.leftObservationId === recoveryUnit.observationId || entry.rightObservationId === recoveryUnit.observationId,
+    );
+
+    return {
+      supplementalObservationId: recoveryUnit.observationId,
+      baselineObservationIds,
+      overlapClassifications: baselineOverlaps.map((entry) => ({
+        baselineObservationId: entry.leftObservationId === recoveryUnit.observationId ? entry.rightObservationId : entry.leftObservationId,
+        classification: entry.classification,
+        evidenceOverlapRatio: entry.evidenceOverlapRatio,
+        semanticSimilarity: entry.semanticSimilarity,
+        entityOverlapRatio: entry.entityOverlapRatio,
+      })),
+      decision: redundancyResolution
+        ? "abstain_redundant_supplemental"
+        : duplicateResolutionEntry
+          ? "merged_duplicate"
+          : unresolvedAlternative
+            ? "retain_as_unresolved_alternative"
+            : "retain_distinct",
+      rationale: redundancyResolution?.rationale
+        ?? duplicateResolutionEntry?.rationale
+        ?? (unresolvedAlternative ? "overlap_preserved_as_explicit_alternative" : "supplemental_unit_retained_as_distinct"),
+      supplementalUncertainty: recoveryUnit.uncertainty,
+      baselineUncertainties: baselineUnits
+        .map((unit) => unit.uncertainty)
+        .filter((value): value is string => typeof value === "string" && value.trim().length > 0),
+      independentlySurvives: !discardedObservationIds.has(recoveryUnit.observationId),
+    };
+  });
+
   const retainedUnits = sortUnitsByEvidence(
     allUnits.filter((unit) => !discardedObservationIds.has(unit.observationId) && unit.reconciliationStatus !== "replaced"),
   ).map((unit) => ({
@@ -504,7 +694,8 @@ export function classifyCompositionOverlaps(allUnits: ExperimentalReconciledObse
     duplicateAnalysis,
     replacementDecisions,
     duplicateResolution,
-    unresolvedOverlaps,
+    unresolvedOverlaps: filteredUnresolvedOverlaps,
+    overlapGovernance,
     retainedUnits,
   };
 }
@@ -710,6 +901,7 @@ export function composeNativeMemoryPackages(request: MemoryCompositionRequest): 
     replacementDecisions: overlapStage.replacementDecisions,
     duplicateResolution: overlapStage.duplicateResolution,
     unresolvedOverlaps: overlapStage.unresolvedOverlaps,
+    overlapGovernance: overlapStage.overlapGovernance,
     localityOverlapAnalysis: localityStage.overlapAnalysis,
     localityMergeDecisions: localityStage.mergeDecisions,
     sourceOrderAssembly: {
