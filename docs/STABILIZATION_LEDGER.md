@@ -58,6 +58,40 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-08-09 - OBS-V3-STAB-07A Native Pre-Composition Candidate Isolation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/descriptive-extraction/`
+  - `src/cognition/observation-v3/completeness-analysis/`
+  - `src/cognition/observation-v3/pipeline/`
+  - `src/cognition/observation/llm-scene-observation-extractor.ts`
+  - `scripts/generate-observation-v3-stab-07a-evidence.ts`
+  - `.validation/observation-v3/stabilization/stab-07a/20260809T174000Z-native-c0-isolation/`
+  - `docs/v2-build/observation/Observation-V3-Remaining-Issue-Register.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused subsystem suites:
+    - `npm.cmd test -- src/cognition/observation-v3/descriptive-extraction/__tests__/descriptive-extraction.test.ts` -> pass
+    - `npm.cmd test -- src/cognition/observation-v3/completeness-analysis/__tests__/completeness-analysis.test.ts` -> pass
+    - `npm.cmd test -- src/cognition/observation-v3/supplemental-realization/__tests__/supplemental-realization.test.ts` -> pass
+    - `npm.cmd test -- src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts` -> pass
+    - `npm.cmd test -- src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass
+    - `npm.cmd test -- src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts` -> pass
+    - `npm.cmd test -- src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts` -> pass
+  - repository verification:
+    - `npm.cmd run typecheck` -> pass
+    - `npm.cmd run lint -- src/cognition/observation-v3/descriptive-extraction src/cognition/observation-v3/completeness-analysis src/cognition/observation-v3/supplemental-realization src/cognition/observation-v3/memory-composition src/cognition/observation-v3/pipeline src/cognition/observation/llm-scene-observation-extractor.ts` -> pass
+    - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in `src/cognition/latent-v2/opportunity-constructor/provenance.ts` and `src/runtime/orchestration/generate-latent-opportunities-for-reflective-object.ts`
+    - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-09T15-35-39-021Z.log`
+  - machine-readable evidence:
+    - `npx.cmd tsx scripts/generate-observation-v3-stab-07a-evidence.ts --stabilization-root .validation/observation-v3/stabilization/stab-07a/20260809T174000Z-native-c0-isolation` -> pass
+- Notes:
+  - Replaced `ObservationV2Bundle` as the active pre-composition shadow-path carrier with a native `ObservationV3NativeC0Candidate`, keeping C0 as the authoritative input to initial Completeness, Supplemental baseline seeding, and baseline Memory Composition seeding.
+  - Retained V2 projection only as an explicit compatibility/comparison boundary through native-candidate projection helpers and the legacy `llm-scene-observation-extractor` bridge, so the native shadow pipeline no longer consumes a V2 bundle to make active-path decisions.
+  - Added concise machine-readable carrier evidence at `.validation/observation-v3/stabilization/stab-07a/20260809T174000Z-native-c0-isolation/stab-07a-evidence.json`, including native C0 identity, initial Completeness input identity, Supplemental baseline identity, Composition baseline identity, V2 projection identity, and confirmation that the projection is not re-consumed by the native pipeline.
+
 ## 2026-08-09 - OBS-V3-STAB-06 Targeted Tail-Recovery Reliability and Cost-Latency Hardening
 
 - Phase: BUILD

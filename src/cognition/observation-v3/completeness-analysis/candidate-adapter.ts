@@ -1,5 +1,6 @@
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
 import type { ComposedProvisionalMemoryCandidate } from "@/src/cognition/observation-v3/memory-composition/memory-composition-contract";
+import type { ObservationV3NativeC0Candidate } from "@/src/cognition/observation-v3/descriptive-extraction";
 
 export interface AdaptedCandidateScene {
   sceneId: string;
@@ -54,6 +55,32 @@ export function adaptObservationBundle(bundle: ObservationV2Bundle): AdaptedObse
         })),
       })),
     ),
+  };
+}
+
+export function adaptNativeC0Candidate(candidate: ObservationV3NativeC0Candidate): AdaptedObservationCandidate {
+  return {
+    scenes: candidate.localities.map((locality) => ({
+      sceneId: locality.localityId,
+      position: locality.order,
+      summary: locality.label,
+      sceneRange: {
+        spanStart: locality.evidenceContext.spanStart,
+        spanEnd: locality.evidenceContext.spanEnd,
+      },
+    })),
+    observations: candidate.descriptiveUnits.map((unit) => ({
+      observationId: unit.unitId,
+      sceneId: unit.localityId,
+      scenePosition: candidate.localities.find((locality) => locality.localityId === unit.localityId)?.order ?? 0,
+      position: unit.order,
+      text: unit.statement,
+      evidence: unit.evidenceRefs.map((entry) => ({
+        spanStart: entry.spanStart,
+        spanEnd: entry.spanEnd,
+        contextLabel: entry.contextLabel,
+      })),
+    })),
   };
 }
 

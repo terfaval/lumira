@@ -86,20 +86,18 @@ describe("executeDescriptiveExtractionAttempt", () => {
     );
     expect(result).toMatchObject({
       status: "candidate_available",
-      bundle: expect.objectContaining({
-        scenes: [
+      candidate: expect.objectContaining({
+        localities: [
           expect.objectContaining({
-            sceneId: "scene-1",
-            observations: [
-              expect.objectContaining({
-                observationId: "obs-1",
-              }),
-            ],
+            localityId: "scene-1",
           }),
         ],
-      }),
-      payload: expect.objectContaining({
-        reflectiveObjectId: "object-1",
+        descriptiveUnits: [
+          expect.objectContaining({
+            unitId: "obs-1",
+            localityId: "scene-1",
+          }),
+        ],
       }),
       diagnostics: expect.objectContaining({
         attempt: 1,
@@ -136,8 +134,7 @@ describe("executeDescriptiveExtractionAttempt", () => {
 
     expect(result).toMatchObject({
       status: "missing_scenes",
-      bundle: null,
-      payload: null,
+      candidate: null,
       diagnostics: expect.objectContaining({
         attempt: 1,
         fallbackReason: "missing_scenes",

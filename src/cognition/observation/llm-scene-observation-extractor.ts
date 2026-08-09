@@ -14,6 +14,8 @@ import {
 import {
   buildDescriptiveExtractionCandidateFromStructuredResult,
   executeDescriptiveExtractionAttempt,
+  projectNativeC0CandidateToCreateObservationInput,
+  projectNativeC0CandidateToObservationV2Bundle,
 } from "@/src/cognition/observation-v3/descriptive-extraction";
 import {
   buildDescriptiveExtractionAttemptIdentity,
@@ -307,8 +309,8 @@ export async function buildSceneObservationExtractionFromStructuredResult(input:
     attempt: input.attempt ?? 1,
     reflectiveObjectId: input.reflectiveObjectId,
     dreamText: input.dreamText,
-    bundle: candidateResult.bundle!,
-    payload: candidateResult.payload!,
+    bundle: projectNativeC0CandidateToObservationV2Bundle(candidateResult.candidate!),
+    payload: projectNativeC0CandidateToCreateObservationInput(candidateResult.candidate!),
     attemptDiagnostics: candidateResult.diagnostics,
     evidenceSink: input.evidenceSink,
     onAttemptEvidence: input.onAttemptEvidence,
@@ -439,8 +441,8 @@ export async function buildLlmSceneObservationExtraction(input: {
         attempt,
         reflectiveObjectId: input.reflectiveObjectId,
         dreamText: input.dreamText,
-        bundle: extractionAttempt.bundle!,
-        payload: extractionAttempt.payload!,
+        bundle: projectNativeC0CandidateToObservationV2Bundle(extractionAttempt.candidate!),
+        payload: projectNativeC0CandidateToCreateObservationInput(extractionAttempt.candidate!),
         attemptDiagnostics: extractionAttempt.diagnostics!,
         onCompletenessAnalysis: input.onCompletenessAnalysis,
         evidenceSink: {

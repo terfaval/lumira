@@ -95,8 +95,7 @@ export async function executeDescriptiveExtractionAttempt(input: {
   if (providerResult === null) {
     return {
       status: "missing_openai_api_key",
-      bundle: null,
-      payload: null,
+      candidate: null,
       diagnostics: null,
     };
   }
@@ -135,8 +134,7 @@ export async function executeDescriptiveExtractionAttempt(input: {
     });
     return {
       status: "empty_response",
-      bundle: null,
-      payload: null,
+      candidate: null,
       diagnostics: buildAttemptDiagnostics({
         attempt: input.attempt,
         model: OBSERVATION_SCENE_EXTRACTION_MODEL,

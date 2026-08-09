@@ -1,6 +1,7 @@
 import {
   adaptObservationBundle,
   adaptComposedCandidate,
+  adaptNativeC0Candidate,
   type AdaptedObservationCandidate,
 } from "@/src/cognition/observation-v3/completeness-analysis/candidate-adapter";
 import type {
@@ -30,6 +31,7 @@ import { buildRecoveryRecommendation } from "@/src/cognition/observation-v3/comp
 import { analyzeStructuralAssessment } from "@/src/cognition/observation-v3/completeness-analysis/structural-assessment";
 import type { ComposedProvisionalMemoryCandidate } from "@/src/cognition/observation-v3/memory-composition/memory-composition-contract";
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
+import type { ObservationV3NativeC0Candidate } from "@/src/cognition/observation-v3/descriptive-extraction";
 
 function buildIndeterminateReport(input: {
   dreamText: string;
@@ -271,6 +273,26 @@ export function analyzeObservationCompleteness(input: {
     dreamText: input.dreamText,
     candidate: adaptObservationBundle(input.bundle),
     candidateIdentity,
+  });
+}
+
+export function analyzeNativeC0Completeness(input: {
+  dreamText: string;
+  candidate: ObservationV3NativeC0Candidate;
+  sourceIdentity?: {
+    sourceHash: string;
+    sourceLength: number;
+  };
+}): CompletenessReport {
+  return analyzeObservationCandidateCompleteness({
+    dreamText: input.dreamText,
+    candidate: adaptNativeC0Candidate(input.candidate),
+    candidateIdentity: {
+      candidateHash: input.candidate.candidateHash,
+      candidateKind: "primary_extraction",
+      candidateVersionLabel: input.candidate.candidateVersion,
+    },
+    sourceIdentity: input.sourceIdentity,
   });
 }
 

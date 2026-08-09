@@ -207,6 +207,15 @@ describe("runObservationV3ShadowPipeline", () => {
     expect(typeof result.summary.finalOutcome).toBe("string");
     expect(result.summary.finalOutcome.length).toBeGreaterThan(0);
     expect(result.artifacts["pipeline-stage-results.json"]).toBeDefined();
+    expect(result.stageResults.find((stage) => stage.stage === "descriptive_extraction")).toMatchObject({
+      status: "success",
+      payload: expect.objectContaining({
+        candidate: expect.objectContaining({
+          candidateId: expect.any(String),
+          candidateHash: expect.any(String),
+        }),
+      }),
+    });
     expect(result.artifacts["native-identity-lineage-comparison.json"]).toEqual(
       expect.objectContaining({
         finalClassification: expect.any(String),
@@ -308,6 +317,20 @@ describe("runObservationV3ShadowPipeline", () => {
         adequacy: "inadequate_recoverable",
       }),
     });
+    expect(result.artifacts["native-c0-carrier-evidence.json"]).toEqual(
+      expect.objectContaining({
+        projectionReconsumedByNativePipeline: false,
+        initialCompleteness: expect.objectContaining({
+          candidateKind: "primary_extraction",
+        }),
+        supplementalBaseline: expect.objectContaining({
+          baselineCarrierKind: "native_c0_candidate",
+        }),
+        compositionBaseline: expect.objectContaining({
+          baselineCarrierKind: "native_c0_candidate",
+        }),
+      }),
+    );
     expect(result.stageResults.find((stage) => stage.stage === "supplemental_realization")).toMatchObject({
       status: "success",
     });

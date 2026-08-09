@@ -1,7 +1,7 @@
 # Observation V3 Remaining Issue Register
 
 Date: 2026-08-09
-Tickets: `OBS-V3-STAB-01`, `OBS-V3-STAB-02`, `OBS-V3-STAB-03`, `OBS-V3-STAB-04`
+Tickets: `OBS-V3-STAB-01`, `OBS-V3-STAB-02`, `OBS-V3-STAB-03`, `OBS-V3-STAB-04`, `OBS-V3-STAB-05`, `OBS-V3-STAB-06`, `OBS-V3-STAB-07A`
 Status: active stabilization register
 
 ## OV3-RI-01
@@ -257,7 +257,7 @@ Validation requirement:
 
 - updated residue inventory and focused contract tests
 
-Status: open
+Status: resolved on shadow path by `STAB-07A`; native C0 is now the internal pre-composition carrier, while later naming cleanup and non-active comparison/replay helpers remain deferred to bounded follow-up
 
 ## OV3-RI-08
 

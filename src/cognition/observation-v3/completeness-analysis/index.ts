@@ -28,11 +28,13 @@ export {
 } from "@/src/cognition/observation-v3/completeness-analysis/completeness-analysis-contract";
 export {
   analyzeComposedCandidateCompleteness,
+  analyzeNativeC0Completeness,
   analyzeObservationCompleteness,
   analyzeObservationCandidateCompleteness,
 } from "@/src/cognition/observation-v3/completeness-analysis/completeness-analyzer";
 export {
   adaptComposedCandidate,
+  adaptNativeC0Candidate,
   adaptObservationBundle,
   type AdaptedCandidateObservation,
   type AdaptedCandidateScene,

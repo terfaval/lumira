@@ -6,9 +6,12 @@ import {
   normalizeSceneWithStats,
   type SceneObservationAttemptDiagnostics,
 } from "@/src/cognition/observation/llm-scene-observation-diagnostics";
-import { createSceneDiscoveryBundle } from "@/src/cognition/observation/scene-discovery";
-import { projectObservationV2BundleToCreateObservationInput } from "@/src/cognition/observation/scene-discovery-projection";
 import type { ObservationLanguage, ObservationV2Scene } from "@/src/domain/observation/v2-runtime";
+import {
+  buildObservationV3NativeC0Candidate,
+  projectNativeC0CandidateToCreateObservationInput,
+  projectNativeC0CandidateToObservationV2Bundle,
+} from "@/src/cognition/observation-v3/descriptive-extraction/native-candidate";
 import {
   OBSERVATION_SCENE_EXTRACTION_MODEL,
 } from "@/src/cognition/observation-v3/descriptive-extraction/provider-adapter";
@@ -93,8 +96,7 @@ export async function buildDescriptiveExtractionCandidateFromStructuredResult(in
   if (!Array.isArray(structured.scenes) || structured.scenes.length === 0) {
     return {
       status: "missing_scenes",
-      bundle: null,
-      payload: null,
+      candidate: null,
       diagnostics: buildMissingScenesDiagnostics({
         attempt,
         dreamText: input.dreamText,
@@ -105,7 +107,8 @@ export async function buildDescriptiveExtractionCandidateFromStructuredResult(in
   }
 
   const normalizationStats = createNormalizationStats();
-  const bundle = createSceneDiscoveryBundle({
+  const normalizedScenes = structured.scenes.map((scene, index) => normalizeSceneWithStats(scene, index, normalizationStats));
+  const candidate = buildObservationV3NativeC0Candidate({
     reflectiveObjectId: input.reflectiveObjectId,
     userId: input.userId,
     source: "system_llm_extract",
@@ -117,16 +120,10 @@ export async function buildDescriptiveExtractionCandidateFromStructuredResult(in
       boundaryVersion: "observation_v2_phase1",
       dreamLanguage: structured.dreamLanguage ?? "unknown",
     },
-    scenes: structured.scenes.map((scene, index) => normalizeSceneWithStats(scene, index, normalizationStats)),
+    scenes: normalizedScenes,
   });
-
-  const payload = projectObservationV2BundleToCreateObservationInput(bundle, {
-    provenanceTier: "system_extract",
-    semanticPolicyResult: "accept_with_uncertainty",
-    semanticPolicyReasons: ["scene_first_projection"],
-    latentBackflowGuard: "observation_only",
-    boundaryVersion: "observation_v2_phase1",
-  });
+  const bundleProjection = projectNativeC0CandidateToObservationV2Bundle(candidate);
+  const payloadProjection = projectNativeC0CandidateToCreateObservationInput(candidate);
 
   const diagnostics = buildAttemptDiagnostics({
     attempt,
@@ -141,16 +138,15 @@ export async function buildDescriptiveExtractionCandidateFromStructuredResult(in
     rawMetrics,
     normalizedMetrics: buildNormalizedBundleMetrics({
       dreamText: input.dreamText,
-      bundle,
+      bundle: bundleProjection,
       normalizationStats,
-      payload,
+      payload: payloadProjection,
     }),
   });
 
   return {
     status: "candidate_available",
-    bundle,
-    payload,
+    candidate,
     diagnostics,
   };
 }

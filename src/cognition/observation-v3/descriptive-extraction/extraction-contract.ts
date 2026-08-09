@@ -1,6 +1,5 @@
 import type { SceneObservationAttemptDiagnostics } from "@/src/cognition/observation/llm-scene-observation-diagnostics";
-import type { CreateObservationInput } from "@/src/domain/observation/types";
-import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
+import type { ObservationV3NativeC0Candidate } from "@/src/cognition/observation-v3/descriptive-extraction/native-candidate";
 
 export interface DescriptiveExtractionProviderDiagnostics {
   elapsedMs: number;
@@ -29,14 +28,12 @@ export interface DescriptiveExtractionProviderRequest {
 
 export interface DescriptiveExtractionCandidateAttemptResult {
   status: "candidate_available" | "missing_scenes";
-  bundle: ObservationV2Bundle | null;
-  payload: CreateObservationInput | null;
+  candidate: ObservationV3NativeC0Candidate | null;
   diagnostics: SceneObservationAttemptDiagnostics;
 }
 
 export interface DescriptiveExtractionAttemptResult {
   status: "candidate_available" | "missing_scenes" | "empty_response" | "missing_openai_api_key";
-  bundle: ObservationV2Bundle | null;
-  payload: CreateObservationInput | null;
+  candidate: ObservationV3NativeC0Candidate | null;
   diagnostics: SceneObservationAttemptDiagnostics | null;
 }

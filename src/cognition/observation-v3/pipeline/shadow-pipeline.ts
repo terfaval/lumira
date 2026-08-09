@@ -4,12 +4,16 @@ import path from "node:path";
 
 import {
   analyzeComposedCandidateCompleteness,
-  analyzeObservationCompleteness,
+  analyzeNativeC0Completeness,
   fingerprintCompletenessAnalysis,
   type CompletenessReport,
 } from "@/src/cognition/observation-v3/completeness-analysis";
 import {
   executeDescriptiveExtractionAttempt,
+  projectNativeC0CandidateToExperimentalRegions,
+  projectNativeC0CandidateToExperimentalUnits,
+  projectNativeC0CandidateToObservationV2Bundle,
+  type ObservationV3NativeC0Candidate,
   type StructuredDescriptiveExtractionProviderResult,
 } from "@/src/cognition/observation-v3/descriptive-extraction";
 import {
@@ -39,11 +43,6 @@ import {
   type SupplementalRealizationShadowRun,
 } from "@/src/cognition/observation-v3/supplemental-realization";
 import { runShadowSourceAnalysis } from "@/src/cognition/observation-v3/source-analysis";
-import type {
-  ExperimentalObservationUnit,
-  ExperimentalRegion,
-} from "@/src/cognition/observation/benchmark/observation-topology-experiment-types";
-import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
 import { fingerprintObservationV3Pipeline } from "@/src/cognition/observation-v3/pipeline/pipeline-fingerprint";
 import {
   runObservationV3PipelineCore,
@@ -123,38 +122,9 @@ function createSourceIdentity(input: ObservationV3ShadowPipelineInput): MemoryRe
   };
 }
 
-function toExperimentalRegion(bundle: ObservationV2Bundle): ExperimentalRegion[] {
-  return bundle.scenes.map((scene, index) => ({
-    regionId: scene.sceneId,
-    order: scene.position ?? index,
-    heading: scene.summary,
-    spanStart: scene.evidenceContext.spanStart,
-    spanEnd: scene.evidenceContext.spanEnd,
-    evidence: [scene.evidenceContext],
-    boundaryConfidence: "medium",
-    uncertainty: scene.uncertaintyNotes?.[0] ?? null,
-    transitionCues: [],
-  }));
-}
-
-function toExperimentalUnits(bundle: ObservationV2Bundle): ExperimentalObservationUnit[] {
-  return bundle.scenes.flatMap((scene) =>
-    scene.observations.map((observation, index) => ({
-      observationId: observation.observationId,
-      regionId: scene.sceneId,
-      order: observation.position ?? index,
-      statement: observation.text,
-      evidence: observation.evidence,
-      uncertainty: observation.uncertaintyNote,
-      source: "baseline" as const,
-      recoveryProvenance: null,
-    })),
-  );
-}
-
 function toCompositionRequest(
   dreamText: string,
-  bundle: ObservationV2Bundle,
+  candidate: ObservationV3NativeC0Candidate,
   supplementalPackages: SupplementalRealizationPackage[],
   sourceIdentity: MemoryRealizationSourceIdentity,
   completeness?: CompletenessReport,
@@ -163,8 +133,8 @@ function toCompositionRequest(
     dreamTextLength: dreamText.length,
     sourceIdentity,
     baselineIdentity: {
-      candidateId: bundle.bundleId ?? "legacy-v2-bundle",
-      candidateHash: completeness?.candidateIdentity.candidateHash ?? sha256Hex(stableJson(bundle)),
+      candidateId: candidate.candidateId,
+      candidateHash: completeness?.candidateIdentity.candidateHash ?? candidate.candidateHash,
     },
     supplementalIdentity: supplementalPackages.length > 0
       ? {
@@ -181,8 +151,8 @@ function toCompositionRequest(
         }
       : undefined,
     baseline: {
-      regions: toExperimentalRegion(bundle),
-      units: toExperimentalUnits(bundle),
+      regions: projectNativeC0CandidateToExperimentalRegions(candidate),
+      units: projectNativeC0CandidateToExperimentalUnits(candidate),
     },
     supplemental: {
       regions: supplementalPackages.flatMap((pkg) => pkg.regions),
@@ -278,7 +248,7 @@ export async function runObservationV3ShadowPipeline(
           requestStructuredOutput: async () => input.replay.descriptiveExtraction.providerResult,
         });
 
-        if (result.status !== "candidate_available" || !result.bundle) {
+        if (result.status !== "candidate_available" || !result.candidate) {
           return {
             status: "failed",
             executionMode: "preserved_replay",
@@ -301,18 +271,18 @@ export async function runObservationV3ShadowPipeline(
           adapterFingerprint: input.replay.adapterId,
           subsystemFingerprint: sha256Hex(stableJson(subsystemFingerprints.descriptive_extraction)),
           inputHash: sha256Hex(sourceText),
-          outputHash: sha256Hex(stableJson(result.bundle)),
+          outputHash: sha256Hex(stableJson(result.candidate)),
           payload: {
             attemptNumber: input.replay.descriptiveExtraction.attemptNumber,
             attemptId: input.replay.descriptiveExtraction.attemptId,
-            bundle: result.bundle,
+            candidate: result.candidate,
             diagnostics: result.diagnostics,
           },
         };
       },
       completenessAnalysis: async ({ sourceText, upstream }) => {
-        const bundle = upstream.descriptive_extraction?.bundle as ObservationV2Bundle | undefined;
-        if (!bundle) {
+        const candidate = upstream.descriptive_extraction?.candidate as ObservationV3NativeC0Candidate | undefined;
+        if (!candidate) {
           return {
             status: "failed",
             executionMode: "native_deterministic",
@@ -323,14 +293,18 @@ export async function runObservationV3ShadowPipeline(
             outputHash: null,
             failure: {
               code: "candidate_unavailable",
-              message: "descriptive_extraction_bundle_unavailable",
+              message: "descriptive_extraction_candidate_unavailable",
             },
           };
         }
 
-        const report = analyzeObservationCompleteness({
+        const report = analyzeNativeC0Completeness({
           dreamText: sourceText,
-          bundle,
+          candidate,
+          sourceIdentity: {
+            sourceHash: sourceIdentity.sourceHash,
+            sourceLength: sourceIdentity.sourceLength,
+          },
         });
 
         return {
@@ -339,15 +313,15 @@ export async function runObservationV3ShadowPipeline(
           sourceArtifactRef: "completeness-report.json",
           adapterFingerprint: null,
           subsystemFingerprint: sha256Hex(stableJson(subsystemFingerprints.completeness_analysis)),
-          inputHash: sha256Hex(stableJson({ sourceText, bundleId: bundle.bundleId })),
+          inputHash: sha256Hex(stableJson({ sourceText, candidateId: candidate.candidateId })),
           outputHash: sha256Hex(stableJson(report)),
           payload: report as unknown as Record<string, unknown>,
         };
       },
       supplementalRealization: async ({ sourceText, upstream }) => {
         const completeness = upstream.completeness_analysis as CompletenessReport | undefined;
-        const bundle = upstream.descriptive_extraction?.bundle as ObservationV2Bundle | undefined;
-        if (!completeness || !bundle) {
+        const candidate = upstream.descriptive_extraction?.candidate as ObservationV3NativeC0Candidate | undefined;
+        if (!completeness || !candidate) {
           return {
             status: "failed",
             executionMode: "preserved_replay",
@@ -370,10 +344,10 @@ export async function runObservationV3ShadowPipeline(
           sourceText,
           completeness,
           baseline: {
-            candidateId: bundle.bundleId ?? "bundle",
-            candidateHash: completeness.candidateIdentity.candidateHash,
-            regions: toExperimentalRegion(bundle),
-            units: toExperimentalUnits(bundle),
+            candidateId: candidate.candidateId,
+            candidateHash: candidate.candidateHash,
+            regions: projectNativeC0CandidateToExperimentalRegions(candidate),
+            units: projectNativeC0CandidateToExperimentalUnits(candidate),
           },
           contextPadding: 260,
           maximumWindowLength: 3200,
@@ -433,8 +407,8 @@ export async function runObservationV3ShadowPipeline(
         };
       },
       memoryComposition: async ({ sourceText, upstream }) => {
-        const bundle = upstream.descriptive_extraction?.bundle as ObservationV2Bundle | undefined;
-        if (!bundle) {
+        const candidate = upstream.descriptive_extraction?.candidate as ObservationV3NativeC0Candidate | undefined;
+        if (!candidate) {
           return {
             status: "failed",
             executionMode: "native_deterministic",
@@ -444,15 +418,15 @@ export async function runObservationV3ShadowPipeline(
             inputHash: null,
             outputHash: null,
             failure: {
-              code: "baseline_bundle_unavailable",
-              message: "baseline_bundle_unavailable",
+              code: "baseline_candidate_unavailable",
+              message: "baseline_candidate_unavailable",
             },
           };
         }
 
         const packages = (upstream.supplemental_realization?.packages as SupplementalRealizationPackage[] | undefined) ?? [];
         const initialCompleteness = upstream.completeness_analysis as CompletenessReport | undefined;
-        const compositionRequest = toCompositionRequest(sourceText, bundle, packages, sourceIdentity, initialCompleteness);
+        const compositionRequest = toCompositionRequest(sourceText, candidate, packages, sourceIdentity, initialCompleteness);
         const compositionRun = runShadowMemoryComposition(compositionRequest);
         const finalCompleteness = analyzeComposedCandidateCompleteness({
           dreamText: sourceText,
@@ -647,6 +621,45 @@ export async function runObservationV3ShadowPipeline(
     artifacts["pipeline-governance.json"] = {
       ...(artifacts["pipeline-governance.json"] as Record<string, unknown>),
       supplementalDisposition,
+    };
+  }
+  const extractionStage = result.stageResults.find((stage) => stage.stage === "descriptive_extraction");
+  const completenessStage = result.stageResults.find((stage) => stage.stage === "completeness_analysis");
+  const compositionStage = result.stageResults.find((stage) => stage.stage === "memory_composition");
+  const nativeCandidate = (extractionStage?.payload as { candidate?: ObservationV3NativeC0Candidate } | null)?.candidate;
+  const initialCompleteness = completenessStage?.payload as CompletenessReport | null;
+  const compositionPayload = compositionStage?.payload as { request?: MemoryCompositionRequest } | null;
+  if (nativeCandidate) {
+    const projection = projectNativeC0CandidateToObservationV2Bundle(nativeCandidate);
+    artifacts["native-c0-carrier-evidence.json"] = {
+      nativeCandidateIdentity: {
+        candidateId: nativeCandidate.candidateId,
+        candidateHash: nativeCandidate.candidateHash,
+        candidateVersion: nativeCandidate.candidateVersion,
+      },
+      initialCompleteness: initialCompleteness
+        ? {
+            candidateKind: initialCompleteness.candidateIdentity.candidateKind,
+            candidateHash: initialCompleteness.candidateIdentity.candidateHash,
+          }
+        : null,
+      supplementalBaseline: {
+        baselineCarrierKind: "native_c0_candidate",
+        candidateId: nativeCandidate.candidateId,
+        candidateHash: nativeCandidate.candidateHash,
+      },
+      compositionBaseline: compositionPayload?.request?.baselineIdentity
+        ? {
+            baselineCarrierKind: "native_c0_candidate",
+            candidateId: compositionPayload.request.baselineIdentity.candidateId,
+            candidateHash: compositionPayload.request.baselineIdentity.candidateHash,
+          }
+        : null,
+      v2ProjectionIdentity: {
+        bundleId: projection.bundleId ?? null,
+        runtimeVersion: projection.runtimeVersion ?? null,
+      },
+      projectionReconsumedByNativePipeline: false,
     };
   }
 
