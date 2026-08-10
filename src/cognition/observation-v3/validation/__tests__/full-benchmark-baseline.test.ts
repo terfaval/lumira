@@ -79,6 +79,9 @@ function buildBaselineResult(): ObservationV3FullBenchmarkBaselineResult {
                 inputHash: "input-hash-1",
                 outputHash: "output-hash-1",
                 skippedReason: null,
+                startedAt: "2026-08-02T21:00:00.000Z",
+                completedAt: "2026-08-02T21:00:00.010Z",
+                latencyMs: 10,
                 payload: {
                   request: {
                     requestId: "memory-request-1",
@@ -100,6 +103,9 @@ function buildBaselineResult(): ObservationV3FullBenchmarkBaselineResult {
               finalOutcome: "admitted",
               pipelineCompletionStatus: "completed",
               skippedStages: [],
+              startedAt: "2026-08-02T21:00:00.000Z",
+              completedAt: "2026-08-02T21:00:00.010Z",
+              totalLatencyMs: 10,
             },
             failurePropagation: {
               failureSourceStage: null,
@@ -110,6 +116,9 @@ function buildBaselineResult(): ObservationV3FullBenchmarkBaselineResult {
                 governanceDisposition: "admitted",
                 finalOutcome: "admitted",
                 pipelineCompletionStatus: "completed",
+                startedAt: "2026-08-02T21:00:00.000Z",
+                completedAt: "2026-08-02T21:00:00.010Z",
+                totalLatencyMs: 10,
               },
               "native-identity-lineage-comparison.json": {
                 finalClassification: "identity_preserved",
@@ -214,6 +223,9 @@ describe("persistObservationV3FullBenchmarkBaseline", () => {
         governanceDisposition: "admitted",
         finalOutcome: "admitted",
         pipelineCompletionStatus: "completed",
+        startedAt: "2026-08-02T21:00:00.000Z",
+        completedAt: "2026-08-02T21:00:00.010Z",
+        totalLatencyMs: 10,
       }),
     );
     expect(identityLineage).toEqual(

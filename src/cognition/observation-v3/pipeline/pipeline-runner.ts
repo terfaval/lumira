@@ -9,6 +9,7 @@ export type ObservationV3PipelineStageName =
 
 export type ObservationV3PipelineExecutionMode =
   | "preserved_replay"
+  | "provider_backed"
   | "native_deterministic"
   | "skipped";
 
@@ -49,6 +50,9 @@ export interface ObservationV3PipelineStageResult {
   inputHash: string | null;
   outputHash: string | null;
   skippedReason: "not_required" | "upstream_failure" | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  latencyMs: number | null;
   payload: Record<string, unknown> | null;
   failure: {
     code: string;
@@ -109,6 +113,9 @@ export interface ObservationV3PipelineRunResult {
     finalOutcome: string;
     pipelineCompletionStatus: "completed" | "failed" | "terminated_early";
     skippedStages: ObservationV3PipelineStageName[];
+    startedAt: string;
+    completedAt: string;
+    totalLatencyMs: number;
   };
   failurePropagation: {
     failureSourceStage: ObservationV3PipelineStageName | null;
@@ -132,6 +139,11 @@ const STAGE_SEQUENCE: Array<{
 function toStageResult(
   stage: ObservationV3PipelineStageName,
   outcome: ObservationV3PipelineStageOutcome,
+  timing: {
+    startedAt: string;
+    completedAt: string;
+    latencyMs: number;
+  },
 ): ObservationV3PipelineStageResult {
   if (outcome.status === "success") {
     return {
@@ -144,6 +156,9 @@ function toStageResult(
       inputHash: outcome.inputHash,
       outputHash: outcome.outputHash,
       skippedReason: null,
+      startedAt: timing.startedAt,
+      completedAt: timing.completedAt,
+      latencyMs: timing.latencyMs,
       payload: outcome.payload,
       failure: null,
     };
@@ -159,6 +174,9 @@ function toStageResult(
     inputHash: outcome.inputHash,
     outputHash: outcome.outputHash,
     skippedReason: null,
+    startedAt: timing.startedAt,
+    completedAt: timing.completedAt,
+    latencyMs: timing.latencyMs,
     payload: null,
     failure: outcome.failure,
   };
@@ -178,6 +196,9 @@ function skippedStage(
     inputHash: null,
     outputHash: null,
     skippedReason: reason,
+    startedAt: null,
+    completedAt: null,
+    latencyMs: null,
     payload: null,
     failure: null,
   };
@@ -193,6 +214,7 @@ function shouldSkipSupplemental(
 export async function runObservationV3PipelineCore(
   input: ObservationV3PipelineCoreInput,
 ): Promise<ObservationV3PipelineRunResult> {
+  const pipelineStartedAtMs = Date.now();
   const pipelineFingerprint = await input.fingerprintPipeline();
   const stageResults: ObservationV3PipelineStageResult[] = [];
   const upstreamPayloads: Partial<Record<ObservationV3PipelineStageName, Record<string, unknown>>> = {};
@@ -215,12 +237,18 @@ export async function runObservationV3PipelineCore(
       continue;
     }
 
+    const stageStartedAtMs = Date.now();
     const outcome = await input.stages[executorKey]({
       sourceText: input.sourceText,
       sourceIdentity: input.sourceIdentity,
       upstream: upstreamPayloads,
     });
-    const result = toStageResult(name, outcome);
+    const stageCompletedAtMs = Date.now();
+    const result = toStageResult(name, outcome, {
+      startedAt: new Date(stageStartedAtMs).toISOString(),
+      completedAt: new Date(stageCompletedAtMs).toISOString(),
+      latencyMs: Math.max(0, stageCompletedAtMs - stageStartedAtMs),
+    });
     stageResults.push(result);
 
     if (result.status === "success" && result.payload) {
@@ -252,6 +280,7 @@ export async function runObservationV3PipelineCore(
         : failureSourceStage
           ? `failed_${failureSourceStage}`
           : "completed_without_admission");
+  const pipelineCompletedAtMs = Date.now();
 
   return {
     pipelineId: input.pipelineId,
@@ -262,6 +291,9 @@ export async function runObservationV3PipelineCore(
       finalOutcome,
       pipelineCompletionStatus,
       skippedStages,
+      startedAt: new Date(pipelineStartedAtMs).toISOString(),
+      completedAt: new Date(pipelineCompletedAtMs).toISOString(),
+      totalLatencyMs: Math.max(0, pipelineCompletedAtMs - pipelineStartedAtMs),
     },
     failurePropagation: {
       failureSourceStage,

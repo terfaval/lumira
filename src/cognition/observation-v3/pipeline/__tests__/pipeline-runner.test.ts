@@ -137,6 +137,30 @@ function makeCoreInput(
 }
 
 describe("runObservationV3PipelineCore", () => {
+  it("records non-identity pipeline and stage timing metadata for executed stages", async () => {
+    const input = makeCoreInput({});
+
+    const result = await runObservationV3PipelineCore(input);
+
+    expect(result.summary).toEqual(expect.objectContaining({
+      startedAt: expect.any(String),
+      completedAt: expect.any(String),
+      totalLatencyMs: expect.any(Number),
+    }));
+    expect(result.summary.totalLatencyMs).toBeGreaterThanOrEqual(0);
+    expect(Date.parse(result.summary.completedAt)).toBeGreaterThanOrEqual(Date.parse(result.summary.startedAt));
+
+    for (const stage of result.stageResults.filter((entry) => entry.status !== "skipped")) {
+      expect(stage).toEqual(expect.objectContaining({
+        startedAt: expect.any(String),
+        completedAt: expect.any(String),
+        latencyMs: expect.any(Number),
+      }));
+      expect(stage.latencyMs).toBeGreaterThanOrEqual(0);
+      expect(Date.parse(stage.completedAt!)).toBeGreaterThanOrEqual(Date.parse(stage.startedAt!));
+    }
+  });
+
   it("executes the native stage order and skips supplemental realization when completeness does not justify it", async () => {
     const input = makeCoreInput({});
 
@@ -163,6 +187,12 @@ describe("runObservationV3PipelineCore", () => {
     expect(result.summary.finalOutcome).toBe("admitted");
     expect(result.summary.pipelineCompletionStatus).toBe("completed");
     expect(result.summary.skippedStages).toEqual(["supplemental_realization"]);
+    expect(result.stageResults.find((stage) => stage.stage === "supplemental_realization")).toMatchObject({
+      status: "skipped",
+      startedAt: null,
+      completedAt: null,
+      latencyMs: null,
+    });
   });
 
   it("does not execute supplemental realization when completeness says recovery is not required but still eligible", async () => {

@@ -38,10 +38,15 @@ import {
   fingerprintSupplementalRealization,
   fingerprintSupplementalRealizationPlan,
   runShadowSupplementalRealization,
+  type PlannedSupplementalGap,
   type SupplementalRealizationExecutionResponse,
   type SupplementalRealizationPackage,
   type SupplementalRealizationShadowRun,
 } from "@/src/cognition/observation-v3/supplemental-realization";
+import type {
+  DescriptiveExtractionProviderEvidence,
+  SupplementalRealizationProviderEvidence,
+} from "@/src/cognition/observation-v3/provider-evidence";
 import { runShadowSourceAnalysis } from "@/src/cognition/observation-v3/source-analysis";
 import { fingerprintObservationV3Pipeline } from "@/src/cognition/observation-v3/pipeline/pipeline-fingerprint";
 import {
@@ -97,7 +102,45 @@ export interface ObservationV3PreservedReplayAdapterInput {
   };
 }
 
-export interface ObservationV3ShadowPipelineInput {
+export interface ObservationV3LiveProviderExecutionInput {
+  descriptiveExtraction?: {
+    attempt?: 1 | 2;
+    extractionRequestId?: string;
+    retryParentAttemptIdentity?: string | null;
+    onProviderEvidence?: (evidence: DescriptiveExtractionProviderEvidence) => void | Promise<void>;
+    requestStructuredOutput?: (
+      input: {
+        dreamText: string;
+        prompt: string;
+        model: string;
+        schemaName: string;
+        schema: Record<string, unknown>;
+        timeoutMs: number;
+        startedAtMs: number;
+      },
+    ) => Promise<StructuredDescriptiveExtractionProviderResult | null>;
+  };
+  supplementalRealization?: {
+    onProviderEvidence?: (evidence: SupplementalRealizationProviderEvidence) => void | Promise<void>;
+    executeStructuredRealization?: (input: {
+      prompt: string;
+      schema: Record<string, unknown>;
+      schemaName: string;
+      timeoutMs: number;
+      model: string;
+      target: PlannedSupplementalGap;
+    }) => Promise<SupplementalRealizationExecutionResponse>;
+  };
+  onDeterministicSubstageTiming?: (timing: {
+    stage: "final_completeness";
+    startedAt: string;
+    completedAt: string;
+    latencyMs: number;
+    status: "success" | "failed";
+  }) => void | Promise<void>;
+}
+
+interface ObservationV3ShadowPipelineBaseInput {
   userId: string;
   reflectiveObjectId: string;
   dreamText: string;
@@ -106,8 +149,21 @@ export interface ObservationV3ShadowPipelineInput {
     sourceHash: string;
     sourceLength: number;
   };
-  replay: ObservationV3PreservedReplayAdapterInput;
 }
+
+type ObservationV3ShadowPipelineReplayInput = ObservationV3ShadowPipelineBaseInput & {
+  replay: ObservationV3PreservedReplayAdapterInput;
+  liveProviderExecution?: undefined;
+};
+
+type ObservationV3ShadowPipelineLiveInput = ObservationV3ShadowPipelineBaseInput & {
+  replay?: undefined;
+  liveProviderExecution: ObservationV3LiveProviderExecutionInput;
+};
+
+export type ObservationV3ShadowPipelineInput =
+  | ObservationV3ShadowPipelineReplayInput
+  | ObservationV3ShadowPipelineLiveInput;
 
 export interface ObservationV3ShadowPipelineResult extends ObservationV3PipelineRunResult {
   artifacts: Record<string, unknown>;
@@ -198,6 +254,9 @@ export async function runObservationV3ShadowPipeline(
   input: ObservationV3ShadowPipelineInput,
 ): Promise<ObservationV3ShadowPipelineResult> {
   const sourceIdentity = createSourceIdentity(input);
+  const liveProviderExecution = input.liveProviderExecution;
+  const descriptiveExecutionMode = liveProviderExecution ? "provider_backed" : "preserved_replay";
+  const supplementalExecutionMode = liveProviderExecution ? "provider_backed" : "preserved_replay";
   const pipelineFingerprint = await fingerprintObservationV3Pipeline();
   const subsystemFingerprints = await collectSubsystemFingerprints();
   let supplementalRun: SupplementalRealizationShadowRun | null = null;
@@ -244,16 +303,22 @@ export async function runObservationV3ShadowPipeline(
           userId: input.userId,
           reflectiveObjectId: input.reflectiveObjectId,
           dreamText: sourceText,
-          attempt: input.replay.descriptiveExtraction.attemptNumber,
-          requestStructuredOutput: async () => input.replay.descriptiveExtraction.providerResult,
+          attempt: liveProviderExecution?.descriptiveExtraction?.attempt ?? input.replay?.descriptiveExtraction.attemptNumber ?? 1,
+          extractionRequestId: liveProviderExecution?.descriptiveExtraction?.extractionRequestId,
+          retryParentAttemptIdentity: liveProviderExecution?.descriptiveExtraction?.retryParentAttemptIdentity,
+          onProviderEvidence: liveProviderExecution?.descriptiveExtraction?.onProviderEvidence,
+          requestStructuredOutput: liveProviderExecution?.descriptiveExtraction?.requestStructuredOutput
+            ?? (input.replay
+              ? async () => input.replay!.descriptiveExtraction.providerResult
+              : undefined),
         });
 
         if (result.status !== "candidate_available" || !result.candidate) {
           return {
             status: "failed",
-            executionMode: "preserved_replay",
-            sourceArtifactRef: input.replay.descriptiveExtraction.sourceArtifactRef,
-            adapterFingerprint: input.replay.adapterId,
+            executionMode: descriptiveExecutionMode,
+            sourceArtifactRef: input.replay?.descriptiveExtraction.sourceArtifactRef ?? null,
+            adapterFingerprint: input.replay?.adapterId ?? null,
             subsystemFingerprint: sha256Hex(stableJson(subsystemFingerprints.descriptive_extraction)),
             inputHash: sha256Hex(sourceText),
             outputHash: null,
@@ -266,15 +331,15 @@ export async function runObservationV3ShadowPipeline(
 
         return {
           status: "success",
-          executionMode: "preserved_replay",
-          sourceArtifactRef: input.replay.descriptiveExtraction.sourceArtifactRef,
-          adapterFingerprint: input.replay.adapterId,
+          executionMode: descriptiveExecutionMode,
+          sourceArtifactRef: input.replay?.descriptiveExtraction.sourceArtifactRef ?? null,
+          adapterFingerprint: input.replay?.adapterId ?? null,
           subsystemFingerprint: sha256Hex(stableJson(subsystemFingerprints.descriptive_extraction)),
           inputHash: sha256Hex(sourceText),
           outputHash: sha256Hex(stableJson(result.candidate)),
           payload: {
-            attemptNumber: input.replay.descriptiveExtraction.attemptNumber,
-            attemptId: input.replay.descriptiveExtraction.attemptId,
+            attemptNumber: liveProviderExecution?.descriptiveExtraction?.attempt ?? input.replay?.descriptiveExtraction.attemptNumber ?? 1,
+            attemptId: input.replay?.descriptiveExtraction.attemptId ?? null,
             candidate: result.candidate,
             diagnostics: result.diagnostics,
           },
@@ -324,9 +389,9 @@ export async function runObservationV3ShadowPipeline(
         if (!completeness || !candidate) {
           return {
             status: "failed",
-            executionMode: "preserved_replay",
-            sourceArtifactRef: input.replay.supplementalRealization?.responses[0]?.sourceArtifactRef ?? null,
-            adapterFingerprint: input.replay.adapterId,
+            executionMode: supplementalExecutionMode,
+            sourceArtifactRef: input.replay?.supplementalRealization?.responses[0]?.sourceArtifactRef ?? null,
+            adapterFingerprint: input.replay?.adapterId ?? null,
             subsystemFingerprint: sha256Hex(stableJson(subsystemFingerprints.supplemental_realization)),
             inputHash: null,
             outputHash: null,
@@ -338,10 +403,11 @@ export async function runObservationV3ShadowPipeline(
         }
 
         const replayResponses = new Map(
-          (input.replay.supplementalRealization?.responses ?? []).map((entry) => [entry.physicalGapId, entry]),
+          (input.replay?.supplementalRealization?.responses ?? []).map((entry) => [entry.physicalGapId, entry]),
         );
         supplementalRun = await runShadowSupplementalRealization({
           sourceText,
+          sourceIdentity: sourceIdentity.sourceId,
           completeness,
           baseline: {
             candidateId: candidate.candidateId,
@@ -351,22 +417,26 @@ export async function runObservationV3ShadowPipeline(
           },
           contextPadding: 260,
           maximumWindowLength: 3200,
-          executeStructuredRealization: async ({ target }) => {
-            const replay = replayResponses.get(target.physicalGapId);
-            if (!replay) {
-              return {
-                outputText: null,
-                providerStatus: "missing_preserved_replay",
-                providerIncompleteReason: "missing_preserved_replay",
-                tokenUsage: {
-                  input: null,
-                  output: null,
-                  total: null,
-                },
-              } satisfies SupplementalRealizationExecutionResponse;
-            }
-            return replay.providerResult;
-          },
+          onProviderEvidence: liveProviderExecution?.supplementalRealization?.onProviderEvidence,
+          executeStructuredRealization: liveProviderExecution?.supplementalRealization?.executeStructuredRealization
+            ?? (input.replay
+              ? async ({ target }) => {
+                  const replay = replayResponses.get(target.physicalGapId);
+                  if (!replay) {
+                    return {
+                      outputText: null,
+                      providerStatus: "missing_preserved_replay",
+                      providerIncompleteReason: "missing_preserved_replay",
+                      tokenUsage: {
+                        input: null,
+                        output: null,
+                        total: null,
+                      },
+                    } satisfies SupplementalRealizationExecutionResponse;
+                  }
+                  return replay.providerResult;
+                }
+              : undefined),
         });
         supplementalDisposition = supplementalRun.result.disposition;
 
@@ -376,9 +446,9 @@ export async function runObservationV3ShadowPipeline(
         if (missingReplayExecution) {
           return {
             status: "failed",
-            executionMode: "preserved_replay",
+            executionMode: supplementalExecutionMode,
             sourceArtifactRef: null,
-            adapterFingerprint: input.replay.adapterId,
+            adapterFingerprint: input.replay?.adapterId ?? null,
             subsystemFingerprint: sha256Hex(stableJson(subsystemFingerprints.supplemental_realization)),
             inputHash: sha256Hex(stableJson(completeness)),
             outputHash: null,
@@ -391,9 +461,9 @@ export async function runObservationV3ShadowPipeline(
 
         return {
           status: "success",
-          executionMode: "preserved_replay",
-          sourceArtifactRef: input.replay.supplementalRealization?.responses[0]?.sourceArtifactRef ?? null,
-          adapterFingerprint: input.replay.adapterId,
+          executionMode: supplementalExecutionMode,
+          sourceArtifactRef: input.replay?.supplementalRealization?.responses[0]?.sourceArtifactRef ?? null,
+          adapterFingerprint: input.replay?.adapterId ?? null,
           subsystemFingerprint: sha256Hex(stableJson(subsystemFingerprints.supplemental_realization)),
           inputHash: sha256Hex(stableJson(completeness)),
           outputHash: sha256Hex(stableJson(supplementalRun.result)),
@@ -428,6 +498,7 @@ export async function runObservationV3ShadowPipeline(
         const initialCompleteness = upstream.completeness_analysis as CompletenessReport | undefined;
         const compositionRequest = toCompositionRequest(sourceText, candidate, packages, sourceIdentity, initialCompleteness);
         const compositionRun = runShadowMemoryComposition(compositionRequest);
+        const finalCompletenessStartedAtMs = Date.now();
         const finalCompleteness = analyzeComposedCandidateCompleteness({
           dreamText: sourceText,
           composedCandidate: compositionRun.result.composedCandidate,
@@ -436,6 +507,14 @@ export async function runObservationV3ShadowPipeline(
             sourceHash: sourceIdentity.sourceHash,
             sourceLength: sourceIdentity.sourceLength,
           },
+        });
+        const finalCompletenessCompletedAtMs = Date.now();
+        await liveProviderExecution?.onDeterministicSubstageTiming?.({
+          stage: "final_completeness",
+          startedAt: new Date(finalCompletenessStartedAtMs).toISOString(),
+          completedAt: new Date(finalCompletenessCompletedAtMs).toISOString(),
+          latencyMs: Math.max(0, finalCompletenessCompletedAtMs - finalCompletenessStartedAtMs),
+          status: "success",
         });
 
         return {

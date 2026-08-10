@@ -9,6 +9,9 @@ export function buildObservationV3PipelineSummary(
     finalOutcome: result.summary.finalOutcome,
     pipelineCompletionStatus: result.summary.pipelineCompletionStatus,
     skippedStages: result.summary.skippedStages,
+    startedAt: result.summary.startedAt,
+    completedAt: result.summary.completedAt,
+    totalLatencyMs: result.summary.totalLatencyMs,
     failureSourceStage: result.failurePropagation.failureSourceStage,
     stageOrder: result.stageResults.map((stage) => stage.stage),
     executionModes: result.stageResults.map((stage) => ({

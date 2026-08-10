@@ -26,6 +26,9 @@ function buildResult(input: {
         inputHash: null,
         outputHash: null,
         skippedReason: input.governanceDisposition ? null : "upstream_failure",
+        startedAt: input.governanceDisposition ? "2026-08-10T12:00:00.000Z" : null,
+        completedAt: input.governanceDisposition ? "2026-08-10T12:00:00.010Z" : null,
+        latencyMs: input.governanceDisposition ? 10 : null,
         payload: input.governanceDisposition ? { disposition: input.governanceDisposition } : null,
         failure: null,
       },
@@ -35,6 +38,9 @@ function buildResult(input: {
       finalOutcome: input.finalOutcome,
       pipelineCompletionStatus: input.pipelineCompletionStatus,
       skippedStages: [],
+      startedAt: "2026-08-10T12:00:00.000Z",
+      completedAt: "2026-08-10T12:00:00.010Z",
+      totalLatencyMs: 10,
     },
     failurePropagation: {
       failureSourceStage: input.failureSourceStage,
@@ -57,6 +63,9 @@ describe("buildObservationV3PipelineSummary", () => {
       finalOutcome: "deferred_for_supplemental_realization",
       pipelineCompletionStatus: "completed",
       failureSourceStage: null,
+      startedAt: "2026-08-10T12:00:00.000Z",
+      completedAt: "2026-08-10T12:00:00.010Z",
+      totalLatencyMs: 10,
     }));
   });
 

@@ -168,12 +168,21 @@ export function buildObservationV3PipelineArtifacts(
         executionMode: stage.executionMode,
         sourceArtifactRef: stage.sourceArtifactRef,
         skippedReason: stage.skippedReason,
+        startedAt: stage.startedAt,
+        completedAt: stage.completedAt,
+        latencyMs: stage.latencyMs,
       })),
     },
     "pipeline-timing.json": {
+      startedAt: result.summary.startedAt,
+      completedAt: result.summary.completedAt,
+      totalLatencyMs: result.summary.totalLatencyMs,
       stages: result.stageResults.map((stage) => ({
         stage: stage.stage,
         status: stage.status,
+        startedAt: stage.startedAt,
+        completedAt: stage.completedAt,
+        latencyMs: stage.latencyMs,
       })),
     },
     "pipeline-fingerprints.json": {
