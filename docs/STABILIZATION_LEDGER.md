@@ -5611,3 +5611,28 @@ Verification references:
   - Moved active native Admission request construction onto a neutral `admission-request` surface and kept the shadow-named builder as a compatibility alias.
   - Renamed active composition terminology toward compatibility-first naming while preserving legacy aliases needed for replay determinism and preserved readers.
   - Refreshed living Observation V3 architecture documents to the post-STAB-08B shadow state and explicitly marked the Supplemental Realization scout as historical proposal evidence.
+
+## 2026-08-10 - OBS-V3-STAB-09 Full Post-Stabilization Baseline Refresh
+
+- Phase: VALIDATION / EVIDENCE REFRESH
+- Touched boundaries:
+  - `.validation/observation-v3/stab-09/`
+  - `scripts/generate-observation-v3-stab-09-artifacts.ts`
+  - `docs/v2-build/observation/Observation-V3-Full-Benchmark-Baseline-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-V2-Comparison-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Production-Candidacy-Assessment.md`
+  - `docs/v2-build/observation/Observation-V3-Remaining-Issue-Register.md`
+  - `docs/v2-build/observation/Observation-V3-Architecture.md`
+  - `docs/v2-build/observation/Observation-V3-Dataflow.md`
+  - `docs/v2-build/observation/Observation-V3-Subsystem-Contracts.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd tsx scripts/generate-observation-v3-stab-09-artifacts.ts` -> pass, artifact root `.validation/observation-v3/stab-09/20260810T130000Z-full-post-stabilization-baseline-refresh`
+  - `npx.cmd vitest run src/cognition/observation-v3/descriptive-extraction/__tests__/descriptive-extraction.test.ts src/cognition/observation-v3/completeness-analysis/__tests__/completeness-analysis.test.ts src/cognition/observation-v3/supplemental-realization/__tests__/supplemental-realization.test.ts src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts src/cognition/observation-v3/memory-realization/__tests__/memory-realization.test.ts src/cognition/observation-v3/authority-admission/__tests__/admission-evaluator.test.ts src/cognition/observation-v3/authority-admission/__tests__/shadow-authority-admission.test.ts src/cognition/observation-v3/pipeline/__tests__/pipeline-runner.test.ts src/cognition/observation-v3/pipeline/__tests__/pipeline-summary.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts src/cognition/observation/benchmark/__tests__/observation-benchmark-runner.test.ts src/cognition/observation/benchmark/__tests__/observation-topology-experiment-runner.test.ts` -> pass (`15` files, `147` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in latent V2/runtime files
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-10T10-16-15-774Z.log`
+- Notes:
+  - Refreshed the full 17-case Observation V3 post-stabilization baseline against current main at commit `547648d`.
+  - Produced fresh machine-readable baseline, semantic comparison, admission distribution, determinism, cost/latency, issue-classification, documentation-consistency, and summary artifacts under the STAB-09 root.
+  - Fresh evidence preserved repaired lifecycle and governance invariants, kept deterministic replay stable, and shifted production-candidacy posture to constitutional closure review rather than runtime cutover readiness.
