@@ -20,6 +20,7 @@ function createAuthorityProvenance(
       summary: "A search continues through the house.",
     },
     observation: {
+      family: "observation_v2",
       observationBundleId: "bundle-1",
       observationRuntimeVersion: "observation_v2_phase1",
       semanticPolicyResult: "accept_with_uncertainty",
@@ -272,10 +273,14 @@ describe("latent authority fingerprint separation", () => {
 
   it("changes when observation authority changes materially", () => {
     const fingerprintA = buildAuthorityFingerprint(createAuthorityProvenance());
+    const observation = createAuthorityProvenance().observation;
+    if (observation.family !== "observation_v2") {
+      throw new Error("Expected V2 observation authority in provenance test fixture.");
+    }
     const fingerprintB = buildAuthorityFingerprint(
       createAuthorityProvenance({
         observation: {
-          ...createAuthorityProvenance().observation,
+          ...observation,
           semanticPolicyResult: "accept",
         },
       }),

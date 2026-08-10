@@ -2270,6 +2270,7 @@ describe("SupabaseGlossaryRepository isolation", () => {
           summary: "dream summary",
         },
         observation: {
+          family: "observation_v2",
           observationBundleId: "bundle-1",
           observationRuntimeVersion: "observation_v2_phase1",
           semanticPolicyResult: "accept",

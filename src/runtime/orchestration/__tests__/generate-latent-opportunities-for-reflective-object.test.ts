@@ -310,6 +310,7 @@ function createAuthorityProvenance(
       summary: packet.priorityObject.summary ?? null,
     },
     observation: {
+      family: "observation_v2",
       observationBundleId: packet.generationContext.observationBundleId,
       observationRuntimeVersion: packet.generationContext.observationRuntimeVersion,
       semanticPolicyResult: packet.generationContext.semanticPolicyResult,

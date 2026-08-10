@@ -3,10 +3,6 @@ import type {
   LatentContextProvenance,
   LatentExecutionProvenance,
 } from "@/src/domain/latent-v2/types";
-import {
-  buildAuthorityFingerprint,
-  canonicalizeAuthorityProvenance,
-} from "@/src/domain/latent-v2/authority-provenance";
 import type { OpportunityConstructorInputPacket } from "@/src/cognition/latent-v2/opportunity-constructor/types";
 
 const EXECUTION_PROVIDER = "openai";
@@ -46,6 +42,7 @@ export function projectAuthorityProvenance(input: {
       summary: input.packet.priorityObject.summary ?? null,
     },
     observation: {
+      family: "observation_v2",
       observationBundleId: input.packet.generationContext.observationBundleId,
       observationRuntimeVersion: input.packet.generationContext.observationRuntimeVersion,
       semanticPolicyResult: input.packet.generationContext.semanticPolicyResult,

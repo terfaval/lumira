@@ -1,5 +1,4 @@
 import {
-  composeOpportunityConstructorInputPacket,
   composeOpportunityConstructorInputPacketWithProvenance,
   buildAuthorityFingerprint,
   captureExecutionProvenance,

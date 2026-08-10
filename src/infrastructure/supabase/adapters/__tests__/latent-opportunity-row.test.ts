@@ -254,6 +254,7 @@ describe("latent opportunity row adapters", () => {
           summary: "A house search remains active.",
         },
         observation: {
+          family: "observation_v2",
           observationBundleId: "bundle-1",
           observationRuntimeVersion: "observation_v2_phase1",
           semanticPolicyResult: "accept_with_uncertainty",
@@ -331,6 +332,85 @@ describe("latent opportunity row adapters", () => {
     expect(run.authorityProvenance).toEqual(insertRow.authority_provenance);
     expect(run.contextProvenance).toEqual(insertRow.context_provenance);
     expect(run.executionProvenance).toEqual(insertRow.execution_provenance);
+  });
+
+  it("round-trips explicit v3 authority lineage through generation-run row adapters", () => {
+    const insertRow = toLatentGenerationRunInsertRow({
+      id: "run-v3-1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      status: "pending",
+      inputFingerprint: "fingerprint:v3",
+      authorityFingerprint: "b".repeat(64),
+      authorityProvenance: {
+        dream: {
+          priorityReflectiveObjectId: "object-1",
+          title: "House search dream",
+          objectLanguage: "hu",
+          content: "I move through a house searching for someone.",
+          summary: "A house search remains active.",
+        },
+        observation: {
+          family: "observation_v3",
+          authorityId: "authority-1",
+          canonicalObservationId: "canonical-observation-1",
+          canonicalHash: "c".repeat(64),
+          generationVersion: "observation_v3_shadow_1",
+        },
+        glossary: {
+          confirmedTerms: [],
+          appearanceRecords: [],
+        },
+        reflections: [],
+      },
+      contextProvenance: {
+        existingOpportunityContext: {
+          identities: [],
+        },
+        truncationNote: null,
+      },
+      executionProvenance: {
+        constructorRuntimeVersion: "latent_opportunity_constructor_v1",
+        llm: {
+          provider: "openai",
+          model: "gpt-4.1-mini",
+          requestTimeoutMs: 180000,
+          responseFormat: {
+            type: "json_schema",
+            schemaName: "lumira_latent_opportunity_constructor_v1",
+            strict: true,
+          },
+        },
+      },
+      triggerReason: null,
+      predecessorRunId: null,
+    });
+
+    const run = fromLatentGenerationRunRow({
+      id: "run-v3-1",
+      user_id: "user-1",
+      priority_reflective_object_id: "object-1",
+      status: "pending",
+      input_fingerprint: "fingerprint:v3",
+      authority_fingerprint: "b".repeat(64),
+      authority_provenance: insertRow.authority_provenance,
+      context_provenance: insertRow.context_provenance,
+      execution_provenance: insertRow.execution_provenance,
+      trigger_reason: null,
+      predecessor_run_id: null,
+      accepted_at: null,
+      superseded_at: null,
+      created_at: "2026-07-18T08:00:00.000Z",
+      updated_at: "2026-07-18T08:00:00.000Z",
+    });
+
+    expect(run.authorityProvenance?.observation).toEqual({
+      family: "observation_v3",
+      authorityId: "authority-1",
+      canonicalObservationId: "canonical-observation-1",
+      canonicalHash: "c".repeat(64),
+      generationVersion: "observation_v3_shadow_1",
+    });
   });
 
   it("keeps historical generation runs with null provenance readable", () => {

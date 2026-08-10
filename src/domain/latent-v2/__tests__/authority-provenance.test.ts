@@ -4,7 +4,11 @@ import {
   buildAuthorityFingerprint,
   canonicalizeAuthorityProvenance,
 } from "@/src/domain/latent-v2/authority-provenance";
-import type { LatentAuthorityProvenance } from "@/src/domain/latent-v2/types";
+import type {
+  LatentAuthorityProvenance,
+  LatentObservationEvidenceRef,
+  ObservationV3AuthorityBasis,
+} from "@/src/domain/latent-v2/types";
 
 function createAuthorityProvenance(): LatentAuthorityProvenance {
   return {
@@ -16,6 +20,7 @@ function createAuthorityProvenance(): LatentAuthorityProvenance {
       summary: "Stairwell dream",
     },
     observation: {
+      family: "observation_v2",
       observationBundleId: "bundle-1",
       observationRuntimeVersion: "obs-v2",
       semanticPolicyResult: "accept",
@@ -44,6 +49,39 @@ function createAuthorityProvenance(): LatentAuthorityProvenance {
           uncertaintyNote: null,
         },
       ],
+    },
+    glossary: {
+      confirmedTerms: [],
+      appearanceRecords: [],
+    },
+    reflections: [],
+  };
+}
+
+function createObservationV3AuthorityBasis(
+  overrides: Partial<ObservationV3AuthorityBasis> = {},
+): ObservationV3AuthorityBasis {
+  return {
+    authorityId: "authority-1",
+    canonicalObservationId: "canonical-observation-1",
+    canonicalHash: "c".repeat(64),
+    generationVersion: "observation_v3_shadow_1",
+    ...overrides,
+  };
+}
+
+function createV3AuthorityProvenance(): LatentAuthorityProvenance {
+  return {
+    dream: {
+      priorityReflectiveObjectId: "object-1",
+      title: "Dream",
+      objectLanguage: "en",
+      content: "I am in a stairwell.",
+      summary: "Stairwell dream",
+    },
+    observation: {
+      family: "observation_v3",
+      ...createObservationV3AuthorityBasis(),
     },
     glossary: {
       confirmedTerms: [],
@@ -91,5 +129,52 @@ describe("latent authority provenance primitive", () => {
     expect(buildAuthorityFingerprint(left)).not.toBe(
       buildAuthorityFingerprint(right),
     );
+  });
+
+  it("represents v3 authority lineage explicitly and deterministically", () => {
+    const left = createV3AuthorityProvenance();
+    const right = createV3AuthorityProvenance();
+
+    expect(left.observation.family).toBe("observation_v3");
+    expect(canonicalizeAuthorityProvenance(left)).toBe(
+      canonicalizeAuthorityProvenance(right),
+    );
+    expect(buildAuthorityFingerprint(left)).toBe(
+      buildAuthorityFingerprint(right),
+    );
+  });
+
+  it("distinguishes v2 and v3 authority lineage in canonical form", () => {
+    const v2 = createAuthorityProvenance();
+    const v3 = createV3AuthorityProvenance();
+
+    expect(canonicalizeAuthorityProvenance(v2)).not.toBe(
+      canonicalizeAuthorityProvenance(v3),
+    );
+    expect(buildAuthorityFingerprint(v2)).not.toBe(
+      buildAuthorityFingerprint(v3),
+    );
+  });
+
+  it("keeps v2 and v3 evidence refs unambiguous", () => {
+    const v2Ref: LatentObservationEvidenceRef = {
+      family: "observation_v2",
+      observationV2SceneObservationId: "bundle-1:scene-1:obs-1",
+      sceneId: "bundle-1:scene-1",
+    };
+    const v3Ref: LatentObservationEvidenceRef = {
+      family: "observation_v3",
+      authorityId: "authority-1",
+      unitId: "unit-1",
+      localityId: "locality-1",
+      evidenceId: "evidence-1",
+    };
+
+    expect(v2Ref.family).toBe("observation_v2");
+    expect(v3Ref.family).toBe("observation_v3");
+    expect("observationV2SceneObservationId" in v2Ref).toBe(true);
+    expect("unitId" in v2Ref).toBe(false);
+    expect("unitId" in v3Ref).toBe(true);
+    expect("observationV2SceneObservationId" in v3Ref).toBe(false);
   });
 });

@@ -58,6 +58,12 @@ export const LATENT_GENERATION_RUN_STATUSES = [
 ] as const;
 export type LatentGenerationRunStatus = (typeof LATENT_GENERATION_RUN_STATUSES)[number];
 
+export const OBSERVATION_AUTHORITY_FAMILIES = [
+  "observation_v2",
+  "observation_v3",
+] as const;
+export type ObservationAuthorityFamily = (typeof OBSERVATION_AUTHORITY_FAMILIES)[number];
+
 export const LATENT_GENERATION_RUN_INVALIDATION_SOURCE_LAYERS = ["observation"] as const;
 export type LatentGenerationRunInvalidationSourceLayer =
   (typeof LATENT_GENERATION_RUN_INVALIDATION_SOURCE_LAYERS)[number];
@@ -123,7 +129,15 @@ export interface LatentAuthorityDreamProvenance {
   summary: string | null;
 }
 
-export interface LatentAuthorityObservationProvenance {
+export interface ObservationV3AuthorityBasis {
+  authorityId: string;
+  canonicalObservationId: string;
+  canonicalHash: string;
+  generationVersion: string;
+}
+
+export interface LatentAuthorityObservationV2Provenance {
+  family: "observation_v2";
   observationBundleId: string;
   observationRuntimeVersion: string;
   semanticPolicyResult: "accept" | "accept_with_uncertainty";
@@ -157,6 +171,14 @@ export interface LatentAuthorityObservationProvenance {
   }>;
 }
 
+export interface LatentAuthorityObservationV3Provenance extends ObservationV3AuthorityBasis {
+  family: "observation_v3";
+}
+
+export type LatentObservationAuthority =
+  | LatentAuthorityObservationV2Provenance
+  | LatentAuthorityObservationV3Provenance;
+
 export interface LatentAuthorityGlossaryProvenance {
   confirmedTerms: Array<{
     glossaryTermId: GlossaryTermId;
@@ -189,7 +211,7 @@ export interface LatentAuthorityReflectionProvenance {
 
 export interface LatentAuthorityProvenance {
   dream: LatentAuthorityDreamProvenance;
-  observation: LatentAuthorityObservationProvenance;
+  observation: LatentObservationAuthority;
   glossary: LatentAuthorityGlossaryProvenance;
   reflections: LatentAuthorityReflectionProvenance[];
 }
@@ -397,6 +419,24 @@ export interface LatentOpportunityGlossaryLink {
   createdAt: string;
 }
 
+export interface LatentObservationV2EvidenceRef {
+  family: "observation_v2";
+  observationV2SceneObservationId: string;
+  sceneId?: string | null;
+}
+
+export interface ObservationV3EvidenceRef {
+  family: "observation_v3";
+  authorityId: string;
+  unitId: string;
+  localityId?: string | null;
+  evidenceId?: string | null;
+}
+
+export type LatentObservationEvidenceRef =
+  | LatentObservationV2EvidenceRef
+  | ObservationV3EvidenceRef;
+
 export interface LatentOpportunityEvidenceObservation {
   id: LatentOpportunityEvidenceObservationId;
   evidenceBlockId: LatentOpportunityEvidenceBlockId;
@@ -507,6 +547,8 @@ export interface CreateLatentOpportunityGlossaryLinkInput {
   glossaryTermId: GlossaryTermId;
   role: LatentOpportunityGlossaryLinkRole;
 }
+
+export type CreateLatentObservationEvidenceRefInput = LatentObservationEvidenceRef;
 
 export interface CreateLatentOpportunityEvidenceObservationInput {
   observationV2SceneObservationId: string;

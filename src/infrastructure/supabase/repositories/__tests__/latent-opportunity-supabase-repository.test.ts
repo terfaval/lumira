@@ -199,6 +199,7 @@ function createAuthorityProvenance(
       summary: "Stairwell dream",
     },
     observation: {
+      family: "observation_v2",
       observationBundleId: "bundle-1",
       observationRuntimeVersion: "obs-v2",
       semanticPolicyResult: "accept",
