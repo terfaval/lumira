@@ -2,6 +2,7 @@ import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { GlossaryCandidate, GlossaryTerm } from "@/src/domain/glossary/types";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
 import type { LatentOpportunityManifestation } from "@/src/domain/latent-v2/types";
+import { requireObservationV2SceneObservationId } from "@/src/domain/latent-v2/evidence";
 import type { ObservationV2Repository } from "@/src/domain/observation/contracts";
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
 import type { ReflectionRepository } from "@/src/domain/reflections/contracts";
@@ -413,4 +414,3 @@ export async function composeOpportunityConstructorInputPacketWithProvenance(
     }),
   };
 }
-import { requireObservationV2SceneObservationId } from "@/src/domain/latent-v2/evidence";

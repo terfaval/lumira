@@ -5715,3 +5715,19 @@ Verification references:
   - `npm.cmd run typecheck` -> pass
   - `npm.cmd run lint` -> pass
   - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-10T21-04-44-008Z.log`)
+
+## 2026-08-10 - OBS-V3-LATENT-03 V3-Native Latent Input Packet & Enrichment Foundation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/latent-v2/opportunity-constructor`
+  - `src/cognition/latent-v2/opportunity-constructor-v3`
+- Notes:
+  - Added a separate shadow-only Observation V3 Latent packet path that composes native V3 authority, locality, unit, evidence, uncertainty, and provenance into a V3-specific constructor packet.
+  - Added deterministic Latent-owned enrichment for the V3 path so unit/locality semantic cues no longer depend on Observation V2 `derivedStructures`.
+  - Added V3-specific prompt, parser, validator, mapper, and shadow execution harness surfaces while leaving the active V2 constructor, prompt, orchestration, persistence lineage, and invalidation behavior unchanged.
+- Verification:
+  - `npx.cmd vitest run src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts src/cognition/latent-v2/opportunity-constructor/__tests__/opportunity-constructor.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-10T21-29-04-041Z.log`)
