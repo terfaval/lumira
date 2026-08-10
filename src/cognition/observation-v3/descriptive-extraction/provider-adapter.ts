@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { readResponseUsageMetrics } from "@/src/cognition/observation/llm-scene-observation-diagnostics";
 import { readRuntimeEnvironment } from "@/src/infrastructure/environment/env";
 import type {
+  DescriptiveExtractionContractVariant,
   DescriptiveExtractionProviderRequest,
   StructuredDescriptiveExtractionProviderResult,
 } from "@/src/cognition/observation-v3/descriptive-extraction/extraction-contract";
@@ -10,8 +11,29 @@ import type {
 export const OPENAI_REQUEST_TIMEOUT_MS = 180_000;
 export const OBSERVATION_SCENE_EXTRACTION_MODEL = "gpt-4.1-mini";
 export const DESCRIPTIVE_EXTRACTION_SCHEMA_NAME = "lumira_scene_observation_extraction";
+export const DESCRIPTIVE_EXTRACTION_WITHOUT_DERIVED_SCHEMA_NAME =
+  "lumira_scene_observation_extraction_without_derived";
+const DERIVED_ITEM_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["identityKey", "displayLabel", "sourceLanguage", "label", "observationIds"],
+  properties: {
+    identityKey: { type: "string" },
+    displayLabel: { type: "string" },
+    sourceLanguage: { type: "string", enum: ["hu", "en", "unknown"] },
+    label: { type: "string" },
+    observationIds: {
+      type: "array",
+      items: { type: "string" },
+    },
+  },
+} as const;
 
-export const SCENE_EXTRACTION_JSON_SCHEMA = {
+export function buildSceneExtractionJsonSchema(
+  contractVariant: DescriptiveExtractionContractVariant = "control",
+) {
+  const includeDerived = contractVariant === "control";
+  return {
   type: "object",
   additionalProperties: false,
   required: ["dreamLanguage", "scenes"],
@@ -22,7 +44,15 @@ export const SCENE_EXTRACTION_JSON_SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["sceneId", "position", "summary", "boundaryReasoning", "evidenceContext", "observations", "derived"],
+        required: [
+          "sceneId",
+          "position",
+          "summary",
+          "boundaryReasoning",
+          "evidenceContext",
+          "observations",
+          ...(includeDerived ? ["derived"] : []),
+        ],
         properties: {
           sceneId: { type: "string" },
           position: { type: "integer", minimum: 0 },
@@ -89,43 +119,40 @@ export const SCENE_EXTRACTION_JSON_SCHEMA = {
               },
             },
           },
-          derived: {
-            type: "object",
-            additionalProperties: false,
-            required: ["actors", "locations", "objects", "interactions", "affect", "agency", "phenomenology", "metacognition"],
-            properties: {
-              actors: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              locations: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              objects: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              interactions: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              affect: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              agency: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              phenomenology: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-              metacognition: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
-            },
-          },
+          ...(includeDerived
+            ? {
+                derived: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["actors", "locations", "objects", "interactions", "affect", "agency", "phenomenology", "metacognition"],
+                  properties: {
+                    actors: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
+                    locations: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
+                    objects: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
+                    interactions: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
+                    affect: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
+                    agency: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
+                    phenomenology: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
+                    metacognition: { type: "array", items: { $ref: "#/$defs/derivedItem" } },
+                  },
+                },
+              }
+            : {}),
         },
       },
     },
   },
-  $defs: {
-    derivedItem: {
-      type: "object",
-      additionalProperties: false,
-      required: ["identityKey", "displayLabel", "sourceLanguage", "label", "observationIds"],
-      properties: {
-        identityKey: { type: "string" },
-        displayLabel: { type: "string" },
-        sourceLanguage: { type: "string", enum: ["hu", "en", "unknown"] },
-        label: { type: "string" },
-        observationIds: {
-          type: "array",
-          items: { type: "string" },
+  ...(includeDerived
+    ? {
+        $defs: {
+          derivedItem: DERIVED_ITEM_JSON_SCHEMA,
         },
-      },
-    },
-  },
+      }
+    : {}),
 } as const;
+}
+
+export const SCENE_EXTRACTION_JSON_SCHEMA = buildSceneExtractionJsonSchema("control");
 
 export async function requestOpenAiStructuredDescriptiveExtraction(
   input: DescriptiveExtractionProviderRequest,

@@ -1,14 +1,16 @@
 import type {
+  DescriptiveExtractionContractVariant,
   DescriptiveExtractionAttemptResult,
   StructuredDescriptiveExtractionProviderResult,
 } from "@/src/cognition/observation-v3/descriptive-extraction/extraction-contract";
 import { buildDescriptiveExtractionPrompt, parseStructuredDescriptiveExtraction } from "@/src/cognition/observation-v3/descriptive-extraction/parser";
 import {
+  buildSceneExtractionJsonSchema,
+  DESCRIPTIVE_EXTRACTION_WITHOUT_DERIVED_SCHEMA_NAME,
   DESCRIPTIVE_EXTRACTION_SCHEMA_NAME,
   OBSERVATION_SCENE_EXTRACTION_MODEL,
   OPENAI_REQUEST_TIMEOUT_MS,
   requestOpenAiStructuredDescriptiveExtraction,
-  SCENE_EXTRACTION_JSON_SCHEMA,
 } from "@/src/cognition/observation-v3/descriptive-extraction/provider-adapter";
 import { buildDescriptiveExtractionCandidateFromStructuredResult } from "@/src/cognition/observation-v3/descriptive-extraction/normalization";
 import { buildAttemptDiagnostics } from "@/src/cognition/observation/llm-scene-observation-diagnostics";
@@ -38,6 +40,7 @@ export async function executeDescriptiveExtractionAttempt(input: {
   reflectiveObjectId: string;
   dreamText: string;
   attempt: 1 | 2;
+  contractVariant?: DescriptiveExtractionContractVariant;
   startedAtMs?: number;
   sourceIdentity?: string;
   extractionRequestId?: string;
@@ -57,7 +60,12 @@ export async function executeDescriptiveExtractionAttempt(input: {
 }): Promise<DescriptiveExtractionAttemptResult> {
   const startedAtMs = input.startedAtMs ?? Date.now();
   const requestStructuredOutput = input.requestStructuredOutput ?? requestOpenAiStructuredDescriptiveExtraction;
-  const prompt = buildDescriptiveExtractionPrompt(input.dreamText);
+  const contractVariant = input.contractVariant ?? "control";
+  const prompt = buildDescriptiveExtractionPrompt(input.dreamText, contractVariant);
+  const schema = buildSceneExtractionJsonSchema(contractVariant);
+  const schemaName = contractVariant === "control"
+    ? DESCRIPTIVE_EXTRACTION_SCHEMA_NAME
+    : DESCRIPTIVE_EXTRACTION_WITHOUT_DERIVED_SCHEMA_NAME;
   const sourceIdentity = input.sourceIdentity ?? input.reflectiveObjectId;
   const extractionRequestId = input.extractionRequestId ?? `${sourceIdentity}:descriptive-extraction`;
   const providerEvidenceCapture = createDescriptiveExtractionProviderEvidenceCapture({
@@ -70,27 +78,27 @@ export async function executeDescriptiveExtractionAttempt(input: {
       requestFingerprint: sha256StableProviderEvidence({
         model: OBSERVATION_SCENE_EXTRACTION_MODEL,
         prompt,
-        schemaName: DESCRIPTIVE_EXTRACTION_SCHEMA_NAME,
+        schemaName,
       }),
       promptFingerprint: sha256StableProviderEvidence(prompt),
-      schemaFingerprint: sha256StableProviderEvidence(SCENE_EXTRACTION_JSON_SCHEMA),
+      schemaFingerprint: sha256StableProviderEvidence(schema),
       modelIdentifier: OBSERVATION_SCENE_EXTRACTION_MODEL,
     },
     sanitizationVersion: "descriptive-extraction-provider-sanitization-v1",
     parserFingerprint: sha256StableProviderEvidence(parseStructuredDescriptiveExtraction.toString()),
-    parserSchemaFingerprint: sha256StableProviderEvidence(SCENE_EXTRACTION_JSON_SCHEMA),
+    parserSchemaFingerprint: sha256StableProviderEvidence(schema),
     artifactVersion: "1",
   });
 
   const providerResult = await requestStructuredOutput({
-    dreamText: input.dreamText,
-    prompt,
-    model: OBSERVATION_SCENE_EXTRACTION_MODEL,
-    schemaName: DESCRIPTIVE_EXTRACTION_SCHEMA_NAME,
-    schema: SCENE_EXTRACTION_JSON_SCHEMA,
-    timeoutMs: OPENAI_REQUEST_TIMEOUT_MS,
-    startedAtMs,
-  });
+      dreamText: input.dreamText,
+      prompt,
+      model: OBSERVATION_SCENE_EXTRACTION_MODEL,
+      schemaName,
+      schema,
+      timeoutMs: OPENAI_REQUEST_TIMEOUT_MS,
+      startedAtMs,
+    });
 
   if (providerResult === null) {
     return {

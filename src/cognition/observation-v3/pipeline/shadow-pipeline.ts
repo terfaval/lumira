@@ -105,6 +105,7 @@ export interface ObservationV3PreservedReplayAdapterInput {
 export interface ObservationV3LiveProviderExecutionInput {
   descriptiveExtraction?: {
     attempt?: 1 | 2;
+    contractVariant?: "control" | "no_derived";
     extractionRequestId?: string;
     retryParentAttemptIdentity?: string | null;
     onProviderEvidence?: (evidence: DescriptiveExtractionProviderEvidence) => void | Promise<void>;
@@ -304,6 +305,7 @@ export async function runObservationV3ShadowPipeline(
           reflectiveObjectId: input.reflectiveObjectId,
           dreamText: sourceText,
           attempt: liveProviderExecution?.descriptiveExtraction?.attempt ?? input.replay?.descriptiveExtraction.attemptNumber ?? 1,
+          contractVariant: liveProviderExecution?.descriptiveExtraction?.contractVariant,
           extractionRequestId: liveProviderExecution?.descriptiveExtraction?.extractionRequestId,
           retryParentAttemptIdentity: liveProviderExecution?.descriptiveExtraction?.retryParentAttemptIdentity,
           onProviderEvidence: liveProviderExecution?.descriptiveExtraction?.onProviderEvidence,

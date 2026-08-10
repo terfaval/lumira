@@ -1,6 +1,8 @@
 import type { SceneObservationAttemptDiagnostics } from "@/src/cognition/observation/llm-scene-observation-diagnostics";
 import type { ObservationV3NativeC0Candidate } from "@/src/cognition/observation-v3/descriptive-extraction/native-candidate";
 
+export type DescriptiveExtractionContractVariant = "control" | "no_derived";
+
 export interface DescriptiveExtractionProviderDiagnostics {
   elapsedMs: number;
   providerStatus: string | null;

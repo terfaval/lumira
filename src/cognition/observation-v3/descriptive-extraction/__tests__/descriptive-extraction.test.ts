@@ -186,4 +186,93 @@ describe("executeDescriptiveExtractionAttempt", () => {
       }),
     ]);
   });
+
+  it("supports an experiment-only derived-free provider contract without changing native candidate construction", async () => {
+    const requestStructuredOutput = vi.fn(async () => ({
+      outputText: JSON.stringify({
+        dreamLanguage: "en",
+        scenes: [
+          {
+            sceneId: "scene-1",
+            position: 0,
+            summary: "A guide leads the dreamer up a staircase.",
+            boundaryReasoning: [],
+            evidenceContext: {
+              snippet: "A guide leads the dreamer up a staircase.",
+              spanStart: 0,
+              spanEnd: 40,
+              contextLabel: "scene",
+            },
+            observations: [
+              {
+                observationId: "obs-1",
+                position: 0,
+                text: "A guide leads the dreamer up a staircase.",
+                evidence: [
+                  {
+                    snippet: "A guide leads the dreamer up a staircase.",
+                    spanStart: 0,
+                    spanEnd: 40,
+                    contextLabel: "quoted_support",
+                  },
+                ],
+                uncertaintyNote: null,
+              },
+            ],
+          },
+        ],
+      }),
+      providerDiagnostics: {
+        elapsedMs: 18,
+        providerStatus: "completed",
+        providerIncompleteReason: null,
+        providerReturnedStructuredOutput: true,
+        inputTokenUsage: 12,
+        outputTokenUsage: 24,
+        totalTokenUsage: 36,
+      },
+    }));
+
+    const result = await executeDescriptiveExtractionAttempt({
+      userId: "user-1",
+      reflectiveObjectId: "object-1",
+      dreamText: "A guide leads the dreamer up a staircase.",
+      attempt: 1,
+      contractVariant: "no_derived",
+      requestStructuredOutput,
+    });
+
+    expect(requestStructuredOutput).toHaveBeenCalledWith(
+      expect.objectContaining({
+        schemaName: "lumira_scene_observation_extraction_without_derived",
+        schema: expect.not.objectContaining({
+          properties: expect.objectContaining({
+            scenes: expect.objectContaining({
+              items: expect.objectContaining({
+                properties: expect.objectContaining({
+                  derived: expect.anything(),
+                }),
+              }),
+            }),
+          }),
+        }),
+        prompt: expect.not.stringContaining("then Derived Structures"),
+      }),
+    );
+    expect(result).toMatchObject({
+      status: "candidate_available",
+      candidate: expect.objectContaining({
+        localities: [
+          expect.objectContaining({
+            localityId: "scene-1",
+          }),
+        ],
+        descriptiveUnits: [
+          expect.objectContaining({
+            unitId: "obs-1",
+          }),
+        ],
+      }),
+    });
+  });
 });

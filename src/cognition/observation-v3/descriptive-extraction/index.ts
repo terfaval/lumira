@@ -14,12 +14,15 @@ export type {
   ObservationV3NativeC0Provenance,
 } from "@/src/cognition/observation-v3/descriptive-extraction/native-candidate";
 export {
+  buildSceneExtractionJsonSchema,
+  DESCRIPTIVE_EXTRACTION_WITHOUT_DERIVED_SCHEMA_NAME,
   DESCRIPTIVE_EXTRACTION_SCHEMA_NAME,
   OBSERVATION_SCENE_EXTRACTION_MODEL,
   OPENAI_REQUEST_TIMEOUT_MS,
   SCENE_EXTRACTION_JSON_SCHEMA,
 } from "@/src/cognition/observation-v3/descriptive-extraction/provider-adapter";
 export type {
+  DescriptiveExtractionContractVariant,
   DescriptiveExtractionAttemptResult,
   DescriptiveExtractionCandidateAttemptResult,
   DescriptiveExtractionProviderDiagnostics,
