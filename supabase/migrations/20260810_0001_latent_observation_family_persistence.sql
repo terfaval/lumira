@@ -1,15 +1,57 @@
-alter table public.latent_opportunity_generation_runs
-  add column if not exists observation_authority_family text;
+do $$
+declare
+  v_generation_family_exists boolean;
+  v_generation_family_has_null boolean;
+  v_generation_family_has_v3 boolean;
+begin
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'latent_opportunity_generation_runs'
+      and column_name = 'observation_authority_family'
+  )
+  into v_generation_family_exists;
 
-alter table public.latent_opportunity_generation_runs
-  alter column observation_authority_family set default 'observation_v2';
+  if not v_generation_family_exists then
+    alter table public.latent_opportunity_generation_runs
+      add column observation_authority_family text not null default 'observation_v2';
+  else
+    execute $sql$
+      select
+        exists (
+          select 1
+          from public.latent_opportunity_generation_runs
+          where observation_authority_family is null
+        ),
+        exists (
+          select 1
+          from public.latent_opportunity_generation_runs
+          where observation_authority_family = 'observation_v3'
+        )
+    $sql$
+    into v_generation_family_has_null, v_generation_family_has_v3;
 
-update public.latent_opportunity_generation_runs
-set observation_authority_family = 'observation_v2'
-where observation_authority_family is null;
+    if v_generation_family_has_null and not v_generation_family_has_v3 then
+      alter table public.latent_opportunity_generation_runs
+        drop column if exists observation_authority_family;
 
-alter table public.latent_opportunity_generation_runs
-  alter column observation_authority_family set not null;
+      alter table public.latent_opportunity_generation_runs
+        add column observation_authority_family text not null default 'observation_v2';
+    else
+      alter table public.latent_opportunity_generation_runs
+        alter column observation_authority_family set default 'observation_v2';
+
+      if v_generation_family_has_null then
+        raise exception 'Cannot finalize latent observation-family migration with mixed V3 generation-run family state.';
+      end if;
+
+      alter table public.latent_opportunity_generation_runs
+        alter column observation_authority_family set not null;
+    end if;
+  end if;
+end
+$$;
 
 alter table public.latent_opportunity_generation_runs
   drop constraint if exists latent_opportunity_generation_runs_observation_authority_family_check;
@@ -19,23 +61,126 @@ alter table public.latent_opportunity_generation_runs
     observation_authority_family in ('observation_v2', 'observation_v3')
   );
 
-alter table public.latent_opportunity_evidence_observations
-  add column if not exists observation_family text,
-  add column if not exists observation_v3_authority_id text null,
-  add column if not exists observation_v3_unit_id text null,
-  add column if not exists observation_v3_locality_id text null,
-  add column if not exists observation_v3_evidence_id text null;
+do $$
+declare
+  v_evidence_family_exists boolean;
+  v_evidence_v3_authority_exists boolean;
+  v_evidence_v3_unit_exists boolean;
+  v_evidence_v3_locality_exists boolean;
+  v_evidence_v3_evidence_exists boolean;
+  v_evidence_family_has_null boolean;
+  v_evidence_has_v3_data boolean;
+begin
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'latent_opportunity_evidence_observations'
+      and column_name = 'observation_family'
+  )
+  into v_evidence_family_exists;
 
-alter table public.latent_opportunity_evidence_observations
-  alter column observation_family set default 'observation_v2';
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'latent_opportunity_evidence_observations'
+      and column_name = 'observation_v3_authority_id'
+  )
+  into v_evidence_v3_authority_exists;
 
-update public.latent_opportunity_evidence_observations
-set observation_family = 'observation_v2'
-where observation_family is null;
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'latent_opportunity_evidence_observations'
+      and column_name = 'observation_v3_unit_id'
+  )
+  into v_evidence_v3_unit_exists;
 
-alter table public.latent_opportunity_evidence_observations
-  alter column observation_family set not null,
-  alter column observation_v2_scene_observation_id drop not null;
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'latent_opportunity_evidence_observations'
+      and column_name = 'observation_v3_locality_id'
+  )
+  into v_evidence_v3_locality_exists;
+
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'latent_opportunity_evidence_observations'
+      and column_name = 'observation_v3_evidence_id'
+  )
+  into v_evidence_v3_evidence_exists;
+
+  if not v_evidence_family_exists then
+    alter table public.latent_opportunity_evidence_observations
+      add column observation_family text not null default 'observation_v2',
+      add column if not exists observation_v3_authority_id text null,
+      add column if not exists observation_v3_unit_id text null,
+      add column if not exists observation_v3_locality_id text null,
+      add column if not exists observation_v3_evidence_id text null;
+  else
+    execute $sql$
+      select
+        exists (
+          select 1
+          from public.latent_opportunity_evidence_observations
+          where observation_family is null
+        ),
+        exists (
+          select 1
+          from public.latent_opportunity_evidence_observations
+          where observation_family = 'observation_v3'
+             or observation_v3_authority_id is not null
+             or observation_v3_unit_id is not null
+             or observation_v3_locality_id is not null
+             or observation_v3_evidence_id is not null
+        )
+    $sql$
+    into v_evidence_family_has_null, v_evidence_has_v3_data;
+
+    if (v_evidence_family_has_null or not v_evidence_v3_authority_exists or not v_evidence_v3_unit_exists or not v_evidence_v3_locality_exists or not v_evidence_v3_evidence_exists)
+       and not v_evidence_has_v3_data then
+      alter table public.latent_opportunity_evidence_observations
+        drop column if exists observation_family,
+        drop column if exists observation_v3_authority_id,
+        drop column if exists observation_v3_unit_id,
+        drop column if exists observation_v3_locality_id,
+        drop column if exists observation_v3_evidence_id;
+
+      alter table public.latent_opportunity_evidence_observations
+        add column observation_family text not null default 'observation_v2',
+        add column if not exists observation_v3_authority_id text null,
+        add column if not exists observation_v3_unit_id text null,
+        add column if not exists observation_v3_locality_id text null,
+        add column if not exists observation_v3_evidence_id text null;
+    else
+      alter table public.latent_opportunity_evidence_observations
+        alter column observation_family set default 'observation_v2';
+
+      if v_evidence_family_has_null then
+        raise exception 'Cannot finalize latent observation-family migration with mixed V3 evidence-family state.';
+      end if;
+
+      alter table public.latent_opportunity_evidence_observations
+        alter column observation_family set not null;
+
+      alter table public.latent_opportunity_evidence_observations
+        add column if not exists observation_v3_authority_id text null,
+        add column if not exists observation_v3_unit_id text null,
+        add column if not exists observation_v3_locality_id text null,
+        add column if not exists observation_v3_evidence_id text null;
+    end if;
+  end if;
+
+  alter table public.latent_opportunity_evidence_observations
+    alter column observation_v2_scene_observation_id drop not null;
+end
+$$;
 
 alter table public.latent_opportunity_evidence_observations
   drop constraint if exists latent_opportunity_evidence_observations_family_check;

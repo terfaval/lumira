@@ -57,19 +57,18 @@ describe("latent generation-run empty-status hardening migration", () => {
     expect(migration).toContain("add column if not exists authority_provenance jsonb null");
     expect(migration).toContain("add column if not exists context_provenance jsonb null");
     expect(migration).toContain("add column if not exists execution_provenance jsonb null");
-    expect(migration).not.toContain("update public.latent_opportunity_generation_runs");
+    expect(migration).not.toContain("update public.latent_opportunity_generation_runs\nset observation_authority_family = 'observation_v2'");
+    expect(migration).not.toContain("where observation_authority_family is null;");
   });
 
   it("adds explicit observation authority-family and dual-family evidence columns additively", () => {
     const migration = readWorkspaceFile("supabase/migrations/20260810_0001_latent_observation_family_persistence.sql");
 
-    expect(migration).toContain("alter table public.latent_opportunity_generation_runs");
-    expect(migration).toContain("add column if not exists observation_authority_family text");
+    expect(migration).toContain("add column observation_authority_family text not null default 'observation_v2'");
     expect(migration).toContain("default 'observation_v2'");
     expect(migration).toContain("observation_authority_family in ('observation_v2', 'observation_v3')");
 
-    expect(migration).toContain("alter table public.latent_opportunity_evidence_observations");
-    expect(migration).toContain("add column if not exists observation_family text");
+    expect(migration).toContain("add column observation_family text not null default 'observation_v2'");
     expect(migration).toContain("add column if not exists observation_v3_authority_id text");
     expect(migration).toContain("add column if not exists observation_v3_unit_id text");
     expect(migration).toContain("add column if not exists observation_v3_locality_id text");
@@ -80,6 +79,29 @@ describe("latent generation-run empty-status hardening migration", () => {
     expect(migration).toContain("observation_v3_unit_id is not null");
     expect(migration).not.toContain("drop table public.latent_opportunity_evidence_observations");
     expect(migration).not.toContain("drop column observation_v2_scene_observation_id");
+  });
+
+  it("does not bulk-update guarded generation-run authority rows to backfill observation family", () => {
+    const migration = readWorkspaceFile("supabase/migrations/20260810_0001_latent_observation_family_persistence.sql");
+    const continuityGuardMigration = readWorkspaceFile("supabase/migrations/20260722_0001_latent_reflective_continuity.sql");
+    const migrationPreamble = migration.split("create or replace function public.accept_latent_generation_run_successor(")[0] ?? migration;
+
+    expect(continuityGuardMigration).toContain("Latent generation-run authority fields are immutable outside accepted continuity projection updates.");
+    expect(migrationPreamble).not.toContain("update public.latent_opportunity_generation_runs\nset observation_authority_family = 'observation_v2'");
+    expect(migrationPreamble).not.toContain("where observation_authority_family is null;");
+    expect(migrationPreamble).not.toContain("set observation_authority_family = 'observation_v2'");
+    expect(migrationPreamble).not.toContain("app.latent_continuity_write_authorized");
+    expect(migrationPreamble).not.toContain("accept_generation_run");
+  });
+
+  it("avoids unnecessary historical evidence-family backfill updates and repairs partial state structurally", () => {
+    const migration = readWorkspaceFile("supabase/migrations/20260810_0001_latent_observation_family_persistence.sql");
+
+    expect(migration).not.toContain("update public.latent_opportunity_evidence_observations");
+    expect(migration).toContain("drop column if exists observation_authority_family");
+    expect(migration).toContain("drop column if exists observation_family");
+    expect(migration).toContain("Cannot finalize latent observation-family migration with mixed V3 generation-run family state.");
+    expect(migration).toContain("Cannot finalize latent observation-family migration with mixed V3 evidence-family state.");
   });
 
   it("creates continuity tables and an atomic successor-acceptance rpc", () => {

@@ -5731,3 +5731,19 @@ Verification references:
   - `npm.cmd run typecheck` -> pass
   - `npm.cmd run lint` -> pass
   - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-10T21-29-04-041Z.log`)
+
+## 2026-08-10 - OBS-V3-LATENT-02 Migration Guard Repair
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations`
+  - `src/shared/__tests__`
+- Notes:
+  - Repaired the LATENT-02 persistence migration so historical Observation-family interpretation comes from additive schema defaults rather than guarded authority-row backfill updates.
+  - Added structural partial-application repair for pre-V3 discriminator columns and hard-stop exceptions for unsafe mixed partial state that would otherwise require authority mutation.
+  - Preserved the continuity guard, accepted continuity seam, V2 foreign keys, and active runtime behavior unchanged.
+- Verification:
+  - `npx.cmd vitest run src/shared/__tests__/latent-generation-run-hardening-migration.test.ts src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-10T22-00-50-714Z.log`)
