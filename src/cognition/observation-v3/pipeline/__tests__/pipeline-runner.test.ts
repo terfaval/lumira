@@ -159,7 +159,9 @@ describe("runObservationV3PipelineCore", () => {
       ["memory_realization", "success", "native_deterministic"],
       ["authority_admission", "success", "native_deterministic"],
     ]);
+    expect(result.summary.governanceDisposition).toBe("admitted");
     expect(result.summary.finalOutcome).toBe("admitted");
+    expect(result.summary.pipelineCompletionStatus).toBe("completed");
     expect(result.summary.skippedStages).toEqual(["supplemental_realization"]);
   });
 
@@ -244,7 +246,9 @@ describe("runObservationV3PipelineCore", () => {
     const result = await runObservationV3PipelineCore(input);
 
     expect(input.stages.descriptiveExtraction).not.toHaveBeenCalled();
+    expect(result.summary.governanceDisposition).toBeNull();
     expect(result.summary.finalOutcome).toBe("failed_source_analysis");
+    expect(result.summary.pipelineCompletionStatus).toBe("failed");
     expect(result.stageResults.slice(1).every((stage) => stage.status === "skipped")).toBe(true);
     expect(result.failurePropagation.failureSourceStage).toBe("source_analysis");
   });
@@ -285,11 +289,81 @@ describe("runObservationV3PipelineCore", () => {
     const result = await runObservationV3PipelineCore(input);
 
     expect(input.stages.authorityAdmission).not.toHaveBeenCalled();
+    expect(result.summary.governanceDisposition).toBeNull();
     expect(result.summary.finalOutcome).toBe("failed_memory_realization");
+    expect(result.summary.pipelineCompletionStatus).toBe("failed");
     expect(result.stageResults.find((stage) => stage.stage === "authority_admission")).toMatchObject({
       status: "skipped",
       skippedReason: "upstream_failure",
     });
     expect(result.failurePropagation.failureSourceStage).toBe("memory_realization");
+  });
+
+  it("treats a completed deferred admission as completed pipeline execution", async () => {
+    const base = makeCoreInput({});
+    const input = makeCoreInput({
+      stages: {
+        ...base.stages,
+        completenessAnalysis: vi.fn(async () => success({
+          adequacy: "inadequate_recoverable",
+          recoveryRecommendation: {
+            eligibility: "eligible",
+            disposition: "required_before_admission",
+          },
+        }, {
+          executionMode: "native_deterministic",
+          sourceArtifactRef: "completeness-report.json",
+          adapterFingerprint: null,
+          subsystemFingerprint: "completeness-analysis-fingerprint",
+          inputHash: "completeness-input-hash",
+          outputHash: "completeness-output-hash",
+        })),
+        authorityAdmission: vi.fn(async () => success({
+          disposition: "deferred_for_supplemental_realization",
+          receivedCanonicalCandidateId: "canonical-candidate-1",
+        }, {
+          executionMode: "native_deterministic",
+          sourceArtifactRef: "native-admission-decision.json",
+          adapterFingerprint: null,
+          subsystemFingerprint: "authority-admission-fingerprint",
+          inputHash: "authority-admission-input-hash",
+          outputHash: "authority-admission-output-hash",
+        })),
+      },
+    });
+
+    const result = await runObservationV3PipelineCore(input);
+
+    expect(result.summary.governanceDisposition).toBe("deferred_for_supplemental_realization");
+    expect(result.summary.finalOutcome).toBe("deferred_for_supplemental_realization");
+    expect(result.summary.pipelineCompletionStatus).toBe("completed");
+    expect(result.failurePropagation.failureSourceStage).toBeNull();
+  });
+
+  it("treats a completed rejection from authority admission as completed pipeline execution", async () => {
+    const base = makeCoreInput({});
+    const input = makeCoreInput({
+      stages: {
+        ...base.stages,
+        authorityAdmission: vi.fn(async () => success({
+          disposition: "rejected_governance_failure",
+          receivedCanonicalCandidateId: "canonical-candidate-1",
+        }, {
+          executionMode: "native_deterministic",
+          sourceArtifactRef: "native-admission-decision.json",
+          adapterFingerprint: null,
+          subsystemFingerprint: "authority-admission-fingerprint",
+          inputHash: "authority-admission-input-hash",
+          outputHash: "authority-admission-output-hash",
+        })),
+      },
+    });
+
+    const result = await runObservationV3PipelineCore(input);
+
+    expect(result.summary.governanceDisposition).toBe("rejected_governance_failure");
+    expect(result.summary.finalOutcome).toBe("rejected_governance_failure");
+    expect(result.summary.pipelineCompletionStatus).toBe("completed");
+    expect(result.failurePropagation.failureSourceStage).toBeNull();
   });
 });

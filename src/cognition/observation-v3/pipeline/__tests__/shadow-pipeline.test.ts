@@ -206,6 +206,8 @@ describe("runObservationV3ShadowPipeline", () => {
     ]);
     expect(typeof result.summary.finalOutcome).toBe("string");
     expect(result.summary.finalOutcome.length).toBeGreaterThan(0);
+    expect(result.summary.governanceDisposition).toBe(result.summary.finalOutcome);
+    expect(result.summary.pipelineCompletionStatus).toBe("completed");
     expect(result.artifacts["pipeline-stage-results.json"]).toBeDefined();
     expect(result.stageResults.find((stage) => stage.stage === "descriptive_extraction")).toMatchObject({
       status: "success",
@@ -425,6 +427,8 @@ describe("runObservationV3ShadowPipeline", () => {
     expect(result.stageResults.find((stage) => stage.stage === "memory_composition")).toMatchObject({
       status: "skipped",
     });
+    expect(result.summary.governanceDisposition).toBeNull();
+    expect(result.summary.pipelineCompletionStatus).toBe("failed");
     expect(result.summary.finalOutcome).toBe("failed_supplemental_realization");
   });
 });

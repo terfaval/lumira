@@ -58,6 +58,27 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-08-10 - OBS-V3-STAB-08B Pipeline Completion and Governance Disposition Separation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/pipeline/`
+  - `src/cognition/observation-v3/validation/__tests__/`
+  - `docs/v2-build/observation/Observation-V3-End-to-End-Replay-Completion.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/BUILD_LOG.md`
+- Verification:
+  - focused subsystem suites:
+    - `npx.cmd vitest run src/cognition/observation-v3/pipeline/__tests__/pipeline-summary.test.ts src/cognition/observation-v3/pipeline/__tests__/pipeline-runner.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts` -> pass
+  - repository verification:
+    - `npm.cmd run typecheck` -> pass
+    - `npm.cmd run lint -- src/cognition/observation-v3/pipeline src/cognition/observation-v3/validation scripts/generate-observation-v3-stab-05-evidence.ts` -> pass
+    - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-10T07-19-39-502Z.log`
+- Notes:
+  - Added explicit execution-oriented `pipelineCompletionStatus` to the terminal summary so successful runs that reach Authority Admission no longer present governance deferral or rejection as pipeline failure.
+  - Promoted `governanceDisposition` as the primary governance field for new consumers while retaining `finalOutcome` only as a deprecated compatibility alias for replay and validation consumers that still expect it.
+  - Preserved truthful `failureSourceStage` reporting and verified representative `completed + deferred`, `completed + rejected`, and actual execution-failure cases without changing Authority Admission policy or disposition mapping.
+
 ## 2026-08-09 - OBS-V3-STAB-07A Native Pre-Composition Candidate Isolation
 
 - Phase: BUILD

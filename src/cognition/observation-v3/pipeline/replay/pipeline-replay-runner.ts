@@ -55,7 +55,8 @@ export async function runObservationV3CorpusReplay(input: {
 
     const pipelineResult = await runObservationV3ShadowPipeline(resolved.pipelineInput);
     const executionFailure: ObservationV3ReplayFailure | null =
-      pipelineResult.summary.finalOutcome === "failed" || pipelineResult.stageResults.some((stage) => stage.status === "failed")
+      pipelineResult.summary.pipelineCompletionStatus === "failed"
+        || pipelineResult.stageResults.some((stage) => stage.status === "failed")
         ? {
             classification: pipelineResult.stageResults.some((stage) => stage.stage === "authority_admission" && stage.status === "failed")
               ? "governance_failure"

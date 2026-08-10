@@ -96,7 +96,9 @@ function buildBaselineResult(): ObservationV3FullBenchmarkBaselineResult {
               },
             ],
             summary: {
+              governanceDisposition: "admitted",
               finalOutcome: "admitted",
+              pipelineCompletionStatus: "completed",
               skippedStages: [],
             },
             failurePropagation: {
@@ -105,7 +107,9 @@ function buildBaselineResult(): ObservationV3FullBenchmarkBaselineResult {
             },
             artifacts: {
               "pipeline-summary.json": {
+                governanceDisposition: "admitted",
                 finalOutcome: "admitted",
+                pipelineCompletionStatus: "completed",
               },
               "native-identity-lineage-comparison.json": {
                 finalClassification: "identity_preserved",
@@ -207,7 +211,9 @@ describe("persistObservationV3FullBenchmarkBaseline", () => {
     );
     expect(executedPipelineSummary).toEqual(
       expect.objectContaining({
+        governanceDisposition: "admitted",
         finalOutcome: "admitted",
+        pipelineCompletionStatus: "completed",
       }),
     );
     expect(identityLineage).toEqual(

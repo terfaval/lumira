@@ -101,7 +101,13 @@ export interface ObservationV3PipelineRunResult {
   };
   stageResults: ObservationV3PipelineStageResult[];
   summary: {
+    governanceDisposition: string | null;
+    /**
+     * Deprecated compatibility field.
+     * New consumers should read governanceDisposition for governance semantics.
+     */
     finalOutcome: string;
+    pipelineCompletionStatus: "completed" | "failed" | "terminated_early";
     skippedStages: ObservationV3PipelineStageName[];
   };
   failurePropagation: {
@@ -230,22 +236,31 @@ export async function runObservationV3PipelineCore(
     .map((stage) => stage.stage);
 
   const authorityAdmission = stageResults.find((stage) => stage.stage === "authority_admission");
-  const finalOutcome = authorityAdmission?.status === "success"
+  const governanceDisposition = authorityAdmission?.status === "success"
     ? String((authorityAdmission.payload?.disposition as string | undefined) ?? "authority_admission_completed")
-    : failureSourceStage === "source_analysis"
+    : null;
+  const pipelineCompletionStatus = authorityAdmission?.status === "success"
+    ? "completed"
+    : failureSourceStage
+      ? "failed"
+      : "terminated_early";
+  const finalOutcome = governanceDisposition
+    ?? (failureSourceStage === "source_analysis"
       ? "failed_source_analysis"
       : failureSourceStage === "memory_realization"
         ? "failed_memory_realization"
         : failureSourceStage
           ? `failed_${failureSourceStage}`
-          : "completed_without_admission";
+          : "completed_without_admission");
 
   return {
     pipelineId: input.pipelineId,
     pipelineFingerprint,
     stageResults,
     summary: {
+      governanceDisposition,
       finalOutcome,
+      pipelineCompletionStatus,
       skippedStages,
     },
     failurePropagation: {

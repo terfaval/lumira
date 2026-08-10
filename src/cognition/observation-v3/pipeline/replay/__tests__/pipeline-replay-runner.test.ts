@@ -419,6 +419,10 @@ describe("Observation V3 corpus replay", () => {
       classification: "fully_replayable",
       executionStatus: "executed",
     });
+    expect(replayable?.pipelineResult?.summary).toEqual(expect.objectContaining({
+      governanceDisposition: expect.any(String),
+      pipelineCompletionStatus: "completed",
+    }));
     expect(replayable?.pipelineResult?.stageResults.find((stage) => stage.stage === "descriptive_extraction")).toMatchObject({
       executionMode: "preserved_replay",
       status: "success",

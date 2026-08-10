@@ -112,6 +112,7 @@ function buildNativeIdentityLineageComparison(result: ObservationV3PipelineRunRe
       unchangedFromLegacy: true,
     },
     replayOutcomeComparison: {
+      governanceDisposition: result.summary.governanceDisposition,
       finalOutcome: result.summary.finalOutcome,
       unchangedFromLegacy: true,
     },
@@ -166,7 +167,9 @@ export function buildObservationV3PipelineArtifacts(
     },
     "pipeline-failure-propagation.json": result.failurePropagation,
     "pipeline-governance.json": {
+      governanceDisposition: result.summary.governanceDisposition,
       finalOutcome: result.summary.finalOutcome,
+      pipelineCompletionStatus: result.summary.pipelineCompletionStatus,
       completenessLifecycle: {
         initialStage: "completeness_analysis",
         finalStage: "memory_composition",
