@@ -176,9 +176,13 @@ function collectManifestationObservationIds(
 ): string[] {
   return manifestations.flatMap((manifestation) =>
     manifestation.evidenceBlocks.flatMap((block) =>
-      block.observations.map((observation) => observation.observationV2SceneObservationId),
+      block.observations.map((observation) =>
+        (observation.family ?? "observation_v2") === "observation_v2"
+          ? observation.observationV2SceneObservationId
+          : observation.unitId,
+      ),
     ),
-  );
+  ).filter((observationId): observationId is string => typeof observationId === "string" && observationId.length > 0);
 }
 
 function collectContradictoryAcceptedObservationIds(input: {
@@ -194,11 +198,17 @@ function collectContradictoryAcceptedObservationIds(input: {
     )
     .flatMap((manifestation) =>
       manifestation.evidenceBlocks.flatMap((block) =>
-        block.observations.map((observation) => observation.observationV2SceneObservationId),
+        block.observations.map((observation) =>
+          (observation.family ?? "observation_v2") === "observation_v2"
+            ? observation.observationV2SceneObservationId
+            : observation.unitId,
+        ),
       ),
     );
 
-  return [...new Set(contradictoryManifestationObservationIds)];
+  return [...new Set(contradictoryManifestationObservationIds)].filter(
+    (observationId): observationId is string => typeof observationId === "string" && observationId.length > 0,
+  );
 }
 
 async function cleanupCreatedResources(input: {

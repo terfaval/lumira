@@ -112,6 +112,10 @@ describe("latent opportunity row adapters", () => {
     expect(manifestationRow.priority_reflective_object_id).toBe("object-1");
     expect(manifestationRow.salience_band).toBe("high");
     expect(evidenceBlockRows.map((row) => row.role)).toEqual(["priority", "context"]);
+    expect(evidenceObservationRows.map((row) => row.observation_family)).toEqual([
+      "observation_v2",
+      "observation_v2",
+    ]);
     expect(evidenceObservationRows.map((row) => row.observation_v2_scene_observation_id)).toEqual([
       "bundle-1:scene-1:obs-1",
       "bundle-2:scene-1:obs-2",
@@ -182,6 +186,7 @@ describe("latent opportunity row adapters", () => {
         id: "manifestation-1:block:0:observation:0",
         evidence_block_id: "manifestation-1:block:0",
         user_id: "user-1",
+        observation_family: "observation_v2",
         observation_v2_scene_observation_id: "bundle-1:scene-1:obs-1",
         scene_id: "scene-1",
         role: "primary_support",
@@ -212,6 +217,7 @@ describe("latent opportunity row adapters", () => {
     expect(manifestation.identity.id).toBe("identity-1");
     expect(manifestation.priorityReflectiveObjectId).toBe("object-1");
     expect(manifestation.evidenceBlocks).toHaveLength(1);
+    expect(manifestation.evidenceBlocks[0].observations[0].family).toBe("observation_v2");
     expect(manifestation.evidenceBlocks[0].observations[0].observationV2SceneObservationId).toBe("bundle-1:scene-1:obs-1");
     expect((manifestation.evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsNodeKeys).toEqual(["issue", "action"]);
     expect((manifestation.evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsEdgeIndexes).toEqual([0]);
@@ -243,6 +249,7 @@ describe("latent opportunity row adapters", () => {
       userId: "user-1",
       priorityReflectiveObjectId: "object-1",
       status: "pending",
+      observationAuthorityFamily: "observation_v2",
       inputFingerprint: "fingerprint:mixed",
       authorityFingerprint: "a".repeat(64),
       authorityProvenance: {
@@ -291,6 +298,7 @@ describe("latent opportunity row adapters", () => {
       predecessorRunId: null,
     });
 
+    expect(insertRow.observation_authority_family).toBe("observation_v2");
     expect(insertRow.authority_fingerprint).toBe("a".repeat(64));
     expect(insertRow.authority_provenance).toEqual(
       expect.objectContaining({
@@ -315,6 +323,7 @@ describe("latent opportunity row adapters", () => {
       user_id: "user-1",
       priority_reflective_object_id: "object-1",
       status: "pending",
+      observation_authority_family: "observation_v2",
       input_fingerprint: "fingerprint:mixed",
       authority_fingerprint: "a".repeat(64),
       authority_provenance: insertRow.authority_provenance,
@@ -328,6 +337,7 @@ describe("latent opportunity row adapters", () => {
       updated_at: "2026-07-18T08:00:00.000Z",
     });
 
+    expect(run.observationAuthorityFamily).toBe("observation_v2");
     expect(run.authorityFingerprint).toBe("a".repeat(64));
     expect(run.authorityProvenance).toEqual(insertRow.authority_provenance);
     expect(run.contextProvenance).toEqual(insertRow.context_provenance);
@@ -340,6 +350,7 @@ describe("latent opportunity row adapters", () => {
       userId: "user-1",
       priorityReflectiveObjectId: "object-1",
       status: "pending",
+      observationAuthorityFamily: "observation_v3",
       inputFingerprint: "fingerprint:v3",
       authorityFingerprint: "b".repeat(64),
       authorityProvenance: {
@@ -386,11 +397,13 @@ describe("latent opportunity row adapters", () => {
       predecessorRunId: null,
     });
 
+    expect(insertRow.observation_authority_family).toBe("observation_v3");
     const run = fromLatentGenerationRunRow({
       id: "run-v3-1",
       user_id: "user-1",
       priority_reflective_object_id: "object-1",
       status: "pending",
+      observation_authority_family: "observation_v3",
       input_fingerprint: "fingerprint:v3",
       authority_fingerprint: "b".repeat(64),
       authority_provenance: insertRow.authority_provenance,
@@ -404,6 +417,7 @@ describe("latent opportunity row adapters", () => {
       updated_at: "2026-07-18T08:00:00.000Z",
     });
 
+    expect(run.observationAuthorityFamily).toBe("observation_v3");
     expect(run.authorityProvenance?.observation).toEqual({
       family: "observation_v3",
       authorityId: "authority-1",
@@ -419,6 +433,7 @@ describe("latent opportunity row adapters", () => {
       user_id: "user-1",
       priority_reflective_object_id: "object-1",
       status: "current",
+      observation_authority_family: "observation_v2",
       input_fingerprint: "legacy:mixed",
       authority_fingerprint: null,
       authority_provenance: null,
@@ -432,11 +447,94 @@ describe("latent opportunity row adapters", () => {
       updated_at: "2026-07-18T08:00:00.000Z",
     });
 
+    expect(run.observationAuthorityFamily).toBe("observation_v2");
     expect(run.inputFingerprint).toBe("legacy:mixed");
     expect(run.authorityFingerprint).toBeNull();
     expect(run.authorityProvenance).toBeNull();
     expect(run.contextProvenance).toBeNull();
     expect(run.executionProvenance).toBeNull();
+  });
+
+  it("round-trips explicit v3 evidence references without fabricating v2 ids", () => {
+    const manifestation = fromLatentOpportunityRows(
+      {
+        id: "identity-1",
+        user_id: "user-1",
+        title: "Exploration -> danger",
+        primary_category: "transition",
+        secondary_categories: ["tension"],
+        lifecycle_state: "emerging",
+        status: "active",
+        archived_at: null,
+        created_at: "2026-06-15T08:00:00.000Z",
+        updated_at: "2026-06-15T08:00:00.000Z",
+      },
+      {
+        id: "manifestation-1",
+        identity_id: "identity-1",
+        user_id: "user-1",
+        priority_reflective_object_id: "object-1",
+        generation_run_id: "run-v3-1",
+        summary: "V3 evidence manifestation.",
+        structure_payload: {
+          kind: "transition",
+          label: "Exploration -> danger",
+          elements: ["exploration", "danger"],
+        },
+        primary_category: "transition",
+        secondary_categories: [],
+        credibility_score: 0.82,
+        reflective_potential_score: 0.77,
+        salience_band: "high",
+        salience_rationale: {},
+        construction_metadata: {},
+        archived_at: null,
+        created_at: "2026-06-15T08:00:00.000Z",
+        updated_at: "2026-06-15T08:00:00.000Z",
+      },
+      [
+        {
+          id: "manifestation-1:block:0",
+          manifestation_id: "manifestation-1",
+          user_id: "user-1",
+          reflective_object_id: "object-1",
+          role: "priority",
+          summary: "V3 evidence.",
+          position: 0,
+          created_at: "2026-06-15T08:00:00.000Z",
+        },
+      ],
+      [
+        {
+          id: "manifestation-1:block:0:observation:0",
+          evidence_block_id: "manifestation-1:block:0",
+          user_id: "user-1",
+          observation_family: "observation_v3",
+          observation_v2_scene_observation_id: null,
+          scene_id: null,
+          observation_v3_authority_id: "authority-1",
+          observation_v3_unit_id: "unit-1",
+          observation_v3_locality_id: "locality-1",
+          observation_v3_evidence_id: "evidence-1",
+          role: "primary_support",
+          supports_node_keys: ["issue"],
+          supports_edge_indexes: [0],
+          created_at: "2026-06-15T08:00:00.000Z",
+        } as never,
+      ],
+      [],
+    );
+
+    expect(manifestation.evidenceBlocks[0].observations[0]).toEqual(
+      expect.objectContaining({
+        family: "observation_v3",
+        authorityId: "authority-1",
+        unitId: "unit-1",
+        localityId: "locality-1",
+        evidenceId: "evidence-1",
+      }),
+    );
+    expect("observationV2SceneObservationId" in manifestation.evidenceBlocks[0].observations[0]).toBe(false);
   });
 
   it("maps invalidation event rows and insert payloads with exact literals", () => {

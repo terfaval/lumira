@@ -5636,3 +5636,82 @@ Verification references:
   - Refreshed the full 17-case Observation V3 post-stabilization baseline against current main at commit `547648d`.
   - Produced fresh machine-readable baseline, semantic comparison, admission distribution, determinism, cost/latency, issue-classification, documentation-consistency, and summary artifacts under the STAB-09 root.
   - Fresh evidence preserved repaired lifecycle and governance invariants, kept deterministic replay stable, and shifted production-candidacy posture to constitutional closure review rather than runtime cutover readiness.
+
+## 2026-08-10 - OBS-V3-STAB-10 Constitutional Closure Review
+
+- Phase: CLOSURE
+- Touched boundaries:
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/CURRENT_STATE.md`
+- Closure verdict:
+  - `CONSTITUTIONALLY CLOSED WITH STEWARDSHIP OBSERVATIONS`
+- Closure record basis:
+  - `docs/v2-build/observation/Observation-V3-Constitutional-Closure-Criteria.md`
+  - `docs/v2-build/observation/Observation-V3-Full-Benchmark-Baseline-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-V2-Comparison-Report-2026-08.md`
+  - `docs/v2-build/observation/Observation-V3-Remaining-Issue-Register.md`
+  - `docs/v2-build/observation/Observation-V3-Production-Candidacy-Assessment.md`
+- Review outcome:
+  - Architecture completeness -> `SATISFIED`
+  - Governance correctness -> `SATISFIED`
+  - Semantic quality -> `SATISFIED`
+  - Deterministic stability -> `SATISFIED`
+  - Unresolved observations -> `SATISFIED`
+  - Documentation status -> `SATISFIED`
+- Non-blocking stewardship observations:
+  - bounded duplicate or overlap-style accretion remains on a small number of cases
+  - explicit compatibility or transition seams remain and stay non-authoritative
+  - benchmark-grade rather than rollout-grade operational evidence remains outside closure
+- Runtime-cutover blockers retained outside closure:
+  - no V3 primary-runtime persistence, routing, read, rollback, or coexistence path exists
+  - long-case incompleteness and live-provider late-section guard instability remain runtime-readiness concerns
+- Constitutional consequence:
+  - Observation V3 constitutional architecture and stabilization are formally closed
+  - Observation V3 does not become production authority by this review
+  - Observation V2 remains the only production authority pending separate runtime-readiness and cutover work
+- Verification:
+  - repository evidence review against current `main` and the refreshed STAB-09 package -> closure verdict issued
+  - `rg -n "OBS-V3-STAB-10|CONSTITUTIONALLY CLOSED WITH STEWARDSHIP OBSERVATIONS|Observation V3 is constitutionally closeable pending formal review|No remaining issue currently traces" docs/STABILIZATION_LEDGER.md docs/CURRENT_STATE.md docs/v2-build/observation` -> pass
+
+## 2026-08-10 - OBS-V3-RUNTIME-PERF-02 Fresh Provider-Backed Measurement
+
+- Phase: VALIDATION
+- Touched boundaries:
+  - `src/cognition/observation-v3/pipeline`
+  - `src/cognition/observation-v3/validation`
+  - `scripts/run-observation-v3-runtime-perf-measurement.ts`
+- Notes:
+  - Added non-identity end-to-end and per-stage timing metadata to the Observation V3 pipeline result and persisted summary artifacts.
+  - Added a focused four-case fresh provider-backed runtime-perf validation runner for `OBS-A-002`, `OBS-E-002`, `OBS-C-003`, and `OBS-H-002`.
+  - Preserved deterministic identity, canonical hash, replay, and governance boundaries while reusing existing provider evidence for token, latency, and retry accounting.
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/descriptive-extraction/__tests__/descriptive-extraction.test.ts src/cognition/observation-v3/supplemental-realization/__tests__/supplemental-realization.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts src/cognition/observation-v3/pipeline/__tests__/pipeline-runner.test.ts src/cognition/observation-v3/pipeline/__tests__/pipeline-summary.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts src/cognition/observation-v3/validation/__tests__/runtime-perf-measurement.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-10T13-12-16-283Z.log`)
+  - `npx.cmd tsx scripts/run-observation-v3-runtime-perf-measurement.ts --measurement-id 20260810T151500Z-obs-v3-runtime-perf-measurement` -> pass
+- Evidence:
+  - `.validation/observation-v3/runtime-perf-measurement/20260810T151500Z-obs-v3-runtime-perf-measurement/`
+
+## 2026-08-10 - OBS-V3-LATENT-02 Latent Generation-Run Persistence Mapping
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations`
+  - `src/domain/latent-v2`
+  - `src/infrastructure/supabase/adapters`
+  - `src/infrastructure/supabase/repositories`
+  - `src/runtime/orchestration`
+  - `src/reflective-space/composition`
+  - `src/cognition/openings`
+  - `src/cognition/anchor-v1`
+  - `src/cognition/latent-v2/opportunity-constructor`
+- Notes:
+  - Added an explicit generation-run observation authority-family discriminator so Latent persistence no longer has to infer V2 versus V3 lineage from nullable provenance alone.
+  - Extended latent evidence-observation persistence with a native V3 reference surface while preserving historical V2 rows and the existing V2 foreign-key path.
+  - Kept active Latent runtime generation and invalidation behavior V2-only; only persistence, mapping, and V2-only read guards were widened.
+- Verification:
+  - `npx.cmd vitest run src/shared/__tests__/latent-generation-run-hardening-migration.test.ts src/infrastructure/supabase/adapters/__tests__/latent-opportunity-row.test.ts src/infrastructure/supabase/repositories/__tests__/latent-opportunity-supabase-repository.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-10T21-04-44-008Z.log`)

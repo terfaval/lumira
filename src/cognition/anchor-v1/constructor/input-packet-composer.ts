@@ -150,17 +150,21 @@ function mapOpportunityEvidenceTrace(
         .flatMap((block) =>
           [...block.observations]
             .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id))
-            .map((observation) => ({
+            .map((observation) => {
+              const observationV2SceneObservationId = requireObservationV2SceneObservationId(observation);
+
+              return {
               opportunityManifestationId: manifestation.id,
               opportunityIdentityId: manifestation.identityId,
               evidenceBlockId: block.id,
               evidenceBlockRole: block.role,
-              observationV2SceneObservationId: observation.observationV2SceneObservationId,
-              sceneId: observation.sceneId,
+              observationV2SceneObservationId,
+              sceneId: observation.family === "observation_v2" ? observation.sceneId : null,
               observationRole: observation.role,
               supportsNodeKeys: [...observation.supportsNodeKeys],
               supportsEdgeIndexes: [...observation.supportsEdgeIndexes],
-            })),
+              };
+            }),
         ),
     );
 }
@@ -278,3 +282,4 @@ export async function composeAnchorConstructorInputPacket(
     },
   };
 }
+import { requireObservationV2SceneObservationId } from "@/src/domain/latent-v2/evidence";

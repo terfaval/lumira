@@ -14,6 +14,7 @@ import type {
   LatentGenerationRunInvalidationSourceEntityType,
   LatentGenerationRunInvalidationSourceLayer,
   LatentGenerationRunStatus,
+  ObservationAuthorityFamily,
   LatentOpportunityCategory,
   LatentOpportunityEvidenceObservationRole,
   LatentOpportunityEvidenceRole,
@@ -45,6 +46,7 @@ export interface LatentGenerationRunRow {
   user_id: string;
   priority_reflective_object_id: string;
   status: string;
+  observation_authority_family?: string | null;
   input_fingerprint: string;
   authority_fingerprint?: string | null;
   authority_provenance?: unknown;
@@ -93,8 +95,13 @@ export interface LatentOpportunityEvidenceObservationRow {
   id: string;
   evidence_block_id: string;
   user_id: string;
-  observation_v2_scene_observation_id: string;
+  observation_family?: string | null;
+  observation_v2_scene_observation_id: string | null;
   scene_id: string | null;
+  observation_v3_authority_id?: string | null;
+  observation_v3_unit_id?: string | null;
+  observation_v3_locality_id?: string | null;
+  observation_v3_evidence_id?: string | null;
   role: string;
   supports_node_keys: string[] | null;
   supports_edge_indexes: number[] | null;
@@ -165,6 +172,7 @@ export interface LatentGenerationRunInsertRow {
   user_id: string;
   priority_reflective_object_id: string;
   status: LatentGenerationRunStatus;
+  observation_authority_family: ObservationAuthorityFamily;
   input_fingerprint: string;
   authority_fingerprint: string | null;
   authority_provenance: LatentAuthorityProvenance | null;
@@ -242,8 +250,13 @@ export interface LatentOpportunityEvidenceObservationInsertRow {
   id: string;
   evidence_block_id: string;
   user_id: string;
-  observation_v2_scene_observation_id: string;
+  observation_family: ObservationAuthorityFamily;
+  observation_v2_scene_observation_id: string | null;
   scene_id: string | null;
+  observation_v3_authority_id: string | null;
+  observation_v3_unit_id: string | null;
+  observation_v3_locality_id: string | null;
+  observation_v3_evidence_id: string | null;
   role: LatentOpportunityEvidenceObservationRole;
   supports_node_keys: string[];
   supports_edge_indexes: number[];
@@ -323,6 +336,10 @@ function parseGenerationRunStatus(input: string): LatentGenerationRunStatus {
     default:
       throw new Error(`Unsupported latent generation run status: ${input}`);
   }
+}
+
+function parseObservationAuthorityFamily(input: unknown): ObservationAuthorityFamily {
+  return input === "observation_v3" ? "observation_v3" : "observation_v2";
 }
 
 function parseGenerationRunInvalidationSourceLayer(input: string): LatentGenerationRunInvalidationSourceLayer {
@@ -452,6 +469,15 @@ function buildIdentityRelationshipId(input: CreateLatentOpportunityIdentityRelat
   return input.id ?? crypto.randomUUID();
 }
 
+function isCreateObservationV3Input(
+  input: CreateLatentOpportunityManifestationInput["evidenceBlocks"][number]["observations"][number],
+): input is Extract<
+  CreateLatentOpportunityManifestationInput["evidenceBlocks"][number]["observations"][number],
+  { family: "observation_v3" }
+> {
+  return input.family === "observation_v3";
+}
+
 export function toLatentOpportunityIdentityInsertRow(
   input: CreateLatentOpportunityIdentityInput,
 ): LatentOpportunityIdentityInsertRow {
@@ -474,6 +500,7 @@ export function toLatentGenerationRunInsertRow(
     user_id: input.userId,
     priority_reflective_object_id: input.priorityReflectiveObjectId,
     status: input.status,
+    observation_authority_family: input.observationAuthorityFamily ?? "observation_v2",
     input_fingerprint: input.inputFingerprint,
     authority_fingerprint: input.authorityFingerprint ?? null,
     authority_provenance: input.authorityProvenance ?? null,
@@ -574,16 +601,41 @@ export function toLatentOpportunityEvidenceObservationInsertRows(
   input: CreateLatentOpportunityManifestationInput,
 ): LatentOpportunityEvidenceObservationInsertRow[] {
   return blockRows.flatMap((blockRow, blockIndex) =>
-    input.evidenceBlocks[blockIndex].observations.map((observation, observationIndex) => ({
-      id: `${blockRow.id}:observation:${observationIndex}`,
-      evidence_block_id: blockRow.id,
-      user_id: input.userId,
-      observation_v2_scene_observation_id: observation.observationV2SceneObservationId,
-      scene_id: observation.sceneId ?? null,
-      role: observation.role,
-      supports_node_keys: observation.supportsNodeKeys ?? [],
-      supports_edge_indexes: observation.supportsEdgeIndexes ?? [],
-    })),
+    input.evidenceBlocks[blockIndex].observations.map((observation, observationIndex) => {
+      if (!isCreateObservationV3Input(observation)) {
+        return {
+          id: `${blockRow.id}:observation:${observationIndex}`,
+          evidence_block_id: blockRow.id,
+          user_id: input.userId,
+          observation_family: "observation_v2",
+          observation_v2_scene_observation_id: observation.observationV2SceneObservationId,
+          scene_id: observation.sceneId ?? null,
+          observation_v3_authority_id: null,
+          observation_v3_unit_id: null,
+          observation_v3_locality_id: null,
+          observation_v3_evidence_id: null,
+          role: observation.role,
+          supports_node_keys: observation.supportsNodeKeys ?? [],
+          supports_edge_indexes: observation.supportsEdgeIndexes ?? [],
+        };
+      }
+
+      return {
+        id: `${blockRow.id}:observation:${observationIndex}`,
+        evidence_block_id: blockRow.id,
+        user_id: input.userId,
+        observation_family: "observation_v3",
+        observation_v2_scene_observation_id: null,
+        scene_id: null,
+        observation_v3_authority_id: observation.authorityId,
+        observation_v3_unit_id: observation.unitId,
+        observation_v3_locality_id: observation.localityId ?? null,
+        observation_v3_evidence_id: observation.evidenceId ?? null,
+        role: observation.role,
+        supports_node_keys: observation.supportsNodeKeys ?? [],
+        supports_edge_indexes: observation.supportsEdgeIndexes ?? [],
+      };
+    }),
   );
 }
 
@@ -633,17 +685,47 @@ export function fromLatentOpportunityRows(
       createdAt: blockRow.created_at,
       observations: evidenceObservationRows
         .filter((row) => row.evidence_block_id === blockRow.id)
-        .map((row) => ({
-          id: row.id,
-          evidenceBlockId: row.evidence_block_id,
-          userId: row.user_id,
-          observationV2SceneObservationId: row.observation_v2_scene_observation_id,
-          sceneId: row.scene_id,
-          role: parseEvidenceObservationRole(row.role),
-          supportsNodeKeys: parseStringArray(row.supports_node_keys),
-          supportsEdgeIndexes: parseNonNegativeIntegerArray(row.supports_edge_indexes),
-          createdAt: row.created_at,
-        })),
+        .map((row) => {
+          const family = parseObservationAuthorityFamily(row.observation_family);
+
+          if (family === "observation_v3") {
+            if (!row.observation_v3_authority_id || !row.observation_v3_unit_id) {
+              throw new Error(`Stored V3 evidence observation is missing authority identity: ${row.id}`);
+            }
+
+            return {
+              id: row.id,
+              evidenceBlockId: row.evidence_block_id,
+              userId: row.user_id,
+              family: "observation_v3" as const,
+              authorityId: row.observation_v3_authority_id,
+              unitId: row.observation_v3_unit_id,
+              localityId: row.observation_v3_locality_id ?? null,
+              evidenceId: row.observation_v3_evidence_id ?? null,
+              role: parseEvidenceObservationRole(row.role),
+              supportsNodeKeys: parseStringArray(row.supports_node_keys),
+              supportsEdgeIndexes: parseNonNegativeIntegerArray(row.supports_edge_indexes),
+              createdAt: row.created_at,
+            };
+          }
+
+          if (!row.observation_v2_scene_observation_id) {
+            throw new Error(`Stored V2 evidence observation is missing scene observation id: ${row.id}`);
+          }
+
+          return {
+            id: row.id,
+            evidenceBlockId: row.evidence_block_id,
+            userId: row.user_id,
+            family: "observation_v2" as const,
+            observationV2SceneObservationId: row.observation_v2_scene_observation_id,
+            sceneId: row.scene_id,
+            role: parseEvidenceObservationRole(row.role),
+            supportsNodeKeys: parseStringArray(row.supports_node_keys),
+            supportsEdgeIndexes: parseNonNegativeIntegerArray(row.supports_edge_indexes),
+            createdAt: row.created_at,
+          };
+        }),
     }));
 
   return {
@@ -695,6 +777,7 @@ export function fromLatentGenerationRunRow(row: LatentGenerationRunRow): LatentG
     userId: row.user_id,
     priorityReflectiveObjectId: row.priority_reflective_object_id,
     status: parseGenerationRunStatus(row.status),
+    observationAuthorityFamily: parseObservationAuthorityFamily(row.observation_authority_family),
     inputFingerprint: row.input_fingerprint,
     authorityFingerprint: row.authority_fingerprint ?? null,
     authorityProvenance: parseNullableRecord(row.authority_provenance) as LatentAuthorityProvenance | null,

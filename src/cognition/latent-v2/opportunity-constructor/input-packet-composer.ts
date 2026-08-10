@@ -187,7 +187,9 @@ function buildExistingOpportunityIdentities(input: {
               ? manifestation.evidenceBlocks
                   .filter((block) => block.role === "priority")
                   .flatMap((block) => block.observations)
-                  .map((observation) => observationTextIndex.get(observation.observationV2SceneObservationId))
+                  .map((observation) =>
+                    observationTextIndex.get(requireObservationV2SceneObservationId(observation)),
+                  )
                   .filter((text): text is string => typeof text === "string" && text.length > 0)
               : [],
         })),
@@ -411,3 +413,4 @@ export async function composeOpportunityConstructorInputPacketWithProvenance(
     }),
   };
 }
+import { requireObservationV2SceneObservationId } from "@/src/domain/latent-v2/evidence";

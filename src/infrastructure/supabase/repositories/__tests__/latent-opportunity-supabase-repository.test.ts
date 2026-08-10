@@ -67,6 +67,7 @@ function createGenerationRunRow(overrides: Partial<Record<string, unknown>> = {}
     user_id: "user-1",
     priority_reflective_object_id: "object-1",
     status: "pending",
+    observation_authority_family: "observation_v2",
     input_fingerprint: "fingerprint:test",
     authority_fingerprint: "a".repeat(64),
     authority_provenance: {
@@ -99,6 +100,7 @@ function createGenerationRun(overrides: Partial<Record<string, unknown>> = {}) {
     userId: "user-1",
     priorityReflectiveObjectId: "object-1",
     status: "pending",
+    observationAuthorityFamily: "observation_v2",
     inputFingerprint: "fingerprint:test",
     authorityFingerprint: "a".repeat(64),
     authorityProvenance: {
@@ -381,6 +383,15 @@ describe("SupabaseLatentOpportunityRepository", () => {
             id: "manifestation-2",
             generation_run_id: "run-2",
             identity_id: "identity-2",
+            evidence_blocks: [
+              expect.objectContaining({
+                observations: [
+                  expect.objectContaining({
+                    observation_family: "observation_v2",
+                  }),
+                ],
+              }),
+            ],
           }),
         ],
         p_lifecycle_events: [
@@ -1339,6 +1350,7 @@ describe("SupabaseLatentOpportunityRepository", () => {
           id: "manifestation-1:block:0:observation:0",
           evidence_block_id: "manifestation-1:block:0",
           user_id: "user-1",
+          observation_family: "observation_v2",
           observation_v2_scene_observation_id: "bundle-1:scene-1:obs-1",
           scene_id: "scene-1",
           role: "primary_support",
@@ -1502,6 +1514,7 @@ describe("SupabaseLatentOpportunityRepository", () => {
     expect(manifestation).not.toBeNull();
     expect(manifestation?.priorityReflectiveObjectId).toBe("object-1");
     expect(manifestation?.evidenceBlocks[0].observations[0].observationV2SceneObservationId).toBe("bundle-1:scene-1:obs-1");
+    expect(manifestation?.evidenceBlocks[0].observations[0].family).toBe("observation_v2");
     expect((manifestation?.evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsNodeKeys).toEqual(["issue", "action"]);
     expect((manifestation?.evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsEdgeIndexes).toEqual([0]);
     expect((listed[0].evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsNodeKeys).toEqual(["issue", "action"]);
@@ -2033,6 +2046,183 @@ describe("SupabaseLatentOpportunityRepository", () => {
       }),
     );
     expect(event?.targetGenerationRunId).toBe("run-1");
+  });
+
+  it("reconstructs explicit v3 evidence references from repository rows without inventing v2 ids", async () => {
+    const maybeSingleIdentity = vi.fn().mockResolvedValue({
+      data: {
+        id: "identity-1",
+        user_id: "user-1",
+        title: "Identity",
+        primary_category: "transition",
+        secondary_categories: [],
+        lifecycle_state: "emerging",
+        status: "active",
+        archived_at: null,
+        created_at: "2026-06-15T08:00:00.000Z",
+        updated_at: "2026-06-15T08:00:00.000Z",
+      },
+      error: null,
+    });
+    const maybeSingleManifestation = vi.fn().mockResolvedValue({
+      data: {
+        id: "manifestation-v3-1",
+        identity_id: "identity-1",
+        generation_run_id: "run-v3-1",
+        user_id: "user-1",
+        priority_reflective_object_id: "object-1",
+        summary: "V3 manifestation",
+        structure_payload: { kind: "transition", label: "V3", elements: ["a", "b"] },
+        primary_category: "transition",
+        secondary_categories: [],
+        credibility_score: 0.82,
+        reflective_potential_score: 0.77,
+        salience_band: "high",
+        salience_rationale: {},
+        construction_metadata: {},
+        archived_at: null,
+        created_at: "2026-06-15T08:00:00.000Z",
+        updated_at: "2026-06-15T08:00:00.000Z",
+      },
+      error: null,
+    });
+    const evidenceBlockOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "manifestation-v3-1:block:0",
+          manifestation_id: "manifestation-v3-1",
+          user_id: "user-1",
+          reflective_object_id: "object-1",
+          role: "priority",
+          summary: "V3 evidence.",
+          position: 0,
+          created_at: "2026-06-15T08:00:00.000Z",
+        },
+      ],
+      error: null,
+    });
+    const evidenceObservationOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "manifestation-v3-1:block:0:observation:0",
+          evidence_block_id: "manifestation-v3-1:block:0",
+          user_id: "user-1",
+          observation_family: "observation_v3",
+          observation_v2_scene_observation_id: null,
+          scene_id: null,
+          observation_v3_authority_id: "authority-1",
+          observation_v3_unit_id: "unit-1",
+          observation_v3_locality_id: "locality-1",
+          observation_v3_evidence_id: "evidence-1",
+          role: "primary_support",
+          supports_node_keys: ["issue"],
+          supports_edge_indexes: [0],
+          created_at: "2026-06-15T08:00:00.000Z",
+        },
+      ],
+      error: null,
+    });
+
+    const from = vi.fn().mockImplementation((table: string) => {
+      if (table === "latent_opportunity_identities") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                is: vi.fn().mockReturnValue({
+                  maybeSingle: maybeSingleIdentity,
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "latent_opportunity_manifestations") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                is: vi.fn().mockReturnValue({
+                  maybeSingle: maybeSingleManifestation,
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "latent_opportunity_evidence_blocks") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: evidenceBlockOrder,
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "latent_opportunity_evidence_observations") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: evidenceObservationOrder,
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "latent_opportunity_glossary_links") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          }),
+        };
+      }
+
+      return {};
+    });
+
+    const repository = new SupabaseLatentOpportunityRepository({ from } as never);
+    vi.spyOn(repository, "listLifecycleEventsByIdentity").mockResolvedValue([
+      {
+        id: "event-1",
+        userId: "user-1",
+        identityId: "identity-1",
+        eventType: "emergence",
+        priorLifecycleState: null,
+        resultingLifecycleState: "emerging",
+        sourceGenerationRunId: null,
+        resultingGenerationRunId: "run-v3-1",
+        sourceManifestationIds: [],
+        resultingManifestationIds: ["manifestation-v3-1"],
+        relatedIdentityIds: [],
+        triggeringReflectiveObjectId: "object-1",
+        triggeringReflectionId: null,
+        createdAt: "2026-06-15T08:00:00.000Z",
+      },
+    ] as never);
+
+    const manifestation = await repository.getManifestationById("manifestation-v3-1", "user-1");
+
+    expect(manifestation?.evidenceBlocks[0].observations[0]).toEqual(
+      expect.objectContaining({
+        family: "observation_v3",
+        authorityId: "authority-1",
+        unitId: "unit-1",
+        localityId: "locality-1",
+        evidenceId: "evidence-1",
+      }),
+    );
+    expect("observationV2SceneObservationId" in (manifestation?.evidenceBlocks[0].observations[0] ?? {})).toBe(false);
   });
 
   it("returns null when invalidation event creation hits the dedupe constraint", async () => {

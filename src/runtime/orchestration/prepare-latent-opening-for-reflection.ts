@@ -6,6 +6,7 @@ import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { LatentRepository } from "@/src/domain/latent/contracts";
 import type { LatentSnapshot } from "@/src/domain/latent/types";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
+import { requireObservationV2SceneObservationId } from "@/src/domain/latent-v2/evidence";
 import type { LatentOpportunityManifestation, LatentOpportunitySalienceBand } from "@/src/domain/latent-v2/types";
 import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
 import type { OpeningRepository } from "@/src/domain/openings/contracts";
@@ -179,7 +180,7 @@ function toCompatibilityOpeningCandidate(
       ]),
       sourceObservations: toUniqueStrings(
         manifestation.evidenceBlocks.flatMap((block) =>
-          block.observations.map((observation) => observation.observationV2SceneObservationId),
+          block.observations.map((observation) => requireObservationV2SceneObservationId(observation)),
         ),
       ),
       sourceGlossaryTerms: toUniqueStrings(manifestation.glossaryLinks.map((link) => link.glossaryTermId)),

@@ -1,5 +1,6 @@
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
+import { requireObservationV2SceneObservationId } from "@/src/domain/latent-v2/evidence";
 import type { OpeningRepository } from "@/src/domain/openings/contracts";
 import type { Opening, OpeningTone, OpeningType } from "@/src/domain/openings/types";
 import type { ReflectionRepository } from "@/src/domain/reflections/contracts";
@@ -116,7 +117,9 @@ function toSupportingFragmentCard(
 
   const selectedBlock =
     blocks.find((block) =>
-      block.observations.some((observation) => sourceObservationSet.has(observation.observationV2SceneObservationId)),
+      block.observations.some((observation) =>
+        sourceObservationSet.has(requireObservationV2SceneObservationId(observation)),
+      ),
     ) ??
     blocks.find((block) => typeof block.summary === "string" && block.summary.trim().length > 0) ??
     null;
@@ -128,7 +131,7 @@ function toSupportingFragmentCard(
   const linkedObservationCount =
     sourceObservationSet.size > 0
       ? selectedBlock.observations.filter((observation) =>
-          sourceObservationSet.has(observation.observationV2SceneObservationId),
+          sourceObservationSet.has(requireObservationV2SceneObservationId(observation)),
         ).length
       : selectedBlock.observations.length;
 

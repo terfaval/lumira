@@ -1,3 +1,4 @@
+import { requireObservationV2SceneObservationId } from "@/src/domain/latent-v2/evidence";
 import type { ComposeOpeningV2InputPacketInput, OpeningV2ConstructorInputPacket } from "@/src/cognition/openings/opening-v2-constructor/types";
 
 export function composeOpeningV2InputPacket(input: ComposeOpeningV2InputPacketInput): OpeningV2ConstructorInputPacket {
@@ -20,8 +21,8 @@ export function composeOpeningV2InputPacket(input: ComposeOpeningV2InputPacketIn
         role: block.role,
         summary: block.summary,
         observations: block.observations.map((observation) => ({
-          observationV2SceneObservationId: observation.observationV2SceneObservationId,
-          sceneId: observation.sceneId,
+          observationV2SceneObservationId: requireObservationV2SceneObservationId(observation),
+          sceneId: observation.family === "observation_v2" ? observation.sceneId : null,
           role: observation.role,
           supportsNodeKeys: observation.supportsNodeKeys,
           supportsEdgeIndexes: observation.supportsEdgeIndexes,

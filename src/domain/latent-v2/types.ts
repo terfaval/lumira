@@ -257,6 +257,7 @@ export interface LatentGenerationRun extends VersionedTimestamps {
   userId: UserId;
   priorityReflectiveObjectId: ReflectiveObjectId;
   status: LatentGenerationRunStatus;
+  observationAuthorityFamily: ObservationAuthorityFamily;
   inputFingerprint: string;
   authorityFingerprint: string | null;
   authorityProvenance: LatentAuthorityProvenance | null;
@@ -437,17 +438,41 @@ export type LatentObservationEvidenceRef =
   | LatentObservationV2EvidenceRef
   | ObservationV3EvidenceRef;
 
-export interface LatentOpportunityEvidenceObservation {
+interface LatentOpportunityEvidenceObservationBase {
   id: LatentOpportunityEvidenceObservationId;
   evidenceBlockId: LatentOpportunityEvidenceBlockId;
   userId: UserId;
-  observationV2SceneObservationId: string;
-  sceneId: string | null;
   role: LatentOpportunityEvidenceObservationRole;
   supportsNodeKeys: string[];
   supportsEdgeIndexes: number[];
   createdAt: string;
 }
+
+export interface LatentOpportunityEvidenceObservationV2
+  extends LatentOpportunityEvidenceObservationBase {
+  family?: "observation_v2";
+  observationV2SceneObservationId: string;
+  sceneId: string | null;
+  authorityId?: never;
+  unitId?: never;
+  localityId?: never;
+  evidenceId?: never;
+}
+
+export interface LatentOpportunityEvidenceObservationV3
+  extends LatentOpportunityEvidenceObservationBase {
+  family: "observation_v3";
+  observationV2SceneObservationId?: undefined;
+  sceneId?: null;
+  authorityId: string;
+  unitId: string;
+  localityId: string | null;
+  evidenceId: string | null;
+}
+
+export type LatentOpportunityEvidenceObservation =
+  | LatentOpportunityEvidenceObservationV2
+  | LatentOpportunityEvidenceObservationV3;
 
 export interface LatentOpportunityEvidenceBlock {
   id: LatentOpportunityEvidenceBlockId;
@@ -497,6 +522,7 @@ export interface CreateLatentGenerationRunInput {
   userId: UserId;
   priorityReflectiveObjectId: ReflectiveObjectId;
   status: LatentGenerationRunStatus;
+  observationAuthorityFamily?: ObservationAuthorityFamily;
   inputFingerprint: string;
   authorityFingerprint?: string | null;
   authorityProvenance?: LatentAuthorityProvenance | null;
@@ -550,13 +576,31 @@ export interface CreateLatentOpportunityGlossaryLinkInput {
 
 export type CreateLatentObservationEvidenceRefInput = LatentObservationEvidenceRef;
 
-export interface CreateLatentOpportunityEvidenceObservationInput {
-  observationV2SceneObservationId: string;
-  sceneId?: string | null;
-  role: LatentOpportunityEvidenceObservationRole;
-  supportsNodeKeys?: string[] | null;
-  supportsEdgeIndexes?: number[] | null;
-}
+export type CreateLatentOpportunityEvidenceObservationInput =
+  | {
+      family?: "observation_v2";
+      observationV2SceneObservationId: string;
+      sceneId?: string | null;
+      authorityId?: never;
+      unitId?: never;
+      localityId?: never;
+      evidenceId?: never;
+      role: LatentOpportunityEvidenceObservationRole;
+      supportsNodeKeys?: string[] | null;
+      supportsEdgeIndexes?: number[] | null;
+    }
+  | {
+      family: "observation_v3";
+      observationV2SceneObservationId?: undefined;
+      sceneId?: null;
+      authorityId: string;
+      unitId: string;
+      localityId?: string | null;
+      evidenceId?: string | null;
+      role: LatentOpportunityEvidenceObservationRole;
+      supportsNodeKeys?: string[] | null;
+      supportsEdgeIndexes?: number[] | null;
+    };
 
 export interface CreateLatentOpportunityEvidenceBlockInput {
   reflectiveObjectId: ReflectiveObjectId;

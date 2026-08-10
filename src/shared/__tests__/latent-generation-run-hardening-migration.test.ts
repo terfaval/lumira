@@ -60,6 +60,28 @@ describe("latent generation-run empty-status hardening migration", () => {
     expect(migration).not.toContain("update public.latent_opportunity_generation_runs");
   });
 
+  it("adds explicit observation authority-family and dual-family evidence columns additively", () => {
+    const migration = readWorkspaceFile("supabase/migrations/20260810_0001_latent_observation_family_persistence.sql");
+
+    expect(migration).toContain("alter table public.latent_opportunity_generation_runs");
+    expect(migration).toContain("add column if not exists observation_authority_family text");
+    expect(migration).toContain("default 'observation_v2'");
+    expect(migration).toContain("observation_authority_family in ('observation_v2', 'observation_v3')");
+
+    expect(migration).toContain("alter table public.latent_opportunity_evidence_observations");
+    expect(migration).toContain("add column if not exists observation_family text");
+    expect(migration).toContain("add column if not exists observation_v3_authority_id text");
+    expect(migration).toContain("add column if not exists observation_v3_unit_id text");
+    expect(migration).toContain("add column if not exists observation_v3_locality_id text");
+    expect(migration).toContain("add column if not exists observation_v3_evidence_id text");
+    expect(migration).toContain("observation_family in ('observation_v2', 'observation_v3')");
+    expect(migration).toContain("observation_v2_scene_observation_id is not null");
+    expect(migration).toContain("observation_v3_authority_id is not null");
+    expect(migration).toContain("observation_v3_unit_id is not null");
+    expect(migration).not.toContain("drop table public.latent_opportunity_evidence_observations");
+    expect(migration).not.toContain("drop column observation_v2_scene_observation_id");
+  });
+
   it("creates continuity tables and an atomic successor-acceptance rpc", () => {
     const migration = readWorkspaceFile("supabase/migrations/20260722_0001_latent_reflective_continuity.sql");
 
