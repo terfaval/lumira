@@ -22,11 +22,11 @@ import {
   type MemoryCompositionRequest,
 } from "@/src/cognition/observation-v3/memory-composition";
 import {
+  buildNativeAdmissionRequest,
   DEFAULT_AUTHORITY_ADMISSION_POLICY,
   fingerprintAuthorityAdmission,
   runShadowAuthorityAdmission,
 } from "@/src/cognition/observation-v3/authority-admission";
-import { buildNativeShadowAdmissionRequest } from "@/src/cognition/observation-v3/authority-admission/shadow-authority-admission";
 import {
   fingerprintMemoryRealization,
   realizeCanonicalMemoryCandidate,
@@ -546,7 +546,7 @@ export async function runObservationV3ShadowPipeline(
           };
         }
 
-        const request = buildNativeShadowAdmissionRequest({
+        const request = buildNativeAdmissionRequest({
           nativeResult: memoryRealization,
           completeness: {
             status: "available",

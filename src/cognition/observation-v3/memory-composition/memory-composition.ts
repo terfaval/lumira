@@ -70,10 +70,11 @@ function buildComposedCandidateIdentity(
   };
 }
 
-function buildLegacyProvisionalIdentity(input: {
+function buildCompatibilityProvisionalIdentity(input: {
   request: MemoryCompositionRequest;
   result: ReturnType<typeof composeNativeMemoryPackages>;
 }): { candidateId: string; candidateHash: string } {
+  // Keep the serialized hash basis stable for preserved replay and prior evidence roots.
   const candidateHash = sha256Hex({
     baselineIdentity: input.request.baselineIdentity ?? null,
     supplementalIdentity: input.request.supplementalIdentity ?? null,
@@ -81,7 +82,7 @@ function buildLegacyProvisionalIdentity(input: {
   });
 
   return {
-    candidateId: `legacy-provisional-${candidateHash.slice(0, 16)}`,
+    candidateId: `compatibility-provisional-${candidateHash.slice(0, 16)}`,
     candidateHash,
   };
 }
@@ -185,12 +186,12 @@ export function composeMemoryPackages(request: MemoryCompositionRequest): Memory
     sourceIdentity,
   });
   const composedCandidateIdentity = buildComposedCandidateIdentity(composedCandidate);
-  const legacyIdentity = buildLegacyProvisionalIdentity({
+  const compatibilityIdentity = buildCompatibilityProvisionalIdentity({
     request,
     result: nativeComposition,
   });
   const identityComparison = classifyIdentityComparison({
-    legacyIdentity,
+    legacyIdentity: compatibilityIdentity,
     nativeIdentity: {
       candidateId: composedCandidateIdentity.composedCandidateId,
       candidateHash: composedCandidateIdentity.composedCandidateHash,
@@ -216,7 +217,8 @@ export function composeMemoryPackages(request: MemoryCompositionRequest): Memory
         candidateId: composedCandidateIdentity.composedCandidateId,
         candidateHash: composedCandidateIdentity.composedCandidateHash,
       },
-      legacyIdentity,
+      compatibilityIdentity,
+      legacyIdentity: compatibilityIdentity,
       subsystemFingerprint: MEMORY_COMPOSITION_IMPLEMENTATION_VERSION,
       policyFingerprint: MEMORY_COMPOSITION_IMPLEMENTATION_VERSION,
       lineageRefs: [
@@ -249,12 +251,13 @@ export function composeMemoryPackages(request: MemoryCompositionRequest): Memory
       uncoveredTail: nativeComposition.uncoveredTail,
       internalGaps: nativeComposition.internalGaps,
     },
+    compatibilityProjection: nativeComposition,
     legacyReconciliation: nativeComposition,
   };
 }
 
 export function compareMemoryCompositionOutputs(input: {
-  experimental: MemoryCompositionResult["legacyReconciliation"];
+  experimental: MemoryCompositionResult["compatibilityProjection"];
   composition: MemoryCompositionResult;
 }): MemoryCompositionEquivalence {
   const comparableExperimental = {

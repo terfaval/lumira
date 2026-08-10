@@ -64,6 +64,35 @@ function buildNativeIdentityLineageComparison(result: ObservationV3PipelineRunRe
       ?? (admissionComparison as Record<string, unknown> | null)?.sourceIdentity
       ?? null,
     transitions,
+    compatibilityToNativeMappings: {
+      provisional: provisionalTransition
+        ? {
+            compatibilityIdentity: (provisionalTransition as Record<string, unknown>).compatibilityIdentity
+              ?? (provisionalTransition as Record<string, unknown>).legacyIdentity
+              ?? null,
+            legacyIdentity: (provisionalTransition as Record<string, unknown>).legacyIdentity ?? null,
+            nativeIdentity: (provisionalTransition as Record<string, unknown>).nativeIdentity ?? null,
+          }
+        : null,
+      canonical: canonicalTransition
+        ? {
+            compatibilityIdentity: (canonicalTransition as Record<string, unknown>).compatibilityIdentity
+              ?? (canonicalTransition as Record<string, unknown>).legacyIdentity
+              ?? null,
+            legacyIdentity: (canonicalTransition as Record<string, unknown>).legacyIdentity ?? null,
+            nativeIdentity: (canonicalTransition as Record<string, unknown>).nativeIdentity ?? null,
+          }
+        : null,
+      admission: admissionComparison
+        ? {
+            compatibilityIdentity: (admissionComparison as Record<string, unknown>).compatibilityIdentity
+              ?? (admissionComparison as Record<string, unknown>).legacyIdentity
+              ?? null,
+            legacyIdentity: (admissionComparison as Record<string, unknown>).legacyIdentity ?? null,
+            nativeIdentity: (admissionComparison as Record<string, unknown>).nativeIdentity ?? null,
+          }
+        : null,
+    },
     legacyToNativeMappings: {
       provisional: provisionalTransition
         ? {

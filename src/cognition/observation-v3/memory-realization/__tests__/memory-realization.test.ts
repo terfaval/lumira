@@ -9,6 +9,7 @@ import {
   type MemoryRealizationRequest,
 } from "@/src/cognition/observation-v3/memory-realization";
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
+import * as memoryRealizationPublicApi from "@/src/cognition/observation-v3/memory-realization";
 
 function buildComposedCandidate(
   overrides?: Partial<ComposedProvisionalMemoryCandidate>,
@@ -381,5 +382,10 @@ describe("compareNativeMemoryRealizationWithLegacyAdapter", () => {
     });
 
     expect(comparison.classification).toBe("governance_information_gain");
+  });
+
+  it("does not expose internal V2 adapter construction helpers from the public barrel", () => {
+    expect("buildShadowComposedCandidateFromV2Bundle" in memoryRealizationPublicApi).toBe(false);
+    expect("buildMemoryRealizationArtifacts" in memoryRealizationPublicApi).toBe(false);
   });
 });

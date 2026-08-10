@@ -9,6 +9,7 @@ import {
   loadObservationV3BenchmarkMatrix,
   runObservationV3CorpusReplay,
 } from "@/src/cognition/observation-v3/pipeline/replay";
+import * as replayPublicApi from "@/src/cognition/observation-v3/pipeline/replay";
 
 const createdDirectories: string[] = [];
 
@@ -381,6 +382,14 @@ afterEach(async () => {
 });
 
 describe("Observation V3 corpus replay", () => {
+  it("exposes only the intended replay runner-facing barrel surface", () => {
+    expect("runObservationV3CorpusReplay" in replayPublicApi).toBe(true);
+    expect("discoverObservationV3ReplayRoots" in replayPublicApi).toBe(true);
+    expect("loadObservationV3BenchmarkMatrix" in replayPublicApi).toBe(true);
+    expect("fingerprintObservationV3CorpusReplay" in replayPublicApi).toBe(false);
+    expect("buildObservationV3ReplayCaseArtifacts" in replayPublicApi).toBe(false);
+  });
+
   it("discovers replay roots and benchmark matrix entries deterministically", async () => {
     const fixture = await createReplayFixture();
 

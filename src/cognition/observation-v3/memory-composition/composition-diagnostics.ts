@@ -22,6 +22,7 @@ export function buildMemoryCompositionArtifacts(input: {
       sourceIdentity: input.result.provisionalIdentityTransition.sourceIdentity,
       parentIdentity: input.result.provisionalIdentityTransition.parentIdentity,
       nativeIdentity: input.result.provisionalIdentityTransition.nativeIdentity,
+      compatibilityIdentity: input.result.provisionalIdentityTransition.compatibilityIdentity,
       legacyIdentity: input.result.provisionalIdentityTransition.legacyIdentity,
       subsystemFingerprint: input.result.provisionalIdentityTransition.subsystemFingerprint,
       policyFingerprint: input.result.provisionalIdentityTransition.policyFingerprint,

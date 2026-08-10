@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { runObservationV3ShadowPipeline } from "@/src/cognition/observation-v3/pipeline";
+import * as authorityAdmissionModule from "@/src/cognition/observation-v3/authority-admission";
 
 function buildAdequateExtractionReplay() {
   const dreamText = "A guide leads the dreamer up a staircase.";
@@ -430,5 +431,17 @@ describe("runObservationV3ShadowPipeline", () => {
     expect(result.summary.governanceDisposition).toBeNull();
     expect(result.summary.pipelineCompletionStatus).toBe("failed");
     expect(result.summary.finalOutcome).toBe("failed_supplemental_realization");
+  });
+
+  it("uses the neutral authority-admission surface for native request construction", async () => {
+    expect("buildNativeAdmissionRequest" in authorityAdmissionModule).toBe(true);
+
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile("src/cognition/observation-v3/pipeline/shadow-pipeline.ts", "utf8"),
+    );
+
+    expect(source).toContain('from "@/src/cognition/observation-v3/authority-admission"');
+    expect(source).not.toContain('from "@/src/cognition/observation-v3/authority-admission/shadow-authority-admission"');
+    expect(source).not.toContain("buildNativeShadowAdmissionRequest");
   });
 });

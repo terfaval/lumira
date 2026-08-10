@@ -279,6 +279,7 @@ function buildRequest(overrides?: Partial<AdmissionRequest>): AdmissionRequest {
         candidateId: candidate.canonicalCandidateId,
         candidateHash: candidate.canonicalHash,
       },
+      compatibilityIdentity: null,
       legacyIdentity: null,
       subsystemFingerprint: "memory-realization-contract-v1",
       policyFingerprint: "memory-realization-policy-fingerprint",

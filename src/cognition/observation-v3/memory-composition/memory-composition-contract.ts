@@ -200,6 +200,10 @@ export interface ProvisionalIdentityTransition {
   sourceIdentity: SourceIdentity;
   parentIdentity: IdentitySnapshot;
   nativeIdentity: IdentitySnapshot;
+  compatibilityIdentity: IdentitySnapshot | null;
+  /**
+   * Deprecated compatibility alias for preserved readers.
+   */
   legacyIdentity: IdentitySnapshot | null;
   subsystemFingerprint: string;
   policyFingerprint: string;
@@ -241,6 +245,10 @@ export interface MemoryCompositionResult {
   };
   chronology: SourceOrderAssemblyRecord;
   coverage: MemoryCompositionCoverage;
+  compatibilityProjection: NativeCompositionLegacyResult;
+  /**
+   * Deprecated compatibility alias for preserved readers.
+   */
   legacyReconciliation: NativeCompositionLegacyResult;
 }
 

@@ -6,24 +6,20 @@ import { compareAuthorityAdmissionWithV2 } from "@/src/cognition/observation-v3/
 import { evaluateAdmissionRequest } from "@/src/cognition/observation-v3/authority-admission/admission-evaluator";
 import { fingerprintAuthorityAdmission, stableStringify } from "@/src/cognition/observation-v3/authority-admission/admission-fingerprint";
 import {
+  buildNativeShadowAdmissionRequest,
+} from "@/src/cognition/observation-v3/authority-admission/admission-request";
+import {
   AUTHORITY_ADMISSION_EVALUATOR_VERSION,
   AUTHORITY_ADMISSION_SCHEMA_VERSION,
   type AdmissionDecision,
-  type AdmissionIdentityInputComparison,
   type AdmissionPolicy,
   type AdmissionRequest,
-  type EvidenceIntegrityAssessment,
-  type MemoryRealizationValidationResult,
-  type ObservationProvenanceManifest,
-  type UncertaintyPreservationAssessment,
   type V2AuthorityOutcome,
 } from "@/src/cognition/observation-v3/authority-admission/authority-admission-contract";
 import { DEFAULT_AUTHORITY_ADMISSION_POLICY } from "@/src/cognition/observation-v3/authority-admission/admission-policy";
 import type { CompletenessReport } from "@/src/cognition/observation-v3/completeness-analysis";
-import { classifyIdentityComparison, type IdentitySnapshot } from "@/src/cognition/observation-v3/identity-comparison";
 import {
   buildShadowMemoryRealizationRequest,
-  type CanonicalMemoryCandidate,
   compareNativeMemoryRealizationWithLegacyAdapter,
   fingerprintMemoryRealization,
   runShadowMemoryRealization,
@@ -215,66 +211,6 @@ export function buildCanonicalEquivalentCandidate(input: {
   };
 }
 
-function assessEvidenceIntegrity(input: {
-  candidate: CanonicalMemoryCandidate;
-}): EvidenceIntegrityAssessment {
-  let malformedSpanCount = 0;
-  let missingSpanCount = 0;
-  let outOfBoundsSpanCount = 0;
-  let totalEvidenceSpanCount = 0;
-
-  const evidenceRefs = [
-    ...input.candidate.localities.flatMap((locality) => locality.evidenceRefs),
-    ...input.candidate.descriptiveUnits.flatMap((unit) => unit.evidenceRefs),
-    ...input.candidate.transitions.flatMap((transition) => transition.evidenceRefs),
-    ...input.candidate.unresolvedAlternatives.flatMap((alternative) => alternative.evidenceRefs),
-  ];
-
-  if (evidenceRefs.length === 0) {
-    missingSpanCount += 1;
-  }
-
-  for (const evidence of evidenceRefs) {
-    totalEvidenceSpanCount += 1;
-    if (typeof evidence.spanStart !== "number" || typeof evidence.spanEnd !== "number" || evidence.spanStart > evidence.spanEnd) {
-      malformedSpanCount += 1;
-      continue;
-    }
-
-    if (evidence.spanStart < 0 || evidence.spanEnd > input.candidate.sourceIdentity.sourceLength) {
-      outOfBoundsSpanCount += 1;
-    }
-  }
-
-  return {
-    assessmentId: `evidence-${input.candidate.canonicalHash.slice(0, 16)}`,
-    status: malformedSpanCount === 0 && missingSpanCount === 0 && outOfBoundsSpanCount === 0 && totalEvidenceSpanCount > 0
-      ? "pass"
-      : "failed",
-    malformedSpanCount,
-    missingSpanCount,
-    outOfBoundsSpanCount,
-    totalEvidenceSpanCount,
-    evidenceRef: "canonicalCandidate.evidence",
-    observations: [],
-  };
-}
-
-function assessUncertaintyPreservation(input: {
-  candidate: CanonicalMemoryCandidate;
-}): UncertaintyPreservationAssessment {
-  const uncertaintySignals = input.candidate.uncertaintyRecords.filter((record) => record.note || record.uncertaintyType);
-
-  return {
-    assessmentId: `uncertainty-${input.candidate.canonicalHash.slice(0, 16)}`,
-    status: uncertaintySignals.length > 0
-      ? "acceptable"
-      : "indeterminate",
-    evidenceRef: "canonicalCandidate.uncertaintyRecords",
-    observations: [],
-  };
-}
-
 export function buildShadowAdmissionRequest(input: {
   candidate: LegacyComparableCandidate;
   completeness: AttemptCandidateRecord["completeness"];
@@ -308,135 +244,6 @@ export function buildShadowAdmissionRequest(input: {
     throw new Error("shadow_authority_admission_request_unavailable");
   }
   return request;
-}
-
-function buildNativeProvenanceManifest(input: {
-  nativeResult: ReturnType<typeof runShadowMemoryRealization>["result"];
-}): ObservationProvenanceManifest {
-  const provenance = input.nativeResult.canonicalCandidate?.provenance;
-  return {
-    provenanceId: provenance?.provenanceId ?? "native-provenance-unavailable",
-    status: provenance ? "available" : "unavailable",
-    derivationKind: provenance ? "adapter_derived" : "unavailable",
-    sourceBoundaryVersion: provenance?.realizationPolicyVersion ?? null,
-    provenanceTier: "system_extract",
-    dreamLanguage: null,
-    evidenceRef: "canonical-provenance",
-  };
-}
-
-function buildAdmissionIdentityInputComparison(input: {
-  canonicalCandidate: CanonicalMemoryCandidate;
-  nativeResult: ReturnType<typeof runShadowMemoryRealization>["result"];
-  legacyIdentity?: IdentitySnapshot | null;
-}): AdmissionIdentityInputComparison {
-  const nativeIdentity = {
-    candidateId: input.canonicalCandidate.canonicalCandidateId,
-    candidateHash: input.canonicalCandidate.canonicalHash,
-  };
-  const comparison = classifyIdentityComparison({
-    legacyIdentity: input.legacyIdentity ?? null,
-    nativeIdentity,
-    substantiveEquality: true,
-    lineagePreserved: true,
-    deterministic: input.nativeResult.validation.candidateHashStable && input.nativeResult.validation.stableOrdering,
-  });
-
-  return {
-    sourceIdentity: input.canonicalCandidate.sourceIdentity,
-    parentIdentity: {
-      candidateId: input.canonicalCandidate.composedCandidateIdentity.composedCandidateId,
-      candidateHash: input.canonicalCandidate.composedCandidateIdentity.composedCandidateHash,
-    },
-    nativeIdentity,
-    legacyIdentity: input.legacyIdentity ?? null,
-    subsystemFingerprint: input.nativeResult.contractFingerprint,
-    policyFingerprint: input.nativeResult.realizationPolicyFingerprint,
-    lineageRefs: [
-      input.canonicalCandidate.composedCandidateIdentity.composedCandidateId,
-      input.canonicalCandidate.provenance.provenanceId,
-    ],
-    substantiveEquality: true,
-    classification: comparison.classification,
-    reasonCode: comparison.reasonCode,
-    artifactRefs: [
-      "canonical-memory-candidate",
-      "memory-realization-validation",
-      "canonical-identity-transition.json",
-    ],
-  };
-}
-
-function buildNativeRealizationValidationSummary(input: {
-  nativeResult: ReturnType<typeof runShadowMemoryRealization>["result"];
-}): MemoryRealizationValidationResult {
-  const validation = input.nativeResult.validation;
-  return {
-    validationId: validation.validationId,
-    status: validation.status === "valid" || validation.status === "valid_with_observations"
-      ? "pass"
-      : validation.status === "indeterminate"
-        ? "unavailable"
-        : "failed",
-    candidateHashStable: validation.candidateHashStable,
-    stableOrdering: validation.stableOrdering,
-    unitIdentitiesAvailable: validation.unitIdentitiesAvailable,
-    evidenceReferencesAvailable: validation.evidenceReferencesAvailable,
-    structuralConflicts: validation.structuralConflicts,
-    observations: validation.observations,
-    evidenceRef: validation.evidenceRef,
-  };
-}
-
-export function buildNativeShadowAdmissionRequest(input: {
-  nativeResult: ReturnType<typeof runShadowMemoryRealization>["result"];
-  completeness: AttemptCandidateRecord["completeness"];
-  legacyIdentity?: IdentitySnapshot | null;
-}): AdmissionRequest | null {
-  const canonicalCandidate = input.nativeResult.canonicalCandidate;
-  if (!canonicalCandidate) {
-    return null;
-  }
-
-  return {
-    sourceIdentity: {
-      sourceId: canonicalCandidate.sourceIdentity.sourceId,
-      sourceHash: canonicalCandidate.sourceIdentity.sourceHash,
-      sourceLength: canonicalCandidate.sourceIdentity.sourceLength,
-    },
-    canonicalCandidate,
-    provenanceManifest: buildNativeProvenanceManifest({
-      nativeResult: input.nativeResult,
-    }),
-    completeness: input.completeness.status === "available"
-      ? {
-          status: "available",
-          reportId: input.completeness.reportId!,
-          report: input.completeness.report!,
-        }
-      : {
-          status: "unavailable",
-          reportId: null,
-          reason: "completeness_input_unavailable",
-          evidenceRef: "completeness-report.json",
-        },
-    memoryRealizationValidation: buildNativeRealizationValidationSummary({
-      nativeResult: input.nativeResult,
-    }),
-    evidenceIntegrity: assessEvidenceIntegrity({
-      candidate: canonicalCandidate,
-    }),
-    uncertaintyPreservation: assessUncertaintyPreservation({
-      candidate: canonicalCandidate,
-    }),
-    admissionIdentityInputComparison: buildAdmissionIdentityInputComparison({
-      canonicalCandidate,
-      nativeResult: input.nativeResult,
-      legacyIdentity: input.legacyIdentity ?? null,
-    }),
-    governanceObservations: [],
-    contractFingerprint: "shadow-authority-admission-contract-v1",
-  };
 }
 
 function normalizeDecision(decision: AdmissionDecision): unknown {

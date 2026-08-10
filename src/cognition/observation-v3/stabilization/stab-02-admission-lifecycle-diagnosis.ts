@@ -3,8 +3,8 @@ import path from "node:path";
 
 import {
   DEFAULT_AUTHORITY_ADMISSION_POLICY,
+  buildNativeAdmissionRequest,
   evaluateAdmissionRequest,
-  buildNativeShadowAdmissionRequest,
   type AdmissionDecision,
 } from "@/src/cognition/observation-v3/authority-admission";
 import {
@@ -336,7 +336,7 @@ export function buildHypotheticalAdmissionDecision(input: {
   completenessReport: CompletenessReport;
   reportId: string;
 }): AdmissionDecision {
-  const request = buildNativeShadowAdmissionRequest({
+  const request = buildNativeAdmissionRequest({
     nativeResult: input.memoryRealizationResult,
     completeness: {
       status: "available",

@@ -5584,3 +5584,30 @@ Verification references:
   - Repaired preserved supplemental replay by recovering canonical gap identity from preserved recovery-selection lineage, selecting the newest compatible topology root, and allowing coherent topology extraction replay when standalone benchmark extraction and supplemental lineage diverged.
   - Repaired two native supplemental package-construction defects surfaced by downstream Memory Realization: unclamped recovery-region evidence spans and double-shifting of already-absolute preserved evidence spans.
   - Added checkpointed topology experiment finalization and `--resume-run` support so interrupted experiment runs can continue or finalize without rewriting completed item artifacts.
+
+## 2026-08-10 - OBS-V3-PRECLOSURE-CLEANUP Repository Clarity Hardening
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/memory-realization/`
+  - `src/cognition/observation-v3/authority-admission/`
+  - `src/cognition/observation-v3/memory-composition/`
+  - `src/cognition/observation-v3/pipeline/`
+  - `src/cognition/observation-v3/pipeline/replay/`
+  - `src/cognition/observation-v3/validation/`
+  - `docs/v2-build/observation/Observation-V3-Technical-Debt-Register.md`
+  - `docs/v2-build/observation/Observation-V3-Dataflow.md`
+  - `docs/v2-build/observation/Observation-V3-Subsystem-Contracts.md`
+  - `docs/v2-build/observation/Observation-V3-Architecture.md`
+  - `docs/v2-build/observation/Observation-V3-Supplemental-Realization-Responsibility-Scout.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Verification:
+  - `npx.cmd vitest run src/cognition/observation-v3/memory-realization/__tests__/memory-realization.test.ts src/cognition/observation-v3/authority-admission/__tests__/shadow-authority-admission.test.ts src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts src/cognition/observation-v3/pipeline/replay/__tests__/pipeline-replay-runner.test.ts src/cognition/observation-v3/validation/__tests__/full-benchmark-baseline.test.ts` -> pass (`6` files, `44` tests)
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run lint` -> pass with `3` pre-existing unrelated warnings in latent V2/runtime files
+  - `npm.cmd run build` -> pass at `docs/build-logs/2026-08-10T07-49-30-331Z.log`
+- Notes:
+  - Narrowed public Observation V3 barrel exports without removing required compatibility implementations.
+  - Moved active native Admission request construction onto a neutral `admission-request` surface and kept the shadow-named builder as a compatibility alias.
+  - Renamed active composition terminology toward compatibility-first naming while preserving legacy aliases needed for replay determinism and preserved readers.
+  - Refreshed living Observation V3 architecture documents to the post-STAB-08B shadow state and explicitly marked the Supplemental Realization scout as historical proposal evidence.

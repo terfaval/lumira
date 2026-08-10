@@ -10,11 +10,14 @@ import {
   compareAuthorityAdmissionWithV2,
   evaluateAdmissionRequest,
   runAuthorityAdmissionShadowReview,
-  runtimeDependencyGuard,
-  validateAuthorityAdmissionArtifactSet,
 } from "@/src/cognition/observation-v3/authority-admission";
 import { DEFAULT_AUTHORITY_ADMISSION_POLICY } from "@/src/cognition/observation-v3/authority-admission/admission-policy";
+import {
+  runtimeDependencyGuard,
+  validateAuthorityAdmissionArtifactSet,
+} from "@/src/cognition/observation-v3/authority-admission/shadow-authority-admission";
 import { realizeCanonicalMemoryCandidate, type MemoryRealizationRequest } from "@/src/cognition/observation-v3/memory-realization";
+import * as authorityAdmissionPublicApi from "@/src/cognition/observation-v3/authority-admission";
 
 function buildCanonicalCandidateFixture() {
   const request: MemoryRealizationRequest = {
@@ -234,6 +237,7 @@ describe("compareAuthorityAdmissionWithV2", () => {
             candidateId: canonicalCandidate.canonicalCandidateId,
             candidateHash: canonicalCandidate.canonicalHash,
           },
+          compatibilityIdentity: null,
           legacyIdentity: null,
           subsystemFingerprint: "memory-realization-contract-v1",
           policyFingerprint: "memory-realization-policy-v1",
@@ -587,6 +591,11 @@ describe("runAuthorityAdmissionShadowReview", () => {
 
   it("rejects incomplete review roots as missing expected artifacts", () => {
     expect(validateAuthorityAdmissionArtifactSet(["review-manifest.json"])).toBe(false);
+  });
+
+  it("does not expose review-root validation helpers from the public barrel", () => {
+    expect("runtimeDependencyGuard" in authorityAdmissionPublicApi).toBe(false);
+    expect("validateAuthorityAdmissionArtifactSet" in authorityAdmissionPublicApi).toBe(false);
   });
 });
 

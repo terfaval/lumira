@@ -36,14 +36,15 @@ export {
   DEFAULT_AUTHORITY_ADMISSION_SHADOW_INPUT_ROOT,
   DEFAULT_AUTHORITY_ADMISSION_SHADOW_OUTPUT_ROOT,
   buildCanonicalEquivalentCandidate,
-  buildNativeShadowAdmissionRequest,
   buildShadowAdmissionRequest,
   loadAuthorityAdmissionAttemptCandidates,
   runAuthorityAdmissionShadowReview,
   runShadowAuthorityAdmission,
-  runtimeDependencyGuard,
-  validateAuthorityAdmissionArtifactSet,
 } from "@/src/cognition/observation-v3/authority-admission/shadow-authority-admission";
+export {
+  buildNativeAdmissionRequest,
+  buildNativeShadowAdmissionRequest,
+} from "@/src/cognition/observation-v3/authority-admission/admission-request";
 export {
   DEFAULT_AUTHORITY_ADMISSION_CALIBRATION_OUTPUT_ROOT,
   DEFAULT_AUTHORITY_ADMISSION_SHADOW_REVIEW_ROOT,
