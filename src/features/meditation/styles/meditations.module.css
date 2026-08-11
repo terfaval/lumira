@@ -1,0 +1,702 @@
+﻿.space {
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  background-color: #05080e;
+  background-image: url("/backgrounds/meditations_background.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #e9eff6;
+  overflow: hidden;
+}
+
+.space::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(900px circle at 18% 18%, rgba(120, 170, 210, 0.38), transparent 62%),
+    radial-gradient(700px circle at 80% 30%, rgba(80, 210, 170, 0.26), transparent 60%),
+    linear-gradient(160deg, rgba(7, 14, 26, 0.7) 0%, rgba(5, 8, 14, 0.92) 100%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.space::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.06), transparent 55%),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.05), transparent 60%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.backLink {
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 50;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: rgba(233, 239, 246, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 1.6rem;
+  letter-spacing: 0.05em;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+  overflow: visible;
+}
+
+
+.backIcon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.backLabel {
+  position: absolute;
+  left: 100%;
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(233, 239, 246, 0.8);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+
+.backLink:hover {
+  transform: translateY(-1px);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+
+.backLink:hover .backLabel {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.spaceReaderOpen .ring {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spaceReaderOpen .previewBackdrop,
+.spaceReaderOpen .previewPanel,
+.spaceReaderOpen .centerFocus {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spaceInner {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  z-index: 1;
+}
+
+.centerFocus {
+  position: fixed;
+  z-index: 2;
+  text-align: center;
+  max-width: 360px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  backdrop-filter: none;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.centerHint {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  color: rgba(233, 239, 246, 0.92);
+}
+
+.centerSubtle {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(233, 239, 246, 0.55);
+}
+
+.centerCategory {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  color: rgba(190, 210, 240, 0.7);
+}
+
+.centerTitle {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  font-weight: 700;
+  color: #f5f7fb;
+}
+
+.ring {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, 70vw);
+  height: min(520px, 70vw);
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  --ring-radius: clamp(190px, 32vw, 260px);
+}
+
+.bead {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(120, 170, 210, 0.25);
+  box-shadow: 0 0 12px rgba(120, 170, 210, 0.22);
+  transform: translate(-50%, -50%) rotate(var(--bead-angle))
+    translateX(calc(var(--ring-radius) * var(--bead-radius-mult, 1)))
+    rotate(calc(var(--bead-angle) * -1));
+  left: 50%;
+  top: 50%;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.bead:hover,
+.bead:focus-visible {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.35);
+}
+
+.beadHovered {
+  background: color-mix(in srgb, var(--bead-color, #7aaad2) 55%, white);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--bead-glow, #7aaad2) 70%, white);
+  transform: translate(-50%, -50%) rotate(var(--bead-angle))
+    translateX(calc(var(--ring-radius) * var(--bead-radius-mult, 1)))
+    rotate(calc(var(--bead-angle) * -1));
+}
+
+.beadSelected {
+  background: color-mix(in srgb, var(--bead-color, #7aaad2) 70%, white);
+  border-color: color-mix(in srgb, var(--bead-color, #7aaad2) 40%, white);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--bead-glow, #7aaad2) 80%, white);
+}
+
+.previewBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.previewPanel {
+  position: relative;
+  width: min(360px, 90vw);
+  padding: 1.5rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 14, 23, 0.82);
+  box-shadow: 0 24px 60px rgba(2, 4, 8, 0.6);
+  backdrop-filter: blur(14px);
+  z-index: 5;
+}
+
+.previewClose {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(8, 12, 18, 0.75);
+  color: rgba(233, 239, 246, 0.9);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.previewHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.previewCategory {
+  font-size: 0.65rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(210, 220, 240, 0.6);
+}
+
+.previewTitle {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #f7f9fb;
+}
+
+.previewSummary {
+  margin: 0.8rem 0 1rem;
+  color: rgba(225, 235, 246, 0.82);
+  font-size: 0.95rem;
+}
+
+.previewMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(195, 210, 230, 0.6);
+}
+
+.previewLevelDots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.levelDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.levelDotActive {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+.previewModeRow {
+  display: flex;
+  margin: 0.6rem 0 1rem;
+}
+
+.modePill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.modekontemplativ {
+  background: rgba(74, 140, 210, 0.18);
+  border-color: rgba(110, 170, 230, 0.45);
+  color: rgba(200, 228, 255, 0.9);
+}
+
+.modeimaginativ {
+  background: rgba(190, 120, 220, 0.18);
+  border-color: rgba(210, 150, 235, 0.45);
+  color: rgba(245, 220, 255, 0.9);
+}
+
+.previewDot {
+  opacity: 0.4;
+}
+
+.previewTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.9rem 0 1.2rem;
+}
+
+.previewTag {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(210, 220, 240, 0.7);
+}
+
+.previewButton {
+  width: 100%;
+}
+
+.previewButton.btn--primary:not(:hover):not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.9);
+  color: #ffffff;
+  background: transparent;
+  box-shadow: none;
+}
+
+.readerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(6, 10, 16, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  transition: opacity 0.8s ease, background 0.8s ease, backdrop-filter 0.8s ease;
+}
+
+.readerOverlayClosing {
+  opacity: 0;
+}
+
+.readerPanel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(720px, 90vw);
+  min-height: min(420px, 55vh);
+}
+
+.readerPanelEditor {
+  width: min(980px, 95vw);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: 1.5rem;
+  align-items: stretch;
+  place-items: stretch;
+}
+
+.readerExit {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(8, 12, 18, 0.85);
+  color: rgba(230, 238, 246, 0.8);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.readerAdminToggle {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(8, 12, 18, 0.85);
+  color: rgba(230, 238, 246, 0.8);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.readerMuteFab {
+  position: fixed;
+  right: clamp(1.5rem, 4vw, 2.5rem);
+  bottom: clamp(1.5rem, 4vw, 2.5rem);
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(8, 12, 18, 0.9);
+  color: rgba(230, 238, 246, 0.85);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 18px 40px rgba(2, 4, 10, 0.45);
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  z-index: 45;
+}
+
+.readerMuteFab:hover,
+.readerMuteFab:focus-visible {
+  outline: none;
+  transform: translateY(-2px);
+  color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.readerMuteFab svg {
+  width: 22px;
+  height: 22px;
+}
+
+.readerStage {
+  width: min(720px, 90vw);
+  min-height: min(360px, 45vh);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border-radius: 28px;
+  background: radial-gradient(circle at 30% 20%, rgba(120, 170, 210, 0.08), transparent 60%),
+    rgba(7, 11, 18, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 80px rgba(2, 4, 8, 0.7);
+  transition: opacity 0.8s ease;
+}
+
+.readerPanelEditor .readerStage {
+  width: 100%;
+  min-height: min(360px, 50vh);
+}
+
+.readerEditorPanel {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(9, 14, 23, 0.88);
+  box-shadow: 0 20px 50px rgba(2, 4, 10, 0.6);
+  color: rgba(230, 238, 246, 0.9);
+}
+
+.readerEditorHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.readerEditorTitle {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(210, 220, 240, 0.7);
+}
+
+.readerEditorMeta {
+  margin: 0.35rem 0 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(210, 220, 240, 0.6);
+}
+
+.readerEditorSaveState {
+  margin: 0.35rem 0 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(210, 220, 240, 0.55);
+  min-height: 0.8rem;
+}
+
+.readerEditorDuration {
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(220, 232, 246, 0.85);
+}
+
+.readerEditorControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.readerEditorLabel {
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(200, 215, 235, 0.7);
+}
+
+.readerEditorTextarea,
+.readerEditorSelect,
+.readerEditorInput {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(7, 11, 18, 0.92);
+  color: rgba(233, 241, 249, 0.92);
+  font-size: 0.9rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.readerEditorTextarea {
+  resize: vertical;
+  min-height: 140px;
+}
+
+.readerEditorSelect {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.readerEditorInput {
+  max-width: 160px;
+}
+
+.readerEditorNote {
+  margin: 0.2rem 0 0;
+  font-size: 0.65rem;
+  color: rgba(200, 215, 235, 0.55);
+}
+
+.readerStageClosing {
+  opacity: 0;
+}
+
+.readerText {
+  font-size: clamp(1.2rem, 2.2vw, 1.9rem);
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  margin: 0;
+  color: #f4f7fb;
+  animation: fadeIn 1.2s ease;
+}
+
+.readerPlaceholder {
+  font-size: 1.1rem;
+  letter-spacing: 0.4em;
+  color: rgba(200, 215, 235, 0.35);
+}
+
+.readerTone-soft {
+  color: rgba(233, 241, 249, 0.9);
+}
+
+.readerTone-neutral {
+  color: rgba(233, 241, 249, 0.75);
+}
+
+.readerTone-deep {
+  color: rgba(240, 244, 251, 0.98);
+  font-weight: 600;
+}
+
+.readerEndPanel {
+  position: absolute;
+  bottom: clamp(1.5rem, 5vw, 3rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+  color: rgba(220, 232, 246, 0.75);
+}
+
+.readerEndActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.readerReturnHint {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(210, 220, 240, 0.5);
+}
+
+@media (max-width: 720px) {
+  .spaceInner {
+    min-height: auto;
+    padding: 2rem 1rem 5rem;
+  }
+
+  .ring {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    width: min(360px, 88vw);
+    height: min(360px, 88vw);
+    --ring-radius: clamp(150px, 40vw, 200px);
+  }
+
+  .previewPanel {
+    position: relative;
+    margin-top: 0;
+  }
+
+  .centerFocus {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin-bottom: 0;
+  }
+
+  .readerPanelEditor {
+    grid-template-columns: 1fr;
+    width: min(720px, 92vw);
+  }
+
+  .readerAdminToggle,
+  .readerExit {
+    top: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bead,
+  .readerOverlay,
+  .readerStage,
+  .readerText {
+    transition: none;
+    animation: none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
