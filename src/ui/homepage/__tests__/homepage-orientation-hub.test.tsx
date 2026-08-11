@@ -100,4 +100,13 @@ describe("HomepageOrientationHub capture surface", () => {
     expect(markup).not.toContain("Wind-down");
     expect(markup).not.toContain("Recall");
   });
+
+  it("renders a meditation entry tile linking to /meditation", () => {
+    const markup = renderToStaticMarkup(<HomepageOrientationHub payload={payload} />);
+
+    expect(markup).toContain('href="/meditation"');
+    expect(markup).toContain("<h2>Meditáció</h2>");
+    expect(markup).toContain("Lépj be egy lassabb, csendesebb térbe.");
+    expect(markup).toContain("Meditációk megnyitása");
+  });
 });
