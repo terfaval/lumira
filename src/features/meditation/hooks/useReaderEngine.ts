@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import type { Meditation, ReaderTextBlock } from "../lib/meditation-types";
 
 export type ReaderStatus = "idle" | "running" | "ended";
@@ -32,6 +33,7 @@ export function useReaderEngine(meditation: Meditation | null) {
     clearTimer();
     setCurrentIndex(0);
     setCurrentText(null);
+    setCurrentBlockIndex(null);
     setStatus("running");
   }, [clearTimer, meditation]);
 
@@ -43,13 +45,19 @@ export function useReaderEngine(meditation: Meditation | null) {
   const restart = useCallback(() => {
     reset();
     if (meditation) {
-      setStatus("running");
+      const timer = window.setTimeout(() => {
+        setStatus("running");
+      }, 0);
+      timerRef.current = timer;
     }
   }, [meditation, reset]);
 
   useEffect(() => {
     if (!meditation) {
-      reset();
+      const timer = window.setTimeout(() => {
+        reset();
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
   }, [meditation, reset]);
 
@@ -58,23 +66,34 @@ export function useReaderEngine(meditation: Meditation | null) {
 
     const blocks = meditation.reader.blocks;
     if (currentIndex >= blocks.length) {
-      setStatus("ended");
-      return;
+      const timer = window.setTimeout(() => {
+        setStatus("ended");
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
 
     const block = blocks[currentIndex];
-    setCurrentBlockIndex(currentIndex);
+
     if (block.type === "text") {
-      setCurrentText(block);
-      setCurrentIndex((index) => index + 1);
-      return;
+      const timer = window.setTimeout(() => {
+        setCurrentBlockIndex(currentIndex);
+        setCurrentText(block);
+        setCurrentIndex((index) => index + 1);
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
+
+    const syncTimer = window.setTimeout(() => {
+      setCurrentBlockIndex(currentIndex);
+      setCurrentText(null);
+    }, 0);
 
     timerRef.current = window.setTimeout(() => {
       setCurrentIndex((index) => index + 1);
     }, Math.max(0, block.duration_ms));
 
     return () => {
+      window.clearTimeout(syncTimer);
       clearTimer();
     };
   }, [clearTimer, currentIndex, meditation, status]);
@@ -90,4 +109,3 @@ export function useReaderEngine(meditation: Meditation | null) {
     restart,
   };
 }
-

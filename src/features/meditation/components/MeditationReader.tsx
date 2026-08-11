@@ -163,7 +163,7 @@ export default function MeditationReader({
       }, 2000);
       return () => window.clearTimeout(timer);
     }
-  }, [completed, editorMode, endBehavior, onComplete, onExit, status]);
+  }, [audioEngine, completed, editorMode, endBehavior, onComplete, onExit, status]);
 
   const handleExit = useCallback(() => {
     audioEngine.stop();

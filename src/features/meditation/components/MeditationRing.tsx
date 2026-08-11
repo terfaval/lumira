@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { Meditation } from "../lib/meditation-types";
 import { buildRingLayout } from "../lib/meditation-layout";
@@ -22,6 +22,12 @@ export default function MeditationRing({ meditations, hoveredId, selectedId, onH
         const isHovered = hoveredId === meditation.id;
         const isSelected = selectedId === meditation.id;
         const color = getCategoryColor(meditation.category);
+        const beadStyle = {
+          ["--bead-angle" as string]: `${angle}deg`,
+          ["--bead-glow" as string]: color,
+          ["--bead-color" as string]: color,
+          ["--bead-radius-mult" as string]: `${radiusMult}`,
+        };
 
         return (
           <button
@@ -30,12 +36,7 @@ export default function MeditationRing({ meditations, hoveredId, selectedId, onH
             className={`${styles.bead} ${isHovered ? styles.beadHovered : ""} ${
               isSelected ? styles.beadSelected : ""
             }`}
-            style={{
-              ["--bead-angle" as any]: `${angle}deg`,
-              ["--bead-glow" as any]: color,
-              ["--bead-color" as any]: color,
-              ["--bead-radius-mult" as any]: `${radiusMult}`,
-            }}
+            style={beadStyle}
             onMouseEnter={() => onHover(meditation.id)}
             onMouseLeave={() => onHover(null)}
             onFocus={() => onHover(meditation.id)}
@@ -50,4 +51,3 @@ export default function MeditationRing({ meditations, hoveredId, selectedId, onH
     </div>
   );
 }
-
