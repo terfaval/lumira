@@ -272,3 +272,5 @@ Append-only build run summary. Detailed logs are under `docs/build-logs/`.
 | 2026-08-10T21:04:44.008Z | success | 0 | `docs/build-logs/2026-08-10T21-04-44-008Z.log` |
 | 2026-08-10T21:29:04.041Z | success | 0 | `docs/build-logs/2026-08-10T21-29-04-041Z.log` |
 | 2026-08-10T22:00:50.714Z | success | 0 | `docs/build-logs/2026-08-10T22-00-50-714Z.log` |
+| 2026-08-11T09:07:06.190Z | failed | 1 | `docs/build-logs/2026-08-11T09-07-06-190Z.log` |
+| 2026-08-11T09:08:31.013Z | success | 0 | `docs/build-logs/2026-08-11T09-08-31-013Z.log` |

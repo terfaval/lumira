@@ -5747,3 +5747,28 @@ Verification references:
   - `npm.cmd run typecheck` -> pass
   - `npm.cmd run lint` -> pass
   - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-10T22-00-50-714Z.log`)
+
+## 2026-08-11 - Lumira Meditation Module Port
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/ui/homepage`
+  - `app/meditation`
+  - `src/features/meditation`
+  - `data/meditations`
+  - `data/audio`
+  - `public/backgrounds`
+  - `public/audio`
+- Notes:
+  - Replaced the homepage `Recent objects` tile with a Lumira-compatible Meditation entry tile using the approved invitation line and a direct `/meditation` entry point.
+  - Ported the Kincstarto meditation module into an isolated Lumira feature boundary with file-based meditation JSON loading, audio map loading, ring selection UI, preview state, reader flow, and route-local back navigation.
+  - Kept the storage model file-based for the first pass and avoided reflective-system schema or repository changes while still bringing over the supporting background and audio assets required by the meditation experience.
+- Verification:
+  - `npm.cmd test -- src/ui/homepage/__tests__/homepage-orientation-hub.test.tsx` -> pass
+  - `npm.cmd test -- src/features/meditation/lib/meditation-loaders.test.ts src/features/meditation/lib/audio-loaders.test.ts` -> pass
+  - `npm.cmd test -- src/features/meditation/components/MeditationSpace.test.tsx` -> pass
+  - `npm.cmd test -- app/meditation/page.test.tsx` -> pass
+  - `npm.cmd test -- src/features/meditation/components/MeditationSpace.test.tsx src/features/meditation/lib/meditation-loaders.test.ts src/features/meditation/lib/audio-loaders.test.ts app/meditation/page.test.tsx src/ui/homepage/__tests__/homepage-orientation-hub.test.tsx` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-11T09-08-31-013Z.log`)
