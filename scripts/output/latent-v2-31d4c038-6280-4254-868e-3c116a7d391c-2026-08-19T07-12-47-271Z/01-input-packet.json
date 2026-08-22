@@ -1,0 +1,1035 @@
+{
+  "generationContext": {
+    "runtimeVersion": "latent_opportunity_constructor_v3_shadow_v1",
+    "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+    "priorityReflectiveObjectId": "31d4c038-6280-4254-868e-3c116a7d391c",
+    "priorityReflectiveObjectType": "dream",
+    "priorityReflectiveObjectTitle": "Emma lakásának kétajtós szobája",
+    "objectLanguage": "unknown",
+    "authority": {
+      "family": "observation_v3",
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "canonicalObservationId": "canonical-candidate-5daf05f97fc0ab96",
+      "canonicalHash": "6169cef1e1f49b249d2ecf6ece5760bc09e56de18589a9e4fbb15c5cd4ea4cc6",
+      "generationVersion": "observation-v3-shadow-pipeline-v1"
+    }
+  },
+  "priorityObject": {
+    "content": "emmáról álmodtam. kevés előzménye van meg a történetnek, de úgy tűnt mintha jobban össze lettünk volna melegedve, mint a valóságban. legalábbis jártam már a lakásán és jobban ismertem a hobbijait meg a mindennapjait. viszont egy jó ideje már nem találkoztunk, több hónapja. aztán valahova utaztunk anyámmal és valami hiányzott, ezért elmentem emma lakására, mert biztos voltam benne, hogy nála lesz. emma viszont nem volt otthon pedig éjszaka volt. én valamiért úgy döntöttem, hogy lepihenek az ágyában - nem ez volt az első alkalom, hogy az ágyában aludtam, ezért nem zavartattam magam különösebben.. amikor felébredtem elkezdtem összeszedni a cuccaimat. gondoltam ha már itt vagyok, akkor összeszedek mindent. több szobában is voltak és egy zsákot is el kellett vennem, mert ennyi dolgot már nem tudtam kézben vinni. az igazat megvallva azt hiszem, hogy nem csak a saját cuccaimat raktam el, de emlékeket is. amikor mindent összepakoltam, akkor elkezdtem visszaállítani a szobáját, utoljára az ágyat hagytam, de amikor elkezdtem megágyazni és szépen visszarendezni olyanra, amilyen az emlékezetemben volt, akkor hazaért. hangosan köszönt az üres lakásnak - azt egyáltalán nem tudhatta, hogy én ott vagyok - majd sokkolta a meglepetés, hogy ott vagyok. teljesen érthető haragra gerjedt, amivel én nem is vitatkoztam, csak próbáltam elcsatornázni azzal, hogy kimagyarázom magam a helyzetből. aztán hamar téma lett, hogy ki nem keresett kit, és akkor már nem fogtam vissza magam és én is kiabáltam, mert úgy éreztem, hogy ő hagyott ott engem, ő nem keresett soha. de ő is így érezte. szerinte nekem kellett volna keresnem őt és nagyon csalódott volt, hogy nem tettem. amikor megértettük, hogy egyikőnk ellen sem szólt a csend, akkor szépen lassan elcsendesedtünk, de kicsit feszült csend volt ez.. megmutogatta hogy milyen szerszámgépeket szerzett (valami kézműves dolog lehetett, de nem igazán tudom megmondani, hogy mi. agyagra és kerámiázásra hasonlított a környezet, de az eszközök meg sokkal nagyobbak voltak és inkább famunkához illettek). aztán mutatott valami régi gépet, amit sehogy sem tudott beindítani. valami szűk ki helyre kellett benyúlnom és ott rántani a motorindítóját, de kérte hogy vigyázzak, mert ha beindul a motor, akkor könnyen levághatja az ujjam. sikerült beindítani, valamit meg akart nézni közelebbről és bár eddig is közel voltunk, most még közelebb hajolt - persze csak a géphez, de a gép és közte voltam én is - próbáltam több helyet adni neki, valahogy megkerülve átadni neki a helyemet, hogy meg tudja nézni, de akkor felém fordult és csókolózni kezdtünk. minden feszültség elszállt, ahogy átadtuk magunkat egymásnak, felkaptam az ölembe és átmentem vele a hálószobájába. lefektettem az ágyára, és csak akkor vettem észre, hogy máshogy van a szobája, két ajtaja is van.. mondta, hogy régen is kettő volt, csak le volt takarva valami függönnyel az ajtó, de valamiért ki kellett nyitnia teret és azóta így van. ez az új ajtó közvetlenül az ágya mellett volt, de nem volt rögzítve, csak egyszerűen a falnak volt támasztva. mivel az előző pillanatban még szeretkezni készültünk, ezért gondoltam, hogy becsukom ezt az ajtót, de akkor vettem észre, hogy nincs rögzítve és sehogy sem sikerült becsuknom. végül elmagyarázta, hogy valahogy a fejfához kell illesztenem, de így sem sikerült, csak amikor felállt segíteni. kiderült h felül szögek vannak és ezekre kell ügyesen akasztani az ajtót. aztán felébredtem."
+  },
+  "localities": [
+    {
+      "localityId": "locality-8adce6f26312affd",
+      "position": 0,
+      "label": null,
+      "evidenceSnippet": "emmáról álmodtam. kevés előzménye van meg a történetnek, de úgy tűnt mintha jobban össze lettünk volna melegedve, mint a valóságban. legalábbis jártam már a lakásán és jobban ismertem a hobbijait meg a mindennapjait. viszont egy jó ideje már nem találkoztunk, több hónapja. aztán valahova utaztunk anyámmal és ",
+      "boundaryUncertainty": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-b0439463b9db2aaf",
+          "snippet": "emmáról álmodtam. kevés előzménye van meg a történetnek, de úgy tűnt mintha jobban össze lettünk volna melegedve, mint a valóságban. legalábbis jártam már a lakásán és jobban ismertem a hobbijait meg a mindennapjait. viszont egy jó ideje már nem találkoztunk, több hónapja. aztán valahova utaztunk anyámmal és ",
+          "spanStart": 0,
+          "spanEnd": 310,
+          "contextLabel": "recovery_region"
+        }
+      ],
+      "enrichment": {
+        "affect": [],
+        "agency": [],
+        "interactions": [],
+        "metacognition": [],
+        "phenomenology": [],
+        "continuity": []
+      }
+    },
+    {
+      "localityId": "locality-5b0c045e4aafe190",
+      "position": 1,
+      "label": "Átmenet egy elfeledett kapcsolathoz, megérkezés Emma lakására, ahol megtalálja az ágyat és cuccait összeszedi.",
+      "evidenceSnippet": "valami hiányzott, ezért elmentem emma lakására, mert biztos voltam benne, hogy nála lesz. emma viszont nem volt otthon pedig éjszaka volt. én valamiért úgy döntöttem, hogy lepihenek az ágyában - nem ez volt az első alkalom, hogy az ágyában aludtam, ezért nem zavartattam magam különösebben..",
+      "boundaryUncertainty": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-dc5c050f92335b3d",
+          "snippet": "valami hiányzott, ezért elmentem emma lakására, mert biztos voltam benne, hogy nála lesz. emma viszont nem volt otthon pedig éjszaka volt. én valamiért úgy döntöttem, hogy lepihenek az ágyában - nem ez volt az első alkalom, hogy az ágyában aludtam, ezért nem zavartattam magam különösebben..",
+          "spanStart": 310,
+          "spanEnd": 601,
+          "contextLabel": "derived_locality"
+        }
+      ],
+      "enrichment": {
+        "affect": [],
+        "agency": [],
+        "interactions": [],
+        "metacognition": [],
+        "phenomenology": [],
+        "continuity": []
+      }
+    },
+    {
+      "localityId": "locality-15b4513d85237cd0",
+      "position": 2,
+      "label": null,
+      "evidenceSnippet": " amikor felébredtem elkezdtem összeszedni a cuccaimat. gondoltam ha már itt vagyok, akkor összeszedek mindent. több szobában is voltak és egy zsákot is el kellett vennem, mert ennyi dolgot már nem tudtam kézben vinni. az igazat megvallva azt hiszem, hogy nem csak a saját cuccaimat raktam el, de emlékeket is. ",
+      "boundaryUncertainty": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-bd49c0e71e90906a",
+          "snippet": " amikor felébredtem elkezdtem összeszedni a cuccaimat. gondoltam ha már itt vagyok, akkor összeszedek mindent. több szobában is voltak és egy zsákot is el kellett vennem, mert ennyi dolgot már nem tudtam kézben vinni. az igazat megvallva azt hiszem, hogy nem csak a saját cuccaimat raktam el, de emlékeket is. ",
+          "spanStart": 601,
+          "spanEnd": 911,
+          "contextLabel": "recovery_region"
+        }
+      ],
+      "enrichment": {
+        "affect": [],
+        "agency": [],
+        "interactions": [],
+        "metacognition": [],
+        "phenomenology": [],
+        "continuity": []
+      }
+    },
+    {
+      "localityId": "locality-0551c2b26879024d",
+      "position": 3,
+      "label": "Rendezgetés Emma lakásában, pakolás, emlékek elpakolása, ágy visszarendezése, majd megérkezik Emma és haragos lesz.",
+      "evidenceSnippet": "amikor mindent összepakoltam, akkor elkezdtem visszaállítani a szobáját, utoljára az ágyat hagytam, de amikor elkezdtem megágyazni ",
+      "boundaryUncertainty": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-301f433cdd6c4587",
+          "snippet": "amikor mindent összepakoltam, akkor elkezdtem visszaállítani a szobáját, utoljára az ágyat hagytam, de amikor elkezdtem megágyazni ",
+          "spanStart": 911,
+          "spanEnd": 1042,
+          "contextLabel": "derived_locality"
+        }
+      ],
+      "enrichment": {
+        "affect": [],
+        "agency": [],
+        "interactions": [],
+        "metacognition": [],
+        "phenomenology": [],
+        "continuity": []
+      }
+    },
+    {
+      "localityId": "locality-7a27624387b80870",
+      "position": 4,
+      "label": null,
+      "evidenceSnippet": "és szépen visszarendezni olyanra, amilyen az emlékezetemben volt, akkor hazaért. hangosan köszönt az üres lakásnak - azt egyáltalán nem tudhatta, hogy én ott vagyok - majd sokkolta a meglepetés, hogy ott vagyok. teljesen érthető haragra gerjedt, amivel én nem is vitatkoztam, csak próbáltam elcsatornázni azzal, hogy kimagyarázom magam a helyzetből. aztán hamar téma lett, hogy ki nem keresett kit, és akkor már nem fogtam vissza magam és én is kiabáltam, mert úgy éreztem, hogy ő hagyott ott engem, ő nem keresett soha. de ő is így érezte. szerinte nekem kellett volna keresnem őt és nagyon csalódott volt, hogy nem tettem. ",
+      "boundaryUncertainty": "strict",
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-0a14918facf1d2a2",
+          "snippet": "és szépen visszarendezni olyanra, amilyen az emlékezetemben volt, akkor hazaért. hangosan köszönt az üres lakásnak - azt egyáltalán nem tudhatta, hogy én ott vagyok - majd sokkolta a meglepetés, hogy ott vagyok. teljesen érthető haragra gerjedt, amivel én nem is vitatkoztam, csak próbáltam elcsatornázni azzal, hogy kimagyarázom magam a helyzetből. aztán hamar téma lett, hogy ki nem keresett kit, és akkor már nem fogtam vissza magam és én is kiabáltam, mert úgy éreztem, hogy ő hagyott ott engem, ő nem keresett soha. de ő is így érezte. szerinte nekem kellett volna keresnem őt és nagyon csalódott volt, hogy nem tettem. ",
+          "spanStart": 1042,
+          "spanEnd": 1667,
+          "contextLabel": "recovery_region"
+        }
+      ],
+      "enrichment": {
+        "affect": [],
+        "agency": [],
+        "interactions": [],
+        "metacognition": [],
+        "phenomenology": [],
+        "continuity": []
+      }
+    },
+    {
+      "localityId": "locality-47a4c66bd2aedb68",
+      "position": 5,
+      "label": "Vita és kibékülés Emma lakásában, arról, ki nem keresett kit, majd bemutatja eszközeit, elindít egy gépet, majd csókolózás kezdődik és átvonulás a hálószobába.",
+      "evidenceSnippet": "amikor megértettük, hogy egyikőnk ellen sem szólt a csend, akkor szépen lassan elcsendesedtünk, de kicsit feszült csend volt ez.. megmutogatta hogy milyen szerszámgépeket szerzett (valami kézműves dolog lehetett, de nem igazán tudom megmondani, hogy mi. agyagra és kerámiázásra hasonlított a környezet, de az eszközök meg sokkal nagyobbak voltak és inkább famunkához illettek). aztán mutatott valami régi gépet, amit sehogy sem tudott beindítani. valami szűk ki helyre kellett benyúlnom és ott rántani a motorindítóját, de kérte hogy vigyázzak, mert ha beindul a motor, akkor könnyen levághatja az ujjam. sikerült beindítani, valamit meg akart nézni közelebbről és bár eddig is közel voltunk, most még közelebb hajolt - persze csak a géphez, de a gép és közte voltam én is - próbáltam több helyet adni neki, valahogy megkerülve átadni neki a helyemet, hogy meg tudja nézni, de akkor felém fordult és csókolózni kezdtünk. minden feszültség elszállt, ahogy átadtuk magunkat egymásnak, felkaptam az ölembe és átmentem vele a hálószobájába. lefektettem az ágyára",
+      "boundaryUncertainty": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-0b42a01ec74e11f3",
+          "snippet": "amikor megértettük, hogy egyikőnk ellen sem szólt a csend, akkor szépen lassan elcsendesedtünk, de kicsit feszült csend volt ez.. megmutogatta hogy milyen szerszámgépeket szerzett (valami kézműves dolog lehetett, de nem igazán tudom megmondani, hogy mi. agyagra és kerámiázásra hasonlított a környezet, de az eszközök meg sokkal nagyobbak voltak és inkább famunkához illettek). aztán mutatott valami régi gépet, amit sehogy sem tudott beindítani. valami szűk ki helyre kellett benyúlnom és ott rántani a motorindítóját, de kérte hogy vigyázzak, mert ha beindul a motor, akkor könnyen levághatja az ujjam. sikerült beindítani, valamit meg akart nézni közelebbről és bár eddig is közel voltunk, most még közelebb hajolt - persze csak a géphez, de a gép és közte voltam én is - próbáltam több helyet adni neki, valahogy megkerülve átadni neki a helyemet, hogy meg tudja nézni, de akkor felém fordult és csókolózni kezdtünk. minden feszültség elszállt, ahogy átadtuk magunkat egymásnak, felkaptam az ölembe és átmentem vele a hálószobájába. lefektettem az ágyára",
+          "spanStart": 1667,
+          "spanEnd": 2725,
+          "contextLabel": "derived_locality"
+        }
+      ],
+      "enrichment": {
+        "affect": [],
+        "agency": [],
+        "interactions": [],
+        "metacognition": [],
+        "phenomenology": [],
+        "continuity": []
+      }
+    },
+    {
+      "localityId": "locality-3f974e436c270ea9",
+      "position": 6,
+      "label": null,
+      "evidenceSnippet": " megmutogatta hogy milyen szerszámgépeket szerzett (valami kézműves dolog lehetett, de nem igazán tudom megmondani, hogy mi. agyagra és kerámiázásra hasonlított a környezet, de az eszközök meg sokkal nagyobbak voltak és inkább famunkához illettek). aztán mutatott valami régi gépet, amit sehogy sem tudott beindítani. valami szűk ki helyre kellett benyúlnom és ott rántani a motorindítóját, de kérte hogy vigyázzak, mert ha beindul a motor, akkor könnyen levághatja az ujjam. sikerült beindítani, valamit meg akart nézni közelebbről és bár eddig is közel voltunk, most még közelebb hajolt - persze csak a géphez, de a gép és közte voltam én is - próbáltam több helyet adni neki, valahogy megkerülve átadni neki a helyemet, hogy meg tudja nézni, de akkor felém fordult és csókolózni kezdtünk. minden feszültség elszállt, ahogy átadtuk magunkat egymásnak, ",
+      "boundaryUncertainty": "exact",
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-59e14f53b9e9d774",
+          "snippet": " megmutogatta hogy milyen szerszámgépeket szerzett (valami kézműves dolog lehetett, de nem igazán tudom megmondani, hogy mi. agyagra és kerámiázásra hasonlított a környezet, de az eszközök meg sokkal nagyobbak voltak és inkább famunkához illettek). aztán mutatott valami régi gépet, amit sehogy sem tudott beindítani. valami szűk ki helyre kellett benyúlnom és ott rántani a motorindítóját, de kérte hogy vigyázzak, mert ha beindul a motor, akkor könnyen levághatja az ujjam. sikerült beindítani, valamit meg akart nézni közelebbről és bár eddig is közel voltunk, most még közelebb hajolt - persze csak a géphez, de a gép és közte voltam én is - próbáltam több helyet adni neki, valahogy megkerülve átadni neki a helyemet, hogy meg tudja nézni, de akkor felém fordult és csókolózni kezdtünk. minden feszültség elszállt, ahogy átadtuk magunkat egymásnak, ",
+          "spanStart": 1796,
+          "spanEnd": 2650,
+          "contextLabel": "recovery_region"
+        }
+      ],
+      "enrichment": {
+        "affect": [],
+        "agency": [],
+        "interactions": [],
+        "metacognition": [],
+        "phenomenology": [],
+        "continuity": []
+      }
+    },
+    {
+      "localityId": "locality-9c4e4d12e4f0676a",
+      "position": 7,
+      "label": "Felfedezés, hogy a hálószoba másként van berendezve, két ajtója van, az egyik csak támaszkodik, nem zárható, Emma segít becsukni.",
+      "evidenceSnippet": "máshogy van a szobája, két ajtaja is van.. mondta, hogy régen is kettő volt, csak le volt takarva valami függönnyel az ajtó, de valamiért ki kellett nyitnia teret és azóta így van. ez az új ajtó közvetlenül az ágya mellett volt, de nem volt rögzítve, csak egyszerűen a falnak volt támasztva. mivel az előző pillanatban még szeretkezni készültünk, ezért gondoltam, hogy becsukom ezt az ajtót, de akkor vettem észre, hogy nincs rögzítve és sehogy sem sikerült becsuknom. végül elmagyarázta, hogy valahogy a fejfához kell illesztenem, de így sem sikerült, csak amikor felállt segíteni. kiderült h felül szögek vannak és ezekre kell ügyesen akasztani az ajtót. ",
+      "boundaryUncertainty": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-9c7916d0353ff08c",
+          "snippet": "máshogy van a szobája, két ajtaja is van.. mondta, hogy régen is kettő volt, csak le volt takarva valami függönnyel az ajtó, de valamiért ki kellett nyitnia teret és azóta így van. ez az új ajtó közvetlenül az ágya mellett volt, de nem volt rögzítve, csak egyszerűen a falnak volt támasztva. mivel az előző pillanatban még szeretkezni készültünk, ezért gondoltam, hogy becsukom ezt az ajtót, de akkor vettem észre, hogy nincs rögzítve és sehogy sem sikerült becsuknom. végül elmagyarázta, hogy valahogy a fejfához kell illesztenem, de így sem sikerült, csak amikor felállt segíteni. kiderült h felül szögek vannak és ezekre kell ügyesen akasztani az ajtót. ",
+          "spanStart": 2760,
+          "spanEnd": 3417,
+          "contextLabel": "derived_locality"
+        }
+      ],
+      "enrichment": {
+        "affect": [],
+        "agency": [],
+        "interactions": [],
+        "metacognition": [],
+        "phenomenology": [],
+        "continuity": []
+      }
+    },
+    {
+      "localityId": "locality-9670d32fd5662b10",
+      "position": 8,
+      "label": null,
+      "evidenceSnippet": ", de valamiért ki kellett nyitnia teret és azóta így van. ez az új ajtó közvetlenül az ágya mellett volt, de nem volt rögzítve, csak egyszerűen a falnak volt támasztva. mivel az előző pillanatban még szeretkezni készültünk, ezért gondoltam, hogy becsukom ezt az ajtót, de akkor vettem észre, hogy nincs rögzítve és sehogy sem sikerült becsuknom. ",
+      "boundaryUncertainty": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-00ba6911efa99a7c",
+          "snippet": ", de valamiért ki kellett nyitnia teret és azóta így van. ez az új ajtó közvetlenül az ágya mellett volt, de nem volt rögzítve, csak egyszerűen a falnak volt támasztva. mivel az előző pillanatban még szeretkezni készültünk, ezért gondoltam, hogy becsukom ezt az ajtót, de akkor vettem észre, hogy nincs rögzítve és sehogy sem sikerült becsuknom. ",
+          "spanStart": 2883,
+          "spanEnd": 3229,
+          "contextLabel": "recovery_region"
+        }
+      ],
+      "enrichment": {
+        "affect": [],
+        "agency": [],
+        "interactions": [],
+        "metacognition": [],
+        "phenomenology": [],
+        "continuity": []
+      }
+    }
+  ],
+  "units": [
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-bc2e2ed19301112b",
+      "localityId": "locality-8adce6f26312affd",
+      "position": 0,
+      "statement": "Álmodtam emmáról, ahol úgy tűnt, mintha jobban össze lettünk volna melegedve, mint a valóságban, mivel jártam már a lakásán és jobban ismertem a hobbijait meg mindennapjait.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-9d5a9404ca7eac8d",
+          "snippet": "emmáról álmodtam. kevés előzménye van meg a történetnek, de úgy tűnt mintha jobban össze lettünk volna melegedve, mint a valóságban. legalábbis jártam már a lakásán és jobban ismertem a hobbijait meg a mindennapjait.",
+          "spanStart": 0,
+          "spanEnd": 216,
+          "contextLabel": "quoted_support"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-9b68ffae89815d2b",
+      "localityId": "locality-8adce6f26312affd",
+      "position": 1,
+      "statement": "Több hónapja nem találkoztunk emmával.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-cd50563e34d2af5b",
+          "snippet": "viszont egy jó ideje már nem találkoztunk, több hónapja.",
+          "spanStart": 217,
+          "spanEnd": 273,
+          "contextLabel": "quoted_support"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-1730bb7f9e2ad2e9",
+      "localityId": "locality-8adce6f26312affd",
+      "position": 2,
+      "statement": "Anyámmal utaztunk valahova.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-65ee0d323ba2a5de",
+          "snippet": "aztán valahova utaztunk anyámmal",
+          "spanStart": 274,
+          "spanEnd": 306,
+          "contextLabel": "quoted_support"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-b61b00aa78b9569b",
+      "localityId": "locality-5b0c045e4aafe190",
+      "position": 3,
+      "statement": "Elmentem Emma lakására valami hiány miatt, bár Emma nem volt otthon éjszaka.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-1916db390ae9d8d9",
+          "snippet": "és valami hiányzott, ezért elmentem emma lakására, mert biztos voltam benne, hogy nála lesz.",
+          "spanStart": 307,
+          "spanEnd": 399,
+          "contextLabel": "quoted_support"
+        },
+        {
+          "evidenceId": "evidence-51e73b8bfc4df61b",
+          "snippet": "valami hiányzott, ezért elmentem emma lakására, mert biztos voltam benne, hogy nála lesz. emma viszont nem volt otthon pedig éjszaka volt.",
+          "spanStart": 310,
+          "spanEnd": 448,
+          "contextLabel": "Megérkezés Emma lakására"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-724d3a7309cacf7f",
+      "localityId": "locality-5b0c045e4aafe190",
+      "position": 4,
+      "statement": "Lepihentem Emma ágyában, mert korábban is aludtam már ott, nem zavartam magam.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-16fc931b0a1c6c31",
+          "snippet": "én valamiért úgy döntöttem, hogy lepihenek az ágyában - nem ez volt az első alkalom, hogy az ágyában aludtam, ezért nem zavartattam magam különösebben..",
+          "spanStart": 449,
+          "spanEnd": 601,
+          "contextLabel": "Ágyban lepihenés"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-ef597bd4d025b347",
+      "localityId": "locality-15b4513d85237cd0",
+      "position": 5,
+      "statement": "Amikor felébredtem, elkezdtem összeszedni a cuccaimat, több szobában is voltak, ezért egy zsákot is el kellett vennem, mert nem tudtam kézben vinni ennyi dolgot.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-efddcd1ec7bf48f7",
+          "snippet": "amikor felébredtem elkezdtem összeszedni a cuccaimat. gondoltam ha már itt vagyok, akkor összeszedek mindent. több szobában is voltak és egy zsákot is el kellett vennem, mert ennyi dolgot már nem tudtam kézben vinni.",
+          "spanStart": 602,
+          "spanEnd": 818,
+          "contextLabel": "dream narrative"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-44e5469d821b25c1",
+      "localityId": "locality-15b4513d85237cd0",
+      "position": 6,
+      "statement": "Az igazat megvallva, nem csak a saját dolgaimat pakoltam el, hanem emlékeket is.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-99066f8dc1fe98f8",
+          "snippet": "az igazat megvallva azt hiszem, hogy nem csak a saját cuccaimat raktam el, de emlékeket is.",
+          "spanStart": 819,
+          "spanEnd": 910,
+          "contextLabel": "dream narrative"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-24480b8e849c4cb9",
+      "localityId": "locality-0551c2b26879024d",
+      "position": 7,
+      "statement": "Elkezdtem visszarendezni Emma szobáját, utoljára az ágyat hagytam megágyazásra.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-16d9f0bda433be1a",
+          "snippet": "amikor mindent összepakoltam, akkor elkezdtem visszaállítani a szobáját, utoljára az ágyat hagytam, de amikor elkezdtem megágyazni ",
+          "spanStart": 911,
+          "spanEnd": 1042,
+          "contextLabel": "Szoba visszarendezése"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-fed031ef09455538",
+      "localityId": "locality-7a27624387b80870",
+      "position": 8,
+      "statement": "Éppen visszarendeztem Emma szobáját az emlékezetem szerint, amikor hazaért, hangosan köszönt az üres lakásnak, nem tudva, hogy ott vagyok.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-cfed3786e6e72219",
+          "snippet": "amikor elkezdtem megágyazni és szépen visszarendezni olyanra, amilyen az emlékezetemben volt, akkor hazaért. hangosan köszönt az üres lakásnak - azt egyáltalán nem tudhatta, hogy én ott vagyok",
+          "spanStart": 1014,
+          "spanEnd": 1206,
+          "contextLabel": "bounded gap text"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-d1fa57bee6e21390",
+      "localityId": "locality-7a27624387b80870",
+      "position": 9,
+      "statement": "Emma haragra gerjedt a meglepetés miatt; én nem vitatkoztam vele, csak próbáltam kimagyarázni magam.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-7413a5f49a501557",
+          "snippet": "majd sokkolta a meglepetés, hogy ott vagyok. teljesen érthető haragra gerjedt, amivel én nem is vitatkoztam, csak próbáltam elcsatornázni azzal, hogy kimagyarázom magam a helyzetből",
+          "spanStart": 1209,
+          "spanEnd": 1390,
+          "contextLabel": "bounded gap text"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-c7ce8e2d9de86fe9",
+      "localityId": "locality-7a27624387b80870",
+      "position": 10,
+      "statement": "Kezdődött vita arról, hogy ki nem kereste ki kit: én kiabáltam, mert úgy éreztem, hogy ő hagyott ott engem és soha nem keresett, de ő is hasonlóan érezte, hogy nekem kellett volna keresnem őt és csalódott volt emiatt.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-ac60ccd3cbe24258",
+          "snippet": "aztán hamar téma lett, hogy ki nem keresett kit, és akkor már nem fogtam vissza magam és én is kiabáltam, mert úgy éreztem, hogy ő hagyott ott engem, ő nem keresett soha. de ő is így érezte. szerinte nekem kellett volna keresnem őt és nagyon csalódott volt, hogy nem tettem",
+          "spanStart": 1392,
+          "spanEnd": 1665,
+          "contextLabel": "bounded gap text"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-3a9ad164140efeae",
+      "localityId": "locality-47a4c66bd2aedb68",
+      "position": 11,
+      "statement": "Miután megértettük, hogy egyikünk sem szándékosan nem kereste a másikat, elcsendesedtünk feszültséggel.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-c06faa62f41e2b8e",
+          "snippet": "amikor megértettük, hogy egyikőnk ellen sem szólt a csend, akkor szépen lassan elcsendesedtünk, de kicsit feszült csend volt ez..",
+          "spanStart": 1667,
+          "spanEnd": 1796,
+          "contextLabel": "Feszültséggel teli elcsendesedés"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-000dc8eaeb9182d4",
+      "localityId": "locality-3f974e436c270ea9",
+      "position": 12,
+      "statement": "Megmutatta a kézműves szerszámgépeket, amelyek inkább famunkához illettek, környezetük agyagra és kerámiázásra hasonlított, de a gépek nagyobbak voltak.",
+      "category": "other",
+      "uncertaintyNote": "low",
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-505ea4860e52eb2d",
+          "snippet": "megmutogatta hogy milyen szerszámgépeket szerzett (valami kézműves dolog lehetett, de nem igazán tudom megmondani, hogy mi. agyagra és kerámiázásra hasonlított a környezet, de az eszközök meg sokkal nagyobbak voltak és inkább famunkához illettek)",
+          "spanStart": 1797,
+          "spanEnd": 2043,
+          "contextLabel": "bounded gap"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-7582a846cda67f44",
+      "localityId": "locality-3f974e436c270ea9",
+      "position": 13,
+      "statement": "Megpróbált beindítani egy régi gépet, amelynek motorindítóját egy szűk helyen kellett meghúzni, és figyelmeztetett a motorindítás veszélyeire, mint az ujjal való sérülésre.",
+      "category": "other",
+      "uncertaintyNote": "low",
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-39f32b72587915cc",
+          "snippet": "mutatott valami régi gépet, amit sehogy sem tudott beindítani. valami szűk ki helyre kellett benyúlnom és ott rántani a motorindítóját, de kérte hogy vigyázzak, mert ha beindul a motor, akkor könnyen levághatja az ujjam",
+          "spanStart": 2051,
+          "spanEnd": 2270,
+          "contextLabel": "bounded gap"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-317178b103696bab",
+      "localityId": "locality-3f974e436c270ea9",
+      "position": 14,
+      "statement": "Sikerült beindítani a motort, majd közelebbről is megnézett valamit a gépen. Közben közelebb hajolt a géphez, miközben köztük álltam, próbáltam több helyet adni neki, majd felém fordult és csókolózni kezdtek, ami minden feszültséget eloszlatott.",
+      "category": "other",
+      "uncertaintyNote": "low",
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-229c7a404e4756a8",
+          "snippet": "sikerült beindítani, valamit meg akart nézni közelebbről és bár eddig is közel voltunk, most még közelebb hajolt - persze csak a géphez, de a gép és közte voltam én is - próbáltam több helyet adni neki, valahogy megkerülve átadni neki a helyemet, hogy meg tudja nézni, de akkor felém fordult és csókolózni kezdtünk. minden feszültség elszállt, ahogy átadtuk magunkat egymásnak",
+          "spanStart": 2272,
+          "spanEnd": 2648,
+          "contextLabel": "bounded gap"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-f92340024a3bd4bb",
+      "localityId": "locality-47a4c66bd2aedb68",
+      "position": 15,
+      "statement": "Felkaptam őt az ölembe és átvittük a hálószobába, ahol lefektettem az ágyára, és csak ekkor vettem észre, hogy a hálószobának két ajtaja van; korábban ugyanúgy kettő volt, de az egyik ajtót függöny takarta.",
+      "category": "other",
+      "uncertaintyNote": "low",
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-e4bdec26c5f22105",
+          "snippet": "felkaptam az ölembe és átmentem vele a hálószobájába. lefektettem az ágyára",
+          "spanStart": 2650,
+          "spanEnd": 2725,
+          "contextLabel": "Átvonulás hálószobába"
+        },
+        {
+          "evidenceId": "evidence-53e8184761bce209",
+          "snippet": "felkaptam az ölembe és átmentem vele a hálószobájába. lefektettem az ágyára, és csak akkor vettem észre, hogy máshogy van a szobája, két ajtaja is van.. mondta, hogy régen is kettő volt, csak le volt takarva valami függönnyel az ajtó",
+          "spanStart": 2650,
+          "spanEnd": 2883,
+          "contextLabel": "bounded gap"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-dd8220ef6b735aaa",
+      "localityId": "locality-9c4e4d12e4f0676a",
+      "position": 16,
+      "statement": "A hálószoba máshogy nézett ki, két ajtó is volt, az egyik új, régen is kettő volt, de le volt takarva függönnyel.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-375caeff64e3746b",
+          "snippet": "máshogy van a szobája, két ajtaja is van.. mondta, hogy régen is kettő volt, csak le volt takarva valami függönnyel az ajtó",
+          "spanStart": 2760,
+          "spanEnd": 2883,
+          "contextLabel": "Két ajtó a hálószobában"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-09442f028d83517a",
+      "localityId": "locality-9670d32fd5662b10",
+      "position": 17,
+      "statement": "Az új ajtó az ágy mellett volt, de nem volt rögzítve, csak a falnak támasztva.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-ad61241c44124e84",
+          "snippet": "ez az új ajtó közvetlenül az ágya mellett volt, de nem volt rögzítve, csak egyszerűen a falnak volt támasztva.",
+          "spanStart": 2941,
+          "spanEnd": 3051,
+          "contextLabel": "bounded_gap"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-96f3bb2647f2ff9a",
+      "localityId": "locality-9670d32fd5662b10",
+      "position": 18,
+      "statement": "A becsukására tett kísérletek sikertelenek voltak, mert az ajtó nincsen rögzítve.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-58207a4d5a260b3f",
+          "snippet": "mivel az előző pillanatban még szeretkezni készültünk, ezért gondoltam, hogy becsukom ezt az ajtót, de akkor vettem észre, hogy nincs rögzítve és sehogy sem sikerült becsuknom.",
+          "spanStart": 3052,
+          "spanEnd": 3228,
+          "contextLabel": "bounded_gap"
+        }
+      ],
+      "enrichmentTags": []
+    },
+    {
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "unitId": "unit-df120b69be785e3b",
+      "localityId": "locality-9c4e4d12e4f0676a",
+      "position": 19,
+      "statement": "Emma elmagyarázta, hogy a fejfához kell illeszteni az ajtót, felül szögek vannak, amikre fel kell akasztani, végül ő segített becsukni.",
+      "category": "other",
+      "uncertaintyNote": null,
+      "evidenceRefs": [
+        {
+          "evidenceId": "evidence-339843d41c7399bd",
+          "snippet": "végül elmagyarázta, hogy valahogy a fejfához kell illesztenem, de így sem sikerült, csak amikor felállt segíteni. kiderült h felül szögek vannak és ezekre kell ügyesen akasztani az ajtót.",
+          "spanStart": 3229,
+          "spanEnd": 3416,
+          "contextLabel": "bounded_gap"
+        },
+        {
+          "evidenceId": "evidence-7f9b3462a9f8be0e",
+          "snippet": "végül elmagyarázta, hogy valahogy a fejfához kell illesztenem, de így sem sikerült, csak amikor felállt segíteni. kiderült h felül szögek vannak és ezekre kell ügyesen akasztani az ajtót. ",
+          "spanStart": 3229,
+          "spanEnd": 3417,
+          "contextLabel": "Az ajtó rögzítése"
+        }
+      ],
+      "enrichmentTags": []
+    }
+  ],
+  "uncertaintyRecords": [
+    {
+      "canonicalUncertaintyId": "uncertainty-91c48dcebb1efd49",
+      "subjectType": "alternative",
+      "subjectId": "alternative-034060264cf96474",
+      "uncertaintyType": "alternative_preserved",
+      "note": null
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-3a5b124f5423958a",
+      "subjectType": "alternative",
+      "subjectId": "alternative-70cdc0145757d65c",
+      "uncertaintyType": "alternative_preserved",
+      "note": null
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-268a48d5fb506a42",
+      "subjectType": "bundle",
+      "subjectId": null,
+      "uncertaintyType": "certainty_assessment_unavailable",
+      "note": "exact"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-edcd93f3c4557a71",
+      "subjectType": "bundle",
+      "subjectId": null,
+      "uncertaintyType": "certainty_assessment_unavailable",
+      "note": "low"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-edcd93f3c4557a71",
+      "subjectType": "bundle",
+      "subjectId": null,
+      "uncertaintyType": "certainty_assessment_unavailable",
+      "note": "low"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-edcd93f3c4557a71",
+      "subjectType": "bundle",
+      "subjectId": null,
+      "uncertaintyType": "certainty_assessment_unavailable",
+      "note": "low"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-edcd93f3c4557a71",
+      "subjectType": "bundle",
+      "subjectId": null,
+      "uncertaintyType": "certainty_assessment_unavailable",
+      "note": "low"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-990477f682d31d8d",
+      "subjectType": "bundle",
+      "subjectId": null,
+      "uncertaintyType": "certainty_assessment_unavailable",
+      "note": "strict"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-3b790887e2470016",
+      "subjectType": "locality",
+      "subjectId": "locality-3f974e436c270ea9",
+      "uncertaintyType": "boundary_uncertainty",
+      "note": "exact"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-dd454ffec27ed46d",
+      "subjectType": "locality",
+      "subjectId": "locality-7a27624387b80870",
+      "uncertaintyType": "boundary_uncertainty",
+      "note": "strict"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-4ca95c6249cfc2ec",
+      "subjectType": "unit",
+      "subjectId": "unit-000dc8eaeb9182d4",
+      "uncertaintyType": "statement_uncertainty",
+      "note": "low"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-927a5e62b1928ae9",
+      "subjectType": "unit",
+      "subjectId": "unit-317178b103696bab",
+      "uncertaintyType": "statement_uncertainty",
+      "note": "low"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-f336fa5378d3629b",
+      "subjectType": "unit",
+      "subjectId": "unit-7582a846cda67f44",
+      "uncertaintyType": "statement_uncertainty",
+      "note": "low"
+    },
+    {
+      "canonicalUncertaintyId": "uncertainty-cbb22d5ee92c96ea",
+      "subjectType": "unit",
+      "subjectId": "unit-f92340024a3bd4bb",
+      "uncertaintyType": "statement_uncertainty",
+      "note": "low"
+    }
+  ],
+  "provenance": {
+    "provenanceId": "canonical-provenance-ef395edcb83ad4e8",
+    "sourceId": "source-f66c11af2aeb",
+    "sourceHash": "f66c11af2aeb609ca7b239ba25691cb200a5224c5ad4ff4bba4e5f7c45183c55",
+    "sourceLength": 3435,
+    "primaryRealizationRefs": [
+      "native-c0-1807b2e36764d32b"
+    ],
+    "supplementalRealizationPackageRefs": [
+      "supplemental-12561196585e7ff7"
+    ],
+    "compositionResultRef": "composition:composition-provenance-8e2856d7c0733294"
+  },
+  "glossaryContext": {
+    "confirmedTerms": [],
+    "appearanceRecords": [],
+    "candidates": [
+      {
+        "glossaryCandidateId": "6667b779-daf1-4c09-9bc0-8b60aa03a730",
+        "displayLabel": "Rendezgetés Emma lakásában",
+        "normalizedKey": "rendezgetes emma lakasaban",
+        "sourceCategory": "location",
+        "candidateClass": "new_candidate",
+        "state": "candidate",
+        "sourceObservationStableId": null
+      },
+      {
+        "glossaryCandidateId": "9496741b-90ad-468e-8961-bbbc880a0968",
+        "displayLabel": "Felfedezés",
+        "normalizedKey": "felfedezes",
+        "sourceCategory": "location",
+        "candidateClass": "new_candidate",
+        "state": "candidate",
+        "sourceObservationStableId": null
+      }
+    ]
+  },
+  "existingOpportunityContext": {
+    "identities": [
+      {
+        "identityId": "9771e4ae-0672-4057-b8a6-40be5c2a1cdc",
+        "primaryCategory": "transition",
+        "secondaryCategories": [
+          "ambiguity",
+          "tension"
+        ],
+        "lifecycleState": "emerging",
+        "latestStructure": {
+          "structureType": "A_TO_B_TO_C",
+          "nodes": [
+            "Alapos előkészítés hetekkel korábban (becsomagolt hátizsákok)",
+            "Rájön, hogy hiányos a pakolás, többször visszaszalad szobába a hiányzó tárgyakért",
+            "Feszültség és kritika kialakulása anyával a pakolás miatti készenlét hiánya miatt"
+          ]
+        },
+        "recentManifestationSummaries": [
+          {
+            "manifestationId": "a370049f-f327-46ff-8438-375a5f8d979f",
+            "priorityReflectiveObjectId": "ee512505-287d-49ec-8e82-0eaf219ad224",
+            "structure": {
+              "kind": "A_TO_B_TO_C",
+              "label": "Alapos előkészítés hetekkel korábban (becsomagolt hátizsákok) -> Rájön, hogy hiányos a pakolás, többször visszaszalad szobába a hiányzó tárgyakért -> Feszültség és kritika kialakulása anyával a pakolás miatti készenlét hiánya miatt",
+              "elements": [
+                "Alapos előkészítés hetekkel korábban (becsomagolt hátizsákok)",
+                "Rájön, hogy hiányos a pakolás, többször visszaszalad szobába a hiányzó tárgyakért",
+                "Feszültség és kritika kialakulása anyával a pakolás miatti készenlét hiánya miatt"
+              ],
+              "metadata": {
+                "gaps": [],
+                "edges": [
+                  {
+                    "to": "B",
+                    "from": "A",
+                    "relation": "átmenet"
+                  },
+                  {
+                    "to": "C",
+                    "from": "B",
+                    "relation": "átmenet"
+                  }
+                ],
+                "nodes": [
+                  {
+                    "key": "A",
+                    "kind": "agency",
+                    "label": "Alapos előkészítés hetekkel korábban (becsomagolt hátizsákok)"
+                  },
+                  {
+                    "key": "B",
+                    "kind": "agency",
+                    "label": "Rájön, hogy hiányos a pakolás, többször visszaszalad szobába a hiányzó tárgyakért"
+                  },
+                  {
+                    "key": "C",
+                    "kind": "affect",
+                    "label": "Feszültség és kritika kialakulása anyával a pakolás miatti készenlét hiánya miatt"
+                  }
+                ],
+                "tensions": [
+                  {
+                    "between": [
+                      "B",
+                      "C"
+                    ],
+                    "description": "Káosz és kapkodás a pakolásban kontrasztban az anya feszültségével és kritikus hozzáállásával"
+                  }
+                ],
+                "continuitySignals": [
+                  {
+                    "kind": "none",
+                    "description": null,
+                    "referenceId": null
+                  }
+                ]
+              }
+            },
+            "primaryEvidenceObservationTexts": []
+          }
+        ]
+      },
+      {
+        "identityId": "17374c4e-8f67-4057-a8b3-966e9ef9102c",
+        "primaryCategory": "salience_signal",
+        "secondaryCategories": [
+          "ambiguity"
+        ],
+        "lifecycleState": "emerging",
+        "latestStructure": {
+          "structureType": "SALIENCE_SIGNAL",
+          "nodes": [
+            "Érzékelt jelenlét, amit az álmodó erősen észlel, de nem lát tisztán objektíven (pl. Kozmó fésűje miatt visszaszaladás)"
+          ]
+        },
+        "recentManifestationSummaries": [
+          {
+            "manifestationId": "ce2040ee-c299-42fa-9048-a66f941ba0a8",
+            "priorityReflectiveObjectId": "ee512505-287d-49ec-8e82-0eaf219ad224",
+            "structure": {
+              "kind": "SALIENCE_SIGNAL",
+              "label": "Feltűnő jelenlét jelzése, amely nem konkrét vizuális megjelenésből, hanem erős érzetből áll, különálló reflektív szerkez",
+              "elements": [
+                "Érzékelt jelenlét, amit az álmodó erősen észlel, de nem lát tisztán objektíven (pl. Kozmó fésűje miatt visszaszaladás)"
+              ],
+              "metadata": {
+                "gaps": [],
+                "edges": [],
+                "nodes": [
+                  {
+                    "key": "F",
+                    "kind": "phenomenon",
+                    "label": "Érzékelt jelenlét, amit az álmodó erősen észlel, de nem lát tisztán objektíven (pl. Kozmó fésűje miatt visszaszaladás)"
+                  }
+                ],
+                "tensions": [],
+                "continuitySignals": [
+                  {
+                    "kind": "none",
+                    "description": null,
+                    "referenceId": null
+                  }
+                ]
+              }
+            },
+            "primaryEvidenceObservationTexts": []
+          }
+        ]
+      },
+      {
+        "identityId": "9f60f76f-cf55-40d0-b877-b3c30097801d",
+        "primaryCategory": "transition",
+        "secondaryCategories": [
+          "relationship",
+          "ambiguity"
+        ],
+        "lifecycleState": "emerging",
+        "latestStructure": {
+          "structureType": "A_TO_B",
+          "nodes": [
+            "álmodó bizonytalansága álmodás és irányítás kapcsán",
+            "álmodó aktív álomirányító szerepben, a környezet megváltoztatásával (házszám 15-ről 16-ra váltás)"
+          ]
+        },
+        "recentManifestationSummaries": [
+          {
+            "manifestationId": "684b01dd-bf90-415b-9f87-bcf78f160e1f",
+            "priorityReflectiveObjectId": "40a5454a-20c1-43d1-932e-66e5d145f800",
+            "structure": {
+              "kind": "A_TO_B",
+              "label": "álmodó bizonytalansága álmodás és irányítás kapcsán -> álmodó aktív álomirányító szerepben, a környezet megváltoztatásával (házszám 15-ről 16-ra váltás)",
+              "elements": [
+                "álmodó bizonytalansága álmodás és irányítás kapcsán",
+                "álmodó aktív álomirányító szerepben, a környezet megváltoztatásával (házszám 15-ről 16-ra váltás)"
+              ],
+              "metadata": {
+                "gaps": [],
+                "edges": [
+                  {
+                    "to": "B",
+                    "from": "A",
+                    "relation": "átmenet"
+                  }
+                ],
+                "nodes": [
+                  {
+                    "key": "A",
+                    "kind": "affect",
+                    "label": "álmodó bizonytalansága álmodás és irányítás kapcsán"
+                  },
+                  {
+                    "key": "B",
+                    "kind": "agency",
+                    "label": "álmodó aktív álomirányító szerepben, a környezet megváltoztatásával (házszám 15-ről 16-ra váltás)"
+                  }
+                ],
+                "tensions": [],
+                "continuitySignals": [
+                  {
+                    "kind": "none",
+                    "description": null,
+                    "referenceId": null
+                  }
+                ]
+              }
+            },
+            "primaryEvidenceObservationTexts": []
+          }
+        ]
+      },
+      {
+        "identityId": "3250c44b-f1d6-416a-b800-032ebf77f364",
+        "primaryCategory": "transition",
+        "secondaryCategories": [
+          "ambiguity",
+          "salience_signal"
+        ],
+        "lifecycleState": "emerging",
+        "latestStructure": {
+          "structureType": "A_TO_B",
+          "nodes": [
+            "eső nagyon esik",
+            "eső hirtelen eláll, beszürkül a környezet"
+          ]
+        },
+        "recentManifestationSummaries": [
+          {
+            "manifestationId": "e1fb4f3e-ed58-4b6d-8eb9-fa57eec7374f",
+            "priorityReflectiveObjectId": "40a5454a-20c1-43d1-932e-66e5d145f800",
+            "structure": {
+              "kind": "A_TO_B",
+              "label": "eső nagyon esik -> eső hirtelen eláll, beszürkül a környezet",
+              "elements": [
+                "eső nagyon esik",
+                "eső hirtelen eláll, beszürkül a környezet"
+              ],
+              "metadata": {
+                "gaps": [],
+                "edges": [
+                  {
+                    "to": "B",
+                    "from": "A",
+                    "relation": "átmenet"
+                  }
+                ],
+                "nodes": [
+                  {
+                    "key": "A",
+                    "kind": "phenomenon",
+                    "label": "eső nagyon esik"
+                  },
+                  {
+                    "key": "B",
+                    "kind": "phenomenon",
+                    "label": "eső hirtelen eláll, beszürkül a környezet"
+                  }
+                ],
+                "tensions": [],
+                "continuitySignals": [
+                  {
+                    "kind": "none",
+                    "description": null,
+                    "referenceId": null
+                  }
+                ]
+              }
+            },
+            "primaryEvidenceObservationTexts": []
+          }
+        ]
+      }
+    ]
+  },
+  "reflectionContext": {
+    "reflections": []
+  }
+}

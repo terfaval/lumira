@@ -68,6 +68,15 @@ export interface ObservationV2BoundaryReason {
   note: string;
 }
 
+export interface ObservationV2SceneGroundingDegradation {
+  status: "partial_scene_salvage";
+  sceneGroundingFailed: true;
+  salvageMethod: "observation_level_grounding";
+  originalObservationCount: number;
+  retainedObservationCount: number;
+  removedObservationCount: number;
+}
+
 export interface ObservationV2Observation {
   observationId: string;
   position: number;
@@ -101,6 +110,7 @@ export interface ObservationV2Scene {
   summary: string;
   boundaryReasoning: ObservationV2BoundaryReason[];
   uncertaintyNotes?: string[];
+  groundingDegradation?: ObservationV2SceneGroundingDegradation;
   evidenceContext: ObservationV2EvidenceRef;
   observations: ObservationV2Observation[];
   derived: ObservationV2DerivedStructures;

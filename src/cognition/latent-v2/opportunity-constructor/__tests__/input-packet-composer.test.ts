@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { composeOpportunityConstructorInputPacket } from "@/src/cognition/latent-v2/opportunity-constructor/input-packet-composer";
+import {
+  composeOpportunityConstructorInputPacket,
+  composeOpportunityConstructorInputPacketWithProvenance,
+} from "@/src/cognition/latent-v2/opportunity-constructor/input-packet-composer";
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type {
   GlossaryAppearanceRecord,
@@ -9,8 +12,9 @@ import type {
 } from "@/src/domain/glossary/types";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
 import type { LatentOpportunityManifestation } from "@/src/domain/latent-v2/types";
-import type { ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationNativeReadRepository } from "@/src/domain/observation/native-read";
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
+import type { ObservationV3AuthorityRecord } from "@/src/domain/observation/v3-authority";
 import type { ReflectionRepository } from "@/src/domain/reflections/contracts";
 import type { Reflection } from "@/src/domain/reflections/types";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
@@ -214,6 +218,251 @@ function createObservationBundle(): ObservationV2Bundle {
         },
       },
     ],
+  };
+}
+
+function createObservationV3AuthorityRecord(): ObservationV3AuthorityRecord {
+  return {
+    authorityId: "authority-1",
+    userId: "user-1",
+    reflectiveObjectId: "object-1",
+    sourceIdentity: {
+      sourceId: "source-1",
+      sourceHash: "source-hash-1",
+      sourceLength: 96,
+    },
+    canonicalCandidate: {
+      canonicalCandidateId: "canonical-1",
+      sourceIdentity: {
+        sourceId: "source-1",
+        sourceHash: "source-hash-1",
+        sourceLength: 96,
+      },
+      composedCandidateIdentity: {
+        composedCandidateId: "composed-1",
+        composedCandidateHash: "composed-hash-1",
+      },
+      localities: [
+        {
+          canonicalLocalityId: "locality-hallway",
+          derivedFromLocalityIds: ["derived-hallway"],
+          order: 1,
+          label: "Hallway",
+          sourceStart: 0,
+          sourceEnd: 49,
+          boundaryUncertainty: "the hallway edges remain fuzzy",
+          evidenceRefs: [
+            {
+              evidenceId: "evidence-locality-hallway",
+              sourceHash: "source-hash-1",
+              snippet: "I feel watched",
+              spanStart: 0,
+              spanEnd: 14,
+              contextLabel: "scene",
+            },
+          ],
+        },
+        {
+          canonicalLocalityId: "locality-kitchen",
+          derivedFromLocalityIds: ["derived-kitchen"],
+          order: 2,
+          label: "Kitchen",
+          sourceStart: 50,
+          sourceEnd: 68,
+          boundaryUncertainty: null,
+          evidenceRefs: [
+            {
+              evidenceId: "evidence-locality-kitchen",
+              sourceHash: "source-hash-1",
+              snippet: "in the kitchen",
+              spanStart: 57,
+              spanEnd: 68,
+              contextLabel: "scene",
+            },
+          ],
+        },
+      ],
+      descriptiveUnits: [
+        {
+          canonicalUnitId: "unit-presence",
+          derivedFromUnitIds: ["derived-unit-presence"],
+          localityId: "locality-hallway",
+          order: 1,
+          statement: "I feel watched even though I cannot clearly see the figure.",
+          evidenceRefs: [
+            {
+              evidenceId: "evidence-presence",
+              sourceHash: "source-hash-1",
+              snippet: "feel watched",
+              spanStart: 0,
+              spanEnd: 12,
+              contextLabel: "quoted_support",
+            },
+          ],
+          uncertainty: "the figure remains indistinct",
+        },
+        {
+          canonicalUnitId: "unit-apology",
+          derivedFromUnitIds: ["derived-unit-apology"],
+          localityId: "locality-kitchen",
+          order: 2,
+          statement: "I apologize because I think I caused harm.",
+          evidenceRefs: [
+            {
+              evidenceId: "evidence-apology",
+              sourceHash: "source-hash-1",
+              snippet: "I apologize",
+              spanStart: 15,
+              spanEnd: 26,
+              contextLabel: "quoted_support",
+            },
+          ],
+          uncertainty: null,
+        },
+        {
+          canonicalUnitId: "unit-reassurance",
+          derivedFromUnitIds: ["derived-unit-reassurance"],
+          localityId: "locality-kitchen",
+          order: 3,
+          statement: "She reassures me after I apologize.",
+          evidenceRefs: [
+            {
+              evidenceId: "evidence-reassurance",
+              sourceHash: "source-hash-1",
+              snippet: "reassures me",
+              spanStart: 32,
+              spanEnd: 44,
+              contextLabel: "quoted_support",
+            },
+          ],
+          uncertainty: null,
+        },
+      ],
+      transitions: [],
+      unresolvedAlternatives: [],
+      uncertaintyRecords: [
+        {
+          canonicalUncertaintyId: "uncertainty-1",
+          subjectType: "unit",
+          subjectId: "unit-presence",
+          uncertaintyType: "statement_uncertainty",
+          note: "the figure remains indistinct",
+        },
+      ],
+      provenance: {
+        provenanceId: "provenance-1",
+        sourceIdentity: {
+          sourceId: "source-1",
+          sourceHash: "source-hash-1",
+          sourceLength: 96,
+        },
+        primaryRealizationRefs: ["realization-1"],
+        supplementalRealizationPackageRefs: [],
+        compositionResultRef: "composition-1",
+        composedCandidateId: "composed-1",
+        realizationPolicyVersion: "memory-realization-shadow-v1",
+        realizationPolicyFingerprint: "memory-realization-shadow-v1",
+      },
+      canonicalHash: "canonical-hash-1",
+    },
+    provenanceManifest: {
+      provenanceId: "provenance-1",
+      status: "available",
+      derivationKind: "direct_runtime",
+      sourceBoundaryVersion: "observation_v3_shadow_v1",
+      provenanceTier: "system_extract",
+      dreamLanguage: "en",
+      evidenceRef: "provenance",
+    },
+    completeness: {
+      status: "unavailable",
+      reportId: null,
+      reason: "completeness_input_unavailable",
+      evidenceRef: "completeness",
+    },
+    memoryRealizationValidation: {
+      validationId: "validation-1",
+      status: "pass",
+      candidateHashStable: true,
+      stableOrdering: true,
+      unitIdentitiesAvailable: true,
+      evidenceReferencesAvailable: true,
+      structuralConflicts: [],
+      observations: [],
+      evidenceRef: "validation",
+    },
+    evidenceIntegrity: {
+      assessmentId: "integrity-1",
+      status: "pass",
+      malformedSpanCount: 0,
+      missingSpanCount: 0,
+      outOfBoundsSpanCount: 0,
+      totalEvidenceSpanCount: 3,
+      evidenceRef: "evidence",
+      observations: [],
+    },
+    uncertaintyPreservation: {
+      assessmentId: "uncertainty-1",
+      status: "acceptable",
+      evidenceRef: "uncertainty",
+      observations: [],
+    },
+    admissionIdentityInputComparison: {
+      sourceIdentity: {
+        sourceId: "source-1",
+        sourceHash: "source-hash-1",
+        sourceLength: 96,
+      },
+      parentIdentity: {
+        candidateId: "composed-1",
+        candidateHash: "composed-hash-1",
+      },
+      nativeIdentity: {
+        candidateId: "canonical-1",
+        candidateHash: "canonical-hash-1",
+      },
+      compatibilityIdentity: null,
+      legacyIdentity: null,
+      subsystemFingerprint: "subsystem-1",
+      policyFingerprint: "policy-1",
+      lineageRefs: ["composed-1", "provenance-1"],
+      substantiveEquality: true,
+      classification: "comparison_unavailable",
+      reasonCode: "native_authority",
+      artifactRefs: [],
+    },
+    governanceObservations: [],
+    admissionDecision: {
+      disposition: "admitted",
+      authorityIdentity: {
+        authorityId: "authority-1",
+        sourceId: "source-1",
+        canonicalCandidateId: "canonical-1",
+        candidateHash: "canonical-hash-1",
+        policyFingerprint: "policy-1",
+        shadowStatus: "inactive_non_authoritative",
+      },
+      decisionReasons: ["admitted_core_governance_passed"],
+      blockingFindings: [],
+      nonBlockingObservations: [],
+      requiredNextAction: "none",
+      persistenceEligibility: "authoritative",
+      downstreamEligibility: "authoritative",
+      reusableCandidate: true,
+      audit: {
+        sourceHash: "source-hash-1",
+        candidateHash: "canonical-hash-1",
+        completenessReportId: null,
+        provenanceId: "provenance-1",
+        realizationValidationId: "validation-1",
+        evidenceIntegrityId: "integrity-1",
+        uncertaintyAssessmentId: "uncertainty-1",
+      },
+      policyFingerprint: "policy-1",
+      contractFingerprint: "contract-1",
+    },
+    createdAt: "2026-08-11T10:00:00.000Z",
+    updatedAt: "2026-08-11T10:00:00.000Z",
   };
 }
 
@@ -473,7 +722,7 @@ function createRepositories(options?: {
   reflections?: Reflection[];
 }): {
   reflectiveObjectRepository: ReflectiveObjectRepository;
-  observationV2Repository: ObservationV2Repository;
+  observationNativeReadRepository: ObservationNativeReadRepository;
   glossaryRepository: GlossaryRepository;
   latentOpportunityRepository: LatentOpportunityRepository;
   reflectionRepository: ReflectionRepository;
@@ -550,11 +799,11 @@ function createRepositories(options?: {
       update: vi.fn(),
       archive: vi.fn(),
     },
-    observationV2Repository: {
-      create: vi.fn(),
-      getByBundleId: vi.fn(),
-      getByReflectiveObjectId: vi.fn().mockResolvedValue(createObservationBundle()),
-      archive: vi.fn(),
+    observationNativeReadRepository: {
+      getByReflectiveObjectId: vi.fn().mockResolvedValue({
+        family: "v2",
+        native: createObservationBundle(),
+      }),
     },
     glossaryRepository: {
       listTerms: vi.fn(),
@@ -624,24 +873,44 @@ describe("composeOpportunityConstructorInputPacket", () => {
       priorityReflectiveObjectId: "object-1",
       ...repositories,
     });
+    if ("authority" in packet.generationContext) {
+      throw new Error("Expected V2 packet.");
+    }
+    const v2Packet = packet as import("@/src/cognition/latent-v2/opportunity-constructor").OpportunityConstructorInputPacket;
 
-    expect(packet.generationContext.priorityReflectiveObjectId).toBe("object-1");
-    expect(packet.generationContext.observationBundleId).toBe("bundle-1");
-    expect(packet.scenes.map((scene) => scene.sceneStableId)).toEqual(["scene-a", "scene-b"]);
-    expect(packet.observations.map((observation) => observation.observationStableId)).toEqual([
+    expect(v2Packet.generationContext.priorityReflectiveObjectId).toBe("object-1");
+    expect(v2Packet.generationContext.observationBundleId).toBe("bundle-1");
+    expect(v2Packet.scenes.map((scene) => scene.sceneStableId)).toEqual(["scene-a", "scene-b"]);
+    expect(v2Packet.observations.map((observation) => observation.observationStableId)).toEqual([
       "obs-a1",
       "obs-a2",
       "obs-b1",
       "obs-b2",
     ]);
-    expect(packet.observations.map((observation) => observation.category)).toEqual([
+    expect(v2Packet.observations.map((observation) => observation.category)).toEqual([
       "interaction",
       "affect",
       "interaction",
       "location",
     ]);
-    expect(packet.priorityObject.content).toContain("searching for someone");
-    expect(packet.priorityObject.summary).toBe("Searching through a house before the scene shifts to a stairwell.");
+    expect(v2Packet.priorityObject.content).toContain("searching for someone");
+    expect(v2Packet.priorityObject.summary).toBe("Searching through a house before the scene shifts to a stairwell.");
+  });
+
+  it("routes default latent composition through the native observation read seam without forcing a V2 selector", async () => {
+    const repositories = createRepositories();
+
+    await composeOpportunityConstructorInputPacket({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      ...repositories,
+    });
+
+    expect(repositories.observationNativeReadRepository.getByReflectiveObjectId).toHaveBeenCalledWith({
+      reflectiveObjectId: "object-1",
+      userId: "user-1",
+      resolution: undefined,
+    });
   });
 
   it("includes glossary candidates as context only", async () => {
@@ -787,6 +1056,63 @@ describe("composeOpportunityConstructorInputPacket", () => {
     expect(repositories.reflectionRepository.listReflectionsByUser).toHaveBeenCalledWith("user-1", 8);
   });
 
+  it("composes explicit native V3 latent input without requiring V2 observation ids", async () => {
+    const repositories = createRepositories();
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockResolvedValue({
+      family: "v3",
+      native: createObservationV3AuthorityRecord(),
+    });
+
+    const composed = await composeOpportunityConstructorInputPacketWithProvenance({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      observationResolution: "explicit_v3",
+      ...repositories,
+    });
+
+    expect(composed.family).toBe("v3");
+    if (composed.family !== "v3") {
+      return;
+    }
+
+    expect(composed.packet.generationContext.authority.family).toBe("observation_v3");
+    expect(composed.packet.generationContext.authority.authorityId).toBe("authority-1");
+    expect(composed.packet.units.map((unit) => unit.unitId)).toEqual([
+      "unit-presence",
+      "unit-apology",
+      "unit-reassurance",
+    ]);
+    expect(composed.authorityProvenance.observation).toEqual({
+      family: "observation_v3",
+      authorityId: "authority-1",
+      canonicalObservationId: "canonical-1",
+      canonicalHash: "canonical-hash-1",
+      generationVersion: "observation_v3_shadow_v1",
+    });
+    expect(composed.packet.glossaryContext.candidates.every((candidate) => candidate.sourceObservationStableId === null)).toBe(true);
+    expect(JSON.stringify(composed.packet)).not.toContain("observationV2SceneObservationId");
+    expect(JSON.stringify(composed.packet)).not.toContain("observationBundleId");
+    expect(repositories.observationNativeReadRepository.getByReflectiveObjectId).toHaveBeenCalledWith({
+      reflectiveObjectId: "object-1",
+      userId: "user-1",
+      resolution: "explicit_v3",
+    });
+  });
+
+  it("fails closed when explicit V3 resolution returns no native authority", async () => {
+    const repositories = createRepositories();
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockResolvedValue(null);
+
+    await expect(
+      composeOpportunityConstructorInputPacket({
+        userId: "user-1",
+        priorityReflectiveObjectId: "object-1",
+        observationResolution: "explicit_v3",
+        ...repositories,
+      }),
+    ).rejects.toThrow("Observation not found for reflective object: object-1 (resolution: explicit_v3)");
+  });
+
   it("excludes existing opportunity identities from the current reflective object", async () => {
     const repositories = createRepositories();
 
@@ -903,10 +1229,14 @@ describe("composeOpportunityConstructorInputPacket", () => {
       priorityReflectiveObjectId: "object-1",
       ...repositories,
     });
+    if ("authority" in packet.generationContext) {
+      throw new Error("Expected V2 packet.");
+    }
+    const v2Packet = packet as import("@/src/cognition/latent-v2/opportunity-constructor").OpportunityConstructorInputPacket;
 
-    expect(packet.scenes.map((scene) => scene.position)).toEqual([1, 2]);
-    expect(packet.observations.map((observation) => observation.position)).toEqual([1, 2, 1, 2]);
-    expect(packet.existingOpportunityContext.identities.map((identity) => identity.identityId)).toEqual(["identity-other"]);
+    expect(v2Packet.scenes.map((scene) => scene.position)).toEqual([1, 2]);
+    expect(v2Packet.observations.map((observation) => observation.position)).toEqual([1, 2, 1, 2]);
+    expect(v2Packet.existingOpportunityContext.identities.map((identity) => identity.identityId)).toEqual(["identity-other"]);
   });
 
   it("handles missing glossary context gracefully", async () => {

@@ -6,6 +6,7 @@ import type { LatentSnapshot } from "@/src/domain/latent/types";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
 import type { LatentOpportunityManifestation } from "@/src/domain/latent-v2/types";
 import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationNativeReadRepository } from "@/src/domain/observation/native-read";
 import type { OpeningRepository } from "@/src/domain/openings/contracts";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 import type { ReflectiveResponseRepository } from "@/src/domain/responses/contracts";
@@ -144,6 +145,105 @@ function makeManifestation(id: string, reflectiveObjectId: string): LatentOpport
   };
 }
 
+function makeObservationV3Manifestation(id: string, reflectiveObjectId: string): LatentOpportunityManifestation {
+  return {
+    id,
+    identityId: `identity-${id}`,
+    userId: "user-1",
+    priorityReflectiveObjectId: reflectiveObjectId,
+    generationRunId: "run-v3-1",
+    summary: "A hallway presence sharpens into apology and reassurance without settling its meaning.",
+    structure: {
+      kind: "A_TO_B_TO_C",
+      label: "presence -> apology -> reassurance",
+      elements: ["presence", "apology", "reassurance"],
+      metadata: {},
+    },
+    primaryCategory: "transition",
+    secondaryCategories: ["relationship"],
+    credibilityScore: 0.84,
+    reflectivePotentialScore: 0.8,
+    salienceBand: "high",
+    salienceRationale: {},
+    constructionMetadata: {
+      authority: {
+        family: "observation_v3",
+        authorityId: "authority-1",
+        canonicalObservationId: "canonical-1",
+        canonicalHash: "canonical-hash-1",
+        generationVersion: "observation_v3_shadow_v1",
+      },
+    },
+    archivedAt: null,
+    createdAt: "2026-08-10T12:00:00.000Z",
+    updatedAt: "2026-08-10T12:00:00.000Z",
+    identity: {
+      id: `identity-${id}`,
+      userId: "user-1",
+      title: "presence to reassurance",
+      primaryCategory: "transition",
+      secondaryCategories: ["relationship"],
+      lifecycleState: "emerging",
+      status: "active",
+      archivedAt: null,
+      createdAt: "2026-08-10T12:00:00.000Z",
+      updatedAt: "2026-08-10T12:00:00.000Z",
+    },
+    evidenceBlocks: [
+      {
+        id: `${id}:block:1`,
+        manifestationId: id,
+        userId: "user-1",
+        reflectiveObjectId,
+        role: "priority",
+        summary: "Presence gives way to apology and reassurance.",
+        position: 0,
+        createdAt: "2026-08-10T12:00:00.000Z",
+        observations: [
+          {
+            id: `${id}:obs:1`,
+            evidenceBlockId: `${id}:block:1`,
+            userId: "user-1",
+            family: "observation_v3",
+            authorityId: "authority-1",
+            unitId: "unit-presence",
+            localityId: "locality-hallway",
+            evidenceId: "evidence-presence",
+            role: "primary_support",
+            supportsNodeKeys: ["A"],
+            supportsEdgeIndexes: [0],
+            createdAt: "2026-08-10T12:00:00.000Z",
+          },
+          {
+            id: `${id}:obs:2`,
+            evidenceBlockId: `${id}:block:1`,
+            userId: "user-1",
+            family: "observation_v3",
+            authorityId: "authority-1",
+            unitId: "unit-apology",
+            localityId: null,
+            evidenceId: null,
+            role: "primary_support",
+            supportsNodeKeys: ["B"],
+            supportsEdgeIndexes: [1],
+            createdAt: "2026-08-10T12:00:00.000Z",
+          },
+        ],
+      },
+    ],
+    glossaryLinks: [
+      {
+        id: `${id}:glossary:1`,
+        manifestationId: id,
+        userId: "user-1",
+        glossaryTermId: "term-v3-1",
+        role: "continuity",
+        createdAt: "2026-08-10T12:00:00.000Z",
+      },
+    ],
+  };
+}
+
 function makeGenerationRun(id: string, reflectiveObjectId: string) {
   return {
     id,
@@ -213,6 +313,9 @@ describe("prepareLatentOpeningForReflection", () => {
       observationV2Repository: {
         getByReflectiveObjectId: vi.fn(async () => null),
       } as unknown as ObservationV2Repository,
+      observationNativeReadRepository: {
+        getByReflectiveObjectId: vi.fn(async () => null),
+      } as unknown as ObservationNativeReadRepository,
       glossaryRepository: {
         listTerms: vi.fn(async () => []),
       } as unknown as GlossaryRepository,
@@ -290,6 +393,16 @@ describe("prepareLatentOpeningForReflection", () => {
     repositories.observationV2Repository = {
       getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
     } as unknown as ObservationV2Repository;
+    repositories.observationNativeReadRepository = {
+      getByReflectiveObjectId: vi.fn(async () => ({
+        family: "v3",
+        native: {
+          authorityId: "authority-1",
+          userId: "user-1",
+          reflectiveObjectId: "obj-1",
+        },
+      })),
+    } as unknown as ObservationNativeReadRepository;
     repositories.latentOpportunityRepository = {
       determineAcceptedOpportunityStaleness: vi.fn(async () => ({
         outcome: "current",
@@ -382,6 +495,246 @@ describe("prepareLatentOpeningForReflection", () => {
     );
   });
 
+  it("prepares an opening from reusable V3-backed latent manifestations without requiring a V2 bundle", async () => {
+    const repositories = baseRepositories();
+    repositories.reflectiveObjectRepository = {
+      getById: vi.fn(async () => ({
+        id: "obj-1",
+        userId: "user-1",
+        objectType: "dream",
+        title: "title",
+        primaryContent: "content",
+        sourceContext: "manual",
+        state: "active",
+        metadata: {},
+        createdAt: "2026-08-10T00:00:00.000Z",
+        updatedAt: "2026-08-10T00:00:00.000Z",
+      })),
+    } as unknown as ReflectiveObjectRepository;
+    repositories.observationV2Repository = {
+      getByReflectiveObjectId: vi.fn(async () => null),
+    } as unknown as ObservationV2Repository;
+    repositories.latentOpportunityRepository = {
+      determineAcceptedOpportunityStaleness: vi.fn(async () => ({
+        outcome: "current",
+        grounds: [],
+      })),
+      resolveReusableAcceptedGenerationRun: vi.fn(async () => ({
+        reusable: true,
+        generationRun: {
+          ...makeGenerationRun("run-v3-1", "obj-1"),
+          observationAuthorityFamily: "observation_v3",
+        },
+        invalidation: null,
+      })),
+      getCurrentGenerationRunForReflectiveObject: vi.fn(async () => null),
+      listGenerationRunsForReflectiveObject: vi.fn(async () => []),
+      listManifestationsByGenerationRun: vi.fn(async () => [makeObservationV3Manifestation("man-v3-1", "obj-1")]),
+      listManifestationsByPriorityReflectiveObject: vi.fn(async () => [makeObservationV3Manifestation("man-v3-1", "obj-1")]),
+    } as unknown as LatentOpportunityRepository;
+    repositories.openingRepository = {
+      listRecentOpeningsByUser: vi.fn(async () => []),
+      createOpening: vi.fn(async () => ({ id: "opening-v3-1" })),
+    } as unknown as OpeningRepository;
+
+    await prepareLatentOpeningForReflection({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      repositories,
+    });
+
+    expect(repositories.latentRepository.createSnapshot).not.toHaveBeenCalled();
+    expect(repositories.observationRepository.listByReflectiveObject).not.toHaveBeenCalled();
+    expect(generateLatentOpportunitiesForReflectiveObject).not.toHaveBeenCalled();
+    expect(generateOpeningV2CreateInputFromManifestation).not.toHaveBeenCalled();
+    expect(repositories.openingRepository.createOpening).toHaveBeenCalledWith(
+      expect.objectContaining({
+        openingType: "atmospheric_reflection",
+        utterance: "A nearby shift may be worth noticing here.",
+        provenance: expect.objectContaining({
+          sourceObjects: ["obj-1"],
+          sourceObservations: [
+            "observation_v3|authority=authority-1|unit=unit-presence|locality=locality-hallway|evidence=evidence-presence",
+            "observation_v3|authority=authority-1|unit=unit-apology",
+          ],
+          sourceGlossaryTerms: ["term-v3-1"],
+          openingGenerationContext: "latent_v2_convergence_bridge",
+          sourceOpportunityManifestationId: "man-v3-1",
+        }),
+      }),
+    );
+  });
+
+  it("uses freshly persisted V3-backed manifestations when current-run reload is still empty", async () => {
+    const repositories = baseRepositories();
+    repositories.reflectiveObjectRepository = {
+      getById: vi.fn(async () => ({
+        id: "obj-1",
+        userId: "user-1",
+        objectType: "dream",
+        title: "title",
+        primaryContent: "content",
+        sourceContext: "manual",
+        state: "active",
+        metadata: {},
+        createdAt: "2026-08-10T00:00:00.000Z",
+        updatedAt: "2026-08-10T00:00:00.000Z",
+      })),
+    } as unknown as ReflectiveObjectRepository;
+    repositories.observationV2Repository = {
+      getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
+    } as unknown as ObservationV2Repository;
+    repositories.observationNativeReadRepository = {
+      getByReflectiveObjectId: vi.fn(async () => ({
+        family: "v3",
+        native: {
+          authorityId: "authority-1",
+          userId: "user-1",
+          reflectiveObjectId: "obj-1",
+        },
+      })),
+    } as unknown as ObservationNativeReadRepository;
+    repositories.latentOpportunityRepository = {
+      determineAcceptedOpportunityStaleness: vi.fn(async () => ({
+        outcome: "current",
+        grounds: [],
+      })),
+      resolveReusableAcceptedGenerationRun: vi.fn(async () => ({
+        reusable: false,
+        generationRun: null,
+        invalidation: null,
+      })),
+      getCurrentGenerationRunForReflectiveObject: vi.fn(async () => ({
+        ...makeGenerationRun("run-v3-fresh-1", "obj-1"),
+        observationAuthorityFamily: "observation_v3",
+      })),
+      listGenerationRunsForReflectiveObject: vi.fn(async () => []),
+      listManifestationsByGenerationRun: vi.fn(async () => []),
+      listManifestationsByPriorityReflectiveObject: vi.fn(async () => []),
+    } as unknown as LatentOpportunityRepository;
+    repositories.openingRepository = {
+      listRecentOpeningsByUser: vi.fn(async () => []),
+      createOpening: vi.fn(async () => ({ id: "opening-v3-fresh-1" })),
+    } as unknown as OpeningRepository;
+
+    generateLatentOpportunitiesForReflectiveObject.mockResolvedValue({
+      mode: "persisted",
+      packet: {} as never,
+      rawOutput: "{}",
+      parsedOutput: {} as never,
+      validatedOutput: {} as never,
+      mappedPayload: { creates: [] } as never,
+      persistedIdentities: [],
+      persistedManifestations: [makeObservationV3Manifestation("man-v3-fresh-1", "obj-1")],
+    });
+
+    await prepareLatentOpeningForReflection({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      repositories,
+    });
+
+    expect(generateOpeningV2CreateInputFromManifestation).not.toHaveBeenCalled();
+    expect(repositories.openingRepository.createOpening).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provenance: expect.objectContaining({
+          sourceOpportunityManifestationId: "man-v3-fresh-1",
+          sourceObservations: expect.arrayContaining([
+            "observation_v3|authority=authority-1|unit=unit-presence|locality=locality-hallway|evidence=evidence-presence",
+          ]),
+        }),
+      }),
+    );
+  });
+
+  it("generates latent manifestations from active V3 authority without requiring a V2 bundle", async () => {
+    const repositories = baseRepositories();
+    repositories.reflectiveObjectRepository = {
+      getById: vi.fn(async () => ({
+        id: "obj-1",
+        userId: "user-1",
+        objectType: "dream",
+        title: "title",
+        primaryContent: "content",
+        sourceContext: "manual",
+        state: "active",
+        metadata: {},
+        createdAt: "2026-08-10T00:00:00.000Z",
+        updatedAt: "2026-08-10T00:00:00.000Z",
+      })),
+    } as unknown as ReflectiveObjectRepository;
+    repositories.observationV2Repository = {
+      getByReflectiveObjectId: vi.fn(async () => null),
+    } as unknown as ObservationV2Repository;
+    repositories.observationNativeReadRepository = {
+      getByReflectiveObjectId: vi.fn(async () => ({
+        family: "v3",
+        native: {
+          authorityId: "authority-1",
+          userId: "user-1",
+          reflectiveObjectId: "obj-1",
+        },
+      })),
+    } as unknown as ObservationNativeReadRepository;
+    repositories.latentOpportunityRepository = {
+      determineAcceptedOpportunityStaleness: vi.fn(async () => ({
+        outcome: "current",
+        grounds: [],
+      })),
+      resolveReusableAcceptedGenerationRun: vi.fn(async () => ({
+        reusable: false,
+        generationRun: null,
+        invalidation: null,
+      })),
+      getCurrentGenerationRunForReflectiveObject: vi.fn(async () => ({
+        ...makeGenerationRun("run-v3-generated-1", "obj-1"),
+        observationAuthorityFamily: "observation_v3",
+      })),
+      listGenerationRunsForReflectiveObject: vi.fn(async () => []),
+      listManifestationsByGenerationRun: vi.fn(async () => []),
+      listManifestationsByPriorityReflectiveObject: vi.fn(async () => []),
+    } as unknown as LatentOpportunityRepository;
+    repositories.openingRepository = {
+      listRecentOpeningsByUser: vi.fn(async () => []),
+      createOpening: vi.fn(async () => ({ id: "opening-v3-generated-1" })),
+    } as unknown as OpeningRepository;
+
+    generateLatentOpportunitiesForReflectiveObject.mockResolvedValue({
+      mode: "persisted",
+      packet: {} as never,
+      rawOutput: "{}",
+      parsedOutput: {} as never,
+      validatedOutput: {} as never,
+      mappedPayload: { creates: [] } as never,
+      persistedIdentities: [],
+      persistedManifestations: [makeObservationV3Manifestation("man-v3-generated-1", "obj-1")],
+    });
+
+    await prepareLatentOpeningForReflection({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      repositories,
+    });
+
+    expect(repositories.observationV2Repository.getByReflectiveObjectId).not.toHaveBeenCalled();
+    expect(generateLatentOpportunitiesForReflectiveObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        priorityReflectiveObjectId: "obj-1",
+        repositories: expect.objectContaining({
+          observationNativeReadRepository: repositories.observationNativeReadRepository,
+        }),
+      }),
+    );
+    expect(repositories.openingRepository.createOpening).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provenance: expect.objectContaining({
+          sourceOpportunityManifestationId: "man-v3-generated-1",
+        }),
+      }),
+    );
+  });
+
   it("skips latent generation when no observations exist", async () => {
     const repositories = baseRepositories();
     repositories.reflectiveObjectRepository = {
@@ -429,6 +782,12 @@ describe("prepareLatentOpeningForReflection", () => {
     repositories.observationV2Repository = {
       getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
     } as unknown as ObservationV2Repository;
+    repositories.observationNativeReadRepository = {
+      getByReflectiveObjectId: vi.fn(async () => ({
+        family: "v2",
+        native: { bundleId: "bundle-1" },
+      })),
+    } as unknown as ObservationNativeReadRepository;
     repositories.observationRepository = {
       listByReflectiveObject: vi.fn(async () => [
         {
@@ -516,6 +875,12 @@ describe("prepareLatentOpeningForReflection", () => {
     repositories.observationV2Repository = {
       getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
     } as unknown as ObservationV2Repository;
+    repositories.observationNativeReadRepository = {
+      getByReflectiveObjectId: vi.fn(async () => ({
+        family: "v2",
+        native: { bundleId: "bundle-1" },
+      })),
+    } as unknown as ObservationNativeReadRepository;
     repositories.observationRepository = {
       listByReflectiveObject: vi.fn(async () => [makeLegacyObservation("obj-1")]),
     } as unknown as ObservationRepository;
@@ -625,6 +990,12 @@ describe("prepareLatentOpeningForReflection", () => {
     repositories.observationV2Repository = {
       getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
     } as unknown as ObservationV2Repository;
+    repositories.observationNativeReadRepository = {
+      getByReflectiveObjectId: vi.fn(async () => ({
+        family: "v2",
+        native: { bundleId: "bundle-1" },
+      })),
+    } as unknown as ObservationNativeReadRepository;
     repositories.latentOpportunityRepository = {
       determineAcceptedOpportunityStaleness: vi.fn(async () => ({
         outcome: "current",
@@ -728,6 +1099,12 @@ describe("prepareLatentOpeningForReflection", () => {
     repositories.observationV2Repository = {
       getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
     } as unknown as ObservationV2Repository;
+    repositories.observationNativeReadRepository = {
+      getByReflectiveObjectId: vi.fn(async () => ({
+        family: "v2",
+        native: { bundleId: "bundle-1" },
+      })),
+    } as unknown as ObservationNativeReadRepository;
     repositories.latentOpportunityRepository = {
       determineAcceptedOpportunityStaleness: vi.fn(async () => ({
         outcome: "current",
@@ -831,6 +1208,12 @@ describe("prepareLatentOpeningForReflection", () => {
     repositories.observationV2Repository = {
       getByReflectiveObjectId: vi.fn(async () => ({ id: "bundle-1" })),
     } as unknown as ObservationV2Repository;
+    repositories.observationNativeReadRepository = {
+      getByReflectiveObjectId: vi.fn(async () => ({
+        family: "v2",
+        native: { bundleId: "bundle-1" },
+      })),
+    } as unknown as ObservationNativeReadRepository;
     repositories.latentOpportunityRepository = {
       determineAcceptedOpportunityStaleness: vi.fn(async () => ({
         outcome: "current",

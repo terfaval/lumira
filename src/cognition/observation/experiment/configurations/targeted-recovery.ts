@@ -132,11 +132,13 @@ export async function executeTargetedRecoveryConfiguration(
       sourceIdentity: input.benchmarkId,
       onProviderEvidence(evidence: SupplementalRealizationProviderEvidence) {
         const providerMetadata = evidence.providerBoundary.providerMetadata as {
+          targetId?: string;
           physicalGapId?: string;
         } | null;
         supplementalProviderEvidence?.push({
           requestId: evidence.attemptIdentity.supplementalRequestId ?? "supplemental-request",
-          targetId: providerMetadata?.physicalGapId ?? evidence.attemptIdentity.targetId ?? "unknown-target",
+          targetId: evidence.attemptIdentity.targetId ?? providerMetadata?.targetId ?? "unknown-target",
+          physicalGapId: providerMetadata?.physicalGapId ?? null,
           providerAttemptNumber: evidence.attemptIdentity.targetExecutionAttempt ?? evidence.attemptIdentity.attemptNumber,
           retryParentAttemptIdentity: evidence.attemptIdentity.retryParentAttemptIdentity,
           evidence,

@@ -3,6 +3,7 @@ export type HomepageRouteStatus = "implemented" | "placeholder" | "missing";
 export type HomepageNavigationTargetKey =
   | "homepage"
   | "capture_home"
+  | "fortune_home"
   | "glossary_home"
   | "dream_journal_home"
   | "guide_home"
@@ -25,6 +26,11 @@ const HOMEPAGE_ROUTE_TARGET_REGISTRY: Record<HomepageNavigationTargetKey, Homepa
   capture_home: {
     targetKey: "capture_home",
     href: "/capture",
+    routeStatus: "implemented",
+  },
+  fortune_home: {
+    targetKey: "fortune_home",
+    href: "/fortune",
     routeStatus: "implemented",
   },
   glossary_home: {

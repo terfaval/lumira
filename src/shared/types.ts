@@ -12,6 +12,7 @@ export type ReflectiveResponseId = string;
 export type ResponseAssociationId = string;
 export type ReflectionCandidateId = string;
 export type ReflectionId = string;
+export type FortuneSessionId = string;
 export type LatentSnapshotId = string;
 export type LatentSignalId = string;
 export type LatentSuggestionId = string;

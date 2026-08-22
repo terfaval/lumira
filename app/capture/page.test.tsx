@@ -8,7 +8,10 @@ const requireAuthenticatedUserIdMock = vi.fn();
 const createReflectiveObjectMock = vi.fn();
 const updateReflectiveObjectMock = vi.fn();
 const createObservationFromBundleMock = vi.fn();
+const generateObservationForReflectiveObjectMock = vi.fn();
+const persistGeneratedObservationForReflectiveObjectMock = vi.fn();
 const generateGlossaryCandidatesForReflectiveObjectMock = vi.fn();
+const resolveObservationCaptureAuthorityModeMock = vi.fn();
 const buildLlmSceneObservationExtractionMock = vi.fn();
 const constructDerivedStructuresFromObservationBundleMock = vi.fn();
 const generateDreamTitleSuggestionMock = vi.fn();
@@ -36,8 +39,17 @@ vi.mock("@/src/infrastructure/persistence/observation-v2-write-store", () => ({
   }),
 }));
 
+vi.mock("@/src/runtime/orchestration/generate-observation-for-reflective-object", () => ({
+  generateObservationForReflectiveObject: generateObservationForReflectiveObjectMock,
+  persistGeneratedObservationForReflectiveObject: persistGeneratedObservationForReflectiveObjectMock,
+}));
+
 vi.mock("@/src/runtime/orchestration/generate-glossary-candidates-for-reflective-object", () => ({
   generateGlossaryCandidatesForReflectiveObject: generateGlossaryCandidatesForReflectiveObjectMock,
+}));
+
+vi.mock("@/src/runtime/orchestration/resolve-observation-capture-authority-mode", () => ({
+  resolveObservationCaptureAuthorityMode: resolveObservationCaptureAuthorityModeMock,
 }));
 
 vi.mock("@/src/cognition/observation/llm-scene-observation-extractor", () => ({
@@ -118,7 +130,10 @@ describe("CapturePage", () => {
     createReflectiveObjectMock.mockReset();
     updateReflectiveObjectMock.mockReset();
     createObservationFromBundleMock.mockReset();
+    generateObservationForReflectiveObjectMock.mockReset();
+    persistGeneratedObservationForReflectiveObjectMock.mockReset();
     generateGlossaryCandidatesForReflectiveObjectMock.mockReset();
+    resolveObservationCaptureAuthorityModeMock.mockReset();
     buildLlmSceneObservationExtractionMock.mockReset();
     constructDerivedStructuresFromObservationBundleMock.mockReset();
     generateDreamTitleSuggestionMock.mockReset();
@@ -152,7 +167,32 @@ describe("CapturePage", () => {
       source: "system_llm_extract",
       scenes: [],
     });
+    generateObservationForReflectiveObjectMock.mockResolvedValue({
+      mode: "generated_v2",
+      family: "v2",
+      bundle: {
+        reflectiveObjectId: "obj-123",
+        userId: "user-1",
+        source: "system_llm_extract",
+        scenes: [],
+      },
+    });
+    persistGeneratedObservationForReflectiveObjectMock.mockResolvedValue({
+      mode: "persisted_v2",
+      family: "v2",
+      persistedBundle: {
+        bundleId: "bundle-1",
+        reflectiveObjectId: "obj-123",
+        userId: "user-1",
+        source: "system_llm_extract",
+        scenes: [],
+      },
+    });
     generateGlossaryCandidatesForReflectiveObjectMock.mockResolvedValue([]);
+    resolveObservationCaptureAuthorityModeMock.mockReturnValue({
+      mode: "v2",
+      observationResolution: "default_v2",
+    });
     vi.stubGlobal("crypto", { randomUUID: randomUuidMock });
     randomUuidMock.mockReturnValue("obj-123");
   });
@@ -226,8 +266,9 @@ describe("CapturePage", () => {
 
     await submitCapture?.(formData);
 
-    expect(buildLlmSceneObservationExtractionMock).toHaveBeenCalledWith({
+    expect(generateObservationForReflectiveObjectMock).toHaveBeenCalledWith({
       dreamText: "I was inside a house with water under the floorboards.",
+      observationResolution: "default_v2",
       reflectiveObjectId: "obj-123",
       userId: "user-1",
     });
@@ -236,22 +277,22 @@ describe("CapturePage", () => {
         id: "obj-123",
       }),
     );
-    expect(constructDerivedStructuresFromObservationBundleMock).toHaveBeenCalledWith({
-      reflectiveObjectId: "obj-123",
-      userId: "user-1",
-      source: "system_llm_extract",
-      scenes: [],
-    });
-    expect(createObservationFromBundleMock).toHaveBeenCalledWith({
-      reflectiveObjectId: "obj-123",
-      userId: "user-1",
-      source: "system_llm_extract",
-      scenes: [],
-      runtimeVersion: "observation_v2_phase1",
+    expect(persistGeneratedObservationForReflectiveObjectMock).toHaveBeenCalledWith({
+      observation: {
+        mode: "generated_v2",
+        family: "v2",
+        bundle: {
+          reflectiveObjectId: "obj-123",
+          userId: "user-1",
+          source: "system_llm_extract",
+          scenes: [],
+        },
+      },
     });
     expect(generateGlossaryCandidatesForReflectiveObjectMock).toHaveBeenCalledWith({
       reflectiveObjectId: "obj-123",
       userId: "user-1",
+      observationResolution: "default_v2",
     });
   });
 
@@ -265,13 +306,13 @@ describe("CapturePage", () => {
 
     await submitCapture?.(formData);
 
-    expect(buildLlmSceneObservationExtractionMock.mock.invocationCallOrder[0]).toBeLessThan(
-      constructDerivedStructuresFromObservationBundleMock.mock.invocationCallOrder[0],
+    expect(generateObservationForReflectiveObjectMock.mock.invocationCallOrder[0]).toBeLessThan(
+      createReflectiveObjectMock.mock.invocationCallOrder[0],
     );
-    expect(constructDerivedStructuresFromObservationBundleMock.mock.invocationCallOrder[0]).toBeLessThan(
-      createObservationFromBundleMock.mock.invocationCallOrder[0],
+    expect(createReflectiveObjectMock.mock.invocationCallOrder[0]).toBeLessThan(
+      persistGeneratedObservationForReflectiveObjectMock.mock.invocationCallOrder[0],
     );
-    expect(createObservationFromBundleMock.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(persistGeneratedObservationForReflectiveObjectMock.mock.invocationCallOrder[0]).toBeLessThan(
       generateGlossaryCandidatesForReflectiveObjectMock.mock.invocationCallOrder[0],
     );
     expect(generateGlossaryCandidatesForReflectiveObjectMock.mock.invocationCallOrder[0]).toBeLessThan(
@@ -280,52 +321,13 @@ describe("CapturePage", () => {
   });
 
   it("logs a structured persistence diagnostic after the native V2 bundle is rehydrated", async () => {
-    constructDerivedStructuresFromObservationBundleMock.mockResolvedValue({
-      reflectiveObjectId: "obj-123",
-      userId: "user-1",
-      source: "system_llm_extract",
-      scenes: [
-        {
-          sceneId: "scene-1",
-          position: 0,
-          summary: "An ending shoreline scene.",
-          boundaryReasoning: [],
-          evidenceContext: {
-            snippet: "At the end they reach the shoreline",
-            spanStart: 4200,
-            spanEnd: 4260,
-            contextLabel: "scene",
-          },
-          observations: [
-            {
-              observationId: "obs-1",
-              position: 0,
-              text: "At the end they reach the shoreline.",
-              evidence: [
-                {
-                  snippet: "At the end they reach the shoreline",
-                  spanStart: 4200,
-                  spanEnd: 4260,
-                  contextLabel: "quoted_support",
-                },
-              ],
-              uncertaintyNote: null,
-            },
-          ],
-          derived: {
-            actors: [],
-            locations: [],
-            objects: [],
-            interactions: [],
-            affect: [],
-            agency: [],
-            phenomenology: [],
-            metacognition: [],
-          },
-        },
-      ],
-    });
-    createObservationFromBundleMock.mockResolvedValue({
+    persistGeneratedObservationForReflectiveObjectMock.mockResolvedValue({
+      mode: "persisted_v2",
+      family: "v2",
+      diagnostics: {
+        acceptedAttempt: 2,
+      },
+      persistedBundle: {
       bundleId: "bundle-1",
       reflectiveObjectId: "obj-123",
       userId: "user-1",
@@ -370,17 +372,6 @@ describe("CapturePage", () => {
           },
         },
       ],
-    });
-    buildLlmSceneObservationExtractionMock.mockResolvedValue({
-      mode: "validated_llm",
-      bundle: {
-        reflectiveObjectId: "obj-123",
-        userId: "user-1",
-        source: "system_llm_extract",
-        scenes: [],
-      },
-      diagnostics: {
-        acceptedAttempt: 2,
       },
     });
 
@@ -398,6 +389,8 @@ describe("CapturePage", () => {
       expect.objectContaining({
         reflectiveObjectId: "obj-123",
         attempt: 2,
+        selectedMode: "v2",
+        observationResolution: "default_v2",
         stage: "persistence",
         persistedSceneCount: 1,
         persistedObservationCount: 1,
@@ -405,9 +398,78 @@ describe("CapturePage", () => {
     );
   });
 
+  it("uses configured V3 capture authority without duplicating the runtime path", async () => {
+    resolveObservationCaptureAuthorityModeMock.mockReturnValue({
+      mode: "v3",
+      observationResolution: "explicit_v3",
+    });
+    generateObservationForReflectiveObjectMock.mockResolvedValue({
+      mode: "generated_v3",
+      family: "v3",
+      authorityRecord: {
+        authorityId: "authority-1",
+      },
+      pipelineResult: {
+        summary: {
+          governanceDisposition: "admitted",
+          pipelineCompletionStatus: "completed",
+        },
+      },
+    });
+    persistGeneratedObservationForReflectiveObjectMock.mockResolvedValue({
+      mode: "persisted_v3",
+      family: "v3",
+      persistedAuthority: {
+        authorityId: "authority-1",
+        admissionDecision: {
+          disposition: "admitted",
+        },
+      },
+      pipelineResult: {
+        summary: {
+          governanceDisposition: "admitted",
+          pipelineCompletionStatus: "completed",
+        },
+      },
+    });
+
+    const pageModule = await import("./page");
+    const page = await pageModule.default();
+    const submitCapture = findFormAction(page);
+
+    const formData = new FormData();
+    formData.set("dreamText", "A bright room opens into a corridor.");
+
+    await submitCapture?.(formData);
+
+    expect(generateObservationForReflectiveObjectMock).toHaveBeenCalledWith({
+      dreamText: "A bright room opens into a corridor.",
+      observationResolution: "explicit_v3",
+      reflectiveObjectId: "obj-123",
+      userId: "user-1",
+    });
+    expect(generateGlossaryCandidatesForReflectiveObjectMock).toHaveBeenCalledWith({
+      reflectiveObjectId: "obj-123",
+      userId: "user-1",
+      observationResolution: "explicit_v3",
+    });
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      "observation_v3_capture_diagnostic",
+      expect.objectContaining({
+        reflectiveObjectId: "obj-123",
+        selectedMode: "v3",
+        observationResolution: "explicit_v3",
+        authorityId: "authority-1",
+        disposition: "admitted",
+      }),
+    );
+  });
+
   it("fails capture without saving when llm extraction is unsafe", async () => {
-    buildLlmSceneObservationExtractionMock.mockResolvedValue({
-      mode: "fallback",
+    generateObservationForReflectiveObjectMock.mockResolvedValue({
+      mode: "failed",
+      family: "v2",
+      stage: "generation",
       reason: "invalid_json",
     });
 
@@ -422,8 +484,432 @@ describe("CapturePage", () => {
     await submitCapture?.(formData);
 
     expect(createReflectiveObjectMock).not.toHaveBeenCalled();
-    expect(createObservationFromBundleMock).not.toHaveBeenCalled();
+    expect(persistGeneratedObservationForReflectiveObjectMock).not.toHaveBeenCalled();
     expect(redirectMock).toHaveBeenCalledWith("/capture?error=analysis");
+  });
+
+  it("logs iterative V3 deferral diagnostics when explicit V3 capture remains non-authoritative", async () => {
+    resolveObservationCaptureAuthorityModeMock.mockReturnValue({
+      mode: "v3",
+      observationResolution: "explicit_v3",
+    });
+    generateObservationForReflectiveObjectMock.mockResolvedValue({
+      mode: "failed",
+      family: "v3",
+      stage: "generation",
+      reason: "deferred_for_supplemental_realization",
+      pipelineResult: {
+        summary: {
+          governanceDisposition: "deferred_for_supplemental_realization",
+          pipelineCompletionStatus: "completed",
+        },
+        failurePropagation: {
+          failureSourceStage: "authority_admission",
+        },
+        stageResults: [
+          {
+            stage: "supplemental_realization",
+            status: "success",
+            payload: {
+              plan: {
+                selectedGaps: [
+                  {
+                    targetId: "target-001",
+                    physicalGapId: "gap-001",
+                    kind: "tail",
+                    sourceStart: 144,
+                    sourceEnd: 188,
+                    contextStart: 120,
+                    contextEnd: 220,
+                  },
+                ],
+              },
+              result: {
+                disposition: "completed",
+                diagnostics: {
+                  requestCount: 1,
+                  targetCount: 1,
+                  packageCount: 1,
+                  realizedRegionCount: 1,
+                  realizedObservationCount: 2,
+                  abstainedTargetCount: 0,
+                },
+                execution: [
+                  {
+                    targetId: "target-001",
+                    packageId: "supplemental-package-1-gap-001",
+                    providerStatus: "completed",
+                    providerIncompleteReason: null,
+                    latencyMs: 250,
+                    tokenUsage: {
+                      input: 100,
+                      output: 50,
+                      total: 150,
+                    },
+                    structured: {
+                      regions: [
+                        {
+                          regionId: "region-1",
+                          observations: [
+                            { observationId: "obs-r1-1", statement: "Recovered ending beat." },
+                            { observationId: "obs-r1-2", statement: "Recovered final state." },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+              packages: [
+                {
+                  packageId: "supplemental-package-1-gap-001",
+                  physicalGapId: "gap-001",
+                  observations: [
+                    { observationId: "obs-r1-1", statement: "Recovered ending beat." },
+                    { observationId: "obs-r1-2", statement: "Recovered final state." },
+                  ],
+                },
+              ],
+              summary: {
+                disposition: "completed",
+                packageCount: 1,
+                targetCount: 1,
+                realizedObservationCount: 2,
+              },
+            },
+          },
+          {
+            stage: "authority_admission",
+            status: "success",
+            payload: {
+              disposition: "deferred_for_supplemental_realization",
+              request: {
+                completeness: {
+                  status: "available",
+                  reportId: "final-completeness:abc123",
+                },
+              },
+              decision: {
+                disposition: "deferred_for_supplemental_realization",
+                decisionReasons: [
+                  "candidate_recoverable_inadequacy_deferred",
+                  "recovery_route_available",
+                ],
+                blockingFindings: [
+                  {
+                    signalId: "coverage.uncovered_tail",
+                    reasonCode: "admission_with_observations",
+                  },
+                ],
+                nonBlockingObservations: [
+                  {
+                    signalId: "ending.not_retained",
+                    reasonCode: "admission_with_observations",
+                  },
+                ],
+                requiredNextAction: "request_supplemental_realization",
+              },
+              iterativeRecovery: {
+                attempted: true,
+                priorDisposition: "deferred_for_supplemental_realization",
+                supplementalDisposition: "completed",
+                finalDisposition: "deferred_for_supplemental_realization",
+                packageCount: 1,
+              },
+              artifacts: {
+                "final-completeness-report": {
+                  adequacy: "inadequate_recoverable",
+                  coverage: {
+                    uncoveredTail: {
+                      start: 144,
+                      end: 188,
+                    },
+                  },
+                  gaps: {
+                    gaps: [
+                      {
+                        id: "gap-001",
+                        kind: "tail",
+                        sourceStart: 144,
+                        sourceEnd: 188,
+                      },
+                    ],
+                  },
+                  recoveryRecommendation: {
+                    disposition: "required_before_admission",
+                    targetedPhysicalGapIds: ["gap-001"],
+                    reasons: ["physical_gap_detected", "ending_not_retained"],
+                  },
+                  diagnosticReasons: ["coverage_tail_loss_detected", "ending_not_retained"],
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    const pageModule = await import("./page");
+    const page = await pageModule.default();
+    const submitCapture = findFormAction(page);
+
+    const formData = new FormData();
+    formData.set("dreamText", "A dream that still defers after supplemental recovery.");
+
+    await submitCapture?.(formData);
+
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+    const [eventName, serializedPayload] = consoleWarnSpy.mock.calls[0] ?? [];
+    expect(eventName).toBe("llm_observation_extraction_failed");
+    expect(typeof serializedPayload).toBe("string");
+    const parsed = JSON.parse(serializedPayload as string) as Record<string, unknown>;
+    expect(parsed).toEqual(expect.objectContaining({
+      reflectiveObjectId: "obj-123",
+      selectedMode: "v3",
+      observationResolution: "explicit_v3",
+      reason: "deferred_for_supplemental_realization",
+      family: "v3",
+      stage: "generation",
+      governanceDisposition: "deferred_for_supplemental_realization",
+      pipelineCompletionStatus: "completed",
+      failureSourceStage: "authority_admission",
+      failedStage: expect.objectContaining({
+        status: "available",
+        stage: "authority_admission",
+        stageStatus: "success",
+      }),
+      failedStageFailure: {
+        status: "unavailable",
+      },
+      supplementalRealization: {
+        status: "available",
+        stageStatus: "success",
+        plannedTargets: [
+          expect.objectContaining({
+            targetId: "target-001",
+            physicalGapId: "gap-001",
+            kind: "tail",
+          }),
+        ],
+        summary: expect.objectContaining({
+          disposition: "completed",
+          targetCount: 1,
+          packageCount: 1,
+          realizedObservationCount: 2,
+        }),
+        packageSummary: expect.objectContaining({
+          packageCount: 1,
+          realizedObservationCount: 2,
+        }),
+        execution: [
+          expect.objectContaining({
+            targetId: "target-001",
+            packageId: "supplemental-package-1-gap-001",
+          }),
+        ],
+        droppedOrRejectedObservations: [],
+      },
+      authorityAdmission: expect.objectContaining({
+        status: "available",
+        stageStatus: "success",
+        disposition: "deferred_for_supplemental_realization",
+        decisionReasons: [
+          "candidate_recoverable_inadequacy_deferred",
+          "recovery_route_available",
+        ],
+        blockingFindings: [
+          expect.objectContaining({
+            signalId: "coverage.uncovered_tail",
+          }),
+        ],
+        nonBlockingObservations: [
+          expect.objectContaining({
+            signalId: "ending.not_retained",
+          }),
+        ],
+        requiredNextAction: "request_supplemental_realization",
+      }),
+      iterativeRecovery: {
+        status: "available",
+        value: expect.objectContaining({
+          attempted: true,
+          priorDisposition: "deferred_for_supplemental_realization",
+          supplementalDisposition: "completed",
+          finalDisposition: "deferred_for_supplemental_realization",
+        }),
+      },
+      finalCompleteness: {
+        status: "available",
+        value: expect.objectContaining({
+          adequacy: "inadequate_recoverable",
+          coverage: expect.objectContaining({
+            uncoveredTail: {
+              start: 144,
+              end: 188,
+            },
+          }),
+          gaps: expect.objectContaining({
+            gaps: [
+              expect.objectContaining({
+                id: "gap-001",
+                kind: "tail",
+              }),
+            ],
+          }),
+          targetedPhysicalGapIds: ["gap-001"],
+          recoveryRecommendation: expect.objectContaining({
+            disposition: "required_before_admission",
+            targetedPhysicalGapIds: ["gap-001"],
+          }),
+          diagnosticReasons: ["coverage_tail_loss_detected", "ending_not_retained"],
+        }),
+      },
+    }));
+  });
+
+  it("distinguishes failed stages from later stages that were never reached in failed V3 capture diagnostics", async () => {
+    resolveObservationCaptureAuthorityModeMock.mockReturnValue({
+      mode: "v3",
+      observationResolution: "explicit_v3",
+    });
+    generateObservationForReflectiveObjectMock.mockResolvedValue({
+      mode: "failed",
+      family: "v3",
+      stage: "generation",
+      reason: "failed",
+      pipelineResult: {
+        summary: {
+          governanceDisposition: null,
+          pipelineCompletionStatus: "failed",
+        },
+        failurePropagation: {
+          failureSourceStage: "memory_realization",
+        },
+        stageResults: [
+          {
+            stage: "source_analysis",
+            status: "success",
+            payload: {
+              profile: "simple",
+            },
+            failure: null,
+          },
+          {
+            stage: "descriptive_extraction",
+            status: "success",
+            payload: {
+              candidateCount: 12,
+            },
+            failure: null,
+          },
+          {
+            stage: "completeness_analysis",
+            status: "success",
+            payload: {
+              artifacts: {
+                "final-completeness-report": {
+                  adequacy: "inadequate_recoverable",
+                  recoveryRecommendation: {
+                    disposition: "required_before_admission",
+                    targetedPhysicalGapIds: ["gap-101", "gap-102"],
+                  },
+                  diagnosticReasons: ["coverage_tail_loss_detected"],
+                },
+              },
+            },
+            failure: null,
+          },
+          {
+            stage: "supplemental_realization",
+            status: "success",
+            skippedReason: null,
+            payload: {
+              summary: {
+                disposition: "completed",
+                packageCount: 2,
+                targetCount: 2,
+                realizedObservationCount: 4,
+              },
+            },
+            failure: null,
+          },
+          {
+            stage: "memory_realization",
+            status: "failed",
+            payload: null,
+            failure: {
+              code: "canonical_hash_mismatch",
+              message: "Canonical candidate hash changed during realization.",
+              meta: {
+                expectedHash: "hash-a",
+                actualHash: "hash-b",
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    const pageModule = await import("./page");
+    const page = await pageModule.default();
+    const submitCapture = findFormAction(page);
+
+    const formData = new FormData();
+    formData.set("dreamText", "A dream that fails during memory realization after supplemental recovery.");
+
+    await submitCapture?.(formData);
+
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+    const [eventName, serializedPayload] = consoleWarnSpy.mock.calls[0] ?? [];
+    expect(eventName).toBe("llm_observation_extraction_failed");
+    expect(typeof serializedPayload).toBe("string");
+    const parsed = JSON.parse(serializedPayload as string) as Record<string, unknown>;
+    expect(parsed).toEqual(expect.objectContaining({
+      reflectiveObjectId: "obj-123",
+      selectedMode: "v3",
+      observationResolution: "explicit_v3",
+      reason: "failed",
+      family: "v3",
+      stage: "generation",
+      governanceDisposition: null,
+      pipelineCompletionStatus: "failed",
+      failureSourceStage: "memory_realization",
+      failedStage: expect.objectContaining({
+        status: "available",
+        stage: "memory_realization",
+        stageStatus: "failed",
+      }),
+      failedStageFailure: {
+        status: "available",
+        value: {
+          code: "canonical_hash_mismatch",
+          message: "Canonical candidate hash changed during realization.",
+          meta: {
+            expectedHash: "hash-a",
+            actualHash: "hash-b",
+          },
+        },
+      },
+      supplementalRealization: expect.objectContaining({
+        status: "available",
+        stageStatus: "success",
+        summary: {
+          disposition: "completed",
+          packageCount: 2,
+          targetCount: 2,
+          realizedObservationCount: 4,
+        },
+      }),
+      authorityAdmission: {
+        status: "not_reached",
+      },
+      iterativeRecovery: {
+        status: "not_reached",
+      },
+      finalCompleteness: {
+        status: "unavailable",
+      },
+    }));
   });
 
   it("starts observation extraction before title generation finishes", async () => {
@@ -440,14 +926,21 @@ describe("CapturePage", () => {
     const submissionPromise = submitCapture?.(formData);
 
     await vi.waitFor(() => {
-      expect(buildLlmSceneObservationExtractionMock).toHaveBeenCalledWith({
+      expect(generateObservationForReflectiveObjectMock).toHaveBeenCalledWith({
         dreamText: "I was inside a house with water under the floorboards.",
+        observationResolution: "default_v2",
         reflectiveObjectId: "obj-123",
         userId: "user-1",
       });
     });
 
-    expect(createObservationFromBundleMock).not.toHaveBeenCalled();
+    expect(createReflectiveObjectMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "obj-123",
+        userId: "user-1",
+      }),
+    );
+    expect(persistGeneratedObservationForReflectiveObjectMock).not.toHaveBeenCalled();
 
     titleDeferred.resolve({
       mode: "generated",

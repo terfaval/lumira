@@ -348,6 +348,36 @@ describe("realizeCanonicalMemoryCandidate", () => {
     expect(invalid.disposition).toBe("aborted_candidate_failure");
     expect(invalid.validation.status).toBe("invalid_candidate");
   });
+
+  it("fails closed when descriptive units cannot be assigned to canonical localities", () => {
+    const result = realizeCanonicalMemoryCandidate(buildRequest({
+      composedCandidate: buildComposedCandidate({
+        localityRecords: [],
+        descriptiveUnits: [
+          {
+            unitId: "unit-ungrouped",
+            derivedFrom: ["obs-ungrouped"],
+            localityId: null,
+            statement: "An ungrouped observation survives.",
+            evidenceRefs: [
+              {
+                snippet: "ungrouped observation",
+                spanStart: 0,
+                spanEnd: 21,
+                contextLabel: "quoted_support",
+              },
+            ],
+            uncertainty: null,
+            compositionStatus: "retained",
+          },
+        ],
+      }),
+    }));
+
+    expect(result.disposition).toBe("aborted_candidate_failure");
+    expect(result.validation.status).toBe("invalid_candidate");
+    expect(result.failures.map((failure) => failure.code)).toContain("candidate_structurally_invalid");
+  });
 });
 
 describe("runShadowMemoryRealization", () => {

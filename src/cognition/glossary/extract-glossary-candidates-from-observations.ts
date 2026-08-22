@@ -4,6 +4,7 @@ import {
   normalizeGlossaryRecognitionText,
 } from "@/src/domain/glossary/recognition-normalization";
 import type { Observation, ObservationCategory } from "@/src/domain/observation/types";
+import type { ObservationV3AuthorityRecord } from "@/src/domain/observation/v3-authority";
 import type {
   ObservationV2Bundle,
   ObservationV2DerivedItem,
@@ -42,6 +43,12 @@ interface ExtractGlossaryCandidatesFromObservationV2Input {
   bundle: ObservationV2Bundle;
 }
 
+interface ExtractGlossaryCandidatesFromObservationV3Input {
+  userId: UserId;
+  reflectiveObjectId: ReflectiveObjectId;
+  authority: ObservationV3AuthorityRecord;
+}
+
 interface CandidateAccumulator {
   userId: UserId;
   reflectiveObjectId: ReflectiveObjectId;
@@ -52,6 +59,40 @@ interface CandidateAccumulator {
   sourceObservationId: string | null;
   sourceObservationFragmentId: string | null;
   recurrenceCount: number;
+}
+
+function formatObservationV3AuthoritySourceId(authorityId: string): string {
+  return `observation_v3|authority=${authorityId}`;
+}
+
+function formatObservationV3LocalitySourceId(input: {
+  authorityId: string;
+  localityId: string;
+}): string {
+  return `${formatObservationV3AuthoritySourceId(input.authorityId)}|locality=${input.localityId}`;
+}
+
+function formatObservationV3UnitSourceId(input: {
+  authorityId: string;
+  unitId: string;
+  localityId?: string | null;
+  evidenceId?: string | null;
+}): string {
+  const parts = [
+    "observation_v3",
+    `authority=${input.authorityId}`,
+    `unit=${input.unitId}`,
+  ];
+
+  if (input.localityId) {
+    parts.push(`locality=${input.localityId}`);
+  }
+
+  if (input.evidenceId) {
+    parts.push(`evidence=${input.evidenceId}`);
+  }
+
+  return parts.join("|");
 }
 
 function containsInterpretiveLanguage(text: string): boolean {
@@ -247,6 +288,124 @@ export function extractGlossaryCandidatesFromObservationV2Bundle(
       if (candidate) {
         addCandidate(candidates, candidate);
       }
+    }
+  }
+
+  return Array.from(candidates.values()).map((candidate) => ({
+    userId: candidate.userId,
+    reflectiveObjectId: candidate.reflectiveObjectId,
+    identityKey: candidate.identityKey ?? null,
+    normalizedKey: candidate.normalizedKey,
+    displayLabel: candidate.displayLabel,
+    sourceCategory: candidate.sourceCategory,
+    sourceObservationId: candidate.sourceObservationId,
+    sourceObservationFragmentId: candidate.sourceObservationFragmentId,
+    recurrenceCount: candidate.recurrenceCount,
+  }));
+}
+
+function buildCandidateFromCanonicalLocality(input: {
+  authority: ObservationV3AuthorityRecord;
+  locality: ObservationV3AuthorityRecord["canonicalCandidate"]["localities"][number];
+  userId: UserId;
+  reflectiveObjectId: ReflectiveObjectId;
+}): CandidateAccumulator | null {
+  const displayLabel = cleanGlossaryDisplayText(input.locality.label ?? "");
+  const normalizedKey = normalizeGlossaryRecognitionText(displayLabel);
+
+  if (
+    !displayLabel
+    || !normalizedKey
+    || containsInterpretiveLanguage(displayLabel)
+    || isDreamerIdentityText(displayLabel)
+  ) {
+    return null;
+  }
+
+  return {
+    userId: input.userId,
+    reflectiveObjectId: input.reflectiveObjectId,
+    identityKey: null,
+    normalizedKey,
+    displayLabel,
+    sourceCategory: "location",
+    sourceObservationId: formatObservationV3AuthoritySourceId(input.authority.authorityId),
+    sourceObservationFragmentId: formatObservationV3LocalitySourceId({
+      authorityId: input.authority.authorityId,
+      localityId: input.locality.canonicalLocalityId,
+    }),
+    recurrenceCount: Math.max(1, input.locality.evidenceRefs.length),
+  };
+}
+
+function buildRecurrenceCandidateFromCanonicalUnit(input: {
+  authority: ObservationV3AuthorityRecord;
+  unit: ObservationV3AuthorityRecord["canonicalCandidate"]["descriptiveUnits"][number];
+  userId: UserId;
+  reflectiveObjectId: ReflectiveObjectId;
+}): CandidateAccumulator | null {
+  const displayLabel = cleanGlossaryDisplayText(input.unit.statement);
+  const normalizedKey = normalizeGlossaryRecognitionText(displayLabel);
+
+  if (!displayLabel || !normalizedKey) {
+    return null;
+  }
+
+  if (!containsRecurrenceLanguage(displayLabel) || containsInterpretiveLanguage(displayLabel)) {
+    return null;
+  }
+
+  return {
+    userId: input.userId,
+    reflectiveObjectId: input.reflectiveObjectId,
+    identityKey: null,
+    normalizedKey,
+    displayLabel,
+    sourceCategory: "recurrence_candidate",
+    sourceObservationId: input.unit.localityId
+      ? formatObservationV3LocalitySourceId({
+          authorityId: input.authority.authorityId,
+          localityId: input.unit.localityId,
+        })
+      : formatObservationV3AuthoritySourceId(input.authority.authorityId),
+    sourceObservationFragmentId: formatObservationV3UnitSourceId({
+      authorityId: input.authority.authorityId,
+      unitId: input.unit.canonicalUnitId,
+      localityId: input.unit.localityId,
+      evidenceId: input.unit.evidenceRefs[0]?.evidenceId ?? null,
+    }),
+    recurrenceCount: Math.max(1, input.unit.evidenceRefs.length),
+  };
+}
+
+export function extractGlossaryCandidatesFromObservationV3Authority(
+  input: ExtractGlossaryCandidatesFromObservationV3Input,
+): CreateGlossaryCandidateInput[] {
+  const candidates = new Map<string, CandidateAccumulator>();
+
+  for (const locality of input.authority.canonicalCandidate.localities) {
+    const candidate = buildCandidateFromCanonicalLocality({
+      authority: input.authority,
+      locality,
+      userId: input.userId,
+      reflectiveObjectId: input.reflectiveObjectId,
+    });
+
+    if (candidate) {
+      addCandidate(candidates, candidate);
+    }
+  }
+
+  for (const unit of input.authority.canonicalCandidate.descriptiveUnits) {
+    const candidate = buildRecurrenceCandidateFromCanonicalUnit({
+      authority: input.authority,
+      unit,
+      userId: input.userId,
+      reflectiveObjectId: input.reflectiveObjectId,
+    });
+
+    if (candidate) {
+      addCandidate(candidates, candidate);
     }
   }
 

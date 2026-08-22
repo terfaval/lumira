@@ -11,6 +11,7 @@ import {
   type ObservationV2DerivedStructures,
   type ObservationV2EvidenceRef,
   type ObservationV2Scene,
+  type ObservationV2SceneGroundingDegradation,
 } from "@/src/domain/observation/v2-runtime";
 import { projectObservationV2BundleToCreateObservationInput } from "@/src/cognition/observation/scene-discovery-projection";
 import type {
@@ -36,6 +37,7 @@ export interface ObservationV3NativeC0Locality {
   label: string;
   boundaryReasoning: ObservationV2BoundaryReason[];
   boundaryUncertainty: string | null;
+  groundingDegradation?: ObservationV2SceneGroundingDegradation;
   evidenceContext: ObservationV2EvidenceRef;
 }
 
@@ -91,6 +93,7 @@ export function buildObservationV3NativeC0Candidate(input: {
     label: scene.summary,
     boundaryReasoning: scene.boundaryReasoning,
     boundaryUncertainty: scene.uncertaintyNotes?.[0] ?? null,
+    groundingDegradation: scene.groundingDegradation,
     evidenceContext: scene.evidenceContext,
   }));
   const descriptiveUnits = input.scenes.flatMap((scene) =>
@@ -151,6 +154,7 @@ export function projectNativeC0CandidateToObservationV2Bundle(
         summary: locality.label,
         boundaryReasoning: locality.boundaryReasoning,
         uncertaintyNotes: locality.boundaryUncertainty ? [locality.boundaryUncertainty] : [],
+        groundingDegradation: locality.groundingDegradation,
         evidenceContext: locality.evidenceContext,
         observations: (unitMap.get(locality.localityId) ?? [])
           .slice()

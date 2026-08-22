@@ -25,6 +25,7 @@ import type {
   DescriptiveExtractionProviderEvidence,
   SupplementalRealizationProviderEvidence,
 } from "@/src/cognition/observation-v3/provider-evidence";
+import { loadPreservedSupplementalReplayEvidence } from "@/src/cognition/observation-v3/pipeline/replay/preserved-case-loader";
 
 function buildDescriptiveProviderEvidence(): DescriptiveExtractionProviderEvidence {
   return {
@@ -91,7 +92,12 @@ function buildDescriptiveProviderEvidence(): DescriptiveExtractionProviderEviden
   };
 }
 
-function buildSupplementalProviderEvidence(): SupplementalRealizationProviderEvidence {
+function buildSupplementalProviderEvidence(input?: {
+  targetId?: string;
+  physicalGapId?: string;
+}): SupplementalRealizationProviderEvidence {
+  const targetId = input?.targetId ?? "target-gap-1";
+  const physicalGapId = input?.physicalGapId ?? "physical-gap-1";
   return {
     schemaVersion: "1",
     artifactVersion: "1",
@@ -101,11 +107,11 @@ function buildSupplementalProviderEvidence(): SupplementalRealizationProviderEvi
     sourceHash: "source-hash",
     attemptIdentity: {
       subsystem: "supplemental_realization",
-      identity: "supplemental_realization:OBS-C-002:supp-1:target-gap-1:attempt-1:root",
+      identity: `supplemental_realization:OBS-C-002:supp-1:${targetId}:attempt-1:root`,
       fingerprint: "supp-fingerprint",
       sourceIdentity: "OBS-C-002",
       supplementalRequestId: "supp-1",
-      targetId: "target-gap-1",
+      targetId,
       attemptNumber: 1,
       targetExecutionAttempt: 1,
       retryParentAttemptIdentity: null,
@@ -132,6 +138,8 @@ function buildSupplementalProviderEvidence(): SupplementalRealizationProviderEvi
       latencyMs: 800,
       providerMetadata: {
         provider: "openai",
+        physicalGapId,
+        targetId,
       },
       occurredAt: "2026-08-02T12:01:00.000Z",
     },
@@ -340,6 +348,7 @@ describe("anonymized review mapping", () => {
       supplementalProviderEvidence: [{
         requestId: "supp-1",
         targetId: "target-gap-1",
+        physicalGapId: "physical-gap-1",
         providerAttemptNumber: 1,
         retryParentAttemptIdentity: null,
         evidence: buildSupplementalProviderEvidence(),
@@ -411,6 +420,289 @@ describe("anonymized review mapping", () => {
       ),
       "utf8",
     )).resolves.toContain("\"targetId\": \"target-gap-1\"");
+  });
+
+  it("persists the preserved recovery target identity instead of substituting the physical gap id", async () => {
+    const runDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "obs-topology-target-identity-"));
+    const execution: ObservationTopologyExecutionResult = {
+      benchmarkId: "OBS-C-002",
+      configurationId: "C_TARGETED_RECOVERY",
+      repeatIndex: 1,
+      startedAt: "2026-08-02T12:00:00.000Z",
+      completedAt: "2026-08-02T12:00:01.000Z",
+      elapsedMs: 1000,
+      success: true,
+      provider: "openai",
+      model: "gpt-4.1-mini",
+      promptFingerprint: "prompt-hash",
+      schemaFingerprint: "schema-hash",
+      topologyImplementationFingerprint: "topology-hash",
+      sourceFingerprint: "source-hash",
+      stages: [],
+      attempts: [],
+      supplementalProviderEvidence: [{
+        requestId: "supp-1",
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        providerAttemptNumber: 1,
+        retryParentAttemptIdentity: null,
+        evidence: buildSupplementalProviderEvidence({
+          targetId: "target-1-gap-001",
+          physicalGapId: "gap-001",
+        }),
+      }],
+      finalRepresentation: null,
+      completeness: null,
+      diagnostics: {},
+      summary: {
+        benchmarkId: "OBS-C-002",
+        configurationId: "C_TARGETED_RECOVERY",
+        repeatIndex: 1,
+        success: true,
+        sceneOrRegionCount: 2,
+        observationCount: 5,
+        transitionCount: 0,
+        evidenceSpanCoverage: 0.8,
+        lateSectionRetention: true,
+        endingRetention: true,
+        retryOrStageCount: 4,
+        tokenUsageTotal: 100,
+        elapsedMs: 1000,
+        structuralCompleteness: "complete",
+        artifactAvailable: true,
+        finalStatus: "success",
+        failureReason: null,
+        anonymizedCandidateLabel: "Candidate X",
+      },
+    };
+
+    await writeObservationTopologyExperimentArtifacts({
+      runDirectory,
+      execution,
+    });
+
+    const index = JSON.parse(
+      await fs.readFile(
+        path.join(
+          runDirectory,
+          "items",
+          "OBS-C-002",
+          "C_TARGETED_RECOVERY",
+          "repeat-01",
+          "supplemental-provider-evidence-index.json",
+        ),
+        "utf8",
+      ),
+    ) as Array<Record<string, unknown>>;
+
+    expect(index).toEqual([
+      expect.objectContaining({
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+      }),
+    ]);
+    expect(index[0]?.targetId).not.toBe(index[0]?.physicalGapId);
+  });
+
+  it("writes replay-consumable supplemental evidence indexes without manual target normalization", async () => {
+    const runDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "obs-topology-replay-compatible-"));
+    const execution: ObservationTopologyExecutionResult = {
+      benchmarkId: "OBS-C-002",
+      configurationId: "C_TARGETED_RECOVERY",
+      repeatIndex: 1,
+      startedAt: "2026-08-02T12:00:00.000Z",
+      completedAt: "2026-08-02T12:00:01.000Z",
+      elapsedMs: 1000,
+      success: true,
+      provider: "openai",
+      model: "gpt-4.1-mini",
+      promptFingerprint: "prompt-hash",
+      schemaFingerprint: "schema-hash",
+      topologyImplementationFingerprint: "topology-hash",
+      sourceFingerprint: "source-hash",
+      stages: [{
+        stageId: "recovery-selection",
+        stageType: "recovery_selection",
+        order: 2,
+        status: "success",
+        startedAt: "2026-08-02T12:00:00.000Z",
+        completedAt: "2026-08-02T12:00:01.000Z",
+        elapsedMs: 1000,
+        provider: null,
+        model: null,
+        promptFingerprint: null,
+        schemaFingerprint: null,
+        diagnostics: null,
+        artifact: {
+          canonicalRecoveryWindows: [{
+            targetId: "target-1-gap-001",
+            physicalGapId: "gap-001",
+            kind: "prefix",
+            sourceStart: 0,
+            sourceEnd: 152,
+            contextStart: 0,
+            contextEnd: 412,
+          }],
+        },
+        tokenUsage: {
+          input: null,
+          output: null,
+          total: null,
+        },
+      }],
+      attempts: [],
+      supplementalProviderEvidence: [{
+        requestId: "supp-1",
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        providerAttemptNumber: 1,
+        retryParentAttemptIdentity: null,
+        evidence: buildSupplementalProviderEvidence({
+          targetId: "target-1-gap-001",
+          physicalGapId: "gap-001",
+        }),
+      }],
+      finalRepresentation: null,
+      completeness: null,
+      diagnostics: {},
+      summary: {
+        benchmarkId: "OBS-C-002",
+        configurationId: "C_TARGETED_RECOVERY",
+        repeatIndex: 1,
+        success: true,
+        sceneOrRegionCount: 2,
+        observationCount: 5,
+        transitionCount: 0,
+        evidenceSpanCoverage: 0.8,
+        lateSectionRetention: true,
+        endingRetention: true,
+        retryOrStageCount: 4,
+        tokenUsageTotal: 100,
+        elapsedMs: 1000,
+        structuralCompleteness: "complete",
+        artifactAvailable: true,
+        finalStatus: "success",
+        failureReason: null,
+        anonymizedCandidateLabel: "Candidate X",
+      },
+    };
+
+    await writeObservationTopologyExperimentArtifacts({
+      runDirectory,
+      execution,
+    });
+
+    const repeatDirectory = path.join(
+      runDirectory,
+      "items",
+      "OBS-C-002",
+      "C_TARGETED_RECOVERY",
+      "repeat-01",
+    );
+    const loaded = await loadPreservedSupplementalReplayEvidence({
+      repeatDirectory,
+    });
+
+    expect(loaded).toEqual([
+      expect.objectContaining({
+        physicalGapId: "gap-001",
+        targetContract: expect.objectContaining({
+          targetId: "target-1-gap-001",
+          physicalGapId: "gap-001",
+        }),
+      }),
+    ]);
+  });
+
+  it("keeps multiple target ids for the same physical gap distinguishable in persisted replay indexes", async () => {
+    const runDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "obs-topology-distinct-targets-"));
+    const execution: ObservationTopologyExecutionResult = {
+      benchmarkId: "OBS-C-002",
+      configurationId: "C_TARGETED_RECOVERY",
+      repeatIndex: 1,
+      startedAt: "2026-08-02T12:00:00.000Z",
+      completedAt: "2026-08-02T12:00:01.000Z",
+      elapsedMs: 1000,
+      success: true,
+      provider: "openai",
+      model: "gpt-4.1-mini",
+      promptFingerprint: "prompt-hash",
+      schemaFingerprint: "schema-hash",
+      topologyImplementationFingerprint: "topology-hash",
+      sourceFingerprint: "source-hash",
+      stages: [],
+      attempts: [],
+      supplementalProviderEvidence: [
+        {
+          requestId: "supp-1",
+          targetId: "target-1-gap-001",
+          physicalGapId: "gap-001",
+          providerAttemptNumber: 1,
+          retryParentAttemptIdentity: null,
+          evidence: buildSupplementalProviderEvidence({
+            targetId: "target-1-gap-001",
+            physicalGapId: "gap-001",
+          }),
+        },
+        {
+          requestId: "supp-2",
+          targetId: "target-2-gap-001",
+          physicalGapId: "gap-001",
+          providerAttemptNumber: 1,
+          retryParentAttemptIdentity: null,
+          evidence: buildSupplementalProviderEvidence({
+            targetId: "target-2-gap-001",
+            physicalGapId: "gap-001",
+          }),
+        },
+      ],
+      finalRepresentation: null,
+      completeness: null,
+      diagnostics: {},
+      summary: {
+        benchmarkId: "OBS-C-002",
+        configurationId: "C_TARGETED_RECOVERY",
+        repeatIndex: 1,
+        success: true,
+        sceneOrRegionCount: 2,
+        observationCount: 5,
+        transitionCount: 0,
+        evidenceSpanCoverage: 0.8,
+        lateSectionRetention: true,
+        endingRetention: true,
+        retryOrStageCount: 4,
+        tokenUsageTotal: 100,
+        elapsedMs: 1000,
+        structuralCompleteness: "complete",
+        artifactAvailable: true,
+        finalStatus: "success",
+        failureReason: null,
+        anonymizedCandidateLabel: "Candidate X",
+      },
+    };
+
+    await writeObservationTopologyExperimentArtifacts({
+      runDirectory,
+      execution,
+    });
+
+    const index = JSON.parse(
+      await fs.readFile(
+        path.join(
+          runDirectory,
+          "items",
+          "OBS-C-002",
+          "C_TARGETED_RECOVERY",
+          "repeat-01",
+          "supplemental-provider-evidence-index.json",
+        ),
+        "utf8",
+      ),
+    ) as Array<{ targetId?: string; physicalGapId?: string }>;
+
+    expect(index).toHaveLength(2);
+    expect(index.map((entry) => entry.targetId)).toEqual(["target-1-gap-001", "target-2-gap-001"]);
+    expect(index.map((entry) => entry.physicalGapId)).toEqual(["gap-001", "gap-001"]);
   });
 
   it("finalizes a checkpointed run idempotently from completed item artifacts", async () => {

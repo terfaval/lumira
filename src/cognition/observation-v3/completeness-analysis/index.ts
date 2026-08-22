@@ -49,6 +49,9 @@ export {
   type V2AttemptDiagnosticsReference,
 } from "@/src/cognition/observation-v3/completeness-analysis/v2-equivalence";
 export {
+  analyzeMaterialGapAssessment,
+} from "@/src/cognition/observation-v3/completeness-analysis/material-gap-assessment";
+export {
   fingerprintCompletenessAnalysis,
   type CompletenessFingerprintSet,
 } from "@/src/cognition/observation-v3/completeness-analysis/fingerprint";

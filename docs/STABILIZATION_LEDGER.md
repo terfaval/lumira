@@ -58,6 +58,121 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-08-20 - Fortune Library Proportion And Info Surface Polish
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/fortune`
+  - `src/features/fortune-journaling`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Increased desktop library tile proportions while preserving identical geometry across all three card-count groups, the approved two-row desktop composition, and the desktop-only library scroll lock.
+  - Widened the fixed-position mode info surface so authored descriptions and `use_when[]` content breathe horizontally, and widened the page-level Fortune Journaling info surface to read as a near-full-width explanatory overlay above the grid.
+  - Added restrained transparent-track scrollbar styling for Fortune info surfaces without hiding internal scroll affordances when they are still needed.
+- Verification:
+  - `npm.cmd test -- app/fortune/page.test.tsx app/api/fortune/sessions/route.test.ts src/features/fortune-journaling/session.test.ts src/features/fortune-journaling/facilitator/__tests__/fortune-facilitator-runtime.test.ts` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-20T08-44-56-874Z.log`)
+- Follow-up note:
+  - Direct desktop screenshot validation was attempted but not completed because local Playwright browser installation required approval and that approval was not granted in-session.
+
+## 2026-08-20 - Fortune Library Final Composition And Mode Info Panel
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/fortune`
+  - `src/features/fortune-journaling`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Finalized the desktop Fortune library as a single-screen three-group composition with lighter `2 LAPOS / 3 LAPOS / 4 LAPOS` labels, identical tile geometry across all groups, a preserved two-row height for the one-tile `4 LAPOS` column, and a desktop-only page scroll lock limited to the library state.
+  - Replaced the tile-anchored mode popover with one stable grid-relative overlay panel that stays in the same centered position for every mode, keeps the library visible behind it, and swaps content without moving or resizing the grid.
+  - Preserved the separate page-level Fortune Journaling info surface, the Meditation-style chevron back control, tile-start session behavior, and all existing draw/spread/runtime boundaries.
+- Verification:
+  - `npm.cmd test -- app/fortune/page.test.tsx app/api/fortune/sessions/route.test.ts src/features/fortune-journaling/session.test.ts src/features/fortune-journaling/facilitator/__tests__/fortune-facilitator-runtime.test.ts` -> pass
+  - `npm.cmd run lint` -> fails on pre-existing unrelated lint errors in `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`, `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`, and `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+  - `npm.cmd run typecheck` -> fails on pre-existing unrelated type errors in `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts` and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-20T08-05-32-769Z.log`)
+- Follow-up note:
+  - Desktop screenshot validation could not be completed in-session because local Playwright browser binaries were unavailable, so the visual assessment here is limited to implemented layout constraints plus server-rendered markup inspection.
+
+## 2026-08-20 - Fortune Library Viewport Composition And Info Surfaces
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/fortune`
+  - `src/features/fortune-journaling`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Reworked the default Fortune library into one shared desktop composition with the `2`, `3`, and `4` card-count groups displayed side by side, keeping all seven modes within a compact two-row maximum tile arrangement instead of stacked sections.
+  - Replaced text-like count glyphs with CSS-rendered miniature card silhouettes, removed the remaining library eyebrow, adopted the Meditation-style back-chevron top row, and added a separate page-level Fortune Journaling info surface that does not affect session state.
+  - Kept per-mode info on the anchored-popover path while constraining desktop placement to tile-relative overlays that do not push neighboring tiles or page height, and preserved the existing mobile overlay fallback plus all existing draw/spread/runtime boundaries.
+- Verification:
+  - `npm.cmd test -- app/fortune/page.test.tsx app/api/fortune/sessions/route.test.ts src/features/fortune-journaling/session.test.ts src/features/fortune-journaling/facilitator/__tests__/fortune-facilitator-runtime.test.ts` -> pass
+  - `npm.cmd run lint` -> fails on pre-existing unrelated lint errors in `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`, `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`, and `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+  - `npm.cmd run typecheck` -> fails on pre-existing unrelated type errors in `.next/types/validator.ts`, `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts`, and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-20T07-42-18-066Z.log`)
+- Follow-up note:
+  - Authenticated browser validation was still not available in-session, so the desktop viewport-fit assessment here is based on the implemented layout constraints plus server-rendered markup inspection rather than a signed-in screenshot run.
+
+## 2026-08-20 - Fortune Library Draw Spread Visual Refinement V1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/fortune`
+  - `src/features/fortune-journaling`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Removed the large hero and primary panel framing from the library, draw, and spread surfaces so the Fortune flow sits directly on the existing page background with spacing and typography carrying the hierarchy.
+  - Refined the mode library into card-count-derived grouped grids with square-leaning tiles, interactionally separate circular `i` controls, and anchored info popovers that do not stretch neighboring tiles.
+  - Tightened the desktop draw fan to keep all 22 face-down Major Arcana within the content width, separated selected cards into their own tray, preserved the mobile alternative, and refined the spread hierarchy plus centered reflection CTA without changing the downstream runtime.
+- Verification:
+  - `npm.cmd test -- app/fortune/page.test.tsx app/api/fortune/sessions/route.test.ts src/features/fortune-journaling/session.test.ts src/features/fortune-journaling/facilitator/__tests__/fortune-facilitator-runtime.test.ts` -> pass
+  - `npm.cmd run lint` -> fails on pre-existing unrelated lint errors in `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`, `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`, and `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+  - `npm.cmd run typecheck` -> fails on pre-existing unrelated type errors in `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts` and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-20T07-07-42-017Z.log`)
+- Follow-up note:
+  - Visual browser validation was not completed in-session because the local `/fortune` route redirected to auth, so acceptance here is based on code inspection plus route and session recovery tests.
+
+## 2026-08-13 - OBS-V3-STAB-11 Provisional Carrier Relaxation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/descriptive-extraction/`
+  - `src/cognition/observation-v3/pipeline/__tests__/`
+  - `src/cognition/observation-v3/memory-realization/__tests__/`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Relaxed descriptive extraction so the native provisional candidate can survive when scene-level evidence grounding fails but at least one descriptive unit remains fully grounded to source text.
+  - Kept the existing native C0 candidate shape and derived provisional locality evidence from grounded observation spans instead of inventing a second provisional carrier family or fabricating canonical scenes.
+  - Preserved the canonical scene-first authority boundary by leaving final fail-closed enforcement at memory realization and keeping admission and persistence semantics unchanged.
+- Verification:
+  - `npm.cmd test -- src/cognition/observation-v3/descriptive-extraction/__tests__/descriptive-extraction.test.ts` -> pass
+  - `npm.cmd test -- src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass
+  - `npm.cmd test -- src/cognition/observation-v3/memory-realization/__tests__/memory-realization.test.ts` -> pass
+  - `npm.cmd test -- src/cognition/observation-v3/pipeline/__tests__/pipeline-runner.test.ts` -> pass
+  - `npm.cmd test -- src/cognition/observation-v3/authority-admission/__tests__/shadow-authority-admission.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-13T07-56-23-598Z.log`)
+- Follow-up note:
+  - The successful build preserved the existing Turbopack NFT tracing warning rooted through `next.config.ts`; this ticket did not widen or remediate that warning.
+
+## 2026-08-12 - OBS-V3-CUTOVER-11 Failed Capture Diagnostic Enrichment
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/capture/page.tsx`
+  - `app/capture/page.test.tsx`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Extended the existing `llm_observation_extraction_failed` capture diagnostic for explicit V3 failures instead of introducing a second diagnostic path.
+  - Added deterministic reachability reporting for failed stage, supplemental realization, authority admission, iterative recovery, and final completeness so `not_reached` is emitted only when the pipeline result proves the later stage was never reached.
+  - Preserved the full structured failed-stage `failure` payload and widened final-completeness extraction to already-produced pipeline artifacts, including pre-admission completeness-stage artifacts, without changing capture, admission, supplemental, or persistence semantics.
+- Verification:
+  - `npx.cmd vitest run app/capture/page.test.tsx` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-12T16-56-44-297Z.log`)
+- Follow-up note:
+  - The successful build preserved the existing Turbopack NFT tracing warning rooted through `next.config.ts`; this ticket did not widen or remediate that warning.
+
 ## 2026-08-10 - OBS-V3-STAB-08B Pipeline Completion and Governance Disposition Separation
 
 - Phase: BUILD
@@ -5772,3 +5887,290 @@ Verification references:
   - `npm.cmd run lint` -> pass
   - `npm.cmd run typecheck` -> pass
   - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-11T09-08-31-013Z.log`)
+- Follow-up stabilization:
+  - Refined the homepage Meditation panel overlay/CTA to match the approved capture-style hover behavior while keeping the Kincstarto visual world.
+  - Restored meditation reader text continuity across pause blocks, switched the active-session exit control to a round `X`, and exposed editor mode correctly for authenticated admins on the `/meditation` route.
+  - Added reader-step regression coverage and reran repository verification for the follow-up patch.
+  - `npm.cmd test -- src/features/meditation/lib/reader-step.test.ts` -> pass
+  - `npm.cmd test -- app/meditation/page.test.tsx` -> pass
+  - `npm.cmd test -- src/ui/homepage/__tests__/homepage-orientation-hub.test.tsx` -> pass
+  - `npm.cmd run lint` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-11T09-54-38-594Z.log`)
+  - Added admin inline editor preview support so timing can be checked from the currently selected text block without leaving editor mode, with manual stop and auto-stop on direct editing-field interaction.
+  - Extended the reader/audio engines to support mid-sequence preview starts while preserving default start-from-beginning behavior in normal reader mode.
+  - Added pure preview-selection and auto-stop policy coverage for the new editor preview logic and reran fresh repository verification for the follow-up patch.
+  - `npx.cmd vitest run src/features/meditation/lib/editor-preview.test.ts src/features/meditation/lib/reader-step.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-11T18-34-46-885Z.log`)
+
+## 2026-08-11 - OBS-V3-CUTOVER-09 Capture / Generation Authority Routing Seam
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/capture`
+  - `src/runtime/orchestration`
+  - `src/cognition/observation-v3/pipeline`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Added a transitional capture-time routing seam that resolves Observation generation explicitly as `default_v2` or `explicit_v3` without changing the live V2 default.
+  - Split runtime behavior into generation-then-persistence so capture still fails before reflective-object creation when generation fails, while explicit V3 persists only admitted native V3 authority.
+  - Extended the shadow-pipeline authority-admission stage payload with the full admission decision so the runtime seam can construct authoritative `ObservationV3AuthorityRecord` state without introducing a V2 compatibility authority path.
+- Verification:
+  - `npx.cmd vitest run app/capture/page.test.tsx src/runtime/orchestration/__tests__/generate-observation-for-reflective-object.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-11T14-57-22-099Z.log`)
+- Follow-up note:
+  - The successful build preserved an existing Turbopack NFT tracing warning rooted through `next.config.ts`; this ticket did not widen or remediate that warning.
+
+## 2026-08-11 - OBS-V3-CUTOVER-10 Controlled Production Evaluation Switch
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/capture`
+  - `src/runtime/orchestration`
+  - `src/infrastructure/environment`
+  - `src/infrastructure/supabase/client/__tests__`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Added a single environment-backed capture authority control through `OBSERVATION_CAPTURE_AUTHORITY_MODE`, resolved at runtime to the existing Observation seam as `default_v2` or `explicit_v3`.
+  - Kept V2 as the conservative fallback for unset or invalid configuration and preserved rollback as future-routing-only behavior with no mutation of already-persisted V3 authority.
+  - Routed the resolved control consistently through capture generation and immediate downstream glossary read resolution, while adding selected-mode visibility to existing capture diagnostics and failure logs instead of introducing a broader observability layer.
+- Verification:
+  - `npx.cmd vitest run app/capture/page.test.tsx src/runtime/orchestration/__tests__/resolve-observation-capture-authority-mode.test.ts src/infrastructure/environment/__tests__/env.test.ts` -> pass
+  - `npx.cmd vitest run src/runtime/orchestration/__tests__/generate-observation-for-reflective-object.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-11T14-59-33-789Z.log`)
+- Follow-up note:
+  - The successful build preserved the existing Turbopack NFT tracing warning rooted through `next.config.ts`; this ticket did not widen or remediate that warning.
+- Follow-up stabilization:
+  - Added one bounded iterative V3 supplemental-recovery pass on the live shadow pipeline when post-composition admission still returns `deferred_for_supplemental_realization` with an eligible targeted recovery route.
+  - Kept the retry fail-closed and V3-native: no V3→V2 fallback was introduced, and the retry only re-enters supplemental realization, composition, canonical realization, and admission.
+  - Added a live pipeline regression proving that a deferred first recovery pass can become admitted after the second bounded supplemental pass.
+  - `npx.cmd vitest run src/runtime/orchestration/__tests__/generate-observation-for-reflective-object.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-11T18-44-52-633Z.log`)
+  - Fixed the capture-default live V3 path so the same iterative supplemental recovery still runs when capture passes `liveProviderExecution: {}` without an explicit `supplementalRealization` block.
+  - Added a regression that mocks the default supplemental provider executor and proves the second bounded supplemental pass is invoked twice on the live capture-style path.
+  - `npx.cmd vitest run src/runtime/orchestration/__tests__/generate-observation-for-reflective-object.test.ts src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-11T20-58-47-069Z.log`)
+
+## 2026-08-13 - Observation V3 Memory Composition Semantic Reconciliation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/cognition/observation-v3/memory-composition`
+  - `src/cognition/observation-v3/memory-realization/__tests__`
+  - `src/cognition/observation-v3/authority-admission/__tests__`
+  - `src/cognition/observation-v3/pipeline/__tests__`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Added a bounded semantic-equivalence reconciliation pass inside `memory_composition` after overlap detection so semantically equivalent or refinement-level baseline and supplemental material can resolve into one composed unit before canonical realization.
+  - Distinguishes intra-recovery deduplication from baseline-plus-recovery refinement reconciliation by requiring compatible chronology, locality, and supporting evidence while preserving genuine ambiguity as unresolved overlap alternatives.
+  - Preserved evidence, provenance, and uncertainty lineage across merged units and folded recovery-derived localities back into baseline localities when their surviving units did not establish a genuinely new boundary.
+  - Corrected overlap classification ordering so `possible_duplicate` can be emitted before the generic `partial_overlap` branch.
+- Verification:
+  - `npm.cmd test -- src/cognition/observation-v3/memory-composition/__tests__/memory-composition.test.ts` -> pass
+  - `npm.cmd test -- src/cognition/observation-v3/memory-realization/__tests__/memory-realization.test.ts` -> pass
+  - `npm.cmd test -- src/cognition/observation-v3/authority-admission/__tests__/admission-evaluator.test.ts` -> pass
+  - `npm.cmd test -- src/cognition/observation-v3/pipeline/__tests__/shadow-pipeline.test.ts` -> pass
+  - `npm.cmd run typecheck` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-13T09-10-12-435Z.log`)
+- Follow-up note:
+  - The successful build preserved the existing Turbopack NFT tracing warning rooted through `next.config.ts`; this ticket did not widen or remediate that warning.
+
+## 2026-08-18 - OBS-V3-CUTOVER-12 Runtime Authority Cutover
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/runtime/orchestration`
+  - `src/infrastructure/persistence`
+  - `src/cognition/latent-v2/opportunity-constructor`
+  - `app/api/reflective-objects/[id]/observations`
+  - `docs/CURRENT_STATE.md`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Added one shared runtime Observation authority resolver and flipped the normal live authority mode to V3, while keeping explicit V2 selection as bounded compatibility behavior.
+  - Cut native Observation reads, glossary generation, and latent-opening preparation over to the shared native authority seam so normal live flows no longer depend on implicit `default_v2` routing or V2-only latent generation gates.
+  - Demoted legacy manual Observation POST ingress to read-only compatibility by rejecting authority-capable writes instead of allowing competing legacy Observation state to be created after cutover.
+- Verification:
+  - `npx.cmd vitest run src/infrastructure/persistence/__tests__/observation-native-read-store.test.ts src/runtime/orchestration/__tests__/resolve-observation-capture-authority-mode.test.ts src/runtime/orchestration/__tests__/prepare-latent-opening-for-reflection.test.ts app/api/reflective-objects/[id]/observations/__tests__/route.test.ts` -> pass
+  - `npx.cmd vitest run app/capture/page.test.tsx src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts app/api/reflective-objects/[id]/glossary-candidates/__tests__/route.test.ts app/api/reflective-space/viewport/__tests__/route.test.ts src/cognition/latent-v2/opportunity-constructor/__tests__/input-packet-composer.test.ts` -> pass
+  - `npx.cmd vitest run src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts` -> pass
+  - `npm.cmd run typecheck` -> fails on pre-existing replay-test typing errors in `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-18T19-45-33-273Z.log`)
+- Follow-up note:
+  - The successful build preserved the existing Turbopack NFT tracing warning rooted through `next.config.ts`; this ticket did not widen or remediate that warning.
+
+## 2026-08-19 - Observation V3 Formal Cutover Closure Documentation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `docs/CURRENT_STATE.md`
+  - `docs/STABILIZATION_LEDGER.md`
+  - `docs/v2-build/observation/Observation-V3-Runtime-Cutover-Prerequisites.md`
+- Notes:
+  - Formally recorded in living documentation that Observation V3 is the active runtime Observation authority on normal live flows and that the runtime cutover workstream is closed.
+  - Recorded that retained V2 behavior is compatibility-only, that legacy/manual Observation ingress is non-authoritative, and that current stabilization no longer requires generic Observation V3 cognition hardening.
+  - Recorded the accepted post-cutover benchmark baseline as `20260818T195354Z-obs-v3-full-benchmark-baseline` with preserved `17/17 fully_replayable` and `17/17 admitted_with_observations` outcomes.
+  - Preserved residual non-blocking debt separately: standalone `typecheck` remains red in `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`, `default_v2` remains in compatibility vocabulary, and broader legacy/V2 residue cleanup remains a later workstream.
+- Verification:
+  - Verified the living documentation surfaces in scope no longer describe Observation V2 as the active runtime authority.
+  - Confirmed remaining contrary references under `docs/v2-build/observation` are historical shadow-era records rather than current living authority state.
+
+## 2026-08-19 - Fortune Journaling MVP Foundation and First Local Session
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/fortune`
+  - `src/content/fortune-journaling`
+  - `src/features/fortune-journaling`
+  - `src/reflective-space/composition`
+  - `src/ui/homepage`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Added an authenticated `/fortune` daytime entry point and a top-level homepage Fortune tile without routing Fortune through Dream Journal, capture object types, recent objects, or the dream opening pipeline.
+  - Added authoritative bundled Fortune content loaders for the 22-card Major Arcana deck and the authored tarot mode library, while keeping only `situation_unfolding` / `Helyzet kibontása` active in the MVP UI.
+  - Implemented a local-only Fortune session slice with isolated deterministic deck draw, authored position assignment, optional focus, user-triggered hints, required first interpretation, and a temporary completion state with no persistence or AI generation.
+- Verification:
+  - `npm.cmd test -- src/content/fortune-journaling/index.test.ts src/features/fortune-journaling/session.test.ts app/fortune/page.test.tsx src/ui/homepage/__tests__/homepage-orientation-hub.test.tsx` -> pass
+  - `npm.cmd run lint` -> fails on pre-existing unrelated lint errors in `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`, `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`, and `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+  - `npm.cmd run typecheck` -> fails on pre-existing unrelated type errors in `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts` and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-19T11-27-14-156Z.log`)
+- Follow-up note:
+  - The successful build preserved the existing Turbopack NFT tracing warning rooted through `next.config.ts`; this ticket did not widen or remediate that warning.
+
+## 2026-08-19 - Fortune Journaling Session Persistence Foundation
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations`
+  - `src/domain/fortune-sessions`
+  - `src/infrastructure/supabase/adapters`
+  - `src/infrastructure/supabase/repositories`
+  - `app/api/fortune/sessions`
+  - `app/fortune`
+  - `src/features/fortune-journaling`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Added a dedicated `fortune_sessions` persistence table with owner-scoped RLS, minimal `active | completed` state, bundled-content card references, and no reuse of dream, thread, response, opening, or reflective-object persistence substrates.
+  - Added a Fortune session domain/repository/API boundary that creates sessions atomically at draw time, preserves authored position keys and exact card ids, and completes the current slice by storing the first interpretation without adding AI or transcript turns.
+  - Updated `/fortune` to recover persisted sessions explicitly from `?session=<id>`, resolving card ids back through bundled Major Arcana content and avoiding silent latest-session resume or redraw drift.
+- Verification:
+  - `npm.cmd test -- src/content/fortune-journaling/index.test.ts src/features/fortune-journaling/session.test.ts src/shared/__tests__/fortune-session-persistence-migration.test.ts src/infrastructure/supabase/repositories/__tests__/fortune-session-supabase-repository.test.ts app/api/fortune/sessions/route.test.ts app/api/fortune/sessions/[id]/route.test.ts app/fortune/page.test.tsx src/ui/homepage/__tests__/homepage-orientation-hub.test.tsx` -> pass
+  - `npm.cmd run lint` -> fails on pre-existing unrelated lint errors in `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`, `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`, and `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+  - `npm.cmd run typecheck` -> fails on generated `.next/types/validator.ts` route-type resolution plus pre-existing unrelated errors in `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts` and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-19T12-04-13-740Z.log`)
+- Follow-up note:
+  - The successful build preserved the existing Turbopack NFT tracing warning rooted through `next.config.ts`; this ticket did not widen or remediate that warning.
+
+## 2026-08-19 - Fortune AI Facilitator V1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations`
+  - `src/domain/fortune-sessions`
+  - `src/content/fortune-journaling`
+  - `src/features/fortune-journaling`
+  - `src/infrastructure/supabase/adapters`
+  - `src/infrastructure/supabase/repositories`
+  - `app/api/fortune/sessions/[id]`
+  - `app/api/fortune/sessions/[id]/facilitator-turn`
+  - `app/api/fortune/sessions/[id]/reflective-reply`
+  - `app/fortune`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Added a dedicated `fortune_session_turns` persistence layer with owner-scoped access, v1-scoped uniqueness for one assistant reflective prompt and one user reflective reply, and no reuse of dream threads, responses, openings, or reflective objects.
+  - Split the Fortune session lifecycle so storing `first_interpretation` keeps the session `active`, assistant generation remains idempotent and retryable on the same session, and completion now happens only after the persisted reflective reply.
+  - Added a Fortune-specific facilitator packet/runtime and authenticated API endpoints that resolve bundled mode/card context on the server, persist exactly one structured `reflection + question` assistant turn, persist one user reply, and recover the flow explicitly from `?session=<id>` plus persisted turns.
+- Verification:
+  - `npx.cmd vitest run src/shared/__tests__/fortune-session-turns-migration.test.ts src/infrastructure/supabase/repositories/__tests__/fortune-session-turn-supabase-repository.test.ts src/infrastructure/supabase/repositories/__tests__/fortune-session-supabase-repository.test.ts src/features/fortune-journaling/facilitator/__tests__/fortune-facilitator-runtime.test.ts src/content/fortune-journaling/index.test.ts src/features/fortune-journaling/session.test.ts app/api/fortune/sessions/route.test.ts app/api/fortune/sessions/[id]/route.test.ts app/api/fortune/sessions/[id]/facilitator-turn/route.test.ts app/api/fortune/sessions/[id]/reflective-reply/route.test.ts app/fortune/page.test.tsx` -> pass
+  - `npm.cmd run lint` -> fails on pre-existing unrelated lint errors in `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`, `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`, and `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+  - `npm.cmd run typecheck` -> fails on pre-existing unrelated type errors in `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts` and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-19T13-20-49-256Z.log`)
+- Follow-up note:
+  - The successful build preserved the existing Turbopack NFT tracing warning rooted through `next.config.ts`; this ticket did not widen or remediate that warning.
+
+## 2026-08-19 - Fortune Multi-turn Conversation And User-controlled Lifecycle V1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `supabase/migrations`
+  - `src/domain/fortune-sessions`
+  - `src/features/fortune-journaling`
+  - `src/infrastructure/supabase/adapters`
+  - `src/infrastructure/supabase/repositories`
+  - `app/api/fortune/sessions/[id]`
+  - `app/api/fortune/sessions/[id]/facilitator-turn`
+  - `app/api/fortune/sessions/[id]/reflective-reply`
+  - `app/api/fortune/sessions/[id]/pause`
+  - `app/api/fortune/sessions/[id]/resume`
+  - `app/api/fortune/sessions/[id]/complete`
+  - `app/fortune`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Preserved `20260819_0001_fortune_sessions.sql` and `20260819_0002_fortune_session_turns.sql` as immutable history, and moved the multi-turn lifecycle expansion into `20260819_0003_fortune_multi_turn_rounds.sql` with `paused_at`, `round_index`, and round-aware assistant/reply uniqueness.
+  - Extended the Fortune-only facilitator and recovery model to support multiple answered or unanswered rounds, backward-compatible hydration of legacy assistant-turn JSON, explicit `active | paused | completed` lifecycle, and `question | resting_point` assistant output without importing dream runtime surfaces.
+  - Updated `/fortune` to auto-continue only after normal user replies, surface explicit `Continue / Pause / Complete` at resting points, keep provider-failure retries on the same session without persisting failed assistant turns, and re-check lifecycle state after provider generation before assistant persistence.
+- Verification:
+  - `npx.cmd vitest run src/shared/__tests__/fortune-session-persistence-migration.test.ts src/shared/__tests__/fortune-session-turns-migration.test.ts src/infrastructure/supabase/repositories/__tests__/fortune-session-supabase-repository.test.ts src/infrastructure/supabase/repositories/__tests__/fortune-session-turn-supabase-repository.test.ts src/features/fortune-journaling/facilitator/__tests__/fortune-facilitator-runtime.test.ts src/content/fortune-journaling/index.test.ts src/features/fortune-journaling/session.test.ts app/api/fortune/sessions/route.test.ts app/api/fortune/sessions/[id]/route.test.ts app/api/fortune/sessions/[id]/facilitator-turn/route.test.ts app/api/fortune/sessions/[id]/reflective-reply/route.test.ts app/api/fortune/sessions/[id]/pause/route.test.ts app/api/fortune/sessions/[id]/resume/route.test.ts app/api/fortune/sessions/[id]/complete/route.test.ts app/fortune/page.test.tsx` -> pass
+  - `npm.cmd run lint` -> fails on pre-existing unrelated lint errors in `src/cognition/glossary/__tests__/extract-glossary-candidates-from-observations.test.ts`, `src/reflective-space/composition/__tests__/compose-deep-reflection-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-homepage-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-object-orientation-payload.test.ts`, `src/reflective-space/composition/__tests__/compose-reflective-space-viewport.test.ts`, and `src/runtime/orchestration/__tests__/generate-glossary-candidates-for-reflective-object.test.ts`
+  - `npm.cmd run typecheck` -> fails on pre-existing unrelated type errors in `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts` and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-19T21-28-15-150Z.log`)
+- Follow-up note:
+  - The successful build preserved the existing Turbopack NFT tracing warning rooted through `next.config.ts`; this ticket did not widen or remediate that warning.
+
+## 2026-08-20 - Fortune Shared Step Shell And Info Surface Refinement
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/fortune`
+  - `src/features/fortune-journaling`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Added a shared Fortune step shell across Library, Draw, and Spread with the approved `I. LÉPÉS / II. LÉPÉS / III. LÉPÉS` mapping while keeping Reflection outside the numbered shell.
+  - Reworked the page-level Fortune Journaling explanation into a viewport-centered overlay with improved editorial hierarchy, and preserved it as a session-independent surface triggered from the top-right info control.
+  - Replaced the fixed mode-info presentation with inward-opening tile-relative overlays that preserve grid stability, keep the library visible underneath, and retain separate Info-vs-start interaction semantics.
+- Verification:
+  - `npm.cmd test -- app/fortune/page.test.tsx app/api/fortune/sessions/route.test.ts src/features/fortune-journaling/session.test.ts src/features/fortune-journaling/facilitator/__tests__/fortune-facilitator-runtime.test.ts` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-20T09-10-55-546Z.log`)
+- Follow-up note:
+  - Direct browser validation was intentionally left to the owner per ticket instruction; no Playwright browser installation or browser dependency changes were attempted in this ticket.
+
+## 2026-08-20 - Fortune Shared Header Shell And Info Positioning Fix
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/fortune`
+  - `src/features/fortune-journaling`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Replaced the separated Fortune step caption with a single shared pre-reflection header shell that keeps the back chevron, centered step guidance, and page-level info trigger in one stable 3-area layout.
+  - Corrected desktop mode-info geometry so the overlay grows inward from its source tile, anchors on the tile midpoint, and uses a substantially wider landscape surface with vertical-only scrolling.
+  - Kept the page-level Fortune Journaling explanation on a distinct fixed, viewport-centered overlay path so it does not inherit tile-relative positioning behavior.
+- Verification:
+  - `npm.cmd test -- app/fortune/page.test.tsx app/api/fortune/sessions/route.test.ts src/features/fortune-journaling/session.test.ts src/features/fortune-journaling/facilitator/__tests__/fortune-facilitator-runtime.test.ts` -> pass
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-20T09-25-05-742Z.log`)
+- Follow-up note:
+  - Owner-requested visual validation remains local-dev only for this ticket; no Playwright browser installation or browser dependency changes were attempted.
+
+## 2026-08-20 - Fortune Draw Refinement V2
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/fortune`
+  - `src/features/fortune-journaling`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Moved the Step II remaining-count guidance fully into the shared Fortune header, removed the Draw-local back button and selected-card tray, and made the header-left control step-aware: Step I returns home, Step II returns to Library and clears local draw state, Step III and later exit safely to the Fortune Library.
+  - Replaced the temporary Draw placeholder backs with the real `public/fortune-journaling/card-back.png` asset and kept selected cards in their original fan/grid positions with toggleable pre-commit selection.
+  - Rebuilt Draw into a stronger viewport-relative desktop fan with larger cards, deeper curvature, and desktop-only page scroll lock while preserving a separate stacked mobile selection layout with scrolling.
+- Verification:
+  - `npx.cmd vitest run src/features/fortune-journaling/draw-state.test.ts src/features/fortune-journaling/session.test.ts app/fortune/page.test.tsx` -> pass
+  - `npm.cmd run lint -- app/fortune/page.test.tsx src/features/fortune-journaling/FortuneJournalingPageClient.tsx src/features/fortune-journaling/draw-state.ts src/features/fortune-journaling/draw-state.test.ts` -> pass
+  - `npm.cmd run typecheck` -> fails on pre-existing unrelated errors in `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts` and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+  - `npm.cmd run lint` -> timed out before completion during repo-wide validation; targeted Fortune lint passed
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-20T13-45-56-037Z.log`)
+- Follow-up note:
+  - Step III -> Step II restoration was intentionally not implemented in this ticket; from persisted Spread onward the shared header-left control exits to the Fortune Library without mutating the persisted session.

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { LayerEnd, LayerStart, MeditationAudioConfig } from "../lib/audio-types";
+import { shouldIgnoreAudioPlaybackError } from "../lib/audio-playback-error";
 import { resolveAudioPath } from "../lib/resolve-audio-path";
 
 type AudioLayerState = {
@@ -84,6 +85,7 @@ export function useAudioEngine() {
       const playPromise = layer.audio.play();
       if (playPromise && typeof playPromise.catch === "function") {
         playPromise.catch((error) => {
+          if (shouldIgnoreAudioPlaybackError(error)) return;
           console.warn("[audio] Playback failed:", error);
         });
       }
@@ -113,11 +115,13 @@ export function useAudioEngine() {
       layer.audio.src = "";
     });
     layersRef.current = [];
+    currentBlockIndexRef.current = 0;
   }, [clearFadeIntervals]);
 
   const start = useCallback(
-    (audioConfig?: MeditationAudioConfig | null) => {
+    (audioConfig?: MeditationAudioConfig | null, initialBlockIndex = 0) => {
       stop();
+      currentBlockIndexRef.current = Math.max(0, initialBlockIndex);
       if (!audioConfig || !Array.isArray(audioConfig.layers) || !audioConfig.layers.length) return;
 
       const baseGain = typeof audioConfig.mix?.base_gain === "number" ? audioConfig.mix.base_gain : 1;

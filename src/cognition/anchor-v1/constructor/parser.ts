@@ -100,17 +100,17 @@ function parseAnchor(raw: unknown): AnchorConstructorAnchor | null {
       return null;
     }
 
-    const observationV2SceneObservationId = readString(ref.observationV2SceneObservationId);
+    const observationReferenceId = readString(ref.observationReferenceId);
     const role = readString(ref.role);
     if (
-      !observationV2SceneObservationId ||
+      !observationReferenceId ||
       (role !== "primary_support" && role !== "context_support")
     ) {
       return null;
     }
 
     return {
-      observationV2SceneObservationId,
+      observationReferenceId,
       role,
     };
   });
@@ -140,27 +140,27 @@ function parseAnchor(raw: unknown): AnchorConstructorAnchor | null {
 
         const opportunityManifestationId = readString(ref.opportunityManifestationId);
         const evidenceBlockId = readString(ref.evidenceBlockId);
-        const observationV2SceneObservationId = readString(ref.observationV2SceneObservationId);
+        const observationReferenceId = readString(ref.observationReferenceId);
         const supportsNodeKeys = readStringArray(ref.supportsNodeKeys);
         const supportsEdgeIndexes = readIntegerArray(ref.supportsEdgeIndexes);
 
         if (
           !opportunityManifestationId ||
           !evidenceBlockId ||
-          !observationV2SceneObservationId ||
+          !observationReferenceId ||
           !supportsNodeKeys ||
           !supportsEdgeIndexes
         ) {
           return null;
         }
 
-        return {
-          opportunityManifestationId,
-          evidenceBlockId,
-          observationV2SceneObservationId,
-          supportsNodeKeys,
-          supportsEdgeIndexes,
-        };
+          return {
+            opportunityManifestationId,
+            evidenceBlockId,
+            observationReferenceId,
+            supportsNodeKeys,
+            supportsEdgeIndexes,
+          };
       })
     : null;
 

@@ -97,12 +97,25 @@ export function HomepageOrientationHub({ payload }: HomepageOrientationHubProps)
           </ul>
         </article>
 
+        <article className={`${styles.tile} ${styles.fortune} ${styles.secondary} ${styles.interactive}`}>
+          <PanelEntryLink target={payload.navigation.fortune} label="Fortune Journaling megnyitása" />
+          <h2>Fortune Journaling</h2>
+          <p className={styles.panelSublead}>Tarot-alapú önreflexió</p>
+          <p className={styles.mobileHint}>Két lap, egy helyzet, saját jelentésalkotás.</p>
+          <p className={styles.quiet}>Külön nappali tér, a dream pipeline-tól függetlenül.</p>
+        </article>
+
         <article className={`${styles.tile} ${styles.meditation} ${styles.secondary} ${styles.interactive}`}>
-          <PanelEntryLink target={MEDITATION_TARGET} label="Meditációk megnyitása" />
+          <PanelEntryLink target={MEDITATION_TARGET} label="Meditáció panel megnyitása" />
           <div className={styles.meditationContent}>
-            <h2>Meditáció</h2>
-            <p className={styles.panelLead}>Lépj be egy lassabb, csendesebb térbe.</p>
-            <span className={styles.meditationCta}>Meditációk megnyitása</span>
+            <p className={`${styles.panelLead} ${styles.meditationLead}`}>
+              Lépj be egy lassabb,
+              <br />
+              csendesebb térbe.
+            </p>
+            <Link className={styles.meditationCta} href={MEDITATION_TARGET.href}>
+              Meditálj
+            </Link>
           </div>
         </article>
 

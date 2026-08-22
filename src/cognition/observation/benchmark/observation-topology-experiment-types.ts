@@ -220,6 +220,7 @@ export interface ObservationTopologyExecutionResult {
   supplementalProviderEvidence?: Array<{
     requestId: string;
     targetId: string;
+    physicalGapId?: string | null;
     providerAttemptNumber: number;
     retryParentAttemptIdentity: string | null;
     evidence: SupplementalRealizationProviderEvidence;

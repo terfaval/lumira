@@ -6,6 +6,10 @@ import {
 } from "@/src/runtime/orchestration/generate-latent-opportunities-for-reflective-object";
 import type { OpportunityConstructorInputPacket, OpportunityConstructorOutputPacket } from "@/src/cognition/latent-v2/opportunity-constructor";
 import type {
+  OpportunityConstructorV3InputPacket,
+  OpportunityConstructorV3OutputPacket,
+} from "@/src/cognition/latent-v2/opportunity-constructor-v3";
+import type {
   LatentAuthorityProvenance,
   LatentContextProvenance,
   LatentExecutionProvenance,
@@ -14,7 +18,7 @@ import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { GlossaryCandidate, GlossaryTerm } from "@/src/domain/glossary/types";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
 import type { LatentOpportunityManifestation } from "@/src/domain/latent-v2/types";
-import type { ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationNativeReadRepository } from "@/src/domain/observation/native-read";
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 import type { ReflectiveObject } from "@/src/domain/reflective-objects/types";
@@ -350,6 +354,307 @@ function createExecutionProvenance(
         strict: true,
       },
     },
+  };
+}
+
+function createV3Packet(): OpportunityConstructorV3InputPacket {
+  return {
+    generationContext: {
+      runtimeVersion: "latent_opportunity_constructor_v3_shadow_v1",
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      priorityReflectiveObjectType: "dream",
+      priorityReflectiveObjectTitle: "Search dream",
+      objectLanguage: "en",
+      authority: {
+        family: "observation_v3",
+        authorityId: "authority-1",
+        canonicalObservationId: "canonical-1",
+        canonicalHash: "canonical-hash-1",
+        generationVersion: "observation_v3_shadow_v1",
+      },
+    },
+    priorityObject: {
+      content: "I feel watched, apologize, and get reassured in the kitchen.",
+      summary: "Watched presence moves into apology and reassurance.",
+    },
+    localities: [
+      {
+        localityId: "locality-hallway",
+        position: 1,
+        label: "Hallway",
+        evidenceSnippet: "I feel watched",
+        boundaryUncertainty: "the hallway edges remain fuzzy",
+        evidenceRefs: [
+          {
+            evidenceId: "evidence-locality-hallway",
+            snippet: "I feel watched",
+            spanStart: 0,
+            spanEnd: 14,
+            contextLabel: "scene",
+          },
+        ],
+        enrichment: {
+          affect: [],
+          agency: [],
+          interactions: [],
+          metacognition: [],
+          phenomenology: ["watched"],
+          continuity: [],
+        },
+      },
+      {
+        localityId: "locality-kitchen",
+        position: 2,
+        label: "Kitchen",
+        evidenceSnippet: "in the kitchen",
+        boundaryUncertainty: null,
+        evidenceRefs: [
+          {
+            evidenceId: "evidence-locality-kitchen",
+            snippet: "in the kitchen",
+            spanStart: 32,
+            spanEnd: 46,
+            contextLabel: "scene",
+          },
+        ],
+        enrichment: {
+          affect: [],
+          agency: ["apologize"],
+          interactions: ["reassure"],
+          metacognition: [],
+          phenomenology: [],
+          continuity: [],
+        },
+      },
+    ],
+    units: [
+      {
+        authorityId: "authority-1",
+        unitId: "unit-presence",
+        localityId: "locality-hallway",
+        position: 1,
+        statement: "I feel watched even though I cannot clearly see the figure.",
+        category: "phenomenology",
+        uncertaintyNote: "the figure remains indistinct",
+        evidenceRefs: [
+          {
+            evidenceId: "evidence-presence",
+            snippet: "feel watched",
+            spanStart: 0,
+            spanEnd: 12,
+            contextLabel: "quoted_support",
+          },
+        ],
+        enrichmentTags: ["watched"],
+      },
+      {
+        authorityId: "authority-1",
+        unitId: "unit-apology",
+        localityId: "locality-kitchen",
+        position: 2,
+        statement: "I apologize because I think I caused harm.",
+        category: "agency",
+        uncertaintyNote: null,
+        evidenceRefs: [
+          {
+            evidenceId: "evidence-apology",
+            snippet: "I apologize",
+            spanStart: 15,
+            spanEnd: 26,
+            contextLabel: "quoted_support",
+          },
+        ],
+        enrichmentTags: ["apologize"],
+      },
+      {
+        authorityId: "authority-1",
+        unitId: "unit-reassurance",
+        localityId: "locality-kitchen",
+        position: 3,
+        statement: "She reassures me after I apologize.",
+        category: "interaction",
+        uncertaintyNote: null,
+        evidenceRefs: [
+          {
+            evidenceId: "evidence-reassurance",
+            snippet: "reassures me",
+            spanStart: 30,
+            spanEnd: 42,
+            contextLabel: "quoted_support",
+          },
+        ],
+        enrichmentTags: ["reassure"],
+      },
+    ],
+    uncertaintyRecords: [
+      {
+        canonicalUncertaintyId: "uncertainty-1",
+        subjectType: "unit",
+        subjectId: "unit-presence",
+        uncertaintyType: "statement_uncertainty",
+        note: "the figure remains indistinct",
+      },
+    ],
+    provenance: {
+      provenanceId: "provenance-1",
+      sourceId: "source-1",
+      sourceHash: "source-hash-1",
+      sourceLength: 96,
+      primaryRealizationRefs: ["realization-1"],
+      supplementalRealizationPackageRefs: [],
+      compositionResultRef: "composition-1",
+    },
+    glossaryContext: {
+      confirmedTerms: [],
+      appearanceRecords: [],
+      candidates: [],
+    },
+    existingOpportunityContext: {
+      identities: [],
+    },
+    reflectionContext: {
+      reflections: [],
+    },
+  };
+}
+
+function createV3OutputForPacket(packet: OpportunityConstructorV3InputPacket): OpportunityConstructorV3OutputPacket {
+  return {
+    generationContext: {
+      runtimeVersion: packet.generationContext.runtimeVersion,
+      priorityReflectiveObjectId: packet.generationContext.priorityReflectiveObjectId,
+      authority: packet.generationContext.authority,
+    },
+    decision: {
+      mode: "opportunities_found",
+      silenceReason: null,
+    },
+    opportunities: [
+      {
+        clientOpportunityKey: "v3-op-1",
+        identityDecision: {
+          mode: "create_new",
+          existingIdentityId: null,
+          reuseConfidence: null,
+          reuseRationale: null,
+        },
+        opportunityStructure: {
+          primaryCategory: "transition",
+          secondaryCategories: ["salience_signal", "relationship"],
+          structureType: "A_TO_B_TO_C",
+          nodes: [
+            { key: "A", label: "felt watched presence", kind: "phenomenological_signal" },
+            { key: "B", label: "apology after possible harm", kind: "repair_dynamic" },
+            { key: "C", label: "reassurance response", kind: "relationship_dynamic" },
+          ],
+          edges: [
+            { from: "A", to: "B", relation: "opens_toward" },
+            { from: "B", to: "C", relation: "responded_to_by" },
+          ],
+          tensions: [
+            {
+              between: ["A", "B"],
+              description: "An indistinct watched feeling gives way to a repair movement.",
+            },
+          ],
+          gaps: [
+            {
+              description: "The watched figure remains unclear even as the social response becomes explicit.",
+              supportedByObservationIds: ["unit-presence"],
+            },
+          ],
+          continuitySignals: [
+            {
+              kind: "none",
+              referenceId: null,
+              description: null,
+            },
+          ],
+        },
+        manifestation: {
+          summaryForInternalUse: "A watched felt presence shifts into apology and then reassurance.",
+          priorityReflectiveObjectRole: "primary_source",
+          salience: {
+            credibility: 0.84,
+            reflectivePotential: 0.79,
+            salienceBand: "high",
+            credibilityRationale: "Multiple V3 units support the movement.",
+            reflectivePotentialRationale: "The structure preserves uncertainty while showing repair and response.",
+          },
+        },
+        evidenceBlocks: [
+          {
+            clientBlockKey: "v3-block-1",
+            reflectiveObjectId: packet.generationContext.priorityReflectiveObjectId,
+            role: "priority",
+            summary: "Priority V3 evidence for the watched-presence to reassurance movement.",
+            observationRefs: [
+              {
+                authorityId: "authority-1",
+                unitId: "unit-presence",
+                localityId: "locality-hallway",
+                evidenceId: "evidence-presence",
+                role: "primary_support",
+                supportsNodeKeys: ["A"],
+                supportsEdgeIndexes: [0],
+              },
+              {
+                authorityId: "authority-1",
+                unitId: "unit-apology",
+                localityId: "locality-kitchen",
+                evidenceId: "evidence-apology",
+                role: "primary_support",
+                supportsNodeKeys: ["B"],
+                supportsEdgeIndexes: [0, 1],
+              },
+              {
+                authorityId: "authority-1",
+                unitId: "unit-reassurance",
+                localityId: "locality-kitchen",
+                evidenceId: "evidence-reassurance",
+                role: "primary_support",
+                supportsNodeKeys: ["C"],
+                supportsEdgeIndexes: [1],
+              },
+            ],
+            confirmedGlossaryRefs: [],
+            candidateGlossaryMentions: [],
+          },
+        ],
+        safety: {
+          containsInterpretation: false,
+          containsDiagnosis: false,
+          containsIdentityClaim: false,
+          containsAdvice: false,
+          userFacingReady: false,
+        },
+      },
+    ],
+  };
+}
+
+function createV3AuthorityProvenance(): LatentAuthorityProvenance {
+  return {
+    dream: {
+      priorityReflectiveObjectId: "object-1",
+      title: "Search dream",
+      objectLanguage: "en",
+      content: "I feel watched, apologize, and get reassured in the kitchen.",
+      summary: "Watched presence moves into apology and reassurance.",
+    },
+    observation: {
+      family: "observation_v3",
+      authorityId: "authority-1",
+      canonicalObservationId: "canonical-1",
+      canonicalHash: "canonical-hash-1",
+      generationVersion: "observation_v3_shadow_v1",
+    },
+    glossary: {
+      confirmedTerms: [],
+      appearanceRecords: [],
+    },
+    reflections: [],
   };
 }
 
@@ -746,10 +1051,7 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
     archive: vi.fn(),
   };
 
-  const observationV2Repository: ObservationV2Repository = {
-    create: vi.fn(),
-    getByBundleId: vi.fn(),
-    getByReflectiveObjectId: vi.fn().mockResolvedValue({
+  const observationV2Bundle = {
       bundleId: "bundle-1",
       reflectiveObjectId: "object-1",
       userId: "user-1",
@@ -851,8 +1153,13 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
           },
         },
       ],
-    } satisfies ObservationV2Bundle),
-    archive: vi.fn(),
+    } satisfies ObservationV2Bundle;
+
+  const observationNativeReadRepository: ObservationNativeReadRepository = {
+    getByReflectiveObjectId: vi.fn().mockResolvedValue({
+      family: "v2",
+      native: observationV2Bundle,
+    }),
   };
 
   const glossaryRepository: GlossaryRepository = {
@@ -1129,7 +1436,7 @@ function createActualComposerRepositories(): GenerateLatentOpportunitiesForRefle
 
   return {
     reflectiveObjectRepository,
-    observationV2Repository,
+    observationNativeReadRepository,
     glossaryRepository,
     latentOpportunityRepository,
   };
@@ -1139,10 +1446,17 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
   it("runs the successful generation path end to end", async () => {
     const repositories = createActualComposerRepositories();
     const packet = createPacket();
-    const generateOutput = vi.fn(async ({ packet }: { packet: OpportunityConstructorInputPacket }) => ({
-      mode: "generated" as const,
-      rawOutput: JSON.stringify(createOutputForPacket(packet)),
-    }));
+    const generateOutput = vi.fn(async ({ packet }: { packet: OpportunityConstructorInputPacket | OpportunityConstructorV3InputPacket }) => {
+      if ("authority" in packet.generationContext) {
+        throw new Error("Expected V2 packet in V2 generation test.");
+      }
+      const v2Packet = packet as OpportunityConstructorInputPacket;
+
+      return {
+        mode: "generated" as const,
+        rawOutput: JSON.stringify(createOutputForPacket(v2Packet)),
+      };
+    });
 
     const result = await generateLatentOpportunitiesForReflectiveObject({
       userId: "user-1",
@@ -1243,6 +1557,93 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
     expect(result.persistedManifestations).toHaveLength(1);
     expect((result.persistedManifestations[0].evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsNodeKeys).toEqual(["A"]);
     expect((result.persistedManifestations[0].evidenceBlocks[0].observations[0] as unknown as Record<string, unknown>).supportsEdgeIndexes).toEqual([0]);
+  });
+
+  it("persists native V3 latent evidence and authority lineage without V2 observation ids", async () => {
+    const repositories = createActualComposerRepositories();
+    const packet = createV3Packet();
+    const generateOutput = vi.fn(async () => ({
+      mode: "generated" as const,
+      rawOutput: JSON.stringify(createV3OutputForPacket(packet)),
+    }));
+
+    const result = await generateLatentOpportunitiesForReflectiveObject({
+      userId: "user-1",
+      priorityReflectiveObjectId: "object-1",
+      observationResolution: "explicit_v3",
+      repositories,
+      composeInputPacket: vi.fn().mockResolvedValue({
+        family: "v3",
+        packet,
+        authorityProvenance: createV3AuthorityProvenance(),
+        contextProvenance: {
+          existingOpportunityContext: { identities: [] },
+          truncationNote: null,
+        },
+      }),
+      generateOutput,
+    });
+
+    expect(result.mode).toBe("persisted");
+    expect(repositories.latentOpportunityRepository.createGenerationRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorityProvenance: expect.objectContaining({
+          observation: expect.objectContaining({
+            family: "observation_v3",
+            authorityId: "authority-1",
+            canonicalObservationId: "canonical-1",
+          }),
+        }),
+      }),
+    );
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
+      expect.objectContaining({
+        manifestations: [
+          expect.objectContaining({
+            evidenceBlocks: [
+              expect.objectContaining({
+                observations: [
+                  expect.objectContaining({
+                    family: "observation_v3",
+                    authorityId: "authority-1",
+                    unitId: "unit-presence",
+                    localityId: "locality-hallway",
+                    evidenceId: "evidence-presence",
+                  }),
+                  expect.objectContaining({
+                    family: "observation_v3",
+                    authorityId: "authority-1",
+                    unitId: "unit-apology",
+                  }),
+                  expect.objectContaining({
+                    family: "observation_v3",
+                    authorityId: "authority-1",
+                    unitId: "unit-reassurance",
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    );
+    expect(repositories.latentOpportunityRepository.acceptGenerationRunSuccessorAtomically).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        manifestations: expect.arrayContaining([
+          expect.objectContaining({
+            evidenceBlocks: expect.arrayContaining([
+              expect.objectContaining({
+                observations: expect.arrayContaining([
+                  expect.objectContaining({
+                    observationV2SceneObservationId: expect.any(String),
+                  }),
+                ]),
+              }),
+            ]),
+          }),
+        ]),
+      }),
+    );
   });
 
   it("uses atomic acceptance for first-generation persistence instead of direct authority writes", async () => {
@@ -1624,10 +2025,17 @@ describe("generateLatentOpportunitiesForReflectiveObject", () => {
       acceptedFingerprint: "a".repeat(64),
       candidateFingerprint: "b".repeat(64),
     });
-    const generateOutput = vi.fn(async ({ packet }: { packet: OpportunityConstructorInputPacket }) => ({
-      mode: "generated" as const,
-      rawOutput: JSON.stringify(createOutputForPacket(packet)),
-    }));
+    const generateOutput = vi.fn(async ({ packet }: { packet: OpportunityConstructorInputPacket | OpportunityConstructorV3InputPacket }) => {
+      if ("authority" in packet.generationContext) {
+        throw new Error("Expected V2 packet in V2 generation test.");
+      }
+      const v2Packet = packet as OpportunityConstructorInputPacket;
+
+      return {
+        mode: "generated" as const,
+        rawOutput: JSON.stringify(createOutputForPacket(v2Packet)),
+      };
+    });
 
     const result = await generateLatentOpportunitiesForReflectiveObject({
       userId: "user-1",

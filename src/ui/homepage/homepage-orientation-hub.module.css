@@ -90,6 +90,7 @@
   justify-items: center;
   gap: 0.7rem;
   max-width: 20rem;
+  pointer-events: none;
 }
 
 .capture p {
@@ -105,25 +106,42 @@
   order: 2;
 }
 
-.meditation {
+.fortune {
   order: 3;
+}
+
+.meditation {
+  order: 6;
   align-content: center;
   justify-items: center;
   min-height: 7.4rem;
   text-align: center;
-  border-color: rgba(226, 234, 229, 0.2);
+  border-color: rgba(229, 236, 231, 0.26);
   background:
-    linear-gradient(180deg, rgba(20, 29, 26, 0.42), rgba(20, 29, 26, 0.18)),
-    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.18), transparent 36%),
+    linear-gradient(180deg, rgba(31, 48, 40, 0.28), rgba(31, 48, 40, 0.14)),
+    linear-gradient(90deg, rgba(28, 42, 35, 0.18), rgba(28, 42, 35, 0.06) 58%, rgba(28, 42, 35, 0.03)),
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.22), transparent 36%),
     url("/backgrounds/meditations_background.png") center / cover no-repeat;
 }
 
+.meditation:hover,
+.meditation:focus-within {
+  border-color: rgba(229, 236, 231, 0.26);
+  background:
+    linear-gradient(180deg, rgba(31, 48, 40, 0.28), rgba(31, 48, 40, 0.14)),
+    linear-gradient(90deg, rgba(28, 42, 35, 0.18), rgba(28, 42, 35, 0.06) 58%, rgba(28, 42, 35, 0.03)),
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.22), transparent 36%),
+    url("/backgrounds/meditations_background.png") center / cover no-repeat;
+  box-shadow: 0 16px 30px rgba(20, 31, 26, 0.18);
+  transform: translateY(-3px);
+}
+
 .glossary {
-  order: 4;
+  order: 5;
 }
 
 .guide {
-  order: 5;
+  order: 4;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 0.62rem;
 }
@@ -135,6 +153,11 @@
 
 .captureLead {
   text-wrap: pretty;
+}
+
+.meditationLead {
+  max-width: 15rem;
+  text-wrap: balance;
 }
 
 .panelSublead {
@@ -325,6 +348,8 @@
   line-height: 1.06;
   letter-spacing: -0.02em;
   font-weight: 600;
+  text-decoration: none;
+  pointer-events: auto;
 }
 
 .quiet {
@@ -389,21 +414,27 @@
     min-height: 8.9rem;
   }
 
-  .meditation {
+  .fortune {
     grid-column: 1 / 4;
     grid-row: 2;
     min-height: 6.7rem;
   }
 
+  .guide {
+    grid-column: 4 / 8;
+    grid-row: 2;
+    min-height: 6.7rem;
+  }
+
   .journal {
-    grid-column: 4 / 10;
+    grid-column: 8 / 13;
     grid-row: 2;
     min-height: 8rem;
   }
 
-  .guide {
+  .meditation {
     grid-column: 10 / 13;
-    grid-row: 2;
+    grid-row: 3;
     min-height: 6.7rem;
   }
 

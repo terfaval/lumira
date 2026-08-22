@@ -12,7 +12,7 @@ import type { AnchorRepository } from "@/src/domain/anchor-v1/contracts";
 import type { AnchorIdentity, AnchorManifestation, AnchorParticipation } from "@/src/domain/anchor-v1/types";
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
-import type { ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationNativeReadRepository } from "@/src/domain/observation/native-read";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 
 function createPacket(): AnchorConstructorInputPacket {
@@ -24,7 +24,8 @@ function createPacket(): AnchorConstructorInputPacket {
       content: "I searched through a house for a phone while my father guided me toward the stairwell.",
     },
     observationSet: {
-      observationBundleId: "bundle-1",
+      observationFamily: "v2",
+      observationAuthorityId: "bundle-1",
       runtimeVersion: "observation_v2",
       objectLanguage: "en",
       scenes: [
@@ -54,7 +55,7 @@ function createPacket(): AnchorConstructorInputPacket {
       ],
       observations: [
         {
-          observationV2SceneObservationId: "bundle-1:scene-a:obs-1",
+          observationReferenceId: "bundle-1:scene-a:obs-1",
           sceneRowId: "bundle-1:scene-a",
           sceneStableId: "scene-a",
           observationStableId: "obs-1",
@@ -70,7 +71,7 @@ function createPacket(): AnchorConstructorInputPacket {
           uncertaintyNote: null,
         },
         {
-          observationV2SceneObservationId: "bundle-1:scene-a:obs-2",
+          observationReferenceId: "bundle-1:scene-a:obs-2",
           sceneRowId: "bundle-1:scene-a",
           sceneStableId: "scene-a",
           observationStableId: "obs-2",
@@ -125,7 +126,7 @@ function createPacket(): AnchorConstructorInputPacket {
           opportunityIdentityId: "opportunity-identity-1",
           evidenceBlockId: "evidence-block-1",
           evidenceBlockRole: "priority",
-          observationV2SceneObservationId: "bundle-1:scene-a:obs-2",
+          observationReferenceId: "bundle-1:scene-a:obs-2",
           sceneId: "scene-a",
           observationRole: "primary_support",
           supportsNodeKeys: ["B"],
@@ -200,7 +201,7 @@ function createValidOutput(packet: AnchorConstructorInputPacket): AnchorConstruc
         evidence: {
           observationRefs: [
             {
-              observationV2SceneObservationId: "bundle-1:scene-a:obs-2",
+              observationReferenceId: "bundle-1:scene-a:obs-2",
               role: "primary_support",
             },
           ],
@@ -214,7 +215,7 @@ function createValidOutput(packet: AnchorConstructorInputPacket): AnchorConstruc
             {
               opportunityManifestationId: "opportunity-manifestation-1",
               evidenceBlockId: "evidence-block-1",
-              observationV2SceneObservationId: "bundle-1:scene-a:obs-2",
+              observationReferenceId: "bundle-1:scene-a:obs-2",
               supportsNodeKeys: ["B"],
               supportsEdgeIndexes: [0],
             },
@@ -281,11 +282,8 @@ function createRepositories(): GenerateAnchorsForReflectiveObjectRepositories {
     archive: vi.fn(),
   };
 
-  const observationV2Repository: ObservationV2Repository = {
-    create: vi.fn(),
-    getByBundleId: vi.fn(),
+  const observationNativeReadRepository: ObservationNativeReadRepository = {
     getByReflectiveObjectId: vi.fn(),
-    archive: vi.fn(),
   };
 
   const glossaryRepository: GlossaryRepository = {
@@ -353,7 +351,7 @@ function createRepositories(): GenerateAnchorsForReflectiveObjectRepositories {
 
   return {
     reflectiveObjectRepository,
-    observationV2Repository,
+    observationNativeReadRepository,
     glossaryRepository,
     latentOpportunityRepository,
     anchorRepository: anchorRepository as GenerateAnchorsForReflectiveObjectRepositories["anchorRepository"],
@@ -397,9 +395,10 @@ describe("generateAnchorsForReflectiveObject", () => {
       userId: "user-1",
       priorityReflectiveObjectId: "reflective-object-1",
       reflectiveObjectRepository: repositories.reflectiveObjectRepository,
-      observationV2Repository: repositories.observationV2Repository,
+      observationNativeReadRepository: repositories.observationNativeReadRepository,
       glossaryRepository: repositories.glossaryRepository,
       latentOpportunityRepository: repositories.latentOpportunityRepository,
+      observationResolution: undefined,
     });
     expect(generateOutput).toHaveBeenCalledWith({ packet });
     expect(anchorRepository.createIdentity).toHaveBeenCalledTimes(1);
@@ -629,3 +628,4 @@ describe("generateAnchorsForReflectiveObject", () => {
     expect(anchorRepository.deleteIdentity).toHaveBeenCalledWith("anchor-id-1", "user-1");
   });
 });
+

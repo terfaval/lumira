@@ -1,0 +1,224 @@
+[
+  {
+    "id": "situation_unfolding",
+    "name": "Helyzet kibontása",
+    "card_count": 2,
+    "library": {
+      "group": "core",
+      "tagline": "Ha szeretnél tisztábban látni egy helyzetet.",
+      "description": "Segít különválasztani azt, amit már most is látsz, attól, ami kevésbé egyértelmű, vagy még csak a háttérben formálódik.",
+      "use_when": [
+        "Valamin sokat gondolkodsz, de nem áll össze a kép.",
+        "Döntés előtt szeretnéd jobban érteni a helyzetet.",
+        "Úgy érzed, van benne valami, amit még nem sikerült megfogalmaznod."
+      ],
+      "orientation": "Gondolj egy helyzetre, amit most szeretnél egy kicsit tisztábban látni."
+    },
+    "positions": [
+      {
+        "key": "visible",
+        "label": "Ami látszik"
+      },
+      {
+        "key": "hidden",
+        "label": "Ami a háttérben van"
+      }
+    ],
+    "question_profile": "surface_vs_depth",
+    "phase": "core"
+  },
+  {
+    "id": "timeline",
+    "name": "Idősík",
+    "card_count": 3,
+    "library": {
+      "group": "core",
+      "tagline": "Ha szeretnéd megérteni, hogyan jutottál el idáig, és mi formálódik most.",
+      "description": "Segít egy folyamat részeként ránézni a jelenlegi helyzetedre: mi előzte meg, mi történik benne most, és milyen irány kezd kirajzolódni.",
+      "use_when": [
+        "Egy változás vagy hosszabb folyamat közepén vagy.",
+        "Szeretnéd megérteni, hogyan kapcsolódik a múlt a jelenhez.",
+        "Kíváncsi vagy, milyen irányt jeleznek a mostani érzéseid, döntéseid vagy körülményeid."
+      ],
+      "orientation": "Gondolj egy folyamatra vagy változásra, amelynek szeretnéd jobban látni az ívét."
+    },
+    "positions": [
+      {
+        "key": "past_trace",
+        "label": "Múlt lenyomata"
+      },
+      {
+        "key": "present_dynamic",
+        "label": "Jelen dinamikája"
+      },
+      {
+        "key": "forming",
+        "label": "Ami formálódik"
+      }
+    ],
+    "question_profile": "temporal_flow",
+    "phase": "core"
+  },
+  {
+    "id": "inner_roles",
+    "name": "Belső szereplők",
+    "card_count": 3,
+    "library": {
+      "group": "core",
+      "tagline": "Ha egyszerre többféle érzés vagy szándék dolgozik benned.",
+      "description": "Segít külön-külön meghallani azokat a belső részeidet, amelyek ugyanahhoz a helyzethez máshogy viszonyulnak.",
+      "use_when": [
+        "Egy részed megtenne valamit, egy másik visszatart.",
+        "Nehezen érted, miért reagálsz valamire ellentmondásosan.",
+        "Szeretnéd jobban megérteni, mi mozgat és mi bizonytalanít el."
+      ],
+      "orientation": "Gondolj egy helyzetre, amelyben nem teljesen egyértelmű számodra, mit érzel vagy mit szeretnél."
+    },
+    "positions": [
+      {
+        "key": "actor",
+        "label": "Aki cselekszik"
+      },
+      {
+        "key": "fear",
+        "label": "Aki fél"
+      },
+      {
+        "key": "knowing",
+        "label": "Aki tud"
+      }
+    ],
+    "question_profile": "inner_parts",
+    "phase": "core"
+  },
+  {
+    "id": "system_view",
+    "name": "Rendszer-nézet",
+    "card_count": 4,
+    "library": {
+      "group": "core",
+      "tagline": "Ha szeretnéd egy lépéssel távolabbról látni az egész helyzetet.",
+      "description": "Segít egyszerre ránézni a saját szerepedre, a környezetedre, a köztük kialakuló feszültségre és arra, hol jelenhet meg mozgástér.",
+      "use_when": [
+        "Egy helyzet túl összetettnek tűnik ahhoz, hogy egyetlen kérdésként nézz rá.",
+        "Más emberek vagy külső körülmények is fontos szerepet játszanak benne.",
+        "Szeretnéd megérteni, hol van ténylegesen mozgástered."
+      ],
+      "orientation": "Gondolj egy összetett helyzetre, és próbáld most nem megoldani — csak nézd meg, hogyan áll össze."
+    },
+    "positions": [
+      {
+        "key": "self",
+        "label": "Én"
+      },
+      {
+        "key": "environment",
+        "label": "Környezet"
+      },
+      {
+        "key": "tension",
+        "label": "Feszültség"
+      },
+      {
+        "key": "shift",
+        "label": "Lehetséges elmozdulás"
+      }
+    ],
+    "question_profile": "system_dynamics",
+    "phase": "core"
+  },
+  {
+    "id": "perspective_shift",
+    "name": "Perspektívaváltás",
+    "card_count": 3,
+    "library": {
+      "group": "advanced",
+      "tagline": "Ha úgy érzed, ugyanabból a nézőpontból már nem jutsz tovább.",
+      "description": "Segít lazítani azon, ahogyan most értelmezel egy helyzetet, és teret ad olyan nézőpontoknak is, amelyek még nem jutottak eszedbe.",
+      "use_when": [
+        "Újra és újra ugyanoda jutsz a gondolkodásban.",
+        "Erősen meg vagy győződve egy helyzet egyetlen értelmezéséről.",
+        "Szeretnéd kipróbálni, hogyan változna a kép egy másik nézőpontból."
+      ],
+      "orientation": "Gondolj valamire, amiről azt érzed, talán már túl régóta ugyanúgy gondolkodsz."
+    },
+    "positions": [
+      {
+        "key": "current_view",
+        "label": "Ahogy most látom"
+      },
+      {
+        "key": "future_view",
+        "label": "Ahogy később láthatnám"
+      },
+      {
+        "key": "unknown",
+        "label": "Amit még nem látok"
+      }
+    ],
+    "question_profile": "perspective_reframe",
+    "phase": "advanced"
+  },
+  {
+    "id": "boundaries",
+    "name": "Határ és áteresztés",
+    "card_count": 2,
+    "library": {
+      "group": "advanced",
+      "tagline": "Ha azt keresed, hol lenne jó határt húzni, és hol lenne jó engedni.",
+      "description": "Segít megvizsgálni, mit szeretnél megóvni egy helyzetben, és minek adnál több teret magadban vagy magad körül.",
+      "use_when": [
+        "Nehéz nemet mondanod valamire vagy valakire.",
+        "Nem tudod, hogy védened kellene magad, vagy inkább nyitnod.",
+        "Túl sokat vállalsz, vagy éppen túlságosan bezárkózol.",
+        "Egy kapcsolatban vagy helyzetben bizonytalanná váltak a határaid."
+      ],
+      "orientation": "Gondolj egy helyzetre, amelyben most nem egyértelmű számodra, minek mondanál igent és minek nemet."
+    },
+    "positions": [
+      {
+        "key": "protect",
+        "label": "Amit védek"
+      },
+      {
+        "key": "allow",
+        "label": "Amit beengednék"
+      }
+    ],
+    "question_profile": "boundaries",
+    "phase": "advanced"
+  },
+  {
+    "id": "conflict_space",
+    "name": "Konfliktus tér",
+    "card_count": 3,
+    "library": {
+      "group": "advanced",
+      "tagline": "Ha két igény, ember, döntés vagy belső késztetés feszül egymásnak.",
+      "description": "Segít úgy ránézni egy konfliktusra, hogy egyik oldalt sem kell rögtön helyesnek vagy helytelennek tekintened — és észrevehesd azt is, ami a kettő találkozásából születhet.",
+      "use_when": [
+        "Két lehetőség között őrlődsz.",
+        "Valakivel újra és újra ugyanabba a konfliktusba kerülsz.",
+        "Két fontos igényed egyszerre nem látszik összeegyeztethetőnek.",
+        "Nem választani szeretnél azonnal, hanem előbb jobban érteni a feszültséget."
+      ],
+      "orientation": "Gondolj két erőre vagy álláspontra, amelyek most nehezen férnek meg egymás mellett."
+    },
+    "positions": [
+      {
+        "key": "force_a",
+        "label": "Az egyik erő"
+      },
+      {
+        "key": "force_b",
+        "label": "A másik erő"
+      },
+      {
+        "key": "emergent",
+        "label": "Ami köztük születik"
+      }
+    ],
+    "question_profile": "conflict_integration",
+    "phase": "advanced"
+  }
+]

@@ -1,4 +1,5 @@
 import type { Observation } from "@/src/domain/observation/types";
+import type { ObservationV3AuthorityRecord } from "@/src/domain/observation/v3-authority";
 import {
   getObservationV2DerivedItemDisplayLabel,
   type ObservationV2Bundle,
@@ -126,6 +127,32 @@ export function deriveGlossaryCuesFromObservationV2Bundle(bundle: ObservationV2B
 
       addCue(counts, "recurrence_candidate", observation.text, 1);
     }
+  }
+
+  return Array.from(counts.values())
+    .sort((a, b) => b.recurrenceCount - a.recurrenceCount)
+    .slice(0, 6);
+}
+
+export function deriveGlossaryCuesFromObservationV3Authority(
+  authority: ObservationV3AuthorityRecord,
+): ReflectiveGlossaryCue[] {
+  const counts = new Map<string, ReflectiveGlossaryCue>();
+
+  for (const locality of authority.canonicalCandidate.localities) {
+    if (!locality.label) {
+      continue;
+    }
+
+    addCue(counts, "location", locality.label, Math.max(1, locality.evidenceRefs.length));
+  }
+
+  for (const unit of authority.canonicalCandidate.descriptiveUnits) {
+    if (!containsRecurrenceLanguage(unit.statement)) {
+      continue;
+    }
+
+    addCue(counts, "recurrence_candidate", unit.statement, Math.max(1, unit.evidenceRefs.length));
   }
 
   return Array.from(counts.values())

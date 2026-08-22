@@ -2,15 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { CreateGlossaryCandidateInput } from "@/src/domain/glossary/types";
-import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationRepository } from "@/src/domain/observation/contracts";
+import type { ObservationNativeReadRepository } from "@/src/domain/observation/native-read";
 import { generateGlossaryCandidatesForReflectiveObject } from "@/src/runtime/orchestration/generate-glossary-candidates-for-reflective-object";
 
 describe("generateGlossaryCandidatesForReflectiveObject", () => {
   function makeRepositories() {
     return {
-      observationV2Repository: {
+      observationNativeReadRepository: {
         getByReflectiveObjectId: vi.fn(async () => null),
-      } as unknown as ObservationV2Repository,
+      } as unknown as ObservationNativeReadRepository,
       observationRepository: {
         listByReflectiveObject: vi.fn(async () => []),
       } as unknown as ObservationRepository,
@@ -43,57 +44,60 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
 
   it("extracts, classifies, and persists admitted candidates from observation v2 bundles", async () => {
     const repositories = makeRepositories();
-    vi.mocked(repositories.observationV2Repository.getByReflectiveObjectId).mockResolvedValue({
-      bundleId: "bundle-1",
-      userId: "user-1",
-      reflectiveObjectId: "obj-1",
-      source: "system_llm_extract",
-      runtimeVersion: "observation_v2_phase1",
-      uncertaintyNotes: [],
-      provenance: {
-        provenanceTier: "system_extract",
-        semanticPolicyResult: "accept_with_uncertainty",
-        semanticPolicyReasons: [],
-        latentBackflowGuard: "observation_only",
-        boundaryVersion: "observation_v2_phase1",
-        dreamLanguage: "en",
-      },
-      scenes: [
-        {
-          sceneId: "scene-1",
-          position: 1,
-          summary: "Father presses a button and slurry pours through a door.",
-          boundaryReasoning: [],
-          evidenceContext: {
-            snippet: "Father presses a button and slurry pours through a door.",
-            spanStart: 0,
-            spanEnd: 55,
-            contextLabel: "dreamText",
-          },
-          observations: [
-            {
-              observationId: "obs-1",
-              position: 1,
-              text: "Father presses a button and slurry pours through a door.",
-              evidence: [],
-              uncertaintyNote: null,
-            },
-          ],
-          derived: {
-            actors: [{ identityKey: "father", displayLabel: "Father", sourceLanguage: "en", label: "Father", observationIds: ["obs-1"] }],
-            locations: [{ identityKey: "closed_building", displayLabel: "Closed building", sourceLanguage: "en", label: "Closed building", observationIds: ["obs-1"] }],
-            objects: [
-              { identityKey: "button", displayLabel: "Button", sourceLanguage: "en", label: "Button", observationIds: ["obs-1"] },
-              { identityKey: "slurry", displayLabel: "Slurry", sourceLanguage: "en", label: "Slurry", observationIds: ["obs-1"] },
-            ],
-            interactions: [],
-            affect: [],
-            agency: [],
-            phenomenology: [],
-            metacognition: [],
-          },
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockResolvedValue({
+      family: "v2",
+      native: {
+        bundleId: "bundle-1",
+        userId: "user-1",
+        reflectiveObjectId: "obj-1",
+        source: "system_llm_extract",
+        runtimeVersion: "observation_v2_phase1",
+        uncertaintyNotes: [],
+        provenance: {
+          provenanceTier: "system_extract",
+          semanticPolicyResult: "accept_with_uncertainty",
+          semanticPolicyReasons: [],
+          latentBackflowGuard: "observation_only",
+          boundaryVersion: "observation_v2_phase1",
+          dreamLanguage: "en",
         },
-      ],
+        scenes: [
+          {
+            sceneId: "scene-1",
+            position: 1,
+            summary: "Father presses a button and slurry pours through a door.",
+            boundaryReasoning: [],
+            evidenceContext: {
+              snippet: "Father presses a button and slurry pours through a door.",
+              spanStart: 0,
+              spanEnd: 55,
+              contextLabel: "dreamText",
+            },
+            observations: [
+              {
+                observationId: "obs-1",
+                position: 1,
+                text: "Father presses a button and slurry pours through a door.",
+                evidence: [],
+                uncertaintyNote: null,
+              },
+            ],
+            derived: {
+              actors: [{ identityKey: "father", displayLabel: "Father", sourceLanguage: "en", label: "Father", observationIds: ["obs-1"] }],
+              locations: [{ identityKey: "closed_building", displayLabel: "Closed building", sourceLanguage: "en", label: "Closed building", observationIds: ["obs-1"] }],
+              objects: [
+                { identityKey: "button", displayLabel: "Button", sourceLanguage: "en", label: "Button", observationIds: ["obs-1"] },
+                { identityKey: "slurry", displayLabel: "Slurry", sourceLanguage: "en", label: "Slurry", observationIds: ["obs-1"] },
+              ],
+              interactions: [],
+              affect: [],
+              agency: [],
+              phenomenology: [],
+              metacognition: [],
+            },
+          },
+        ],
+      },
     });
 
     const candidates = await generateGlossaryCandidatesForReflectiveObject({
@@ -130,7 +134,9 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
 
   it("keeps observation v2 ids in provenance only and out of proposedEntityIds for fresh users", async () => {
     const repositories = makeRepositories();
-    vi.mocked(repositories.observationV2Repository.getByReflectiveObjectId).mockResolvedValue({
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockResolvedValue({
+      family: "v2",
+      native: {
       bundleId: "bundle-1",
       userId: "user-1",
       reflectiveObjectId: "obj-1",
@@ -178,6 +184,7 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
           },
         },
       ],
+      },
     });
 
     await generateGlossaryCandidatesForReflectiveObject({
@@ -201,7 +208,9 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
 
   it("persists existing glossary matches using glossary term uuids only", async () => {
     const repositories = makeRepositories();
-    vi.mocked(repositories.observationV2Repository.getByReflectiveObjectId).mockResolvedValue({
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockResolvedValue({
+      family: "v2",
+      native: {
       bundleId: "bundle-1",
       userId: "user-1",
       reflectiveObjectId: "obj-1",
@@ -249,6 +258,7 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
           },
         },
       ],
+      },
     });
     vi.mocked(repositories.glossaryRepository.listTerms).mockResolvedValue([
       {
@@ -286,7 +296,7 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
     );
   });
 
-  it("falls back to legacy observations when no observation v2 bundle exists", async () => {
+  it("uses explicit V2 compatibility to fall back to legacy observations when no native bundle exists", async () => {
     const repositories = makeRepositories();
     vi.mocked(repositories.observationRepository.listByReflectiveObject).mockResolvedValue([
       {
@@ -332,6 +342,7 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
     const candidates = await generateGlossaryCandidatesForReflectiveObject({
       userId: "user-1",
       reflectiveObjectId: "obj-1",
+      observationResolution: "explicit_v2",
       repositories,
     });
 
@@ -352,7 +363,9 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
 
   it("returns persisted candidates without creating duplicates on repeated invocation", async () => {
     const repositories = makeRepositories();
-    vi.mocked(repositories.observationV2Repository.getByReflectiveObjectId).mockResolvedValue({
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockResolvedValue({
+      family: "v2",
+      native: {
       bundleId: "bundle-1",
       userId: "user-1",
       reflectiveObjectId: "obj-1",
@@ -392,6 +405,7 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
           },
         },
       ],
+      },
     });
 
     const storedByKey = new Map<string, { id: string; count: number }>();
@@ -463,7 +477,9 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
 
   it("propagates Hungarian display labels while keeping identity-based normalized keys stable", async () => {
     const repositories = makeRepositories();
-    vi.mocked(repositories.observationV2Repository.getByReflectiveObjectId).mockResolvedValue({
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockResolvedValue({
+      family: "v2",
+      native: {
       bundleId: "bundle-hu",
       userId: "user-1",
       reflectiveObjectId: "obj-1",
@@ -503,6 +519,7 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
           },
         },
       ],
+      },
     });
 
     await generateGlossaryCandidatesForReflectiveObject({
@@ -524,7 +541,9 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
 
   it("filters rejected Hungarian observation v2 candidates before classification and persistence", async () => {
     const repositories = makeRepositories();
-    vi.mocked(repositories.observationV2Repository.getByReflectiveObjectId).mockResolvedValue({
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockResolvedValue({
+      family: "v2",
+      native: {
       bundleId: "bundle-hu-admission",
       userId: "user-1",
       reflectiveObjectId: "obj-1",
@@ -593,6 +612,7 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
           },
         },
       ],
+      },
     });
 
     const candidates = await generateGlossaryCandidatesForReflectiveObject({
@@ -625,7 +645,9 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
 
   it("skips classification and persistence when admission rejects every extracted candidate", async () => {
     const repositories = makeRepositories();
-    vi.mocked(repositories.observationV2Repository.getByReflectiveObjectId).mockResolvedValue({
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockResolvedValue({
+      family: "v2",
+      native: {
       bundleId: "bundle-hu-rejected",
       userId: "user-1",
       reflectiveObjectId: "obj-1",
@@ -665,6 +687,7 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
           },
         },
       ],
+      },
     });
 
     const candidates = await generateGlossaryCandidatesForReflectiveObject({
@@ -675,6 +698,72 @@ describe("generateGlossaryCandidatesForReflectiveObject", () => {
 
     expect(candidates).toEqual([]);
     expect(repositories.glossaryRepository.listTerms).not.toHaveBeenCalled();
+    expect(repositories.glossaryRepository.upsertCandidates).not.toHaveBeenCalled();
+  });
+
+  it("extracts and persists glossary candidates from explicit V3 native observation", async () => {
+    const repositories = makeRepositories();
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockImplementation(async ({ resolution }) => {
+      expect(resolution).toBe("explicit_v3");
+      return {
+        family: "v3",
+        native: {
+          authorityId: "auth-1",
+          userId: "user-1",
+          reflectiveObjectId: "obj-1",
+          canonicalCandidate: {
+            localities: [
+              {
+                canonicalLocalityId: "locality-1",
+                derivedFromLocalityIds: [],
+                order: 0,
+                label: "Courtyard",
+                sourceStart: null,
+                sourceEnd: null,
+                boundaryUncertainty: null,
+                evidenceRefs: [{ evidenceId: "evidence-1", sourceHash: "hash-1", snippet: "courtyard", spanStart: 0, spanEnd: 9, contextLabel: "scene" }],
+              },
+            ],
+            descriptiveUnits: [],
+          },
+        } as any,
+      };
+    });
+
+    const candidates = await generateGlossaryCandidatesForReflectiveObject({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      observationResolution: "explicit_v3",
+      repositories,
+    });
+
+    expect(repositories.observationRepository.listByReflectiveObject).not.toHaveBeenCalled();
+    expect(repositories.glossaryRepository.upsertCandidates).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          displayLabel: "Courtyard",
+          sourceCategory: "location",
+          sourceObservationId: "observation_v3|authority=auth-1",
+          sourceObservationFragmentId: "observation_v3|authority=auth-1|locality=locality-1",
+        }),
+      ]),
+    );
+    expect(candidates).toHaveLength(1);
+  });
+
+  it("does not fall back to legacy observations when explicit V3 native observation is unavailable", async () => {
+    const repositories = makeRepositories();
+    vi.mocked(repositories.observationNativeReadRepository.getByReflectiveObjectId).mockResolvedValue(null);
+
+    const candidates = await generateGlossaryCandidatesForReflectiveObject({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      observationResolution: "explicit_v3",
+      repositories,
+    });
+
+    expect(candidates).toEqual([]);
+    expect(repositories.observationRepository.listByReflectiveObject).not.toHaveBeenCalled();
     expect(repositories.glossaryRepository.upsertCandidates).not.toHaveBeenCalled();
   });
 });

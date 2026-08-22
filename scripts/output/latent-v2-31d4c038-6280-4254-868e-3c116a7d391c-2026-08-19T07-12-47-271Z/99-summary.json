@@ -1,0 +1,8 @@
+{
+  "mode": "failed",
+  "stage": "validation",
+  "reason": "evidence_ref_out_of_scope",
+  "priorityReflectiveObjectId": "31d4c038-6280-4254-868e-3c116a7d391c",
+  "userId": "b9f35de1-d723-41b7-9730-38cec49016ec",
+  "outputDir": "C:\\mira\\scripts\\output\\latent-v2-31d4c038-6280-4254-868e-3c116a7d391c-2026-08-19T07-12-47-271Z"
+}

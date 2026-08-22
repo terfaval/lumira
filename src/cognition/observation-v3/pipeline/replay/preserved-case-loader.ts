@@ -7,7 +7,10 @@ import type {
   DescriptiveExtractionProviderEvidence,
   SupplementalRealizationProviderEvidence,
 } from "@/src/cognition/observation-v3/provider-evidence";
-import type { SupplementalRealizationExecutionResponse } from "@/src/cognition/observation-v3/supplemental-realization";
+import type {
+  PlannedSupplementalGap,
+  SupplementalRealizationExecutionResponse,
+} from "@/src/cognition/observation-v3/supplemental-realization";
 
 function sha256Hex(value: string): string {
   return createHash("sha256").update(value).digest("hex");
@@ -36,9 +39,37 @@ export interface LoadedExtractionReplayEvidence {
 
 export interface LoadedSupplementalReplayEvidence {
   physicalGapId: string;
+  targetContract: LoadedSupplementalReplayTargetContract | null;
   sourceArtifactRef: string;
   providerResult: SupplementalRealizationExecutionResponse;
   providerResponseHash: string;
+}
+
+export interface LoadedSupplementalReplayTargetContract {
+  targetId: string;
+  physicalGapId: string;
+  kind: PlannedSupplementalGap["kind"];
+  sourceStart: number;
+  sourceEnd: number;
+  contextStart: number;
+  contextEnd: number;
+}
+
+export function isSupplementalReplayTargetCompatible(input: {
+  currentTarget: PlannedSupplementalGap;
+  preservedTarget: LoadedSupplementalReplayTargetContract | null;
+}): boolean {
+  const preservedTarget = input.preservedTarget;
+  if (!preservedTarget) {
+    return false;
+  }
+
+  return preservedTarget.physicalGapId === input.currentTarget.physicalGapId
+    && preservedTarget.kind === input.currentTarget.kind
+    && preservedTarget.sourceStart === input.currentTarget.sourceStart
+    && preservedTarget.sourceEnd === input.currentTarget.sourceEnd
+    && preservedTarget.contextStart === input.currentTarget.contextStart
+    && preservedTarget.contextEnd === input.currentTarget.contextEnd;
 }
 
 export async function loadPreservedExtractionReplayEvidence(input: {
@@ -136,7 +167,7 @@ export async function loadPreservedSupplementalReplayEvidence(input: {
   const providerArtifactPath = path.join(input.repeatDirectory, "stages", "03-recovery_extraction.provider-output.json");
 
   if (await fileExists(canonicalIndexPath)) {
-    const targetToPhysicalGapId = await loadTargetToPhysicalGapIdMap({
+    const targetContracts = await loadTargetContractMap({
       selectionPath,
     });
     const index = await readJson<Array<{
@@ -155,6 +186,9 @@ export async function loadPreservedSupplementalReplayEvidence(input: {
       const providerMetadata = evidence.providerBoundary.providerMetadata as {
         physicalGapId?: string;
       } | null;
+      const targetContract = typeof entry.targetId === "string"
+        ? targetContracts.get(entry.targetId) ?? null
+        : null;
       const outputText = typeof (evidence.providerBoundary.sanitizedPayload as { outputText?: unknown } | null)?.outputText === "string"
         ? (evidence.providerBoundary.sanitizedPayload as { outputText: string }).outputText
         : evidence.parsing.structuredOutput !== null
@@ -163,8 +197,9 @@ export async function loadPreservedSupplementalReplayEvidence(input: {
 
       results.push({
         physicalGapId: providerMetadata?.physicalGapId
-          ?? (entry.targetId ? targetToPhysicalGapId.get(entry.targetId) : undefined)
+          ?? targetContract?.physicalGapId
           ?? entry.targetId,
+        targetContract,
         sourceArtifactRef: evidencePath,
         providerResult: {
           outputText,
@@ -201,6 +236,7 @@ export async function loadPreservedSupplementalReplayEvidence(input: {
   if (!await fileExists(providerArtifactPath)) {
     return gapIds.map((physicalGapId) => ({
       physicalGapId,
+      targetContract: null,
       sourceArtifactRef: providerArtifactPath,
       providerResult: {
         outputText: null,
@@ -220,15 +256,16 @@ export async function loadPreservedSupplementalReplayEvidence(input: {
   const providerResult = JSON.parse(raw) as SupplementalRealizationExecutionResponse;
   return gapIds.map((physicalGapId) => ({
     physicalGapId,
+    targetContract: null,
     sourceArtifactRef: providerArtifactPath,
     providerResult,
     providerResponseHash: sha256Hex(raw),
   }));
 }
 
-async function loadTargetToPhysicalGapIdMap(input: {
+async function loadTargetContractMap(input: {
   selectionPath: string;
-}): Promise<Map<string, string>> {
+}): Promise<Map<string, LoadedSupplementalReplayTargetContract>> {
   if (!await fileExists(input.selectionPath)) {
     return new Map();
   }
@@ -238,10 +275,20 @@ async function loadTargetToPhysicalGapIdMap(input: {
       canonicalRecoveryWindows?: Array<{
         targetId?: string;
         physicalGapId?: string;
+        kind?: unknown;
+        sourceStart?: unknown;
+        sourceEnd?: unknown;
+        contextStart?: unknown;
+        contextEnd?: unknown;
       }>;
       rawRecoveryWindows?: Array<{
         targetId?: string;
         physicalGapId?: string;
+        kind?: unknown;
+        sourceStart?: unknown;
+        sourceEnd?: unknown;
+        contextStart?: unknown;
+        contextEnd?: unknown;
       }>;
     };
   }>(input.selectionPath);
@@ -253,8 +300,22 @@ async function loadTargetToPhysicalGapIdMap(input: {
 
   return new Map(
     entries
-      .filter((entry): entry is { targetId: string; physicalGapId: string } =>
-        typeof entry.targetId === "string" && typeof entry.physicalGapId === "string")
-      .map((entry) => [entry.targetId, entry.physicalGapId] as const),
+      .filter((entry): entry is LoadedSupplementalReplayTargetContract =>
+        typeof entry.targetId === "string"
+          && typeof entry.physicalGapId === "string"
+          && (entry.kind === "prefix" || entry.kind === "internal" || entry.kind === "tail")
+          && typeof entry.sourceStart === "number"
+          && typeof entry.sourceEnd === "number"
+          && typeof entry.contextStart === "number"
+          && typeof entry.contextEnd === "number")
+      .map((entry) => [entry.targetId, {
+        targetId: entry.targetId,
+        physicalGapId: entry.physicalGapId,
+        kind: entry.kind,
+        sourceStart: entry.sourceStart,
+        sourceEnd: entry.sourceEnd,
+        contextStart: entry.contextStart,
+        contextEnd: entry.contextEnd,
+      }] as const),
   );
 }

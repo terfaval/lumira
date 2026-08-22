@@ -9,6 +9,7 @@ import type {
   StructuredSupplementalOutput,
   SupplementalRealizationPackage,
 } from "@/src/cognition/observation-v3/supplemental-realization/supplemental-realization-contract";
+import { reconcileEvidenceToSource } from "@/src/cognition/observation-v3/grounding";
 
 function normalizeText(value: string): string {
   return value
@@ -59,25 +60,34 @@ function clampSpanEnd(value: number, sourceLength: number): number {
   return Math.max(0, Math.min(sourceLength, value));
 }
 
-function shiftEvidenceToAbsolute(
-  evidence: ExperimentalEvidenceSpan[],
-  contextStart: number,
-  sourceLength: number,
-  spanMode: "absolute" | "relative",
-): ExperimentalEvidenceSpan[] {
-  return evidence.map((entry) => ({
-    ...entry,
-    spanStart: typeof entry.spanStart === "number"
-      ? spanMode === "absolute"
-        ? clampSpanStart(Math.min(entry.spanStart, sourceLength))
-        : clampSpanStart(contextStart + entry.spanStart)
-      : null,
-    spanEnd: typeof entry.spanEnd === "number"
-      ? spanMode === "absolute"
-        ? clampSpanEnd(entry.spanEnd, sourceLength)
-        : clampSpanEnd(contextStart + entry.spanEnd, sourceLength)
-      : null,
-  }));
+function resolveEvidenceToAbsolute(input: {
+  evidence: ExperimentalEvidenceSpan;
+  sourceText: string;
+  target: PlannedSupplementalGap;
+  afterAnchor?: number | null;
+}): ExperimentalEvidenceSpan | null {
+  const result = reconcileEvidenceToSource({
+    sourceText: input.sourceText,
+    evidence: input.evidence,
+    allowedScope: {
+      start: input.target.contextStart,
+      end: input.target.contextEnd,
+    },
+    afterAnchor: input.afterAnchor,
+    fallbackToSourceScope: false,
+    requireAbsoluteCoordinatesWithinScope: true,
+  });
+
+  if (result.status !== "grounded_certain" && result.status !== "grounded_uncertain") {
+    return null;
+  }
+
+  return {
+    ...input.evidence,
+    snippet: result.evidence.snippet,
+    spanStart: result.evidence.spanStart,
+    spanEnd: result.evidence.spanEnd,
+  };
 }
 
 function inferStructuredSpanMode(input: {
@@ -134,31 +144,41 @@ export function buildSupplementalRealizationPackage(input: {
     };
   });
 
-  const observations: ExperimentalObservationUnit[] = (input.structured.regions ?? []).flatMap((region, regionIndex) =>
-    region.observations.map((observation, observationIndex) => ({
-      observationId: `recovery-${input.packageIndex + 1}-${observation.observationId || `${regionIndex + 1}-${observationIndex + 1}`}`,
-      regionId: `recovery-${input.packageIndex + 1}-${region.regionId || `region-${regionIndex + 1}`}`,
-      order: observationIndex,
-      statement: observation.statement,
-      evidence: shiftEvidenceToAbsolute(
-        toExperimentalEvidence(observation.evidence),
-        input.target.contextStart,
-        input.sourceText.length,
-        inferStructuredSpanMode({
-          regionSpanStart: region.spanStart,
-          regionSpanEnd: region.spanEnd,
+  const observations: ExperimentalObservationUnit[] = (input.structured.regions ?? []).flatMap((region, regionIndex) => {
+    let previousGroundedEnd: number | null = null;
+    return region.observations.flatMap((observation, observationIndex) => {
+      const groundedEvidence = toExperimentalEvidence(observation.evidence)
+        .map((evidence) => resolveEvidenceToAbsolute({
+          evidence,
+          sourceText: input.sourceText,
           target: input.target,
-        }),
-      ),
-      uncertainty: observation.uncertainty,
-      source: "recovery" as const,
-      recoveryProvenance: buildRecoveryProvenance(
-        observation.statement,
-        input.target,
-        region.regionId || `region-${regionIndex + 1}`,
-      ),
-    })),
-  );
+          afterAnchor: previousGroundedEnd,
+        }));
+      if (groundedEvidence.some((entry) => entry === null) || groundedEvidence.length === 0) {
+        return [];
+      }
+      const resolvedEvidence = groundedEvidence.filter((entry): entry is ExperimentalEvidenceSpan => entry !== null);
+      previousGroundedEnd = resolvedEvidence
+        .map((entry) => entry.spanEnd)
+        .filter((value): value is number => typeof value === "number")
+        .reduce<number | null>((largest, value) => largest === null ? value : Math.max(largest, value), null);
+
+      return [{
+        observationId: `recovery-${input.packageIndex + 1}-${observation.observationId || `${regionIndex + 1}-${observationIndex + 1}`}`,
+        regionId: `recovery-${input.packageIndex + 1}-${region.regionId || `region-${regionIndex + 1}`}`,
+        order: observationIndex,
+        statement: observation.statement,
+        evidence: resolvedEvidence,
+        uncertainty: observation.uncertainty,
+        source: "recovery" as const,
+        recoveryProvenance: buildRecoveryProvenance(
+          observation.statement,
+          input.target,
+          region.regionId || `region-${regionIndex + 1}`,
+        ),
+      }];
+    });
+  });
 
   return {
     packageId: `supplemental-package-${input.packageIndex + 1}-${input.target.physicalGapId}`,

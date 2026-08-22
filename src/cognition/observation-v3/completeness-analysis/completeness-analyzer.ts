@@ -26,6 +26,7 @@ import { analyzeEvidenceRanges } from "@/src/cognition/observation-v3/completene
 import { COMPLETENESS_ANALYSIS_RULES } from "@/src/cognition/observation-v3/completeness-analysis/fingerprint";
 import { hashStableValue } from "@/src/cognition/observation-v3/completeness-analysis/fingerprint";
 import { analyzeLateRetention } from "@/src/cognition/observation-v3/completeness-analysis/late-retention-analysis";
+import { analyzeMaterialGapAssessment } from "@/src/cognition/observation-v3/completeness-analysis/material-gap-assessment";
 import { analyzePhysicalGaps } from "@/src/cognition/observation-v3/completeness-analysis/physical-gap-analysis";
 import { buildRecoveryRecommendation } from "@/src/cognition/observation-v3/completeness-analysis/recovery-recommendation";
 import { analyzeStructuralAssessment } from "@/src/cognition/observation-v3/completeness-analysis/structural-assessment";
@@ -188,6 +189,7 @@ function determineAdequacy(input: {
   hasUnavailableEvidence: boolean;
   uncoveredTail: MeasurementRange | null;
   gaps: PhysicalGapSet;
+  materialGapTargetedCount: number;
   lateRetention: LateRetentionAssessment;
   endingRetention: EndingRetentionAssessment;
   weaknessSignals: StructuralWeaknessSignal[];
@@ -201,7 +203,11 @@ function determineAdequacy(input: {
     return "inadequate_non_recoverable";
   }
 
-  const hasPrefixGap = input.gaps.gaps.some((gap) => gap.kind === "prefix");
+  if (input.materialGapTargetedCount > 0) {
+    return "inadequate_recoverable";
+  }
+
+  const hasAnyGap = input.gaps.gaps.length > 0;
   const hasTailGap = input.gaps.gaps.some((gap) => gap.kind === "tail");
   const reflectiveTailObservation = isReflectiveTailObservation({
     dreamText: input.dreamText,
@@ -220,10 +226,6 @@ function determineAdequacy(input: {
     explicitTerminalCuePresent: input.explicitTerminalCuePresent,
   });
 
-  if (hasPrefixGap) {
-    return "inadequate_recoverable";
-  }
-
   if (hasTailGap) {
     if (reflectiveTailObservation || shortCoherentTailObservation) {
       return "adequate_with_observations";
@@ -240,7 +242,7 @@ function determineAdequacy(input: {
     return "adequate_with_observations";
   }
 
-  if (hasOnlyLowConfidenceInternalGaps(input.gaps)) {
+  if (hasAnyGap || hasOnlyLowConfidenceInternalGaps(input.gaps)) {
     return "adequate_with_observations";
   }
 
@@ -369,12 +371,21 @@ export function analyzeObservationCandidateCompleteness(input: {
     lateRetention,
     endingRetention,
   });
+  const materialGapAssessment = analyzeMaterialGapAssessment({
+    dreamText: input.dreamText,
+    candidate,
+    gaps,
+    lateRetention,
+    endingRetention,
+    explicitTerminalCuePresent,
+  });
 
   const adequacy = determineAdequacy({
     dreamText: input.dreamText,
     hasUnavailableEvidence: false,
     uncoveredTail: evidenceRanges.uncoveredTail,
     gaps,
+    materialGapTargetedCount: materialGapAssessment.targetedGapIds.length,
     lateRetention,
     endingRetention,
     weaknessSignals: structuralAssessment.weaknessSignals,
@@ -382,7 +393,7 @@ export function analyzeObservationCandidateCompleteness(input: {
   });
   const recoveryRecommendation = buildRecoveryRecommendation({
     adequacy,
-    gaps,
+    materialGapAssessment,
     lateRetentionStatus: lateRetention.status,
     endingRetentionStatus: endingRetention.status,
   });
@@ -461,6 +472,7 @@ export function analyzeObservationCandidateCompleteness(input: {
     lateRetention,
     endingRetention,
     structuralAssessment,
+    materialGapAssessment,
     recoveryRecommendation,
     metricDiscrepancies,
     diagnosticReasons: [...diagnosticReasons].sort((left, right) => left.localeCompare(right)),

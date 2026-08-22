@@ -1,0 +1,839 @@
+[
+{
+  "card": "The Fool",
+  "visualDNA": {
+    "protagonist": {
+      "present": true,
+      "scalePercentImageHeight": "30-35",
+      "type": "stylized elemental fox-like being",
+      "morphology": {
+        "body": "light, slender, softly geometric",
+        "face": "slightly elongated, fox-like but not realistic",
+        "ears": "large, upright",
+        "tail": "long, simple, clearly readable in silhouette",
+        "anatomy": "simplified, slightly anthropomorphic, non-realistic"
+      },
+      "embodiedQualities": [
+        "lightness",
+        "openness",
+        "forward movement",
+        "curiosity",
+        "low defensiveness"
+      ],
+      "expressionAndAttention": {
+        "attention": "forward or slightly upward",
+        "emotionalTone": "open and unguarded",
+        "avoid": [
+          "cunning",
+          "slyness",
+          "comic recklessness",
+          "childlike cuteness"
+        ]
+      }
+    },
+    "centralVisualEvent": {
+      "description": "The protagonist is already stepping forward at the edge of a clearly readable rock ledge. Its weight has begun to move beyond the fully secure position, while its attention remains directed forward rather than toward the drop.",
+      "state": "immediately before consequence",
+      "mustNotShow": [
+        "falling",
+        "jumping",
+        "hesitating at the edge",
+        "looking down at the danger"
+      ]
+    },
+    "environment": {
+      "biome": "open highland rocky plateau with a distinct cliff edge",
+      "conditions": [
+        "open",
+        "elevated",
+        "weathered",
+        "physically legible",
+        "spacious"
+      ],
+      "dominantEnvironmentalCarrier": {
+        "type": "walkable ground continuity",
+        "behavior": "stable terrain terminates at a clearly legible ledge, making the next step physically uncertain"
+      },
+      "architecturePresence": "trace",
+      "civilizationPresence": {
+        "level": 1,
+        "name": "Trace"
+      },
+      "lifePresence": "sparse but visibly alive",
+      "visibleLife": [
+        "low vegetation shaped by wind"
+      ],
+      "worldBeyondFrame": "strong",
+      "continuityCues": [
+        "path or terrain entering from outside the frame",
+        "distant landscape continuing beyond the visible card boundaries"
+      ]
+    },
+    "environmentalDetails": {
+      "archetypal": [
+        "clear break in walkable terrain at the cliff edge",
+        "wind moving clothing and low vegetation in the forward direction",
+        "open distant terrain beyond the ledge"
+      ],
+      "discovery": [
+        "one restrained, partially weathered ancient path or stone remnant with unclear original function"
+      ]
+    },
+    "secondaryElements": {
+      "minimalBundle": true,
+      "smallCompanion": {
+        "present": true,
+        "importance": "strongly subordinate",
+        "scale": "very small"
+      }
+    },
+    "composition": {
+      "layout": "asymmetrical lateral movement",
+      "protagonistPlacement": "one third of the frame",
+      "movementDirection": "toward the larger open space",
+      "visualFlow": [
+        "protagonist",
+        "advancing foot",
+        "cliff edge",
+        "open distance"
+      ],
+      "negativeSpace": "substantial open space ahead of the protagonist"
+    },
+    "projectiveGap": {
+      "description": "The image does not reveal what happens in the next moment.",
+      "unresolvedOutcome": true
+    },
+    "realityDistortion": {
+      "level": 0,
+      "name": "Natural",
+      "surrealRule": null
+    },
+    "palette": {
+      "field": {
+        "psychologicalFunction": "openness / air / undetermined possibility",
+        "name": "airy blue",
+        "hex": "#AFC8CF"
+      },
+      "structure": {
+        "psychologicalFunction": "physical continuity / grounded existing world",
+        "name": "warm mineral ochre",
+        "hex": "#B58A58"
+      },
+      "tensionTransform": {
+        "psychologicalFunction": "forward-moving attention / active impulse",
+        "name": "muted coral red",
+        "hex": "#C86758"
+      },
+      "tonalHierarchy": "few discrete tonal steps; airy blue is the lightest and broadest family, warm mineral ochre carries the main structural masses, muted coral red is used selectively as the smallest accent family",
+      "constraint": "exactly three principal color families; no independent green, white, brown, or additional accent family"
+    },
+    "light": {
+      "type": "natural daylight",
+      "direction": "lateral",
+      "stability": "stable",
+      "function": "clearly reveal the protagonist's movement and the end of the ledge while keeping the distant space bright and open"
+    },
+    "tarotRecognition": {
+      "mechanism": "travelling being + minimal bundle + small companion + forward step + visible ledge + consequence visible to the viewer but outside the protagonist's attention"
+    },
+    "illustrationLanguage": {
+      "style": "stylized storybook-like illustration for adults",
+      "qualities": [
+        "hand-drawn or hand-painted impression",
+        "soft geometric construction",
+        "clear silhouette",
+        "simplified anatomy",
+        "large graphic shapes",
+        "restrained texture",
+        "few tonal steps",
+        "non-photographic rendering"
+      ]
+    },
+    "avoid": [
+      "cute mascot treatment",
+      "child character",
+      "realistic fox anatomy",
+      "furry aesthetic",
+      "sly or cunning expression",
+      "portrait-led composition",
+      "epic fantasy adventure mood",
+      "horror-like abyss",
+      "oversized companion",
+      "Tarot prop inventory",
+      "photorealism",
+      "cinematic concept-art rendering",
+      "fourth color family"
+    ]
+  }
+},
+{
+  "card": "The Magician",
+  "visualDNA": {
+    "protagonist": {
+      "present": true,
+      "scalePercentImageHeight": "25-30",
+      "type": "stylized blue-turquoise elemental being",
+      "morphology": {
+        "body": "compact, grounded, slightly robust",
+        "face": "small and simplified with large dark eyes and minimal facial articulation",
+        "head": "large distinctive crown of layered leaf-like or soft spike-like forms",
+        "arms": "long and dexterous relative to the compact body",
+        "hands": "large enough to make deliberate physical manipulation clearly readable",
+        "anatomy": "simplified, slightly anthropomorphic, non-realistic"
+      },
+      "embodiedQualities": [
+        "focused",
+        "capable",
+        "deliberate",
+        "physically engaged",
+        "attentive to material conditions"
+      ],
+      "expressionAndAttention": {
+        "attention": "directed toward the physical point of intervention",
+        "emotionalTone": "quiet concentration and practical engagement",
+        "avoid": [
+          "triumph",
+          "showmanship",
+          "mystical trance",
+          "aggression",
+          "exaggerated facial concentration"
+        ]
+      }
+    },
+    "centralVisualEvent": {
+      "description": "The protagonist crouches beside an existing narrow watercourse and deliberately adjusts a flat stone at a natural junction. The intervention redirects part of the already-flowing water into a second channel while the original flow remains visible. The changed path is physically understandable as the consequence of the protagonist's action.",
+      "state": "deliberate intervention producing an immediately visible consequence",
+      "causalSequence": [
+        "existing flowing water",
+        "recognition of a usable physical possibility",
+        "deliberate placement or adjustment of a flat stone",
+        "water divides into a changed path",
+        "another living being encounters the redirected flow"
+      ],
+      "mustNotShow": [
+        "water originating from the protagonist",
+        "magical control of water",
+        "levitating water",
+        "glowing energy",
+        "spellcasting",
+        "creation of water from nothing",
+        "completed large-scale transformation"
+      ]
+    },
+    "environment": {
+      "biome": "ancient open sandstone highland of broad weathered terraces above a large river valley",
+      "conditions": [
+        "open",
+        "elevated",
+        "dry",
+        "weathered",
+        "physically legible",
+        "spacious",
+        "partially shaped by old habitation"
+      ],
+      "dominantEnvironmentalCarrier": {
+        "type": "existing watercourse moving through terraced stone",
+        "behavior": "a small available flow can be physically redirected through the terrain without ceasing to belong to a much larger natural water system"
+      },
+      "architecturePresence": "visible but distant",
+      "civilizationPresence": {
+        "level": 2,
+        "name": "Sparse"
+      },
+      "lifePresence": "restrained but clearly inhabited",
+      "visibleLife": [
+        "sparse dry vegetation",
+        "small companion creature",
+        "distant vegetation concentrated in the river valley"
+      ],
+      "worldBeyondFrame": "strong",
+      "continuityCues": [
+        "watercourse entering and continuing beyond the immediate event",
+        "broad terraced terrain extending laterally beyond the frame",
+        "large distant valley and river system",
+        "distant ancient structures embedded in the landscape"
+      ]
+    },
+    "environmentalDetails": {
+      "archetypal": [
+        "existing narrow watercourse",
+        "physically readable junction in the flow",
+        "flat movable stone used to alter the water's path",
+        "newly redirected branch remaining connected to the original water system"
+      ],
+      "discovery": [
+        "restrained distant ancient structures with unclear original function",
+        "small traces of vegetation occupying cracks and terrace edges",
+        "large river far below connecting the local event to a much larger landscape"
+      ]
+    },
+    "secondaryElements": {
+      "smallCompanion": {
+        "present": true,
+        "importance": "strongly subordinate but relationally meaningful",
+        "scale": "very small",
+        "type": "warm ochre small quadrupedal animal-like creature",
+        "behavior": "approaches and investigates the newly redirected water",
+        "function": "provides the first visible living response to the consequence of the protagonist's intervention",
+        "symbolicMode": "behavioral and relational rather than deterministic species symbolism"
+      }
+    },
+    "composition": {
+      "layout": "asymmetrical causal flow within a large open landscape",
+      "protagonistPlacement": "lower-left to lower-middle area of the frame",
+      "movementDirection": "attention and action move from the protagonist through the water junction toward the redirected branch and companion",
+      "visualFlow": [
+        "protagonist",
+        "hands and movable stone",
+        "water junction",
+        "redirected branch",
+        "companion",
+        "larger landscape and distant river"
+      ],
+      "densityHierarchy": {
+        "eventZone": "protagonist, hands, stone intervention and water junction",
+        "supportingWorldZone": "redirected flow, companion, terraces, distant structures and valley",
+        "restingZone": "large pale sky and simplified atmospheric distance"
+      },
+      "negativeSpace": "substantial atmospheric sky and distant landscape above and beyond the local event"
+    },
+    "projectiveGap": {
+      "description": "The intervention has visibly changed the immediate flow, but the image does not reveal the eventual reach, usefulness or wider consequence of the redirected water.",
+      "unresolvedOutcome": true
+    },
+    "realityDistortion": {
+      "level": 0,
+      "name": "Natural",
+      "surrealRule": null
+    },
+    "palette": {
+      "field": {
+        "psychologicalFunction": "available world / openness / possibility already present",
+        "name": "warm pale sandstone",
+        "hex": "#D2B47D"
+      },
+      "structure": {
+        "psychologicalFunction": "attention / usable capacity / directed intelligence",
+        "name": "muted mineral turquoise",
+        "hex": "#5F9299"
+      },
+      "tensionTransform": {
+        "psychologicalFunction": "material consequence / life responding to changed conditions",
+        "name": "deep desaturated blue-green",
+        "hex": "#496F68"
+      },
+      "tonalHierarchy": "warm pale sandstone is the dominant and broadest family across the terraces, architecture, clouds and warm companion; muted mineral turquoise concentrates attention in the protagonist, water and atmospheric sky; deep desaturated blue-green is concentrated primarily in the distant inhabited valley and deeper landscape masses",
+      "constraint": "exactly three principal color families; companion, vegetation, architecture, water and atmospheric effects must remain variations within these families rather than creating independent accent colors"
+    },
+    "light": {
+      "type": "natural daylight",
+      "direction": "soft lateral and overhead daylight",
+      "stability": "stable",
+      "function": "clearly reveal the physical water junction, protagonist's hands and broad terraced landscape without creating theatrical emphasis"
+    },
+    "tarotRecognition": {
+      "mechanism": "focused being + existing usable resource + deliberate physical intervention + changed material flow + visible consequence + responsive companion"
+    },
+    "illustrationLanguage": {
+      "style": "stylized storybook-like illustration for adults calibrated to the established Fool rendering anchor",
+      "qualities": [
+        "hand-drawn or hand-painted impression",
+        "large readable forms",
+        "clear protagonist silhouette",
+        "simplified non-realistic anatomy",
+        "restrained tonal modelling",
+        "subtle paper-and-pigment texture",
+        "controlled detail geography",
+        "simplified atmospheric depth",
+        "few tonal steps",
+        "non-photographic rendering"
+      ]
+    },
+    "avoid": [
+      "magical water effects",
+      "water emerging from the hands",
+      "spellcasting",
+      "glowing energy",
+      "floating objects",
+      "wizard imagery",
+      "heroic pose",
+      "mystical performance",
+      "Tarot suit-object inventory",
+      "monumental engineering",
+      "completed grand transformation",
+      "decorative vegetation overload",
+      "uniform microdetail across the image",
+      "fantasy creature concept-art rendering",
+      "photorealism",
+      "3D rendering",
+      "cinematic fantasy lighting",
+      "fourth color family"
+    ]
+  }
+},
+{
+  "card": "The High Priestess",
+  "visualDNA": {
+    "protagonist": {
+      "present": true,
+      "scalePercentImageHeight": "25-30",
+      "type": "stylized indigo feather-layered elemental being",
+      "morphology": {
+        "body": "compact, softly rounded, grounded",
+        "face": "very simple and restrained with dark eyes and almost no visible mouth",
+        "head": "broad overlapping feather-like layers forming a soft contained silhouette",
+        "surface": "layered feather-like forms continuing across head, neck, shoulders and upper body",
+        "anatomy": "simplified, slightly anthropomorphic, non-realistic and not anatomically avian"
+      },
+      "embodiedQualities": [
+        "receptivity",
+        "stillness",
+        "quiet attention",
+        "containment",
+        "sensitivity without urgency"
+      ],
+      "expressionAndAttention": {
+        "attention": "quietly directed toward the reflective water and immediate perceptual field rather than outward action",
+        "emotionalTone": "calm, receptive and inwardly attentive",
+        "avoid": [
+          "wisdom pose",
+          "mystical trance",
+          "sadness",
+          "fear",
+          "ritual solemnity",
+          "childlike cuteness"
+        ]
+      }
+    },
+    "centralVisualEvent": {
+      "description": "The protagonist sits naturally beside a calm highland pool and quietly attends to its reflective surface. The water mirrors the surrounding landscape and creates a perceptual doubling of the visible world without revealing a definitive hidden truth. The protagonist does not intervene, decode or test what it sees; the event remains one of sustained attention to something that may contain more than can immediately be explained.",
+      "state": "receptive observation before explanation",
+      "mustNotShow": [
+        "active divination",
+        "ritual use of the water",
+        "magical portal",
+        "apparition",
+        "explicit message in the reflection",
+        "dramatic supernatural revelation",
+        "protagonist manipulating the water"
+      ]
+    },
+    "environment": {
+      "biome": "quiet highland stone basin with a natural reflective pool inside a vast ancient mineral landscape",
+      "conditions": [
+        "open",
+        "still",
+        "weathered",
+        "spacious",
+        "physically legible",
+        "quietly ambiguous"
+      ],
+      "dominantEnvironmentalCarrier": {
+        "type": "still reflective water",
+        "behavior": "the pool visually doubles part of the surrounding world, allowing familiar reality to become perceptually uncertain without becoming overtly supernatural"
+      },
+      "architecturePresence": "trace",
+      "civilizationPresence": {
+        "level": 1,
+        "name": "Trace"
+      },
+      "lifePresence": "sparse but visibly alive",
+      "visibleLife": [
+        "small companion creature",
+        "restrained low vegetation",
+        "scattered flowering plants"
+      ],
+      "worldBeyondFrame": "strong",
+      "continuityCues": [
+        "distant plateaus and rock formations continuing beyond the visible frame",
+        "weathered terrain extending behind the pool",
+        "ambiguous ancient stone remnants distributed across the landscape"
+      ]
+    },
+    "environmentalDetails": {
+      "archetypal": [
+        "large calm reflective water surface",
+        "visible relationship between physical landscape and reflected landscape",
+        "stillness around the protagonist",
+        "thin translucent veil responding gently to the surrounding air"
+      ],
+      "discovery": [
+        "weathered standing or structural stone remnants of unclear original function",
+        "subtle vegetation and flowers occupying cracks around the pool",
+        "distant geological forms whose full spatial continuation remains unresolved"
+      ]
+    },
+    "secondaryElements": {
+      "translucentVeil": {
+        "present": true,
+        "importance": "supporting",
+        "description": "a single thin unadorned mist-lilac translucent fabric draped loosely across one shoulder and trailing behind or beside the protagonist",
+        "function": "adds permeability, softness and partial concealment without becoming ceremonial clothing"
+      },
+      "smallCompanion": {
+        "present": true,
+        "importance": "strongly subordinate but relationally meaningful",
+        "scale": "very small",
+        "type": "slender unfamiliar grey-green animal-like creature with elongated sensory structures",
+        "behavior": "remains quietly attentive beside the protagonist without duplicating the protagonist's exact focus",
+        "function": "adds a second form of sensitivity and reinforces the feeling that the environment contains more perceptual information than is being explicitly explained",
+        "symbolicMode": "behavioral and relational rather than deterministic species symbolism"
+      }
+    },
+    "composition": {
+      "layout": "asymmetrical stillness within a broad reflective landscape",
+      "protagonistPlacement": "lower third, slightly off-center beside the pool",
+      "movementDirection": "minimal physical movement; visual attention circulates between protagonist, water, reflection and distant landscape",
+      "visualFlow": [
+        "protagonist",
+        "direction of attention",
+        "calm pool",
+        "reflected landscape",
+        "corresponding real landscape",
+        "open atmospheric distance"
+      ],
+      "densityHierarchy": {
+        "eventZone": "protagonist, veil, companion and immediate pool edge",
+        "supportingWorldZone": "reflective water, central rock formation and restrained ancient remnants",
+        "restingZone": "broad sky, calm open water and softened distant terrain"
+      },
+      "negativeSpace": "substantial open sky and calm water create large visually quiet areas"
+    },
+    "projectiveGap": {
+      "description": "The image provides a reflective doubling of reality without establishing whether the reflection contains insight, ambiguity, projection or simply another way of seeing the same world.",
+      "unresolvedOutcome": true
+    },
+    "realityDistortion": {
+      "level": 1,
+      "name": "Uncanny",
+      "surrealRule": "The reflection may feel subtly more revealing or spatially suggestive than ordinary perception, but no explicit impossible event or supernatural explanation is shown."
+    },
+    "palette": {
+      "field": {
+        "psychologicalFunction": "receptive ambiguity / atmospheric openness / incomplete articulation",
+        "name": "muted mist lilac",
+        "hex": "#AAA4B5"
+      },
+      "structure": {
+        "psychologicalFunction": "quiet physical reality / perceptual stability",
+        "name": "soft mineral grey-green",
+        "hex": "#7F9185"
+      },
+      "tensionTransform": {
+        "psychologicalFunction": "concentrated inward attention / significance felt before explanation",
+        "name": "deep muted indigo",
+        "hex": "#4F526E"
+      },
+      "tonalHierarchy": "muted mist lilac carries broad atmospheric sky, veil and reflective space; soft mineral grey-green carries most stone, vegetation and companion structure; deep muted indigo is concentrated primarily in the protagonist and selected deeper reflection values",
+      "constraint": "exactly three principal color families; stone, vegetation, flowers, water, veil, companion and atmospheric effects remain tonal variations within these families rather than creating independent accents"
+    },
+    "light": {
+      "type": "soft natural daylight",
+      "direction": "broad diffuse lateral and overhead illumination",
+      "stability": "stable",
+      "function": "maintains clarity of the protagonist, reflection and landscape while preserving a quiet non-theatrical atmosphere"
+    },
+    "tarotRecognition": {
+      "mechanism": "still receptive being + translucent veil + reflective threshold + quiet doubling of visible reality + sustained non-intervention + unresolved perception"
+    },
+    "illustrationLanguage": {
+      "style": "stylized storybook-like illustration for adults calibrated to the established Fool rendering anchor",
+      "qualities": [
+        "hand-drawn or hand-painted impression",
+        "large readable graphic masses",
+        "soft geometric construction",
+        "simplified non-realistic anatomy",
+        "broad grouped feather-like morphology",
+        "restrained tonal modelling",
+        "subtle paper-and-pigment texture",
+        "controlled detail geography",
+        "few tonal steps",
+        "soft atmospheric depth",
+        "non-photographic rendering"
+      ]
+    },
+    "avoid": [
+      "moon symbolism",
+      "crescent moon",
+      "pillars",
+      "book",
+      "scroll",
+      "occult symbols",
+      "runes",
+      "ritual objects",
+      "priestess costume",
+      "ceremonial robes",
+      "crown",
+      "throne",
+      "meditation pose",
+      "prayer pose",
+      "fortune-telling imagery",
+      "magical portal",
+      "glowing reflection",
+      "apparition in water",
+      "mirror double",
+      "evil reflection",
+      "supernatural message",
+      "realistic bird anatomy",
+      "beak",
+      "wings",
+      "ornate plumage",
+      "feather headdress",
+      "cute mascot treatment",
+      "child character",
+      "portrait-led composition",
+      "dark occult atmosphere",
+      "purple magical glow",
+      "photorealism",
+      "3D rendering",
+      "cinematic fantasy concept art",
+      "uniform microdetail",
+      "fourth color family"
+    ]
+  }
+},
+{
+  "card": "The Empress",
+  "visualDNA": {
+    "protagonist": {
+      "present": true,
+      "scalePercentImageHeight": "25-30",
+      "type": "stylized plum-mauve elemental garden being",
+      "morphology": {
+        "body": "broad, low, softly substantial and grounded",
+        "face": "simple adult face with large restrained dark eyes and minimal mouth",
+        "head": "softly tapered with layered organic leaf-feather surface forms",
+        "surface": "overlapping natural forms suggesting petals, leaves or soft feathering without literal plant anatomy",
+        "limbs": "shorter strong limbs with large capable hands",
+        "anatomy": "simplified, slightly anthropomorphic, non-realistic"
+      },
+      "embodiedQualities": [
+        "groundedness",
+        "receptivity",
+        "patience",
+        "care",
+        "physical ease",
+        "generative presence"
+      ],
+      "expressionAndAttention": {
+        "attention": "directed toward the living relationship between the large leaf, available light and younger growth beneath it",
+        "emotionalTone": "calm, caring and practically attentive",
+        "avoid": [
+          "maternal performance",
+          "goddess pose",
+          "regal authority",
+          "seduction",
+          "triumph",
+          "magical concentration",
+          "childlike cuteness"
+        ]
+      }
+    },
+    "centralVisualEvent": {
+      "description": "The protagonist gently lifts and shifts a very large mature leaf that has been shading younger vegetation beneath it. By physically moving the leaf aside rather than removing or damaging it, the protagonist opens a natural gap through which daylight reaches young shoots, flowers and lower growth.",
+      "state": "careful environmental adjustment creating better conditions for existing life",
+      "causalSequence": [
+        "mature vegetation creates dense shade",
+        "protagonist notices the relationship between larger and younger growth",
+        "large leaf is gently moved aside",
+        "natural daylight reaches the plants below",
+        "younger growth and another small living being gain access to the changed microenvironment"
+      ],
+      "mustNotShow": [
+        "magical plant growth",
+        "plants emerging from the protagonist",
+        "instant supernatural blooming",
+        "protagonist creating sunlight",
+        "cutting or destroying the large leaf",
+        "gardening tool as central mechanism",
+        "water redirection as central action"
+      ]
+    },
+    "environment": {
+      "biome": "lush partially enclosed ancient terraced ruin reclaimed by dense vegetation",
+      "conditions": [
+        "warm",
+        "sheltered",
+        "humid",
+        "layered",
+        "abundant",
+        "inhabited by living growth",
+        "partially enclosed"
+      ],
+      "dominantEnvironmentalCarrier": {
+        "type": "dense self-directed plant ecology integrated with old architecture",
+        "behavior": "large mature growth creates shelter, shade and spatial pressure while younger plants continue developing within and beyond the structures that once organized the space"
+      },
+      "architecturePresence": "integrated",
+      "civilizationPresence": {
+        "level": 3,
+        "name": "Embedded"
+      },
+      "lifePresence": "very high",
+      "visibleLife": [
+        "very large broad leaves",
+        "young shoots",
+        "mature foliage",
+        "vines",
+        "climbing growth",
+        "large flowers",
+        "small flowers",
+        "buds",
+        "seed structures",
+        "ground cover",
+        "small companion creature"
+      ],
+      "worldBeyondFrame": "strong but enclosed",
+      "continuityCues": [
+        "vegetation continuing through wall openings",
+        "dense canopy extending beyond the visible frame",
+        "old stairs and passages disappearing beneath growth",
+        "ruined architecture continuing into deeper layers of foliage"
+      ]
+    },
+    "environmentalDetails": {
+      "archetypal": [
+        "giant mature leaf shading younger plants",
+        "newly opened patch of natural sunlight",
+        "young growth receiving light beneath older growth",
+        "vegetation using and exceeding ancient architectural boundaries",
+        "multiple visible stages of plant development"
+      ],
+      "discovery": [
+        "old stone channels partly hidden beneath plants",
+        "roots entering masonry cracks",
+        "vines crossing ruined walls",
+        "flowers and seed structures at different biological stages",
+        "small water traces integrated into the old garden infrastructure"
+      ]
+    },
+    "secondaryElements": {
+      "smallCompanion": {
+        "present": true,
+        "importance": "strongly subordinate but ecologically meaningful",
+        "scale": "very small",
+        "type": "soft-bodied unfamiliar green companion with petal-like sensory structures",
+        "behavior": "occupies the sheltered lower vegetation and reacts to the newly opened patch of light",
+        "function": "shows that cultivated growth has become habitat for other life",
+        "symbolicMode": "behavioral and ecological rather than deterministic species symbolism"
+      }
+    },
+    "composition": {
+      "layout": "intimate asymmetrical enclosure with outward botanical expansion",
+      "protagonistPlacement": "lower-middle to lower-left area within dense vegetation",
+      "movementDirection": "from protagonist and lifted leaf toward the opened light, younger growth and companion",
+      "visualFlow": [
+        "large surrounding foliage",
+        "protagonist",
+        "hands lifting mature leaf",
+        "opening in canopy",
+        "natural daylight",
+        "younger plants",
+        "companion",
+        "layered flowers and vines",
+        "partially hidden ancient architecture",
+        "continued vegetation beyond the frame"
+      ],
+      "densityHierarchy": {
+        "eventZone": "protagonist, giant leaf, hands, illuminated young growth and companion",
+        "supportingWorldZone": "large flowers, mature foliage, vines, water traces and overgrown architecture",
+        "restingZone": "broad leaf surfaces, shadowed foliage masses, selected stone planes and small openings toward distant light"
+      },
+      "negativeSpace": "limited compared with earlier cards; visual rest comes primarily from broad leaf masses, shadowed foliage and simplified architectural surfaces rather than open sky"
+    },
+    "projectiveGap": {
+      "description": "The younger plants now receive more light, but the image does not reveal how the living system will change, how far the growth will continue, or whether future cultivation will require a different balance.",
+      "unresolvedOutcome": true
+    },
+    "realityDistortion": {
+      "level": 0,
+      "name": "Natural",
+      "surrealRule": null
+    },
+    "palette": {
+      "field": {
+        "psychologicalFunction": "living continuity / shelter / self-sustaining abundance",
+        "name": "rich sage forest green",
+        "hex": "#667A55"
+      },
+      "structure": {
+        "psychologicalFunction": "material warmth / cultivated history / supportive physical conditions",
+        "name": "warm sunlit clay",
+        "hex": "#C89A6B"
+      },
+      "tensionTransform": {
+        "psychologicalFunction": "maturation / generative richness / life exceeding containment",
+        "name": "muted plum rose",
+        "hex": "#8E6075"
+      },
+      "tonalHierarchy": "rich sage forest green is the dominant field and carries most vegetation and environmental depth; warm sunlit clay appears selectively in exposed stone and natural light; muted plum rose is concentrated in the protagonist, flowers, buds and seed structures",
+      "distribution": {
+        "field": "approximately 60-65%",
+        "structure": "approximately 20-25%",
+        "tensionTransform": "approximately 10-15%"
+      },
+      "constraint": "exactly three principal color families; vegetation, flowers, stone, water, companion and atmospheric effects remain tonal variations within these families rather than creating independent local palettes"
+    },
+    "light": {
+      "type": "filtered natural daylight",
+      "direction": "soft daylight entering through canopy and architectural openings",
+      "stability": "stable",
+      "function": "creates a readable local change in growing conditions when the protagonist moves the large leaf aside, while keeping the wider environment warm and sheltered"
+    },
+    "tarotRecognition": {
+      "mechanism": "grounded caretaker + abundant self-directed ecology + large mature growth + younger life receiving newly available light + companion using vegetation as habitat + cultivation without domination"
+    },
+    "illustrationLanguage": {
+      "style": "stylized storybook-like illustration for adults calibrated to the established Fool rendering anchor",
+      "qualities": [
+        "hand-drawn or hand-painted impression",
+        "large readable botanical masses",
+        "simplified non-realistic anatomy",
+        "broad grouped organic forms",
+        "restrained tonal modelling",
+        "soft pigment-like texture",
+        "controlled density hierarchy",
+        "few tonal steps",
+        "simplified depth through overlapping foliage and architecture",
+        "non-photographic rendering"
+      ]
+    },
+    "avoid": [
+      "human woman",
+      "goddess",
+      "queen",
+      "pregnancy",
+      "breasts",
+      "mother-and-child imagery",
+      "fertility-goddess symbolism",
+      "sexualized femininity",
+      "throne",
+      "crown",
+      "flower crown",
+      "cornucopia",
+      "wheat symbolism",
+      "Venus symbolism",
+      "formal garden",
+      "symmetrical garden",
+      "decorative flowerbed",
+      "open desert panorama",
+      "mountain panorama",
+      "entire scene dominated by ochre",
+      "magical plant growth",
+      "glowing plants",
+      "magic particles",
+      "protagonist creating life",
+      "Magician-like water engineering",
+      "gardening tool inventory",
+      "recognizable Earth-animal companion",
+      "pet posing",
+      "photorealism",
+      "3D rendering",
+      "cinematic fantasy concept art",
+      "hyper-detailed botanical realism",
+      "uniform microdetail",
+      "fourth color family"
+    ]
+  }
+}
+]

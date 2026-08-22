@@ -32,7 +32,8 @@ export interface AnchorConstructorInputPacket {
     content?: string;
   };
   observationSet: {
-    observationBundleId: string;
+    observationFamily: "v2" | "v3";
+    observationAuthorityId: string;
     runtimeVersion: string;
     objectLanguage: string;
     scenes: Array<{
@@ -48,7 +49,7 @@ export interface AnchorConstructorInputPacket {
       derivedStructures: Record<string, string[]>;
     }>;
     observations: Array<{
-      observationV2SceneObservationId: string;
+      observationReferenceId: string;
       sceneRowId: string;
       sceneStableId: string;
       observationStableId: string;
@@ -95,7 +96,7 @@ export interface AnchorConstructorInputPacket {
       opportunityIdentityId: LatentOpportunityIdentityId;
       evidenceBlockId: string;
       evidenceBlockRole: LatentOpportunityEvidenceRole;
-      observationV2SceneObservationId: string;
+      observationReferenceId: string;
       sceneId: string | null;
       observationRole: LatentOpportunityEvidenceObservationRole;
       supportsNodeKeys: string[];
@@ -167,7 +168,7 @@ export interface AnchorConstructorAnchor {
   }>;
   evidence: {
     observationRefs: Array<{
-      observationV2SceneObservationId: string;
+      observationReferenceId: string;
       role: AnchorConstructorEvidenceObservationRole;
     }>;
     opportunityRefs: Array<{
@@ -177,7 +178,7 @@ export interface AnchorConstructorAnchor {
     traceRefs: Array<{
       opportunityManifestationId: LatentOpportunityManifestationId;
       evidenceBlockId: string;
-      observationV2SceneObservationId: string;
+      observationReferenceId: string;
       supportsNodeKeys: string[];
       supportsEdgeIndexes: number[];
     }>;

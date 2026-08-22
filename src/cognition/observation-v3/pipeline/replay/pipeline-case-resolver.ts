@@ -213,6 +213,7 @@ export async function resolveObservationV3ReplayCase(input: {
                   ? {
                       responses: supplementalEvidence.map((entry) => ({
                         physicalGapId: entry.physicalGapId,
+                        targetContract: entry.targetContract,
                         sourceArtifactRef: entry.sourceArtifactRef,
                         providerResult: entry.providerResult,
                       })),

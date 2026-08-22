@@ -106,6 +106,36 @@ export interface StructuralCompletenessAssessment {
   weaknessSignals: StructuralWeaknessSignal[];
 }
 
+export type MaterialGapClassification =
+  | "material_missing"
+  | "already_represented"
+  | "non_material"
+  | "unresolved";
+
+export type MaterialGapReason =
+  | "prefix_gap_presumed_material"
+  | "late_or_ending_loss_presumed_material"
+  | "duplicate_source_text_already_covered"
+  | "non_lexical_gap_text"
+  | "reflective_tail_commentary"
+  | "terminal_state_already_represented"
+  | "connective_only_gap_text"
+  | "multi_sentence_internal_gap"
+  | "tail_gap_not_proven_material"
+  | "internal_gap_not_deterministically_classified";
+
+export interface MaterialGapRecord {
+  gapId: string;
+  classification: MaterialGapClassification;
+  admissionRelevant: boolean;
+  reasons: MaterialGapReason[];
+}
+
+export interface MaterialGapAssessment {
+  gaps: MaterialGapRecord[];
+  targetedGapIds: string[];
+}
+
 export type RecoveryRecommendationReason =
   | "physical_gap_detected"
   | "late_section_missing"
@@ -182,6 +212,7 @@ export interface CompletenessReport {
   lateRetention: LateRetentionAssessment;
   endingRetention: EndingRetentionAssessment;
   structuralAssessment: StructuralCompletenessAssessment;
+  materialGapAssessment?: MaterialGapAssessment;
   recoveryRecommendation: RecoveryRecommendation;
   metricDiscrepancies: MetricDiscrepancyRecord[];
   diagnosticReasons: CompletenessReason[];

@@ -64,10 +64,9 @@ describe("/api/reflective-objects/[id]/observations route", () => {
     expect(response.status).toBe(404);
   });
 
-  it("creates observations with evidence-linked payload", async () => {
+  it("rejects manual legacy observation writes after authority cutover", async () => {
     resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
     getById.mockResolvedValue({ id: "obj-1" });
-    create.mockResolvedValue({ id: "obs-1" });
 
     const { POST } = await import("@/app/api/reflective-objects/[id]/observations/route");
     const response = await POST(
@@ -91,11 +90,11 @@ describe("/api/reflective-objects/[id]/observations route", () => {
       },
     );
 
-    expect(response.status).toBe(201);
-    expect(create).toHaveBeenCalled();
+    expect(response.status).toBe(409);
+    expect(create).not.toHaveBeenCalled();
   });
 
-  it("returns semantic rejection with 422 when interpretive language is detected", async () => {
+  it("returns compatibility rejection when interpretive legacy writes are attempted", async () => {
     resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
     getById.mockResolvedValue({ id: "obj-1" });
 
@@ -121,11 +120,11 @@ describe("/api/reflective-objects/[id]/observations route", () => {
       },
     );
 
-    expect(response.status).toBe(422);
+    expect(response.status).toBe(409);
     expect(create).not.toHaveBeenCalled();
   });
 
-  it("returns semantic defer with 422 when evidence is insufficient", async () => {
+  it("returns compatibility rejection when insufficient-evidence legacy writes are attempted", async () => {
     resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
     getById.mockResolvedValue({ id: "obj-1" });
 
@@ -151,7 +150,7 @@ describe("/api/reflective-objects/[id]/observations route", () => {
       },
     );
 
-    expect(response.status).toBe(422);
+    expect(response.status).toBe(409);
     expect(create).not.toHaveBeenCalled();
   });
 });

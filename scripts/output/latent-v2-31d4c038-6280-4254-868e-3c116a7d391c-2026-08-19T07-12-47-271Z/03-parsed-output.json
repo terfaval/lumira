@@ -1,0 +1,158 @@
+{
+  "generationContext": {
+    "runtimeVersion": "latent_opportunity_constructor_v3_shadow_v1",
+    "priorityReflectiveObjectId": "31d4c038-6280-4254-868e-3c116a7d391c",
+    "authority": {
+      "family": "observation_v3",
+      "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+      "canonicalObservationId": "canonical-candidate-5daf05f97fc0ab96",
+      "canonicalHash": "6169cef1e1f49b249d2ecf6ece5760bc09e56de18589a9e4fbb15c5cd4ea4cc6",
+      "generationVersion": "observation-v3-shadow-pipeline-v1"
+    }
+  },
+  "decision": {
+    "mode": "opportunities_found",
+    "silenceReason": null
+  },
+  "opportunities": [
+    {
+      "clientOpportunityKey": "opportunity-1",
+      "identityDecision": {
+        "mode": "create_new",
+        "existingIdentityId": null,
+        "reuseConfidence": null,
+        "reuseRationale": null
+      },
+      "opportunityStructure": {
+        "primaryCategory": "transition",
+        "secondaryCategories": [
+          "ambiguity",
+          "tension"
+        ],
+        "structureType": "A_TO_B_TO_C",
+        "nodes": [
+          {
+            "key": "A",
+            "label": "Elidegenedés és hiányosság az Emma-val való viszonyban",
+            "kind": "affect"
+          },
+          {
+            "key": "B",
+            "label": "Konfliktus és vita Emma-val a hiányzó keresés miatt",
+            "kind": "tension"
+          },
+          {
+            "key": "C",
+            "label": "Feszültség feloldása intim kapcsolódással és közeledéssel",
+            "kind": "transformation"
+          }
+        ],
+        "edges": [
+          {
+            "from": "A",
+            "to": "B",
+            "relation": "transition"
+          },
+          {
+            "from": "B",
+            "to": "C",
+            "relation": "transition"
+          }
+        ],
+        "tensions": [
+          {
+            "between": [
+              "B",
+              "C"
+            ],
+            "description": "Vita és harag kontrasztja az intimitás és megnyugvás pillanatával"
+          }
+        ],
+        "gaps": [
+          {
+            "description": "Az előzmények és az érzelmi állapotok mélyebb összefüggései nincsenek teljesen világosan feltárva",
+            "supportedByObservationIds": [
+              "unit-9b68ffae89815d2b",
+              "unit-c7ce8e2d9de86fe9",
+              "unit-d1fa57bee6e21390"
+            ]
+          }
+        ],
+        "continuitySignals": [
+          {
+            "kind": "none",
+            "referenceId": null,
+            "description": null
+          }
+        ]
+      },
+      "manifestation": {
+        "summaryForInternalUse": "Álom narratívában megjelenő személyes kapcsolatban megjelenő átmeneti működés és érzelmi dinamikák lehetősége a konfliktus, harag és kibékülés szakaszain keresztül.",
+        "priorityReflectiveObjectRole": "primary_source",
+        "salience": {
+          "credibility": 0.85,
+          "reflectivePotential": 0.9,
+          "salienceBand": "high",
+          "credibilityRationale": "Számos közvetlen megfigyelés és narratív egység támogatja a kapcsolat érzelmi átmeneteit és konfliktusait.",
+          "reflectivePotentialRationale": "A feszültség és annak feloldása érzelmi jelentőséggel bír, amely lehetőséget ad további vizsgálatokra a kapcsolati dinamika kapcsán."
+        }
+      },
+      "evidenceBlocks": [
+        {
+          "clientBlockKey": "block-primary",
+          "reflectiveObjectId": "31d4c038-6280-4254-868e-3c116a7d391c",
+          "role": "priority",
+          "summary": "Álom narratívájának összefoglaló részei, kiemelve a kapcsolat dinamikáit és konfliktusait.",
+          "observationRefs": [
+            {
+              "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+              "unitId": "unit-9b68ffae89815d2b",
+              "localityId": "locality-8adce6f26312affd",
+              "evidenceId": "evidence-cd50563e34d2af5b",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "A"
+              ],
+              "supportsEdgeIndexes": []
+            },
+            {
+              "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38d78ee631d28f8a",
+              "unitId": "unit-c7ce8e2d9de86fe9",
+              "localityId": "locality-7a27624387b80870",
+              "evidenceId": "evidence-7413a5f49a501557",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "B"
+              ],
+              "supportsEdgeIndexes": [
+                0
+              ]
+            },
+            {
+              "authorityId": "d8e26b22ad5dde5a56a3679bc178422d10a0fa39a073247d38f8a",
+              "unitId": "unit-d1fa57bee6e21390",
+              "localityId": "locality-7a27624387b80870",
+              "evidenceId": "evidence-c06faa62f41e2b8e",
+              "role": "primary_support",
+              "supportsNodeKeys": [
+                "C"
+              ],
+              "supportsEdgeIndexes": [
+                1
+              ]
+            }
+          ],
+          "confirmedGlossaryRefs": [],
+          "candidateGlossaryMentions": []
+        }
+      ],
+      "safety": {
+        "containsInterpretation": false,
+        "containsDiagnosis": false,
+        "containsIdentityClaim": false,
+        "containsAdvice": false,
+        "userFacingReady": false
+      }
+    }
+  ]
+}

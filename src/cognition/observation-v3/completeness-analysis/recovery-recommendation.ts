@@ -1,13 +1,13 @@
 import type {
   CompletenessAdequacy,
-  PhysicalGapSet,
+  MaterialGapAssessment,
   RecoveryRecommendation,
   RecoveryRecommendationReason,
 } from "@/src/cognition/observation-v3/completeness-analysis/completeness-analysis-contract";
 
 export function buildRecoveryRecommendation(input: {
   adequacy: CompletenessAdequacy;
-  gaps: PhysicalGapSet;
+  materialGapAssessment: MaterialGapAssessment;
   lateRetentionStatus: "retained" | "thin" | "missing" | "not_applicable" | "indeterminate";
   endingRetentionStatus: "retained" | "not_retained" | "indeterminate" | "not_applicable";
 }): RecoveryRecommendation {
@@ -40,11 +40,13 @@ export function buildRecoveryRecommendation(input: {
       reasons.add("ending_not_retained");
     }
 
-    const admissionRelevant = input.lateRetentionStatus === "missing" || input.endingRetentionStatus === "not_retained";
+    const admissionRelevant = input.materialGapAssessment.gaps.some((gap) => gap.admissionRelevant)
+      || input.lateRetentionStatus === "missing"
+      || input.endingRetentionStatus === "not_retained";
     return {
       disposition: admissionRelevant ? "required_before_admission" : "recommended",
-      targetedPhysicalGapIds: input.gaps.gaps.map((gap) => gap.id),
-      eligibility: input.gaps.gaps.length > 0 ? "eligible" : "unknown",
+      targetedPhysicalGapIds: input.materialGapAssessment.targetedGapIds,
+      eligibility: input.materialGapAssessment.targetedGapIds.length > 0 ? "eligible" : "unknown",
       advisoryClass: admissionRelevant ? "admission_relevant" : "advisory",
       reasons: [...reasons].sort((left, right) => left.localeCompare(right)),
     };

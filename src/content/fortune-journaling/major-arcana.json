@@ -1,0 +1,596 @@
+[
+  {
+    "id": "the_fool",
+    "name_hu": "A Bolond",
+    "name_en": "The Fool",
+    "arcana": "major",
+    "number": 0,
+    "archetype": "kezdet, nyitottság, ugrás",
+    "summary": "Gyakran kapcsolódik új kezdetekhez, nyitottsághoz és az ismeretlen felé tett első lépésekhez. Megjelenhet mint bizalom, kísérletezés vagy még formálódó irány.",
+    "interpretation_axes": ["kezdet", "szabadság", "kockázat", "nyitottság", "bizalom", "kísérletezés"],
+    "possible_readings": [
+      "egy új irány még csak körvonalazódik",
+      "a nyitottság most többet vihet előre, mint a kontroll",
+      "érdemes lehet kipróbálni valamit teljes bizonyosság nélkül is",
+      "a spontaneitás most fontosabb lehet a túlgondolásnál"
+    ],
+    "emotional_tones": ["kíváncsiság", "izgalom", "bizalom", "bizonytalanság"],
+    "reflection_questions": [
+      "hol indul most valami új az életemben?",
+      "miben lenne szükség több nyitottságra?",
+      "mitől félek, amikor még nincs minden kidolgozva?",
+      "hol tart vissza a túlzott óvatosság?"
+    ],
+    "shadow_possibilities": ["naivitás", "felelőtlenség", "irányvesztés"],
+    "ui_hint_short": "Új kezdet, nyitottság, első lépés.",
+    "ui_hint_long": "Gyakran kapcsolódik ahhoz az állapothoz, amikor még nem látszik minden részlet, de valami már hív. Megjelenhet mint kíváncsiság, bizalom vagy az első bátor mozdulat egy új irány felé.",
+    "tags": ["kezdet", "szabadság", "bizalom", "ugrás", "ismeretlen"]
+  },
+  {
+    "id": "the_magician",
+    "name_hu": "A Mágus",
+    "name_en": "The Magician",
+    "arcana": "major",
+    "number": 1,
+    "archetype": "figyelem, szándék, hatás",
+    "summary": "Gyakran kapcsolódik a tudatos irányításhoz, az erőforrások mozgósításához és a cselekvő jelenléthez. Megjelenhet mint összpontosítás, kezdeményezés vagy belső eszköztár aktiválása.",
+    "interpretation_axes": ["szándék", "fókusz", "kezdeményezés", "kompetencia", "hatás", "teremtő erő"],
+    "possible_readings": [
+      "most nagyobb szerepe lehet a tudatos irányításnak",
+      "a rendelkezésre álló eszközök már közelebb vannak, mint elsőre tűnik",
+      "érdemes lehet egy dolgot világos szándékkal elindítani",
+      "a figyelem összegyűjtése most különösen sokat számíthat"
+    ],
+    "emotional_tones": ["magabiztosság", "éberség", "elszántság", "lendület"],
+    "reflection_questions": [
+      "milyen erőforrásaim vannak már most is jelen?",
+      "hol lenne szükség tisztább szándékra?",
+      "miben tudnék most kezdeményezőbb lenni?",
+      "hogyan használom a figyelmemet és az energiámat?"
+    ],
+    "shadow_possibilities": ["manipuláció", "ego-vezérelt kontroll", "szétszórtság"],
+    "ui_hint_short": "Szándék, fókusz, kezdeményezés.",
+    "ui_hint_long": "Gyakran jelenik meg akkor, amikor valami nem csak ötletként van jelen, hanem formát is kezd ölteni. Utalhat arra, hogy a figyelem, a szándék és a rendelkezésre álló eszközök együtt most valódi mozgást hozhatnak.",
+    "tags": ["szándék", "fókusz", "kezdeményezés", "hatás", "erőforrás"]
+  },
+  {
+    "id": "the_high_priestess",
+    "name_hu": "A Főpapnő",
+    "name_en": "The High Priestess",
+    "arcana": "major",
+    "number": 2,
+    "archetype": "csend, belső tudás, érzékelés",
+    "summary": "Gyakran kapcsolódik a belső figyelemhez, a csendes tudáshoz és a még ki nem mondott rétegekhez. Megjelenhet mint intuitív érzékelés, visszahúzódás vagy mélyebb belső hallgatás.",
+    "interpretation_axes": ["intuíció", "csend", "belső figyelem", "rejtett réteg", "érzékenység", "befelé fordulás"],
+    "possible_readings": [
+      "nem minden kíván most azonnali kimondást vagy döntést",
+      "érdemes lehet figyelni arra, ami halkabban jelenik meg",
+      "a belső tudás most lassabban, de tisztábban mutatkozhat meg",
+      "a visszafogottság most többet adhat, mint az erőltetett válasz"
+    ],
+    "emotional_tones": ["csend", "mélység", "érzékenység", "rejtelmesség"],
+    "reflection_questions": [
+      "mit érzek, mielőtt megmagyaráznám?",
+      "mi az, ami bennem még formálódik?",
+      "hol lenne fontosabb hallgatni, mint reagálni?",
+      "milyen halk belső jelzéseket hagyok figyelmen kívül?"
+    ],
+    "shadow_possibilities": ["elzárkózás", "passzivitás", "túlzott titkolózás"],
+    "ui_hint_short": "Belső figyelem, csendes tudás.",
+    "ui_hint_long": "Gyakran kapcsolódik azokhoz a helyzetekhez, ahol a válasz nem kívülről érkezik. Megjelenhet mint finom megérzés, belső tisztulás vagy az a felismerés, hogy még nem jött el a kimondás ideje.",
+    "tags": ["intuíció", "csend", "belső világ", "érzékelés", "mélység"]
+  },
+  {
+    "id": "the_empress",
+    "name_hu": "A Császárnő",
+    "name_en": "The Empress",
+    "arcana": "major",
+    "number": 3,
+    "archetype": "bőség, gondoskodás, növekedés",
+    "summary": "Gyakran kapcsolódik tápláló jelenléthez, alkotó termékenységhez és természetes növekedéshez. Megjelenhet mint gondoskodás, befogadás vagy valami élő kibontakozása.",
+    "interpretation_axes": ["bőség", "testiség", "gondoskodás", "termékenység", "alkotás", "befogadás"],
+    "possible_readings": [
+      "valami most több figyelemtől és táplálástól fejlődhet",
+      "a kapcsolódás és a gondoskodás most központi téma lehet",
+      "érdemes lehet helyet adni a természetes kibontakozásnak",
+      "a testtel és az érzéki világgal való kapcsolat most hangsúlyosabb lehet"
+    ],
+    "emotional_tones": ["melegség", "öröm", "gyengédség", "biztonság"],
+    "reflection_questions": [
+      "mit táplálok most az életemben?",
+      "hol lenne szükség több gyengédségre?",
+      "miben jelenik meg a természetes növekedés?",
+      "hogyan kapcsolódom a testemhez és az érzékeimhez?"
+    ],
+    "shadow_possibilities": ["túlanyázás", "kényelmesség", "túlzott ragaszkodás"],
+    "ui_hint_short": "Táplálás, növekedés, befogadás.",
+    "ui_hint_long": "Gyakran jelenik meg akkor, amikor valami figyelemből, törődésből és időből bontakozik ki. Utalhat testi, érzelmi vagy alkotó bőségre is, nem mint teljesítményre, hanem mint élő folyamatra.",
+    "tags": ["bőség", "gondoskodás", "növekedés", "test", "alkotás"]
+  },
+  {
+    "id": "the_emperor",
+    "name_hu": "A Császár",
+    "name_en": "The Emperor",
+    "arcana": "major",
+    "number": 4,
+    "archetype": "rend, struktúra, felelősség",
+    "summary": "Gyakran kapcsolódik stabilitáshoz, keretekhez és tudatos irányításhoz. Megjelenhet mint felelősségvállalás, határok kijelölése vagy hosszabb távú építkezés.",
+    "interpretation_axes": ["struktúra", "stabilitás", "felelősség", "határ", "rend", "vezetés"],
+    "possible_readings": [
+      "most nagyobb szerepe lehet a világos kereteknek",
+      "érdemes lehet tudatosabban kijelölni a határokat",
+      "a következetesség most többet adhat, mint az ösztönösség",
+      "valami szilárdabb alapot kívánhat"
+    ],
+    "emotional_tones": ["biztonság", "komolyság", "határozottság", "stabilitás"],
+    "reflection_questions": [
+      "hol van szükségem több rendre vagy keretre?",
+      "miben vállalok most felelősséget?",
+      "hogyan bánok a saját határaimmal?",
+      "mikor segít a kontroll, és mikor szorít túl?"
+    ],
+    "shadow_possibilities": ["merevség", "uralmi vágy", "érzelmi távolság"],
+    "ui_hint_short": "Keret, felelősség, stabilitás.",
+    "ui_hint_long": "Gyakran kapcsolódik ahhoz, amikor a növekedéshez nem több inspiráció, hanem több rend kell. Megjelenhet mint tartás, határkijelölés vagy az a belső mozdulat, amely vállalja a következményeket.",
+    "tags": ["rend", "struktúra", "határ", "vezetés", "stabilitás"]
+  },
+  {
+    "id": "the_hierophant",
+    "name_hu": "A Főpap",
+    "name_en": "The Hierophant",
+    "arcana": "major",
+    "number": 5,
+    "archetype": "hagyomány, tanulás, keret",
+    "summary": "Gyakran kapcsolódik közös mintákhoz, tanulható rendszerekhez és átörökített tudáshoz. Megjelenhet mint útmutatás, közösségi rend vagy meglévő keretekhez való viszony.",
+    "interpretation_axes": ["hagyomány", "tanulás", "közösség", "szabály", "útmutatás", "értékrend"],
+    "possible_readings": [
+      "érdemes lehet megnézni, milyen mintákhoz igazodom",
+      "egy külső keret most támaszt vagy ellenállást is adhat",
+      "a tanulás most rendszeren belül történhet könnyebben",
+      "fontossá válhat, mihez kapcsolódom értékrendi szinten"
+    ],
+    "emotional_tones": ["bizalom", "tisztelet", "kétely", "alkalmazkodás"],
+    "reflection_questions": [
+      "milyen rendszerek vagy hagyományok hatnak rám most?",
+      "mit vettem át automatikusan másoktól?",
+      "hol segít a közös keret, és hol szűkít?",
+      "milyen értékekhez szeretnék tudatosan kapcsolódni?"
+    ],
+    "shadow_possibilities": ["dogmatizmus", "konformitás", "külső tekintélytől függés"],
+    "ui_hint_short": "Közös keret, tanulás, hagyomány.",
+    "ui_hint_long": "Gyakran jelenik meg akkor, amikor egy helyzet nem csak személyes, hanem kulturális vagy közösségi mintákat is hordoz. Utalhat arra, hogy érdemes megnézni, mit követünk megszokásból, és mihez kapcsolódunk valódi belső igenből.",
+    "tags": ["hagyomány", "tanulás", "értékrend", "közösség", "szabály"]
+  },
+  {
+    "id": "the_lovers",
+    "name_hu": "A Szeretők",
+    "name_en": "The Lovers",
+    "arcana": "major",
+    "number": 6,
+    "archetype": "kapcsolódás, választás, összhang",
+    "summary": "Gyakran kapcsolódik kapcsolati tükröződéshez, értékalapú választáshoz és belső-külső összhanghoz. Megjelenhet mint vonzalom, döntési helyzet vagy mélyebb igazodás önmagunkhoz.",
+    "interpretation_axes": ["kapcsolódás", "választás", "vonzódás", "összhang", "értékek", "intimitás"],
+    "possible_readings": [
+      "egy döntés most nemcsak logikai, hanem értékrendi kérdés is lehet",
+      "valami tükröt tart a kapcsolódási mintáimnak",
+      "a valódi igen és a megszokás most elválhat egymástól",
+      "fontossá válhat, hogy mihez kapcsolódom teljes szívvel"
+    ],
+    "emotional_tones": ["vágy", "közelség", "sebezhetőség", "tisztaság"],
+    "reflection_questions": [
+      "mihez mondok most valóban igent?",
+      "hogyan kapcsolódom másokhoz és önmagamhoz?",
+      "milyen választásaim tükrözik a valódi értékeimet?",
+      "hol keverem össze a vágyat a megfeleléssel?"
+    ],
+    "shadow_possibilities": ["idealizálás", "függés", "belső megosztottság"],
+    "ui_hint_short": "Kapcsolódás és értékalapú választás.",
+    "ui_hint_long": "Gyakran nem pusztán romantikus témát jelez, hanem azt a pontot, ahol a választás személyessé válik. Megjelenhet mint vonzódás, tükröződés vagy annak felismerése, hogy a kapcsolataink a belső viszonyainkat is megmutatják.",
+    "tags": ["kapcsolat", "választás", "értékek", "intimitás", "összhang"]
+  },
+  {
+    "id": "the_chariot",
+    "name_hu": "A Diadalszekér",
+    "name_en": "The Chariot",
+    "arcana": "major",
+    "number": 7,
+    "archetype": "irány, akarat, előrehaladás",
+    "summary": "Gyakran kapcsolódik célirányos mozgáshoz, belső erők összehangolásához és lendülethez. Megjelenhet mint tudatos haladás, önfegyelem vagy fókuszált előretörés.",
+    "interpretation_axes": ["irány", "akarat", "mozgás", "fegyelem", "lendület", "önirányítás"],
+    "possible_readings": [
+      "most fontos lehet egyértelmű irányt tartani",
+      "az előrehaladás belső összehangolást kívánhat",
+      "a széthúzó erők tudatos kezelése most kulcs lehet",
+      "érdemes lehet nemcsak indulni, hanem tartani is az irányt"
+    ],
+    "emotional_tones": ["elszántság", "lendület", "feszültség", "önbizalom"],
+    "reflection_questions": [
+      "mi az az irány, amit most valóban tartani szeretnék?",
+      "mi húz szét bennem kétfelé?",
+      "hogyan tudom a lendületet fegyelmezetten használni?",
+      "mikor haladok, és mikor csak sodródom?"
+    ],
+    "shadow_possibilities": ["túlkontroll", "erőltetés", "konfliktuskerülés helyetti áttolás"],
+    "ui_hint_short": "Irány, lendület, önirányítás.",
+    "ui_hint_long": "Gyakran akkor jelenik meg, amikor az energia már mozgásban van, de az irány még tudatosságot kér. Utalhat arra, hogy a haladás nemcsak erőből, hanem belső összehangoltságból születik.",
+    "tags": ["irány", "akarat", "haladás", "fegyelem", "lendület"]
+  },
+  {
+    "id": "strength",
+    "name_hu": "Erő",
+    "name_en": "Strength",
+    "arcana": "major",
+    "number": 8,
+    "archetype": "szelíd erő, tartás, együttérzés",
+    "summary": "Gyakran kapcsolódik belső tartáshoz, szelíd önuralomhoz és együttérző erőhöz. Megjelenhet mint türelem, önmagunkkal való finom munka vagy ösztönök integrálása.",
+    "interpretation_axes": ["belső erő", "szelídség", "önuralom", "türelem", "együttérzés", "integráció"],
+    "possible_readings": [
+      "most nem a nyers erő, hanem a finom tartás lehet a kulcs",
+      "egy helyzet több türelmet és kevesebb kényszert kívánhat",
+      "az ösztönös részekkel való kapcsolat most gyógyító lehet",
+      "az erő most inkább belülről, mint kívülről mutatkozhat meg"
+    ],
+    "emotional_tones": ["nyugalom", "bátorság", "gyengédség", "belső stabilitás"],
+    "reflection_questions": [
+      "miben tudok most szelíden erős lenni?",
+      "hogyan bánok a saját intenzív érzéseimmel?",
+      "hol segítene a türelem többet, mint a nyomás?",
+      "mit jelent számomra az erő, ha nem kontrollként gondolok rá?"
+    ],
+    "shadow_possibilities": ["elnyomott indulat", "passzív tűrés", "önuralomnak álcázott merevség"],
+    "ui_hint_short": "Szelíd erő és belső tartás.",
+    "ui_hint_long": "Gyakran kapcsolódik ahhoz az erőhöz, amely nem legyőz, hanem megtart és integrál. Megjelenhet mint türelem, finom önszabályozás vagy annak felismerése, hogy a valódi tartás nem keménységből fakad.",
+    "tags": ["erő", "türelem", "együttérzés", "önuralom", "integráció"]
+  },
+  {
+    "id": "the_hermit",
+    "name_hu": "A Remete",
+    "name_en": "The Hermit",
+    "arcana": "major",
+    "number": 9,
+    "archetype": "visszavonulás, keresés, belső fény",
+    "summary": "Gyakran kapcsolódik elcsendesedéshez, önálló kereséshez és belső tisztuláshoz. Megjelenhet mint távolságtartás, bölcsebb lassítás vagy személyes igazság kutatása.",
+    "interpretation_axes": ["visszavonulás", "önismeret", "lassítás", "bölcsesség", "keresés", "belső fény"],
+    "possible_readings": [
+      "most több felismerés születhet csendben, mint zajban",
+      "érdemes lehet távolabbról ránézni egy helyzetre",
+      "a saját igazság keresése most fontosabb lehet a külső visszajelzésnél",
+      "egy átmeneti visszahúzódás most tisztulást hozhat"
+    ],
+    "emotional_tones": ["csend", "magány", "tisztaság", "komolyság"],
+    "reflection_questions": [
+      "mit látok tisztábban, ha egyedül maradok vele?",
+      "hol lenne szükségem lassításra?",
+      "mi az, amit most nem másoktól szeretnék megtudni?",
+      "mikor segít a visszavonulás, és mikor válik elszigetelődéssé?"
+    ],
+    "shadow_possibilities": ["elszigetelődés", "érzelmi távolság", "túlzott önelégültség"],
+    "ui_hint_short": "Lassítás, keresés, belső fény.",
+    "ui_hint_long": "Gyakran nem hiányt, hanem tudatos eltávolodást jelez a zajtól. Utalhat arra, hogy most a csend, az egyedüllét és a belső rendrakás adhatja a legtisztább irányt.",
+    "tags": ["csend", "visszavonulás", "önismeret", "bölcsesség", "lassítás"]
+  },
+  {
+    "id": "wheel_of_fortune",
+    "name_hu": "A Szerencsekerék",
+    "name_en": "Wheel of Fortune",
+    "arcana": "major",
+    "number": 10,
+    "archetype": "fordulat, ciklus, változás",
+    "summary": "Gyakran kapcsolódik ciklusokhoz, váratlan fordulatokhoz és mozgásban lévő mintákhoz. Megjelenhet mint sorsszerűnek érzett váltás, időzítés vagy egy régi kör kifordulása.",
+    "interpretation_axes": ["ciklus", "fordulat", "változás", "időzítés", "minta", "mozgalmasság"],
+    "possible_readings": [
+      "egy helyzet most fordulóponthoz érhet",
+      "érdemes lehet nagyobb ciklusban nézni, ami történik",
+      "nem minden állandó, még ha most annak is tűnik",
+      "egy régi minta most elmozdulhat vagy újra láthatóvá válhat"
+    ],
+    "emotional_tones": ["bizonytalanság", "remény", "izgalom", "sodródásérzet"],
+    "reflection_questions": [
+      "milyen ismétlődő körökben találom most magam?",
+      "hol érzékelek fordulópontot?",
+      "mit próbálok állandósítani ott, ahol változás zajlik?",
+      "hogyan viszonyulok ahhoz, amit nem tudok kontrollálni?"
+    ],
+    "shadow_possibilities": ["fatalizmus", "kapkodás", "külső körülmények túlhangsúlyozása"],
+    "ui_hint_short": "Fordulat, ciklus, elmozdulás.",
+    "ui_hint_long": "Gyakran kapcsolódik ahhoz, amikor valami mozgásba kerül, még ha nem is teljesen a kezünkben van. Megjelenhet mint időzítés, ismétlődő minta vagy annak felismerése, hogy egy kör most más irányt vesz.",
+    "tags": ["ciklus", "fordulat", "változás", "időzítés", "minta"]
+  },
+  {
+    "id": "justice",
+    "name_hu": "Igazság",
+    "name_en": "Justice",
+    "arcana": "major",
+    "number": 11,
+    "archetype": "egyensúly, tisztánlátás, következmény",
+    "summary": "Gyakran kapcsolódik tiszta mérlegeléshez, felelősséghez és arányérzékhez. Megjelenhet mint következmények felismerése, korrekció vagy őszinte önvizsgálat.",
+    "interpretation_axes": ["egyensúly", "tisztánlátás", "felelősség", "következmény", "korrekció", "objektivitás"],
+    "possible_readings": [
+      "érdemes lehet most tisztábban és higgadtabban ránézni a helyzetre",
+      "egy döntés következményei most hangsúlyosabbá válhatnak",
+      "valami korrekcióra vagy helyreállításra törekszik",
+      "a saját szerepem felismerése most fontos lehet"
+    ],
+    "emotional_tones": ["józanság", "komolyság", "tisztaság", "feszültség"],
+    "reflection_questions": [
+      "mit látok most torzítás nélkül?",
+      "milyen következményekhez kapcsolódik a jelenlegi döntésem?",
+      "hol van szükség helyreállításra vagy kiegyensúlyozásra?",
+      "miben vagyok őszinte, és miben kerülöm a tiszta szembenézést?"
+    ],
+    "shadow_possibilities": ["önbíráskodás", "ridegség", "túlzott racionalizálás"],
+    "ui_hint_short": "Mérlegelés, következmény, tiszta kép.",
+    "ui_hint_long": "Gyakran kapcsolódik olyan helyzetekhez, ahol nem az érzés intenzitása, hanem az arányok tisztázása a fontos. Utalhat felelősségre, korrekcióra és arra, hogy a tisztánlátás néha egyszerűbb, mint amilyennek tűnik.",
+    "tags": ["egyensúly", "felelősség", "következmény", "tisztánlátás", "mérlegelés"]
+  },
+  {
+    "id": "the_hanged_man",
+    "name_hu": "Az Akasztott Ember",
+    "name_en": "The Hanged Man",
+    "arcana": "major",
+    "number": 12,
+    "archetype": "megállás, nézőpontváltás, elengedés",
+    "summary": "Gyakran kapcsolódik kényszerű vagy tudatos megálláshoz, másfajta nézőponthoz és átmeneti felfüggesztettséghez. Megjelenhet mint várakozás, elengedés vagy belső átkeretezés.",
+    "interpretation_axes": ["megállás", "nézőpontváltás", "elengedés", "felfüggesztettség", "átkeretezés", "türelem"],
+    "possible_readings": [
+      "most nem az előrenyomás, hanem a megállás hozhat felismerést",
+      "egy helyzet más szögből kezdhet érthetővé válni",
+      "valami átmenetileg kívül esik a megszokott kontrollon",
+      "érdemes lehet elengedni egy régi értelmezési keretet"
+    ],
+    "emotional_tones": ["türelem", "frusztráció", "elfogadás", "lebegésérzet"],
+    "reflection_questions": [
+      "mi történik, ha most nem akarok azonnal továbblépni?",
+      "milyen más nézőpontból tudnék ránézni erre?",
+      "mit próbálok tartani, ami talán már elengedhető?",
+      "hol érzem magam megakasztva, és mit tanít ez?"
+    ],
+    "shadow_possibilities": ["mártírszerep", "tehetetlenség", "halogatás"],
+    "ui_hint_short": "Megállás és más nézőpont.",
+    "ui_hint_long": "Gyakran akkor jelenik meg, amikor a megszokott haladási logika nem működik. Utalhat arra, hogy a mostani helyzet nem gyors megoldást, hanem másfajta látásmódot és elengedést kér.",
+    "tags": ["megállás", "nézőpont", "elengedés", "türelem", "átmenet"]
+  },
+  {
+    "id": "death",
+    "name_hu": "Halál",
+    "name_en": "Death",
+    "arcana": "major",
+    "number": 13,
+    "archetype": "lezárás, átalakulás, leválás",
+    "summary": "Gyakran kapcsolódik lezáruló ciklusokhoz, mély átalakuláshoz és valamitől való leváláshoz. Megjelenhet mint búcsú, belső vedlés vagy szükséges elengedés.",
+    "interpretation_axes": ["lezárás", "átalakulás", "elengedés", "leválás", "ciklusváltás", "megújulás"],
+    "possible_readings": [
+      "valami már nem vihető tovább ugyanabban a formában",
+      "egy lezárás most teret készíthet valami új számára",
+      "a változás itt mélyebb, mint egy egyszerű korrekció",
+      "érdemes lehet nem visszatartani azt, ami kifutott"
+    ],
+    "emotional_tones": ["gyász", "megkönnyebbülés", "bizonytalanság", "átalakulás"],
+    "reflection_questions": [
+      "mi az, ami már kifutott az életemben?",
+      "mit nehéz elengednem, bár érzem, hogy változik?",
+      "milyen formában kapaszkodom a régihez?",
+      "mi szabadulhat fel bennem egy lezárás után?"
+    ],
+    "shadow_possibilities": ["ragaszkodás", "félelem a változástól", "drámai véglegességérzet"],
+    "ui_hint_short": "Lezárás és mély átalakulás.",
+    "ui_hint_long": "Gyakran nem veszteséget önmagában, hanem egy folyamat végét jelzi, amely már nem fenntartható ugyanúgy. Megjelenhet mint leválás, gyász vagy a régi forma elengedése, hogy valami új egyáltalán megszülethessen.",
+    "tags": ["lezárás", "átalakulás", "elengedés", "gyász", "megújulás"]
+  },
+  {
+    "id": "temperance",
+    "name_hu": "Mértékletesség",
+    "name_en": "Temperance",
+    "arcana": "major",
+    "number": 14,
+    "archetype": "egyensúlyozás, összehangolás, áramlás",
+    "summary": "Gyakran kapcsolódik finom hangoláshoz, különböző részek összeillesztéséhez és harmonikus áramláshoz. Megjelenhet mint türelem, integráció vagy fokozatos kiegyenlítődés.",
+    "interpretation_axes": ["egyensúlyozás", "integráció", "harmónia", "fokozatosság", "áramlás", "gyógyulás"],
+    "possible_readings": [
+      "most a finomhangolás fontosabb lehet a nagy áttörésnél",
+      "különböző részek lassan összeérhetnek",
+      "érdemes lehet a szélsőségek helyett az arányokra figyelni",
+      "egy helyzet fokozatosan rendeződhet, ha teret kap"
+    ],
+    "emotional_tones": ["nyugalom", "kiegyensúlyozottság", "türelem", "bizalom"],
+    "reflection_questions": [
+      "mi az, amit most össze kell hangolnom magamban?",
+      "hol billenek könnyen szélsőségekbe?",
+      "mit jelent számomra a jó arány ebben a helyzetben?",
+      "miben segítene a lassabb, finomabb közelítés?"
+    ],
+    "shadow_possibilities": ["túlalkalmazkodás", "halogatott döntés", "önkioltó kompromisszum"],
+    "ui_hint_short": "Finomhangolás és belső arány.",
+    "ui_hint_long": "Gyakran kapcsolódik ahhoz az állapothoz, amikor nem új elemekre, hanem jobb összehangolásra van szükség. Utalhat belső kiegyenlítődésre, gyógyulásra és arra, hogy a tartós változás sokszor csendesebb, mint várnánk.",
+    "tags": ["egyensúly", "integráció", "harmónia", "gyógyulás", "arány"]
+  },
+  {
+    "id": "the_devil",
+    "name_hu": "Az Ördög",
+    "name_en": "The Devil",
+    "arcana": "major",
+    "number": 15,
+    "archetype": "kötés, vágy, beleragadás",
+    "summary": "Gyakran kapcsolódik kötődésekhez, erős vágyakhoz és olyan mintákhoz, amelyek egyszerre vonzanak és korlátoznak. Megjelenhet mint kísértés, függés vagy tudattalan ismétlés.",
+    "interpretation_axes": ["kötődés", "vágy", "függés", "kísértés", "árnyék", "ismétlődés"],
+    "possible_readings": [
+      "egy minta most erősebben tarthat, mint amennyire szeretném",
+      "érdemes lehet megnézni, mihez kapcsolódik a belső kényszer",
+      "ami vonz, az közben szűkíthet is",
+      "egy régi kötés most tudatosíthatóvá válhat"
+    ],
+    "emotional_tones": ["vágy", "szégyen", "feszültség", "vonzás"],
+    "reflection_questions": [
+      "mi az, ami egyszerre vonz és köt meg?",
+      "hol érzem, hogy kevesebb szabadságom van, mint szeretném?",
+      "milyen ismétlődő mintát nehéz megszakítanom?",
+      "milyen szükségletem húzódhat a kényszer mögött?"
+    ],
+    "shadow_possibilities": ["függőség", "önszabotázs", "tagadás"],
+    "ui_hint_short": "Vonzás, kötés, tudattalan minta.",
+    "ui_hint_long": "Gyakran nem külső rosszat jelöl, hanem azt, ami bennünk tapad, húz vagy ismétlődik. Megjelenhet mint vágy, szégyen vagy beleragadás, és finoman arra hívhat, hogy őszintébben nézzünk a kötéseinkre.",
+    "tags": ["kötődés", "vágy", "árnyék", "függés", "ismétlődés"]
+  },
+  {
+    "id": "the_tower",
+    "name_hu": "A Torony",
+    "name_en": "The Tower",
+    "arcana": "major",
+    "number": 16,
+    "archetype": "összeomlás, felismerés, felszabadulás",
+    "summary": "Gyakran kapcsolódik hirtelen felismeréshez, megrendülő struktúrákhoz és illúziók széteséséhez. Megjelenhet mint törés, igazságsokk vagy kényszerű újrarendezés.",
+    "interpretation_axes": ["összeomlás", "felismerés", "megrendülés", "felszabadulás", "igazságsokk", "újrarendezés"],
+    "possible_readings": [
+      "egy stabilnak hitt keret most meginoghat",
+      "valami hirtelen láthatóvá válhat, amit eddig nehéz volt észrevenni",
+      "a megrendülés mögött felszabadulás is húzódhat",
+      "egy régi építmény most már nem tartható fenn"
+    ],
+    "emotional_tones": ["sokk", "félelem", "megkönnyebbülés", "intenzitás"],
+    "reflection_questions": [
+      "mi az, ami most meginog bennem vagy körülöttem?",
+      "milyen igazságot nehéz befogadnom?",
+      "mi omlik össze, és mi szabadul fel ezzel együtt?",
+      "milyen hamis biztonságba kapaszkodtam eddig?"
+    ],
+    "shadow_possibilities": ["káoszhoz való ragaszkodás", "drámai túlazonosulás", "ellenállás a felismerésnek"],
+    "ui_hint_short": "Törés, felismerés, újrarendezés.",
+    "ui_hint_long": "Gyakran intenzív kártya, de nem feltétlenül rombolásként érdemes olvasni. Utalhat arra, hogy valami, ami már nem igazán állt stabilan, most láthatóan megreped, és ezzel helyet nyit egy valóságosabb alapnak.",
+    "tags": ["összeomlás", "felismerés", "törés", "felszabadulás", "igazság"]
+  },
+  {
+    "id": "the_star",
+    "name_hu": "A Csillag",
+    "name_en": "The Star",
+    "arcana": "major",
+    "number": 17,
+    "archetype": "remény, tisztulás, bizalom",
+    "summary": "Gyakran kapcsolódik megkönnyebbüléshez, belső tisztuláshoz és csendes reményhez. Megjelenhet mint gyógyuló nyitottság, bizalom vagy újra felbukkanó irányérzet.",
+    "interpretation_axes": ["remény", "gyógyulás", "tisztulás", "bizalom", "nyitottság", "iránymutatás"],
+    "possible_readings": [
+      "egy nehéz időszak után most tisztább levegő jelenhet meg",
+      "érdemes lehet megengedni a reményt anélkül, hogy bizonyítani kellene",
+      "a gyógyulás most finomabban, de valóságosan történhet",
+      "valami újra kapcsolhat a belső iránytűhöz"
+    ],
+    "emotional_tones": ["remény", "megkönnyebbülés", "tisztaság", "szelíd nyitottság"],
+    "reflection_questions": [
+      "mi ad most valódi reményt?",
+      "hol érzékelek tisztulást vagy fellélegzést?",
+      "miben tudnék újra bízni?",
+      "mi az a finom irány, amit újra észreveszek?"
+    ],
+    "shadow_possibilities": ["naiv idealizmus", "passzív várakozás", "túlzott sebezhetőség"],
+    "ui_hint_short": "Remény és csendes gyógyulás.",
+    "ui_hint_long": "Gyakran egy megrázóbb időszak utáni tisztulást hordoz. Megjelenhet mint fellélegzés, finom újranyílás és annak érzése, hogy nem kell mindent egyszerre megoldani ahhoz, hogy újra legyen bizalom.",
+    "tags": ["remény", "gyógyulás", "bizalom", "tisztulás", "irány"]
+  },
+  {
+    "id": "the_moon",
+    "name_hu": "A Hold",
+    "name_en": "The Moon",
+    "arcana": "major",
+    "number": 18,
+    "archetype": "homály, érzet, belső hullámzás",
+    "summary": "Gyakran kapcsolódik bizonytalan érzetekhez, tudattalan tartalmakhoz és nehezen tisztázható belső tájakhoz. Megjelenhet mint sejtés, álomszerűség vagy érzelmi köd.",
+    "interpretation_axes": ["bizonytalanság", "intuíció", "félelem", "álomszerűség", "tudattalan", "érzelmi hullámzás"],
+    "possible_readings": [
+      "nem minden az, aminek elsőre látszik",
+      "egy helyzet most inkább érződik, mint érthető teljesen",
+      "érdemes lehet óvatosan bánni a gyors következtetésekkel",
+      "a belső képek és félelmek most erősebben színezhetik a valóságot"
+    ],
+    "emotional_tones": ["szorongás", "sejtés", "érzékenység", "zavarodottság"],
+    "reflection_questions": [
+      "mit érzek, amit még nem tudok tisztán megfogalmazni?",
+      "hol keveredhet bennem az intuíció és a félelem?",
+      "milyen belső kép vagy emlék színezi most a helyzetet?",
+      "mi segítene több tisztaságot hozni ebbe a ködbe?"
+    ],
+    "shadow_possibilities": ["önbecsapás", "szorongásspirál", "projekció"],
+    "ui_hint_short": "Köd, érzet, bizonytalan belső táj.",
+    "ui_hint_long": "Gyakran olyan időszakokhoz kapcsolódik, amikor a valóság nem teljesen átlátható, és a belső képek felerősödnek. Utalhat érzékenységre, intuícióra, de arra is, hogy most fontos lehet lassabban, finomabban tájékozódni.",
+    "tags": ["hold", "bizonytalanság", "intuíció", "félelem", "tudattalan"]
+  },
+  {
+    "id": "the_sun",
+    "name_hu": "A Nap",
+    "name_en": "The Sun",
+    "arcana": "major",
+    "number": 19,
+    "archetype": "életöröm, tisztaság, felragyogás",
+    "summary": "Gyakran kapcsolódik tisztasághoz, vitalitáshoz és önazonos megjelenéshez. Megjelenhet mint öröm, megerősödés vagy valami láthatóvá váló egyszerű igazsága.",
+    "interpretation_axes": ["öröm", "életerő", "tisztaság", "önazonosság", "láthatóság", "nyitottság"],
+    "possible_readings": [
+      "valami most világosabbá és egyszerűbbé válhat",
+      "az önazonos jelenlét most felszabadító lehet",
+      "érdemes lehet teret adni annak, ami örömet és energiát hoz",
+      "egy helyzetből most több közvetlen igazság látható"
+    ],
+    "emotional_tones": ["öröm", "felszabadultság", "bizalom", "élénkség"],
+    "reflection_questions": [
+      "mi az, ami most valóban éltet?",
+      "hol tudok egyszerűbben és nyíltabban jelen lenni?",
+      "mitől érzem magam elevenebbnek?",
+      "milyen igazság válik most nyilvánvalóbbá?"
+    ],
+    "shadow_possibilities": ["túlzott önközpontúság", "felszínes optimizmus", "kiégés a túl sok kitettségtől"],
+    "ui_hint_short": "Tisztaság, öröm, életerő.",
+    "ui_hint_long": "Gyakran a dolgok egyszerűbb, élőbb oldalát mutatja meg. Utalhat arra, hogy valami végre kevésbé terhelt, tisztábban látható, és az önazonos jelenlét most valódi erőforrássá válhat.",
+    "tags": ["öröm", "életerő", "tisztaság", "önazonosság", "láthatóság"]
+  },
+  {
+    "id": "judgement",
+    "name_hu": "Ítélet",
+    "name_en": "Judgement",
+    "arcana": "major",
+    "number": 20,
+    "archetype": "felébredés, számvetés, hívás",
+    "summary": "Gyakran kapcsolódik belső ébredéshez, számvetéshez és egy mélyebb hívás felismeréséhez. Megjelenhet mint lezáratlan múlt újraértése vagy tisztább belső válasz.",
+    "interpretation_axes": ["felébredés", "számvetés", "újjászületés", "hívás", "múltintegráció", "felismerés"],
+    "possible_readings": [
+      "egy régi történet most új fényben látszhat",
+      "valami mélyebben hív, mint korábban",
+      "érdemes lehet számot vetni azzal, ami már megtörtént",
+      "egy belső igen vagy nem most tisztábban hallható"
+    ],
+    "emotional_tones": ["tisztaság", "megrendülés", "felszabadulás", "komolyság"],
+    "reflection_questions": [
+      "mi az, ami most valóban hív engem?",
+      "milyen múltbeli részt kellene újraértelmeznem?",
+      "hol jött el az ideje az őszinte számvetésnek?",
+      "mire szeretnék most belülről válaszolni?"
+    ],
+    "shadow_possibilities": ["önvád", "múltban ragadás", "külső elismerés hajszolása"],
+    "ui_hint_short": "Belső hívás és számvetés.",
+    "ui_hint_long": "Gyakran kapcsolódik ahhoz a ponthoz, ahol valami nem pusztán lezárul, hanem értelmet is nyer. Megjelenhet mint felébredés, számvetés vagy annak felismerése, hogy ideje válaszolni egy mélyebb belső hívásra.",
+    "tags": ["felébredés", "számvetés", "hívás", "múlt", "újjászületés"]
+  },
+  {
+    "id": "the_world",
+    "name_hu": "A Világ",
+    "name_en": "The World",
+    "arcana": "major",
+    "number": 21,
+    "archetype": "beteljesedés, integráció, teljesség",
+    "summary": "Gyakran kapcsolódik lezárult ciklushoz, integrációhoz és valami egészbe rendeződéséhez. Megjelenhet mint kiteljesedés, összefüggések felismerése vagy érkező teljességélmény.",
+    "interpretation_axes": ["teljesség", "integráció", "lezárulás", "beteljesedés", "összefüggés", "egész"],
+    "possible_readings": [
+      "egy hosszabb folyamat most összeállhat egésszé",
+      "érdemes lehet észrevenni, mennyi minden már a helyére került",
+      "egy lezárás most nem hiányt, hanem teljességet is hozhat",
+      "valami nagyobb összefüggés válhat láthatóvá"
+    ],
+    "emotional_tones": ["elégedettség", "teljesség", "megkönnyebbülés", "hála"],
+    "reflection_questions": [
+      "mi az, ami most valóban összeért bennem vagy körülöttem?",
+      "milyen ciklus ér a végéhez?",
+      "hol tudom felismerni a már megtett utat?",
+      "mit jelent számomra a teljesség ebben a helyzetben?"
+    ],
+    "shadow_possibilities": ["lezárás elkerülése", "üresség a cél elérése után", "perfekcionizmus"],
+    "ui_hint_short": "Összeérés, teljesség, cikluszárás.",
+    "ui_hint_long": "Gyakran egy hosszabb út integrált pontját jelzi, ahol a részek már nem különállóan érződnek. Utalhat arra, hogy valami most egészebb formában látható, és a lezárás nem veszteségként, hanem beteljesedésként jelenhet meg.",
+    "tags": ["teljesség", "integráció", "lezárás", "beteljesedés", "egész"]
+  }
+]

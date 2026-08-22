@@ -48,7 +48,7 @@ function validateAnchorConstructorOutputInternal(
   }
 
   const knownObservationIds = new Set(
-    inputPacket.observationSet.observations.map((observation) => observation.observationV2SceneObservationId),
+    inputPacket.observationSet.observations.map((observation) => observation.observationReferenceId),
   );
   const knownOpportunityManifestationIds = new Set(
     inputPacket.opportunitySet.opportunities.map((opportunity) => opportunity.opportunityManifestationId),
@@ -58,7 +58,7 @@ function validateAnchorConstructorOutputInternal(
       JSON.stringify({
         opportunityManifestationId: entry.opportunityManifestationId,
         evidenceBlockId: entry.evidenceBlockId,
-        observationV2SceneObservationId: entry.observationV2SceneObservationId,
+        observationReferenceId: entry.observationReferenceId,
         supportsNodeKeys: [...entry.supportsNodeKeys],
         supportsEdgeIndexes: [...entry.supportsEdgeIndexes],
       }),
@@ -118,10 +118,10 @@ function validateAnchorConstructorOutputInternal(
     }
 
     for (const observationRef of anchor.evidence.observationRefs) {
-      if (!knownObservationIds.has(observationRef.observationV2SceneObservationId)) {
+      if (!knownObservationIds.has(observationRef.observationReferenceId)) {
         return buildFailure("observation_ref_out_of_scope", {
           clientAnchorKey: anchor.clientAnchorKey,
-          observationV2SceneObservationId: observationRef.observationV2SceneObservationId,
+          observationReferenceId: observationRef.observationReferenceId,
         });
       }
     }
@@ -148,7 +148,7 @@ function validateAnchorConstructorOutputInternal(
       const fingerprint = JSON.stringify({
         opportunityManifestationId: traceRef.opportunityManifestationId,
         evidenceBlockId: traceRef.evidenceBlockId,
-        observationV2SceneObservationId: traceRef.observationV2SceneObservationId,
+        observationReferenceId: traceRef.observationReferenceId,
         supportsNodeKeys: [...traceRef.supportsNodeKeys],
         supportsEdgeIndexes: [...traceRef.supportsEdgeIndexes],
       });

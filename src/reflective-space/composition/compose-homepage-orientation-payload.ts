@@ -1,8 +1,12 @@
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
-import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationRepository } from "@/src/domain/observation/contracts";
+import type {
+  ObservationNativeReadRepository,
+  ObservationNativeReadResolution,
+} from "@/src/domain/observation/native-read";
 import type { ReflectiveObject, ReflectiveObjectType } from "@/src/domain/reflective-objects/types";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
-import { buildObservationV2PresentationText } from "@/src/reflective-space/composition/observation-presentation";
+import { buildNativeObservationPresentationText } from "@/src/reflective-space/composition/observation-presentation";
 import type { UserId } from "@/src/shared/types";
 import {
   getHomepageRouteTarget,
@@ -94,6 +98,7 @@ export interface HomepageOrientationPayload {
   };
   navigation: {
     capture: HomepageNavigationTargetRef;
+    fortune: HomepageNavigationTargetRef;
     glossary: HomepageNavigationTargetRef;
     dreamJournal: HomepageNavigationTargetRef;
     guide: HomepageNavigationTargetRef;
@@ -118,10 +123,11 @@ export interface HomepageOrientationPayload {
 export interface ComposeHomepageOrientationPayloadInput {
   userId: UserId;
   generatedAt?: string;
+  observationResolution?: ObservationNativeReadResolution;
   reflectiveObjectRepository: ReflectiveObjectRepository;
   glossaryRepository: GlossaryRepository;
   observationRepository: ObservationRepository;
-  observationV2Repository: ObservationV2Repository;
+  observationNativeReadRepository: ObservationNativeReadRepository;
 }
 
 function toTimestamp(iso: string, semantic: HomepageTimestamp["semantic"]): HomepageTimestamp {
@@ -167,20 +173,27 @@ function resolveAiSummary(object: ReflectiveObject): string | null {
 
 interface ObservationPresentationPreview {
   text: string | null;
-  source: "observation_v2" | "observation_v1" | "none";
+  source: "observation_native" | "observation_v1" | "none";
 }
 
 async function buildObservationPresentationLookup(
-  input: Pick<ComposeHomepageOrientationPayloadInput, "userId" | "observationRepository" | "observationV2Repository">,
+  input: Pick<
+    ComposeHomepageOrientationPayloadInput,
+    "userId" | "observationRepository" | "observationNativeReadRepository" | "observationResolution"
+  >,
   objectIds: string[],
 ): Promise<Record<string, ObservationPresentationPreview>> {
   const uniqueObjectIds = Array.from(new Set(objectIds));
   const previews = await Promise.all(
     uniqueObjectIds.map(async (objectId): Promise<readonly [string, ObservationPresentationPreview]> => {
-      const bundle = await input.observationV2Repository.getByReflectiveObjectId(objectId, input.userId);
-      const nativeText = toOptionalDescriptor(buildObservationV2PresentationText(bundle));
+      const nativeObservation = await input.observationNativeReadRepository.getByReflectiveObjectId({
+        userId: input.userId,
+        reflectiveObjectId: objectId,
+        resolution: input.observationResolution,
+      });
+      const nativeText = toOptionalDescriptor(buildNativeObservationPresentationText(nativeObservation));
       if (nativeText) {
-        return [objectId, { text: nativeText, source: "observation_v2" }];
+        return [objectId, { text: nativeText, source: "observation_native" }];
       }
 
       const observations = await input.observationRepository.listByReflectiveObject({
@@ -206,6 +219,7 @@ export async function composeHomepageOrientationPayload(
 ): Promise<HomepageOrientationPayload> {
   const navigation = {
     capture: getHomepageRouteTarget("capture_home"),
+    fortune: getHomepageRouteTarget("fortune_home"),
     glossary: getHomepageRouteTarget("glossary_home"),
     dreamJournal: getHomepageRouteTarget("dream_journal_home"),
     guide: getHomepageRouteTarget("guide_home"),
@@ -229,7 +243,8 @@ export async function composeHomepageOrientationPayload(
     {
       userId: input.userId,
       observationRepository: input.observationRepository,
-      observationV2Repository: input.observationV2Repository,
+      observationNativeReadRepository: input.observationNativeReadRepository,
+      observationResolution: input.observationResolution,
     },
     [...recentPreviewObjects.map((item) => item.id), ...dreamPreviewObjects.map((item) => item.id)],
   );

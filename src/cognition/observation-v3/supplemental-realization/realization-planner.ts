@@ -130,7 +130,9 @@ export function planSupplementalRealization(input: {
   maximumWindowLength: number;
 }): PlannedSupplementalRealization {
   const recoveryRequired = input.completeness.recoveryRecommendation.disposition === "required_before_admission";
-  const selectedGaps = (recoveryRequired ? [...input.completeness.gaps.gaps] : [])
+  const targetedGapIds = new Set(input.completeness.recoveryRecommendation.targetedPhysicalGapIds);
+  const selectedGaps = (recoveryRequired && targetedGapIds.size > 0 ? [...input.completeness.gaps.gaps] : [])
+    .filter((gap) => targetedGapIds.has(gap.id))
     .filter((gap) => gap.sourceStart >= 0 && gap.sourceEnd > gap.sourceStart && gap.sourceEnd <= input.sourceText.length)
     .sort((left, right) => left.sourceStart - right.sourceStart || left.sourceEnd - right.sourceEnd || left.id.localeCompare(right.id))
     .map((gap, index): PlannedSupplementalGap => {
@@ -150,6 +152,18 @@ export function planSupplementalRealization(input: {
         contextStart,
         contextEnd,
         includesEnding: gap.kind === "tail",
+        lateSectionStart:
+          input.completeness.lateRetention.status === "missing" || input.completeness.lateRetention.status === "thin"
+            ? input.completeness.lateRetention.lateSectionStart
+            : null,
+        endingStart:
+          input.completeness.endingRetention.status === "not_retained"
+            ? input.completeness.endingRetention.endingStart
+            : null,
+        requireLateSectionCoverage:
+          input.completeness.lateRetention.status === "missing" || hasReason(gap, "late_section_missing"),
+        requireEndingCoverage:
+          input.completeness.endingRetention.status === "not_retained" || hasReason(gap, "ending_not_retained"),
         neighboringEvidence: gap.neighboringEvidence,
         reasons: [...gap.reasons].sort((left, right) => left.localeCompare(right)),
         confidence: gap.confidence,

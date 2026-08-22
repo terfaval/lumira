@@ -92,12 +92,10 @@ describe("composeObjectOrientationPayload", () => {
         ],
         getById: async () => null,
       },
-      observationV2Repository: {
-        create: async () => {
-          throw new Error("not used");
-        },
-        getByBundleId: async () => null,
+      observationNativeReadRepository: {
         getByReflectiveObjectId: async () => ({
+          family: "v2",
+          native: {
           bundleId: "bundle-1",
           userId: "user-1",
           reflectiveObjectId: "obj-1",
@@ -159,8 +157,8 @@ describe("composeObjectOrientationPayload", () => {
               },
             },
           ],
+          },
         }),
-        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -498,13 +496,8 @@ describe("composeObjectOrientationPayload", () => {
         listByReflectiveObject: async () => [],
         getById: async () => null,
       },
-      observationV2Repository: {
-        create: async () => {
-          throw new Error("not used");
-        },
-        getByBundleId: async () => null,
+      observationNativeReadRepository: {
         getByReflectiveObjectId: async () => null,
-        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -563,5 +556,102 @@ describe("composeObjectOrientationPayload", () => {
     });
 
     expect(payload).toBeNull();
+  });
+
+  it("supports explicit V3 native observation previews without requiring V2 bundle ids", async () => {
+    const payload = await composeObjectOrientationPayload({
+      userId: "user-v3",
+      reflectiveObjectId: "obj-v3",
+      observationResolution: "explicit_v3",
+      reflectiveObjectRepository: {
+        create: async () => { throw new Error("not used"); },
+        getById: async () => ({
+          id: "obj-v3",
+          userId: "user-v3",
+          objectType: "dream",
+          title: "Courtyard dream",
+          primaryContent: "Fallback text",
+          sourceContext: "manual",
+          state: "active",
+          metadata: {},
+          createdAt: "2026-06-21T08:00:00.000Z",
+          updatedAt: "2026-06-21T08:00:00.000Z",
+        }),
+        listByUser: async () => [],
+        update: async () => null,
+        archive: async () => null,
+      },
+      observationRepository: {
+        create: async () => { throw new Error("not used"); },
+        listByReflectiveObject: async () => [],
+        getById: async () => null,
+      },
+      observationNativeReadRepository: {
+        getByReflectiveObjectId: async ({ resolution }) => {
+          expect(resolution).toBe("explicit_v3");
+          return {
+            family: "v3",
+            native: {
+              canonicalCandidate: {
+                localities: [],
+                descriptiveUnits: [
+                  {
+                    canonicalUnitId: "unit-1",
+                    localityId: null,
+                    order: 0,
+                    statement: "A quiet courtyard keeps holding the dream in place.",
+                    evidenceRefs: [],
+                    uncertainty: null,
+                    derivedFromUnitIds: [],
+                  },
+                ],
+              },
+            } as any,
+          };
+        },
+      },
+      glossaryRepository: {
+        listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [],
+        getTermById: async () => null,
+        listAppearanceRecordsByTerm: async () => [],
+        createTerm: async () => { throw new Error("not used"); },
+        updateTerm: async () => null,
+        listCandidates: async () => [],
+        listCandidatesByReflectiveObject: async () => [],
+        getCandidateById: async () => null,
+        upsertCandidates: async () => [],
+        setCandidateLifecycle: async () => null,
+        resolveCandidate: async () => null,
+        createAssociation: async () => { throw new Error("not used"); },
+        createAppearanceRecord: async () => null,
+      },
+      threadRepository: {
+        createThread: async () => { throw new Error("not used"); },
+        getThreadById: async () => null,
+        listThreadsByUser: async () => [],
+        updateThread: async () => null,
+        setThreadState: async () => null,
+        archiveThread: async () => null,
+        createObjectAssociation: async () => { throw new Error("not used"); },
+        createGlossaryAssociation: async () => { throw new Error("not used"); },
+        listAssociationsByThread: async () => [],
+      },
+      openingRepository: {
+        createOpening: async () => { throw new Error("not used"); },
+        getOpeningById: async () => null,
+        listOpeningSurfacesByUser: async () => [],
+        listDormantSuppressedOpeningsByUser: async () => [],
+        listRecentOpeningsByUser: async () => [],
+        listOpeningsByLatentSnapshot: async () => [],
+        activateOpening: async () => null,
+        reactivateOpening: async () => null,
+        dismissOpening: async () => null,
+        setSuppression: async () => null,
+        recordSurfaceEvent: async () => { throw new Error("not used"); },
+      },
+    });
+
+    expect(payload?.dream.preview).toBe("A quiet courtyard keeps holding the dream in place.");
   });
 });

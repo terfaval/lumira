@@ -6,9 +6,18 @@ import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { LatentRepository } from "@/src/domain/latent/contracts";
 import type { LatentSnapshot } from "@/src/domain/latent/types";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
-import { requireObservationV2SceneObservationId } from "@/src/domain/latent-v2/evidence";
-import type { LatentOpportunityManifestation, LatentOpportunitySalienceBand } from "@/src/domain/latent-v2/types";
+import {
+  formatObservationEvidenceLineageId,
+  isObservationV2Evidence,
+} from "@/src/domain/latent-v2/evidence";
+import type {
+  LatentOpportunityEvidenceObservation,
+  LatentOpportunityManifestation,
+  LatentOpportunitySalienceBand,
+} from "@/src/domain/latent-v2/types";
 import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationNativeReadRepository } from "@/src/domain/observation/native-read";
+import { createObservationNativeReadStore } from "@/src/infrastructure/persistence/observation-native-read-store";
 import type { OpeningRepository } from "@/src/domain/openings/contracts";
 import type { OpeningCandidate, OpeningTone, OpeningType } from "@/src/domain/openings/types";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
@@ -38,6 +47,7 @@ interface ReflectionPreparationRepositories {
   reflectiveObjectRepository: ReflectiveObjectRepository;
   observationRepository: ObservationRepository;
   observationV2Repository: ObservationV2Repository;
+  observationNativeReadRepository: ObservationNativeReadRepository;
   glossaryRepository: GlossaryRepository;
   threadRepository: ThreadRepository;
   responseRepository: ReflectiveResponseRepository;
@@ -59,6 +69,7 @@ function resolveRepositories(
     reflectiveObjectRepository: repositories.reflectiveObjectRepository ?? createReflectiveObjectRepository(),
     observationRepository: repositories.observationRepository ?? createObservationRepository(),
     observationV2Repository: repositories.observationV2Repository ?? createObservationV2Repository(),
+    observationNativeReadRepository: repositories.observationNativeReadRepository ?? createObservationNativeReadStore(),
     glossaryRepository: repositories.glossaryRepository ?? createGlossaryRepository(),
     threadRepository: repositories.threadRepository ?? createThreadRepository(),
     responseRepository: repositories.responseRepository ?? createResponseRepository(),
@@ -180,7 +191,7 @@ function toCompatibilityOpeningCandidate(
       ]),
       sourceObservations: toUniqueStrings(
         manifestation.evidenceBlocks.flatMap((block) =>
-          block.observations.map((observation) => requireObservationV2SceneObservationId(observation)),
+          block.observations.map((observation) => formatObservationEvidenceLineageId(observation)),
         ),
       ),
       sourceGlossaryTerms: toUniqueStrings(manifestation.glossaryLinks.map((link) => link.glossaryTermId)),
@@ -196,6 +207,10 @@ function toCompatibilityOpeningCandidate(
   };
 }
 
+function manifestationUsesOnlyObservationV2Evidence(manifestation: LatentOpportunityManifestation): boolean {
+  return manifestation.evidenceBlocks.every((block) => block.observations.every((observation) => isObservationV2Evidence(observation)));
+}
+
 async function deriveOpeningCandidatesFromLatentV2Manifestations(
   manifestations: LatentOpportunityManifestation[],
   objectLanguage: string,
@@ -206,6 +221,10 @@ async function deriveOpeningCandidatesFromLatentV2Manifestations(
 
   const generated = await Promise.all(
     sortedManifestations.map(async (manifestation) => {
+      if (!manifestationUsesOnlyObservationV2Evidence(manifestation)) {
+        return toCompatibilityOpeningCandidate(manifestation);
+      }
+
       const result = await generateOpeningV2CreateInputFromManifestation({
         manifestation,
         objectLanguage,
@@ -244,14 +263,6 @@ async function tryPrepareOpeningsFromLatentV2(
   repositories: ReflectionPreparationRepositories,
   reflectiveObject: { metadata: Record<string, unknown> },
 ): Promise<"handled" | "fallback"> {
-  const observationBundle = await repositories.observationV2Repository.getByReflectiveObjectId(
-    input.reflectiveObjectId,
-    input.userId,
-  );
-  if (!observationBundle) {
-    return "fallback";
-  }
-
   const reuseResolution = await repositories.latentOpportunityRepository.resolveReusableAcceptedGenerationRun(
     input.reflectiveObjectId,
     input.userId,
@@ -266,13 +277,21 @@ async function tryPrepareOpeningsFromLatentV2(
     : [];
 
   if (manifestations.length === 0) {
+    const nativeObservation = await repositories.observationNativeReadRepository.getByReflectiveObjectId({
+      reflectiveObjectId: input.reflectiveObjectId,
+      userId: input.userId,
+    });
+    if (!nativeObservation) {
+      return "fallback";
+    }
+
     const generation = await generateLatentOpportunitiesForReflectiveObject({
       userId: input.userId,
       priorityReflectiveObjectId: input.reflectiveObjectId,
       acceptedRunReuseGuard: reuseResolution.generationRun && !reuseResolution.reusable ? "skip" : "evaluate",
       repositories: {
         reflectiveObjectRepository: repositories.reflectiveObjectRepository,
-        observationV2Repository: repositories.observationV2Repository,
+        observationNativeReadRepository: repositories.observationNativeReadRepository,
         glossaryRepository: repositories.glossaryRepository,
         latentOpportunityRepository: repositories.latentOpportunityRepository,
       },

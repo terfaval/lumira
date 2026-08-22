@@ -55,6 +55,14 @@ from public.observation_v2_scene_observations so
 join dream_observation_v2_scenes s
   on s.id = so.scene_row_id;
 
+drop view if exists pg_temp.dream_observation_v3_authorities;
+create temporary view dream_observation_v3_authorities as
+select authority.*
+from public.observation_v3_authorities authority
+join selected_dream_row d
+  on d.id = authority.reflective_object_id
+ and d.user_id = authority.user_id;
+
 drop view if exists pg_temp.dream_glossary_terms;
 create temporary view dream_glossary_terms as
 select distinct gt.*
@@ -578,6 +586,13 @@ final_report as (
         'message', 'Scene-local native observation rows under the dream bundle.',
         'row_count', (select count(*) from dream_observation_v2_scene_observations),
         'records', coalesce((select jsonb_agg(to_jsonb(t) order by t.scene_row_id, t.position, t.id) from dream_observation_v2_scene_observations t), '[]'::jsonb)
+      ),
+      jsonb_build_object(
+        'table_name', 'public.observation_v3_authorities',
+        'status', case when exists (select 1 from dream_observation_v3_authorities) then 'present' else 'expected_but_empty' end,
+        'message', 'Native Observation V3 authority rows keyed directly to the dream.',
+        'row_count', (select count(*) from dream_observation_v3_authorities),
+        'records', coalesce((select jsonb_agg(to_jsonb(t) order by t.created_at, t.authority_id) from dream_observation_v3_authorities t), '[]'::jsonb)
       ),
       jsonb_build_object(
         'table_name', 'public.glossary_candidate_states',

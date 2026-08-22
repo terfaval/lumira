@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
+import { createObservationNativeReadStore } from "@/src/infrastructure/persistence/observation-native-read-store";
 import { createObservationRepository } from "@/src/infrastructure/supabase/repositories/create-observation-repository";
-import { createObservationV2Repository } from "@/src/infrastructure/supabase/repositories/create-observation-v2-repository";
 import { createOpeningRepository } from "@/src/infrastructure/supabase/repositories/create-opening-repository";
 import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
 import { createThreadRepository } from "@/src/infrastructure/supabase/repositories/create-thread-repository";
@@ -30,13 +30,13 @@ export default async function ObjectOrientationPage({ params }: ObjectOrientatio
 
   const payload = await composeObjectOrientationPayload({
     userId,
-      reflectiveObjectId: objectId,
-      reflectiveObjectRepository: createReflectiveObjectRepository(),
-      observationRepository: createObservationRepository(),
-      observationV2Repository: createObservationV2Repository(),
-      glossaryRepository: createGlossaryRepository(),
-      threadRepository: createThreadRepository(),
-      openingRepository: createOpeningRepository(),
+    reflectiveObjectId: objectId,
+    reflectiveObjectRepository: createReflectiveObjectRepository(),
+    observationRepository: createObservationRepository(),
+    observationNativeReadRepository: createObservationNativeReadStore(),
+    glossaryRepository: createGlossaryRepository(),
+    threadRepository: createThreadRepository(),
+    openingRepository: createOpeningRepository(),
   });
 
   if (!payload) {

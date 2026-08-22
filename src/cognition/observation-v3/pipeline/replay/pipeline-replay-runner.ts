@@ -54,8 +54,18 @@ export async function runObservationV3CorpusReplay(input: {
     }
 
     const pipelineResult = await runObservationV3ShadowPipeline(resolved.pipelineInput);
+    const replayCompatibilityFailureStage = pipelineResult.stageResults.find((stage) =>
+      stage.executionMode === "preserved_replay"
+      && stage.failure?.code === "missing_preserved_replay",
+    );
     const executionFailure: ObservationV3ReplayFailure | null =
-      pipelineResult.summary.pipelineCompletionStatus === "failed"
+      replayCompatibilityFailureStage
+        ? {
+            classification: "missing_replay_evidence",
+            message: replayCompatibilityFailureStage.failure?.message ?? "missing_preserved_replay",
+            sourceArtifactRef: replayCompatibilityFailureStage.sourceArtifactRef ?? null,
+          }
+      : pipelineResult.summary.pipelineCompletionStatus === "failed"
         || pipelineResult.stageResults.some((stage) => stage.status === "failed")
         ? {
             classification: pipelineResult.stageResults.some((stage) => stage.stage === "authority_admission" && stage.status === "failed")

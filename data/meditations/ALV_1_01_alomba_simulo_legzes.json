@@ -29,7 +29,7 @@
     "blocks": [
       {
         "type": "text",
-        "content": "Feküdj le kényelmesen...",
+        "content": "Helyezkedj el kényelmesen...",
         "tone": "soft"
       },
       {
@@ -38,7 +38,7 @@
       },
       {
         "type": "text",
-        "content": "Hunyd be a szemed, mintha a világ halká vált volna...",
+        "content": "Engedd, hogy körülötted lassan halkabbá váljon a világ...",
         "tone": "soft"
       },
       {
@@ -56,16 +56,16 @@
       },
       {
         "type": "text",
-        "content": "Semmit sem kell tenned.",
+        "content": "Semmit sem kell tenned...",
         "tone": "neutral"
       },
       {
         "type": "pause",
-        "duration_ms": 2000
+        "duration_ms": 2500
       },
       {
         "type": "text",
-        "content": "Semmit sem kell akarnod...",
+        "content": "Semmit sem kell akarnod.",
         "tone": "neutral"
       },
       {
@@ -74,7 +74,7 @@
       },
       {
         "type": "text",
-        "content": "Csak... lélegezni...",
+        "content": "Csak figyeld meg egy pillanatra a légzésed...",
         "tone": "soft"
       },
       {
@@ -83,8 +83,44 @@
       },
       {
         "type": "text",
-        "content": "A légzésed puha áramlássá szelídül...",
+        "content": "A légzésed lassan, magától lecsendesedik...",
         "tone": "soft"
+      },
+      {
+        "type": "pause",
+        "duration_ms": 5000
+      },
+      {
+        "type": "text",
+        "content": "Most lélegezz be lassan..",
+        "tone": "soft"
+      },
+      {
+        "type": "pause",
+        "duration_ms": 3500
+      },
+      {
+        "type": "text",
+        "content": "Érezd, ahogy a csend megtelik levegővel...",
+        "tone": "soft"
+      },
+      {
+        "type": "pause",
+        "duration_ms": 4000
+      },
+      {
+        "type": "text",
+        "content": "Majd engedd ki lassan...",
+        "tone": "soft"
+      },
+      {
+        "type": "pause",
+        "duration_ms": 4000
+      },
+      {
+        "type": "text",
+        "content": "És pihenj meg egy pillanatra...",
+        "tone": "neutral"
       },
       {
         "type": "pause",
@@ -92,57 +128,21 @@
       },
       {
         "type": "text",
-        "content": "Vegyél egy mély, lassú lélegzetet...",
+        "content": "Az üresség csendjében.",
         "tone": "soft"
       },
       {
         "type": "pause",
-        "duration_ms": 4000
+        "duration_ms": 6000
       },
       {
         "type": "text",
-        "content": "Mintha a hajnali pára töltené meg a földet...",
-        "tone": "soft"
-      },
-      {
-        "type": "pause",
-        "duration_ms": 4000
-      },
-      {
-        "type": "text",
-        "content": "Érezd, ahogy szétárad benned a mozdulatlan tisztaság...",
-        "tone": "soft"
-      },
-      {
-        "type": "pause",
-        "duration_ms": 5000
-      },
-      {
-        "type": "text",
-        "content": "Amikor megteltél levegővel, hagyd, hogy a tested megpihenjen...",
+        "content": "Most figyeld meg, mit érzel a testedben...",
         "tone": "neutral"
       },
       {
         "type": "pause",
-        "duration_ms": 4000
-      },
-      {
-        "type": "text",
-        "content": "a belső üresség halk ölében.",
-        "tone": "soft"
-      },
-      {
-        "type": "pause",
-        "duration_ms": 10000
-      },
-      {
-        "type": "text",
-        "content": "Most, hogy a légzésed kisimult, irányítsd a figyelmed a testedre...",
-        "tone": "neutral"
-      },
-      {
-        "type": "pause",
-        "duration_ms": 5000
+        "duration_ms": 6000
       },
       {
         "type": "text",
@@ -182,7 +182,7 @@
       },
       {
         "type": "text",
-        "content": "Az állkapocs elernyed, mint eső után a levelek...",
+        "content": "Az állkapocs elernyed... mint egy levél, amely lassan megpihen a vízen.",
         "tone": "soft"
       },
       {
@@ -200,7 +200,7 @@
       },
       {
         "type": "text",
-        "content": "Az ágy puha ölelésébe.",
+        "content": "Az ágyad puha ölelésébe.",
         "tone": "soft"
       },
       {
@@ -254,7 +254,7 @@
       },
       {
         "type": "text",
-        "content": "Csak hagyni, hogy a mozdulat önmaga legyen.",
+        "content": "Csak hagyd, hogy a légzésed lágy hulláma tovább ringasson...",
         "tone": "neutral"
       },
       {
@@ -290,7 +290,7 @@
       },
       {
         "type": "text",
-        "content": "Most, hogy tested átjárta a puhaság...",
+        "content": "A tested átjárja a puhaság...",
         "tone": "soft"
       },
       {
@@ -299,7 +299,7 @@
       },
       {
         "type": "text",
-        "content": "Engedd, hogy minden forma feloldódjon a láthatatlan ölelésében.",
+        "content": "Engedd, hogy feloldódjon a láthatatlan csend ölelésében.",
         "tone": "soft"
       },
       {
@@ -376,34 +376,34 @@
       },
       {
         "type": "pause",
-        "duration_ms": 6000
+        "duration_ms": 7000
       },
       {
         "type": "text",
-        "content": "Nem kell semmit megtartanod...",
+        "content": "Nem kell követned...",
         "tone": "neutral"
       },
       {
         "type": "pause",
-        "duration_ms": 3000
-      },
-      {
-        "type": "text",
-        "content": "Nem kell semmit elengedned...",
-        "tone": "neutral"
-      },
-      {
-        "type": "pause",
-        "duration_ms": 3000
+        "duration_ms": 5000
       },
       {
         "type": "text",
         "content": "Csak engedd, hogy minden önmaga legyen.",
+        "tone": "neutral"
+      },
+      {
+        "type": "pause",
+        "duration_ms": 8000
+      },
+      {
+        "type": "text",
+        "content": "",
         "tone": "soft"
       },
       {
         "type": "pause",
-        "duration_ms": 10000
+        "duration_ms": 2000
       },
       {
         "type": "text",

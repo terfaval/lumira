@@ -93,6 +93,7 @@ export function buildSceneExtractionJsonSchema(
           },
           observations: {
             type: "array",
+            description: "Use multiple observations only when each one preserves genuinely distinct descriptive evidence within the scene. Do not restate the same underlying scene chain at both broader and narrower granularities.",
             items: {
               type: "object",
               additionalProperties: false,
@@ -100,7 +101,10 @@ export function buildSceneExtractionJsonSchema(
               properties: {
                 observationId: { type: "string" },
                 position: { type: "integer", minimum: 0 },
-                text: { type: "string" },
+                text: {
+                  type: "string",
+                  description: "One evidence-linked descriptive unit. Do not summarize a broader scene chain here if the same material is already represented by overlapping finer observations, and do not split unless the resulting observations contain materially distinct descriptive facts.",
+                },
                 evidence: {
                   type: "array",
                   items: {
@@ -115,7 +119,10 @@ export function buildSceneExtractionJsonSchema(
                     },
                   },
                 },
-                uncertaintyNote: { type: ["string", "null"] },
+                uncertaintyNote: {
+                  type: ["string", "null"],
+                  description: "Preserve real uncertainty when needed, but do not multiply one unresolved ambiguity into competing overlapping observations merely to increase granularity.",
+                },
               },
             },
           },

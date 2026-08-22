@@ -4,6 +4,7 @@ import type {
   LatentExecutionProvenance,
 } from "@/src/domain/latent-v2/types";
 import type { OpportunityConstructorInputPacket } from "@/src/cognition/latent-v2/opportunity-constructor/types";
+import type { OpportunityConstructorV3InputPacket } from "@/src/cognition/latent-v2/opportunity-constructor-v3/types";
 
 const EXECUTION_PROVIDER = "openai";
 const EXECUTION_MODEL = "gpt-4.1-mini";
@@ -18,11 +19,19 @@ export type {
   LatentExecutionProvenance,
 } from "@/src/domain/latent-v2/types";
 
-export interface ComposedOpportunityConstructorInput {
-  packet: OpportunityConstructorInputPacket;
-  authorityProvenance: LatentAuthorityProvenance;
-  contextProvenance: LatentContextProvenance;
-}
+export type ComposedOpportunityConstructorInput =
+  | {
+      family: "v2";
+      packet: OpportunityConstructorInputPacket;
+      authorityProvenance: LatentAuthorityProvenance;
+      contextProvenance: LatentContextProvenance;
+    }
+  | {
+      family: "v3";
+      packet: OpportunityConstructorV3InputPacket;
+      authorityProvenance: LatentAuthorityProvenance;
+      contextProvenance: LatentContextProvenance;
+    };
 
 export {
   buildAuthorityFingerprint,
@@ -109,7 +118,7 @@ export function projectAuthorityProvenance(input: {
 }
 
 export function projectContextProvenance(input: {
-  packet: OpportunityConstructorInputPacket;
+  packet: Pick<OpportunityConstructorInputPacket | OpportunityConstructorV3InputPacket, "existingOpportunityContext">;
   truncationNote: string | null;
 }): LatentContextProvenance {
   return {
@@ -136,7 +145,7 @@ export function projectContextProvenance(input: {
 }
 
 export function captureExecutionProvenance(
-  packet: OpportunityConstructorInputPacket,
+  packet: Pick<OpportunityConstructorInputPacket | OpportunityConstructorV3InputPacket, "generationContext">,
 ): LatentExecutionProvenance {
   return {
     constructorRuntimeVersion: packet.generationContext.runtimeVersion,

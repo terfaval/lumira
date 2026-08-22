@@ -18,8 +18,10 @@ import {
   composeOpportunityConstructorInputPacket,
   generateOpportunityConstructorOutput,
 } from "../src/cognition/latent-v2/opportunity-constructor";
+import type { OpportunityConstructorInputPacket } from "../src/cognition/latent-v2/opportunity-constructor";
 import { createGlossaryRepository } from "../src/infrastructure/supabase/repositories/create-glossary-repository";
 import { createLatentOpportunityRepository } from "../src/infrastructure/supabase/repositories/create-latent-opportunity-repository";
+import { createObservationNativeStore } from "../src/infrastructure/persistence/observation-store";
 import { createObservationV2Repository } from "../src/infrastructure/supabase/repositories/create-observation-v2-repository";
 import { createReflectiveObjectRepository } from "../src/infrastructure/supabase/repositories/create-reflective-object-repository";
 
@@ -41,6 +43,7 @@ async function main() {
   }
 
   const reflectiveObjectRepository = createReflectiveObjectRepository();
+  const observationNativeReadRepository = createObservationNativeStore();
   const observationV2Repository = createObservationV2Repository();
   const glossaryRepository = createGlossaryRepository();
   const latentOpportunityRepository = createLatentOpportunityRepository();
@@ -49,10 +52,14 @@ async function main() {
     userId,
     priorityReflectiveObjectId,
     reflectiveObjectRepository,
-    observationV2Repository,
+    observationNativeReadRepository,
     glossaryRepository,
     latentOpportunityRepository,
   });
+  if ("authority" in constructionPacket.generationContext) {
+    throw new Error("Experimental latent comparison expects default V2 construction packet.");
+  }
+  const v2ConstructionPacket = constructionPacket as OpportunityConstructorInputPacket;
   const discoveryPacket = await composeDiscoveryInputPacket({
     userId,
     priorityReflectiveObjectId,
@@ -69,9 +76,10 @@ async function main() {
   }
 
   const comparison = await compareOpportunityConstructors({
-    constructionPacket,
+    constructionPacket: v2ConstructionPacket,
     discoveryResult: discoveryResult.output,
-    generateCurrentOutput: ({ packet }) => generateOpportunityConstructorOutput({ packet }),
+    generateCurrentOutput: ({ packet }) =>
+      generateOpportunityConstructorOutput({ packet: packet as OpportunityConstructorInputPacket }),
     generateExperimentalOutput: ({ packet }) =>
       generateExperimentalOpportunityConstructorOutput({ packet }),
   });
@@ -85,12 +93,12 @@ async function main() {
   );
 
   await fs.mkdir(outputDir, { recursive: true });
-  await writeJson(path.join(outputDir, "01-construction-packet.json"), constructionPacket);
+  await writeJson(path.join(outputDir, "01-construction-packet.json"), v2ConstructionPacket);
   await writeJson(path.join(outputDir, "02-discovery-output.json"), discoveryResult.output);
   await writeJson(
     path.join(outputDir, "03-experimental-input-packet.json"),
     composeExperimentalOpportunityConstructorInput({
-      constructionPacket,
+      constructionPacket: v2ConstructionPacket,
       discoveryResult: discoveryResult.output,
     }),
   );

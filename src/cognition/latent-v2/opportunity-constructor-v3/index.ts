@@ -1,3 +1,5 @@
+import OpenAI from "openai";
+
 import {
   scanOpportunitySafetyLanguage,
 } from "@/src/cognition/latent-v2/opportunity-constructor/safety";
@@ -25,6 +27,242 @@ import {
   type OpportunityConstructorV3Opportunity,
 } from "@/src/cognition/latent-v2/opportunity-constructor-v3/types";
 import type { CreateLatentOpportunityEvidenceBlockInput } from "@/src/domain/latent-v2/types";
+import { readRuntimeEnvironment } from "@/src/infrastructure/environment/env";
+
+const OPENAI_REQUEST_TIMEOUT_MS = 180_000;
+const LATENT_OPPORTUNITY_CONSTRUCTOR_V3_MODEL = "gpt-4.1-mini";
+const OPPORTUNITY_CONSTRUCTOR_V3_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["generationContext", "decision", "opportunities"],
+  properties: {
+    generationContext: {
+      type: "object",
+      additionalProperties: false,
+      required: ["runtimeVersion", "priorityReflectiveObjectId", "authority"],
+      properties: {
+        runtimeVersion: { type: "string" },
+        priorityReflectiveObjectId: { type: "string" },
+        authority: {
+          type: "object",
+          additionalProperties: false,
+          required: ["family", "authorityId", "canonicalObservationId", "canonicalHash", "generationVersion"],
+          properties: {
+            family: { type: "string", enum: ["observation_v3"] },
+            authorityId: { type: "string" },
+            canonicalObservationId: { type: "string" },
+            canonicalHash: { type: "string" },
+            generationVersion: { type: "string" },
+          },
+        },
+      },
+    },
+    decision: {
+      type: "object",
+      additionalProperties: false,
+      required: ["mode", "silenceReason"],
+      properties: {
+        mode: { type: "string", enum: ["opportunities_found", "no_opportunity"] },
+        silenceReason: { type: ["string", "null"] },
+      },
+    },
+    opportunities: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["clientOpportunityKey", "identityDecision", "opportunityStructure", "manifestation", "evidenceBlocks", "safety"],
+        properties: {
+          clientOpportunityKey: { type: "string" },
+          identityDecision: {
+            type: "object",
+            additionalProperties: false,
+            required: ["mode", "existingIdentityId", "reuseConfidence", "reuseRationale"],
+            properties: {
+              mode: { type: "string", enum: ["create_new", "reuse_existing"] },
+              existingIdentityId: { type: ["string", "null"] },
+              reuseConfidence: { type: ["string", "null"], enum: ["tentative", "moderate", null] },
+              reuseRationale: { type: ["string", "null"] },
+            },
+          },
+          opportunityStructure: {
+            type: "object",
+            additionalProperties: false,
+            required: ["primaryCategory", "secondaryCategories", "structureType", "nodes", "edges", "tensions", "gaps", "continuitySignals"],
+            properties: {
+              primaryCategory: { type: "string", enum: [...OPPORTUNITY_CONSTRUCTOR_V3_ALLOWED_CATEGORIES] },
+              secondaryCategories: { type: "array", items: { type: "string", enum: [...OPPORTUNITY_CONSTRUCTOR_V3_ALLOWED_CATEGORIES] } },
+              structureType: { type: "string", enum: [...OPPORTUNITY_CONSTRUCTOR_V3_STRUCTURE_TYPES] },
+              nodes: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["key", "label", "kind"],
+                  properties: {
+                    key: { type: "string" },
+                    label: { type: "string" },
+                    kind: { type: "string" },
+                  },
+                },
+              },
+              edges: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["from", "to", "relation"],
+                  properties: {
+                    from: { type: "string" },
+                    to: { type: "string" },
+                    relation: { type: "string" },
+                  },
+                },
+              },
+              tensions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["between", "description"],
+                  properties: {
+                    between: { type: "array", items: { type: "string" } },
+                    description: { type: "string" },
+                  },
+                },
+              },
+              gaps: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["description", "supportedByObservationIds"],
+                  properties: {
+                    description: { type: "string" },
+                    supportedByObservationIds: { type: "array", items: { type: "string" } },
+                  },
+                },
+              },
+              continuitySignals: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["kind", "referenceId", "description"],
+                  properties: {
+                    kind: { type: "string", enum: ["confirmed_glossary_term", "existing_opportunity", "none"] },
+                    referenceId: { type: ["string", "null"] },
+                    description: { type: ["string", "null"] },
+                  },
+                },
+              },
+            },
+          },
+          manifestation: {
+            type: "object",
+            additionalProperties: false,
+            required: ["summaryForInternalUse", "priorityReflectiveObjectRole", "salience"],
+            properties: {
+              summaryForInternalUse: { type: "string" },
+              priorityReflectiveObjectRole: { type: "string", enum: ["primary_source"] },
+              salience: {
+                type: "object",
+                additionalProperties: false,
+                required: ["credibility", "reflectivePotential", "salienceBand", "credibilityRationale", "reflectivePotentialRationale"],
+                properties: {
+                  credibility: { type: "number" },
+                  reflectivePotential: { type: "number" },
+                  salienceBand: { type: "string", enum: ["low", "moderate", "high"] },
+                  credibilityRationale: { type: "string" },
+                  reflectivePotentialRationale: { type: "string" },
+                },
+              },
+            },
+          },
+          evidenceBlocks: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["clientBlockKey", "reflectiveObjectId", "role", "summary", "observationRefs", "confirmedGlossaryRefs", "candidateGlossaryMentions"],
+              properties: {
+                clientBlockKey: { type: "string" },
+                reflectiveObjectId: {
+                  type: "string",
+                  description:
+                    "Reflective object/dream id for this evidence block. For role='priority', this must equal generationContext.priorityReflectiveObjectId. Never place a unitId, localityId, or evidenceId here; those identities belong only inside observationRefs.",
+                },
+                role: { type: "string", enum: ["priority", "context", "historical_resonance", "contrast"] },
+                summary: { type: ["string", "null"] },
+                observationRefs: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["authorityId", "unitId", "localityId", "evidenceId", "role", "supportsNodeKeys", "supportsEdgeIndexes"],
+                    properties: {
+                      authorityId: { type: "string" },
+                      unitId: { type: "string" },
+                      localityId: { type: ["string", "null"] },
+                      evidenceId: {
+                        type: ["string", "null"],
+                        description:
+                          "When non-null, this evidence id must be selected from the evidenceRefs attached to the same referenced unitId. Do not borrow an evidenceId from another unit, even within the same locality.",
+                      },
+                      role: {
+                        type: "string",
+                        enum: ["primary_support", "context_support", "historical_resonance_support", "contrast_support"],
+                      },
+                      supportsNodeKeys: { type: "array", items: { type: "string" } },
+                      supportsEdgeIndexes: { type: "array", items: { type: "integer", minimum: 0 } },
+                    },
+                  },
+                },
+                confirmedGlossaryRefs: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["glossaryTermId", "relationshipRole", "note"],
+                    properties: {
+                      glossaryTermId: { type: "string" },
+                      relationshipRole: { type: "string", enum: ["continuity", "contrast", "resonance", "context"] },
+                      note: { type: "string" },
+                    },
+                  },
+                },
+                candidateGlossaryMentions: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["glossaryCandidateId", "note"],
+                    properties: {
+                      glossaryCandidateId: { type: "string" },
+                      note: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          safety: {
+            type: "object",
+            additionalProperties: false,
+            required: ["containsInterpretation", "containsDiagnosis", "containsIdentityClaim", "containsAdvice", "userFacingReady"],
+            properties: {
+              containsInterpretation: { type: "boolean" },
+              containsDiagnosis: { type: "boolean" },
+              containsIdentityClaim: { type: "boolean" },
+              containsAdvice: { type: "boolean" },
+              userFacingReady: { type: "boolean", enum: [false] },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
 
 export type {
   ObservationV3LatentInput,
@@ -35,6 +273,7 @@ export type {
   OpportunityRepositoryCreateMappingV3,
   ValidatedOpportunityConstructorV3Output,
 } from "@/src/cognition/latent-v2/opportunity-constructor-v3/types";
+export { parseOpportunityConstructorV3Output } from "@/src/cognition/latent-v2/opportunity-constructor-v3/parser";
 
 export function composeOpportunityConstructorV3InputPacket(
   input: ObservationV3LatentInput,
@@ -145,8 +384,16 @@ export function buildOpportunityConstructorV3Prompt(packet: OpportunityConstruct
     "Construct latent reflective opportunities from the supplied packet.",
     "Return JSON only and match the schema exactly.",
     "This packet uses Observation V3 authority and V3-native evidence handles.",
+    "For every priority evidence block, reflectiveObjectId must equal generationContext.priorityReflectiveObjectId.",
+    "Do not place a unitId or localityId into reflectiveObjectId.",
+    "Observation evidence identity belongs in observationRefs.",
+    "Block-level reflectiveObjectId identifies the source reflective object/dream.",
     "Every evidence ref must use authorityId and unitId.",
     "Use localityId and evidenceId only when supplied by the packet.",
+    "When evidenceId is present, it must be one of the evidence references attached to the same selected unitId.",
+    "Do not borrow an evidenceId from another unit, even if both units belong to the same locality.",
+    "unitId, localityId, and evidenceId must describe one internally consistent Observation evidence reference.",
+    "If no evidence reference attached to the selected unit fits, use null for evidenceId instead of substituting neighboring evidence.",
     "Do not fabricate Observation V2 ids, bundle ids, scene ids, or scene-observation ids.",
     "Do not interpret, diagnose, explain, symbolize, moralize, speculate about psychology, or give advice.",
     `Use only canonical primaryCategory and secondaryCategories values: ${allowedCategories}.`,
@@ -155,6 +402,95 @@ export function buildOpportunityConstructorV3Prompt(packet: OpportunityConstruct
     "Packet JSON:",
     JSON.stringify(packet, null, 2),
   ].join("\n\n");
+}
+
+function isProviderTimeoutError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const errorWithMetadata = error as Error & { code?: string };
+  return (
+    error.name === "AbortError" ||
+    error.name === "APIConnectionTimeoutError" ||
+    errorWithMetadata.code === "ABORT_ERR" ||
+    /timeout|timed out|aborted/i.test(error.message)
+  );
+}
+
+function readProviderErrorDiagnostics(error: unknown): Record<string, unknown> {
+  if (!(error instanceof Error)) {
+    return {
+      errorName: "UnknownError",
+      errorMessage: "Non-Error value thrown during latent opportunity V3 generation.",
+    };
+  }
+
+  const errorWithMetadata = error as Error & {
+    status?: number;
+    code?: string;
+  };
+
+  return {
+    errorName: error.name,
+    errorMessage: error.message,
+    errorStatus: typeof errorWithMetadata.status === "number" ? errorWithMetadata.status : undefined,
+    errorCode: typeof errorWithMetadata.code === "string" ? errorWithMetadata.code : undefined,
+    timeoutMs: isProviderTimeoutError(error) ? OPENAI_REQUEST_TIMEOUT_MS : undefined,
+  };
+}
+
+export async function generateOpportunityConstructorV3Output(input: {
+  packet: OpportunityConstructorV3InputPacket;
+}): Promise<OpportunityConstructorV3GeneratorResult> {
+  const env = readRuntimeEnvironment();
+  if (!env.openAiApiKey) {
+    return {
+      mode: "failed",
+      reason: "missing_openai_api_key",
+    };
+  }
+
+  const client = new OpenAI({ apiKey: env.openAiApiKey });
+
+  try {
+    const response = await client.responses.create(
+      {
+        model: LATENT_OPPORTUNITY_CONSTRUCTOR_V3_MODEL,
+        input: buildOpportunityConstructorV3Prompt(input.packet),
+        text: {
+          format: {
+            type: "json_schema",
+            name: "lumira_latent_opportunity_constructor_v3_shadow_v1",
+            schema: OPPORTUNITY_CONSTRUCTOR_V3_JSON_SCHEMA,
+            strict: true,
+          },
+        },
+      },
+      {
+        timeout: OPENAI_REQUEST_TIMEOUT_MS,
+      },
+    );
+
+    const rawOutput = response.output_text?.trim();
+    if (!rawOutput) {
+      return {
+        mode: "failed",
+        reason: "empty_model_output",
+      };
+    }
+
+    return {
+      mode: "generated",
+      rawOutput,
+    };
+  } catch (error) {
+    return {
+      mode: "failed",
+      reason: isProviderTimeoutError(error) ? "provider_timeout" : "provider_error",
+      details: readProviderErrorDiagnostics(error),
+    };
+  }
 }
 
 function buildFailure(
@@ -501,11 +837,7 @@ export async function runShadowOpportunityConstructorV3(input: {
   const packet = composeOpportunityConstructorV3InputPacket(input.input);
   const generateOutput =
     input.generateOutput ??
-    (async () => ({
-      mode: "failed" as const,
-      reason: "missing_generator",
-      details: undefined,
-    }));
+    generateOpportunityConstructorV3Output;
 
   const generation = await generateOutput({ packet });
   if (generation.mode === "failed") {

@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  extractGlossaryCandidatesFromObservationV3Authority,
   extractGlossaryCandidatesFromObservationV2Bundle,
   extractGlossaryCandidatesFromObservations,
 } from "@/src/cognition/glossary/extract-glossary-candidates-from-observations";
 import type { Observation } from "@/src/domain/observation/types";
+import type { ObservationV3AuthorityRecord } from "@/src/domain/observation/v3-authority";
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
 
 function makeObservation(): Observation {
@@ -179,6 +181,91 @@ function makeObservationV2Bundle(): ObservationV2Bundle {
         },
       },
     ],
+  };
+}
+
+function makeObservationV3Authority(): ObservationV3AuthorityRecord {
+  return {
+    authorityId: "auth-1",
+    userId: "user-1",
+    reflectiveObjectId: "obj-1",
+    sourceIdentity: { sourceId: "source-1", sourceHash: "hash-1", sourceLength: 10 },
+    canonicalCandidate: {
+      canonicalCandidateId: "canonical-1",
+      sourceIdentity: { sourceId: "source-1", sourceHash: "hash-1", sourceLength: 10 },
+      composedCandidateIdentity: { composedCandidateId: "composed-1", composedCandidateHash: "composed-hash-1" },
+      localities: [
+        {
+          canonicalLocalityId: "locality-1",
+          derivedFromLocalityIds: [],
+          order: 0,
+          label: "Courtyard",
+          sourceStart: null,
+          sourceEnd: null,
+          boundaryUncertainty: null,
+          evidenceRefs: [{ evidenceId: "evidence-1", sourceHash: "hash-1", snippet: "courtyard", spanStart: 0, spanEnd: 9, contextLabel: "scene" }],
+        },
+      ],
+      descriptiveUnits: [
+        {
+          canonicalUnitId: "unit-1",
+          derivedFromUnitIds: [],
+          localityId: "locality-1",
+          order: 0,
+          statement: "The same courtyard appears again.",
+          evidenceRefs: [{ evidenceId: "evidence-2", sourceHash: "hash-1", snippet: "same courtyard appears again", spanStart: 0, spanEnd: 29, contextLabel: "scene" }],
+          uncertainty: null,
+        },
+      ],
+      transitions: [],
+      unresolvedAlternatives: [],
+      uncertaintyRecords: [],
+      provenance: {
+        provenanceId: "prov-1",
+        sourceIdentity: { sourceId: "source-1", sourceHash: "hash-1", sourceLength: 10 },
+        primaryRealizationRefs: [],
+        supplementalRealizationPackageRefs: [],
+        compositionResultRef: "comp-1",
+        composedCandidateId: "composed-1",
+        realizationPolicyVersion: "1",
+        realizationPolicyFingerprint: "policy-1",
+      },
+      canonicalHash: "canonical-hash-1",
+    },
+    provenanceManifest: { provenanceId: "prov-1" } as any,
+    completeness: { status: "available", reportId: "complete-1" } as any,
+    memoryRealizationValidation: { validationId: "validation-1" } as any,
+    evidenceIntegrity: { assessmentId: "integrity-1" } as any,
+    uncertaintyPreservation: { assessmentId: "uncertainty-1" } as any,
+    admissionIdentityInputComparison: {
+      sourceIdentity: { sourceId: "source-1", sourceHash: "hash-1", sourceLength: 10 },
+      nativeIdentity: { candidateId: "canonical-1", candidateHash: "canonical-hash-1" },
+      policyFingerprint: "policy-1",
+    } as any,
+    governanceObservations: [],
+    admissionDecision: {
+      disposition: "admitted",
+      persistenceEligibility: "authoritative",
+      authorityIdentity: {
+        authorityId: "auth-1",
+        sourceId: "source-1",
+        canonicalCandidateId: "canonical-1",
+        candidateHash: "canonical-hash-1",
+        policyFingerprint: "policy-1",
+      },
+      audit: {
+        sourceHash: "hash-1",
+        candidateHash: "canonical-hash-1",
+        provenanceId: "prov-1",
+        realizationValidationId: "validation-1",
+        evidenceIntegrityId: "integrity-1",
+        uncertaintyAssessmentId: "uncertainty-1",
+        completenessReportId: "complete-1",
+      },
+      policyFingerprint: "policy-1",
+    } as any,
+    createdAt: "2026-05-24T00:00:00.000Z",
+    updatedAt: "2026-05-24T00:00:00.000Z",
   };
 }
 
@@ -458,5 +545,32 @@ describe("extractGlossaryCandidatesFromObservationV2Bundle", () => {
         candidate.displayLabel.includes("Én"),
       ),
     ).toBe(false);
+  });
+});
+
+describe("extractGlossaryCandidatesFromObservationV3Authority", () => {
+  it("extracts location and recurrence candidates with explicit V3 provenance tokens", () => {
+    const candidates = extractGlossaryCandidatesFromObservationV3Authority({
+      userId: "user-1",
+      reflectiveObjectId: "obj-1",
+      authority: makeObservationV3Authority(),
+    });
+
+    expect(candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          displayLabel: "Courtyard",
+          sourceCategory: "location",
+          sourceObservationId: "observation_v3|authority=auth-1",
+          sourceObservationFragmentId: "observation_v3|authority=auth-1|locality=locality-1",
+        }),
+        expect.objectContaining({
+          displayLabel: "The same courtyard appears again.",
+          sourceCategory: "recurrence_candidate",
+          sourceObservationId: "observation_v3|authority=auth-1|locality=locality-1",
+          sourceObservationFragmentId: "observation_v3|authority=auth-1|unit=unit-1|locality=locality-1|evidence=evidence-2",
+        }),
+      ]),
+    );
   });
 });

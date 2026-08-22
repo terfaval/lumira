@@ -29,7 +29,7 @@ function buildScopedStringSchema(values: string[]) {
 
 function buildAnchorConstructorJsonSchema(packet: AnchorConstructorInputPacket) {
   const observationIds = packet.observationSet.observations.map(
-    (observation) => observation.observationV2SceneObservationId,
+    (observation) => observation.observationReferenceId,
   );
   const opportunityManifestationIds = packet.opportunitySet.opportunities.map(
     (opportunity) => opportunity.opportunityManifestationId,
@@ -132,9 +132,9 @@ function buildAnchorConstructorJsonSchema(packet: AnchorConstructorInputPacket) 
                   items: {
                     type: "object",
                     additionalProperties: false,
-                    required: ["observationV2SceneObservationId", "role"],
+                    required: ["observationReferenceId", "role"],
                     properties: {
-                      observationV2SceneObservationId: buildScopedStringSchema(observationIds),
+                      observationReferenceId: buildScopedStringSchema(observationIds),
                       role: { type: "string", enum: ["primary_support", "context_support"] },
                     },
                   },
@@ -160,14 +160,14 @@ function buildAnchorConstructorJsonSchema(packet: AnchorConstructorInputPacket) 
                     required: [
                       "opportunityManifestationId",
                       "evidenceBlockId",
-                      "observationV2SceneObservationId",
+                      "observationReferenceId",
                       "supportsNodeKeys",
                       "supportsEdgeIndexes",
                     ],
                     properties: {
                       opportunityManifestationId: buildScopedStringSchema(opportunityManifestationIds),
                       evidenceBlockId: { type: "string" },
-                      observationV2SceneObservationId: buildScopedStringSchema(observationIds),
+                      observationReferenceId: buildScopedStringSchema(observationIds),
                       supportsNodeKeys: { type: "array", items: { type: "string" } },
                       supportsEdgeIndexes: { type: "array", items: { type: "integer", minimum: 0 } },
                     },
@@ -303,7 +303,7 @@ export function buildAnchorConstructorPrompt(packet: AnchorConstructorInputPacke
     "If the same evidence supports multiple canon categories, returning multiple anchors across those categories is allowed.",
     "For every opportunityManifestationId field, copy only ids from packet.opportunitySet.opportunities[*].opportunityManifestationId.",
     "Do not use opportunityIdentityId in any opportunityManifestationId field.",
-    "For every observationV2SceneObservationId field, copy only ids from packet.observationSet.observations[*].observationV2SceneObservationId.",
+    "For every observationReferenceId field, copy only ids from packet.observationSet.observations[*].observationReferenceId.",
     "For this minimal runtime, set traceRefs to [] for every anchor.",
     "Allowed anchor types: ENTITY, ROLE, STRUCTURE.",
     "Do not output UNKNOWN.",

@@ -6,10 +6,12 @@ import { describe, expect, it } from "vitest";
 import type { ObservationV2Bundle } from "@/src/domain/observation/v2-runtime";
 import {
   analyzeObservationCompleteness,
+  analyzeComposedCandidateCompleteness,
   analyzeObservationCompletenessPreCalibration,
   compareCompletenessWithV2Diagnostics,
   fingerprintCompletenessAnalysis,
 } from "@/src/cognition/observation-v3/completeness-analysis";
+import { composeMemoryPackages } from "@/src/cognition/observation-v3/memory-composition";
 
 function buildBundle(input?: {
   dreamText?: string;
@@ -405,6 +407,187 @@ describe("observation v3 completeness analysis", () => {
     ]);
     expect(report.adequacy).toBe("adequate_with_observations");
     expect(report.recoveryRecommendation.disposition).toBe("not_required");
+  });
+
+  it("does not require recovery when an uncovered internal region only repeats grounded descriptive content", () => {
+    const repeated = "A red door appears beside a cracked mirror.";
+    const dreamText = [
+      repeated,
+      repeated,
+      "Then I wake up in bed.",
+    ].join(" ");
+    const wakeStart = dreamText.indexOf("Then I wake up in bed.");
+    const { bundle } = buildBundle({
+      dreamText,
+      sceneSpans: [{ sceneId: "scene-1", start: 0, end: dreamText.length }],
+      observationSpans: [
+        { observationId: "obs-1", sceneId: "scene-1", position: 0, start: 0, end: repeated.length, text: repeated },
+        { observationId: "obs-2", sceneId: "scene-1", position: 1, start: wakeStart, end: dreamText.length, text: "Then I wake up in bed." },
+      ],
+    });
+
+    const report = analyzeObservationCompleteness({
+      dreamText,
+      bundle,
+    });
+
+    expect(report.coverage.internalUncoveredRegions).toHaveLength(1);
+    expect(report.recoveryRecommendation.disposition).toBe("not_required");
+    expect(report.materialGapAssessment?.gaps).toEqual([
+      expect.objectContaining({
+        gapId: "gap-001",
+        classification: "already_represented",
+      }),
+    ]);
+  });
+
+  it("keeps a large internal descriptive omission recovery-relevant even when endpoint coverage reaches the ending", () => {
+    const dreamText = [
+      "I stand in the empty station and wait.",
+      "Then the ceiling opens into a black sky and birds begin speaking from the rafters.",
+      "I feel my body become heavy and I cannot tell whether I am awake inside the dream.",
+      "Finally I am back at the platform entrance.",
+    ].join(" ");
+    const endingStart = dreamText.indexOf("Finally I am back at the platform entrance.");
+    const { bundle } = buildBundle({
+      dreamText,
+      sceneSpans: [{ sceneId: "scene-1", start: 0, end: dreamText.length }],
+      observationSpans: [
+        { observationId: "obs-1", sceneId: "scene-1", position: 0, start: 0, end: 38, text: "I stand in the empty station and wait." },
+        { observationId: "obs-2", sceneId: "scene-1", position: 1, start: endingStart, end: dreamText.length, text: "Finally I am back at the platform entrance." },
+      ],
+    });
+
+    const report = analyzeObservationCompleteness({
+      dreamText,
+      bundle,
+    });
+
+    expect(report.coverage.coverageRatio).toBe(1);
+    expect(report.coverage.internalUncoveredRegions).toHaveLength(1);
+    expect(report.adequacy).toBe("inadequate_recoverable");
+    expect(report.recoveryRecommendation.disposition).toBe("required_before_admission");
+    expect(report.recoveryRecommendation.targetedPhysicalGapIds).toEqual(["gap-001"]);
+  });
+
+  it("classifies bounded reflective tail text as non-material rather than recoverable loss", () => {
+    const dreamText = [
+      "I walk through a station.",
+      "A friend waves from the final platform.",
+      "Afterwards I just remember feeling odd about it.",
+    ].join(" ");
+    const retainedEnd = dreamText.indexOf(" Afterwards");
+    const { bundle } = buildBundle({
+      dreamText,
+      sceneSpans: [{ sceneId: "scene-1", start: 0, end: retainedEnd }],
+      observationSpans: [{
+        observationId: "obs-1",
+        sceneId: "scene-1",
+        position: 0,
+        start: 0,
+        end: retainedEnd,
+      }],
+    });
+
+    const report = analyzeObservationCompleteness({
+      dreamText,
+      bundle,
+    });
+
+    expect(report.recoveryRecommendation.disposition).toBe("not_required");
+    expect(report.materialGapAssessment?.gaps).toEqual([
+      expect.objectContaining({
+        gapId: "gap-001",
+        classification: "non_material",
+      }),
+    ]);
+  });
+
+  it("stops requesting recovery after composition once the material distinction has been recovered", () => {
+    const endingSnippet = "Then the ceiling opens into a black sky and birds begin speaking from the rafters.";
+    const dreamText = [
+      "I stand in the empty station and wait.",
+      endingSnippet,
+      "Finally I am back at the platform entrance.",
+    ].join(" ");
+    const endingStart = dreamText.indexOf(endingSnippet);
+    const finalStart = dreamText.indexOf("Finally I am back at the platform entrance.");
+
+    const composition = composeMemoryPackages({
+      dreamTextLength: dreamText.length,
+      baseline: {
+        regions: [{
+          regionId: "scene-1",
+          order: 0,
+          heading: "Station",
+          spanStart: 0,
+          spanEnd: dreamText.length,
+          evidence: [{ snippet: dreamText, spanStart: 0, spanEnd: dreamText.length, contextLabel: "scene" }],
+          boundaryConfidence: "medium",
+          uncertainty: null,
+          transitionCues: [],
+        }],
+        units: [{
+          observationId: "baseline-1",
+          regionId: "scene-1",
+          order: 0,
+          statement: "I stand in the empty station and wait.",
+          evidence: [{ snippet: "I stand in the empty station and wait.", spanStart: 0, spanEnd: 38, contextLabel: "quoted_support" }],
+          uncertainty: null,
+          source: "baseline",
+          recoveryProvenance: null,
+        }, {
+          observationId: "baseline-2",
+          regionId: "scene-1",
+          order: 1,
+          statement: "Finally I am back at the platform entrance.",
+          evidence: [{ snippet: "Finally I am back at the platform entrance.", spanStart: finalStart, spanEnd: dreamText.length, contextLabel: "quoted_support" }],
+          uncertainty: null,
+          source: "baseline",
+          recoveryProvenance: null,
+        }],
+      },
+      supplemental: {
+        regions: [{
+          regionId: "recovery-1",
+          order: 0,
+          heading: "Recovered middle",
+          spanStart: endingStart,
+          spanEnd: endingStart + endingSnippet.length,
+          evidence: [{ snippet: endingSnippet, spanStart: endingStart, spanEnd: endingStart + endingSnippet.length, contextLabel: "window" }],
+          boundaryConfidence: "medium",
+          uncertainty: null,
+          transitionCues: [],
+        }],
+        units: [{
+          observationId: "recovery-1",
+          regionId: "recovery-1",
+          order: 0,
+          statement: endingSnippet,
+          evidence: [{ snippet: endingSnippet, spanStart: endingStart, spanEnd: endingStart + endingSnippet.length, contextLabel: "window" }],
+          uncertainty: null,
+          source: "recovery",
+          recoveryProvenance: {
+            canonicalRecoveryWindowId: "window-1",
+            physicalGapId: "gap-001",
+            extractionLocalRegionId: "recovery-1",
+            semanticSignature: "ending snippet",
+            entitySignature: ["birds", "ceiling"],
+            eventStateType: "event",
+          },
+        }],
+      },
+    });
+
+    const report = analyzeComposedCandidateCompleteness({
+      dreamText,
+      composedCandidate: composition.composedCandidate,
+      composedCandidateHash: composition.composedCandidateIdentity.composedCandidateHash,
+    });
+
+    expect(["adequate", "adequate_with_observations"]).toContain(report.adequacy);
+    expect(report.recoveryRecommendation.disposition).toBe("not_required");
+    expect(report.recoveryRecommendation.targetedPhysicalGapIds).toEqual([]);
   });
 
   it("treats a short coherent tail-only endpoint miss as observational rather than recoverable inadequacy", () => {

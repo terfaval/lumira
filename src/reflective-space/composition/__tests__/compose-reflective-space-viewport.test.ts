@@ -45,11 +45,8 @@ describe("composeReflectiveSpaceViewport", () => {
         listByReflectiveObject: async () => [],
         getById: async () => null,
       },
-      observationV2Repository: {
-        create: async () => { throw new Error("not used"); },
-        getByBundleId: async () => null,
+      observationNativeReadRepository: {
         getByReflectiveObjectId: async () => null,
-        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -263,11 +260,8 @@ describe("composeReflectiveSpaceViewport", () => {
         ],
         getById: async () => null,
       },
-      observationV2Repository: {
-        create: async () => { throw new Error("not used"); },
-        getByBundleId: async () => null,
+      observationNativeReadRepository: {
         getByReflectiveObjectId: async () => null,
-        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -386,11 +380,8 @@ describe("composeReflectiveSpaceViewport", () => {
         listByReflectiveObject: async () => [],
         getById: async () => null,
       },
-      observationV2Repository: {
-        create: async () => { throw new Error("not used"); },
-        getByBundleId: async () => null,
+      observationNativeReadRepository: {
         getByReflectiveObjectId: async () => null,
-        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -524,11 +515,8 @@ describe("composeReflectiveSpaceViewport", () => {
         listByReflectiveObject: async () => [],
         getById: async () => null,
       },
-      observationV2Repository: {
-        create: async () => { throw new Error("not used"); },
-        getByBundleId: async () => null,
+      observationNativeReadRepository: {
         getByReflectiveObjectId: async () => null,
-        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -660,11 +648,8 @@ describe("composeReflectiveSpaceViewport", () => {
         listByReflectiveObject: async () => [],
         getById: async () => null,
       },
-      observationV2Repository: {
-        create: async () => { throw new Error("not used"); },
-        getByBundleId: async () => null,
+      observationNativeReadRepository: {
         getByReflectiveObjectId: async () => null,
-        archive: async () => null,
       },
       glossaryRepository: {
         listTerms: async () => [],
@@ -732,5 +717,127 @@ describe("composeReflectiveSpaceViewport", () => {
     expect(viewport.sections.openingSurfaces.items).toHaveLength(1);
     expect(viewport.sections.openingSurfaces.items[0]?.openingId).toBe("opening-obj-1");
     expect(viewport.sections.openingSurfaces.items[0]?.preview).toBe("Object opening");
+  });
+
+  it("derives glossary cues from explicit V3 native observation without V2 ids", async () => {
+    const viewport = await composeReflectiveSpaceViewport({
+      userId: "user-v3",
+      centerObjectId: "obj-v3",
+      observationResolution: "explicit_v3",
+      reflectiveObjectRepository: {
+        create: async () => { throw new Error("not used"); },
+        getById: async () => null,
+        listByUser: async () => [{
+          id: "obj-v3",
+          userId: "user-v3",
+          objectType: "dream",
+          title: "Courtyard",
+          primaryContent: "Content",
+          sourceContext: "manual",
+          state: "active",
+          metadata: {},
+          createdAt: "2026-06-18T12:00:00.000Z",
+          updatedAt: "2026-06-18T12:00:00.000Z",
+        }],
+        update: async () => null,
+        archive: async () => null,
+      },
+      observationRepository: {
+        create: async () => { throw new Error("not used"); },
+        listByReflectiveObject: async () => [],
+        getById: async () => null,
+      },
+      observationNativeReadRepository: {
+        getByReflectiveObjectId: async ({ resolution }) => {
+          expect(resolution).toBe("explicit_v3");
+          return {
+            family: "v3",
+            native: {
+              canonicalCandidate: {
+                localities: [
+                  {
+                    canonicalLocalityId: "locality-1",
+                    derivedFromLocalityIds: [],
+                    order: 0,
+                    label: "Courtyard",
+                    sourceStart: null,
+                    sourceEnd: null,
+                    boundaryUncertainty: null,
+                    evidenceRefs: [],
+                  },
+                ],
+                descriptiveUnits: [],
+              },
+            } as any,
+          };
+        },
+      },
+      glossaryRepository: {
+        listTerms: async () => [],
+        listTermsByReflectiveObject: async () => [],
+        getTermById: async () => null,
+        listAppearanceRecordsByTerm: async () => [],
+        createTerm: async () => { throw new Error("not used"); },
+        updateTerm: async () => null,
+        listCandidates: async () => [],
+        listCandidatesByReflectiveObject: async () => [],
+        getCandidateById: async () => null,
+        upsertCandidates: async () => [],
+        setCandidateLifecycle: async () => null,
+        resolveCandidate: async () => null,
+        createAssociation: async () => { throw new Error("not used"); },
+        createAppearanceRecord: async () => null,
+      },
+      threadRepository: {
+        createThread: async () => { throw new Error("not used"); },
+        getThreadById: async () => null,
+        listThreadsByReflectiveObject: async () => [],
+        listThreadsByUser: async () => [],
+        updateThread: async () => null,
+        setThreadState: async () => null,
+        archiveThread: async () => null,
+        createObjectAssociation: async () => { throw new Error("not used"); },
+        createGlossaryAssociation: async () => { throw new Error("not used"); },
+        listAssociationsByThread: async () => [],
+      },
+      openingRepository: {
+        createOpening: async () => { throw new Error("not used"); },
+        getOpeningById: async () => null,
+        listOpeningSurfacesByReflectiveObject: async () => [],
+        listOpeningSurfacesByUser: async () => [],
+        listDormantSuppressedOpeningsByUser: async () => [],
+        listRecentOpeningsByUser: async () => [],
+        listOpeningsByLatentSnapshot: async () => [],
+        activateOpening: async () => null,
+        reactivateOpening: async () => null,
+        dismissOpening: async () => null,
+        setSuppression: async () => null,
+        recordSurfaceEvent: async () => { throw new Error("not used"); },
+      },
+      responseRepository: {
+        createResponse: async () => { throw new Error("not used"); },
+        getResponseById: async () => null,
+        listResponsesByUser: async () => [],
+        listResponsesByReflectiveObject: async () => [],
+        updateResponse: async () => null,
+        setResponseState: async () => null,
+        archiveResponse: async () => null,
+        createObjectAssociation: async () => { throw new Error("not used"); },
+        createThreadAssociation: async () => { throw new Error("not used"); },
+        removeObjectAssociation: async () => false,
+        removeThreadAssociation: async () => false,
+        listAssociationsByResponse: async () => [],
+        createOpeningActivationEvent: async () => { throw new Error("not used"); },
+        listOpeningActivationEventsByWindow: async () => [],
+        createOpeningResponseAssociation: async () => { throw new Error("not used"); },
+        removeOpeningResponseAssociation: async () => false,
+        listOpeningResponseAssociationsByOpening: async () => [],
+      },
+    });
+
+    expect(viewport.continuity.glossaryCues[0]).toMatchObject({
+      label: "Courtyard",
+      category: "location",
+    });
   });
 });

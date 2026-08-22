@@ -14,6 +14,9 @@ vi.mock("@/src/infrastructure/supabase/repositories/create-reflective-object-rep
 vi.mock("@/src/infrastructure/supabase/repositories/create-observation-repository", () => ({
   createObservationRepository: () => ({ tag: "observations" }),
 }));
+vi.mock("@/src/infrastructure/persistence/observation-native-read-store", () => ({
+  createObservationNativeReadStore: () => ({ tag: "native-observations" }),
+}));
 vi.mock("@/src/infrastructure/supabase/repositories/create-observation-v2-repository", () => ({
   createObservationV2Repository: () => ({ tag: "observations-v2" }),
 }));

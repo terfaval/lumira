@@ -6,7 +6,11 @@ import type {
   GlossaryTerm,
 } from "@/src/domain/glossary/types";
 import type { ObservationCategory } from "@/src/domain/observation/types";
-import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationRepository } from "@/src/domain/observation/contracts";
+import type {
+  ObservationNativeReadRepository,
+  ObservationNativeReadResolution,
+} from "@/src/domain/observation/native-read";
 import type { OpeningRepository } from "@/src/domain/openings/contracts";
 import type { Opening } from "@/src/domain/openings/types";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
@@ -18,7 +22,7 @@ import {
   type GlossaryPanelProposedEntity,
   type OrientationOpeningCard,
 } from "@/src/ui/object-orientation/view-model";
-import { buildObservationV2PresentationText } from "@/src/reflective-space/composition/observation-presentation";
+import { buildNativeObservationPresentationText } from "@/src/reflective-space/composition/observation-presentation";
 
 const OBSERVATION_LIMIT = 3;
 const RECENT_OPENINGS_LIMIT = 12;
@@ -49,9 +53,10 @@ export interface ObjectOrientationPayload {
 export interface ComposeObjectOrientationPayloadInput {
   userId: UserId;
   reflectiveObjectId: ReflectiveObjectId;
+  observationResolution?: ObservationNativeReadResolution;
   reflectiveObjectRepository: ReflectiveObjectRepository;
   observationRepository: ObservationRepository;
-  observationV2Repository: ObservationV2Repository;
+  observationNativeReadRepository: ObservationNativeReadRepository;
   glossaryRepository: GlossaryRepository;
   threadRepository: ThreadRepository;
   openingRepository: OpeningRepository;
@@ -192,11 +197,11 @@ function uniqueGlossaryItems(items: GlossaryPanelItem[]): GlossaryPanelItem[] {
 }
 
 function toOrientationDreamPreview(input: {
-  observationBundle: Awaited<ReturnType<ObservationV2Repository["getByReflectiveObjectId"]>>;
+  nativeObservation: Awaited<ReturnType<ObservationNativeReadRepository["getByReflectiveObjectId"]>>;
   observations: Awaited<ReturnType<ObservationRepository["listByReflectiveObject"]>>;
   primaryContent: string;
 }): string {
-  const nativePreview = buildObservationV2PresentationText(input.observationBundle);
+  const nativePreview = buildNativeObservationPresentationText(input.nativeObservation);
   if (nativePreview) {
     return nativePreview;
   }
@@ -218,8 +223,12 @@ export async function composeObjectOrientationPayload(
     return null;
   }
 
-  const [observationBundle, observations, allGlossaryCandidates, glossaryCandidates, recentOpenings, glossaryTerms, savedTerms] = await Promise.all([
-    input.observationV2Repository.getByReflectiveObjectId(input.reflectiveObjectId, input.userId),
+  const [nativeObservation, observations, allGlossaryCandidates, glossaryCandidates, recentOpenings, glossaryTerms, savedTerms] = await Promise.all([
+    input.observationNativeReadRepository.getByReflectiveObjectId({
+      userId: input.userId,
+      reflectiveObjectId: input.reflectiveObjectId,
+      resolution: input.observationResolution,
+    }),
     input.observationRepository.listByReflectiveObject({
       userId: input.userId,
       reflectiveObjectId: input.reflectiveObjectId,
@@ -269,7 +278,7 @@ export async function composeObjectOrientationPayload(
       id: reflectiveObject.id,
       title: reflectiveObject.title,
       preview: toOrientationDreamPreview({
-        observationBundle,
+        nativeObservation,
         observations,
         primaryContent: reflectiveObject.primaryContent,
       }),

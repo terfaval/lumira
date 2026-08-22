@@ -51,6 +51,7 @@ const payload: HomepageOrientationPayload = {
   },
   navigation: {
     capture: { targetKey: "capture_home", href: "/capture", routeStatus: "implemented" },
+    fortune: { targetKey: "fortune_home", href: "/fortune", routeStatus: "implemented" },
     glossary: { targetKey: "glossary_home", href: "/glossary", routeStatus: "placeholder" },
     dreamJournal: { targetKey: "dream_journal_home", href: "/journal", routeStatus: "placeholder" },
     guide: { targetKey: "guide_home", href: "/guide", routeStatus: "placeholder" },
@@ -101,12 +102,21 @@ describe("HomepageOrientationHub capture surface", () => {
     expect(markup).not.toContain("Recall");
   });
 
-  it("renders a meditation entry tile linking to /meditation", () => {
+  it("renders a lighter meditation tile with panel and CTA links to /meditation", () => {
     const markup = renderToStaticMarkup(<HomepageOrientationHub payload={payload} />);
 
     expect(markup).toContain('href="/meditation"');
-    expect(markup).toContain("<h2>Meditáció</h2>");
-    expect(markup).toContain("Lépj be egy lassabb, csendesebb térbe.");
-    expect(markup).toContain("Meditációk megnyitása");
+    expect(markup).not.toContain("<h2>Meditáció</h2>");
+    expect(markup).toContain("Lépj be egy lassabb,");
+    expect(markup).toContain("csendesebb térbe.");
+    expect(markup).toContain(">Meditálj</a>");
+  });
+
+  it("renders Fortune Journaling as a top-level homepage destination", () => {
+    const markup = renderToStaticMarkup(<HomepageOrientationHub payload={payload} />);
+
+    expect(markup).toContain("Fortune Journaling");
+    expect(markup).toContain("Tarot-alapú önreflexió");
+    expect(markup).toContain('href="/fortune"');
   });
 });

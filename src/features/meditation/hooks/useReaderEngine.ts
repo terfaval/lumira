@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { getReaderStep } from "../lib/reader-step";
 import type { Meditation, ReaderTextBlock } from "../lib/meditation-types";
 
 export type ReaderStatus = "idle" | "running" | "ended";
@@ -28,10 +29,11 @@ export function useReaderEngine(meditation: Meditation | null) {
     setStatus("idle");
   }, [clearTimer]);
 
-  const start = useCallback(() => {
+  const start = useCallback((startIndex = 0) => {
     if (!meditation) return;
     clearTimer();
-    setCurrentIndex(0);
+    const safeStartIndex = Math.max(0, Math.min(startIndex, meditation.reader.blocks.length));
+    setCurrentIndex(safeStartIndex);
     setCurrentText(null);
     setCurrentBlockIndex(null);
     setStatus("running");
@@ -64,39 +66,37 @@ export function useReaderEngine(meditation: Meditation | null) {
   useEffect(() => {
     if (!meditation || status !== "running") return;
 
-    const blocks = meditation.reader.blocks;
-    if (currentIndex >= blocks.length) {
+    const step = getReaderStep(meditation.reader.blocks, currentIndex, currentText);
+    if (step.kind === "end") {
       const timer = window.setTimeout(() => {
         setStatus("ended");
       }, 0);
       return () => window.clearTimeout(timer);
     }
 
-    const block = blocks[currentIndex];
-
-    if (block.type === "text") {
+    if (step.kind === "text") {
       const timer = window.setTimeout(() => {
-        setCurrentBlockIndex(currentIndex);
-        setCurrentText(block);
+        setCurrentBlockIndex(step.currentBlockIndex);
+        setCurrentText(step.block);
         setCurrentIndex((index) => index + 1);
       }, 0);
       return () => window.clearTimeout(timer);
     }
 
     const syncTimer = window.setTimeout(() => {
-      setCurrentBlockIndex(currentIndex);
-      setCurrentText(null);
+      setCurrentBlockIndex(step.currentBlockIndex);
+      setCurrentText(step.currentText);
     }, 0);
 
     timerRef.current = window.setTimeout(() => {
       setCurrentIndex((index) => index + 1);
-    }, Math.max(0, block.duration_ms));
+    }, step.durationMs);
 
     return () => {
       window.clearTimeout(syncTimer);
       clearTimer();
     };
-  }, [clearTimer, currentIndex, meditation, status]);
+  }, [clearTimer, currentIndex, currentText, meditation, status]);
 
   useEffect(() => () => clearTimer(), [clearTimer]);
 

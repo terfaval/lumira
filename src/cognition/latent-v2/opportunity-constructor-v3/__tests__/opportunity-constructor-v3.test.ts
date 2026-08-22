@@ -1,9 +1,40 @@
 import { describe, expect, it, vi } from "vitest";
 
+const { createMock } = vi.hoisted(() => ({
+  createMock: vi.fn(),
+}));
+
+vi.mock("openai", () => ({
+  default: class OpenAI {
+    responses = {
+      create: createMock,
+    };
+  },
+}));
+
+vi.mock("@/src/infrastructure/environment/env", async () => {
+  const actual = await vi.importActual<typeof import("@/src/infrastructure/environment/env")>(
+    "@/src/infrastructure/environment/env",
+  );
+
+  return {
+    ...actual,
+    readRuntimeEnvironment: () => ({
+      nodeEnv: "test",
+      supabaseUrl: null,
+      supabaseAnonKey: null,
+      supabaseServiceRoleKey: null,
+      openAiApiKey: "test-openai-key",
+      observationCaptureAuthorityMode: "v3",
+    }),
+  };
+});
+
 import { buildOpportunityConstructorPrompt } from "@/src/cognition/latent-v2/opportunity-constructor";
 import {
   buildOpportunityConstructorV3Prompt,
   composeOpportunityConstructorV3InputPacket,
+  generateOpportunityConstructorV3Output,
   mapValidatedOpportunityConstructorV3OutputToRepositoryInputs,
   parseAndValidateOpportunityConstructorV3Output,
   runShadowOpportunityConstructorV3,
@@ -266,6 +297,15 @@ function createValidV3OutputPacket(): OpportunityConstructorV3OutputPacket {
   };
 }
 
+function createValidV3OutputPacketWithNullableOptionalRefs(): OpportunityConstructorV3OutputPacket {
+  const output = createValidV3OutputPacket();
+
+  output.opportunities[0].evidenceBlocks[0].observationRefs[0].localityId = null;
+  output.opportunities[0].evidenceBlocks[0].observationRefs[0].evidenceId = null;
+
+  return output;
+}
+
 describe("composeOpportunityConstructorV3InputPacket", () => {
   it("builds a V3-native packet without fabricated V2 identifiers", () => {
     const packet = composeOpportunityConstructorV3InputPacket(createObservationV3LatentInput());
@@ -334,6 +374,124 @@ describe("V3 prompt foundation", () => {
     expect(v3Prompt).toContain("unitId");
     expect(v3Prompt).not.toContain("observationV2SceneObservationId");
   });
+
+  it("binds priority evidence block reflectiveObjectId to the run priority reflective object id", () => {
+    const v3Prompt = buildOpportunityConstructorV3Prompt(
+      composeOpportunityConstructorV3InputPacket(createObservationV3LatentInput()),
+    );
+
+    expect(v3Prompt).toContain(
+      "For every priority evidence block, reflectiveObjectId must equal generationContext.priorityReflectiveObjectId.",
+    );
+    expect(v3Prompt).toContain("Do not place a unitId or localityId into reflectiveObjectId.");
+    expect(v3Prompt).toContain("Observation evidence identity belongs in observationRefs.");
+    expect(v3Prompt).toContain("Block-level reflectiveObjectId identifies the source reflective object/dream.");
+  });
+
+  it("states that evidenceId ownership is per-unit and never borrowed from neighboring units", () => {
+    const v3Prompt = buildOpportunityConstructorV3Prompt(
+      composeOpportunityConstructorV3InputPacket(createObservationV3LatentInput()),
+    );
+
+    expect(v3Prompt).toContain(
+      "When evidenceId is present, it must be one of the evidence references attached to the same selected unitId.",
+    );
+    expect(v3Prompt).toContain(
+      "Do not borrow an evidenceId from another unit, even if both units belong to the same locality.",
+    );
+    expect(v3Prompt).toContain(
+      "unitId, localityId, and evidenceId must describe one internally consistent Observation evidence reference.",
+    );
+    expect(v3Prompt).toContain(
+      "If no evidence reference attached to the selected unit fits, use null for evidenceId instead of substituting neighboring evidence.",
+    );
+  });
+});
+
+describe("generateOpportunityConstructorV3Output", () => {
+  it("sends a strict schema whose observationRefs required keys include nullable localityId and evidenceId", async () => {
+    createMock.mockResolvedValueOnce({
+      output_text: JSON.stringify(createValidV3OutputPacket()),
+    });
+
+    const packet = composeOpportunityConstructorV3InputPacket(createObservationV3LatentInput());
+    const result = await generateOpportunityConstructorV3Output({ packet });
+
+    expect(result).toEqual({
+      mode: "generated",
+      rawOutput: JSON.stringify(createValidV3OutputPacket()),
+    });
+    expect(createMock).toHaveBeenCalledTimes(1);
+
+    const request = createMock.mock.calls[0]?.[0] as {
+      text: {
+        format: {
+          schema: {
+            properties: {
+              opportunities: {
+                items: {
+                  properties: {
+                    evidenceBlocks: {
+                      items: {
+                        properties: {
+                          observationRefs: {
+                            items: {
+                              required: string[];
+                              properties: Record<string, unknown>;
+                            };
+                          };
+                        };
+                      };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+    const observationRefSchema =
+      request.text.format.schema.properties.opportunities.items.properties.evidenceBlocks.items.properties
+        .observationRefs.items;
+    const evidenceBlockSchema =
+      request.text.format.schema.properties.opportunities.items.properties.evidenceBlocks.items.properties;
+
+    expect(Object.keys(observationRefSchema.properties)).toEqual(
+      expect.arrayContaining([
+        "authorityId",
+        "unitId",
+        "localityId",
+        "evidenceId",
+        "role",
+        "supportsNodeKeys",
+        "supportsEdgeIndexes",
+      ]),
+    );
+    expect(observationRefSchema.required).toEqual([
+      "authorityId",
+      "unitId",
+      "localityId",
+      "evidenceId",
+      "role",
+      "supportsNodeKeys",
+      "supportsEdgeIndexes",
+    ]);
+    expect(evidenceBlockSchema.reflectiveObjectId).toEqual(
+      expect.objectContaining({
+        type: "string",
+        description:
+          "Reflective object/dream id for this evidence block. For role='priority', this must equal generationContext.priorityReflectiveObjectId. Never place a unitId, localityId, or evidenceId here; those identities belong only inside observationRefs.",
+      }),
+    );
+    expect(observationRefSchema.properties.evidenceId).toEqual(
+      expect.objectContaining({
+        type: ["string", "null"],
+        description:
+          "When non-null, this evidence id must be selected from the evidenceRefs attached to the same referenced unitId. Do not borrow an evidenceId from another unit, even within the same locality.",
+      }),
+    );
+  });
 });
 
 describe("parseAndValidateOpportunityConstructorV3Output", () => {
@@ -345,6 +503,35 @@ describe("parseAndValidateOpportunityConstructorV3Output", () => {
     });
 
     expect(result.ok).toBe(true);
+  });
+
+  it("accepts nullable localityId and evidenceId on V3 observation refs", () => {
+    const packet = composeOpportunityConstructorV3InputPacket(createObservationV3LatentInput());
+    const result = parseAndValidateOpportunityConstructorV3Output({
+      input: packet,
+      raw: createValidV3OutputPacketWithNullableOptionalRefs(),
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a priority block whose reflectiveObjectId is a unit id", () => {
+    const packet = composeOpportunityConstructorV3InputPacket(createObservationV3LatentInput());
+    const output = createValidV3OutputPacket();
+    output.opportunities[0].evidenceBlocks[0].reflectiveObjectId = "unit-presence" as never;
+
+    const result = parseAndValidateOpportunityConstructorV3Output({
+      input: packet,
+      raw: output,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      reason: "priority_block_reflective_object_mismatch",
+      details: expect.objectContaining({
+        clientOpportunityKey: "v3-op-1",
+      }),
+    });
   });
 
   it("rejects a mismatched authorityId", () => {
@@ -383,6 +570,86 @@ describe("parseAndValidateOpportunityConstructorV3Output", () => {
       details: expect.objectContaining({
         clientOpportunityKey: "v3-op-1",
         unitId: "unit-missing",
+      }),
+    });
+  });
+
+  it("rejects an unknown localityId when provided", () => {
+    const packet = composeOpportunityConstructorV3InputPacket(createObservationV3LatentInput());
+    const output = createValidV3OutputPacket();
+    output.opportunities[0].evidenceBlocks[0].observationRefs[0].localityId = "locality-missing";
+
+    const result = parseAndValidateOpportunityConstructorV3Output({
+      input: packet,
+      raw: output,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      reason: "locality_ref_out_of_scope",
+      details: expect.objectContaining({
+        clientOpportunityKey: "v3-op-1",
+        localityId: "locality-missing",
+      }),
+    });
+  });
+
+  it("rejects an unknown evidenceId when provided", () => {
+    const packet = composeOpportunityConstructorV3InputPacket(createObservationV3LatentInput());
+    const output = createValidV3OutputPacket();
+    output.opportunities[0].evidenceBlocks[0].observationRefs[0].evidenceId = "evidence-missing";
+
+    const result = parseAndValidateOpportunityConstructorV3Output({
+      input: packet,
+      raw: output,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      reason: "evidence_ref_out_of_scope",
+      details: expect.objectContaining({
+        clientOpportunityKey: "v3-op-1",
+        evidenceId: "evidence-missing",
+      }),
+    });
+  });
+
+  it("rejects a valid packet evidenceId when it belongs to a different unit", () => {
+    const packet = composeOpportunityConstructorV3InputPacket(createObservationV3LatentInput());
+    const output = createValidV3OutputPacket();
+    output.opportunities[0].evidenceBlocks[0].observationRefs[0].evidenceId = "evidence-apology";
+
+    const result = parseAndValidateOpportunityConstructorV3Output({
+      input: packet,
+      raw: output,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      reason: "evidence_ref_out_of_scope",
+      details: expect.objectContaining({
+        clientOpportunityKey: "v3-op-1",
+        evidenceId: "evidence-apology",
+      }),
+    });
+  });
+
+  it("rejects same-locality evidence borrowed from a neighboring unit", () => {
+    const packet = composeOpportunityConstructorV3InputPacket(createObservationV3LatentInput());
+    const output = createValidV3OutputPacket();
+    output.opportunities[0].evidenceBlocks[0].observationRefs[1].evidenceId = "evidence-reassurance";
+
+    const result = parseAndValidateOpportunityConstructorV3Output({
+      input: packet,
+      raw: output,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      reason: "evidence_ref_out_of_scope",
+      details: expect.objectContaining({
+        clientOpportunityKey: "v3-op-1",
+        evidenceId: "evidence-reassurance",
       }),
     });
   });

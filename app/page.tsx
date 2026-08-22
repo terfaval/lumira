@@ -1,6 +1,6 @@
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
+import { createObservationNativeReadStore } from "@/src/infrastructure/persistence/observation-native-read-store";
 import { createObservationRepository } from "@/src/infrastructure/supabase/repositories/create-observation-repository";
-import { createObservationV2Repository } from "@/src/infrastructure/supabase/repositories/create-observation-v2-repository";
 import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
 import { composeHomepageOrientationPayload } from "@/src/reflective-space/composition/compose-homepage-orientation-payload";
 import { SessionControls } from "@/src/ui/auth/session-controls";
@@ -15,7 +15,7 @@ export default async function HomePage() {
     reflectiveObjectRepository: createReflectiveObjectRepository(),
     glossaryRepository: createGlossaryRepository(),
     observationRepository: createObservationRepository(),
-    observationV2Repository: createObservationV2Repository(),
+    observationNativeReadRepository: createObservationNativeReadStore(),
   });
 
   return (

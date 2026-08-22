@@ -11,11 +11,13 @@ import type { CompletenessReport, PhysicalGap } from "@/src/cognition/observatio
 import {
   buildSupplementalRealizationArtifacts,
   buildSupplementalRealizationPackage,
+  buildSupplementalRealizationPrompt,
   compareSupplementalRealizationOutputs,
   fingerprintSupplementalRealization,
   planSupplementalRealization,
   runShadowSupplementalRealization,
 } from "@/src/cognition/observation-v3/supplemental-realization";
+import { composeMemoryPackages } from "@/src/cognition/observation-v3/memory-composition";
 
 function makeRegion(input: Partial<ExperimentalRegion> & Pick<ExperimentalRegion, "regionId" | "order">): ExperimentalRegion {
   return {
@@ -193,6 +195,51 @@ describe("supplemental realization", () => {
     expect(plan.realizationContext[0]?.contextStart).toBe(3190);
     expect(plan.realizationContext[0]?.contextEnd - plan.realizationContext[0]!.contextStart).toBeLessThan(3200);
     expect(plan.realizationContext[0]?.wholeSourceForbidden).toBe(true);
+    expect(plan.realizationContext[0]).toMatchObject({
+      includesEnding: true,
+      lateSectionStart: 3450,
+      endingStart: 4364,
+      requireLateSectionCoverage: true,
+      requireEndingCoverage: true,
+    });
+  });
+
+  it("hardens the bounded prompt when late-section and ending recovery are admission-critical", () => {
+    const completeness = makeCompletenessReport([
+      makeGap({
+        id: "physical-gap-1",
+        sourceStart: 2375,
+        sourceEnd: 4614,
+        kind: "tail",
+        reasons: ["coverage_tail_loss_detected", "late_section_missing", "ending_not_retained"],
+        confidence: "high",
+      }),
+    ]);
+
+    const plan = planSupplementalRealization({
+      sourceText: "x".repeat(4614),
+      completeness,
+      baseline: {
+        candidateId: "candidate-1",
+        candidateHash: "candidate-hash",
+        regions: [],
+        units: [],
+      },
+      contextPadding: 260,
+      maximumWindowLength: 3200,
+    });
+
+    const prompt = buildSupplementalRealizationPrompt({
+      target: plan.realizationContext[0]!,
+      sourceText: "x".repeat(4614),
+      existingObservationText: "Earlier material is already represented.",
+    });
+
+    expect(prompt).toContain("Late section anchor:");
+    expect(prompt).toContain("Ending anchor:");
+    expect(prompt).toContain("You must recover at least one explicit observation from the late section");
+    expect(prompt).toContain("You must recover the terminal ending event, state, or wake-up");
+    expect(prompt).toContain("Do not stop before the ending-bearing material inside the authorized tail target.");
   });
 
   it("does not apply ending-biased targeting to non-terminal recovery gaps", () => {
@@ -254,9 +301,105 @@ describe("supplemental realization", () => {
     expect(plan.realizationContext[0]?.contextEnd).toBe(1260);
   });
 
-  it("builds a provenance-tagged supplemental package from structured bounded output", () => {
+  it("targets only material-gap-selected physical gaps when recovery is required", () => {
+    const sourceText = "x".repeat(2400);
+    const completeness = makeCompletenessReportWithOverrides([
+      makeGap({
+        id: "physical-gap-1",
+        sourceStart: 600,
+        sourceEnd: 980,
+        kind: "internal",
+        reasons: ["coverage_internal_gap_detected"],
+        confidence: "low",
+      }),
+      makeGap({
+        id: "physical-gap-2",
+        sourceStart: 1800,
+        sourceEnd: 2400,
+        kind: "tail",
+        reasons: ["coverage_tail_loss_detected", "ending_not_retained"],
+        confidence: "high",
+      }),
+    ], {
+      adequacy: "inadequate_recoverable",
+      recoveryRecommendation: {
+        disposition: "required_before_admission",
+        targetedPhysicalGapIds: ["physical-gap-2"],
+        eligibility: "eligible",
+        advisoryClass: "admission_relevant",
+        reasons: ["physical_gap_detected", "ending_not_retained"],
+      },
+    });
+
     const plan = planSupplementalRealization({
-      sourceText: "x".repeat(4614),
+      sourceText,
+      completeness,
+      baseline: {
+        candidateId: "candidate-1",
+        candidateHash: "candidate-hash",
+        regions: [],
+        units: [],
+      },
+      contextPadding: 260,
+      maximumWindowLength: 3200,
+    });
+
+    expect(plan.selectedGaps.map((gap) => gap.physicalGapId)).toEqual(["physical-gap-2"]);
+  });
+
+  it("does not broaden recovery to all physical gaps when required recovery has no explicit targets", () => {
+    const sourceText = "x".repeat(2400);
+    const completeness = makeCompletenessReportWithOverrides([
+      makeGap({
+        id: "physical-gap-1",
+        sourceStart: 600,
+        sourceEnd: 980,
+        kind: "internal",
+        reasons: ["coverage_internal_gap_detected"],
+        confidence: "low",
+      }),
+      makeGap({
+        id: "physical-gap-2",
+        sourceStart: 1800,
+        sourceEnd: 2400,
+        kind: "tail",
+        reasons: ["coverage_tail_loss_detected", "ending_not_retained"],
+        confidence: "high",
+      }),
+    ], {
+      adequacy: "inadequate_recoverable",
+      recoveryRecommendation: {
+        disposition: "required_before_admission",
+        targetedPhysicalGapIds: [],
+        eligibility: "unknown",
+        advisoryClass: "admission_relevant",
+        reasons: ["physical_gap_detected", "ending_not_retained"],
+      },
+    });
+
+    const plan = planSupplementalRealization({
+      sourceText,
+      completeness,
+      baseline: {
+        candidateId: "candidate-1",
+        candidateHash: "candidate-hash",
+        regions: [],
+        units: [],
+      },
+      contextPadding: 260,
+      maximumWindowLength: 3200,
+    });
+
+    expect(plan.selectedGaps).toEqual([]);
+    expect(plan.realizationContext).toEqual([]);
+  });
+
+  it("builds a provenance-tagged supplemental package from structured bounded output", () => {
+    const snippet = "ez csak egy alom";
+    const snippetStart = 3500;
+    const sourceText = `${"x".repeat(snippetStart)}${snippet}${"x".repeat(4614 - snippetStart - snippet.length)}`;
+    const plan = planSupplementalRealization({
+      sourceText,
       completeness: makeCompletenessReport([
         makeGap({
           id: "physical-gap-1",
@@ -278,15 +421,15 @@ describe("supplemental realization", () => {
     });
 
     const pkg = buildSupplementalRealizationPackage({
-      sourceText: "x".repeat(4614),
+      sourceText,
       plan,
       target: plan.realizationContext[0]!,
       structured: {
         regions: [{
           regionId: "region-1",
           heading: "City",
-          spanStart: 800,
-          spanEnd: 1200,
+          spanStart: 3400,
+          spanEnd: 3600,
           boundaryUncertainty: null,
           transitionCues: ["dream_awareness_change"],
           observations: [{
@@ -294,9 +437,9 @@ describe("supplemental realization", () => {
             statement: "The person becomes lucid in a polluted city.",
             uncertainty: null,
             evidence: [{
-              snippet: "ez csak egy alom",
-              spanStart: 704,
-              spanEnd: 760,
+              snippet,
+              spanStart: snippetStart,
+              spanEnd: snippetStart + snippet.length,
               contextLabel: "late",
             }],
           }],
@@ -368,7 +511,8 @@ describe("supplemental realization", () => {
   });
 
   it("preserves absolute supplemental evidence spans without shifting them twice", () => {
-    const sourceText = "x".repeat(1651);
+    const absoluteSnippet = "Recovered absolute span.";
+    const sourceText = `${"x".repeat(1109)}${absoluteSnippet}${"x".repeat(1651 - 1109 - absoluteSnippet.length)}`;
     const plan = planSupplementalRealization({
       sourceText,
       completeness: makeCompletenessReport([
@@ -408,9 +552,9 @@ describe("supplemental realization", () => {
             statement: "Recovered absolute span.",
             uncertainty: null,
             evidence: [{
-              snippet: "Recovered absolute span.",
+              snippet: absoluteSnippet,
               spanStart: 1109,
-              spanEnd: 1165,
+              spanEnd: 1109 + absoluteSnippet.length,
               contextLabel: "dream content",
             }],
           }],
@@ -422,7 +566,660 @@ describe("supplemental realization", () => {
     expect(pkg.regions[0]?.spanStart).toBe(828);
     expect(pkg.regions[0]?.spanEnd).toBe(1651);
     expect(pkg.observations[0]?.evidence[0]?.spanStart).toBe(1109);
-    expect(pkg.observations[0]?.evidence[0]?.spanEnd).toBe(1165);
+    expect(pkg.observations[0]?.evidence[0]?.spanEnd).toBe(1109 + absoluteSnippet.length);
+  });
+
+  it("grounds excerpt-local supplemental evidence spans to source-absolute coordinates per evidence item", () => {
+    const sourceText = [
+      "Early setup before the recovery window.",
+      "Noise before the key event.",
+      "The machine whirs loudly.",
+      "Emma leans in close to inspect it.",
+      "I try to give her more space.",
+      "Then she turns toward me and we start kissing.",
+      "Later we move to the bedroom.",
+      "The ending comes after that.",
+    ].join(" ");
+    const relativeSnippet = "I try to give her more space.";
+    const contextStart = sourceText.indexOf("The machine whirs loudly.");
+    const contextEnd = sourceText.length;
+
+    const plan = {
+      request: {
+        requestId: "request-1",
+        sourceHash: "source-hash",
+        primaryCandidateId: "candidate-1",
+        primaryCandidateHash: "candidate-hash",
+        completenessReportId: "completeness-1",
+        policyVersion: "shadow-v1",
+        policyFingerprint: "fingerprint-1",
+        selectedGaps: [],
+      },
+      selectedGaps: [],
+      realizationContext: [],
+    };
+
+    const pkg = buildSupplementalRealizationPackage({
+      sourceText,
+      plan,
+      target: {
+        targetId: "target-1-gap-1",
+        physicalGapId: "gap-1",
+        kind: "internal",
+        sourceStart: contextStart,
+        sourceEnd: contextEnd,
+        contextStart,
+        contextEnd,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: {
+          precedingObservationId: null,
+          followingObservationId: null,
+        },
+        reasons: ["coverage_internal_gap_detected"],
+        confidence: "medium",
+        wholeSourceForbidden: true,
+      },
+      structured: {
+        regions: [{
+          regionId: "r1",
+          heading: null,
+          spanStart: 0,
+          spanEnd: contextEnd - contextStart,
+          boundaryUncertainty: null,
+          transitionCues: [],
+          observations: [{
+            observationId: "o1",
+            statement: "The dreamer makes room before the kiss.",
+            uncertainty: null,
+            evidence: [{
+              snippet: relativeSnippet,
+              spanStart: sourceText.slice(contextStart, contextEnd).indexOf(relativeSnippet),
+              spanEnd: sourceText.slice(contextStart, contextEnd).indexOf(relativeSnippet) + relativeSnippet.length,
+              contextLabel: "window",
+            }],
+          }],
+        }],
+      },
+      packageIndex: 0,
+    });
+
+    const expectedStart = sourceText.indexOf(relativeSnippet);
+    expect(pkg.observations).toHaveLength(1);
+    expect(pkg.observations[0]?.evidence[0]).toMatchObject({
+      snippet: relativeSnippet,
+      spanStart: expectedStart,
+      spanEnd: expectedStart + relativeSnippet.length,
+    });
+  });
+
+  it("uses the bounded recovery window to disambiguate duplicate supplemental snippets deterministically", () => {
+    const repeatedSnippet = "The lamp flickers.";
+    const sourceText = [
+      repeatedSnippet,
+      "Outside noise.",
+      "Inside the room, the chair scrapes.",
+      repeatedSnippet,
+      "Ending.",
+    ].join(" ");
+    const contextStart = sourceText.indexOf("Inside the room");
+    const contextEnd = sourceText.length;
+    const expectedStart = sourceText.lastIndexOf(repeatedSnippet);
+
+    const pkg = buildSupplementalRealizationPackage({
+      sourceText,
+      plan: {
+        request: {
+          requestId: "request-1",
+          sourceHash: "source-hash",
+          primaryCandidateId: "candidate-1",
+          primaryCandidateHash: "candidate-hash",
+          completenessReportId: "completeness-1",
+          policyVersion: "shadow-v1",
+          policyFingerprint: "fingerprint-1",
+          selectedGaps: [],
+        },
+        selectedGaps: [],
+        realizationContext: [],
+      },
+      target: {
+        targetId: "target-1-gap-1",
+        physicalGapId: "gap-1",
+        kind: "internal",
+        sourceStart: contextStart,
+        sourceEnd: contextEnd,
+        contextStart,
+        contextEnd,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: {
+          precedingObservationId: null,
+          followingObservationId: null,
+        },
+        reasons: ["coverage_internal_gap_detected"],
+        confidence: "medium",
+        wholeSourceForbidden: true,
+      },
+      structured: {
+        regions: [{
+          regionId: "r1",
+          heading: null,
+          spanStart: 0,
+          spanEnd: contextEnd - contextStart,
+          boundaryUncertainty: null,
+          transitionCues: [],
+          observations: [{
+            observationId: "o1",
+            statement: "The lamp flickers inside the room.",
+            uncertainty: null,
+            evidence: [{
+              snippet: repeatedSnippet,
+              spanStart: 0,
+              spanEnd: repeatedSnippet.length,
+              contextLabel: "window",
+            }],
+          }],
+        }],
+      },
+      packageIndex: 0,
+    });
+
+    expect(pkg.observations[0]?.evidence[0]).toMatchObject({
+      spanStart: expectedStart,
+      spanEnd: expectedStart + repeatedSnippet.length,
+    });
+  });
+
+  it("does not admit unresolved duplicate supplemental evidence inside the bounded window", () => {
+    const repeatedSnippet = "Door ajar.";
+    const sourceText = [
+      "Inside the room.",
+      repeatedSnippet,
+      "A pause.",
+      repeatedSnippet,
+      "Ending.",
+    ].join(" ");
+    const contextStart = sourceText.indexOf("Inside the room.");
+    const contextEnd = sourceText.length;
+
+    const pkg = buildSupplementalRealizationPackage({
+      sourceText,
+      plan: {
+        request: {
+          requestId: "request-1",
+          sourceHash: "source-hash",
+          primaryCandidateId: "candidate-1",
+          primaryCandidateHash: "candidate-hash",
+          completenessReportId: "completeness-1",
+          policyVersion: "shadow-v1",
+          policyFingerprint: "fingerprint-1",
+          selectedGaps: [],
+        },
+        selectedGaps: [],
+        realizationContext: [],
+      },
+      target: {
+        targetId: "target-1-gap-1",
+        physicalGapId: "gap-1",
+        kind: "internal",
+        sourceStart: contextStart,
+        sourceEnd: contextEnd,
+        contextStart,
+        contextEnd,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: {
+          precedingObservationId: null,
+          followingObservationId: null,
+        },
+        reasons: ["coverage_internal_gap_detected"],
+        confidence: "medium",
+        wholeSourceForbidden: true,
+      },
+      structured: {
+        regions: [{
+          regionId: "r1",
+          heading: null,
+          spanStart: 0,
+          spanEnd: contextEnd - contextStart,
+          boundaryUncertainty: null,
+          transitionCues: [],
+          observations: [{
+            observationId: "o1",
+            statement: "The door is ajar.",
+            uncertainty: null,
+            evidence: [{
+              snippet: repeatedSnippet,
+              spanStart: 0,
+              spanEnd: repeatedSnippet.length,
+              contextLabel: "window",
+            }],
+          }],
+        }],
+      },
+      packageIndex: 0,
+    });
+
+    expect(pkg.observations).toEqual([]);
+  });
+
+  it("handles mixed absolute and excerpt-local evidence safely within one recovery package", () => {
+    const sourceText = [
+      "Intro material.",
+      "The machine whirs loudly.",
+      "Emma leans in close to inspect it.",
+      "I try to give her more space.",
+      "Then she turns toward me and we start kissing.",
+      "Later we move to the bedroom.",
+      "An ending follows.",
+    ].join(" ");
+    const contextStart = sourceText.indexOf("The machine whirs loudly.");
+    const contextEnd = sourceText.length;
+    const localSnippet = "I try to give her more space.";
+    const absoluteSnippet = "Later we move to the bedroom.";
+    const relativeStart = sourceText.slice(contextStart, contextEnd).indexOf(localSnippet);
+    const absoluteStart = sourceText.indexOf(absoluteSnippet);
+
+    const pkg = buildSupplementalRealizationPackage({
+      sourceText,
+      plan: {
+        request: {
+          requestId: "request-1",
+          sourceHash: "source-hash",
+          primaryCandidateId: "candidate-1",
+          primaryCandidateHash: "candidate-hash",
+          completenessReportId: "completeness-1",
+          policyVersion: "shadow-v1",
+          policyFingerprint: "fingerprint-1",
+          selectedGaps: [],
+        },
+        selectedGaps: [],
+        realizationContext: [],
+      },
+      target: {
+        targetId: "target-1-gap-1",
+        physicalGapId: "gap-1",
+        kind: "internal",
+        sourceStart: contextStart,
+        sourceEnd: contextEnd,
+        contextStart,
+        contextEnd,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: {
+          precedingObservationId: null,
+          followingObservationId: null,
+        },
+        reasons: ["coverage_internal_gap_detected"],
+        confidence: "medium",
+        wholeSourceForbidden: true,
+      },
+      structured: {
+        regions: [{
+          regionId: "r1",
+          heading: null,
+          spanStart: contextStart,
+          spanEnd: contextEnd,
+          boundaryUncertainty: null,
+          transitionCues: [],
+          observations: [{
+            observationId: "o1",
+            statement: "Mixed evidence.",
+            uncertainty: null,
+            evidence: [
+              {
+                snippet: localSnippet,
+                spanStart: relativeStart,
+                spanEnd: relativeStart + localSnippet.length,
+                contextLabel: "window",
+              },
+              {
+                snippet: absoluteSnippet,
+                spanStart: absoluteStart,
+                spanEnd: absoluteStart + absoluteSnippet.length,
+                contextLabel: "source",
+              },
+            ],
+          }],
+        }],
+      },
+      packageIndex: 0,
+    });
+
+    expect(pkg.observations).toHaveLength(1);
+    expect(pkg.observations[0]?.evidence).toEqual([
+      expect.objectContaining({
+        snippet: localSnippet,
+        spanStart: sourceText.indexOf(localSnippet),
+        spanEnd: sourceText.indexOf(localSnippet) + localSnippet.length,
+      }),
+      expect.objectContaining({
+        snippet: absoluteSnippet,
+        spanStart: absoluteStart,
+        spanEnd: absoluteStart + absoluteSnippet.length,
+      }),
+    ]);
+  });
+
+  it("quarantines supplemental observations with ambiguous or non-matching evidence grounding", () => {
+    const sourceText = [
+      "Intro material.",
+      "Repeated line appears here.",
+      "Separator.",
+      "Repeated line appears here.",
+      "Ending.",
+    ].join(" ");
+    const contextStart = sourceText.indexOf("Repeated line appears here.");
+    const contextEnd = sourceText.length;
+
+    const pkg = buildSupplementalRealizationPackage({
+      sourceText,
+      plan: {
+        request: {
+          requestId: "request-1",
+          sourceHash: "source-hash",
+          primaryCandidateId: "candidate-1",
+          primaryCandidateHash: "candidate-hash",
+          completenessReportId: "completeness-1",
+          policyVersion: "shadow-v1",
+          policyFingerprint: "fingerprint-1",
+          selectedGaps: [],
+        },
+        selectedGaps: [],
+        realizationContext: [],
+      },
+      target: {
+        targetId: "target-1-gap-1",
+        physicalGapId: "gap-1",
+        kind: "internal",
+        sourceStart: contextStart,
+        sourceEnd: contextEnd,
+        contextStart,
+        contextEnd,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: {
+          precedingObservationId: null,
+          followingObservationId: null,
+        },
+        reasons: ["coverage_internal_gap_detected"],
+        confidence: "medium",
+        wholeSourceForbidden: true,
+      },
+      structured: {
+        regions: [{
+          regionId: "r1",
+          heading: null,
+          spanStart: 0,
+          spanEnd: contextEnd - contextStart,
+          boundaryUncertainty: null,
+          transitionCues: [],
+          observations: [
+            {
+              observationId: "o1",
+              statement: "Ambiguous observation.",
+              uncertainty: null,
+              evidence: [{
+                snippet: "Repeated line appears here.",
+                spanStart: null,
+                spanEnd: null,
+                contextLabel: "window",
+              }],
+            },
+            {
+              observationId: "o2",
+              statement: "Non-matching observation.",
+              uncertainty: null,
+              evidence: [{
+                snippet: "This snippet does not exist.",
+                spanStart: 0,
+                spanEnd: 27,
+                contextLabel: "window",
+              }],
+            },
+          ],
+        }],
+      },
+      packageIndex: 0,
+    });
+
+    expect(pkg.observations).toEqual([]);
+  });
+
+  it("reproduces the Emma failure geometry with corrected absolute recovery spans", () => {
+    const sourceText = "emmáról álmodtam. kevés előzménye van meg a történetnek, de úgy tűnt mintha jobban össze lettünk volna melegedve, mint a valóságban. legalábbis jártam már a lakásán és jobban ismertem a hobbijait meg a mindennapjait. viszont egy jó ideje már nem találkoztunk, több hónapja. aztán valahova utaztunk anyámmal és valami hiányzott, ezért elmentem emma lakására, mert biztos voltam benne, hogy nála lesz. emma viszont nem volt otthon pedig éjszaka volt. én valamiért úgy döntöttem, hogy lepihenek az ágyában - nem ez volt az első alkalom, hogy az ágyában aludtam, ezért nem zavartattam magam különösebben.. amikor felébredtem elkezdtem összeszedni a cuccaimat. gondoltam ha már itt vagyok, akkor összeszedek mindent. több szobában is voltak és egy zsákot is el kellett vennem, mert ennyi dolgot már nem tudtam kézben vinni. az igazat megvallva azt hiszem, hogy nem csak a saját cuccaimat raktam el, de emlékeket is. amikor mindent összepakoltam, akkor elkezdtem visszaállítani a szobáját, utoljára az ágyat hagytam, de amikor elkezdtem megágyazni és szépen visszarendezni olyanra, amilyen az emlékezetemben volt, akkor hazaért. hangosan köszönt az üres lakásnak - azt egyáltalán nem tudhatta, hogy én ott vagyok - majd sokkolta a meglepetés, hogy ott vagyok. teljesen érthető haragra gerjedt, amivel én nem is vitatkoztam, csak próbáltam elcsatornázni azzal, hogy kimagyarázom magam a helyzetből. aztán hamar téma lett, hogy ki nem keresett kit, és akkor már nem fogtam vissza magam és én is kiabáltam, mert úgy éreztem, hogy ő hagyott ott engem, ő nem keresett soha. de ő is így érezte. szerinte nekem kellett volna keresnem őt és nagyon csalódott volt, hogy nem tettem. amikor megértettük, hogy egyikőnk ellen sem szólt a csend, akkor szépen lassan elcsendesedtünk, de kicsit feszült csend volt ez.. megmutogatta hogy milyen szerszámgépeket szerzett (valami kézműves dolog lehetett, de nem igazán tudom megmondani, hogy mi. agyagra és kerámiázásra hasonlított a környezet, de az eszközök meg sokkal nagyobbak voltak és inkább famunkához illettek). aztán mutatott valami régi gépet, amit sehogy sem tudott beindítani. valami szűk ki helyre kellett benyúlnom és ott rántani a motorindítóját, de kérte hogy vigyázzak, mert ha beindul a motor, akkor könnyen levághatja az ujjam. sikerült beindítani, valamit meg akart nézni közelebbről és bár eddig is közel voltunk, most még közelebb hajolt - persze csak a géphez, de a gép és közte voltam én is - próbáltam több helyet adni neki, valahogy megkerülve átadni neki a helyemet, hogy meg tudja nézni, de akkor felém fordult és csókolózni kezdtünk. minden feszültség elszállt, ahogy átadtuk magunkat egymásnak, felkaptam az ölembe és átmentem vele a hálószobájába. lefektettem az ágyára, és csak akkor vettem észre, hogy máshogy van a szobája, két ajtaja is van.. mondta, hogy régen is kettő volt, csak le volt takarva valami függönnyel az ajtó, de valamiért ki kellett nyitnia teret és azóta így van. ez az új ajtó közvetlenül az ágya mellett volt, de nem volt rögzítve, csak egyszerűen a falnak volt támasztva. mivel az előző pillanatban még szeretkezni készültünk, ezért gondoltam, hogy becsukom ezt az ajtót, de akkor vettem észre, hogy nincs rögzítve és sehogy sem sikerült becsuknom. végül elmagyarázta, hogy valahogy a fejfához kell illesztenem, de így sem sikerült, csak amikor felállt segíteni. kiderült h felül szögek vannak és ezekre kell ügyesen akasztani az ajtót. aztán felébredtem.";
+    const contextStart = 2316;
+    const contextEnd = 3435;
+    const regionText = sourceText.slice(contextStart, contextEnd);
+    const snippets = [
+      "próbáltam több helyet adni neki, valahogy megkerülve átadni neki a helyemet, hogy meg tudja nézni, de akkor felém fordult és csókolózni kezdtünk",
+      "felkaptam az ölembe és átmentem vele a hálószobájába. lefektettem az ágyára",
+      "csak akkor vettem észre, hogy máshogy van a szobája, két ajtaja is van.. mondta, hogy régen is kettő volt, csak le volt takarva valami függönnyel az ajtó, de valamiért ki kellett nyitnia teret és azóta így van",
+      "ez az új ajtó közvetlenül az ágya mellett volt, de nem volt rögzítve, csak egyszerűen a falnak volt támasztva",
+      "mivel az előző pillanatban még szeretkezni készültünk, ezért gondoltam, hogy becsukom ezt az ajtót, de akkor vettem észre, hogy nincs rögzítve és sehogy sem sikerült becsuknom",
+      "elmagyarázta, hogy valahogy a fejfához kell illesztenem, de így sem sikerült, csak amikor felállt segíteni. kiderült h felül szögek vannak és ezekre kell ügyesen akasztani az ajtót",
+      "aztán felébredtem",
+    ];
+
+    const pkg = buildSupplementalRealizationPackage({
+      sourceText,
+      plan: {
+        request: {
+          requestId: "request-1",
+          sourceHash: "source-hash",
+          primaryCandidateId: "candidate-1",
+          primaryCandidateHash: "candidate-hash",
+          completenessReportId: "completeness-1",
+          policyVersion: "shadow-v1",
+          policyFingerprint: "fingerprint-1",
+          selectedGaps: [],
+        },
+        selectedGaps: [],
+        realizationContext: [],
+      },
+      target: {
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        kind: "internal",
+        sourceStart: contextStart,
+        sourceEnd: contextEnd,
+        contextStart,
+        contextEnd,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: {
+          precedingObservationId: null,
+          followingObservationId: null,
+        },
+        reasons: ["coverage_internal_gap_detected"],
+        confidence: "low",
+        wholeSourceForbidden: true,
+      },
+      structured: {
+        regions: [{
+          regionId: "r1",
+          heading: null,
+          spanStart: contextStart,
+          spanEnd: contextEnd,
+          boundaryUncertainty: null,
+          transitionCues: [],
+          observations: snippets.map((snippet, index) => {
+            const relativeStart = regionText.indexOf(snippet);
+            return {
+              observationId: `o${index + 1}`,
+              statement: `Recovered ${index + 1}`,
+              uncertainty: null,
+              evidence: [{
+                snippet,
+                spanStart: relativeStart,
+                spanEnd: relativeStart + snippet.length,
+                contextLabel: null,
+              }],
+            };
+          }),
+        }],
+      },
+      packageIndex: 0,
+    });
+
+    expect(pkg.observations.map((observation) => observation.evidence[0])).toEqual(
+      snippets.map((snippet) => {
+        const start = sourceText.indexOf(snippet);
+        return expect.objectContaining({
+          snippet,
+          spanStart: start,
+          spanEnd: start + snippet.length,
+        });
+      }),
+    );
+    expect(pkg.observations.map((observation) => observation.evidence[0]?.spanStart)).not.toEqual([
+      2316,
+      2410,
+      2460,
+      2520,
+      2560,
+      2610,
+      3425,
+    ]);
+  });
+
+  it("allows existing composition logic to suppress duplicate recovery content once grounded", () => {
+    const duplicateSnippet = "Then she turns toward me and we start kissing.";
+    const sourceText = [
+      "Intro material before the overlap.",
+      "The machine whirs loudly.",
+      duplicateSnippet,
+      "After that we move on.",
+    ].join(" ");
+    const contextStart = sourceText.indexOf("The machine whirs loudly.");
+    const contextEnd = sourceText.length;
+    const duplicateStart = sourceText.indexOf(duplicateSnippet);
+    const relativeStart = sourceText.slice(contextStart, contextEnd).indexOf(duplicateSnippet);
+
+    const pkg = buildSupplementalRealizationPackage({
+      sourceText,
+      plan: {
+        request: {
+          requestId: "request-1",
+          sourceHash: "source-hash",
+          primaryCandidateId: "candidate-1",
+          primaryCandidateHash: "candidate-hash",
+          completenessReportId: "completeness-1",
+          policyVersion: "shadow-v1",
+          policyFingerprint: "fingerprint-1",
+          selectedGaps: [],
+        },
+        selectedGaps: [],
+        realizationContext: [],
+      },
+      target: {
+        targetId: "target-1-gap-1",
+        physicalGapId: "gap-1",
+        kind: "internal",
+        sourceStart: contextStart,
+        sourceEnd: contextEnd,
+        contextStart,
+        contextEnd,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: {
+          precedingObservationId: null,
+          followingObservationId: null,
+        },
+        reasons: ["coverage_internal_gap_detected"],
+        confidence: "medium",
+        wholeSourceForbidden: true,
+      },
+      structured: {
+        regions: [{
+          regionId: "r1",
+          heading: null,
+          spanStart: 0,
+          spanEnd: contextEnd - contextStart,
+          boundaryUncertainty: null,
+          transitionCues: [],
+          observations: [{
+            observationId: "o1",
+            statement: "Then she turns toward me and we start kissing.",
+            uncertainty: null,
+            evidence: [{
+              snippet: duplicateSnippet,
+              spanStart: relativeStart,
+              spanEnd: relativeStart + duplicateSnippet.length,
+              contextLabel: "window",
+            }],
+          }],
+        }],
+      },
+      packageIndex: 0,
+    });
+
+    const composition = composeMemoryPackages({
+      dreamTextLength: sourceText.length,
+      baseline: {
+        regions: [makeRegion({
+          regionId: "scene-1",
+          order: 0,
+          heading: "Baseline",
+          spanStart: duplicateStart,
+          spanEnd: duplicateStart + duplicateSnippet.length,
+          evidence: [{
+            snippet: duplicateSnippet,
+            spanStart: duplicateStart,
+            spanEnd: duplicateStart + duplicateSnippet.length,
+            contextLabel: "source",
+          }],
+        })],
+        units: [makeUnit({
+          observationId: "baseline-1",
+          regionId: "scene-1",
+          order: 0,
+          statement: duplicateSnippet,
+          evidence: [{
+            snippet: duplicateSnippet,
+            spanStart: duplicateStart,
+            spanEnd: duplicateStart + duplicateSnippet.length,
+            contextLabel: "source",
+          }],
+        })],
+      },
+      supplemental: {
+        regions: pkg.regions,
+        units: pkg.observations,
+      },
+    });
+
+    expect(pkg.observations[0]?.evidence[0]?.spanStart).toBe(duplicateStart);
+    expect(composition.composedUnits.map((unit) => unit.observationId)).toEqual(["baseline-1"]);
+    expect(composition.duplicateAnalysis.duplicateResolution).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          retainedObservationId: "baseline-1",
+          discardedObservationId: pkg.observations[0]?.observationId,
+        }),
+      ]),
+    );
   });
 
   it("runs deterministically for planning and diagnostics with an injected executor", async () => {

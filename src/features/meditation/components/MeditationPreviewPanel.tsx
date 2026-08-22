@@ -55,7 +55,7 @@ export default function MeditationPreviewPanel({ meditation, onEnter, onClose }:
           ))}
         </div>
       )}
-      <button type="button" className={`${styles.previewButton} btn btn--primary`} onClick={onEnter}>
+      <button type="button" className={styles.previewButton} onClick={onEnter}>
         Indítás
       </button>
     </aside>

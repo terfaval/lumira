@@ -253,6 +253,11 @@ async function createReplayFixture(): Promise<{
           {
             physicalGapId: "gap-001",
             targetId: "target-1-gap-001",
+            kind: "tail",
+            sourceStart: 41,
+            sourceEnd: 66,
+            contextStart: 0,
+            contextEnd: 66,
           },
         ],
       },
@@ -477,6 +482,61 @@ describe("Observation V3 corpus replay", () => {
       executionStatus: "not_executed",
       failure: {
         classification: "corrupt_artifact",
+      },
+    });
+  });
+
+  it("classifies incompatible preserved supplemental replay as replay evidence unavailability rather than native subsystem failure", async () => {
+    const fixture = await createReplayFixture();
+    await writeJson(
+      path.join(
+        fixture.root,
+        ".validation",
+        "observation-topology-experiments",
+        "runs",
+        "20260802T000000Z-aaa-C_TARGETED_RECOVERY-r1",
+        "items",
+        "OBS-A-001",
+        "C_TARGETED_RECOVERY",
+        "repeat-01",
+        "stages",
+        "02-recovery_selection.json",
+      ),
+      {
+        status: "success",
+        artifact: {
+          canonicalGaps: [
+            {
+              physicalGapId: "gap-001",
+            },
+          ],
+          canonicalRecoveryWindows: [
+            {
+              physicalGapId: "gap-001",
+              targetId: "target-1-gap-001",
+              kind: "prefix",
+              sourceStart: 0,
+              sourceEnd: 12,
+              contextStart: 0,
+              contextEnd: 30,
+            },
+          ],
+        },
+      },
+    );
+
+    const result = await runObservationV3CorpusReplay({
+      corpusPath: fixture.corpusPath,
+      expectedBenchmarkOrder: ["OBS-A-001", "OBS-A-002"],
+      validationRoot: path.join(fixture.root, ".validation"),
+    });
+
+    expect(result.results.find((entry) => entry.benchmarkId === "OBS-A-001")).toMatchObject({
+      classification: "artifact_incomplete",
+      executionStatus: "executed",
+      failure: {
+        classification: "missing_replay_evidence",
+        message: "incompatible_preserved_replay:target-1-gap-001",
       },
     });
   });

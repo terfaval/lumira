@@ -14,6 +14,25 @@ import type {
   ObservationTopologyRunStatus,
 } from "@/src/cognition/observation/benchmark/observation-topology-experiment-types";
 
+function resolveSupplementalReplayIdentity(entry: NonNullable<ObservationTopologyExecutionResult["supplementalProviderEvidence"]>[number]): {
+  targetId: string;
+  physicalGapId: string | null;
+} {
+  const providerMetadata = entry.evidence.providerBoundary.providerMetadata as {
+    targetId?: string;
+    physicalGapId?: string;
+  } | null;
+
+  return {
+    targetId: entry.evidence.attemptIdentity.targetId
+      ?? providerMetadata?.targetId
+      ?? entry.targetId,
+    physicalGapId: entry.physicalGapId
+      ?? providerMetadata?.physicalGapId
+      ?? null,
+  };
+}
+
 export interface ObservationTopologyExperimentRunCheckpoint {
   schemaVersion: "1";
   manifest: Record<string, unknown>;
@@ -107,23 +126,28 @@ export async function writeObservationTopologyExperimentArtifacts(input: {
     const supplementalIndex = [];
 
     for (const entry of input.execution.supplementalProviderEvidence ?? []) {
-      const artifactFileName = `${entry.targetId}-attempt-${String(entry.providerAttemptNumber).padStart(2, "0")}.json`;
-      const receiptFileName = `${entry.targetId}-attempt-${String(entry.providerAttemptNumber).padStart(2, "0")}.receipt.json`;
+      const replayIdentity = resolveSupplementalReplayIdentity(entry);
+      const artifactFileName = `${replayIdentity.targetId}-attempt-${String(entry.providerAttemptNumber).padStart(2, "0")}.json`;
+      const receiptFileName = `${replayIdentity.targetId}-attempt-${String(entry.providerAttemptNumber).padStart(2, "0")}.receipt.json`;
       const persisted = await persistProviderEvidenceArtifact({
         destinationPath: path.join(supplementalDirectory, artifactFileName),
         evidence: entry.evidence,
       });
       await writeJsonAtomic(path.join(supplementalDirectory, receiptFileName), persisted.receipt);
-      supplementalIndex.push({
+      const indexEntry: Record<string, unknown> = {
         requestId: entry.requestId,
-        targetId: entry.targetId,
+        targetId: replayIdentity.targetId,
         providerAttemptNumber: entry.providerAttemptNumber,
         retryParentAttemptIdentity: entry.retryParentAttemptIdentity,
         evidenceArtifactRef: path.join("supplemental-provider-evidence", artifactFileName),
         evidenceReceiptRef: path.join("supplemental-provider-evidence", receiptFileName),
         captureCompleteness: entry.evidence.evidenceLifecycle,
         replayCompatibility: entry.evidence.compatibility,
-      });
+      };
+      if (replayIdentity.physicalGapId) {
+        indexEntry.physicalGapId = replayIdentity.physicalGapId;
+      }
+      supplementalIndex.push(indexEntry);
     }
 
     await writeJsonAtomic(

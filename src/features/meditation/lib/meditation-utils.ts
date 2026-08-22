@@ -1,4 +1,4 @@
-﻿import type { MeditationCategory } from "./meditation-types";
+import type { Meditation, MeditationCategory, ReaderBlock } from "./meditation-types";
 
 const CATEGORY_LABELS: Record<MeditationCategory, string> = {
   ALV: "Alvas",
@@ -30,3 +30,19 @@ export function getCategoryColor(category: MeditationCategory) {
   return CATEGORY_COLORS[category] ?? "rgba(170, 190, 220, 0.7)";
 }
 
+export function replaceMeditationReaderBlocks(
+  meditations: Meditation[],
+  meditationId: string,
+  blocks: ReaderBlock[]
+) {
+  return meditations.map((meditation) => {
+    if (meditation.id !== meditationId) return meditation;
+    return {
+      ...meditation,
+      reader: {
+        ...meditation.reader,
+        blocks,
+      },
+    };
+  });
+}

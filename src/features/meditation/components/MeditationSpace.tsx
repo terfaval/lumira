@@ -2,27 +2,39 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Meditation, MeditationEndBehavior } from "../lib/meditation-types";
-import { useMeditations } from "../hooks/useMeditations";
 import MeditationCenterFocus from "./MeditationCenterFocus";
 import MeditationRing from "./MeditationRing";
 import MeditationPreviewPanel from "./MeditationPreviewPanel";
 import MeditationReader from "./MeditationReader";
 import styles from "../styles/meditations.module.css";
 import type { MeditationAudioMap } from "../lib/audio-types";
+import { replaceMeditationReaderBlocks } from "../lib/meditation-utils";
 
 type Props = {
   meditations: Meditation[];
   audioMap: MeditationAudioMap;
   isAdmin?: boolean;
+  onReaderOpenChange?: (readerOpen: boolean) => void;
+  onEditorModeChange?: (editorMode: boolean) => void;
 };
 
-export default function MeditationSpace({ meditations: initialMeditations, audioMap, isAdmin }: Props) {
-  const meditations = useMeditations(initialMeditations);
+export default function MeditationSpace({
+  meditations: initialMeditations,
+  audioMap,
+  isAdmin,
+  onReaderOpenChange,
+  onEditorModeChange,
+}: Props) {
+  const [meditations, setMeditations] = useState(initialMeditations);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [readerId, setReaderId] = useState<string | null>(null);
   const [readerOpen, setReaderOpen] = useState(false);
   const [readerCompleted, setReaderCompleted] = useState(false);
+
+  useEffect(() => {
+    setMeditations(initialMeditations);
+  }, [initialMeditations]);
 
   useEffect(() => {
     const body = document.body;
@@ -93,6 +105,7 @@ export default function MeditationSpace({ meditations: initialMeditations, audio
   const closeReader = () => {
     setReaderOpen(false);
     setReaderId(null);
+    onEditorModeChange?.(false);
   };
 
   const handleReaderComplete = (behavior: MeditationEndBehavior) => {
@@ -100,6 +113,22 @@ export default function MeditationSpace({ meditations: initialMeditations, audio
       setReaderCompleted(true);
     }
   };
+
+  const handleReaderBlocksSaved = (meditationId: string, blocks: Meditation["reader"]["blocks"]) => {
+    setMeditations((current) => replaceMeditationReaderBlocks(current, meditationId, blocks));
+  };
+
+  useEffect(() => {
+    onReaderOpenChange?.(readerOpen);
+  }, [onReaderOpenChange, readerOpen]);
+
+  useEffect(() => {
+    const onReaderCloseRequest = () => {
+      closeReader();
+    };
+    window.addEventListener("meditation-reader-close-request", onReaderCloseRequest);
+    return () => window.removeEventListener("meditation-reader-close-request", onReaderCloseRequest);
+  }, [onEditorModeChange]);
 
   useEffect(() => {
     if (!selected || readerOpen) return;
@@ -144,6 +173,8 @@ export default function MeditationSpace({ meditations: initialMeditations, audio
           audioConfig={readerAudioConfig}
           onExit={closeReader}
           onComplete={handleReaderComplete}
+          onEditorModeChange={onEditorModeChange}
+          onReaderBlocksSaved={handleReaderBlocksSaved}
           isAdmin={isAdmin}
         />
       )}

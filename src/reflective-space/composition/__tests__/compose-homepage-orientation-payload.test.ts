@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
-import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationRepository } from "@/src/domain/observation/contracts";
+import type { ObservationNativeReadRepository } from "@/src/domain/observation/native-read";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 import { composeHomepageOrientationPayload } from "@/src/reflective-space/composition/compose-homepage-orientation-payload";
 import { getHomepageRouteTargetRegistry } from "@/src/reflective-space/composition/homepage-route-target-registry";
@@ -179,54 +180,57 @@ describe("composeHomepageOrientationPayload", () => {
           return [];
         },
       } as unknown as ObservationRepository,
-      observationV2Repository: {
-        getByReflectiveObjectId: async (reflectiveObjectId: string) => {
+      observationNativeReadRepository: {
+        getByReflectiveObjectId: async ({ reflectiveObjectId }: { reflectiveObjectId: string }) => {
           if (reflectiveObjectId === "dream-1") {
             return {
-              bundleId: "bundle-dream-1",
-              reflectiveObjectId: "dream-1",
-              userId: "user-1",
-              source: "system_llm_extract",
-              runtimeVersion: "observation_v2_phase1",
-              uncertaintyNotes: [],
-              provenance: {
-                provenanceTier: "system_extract",
-                semanticPolicyResult: "accept_with_uncertainty",
-                semanticPolicyReasons: [],
-                latentBackflowGuard: "observation_only",
-                boundaryVersion: "observation_v2_phase1",
-              },
-              scenes: [
-                {
-                  sceneId: "scene-1",
-                  position: 0,
-                  summary: "A quiet doorway stayed central.",
-                  boundaryReasoning: [],
-                  evidenceContext: {
-                    snippet: "doorway",
-                    spanStart: 0,
-                    spanEnd: 7,
-                    contextLabel: "scene",
-                  },
-                  observations: [],
-                  derived: {
-                    actors: [],
-                    locations: [],
-                    objects: [],
-                    interactions: [],
-                    affect: [],
-                    agency: [],
-                    phenomenology: [],
-                    metacognition: [],
-                  },
+              family: "v2",
+              native: {
+                bundleId: "bundle-dream-1",
+                reflectiveObjectId: "dream-1",
+                userId: "user-1",
+                source: "system_llm_extract",
+                runtimeVersion: "observation_v2_phase1",
+                uncertaintyNotes: [],
+                provenance: {
+                  provenanceTier: "system_extract",
+                  semanticPolicyResult: "accept_with_uncertainty",
+                  semanticPolicyReasons: [],
+                  latentBackflowGuard: "observation_only",
+                  boundaryVersion: "observation_v2_phase1",
                 },
-              ],
+                scenes: [
+                  {
+                    sceneId: "scene-1",
+                    position: 0,
+                    summary: "A quiet doorway stayed central.",
+                    boundaryReasoning: [],
+                    evidenceContext: {
+                      snippet: "doorway",
+                      spanStart: 0,
+                      spanEnd: 7,
+                      contextLabel: "scene",
+                    },
+                    observations: [],
+                    derived: {
+                      actors: [],
+                      locations: [],
+                      objects: [],
+                      interactions: [],
+                      affect: [],
+                      agency: [],
+                      phenomenology: [],
+                      metacognition: [],
+                    },
+                  },
+                ],
+              },
             };
           }
 
           return null;
         },
-      } as unknown as ObservationV2Repository,
+      } as unknown as ObservationNativeReadRepository,
     });
 
     expect(payload.mode).toBe("orientation_home");
@@ -279,9 +283,9 @@ describe("composeHomepageOrientationPayload", () => {
       observationRepository: {
         listByReflectiveObject: async () => [],
       } as unknown as ObservationRepository,
-      observationV2Repository: {
+      observationNativeReadRepository: {
         getByReflectiveObjectId: async () => null,
-      } as unknown as ObservationV2Repository,
+      } as unknown as ObservationNativeReadRepository,
     });
 
     expect(payload.navigation.capture.routeStatus).toBe("implemented");
@@ -289,5 +293,60 @@ describe("composeHomepageOrientationPayload", () => {
     expect(payload.navigation.dreamJournal.routeStatus).toBe("placeholder");
     expect(payload.navigation.guide.routeStatus).toBe("implemented");
     expect(payload.emptyStates.noDreams).toContain("No dreams are stored yet.");
+  });
+
+  it("supports explicit V3 observation previews through the native read seam", async () => {
+    const payload = await composeHomepageOrientationPayload({
+      userId: "user-v3",
+      generatedAt: "2026-05-26T00:00:00.000Z",
+      observationResolution: "explicit_v3",
+      reflectiveObjectRepository: {
+        listByUser: async () => [{
+          id: "dream-v3",
+          userId: "user-v3",
+          objectType: "dream",
+          title: "Courtyard",
+          primaryContent: "Fallback excerpt",
+          sourceContext: "manual",
+          state: "active",
+          metadata: {},
+          createdAt: "2026-05-26T10:00:00.000Z",
+          updatedAt: "2026-05-26T10:00:00.000Z",
+        }],
+      } as unknown as ReflectiveObjectRepository,
+      glossaryRepository: {
+        listTerms: async () => [],
+      } as unknown as GlossaryRepository,
+      observationRepository: {
+        listByReflectiveObject: async () => [],
+      } as unknown as ObservationRepository,
+      observationNativeReadRepository: {
+        getByReflectiveObjectId: async ({ resolution }: { resolution?: string }) => {
+          expect(resolution).toBe("explicit_v3");
+          return {
+            family: "v3",
+            native: {
+              canonicalCandidate: {
+                localities: [],
+                descriptiveUnits: [
+                  {
+                    canonicalUnitId: "unit-1",
+                    localityId: null,
+                    order: 0,
+                    statement: "A still courtyard holds the dream open.",
+                    evidenceRefs: [],
+                    uncertainty: null,
+                    derivedFromUnitIds: [],
+                  },
+                ],
+              },
+            } as any,
+          };
+        },
+      } as unknown as ObservationNativeReadRepository,
+    });
+
+    expect(payload.dreamJournalPreview.items[0]?.previewText).toBe("A still courtyard holds the dream open.");
+    expect(payload.dreamJournalPreview.items[0]?.previewSource).toBe("observation_preview");
   });
 });

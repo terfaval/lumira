@@ -14,6 +14,7 @@ function resetEnv() {
   delete process.env.SUPABASE_PUBLISHABLE_KEY;
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
   delete process.env.OPENAI_API_KEY;
+  delete process.env.OBSERVATION_CAPTURE_AUTHORITY_MODE;
 }
 
 describe("readRuntimeEnvironment", () => {
@@ -59,5 +60,13 @@ describe("readRuntimeEnvironment", () => {
     const env = readRuntimeEnvironment();
 
     expect(env.openAiApiKey).toBe("sk-test");
+  });
+
+  it("reads the observation capture authority mode when present", () => {
+    process.env.OBSERVATION_CAPTURE_AUTHORITY_MODE = "v3";
+
+    const env = readRuntimeEnvironment();
+
+    expect(env.observationCaptureAuthorityMode).toBe("v3");
   });
 });

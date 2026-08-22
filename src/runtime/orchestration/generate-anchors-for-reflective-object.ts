@@ -14,12 +14,15 @@ import type { AnchorRepository } from "@/src/domain/anchor-v1/contracts";
 import type { AnchorIdentity, AnchorManifestation, AnchorParticipation } from "@/src/domain/anchor-v1/types";
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
-import type { ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type {
+  ObservationNativeReadRepository,
+  ObservationNativeReadResolution,
+} from "@/src/domain/observation/native-read";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 import { createAnchorRepository } from "@/src/infrastructure/supabase/repositories/create-anchor-repository";
+import { createObservationNativeReadStore } from "@/src/infrastructure/persistence/observation-native-read-store";
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
 import { createLatentOpportunityRepository } from "@/src/infrastructure/supabase/repositories/create-latent-opportunity-repository";
-import { createObservationV2Repository } from "@/src/infrastructure/supabase/repositories/create-observation-v2-repository";
 import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
 import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
 
@@ -37,7 +40,7 @@ type AnchorConstructorGenerator = (input: {
 
 export interface GenerateAnchorsForReflectiveObjectRepositories {
   reflectiveObjectRepository: ReflectiveObjectRepository;
-  observationV2Repository: ObservationV2Repository;
+  observationNativeReadRepository: ObservationNativeReadRepository;
   glossaryRepository: GlossaryRepository;
   latentOpportunityRepository: LatentOpportunityRepository;
   anchorRepository: AnchorRepository;
@@ -46,12 +49,14 @@ export interface GenerateAnchorsForReflectiveObjectRepositories {
 export interface GenerateAnchorsForReflectiveObjectInput {
   userId: UserId;
   priorityReflectiveObjectId: ReflectiveObjectId;
+  observationResolution?: ObservationNativeReadResolution;
   repositories?: GenerateAnchorsForReflectiveObjectRepositories;
   composeInputPacket?: (input: {
     userId: UserId;
     priorityReflectiveObjectId: ReflectiveObjectId;
+    observationResolution?: ObservationNativeReadResolution;
     reflectiveObjectRepository: ReflectiveObjectRepository;
-    observationV2Repository: ObservationV2Repository;
+    observationNativeReadRepository: ObservationNativeReadRepository;
     glossaryRepository: GlossaryRepository;
     latentOpportunityRepository: LatentOpportunityRepository;
   }) => Promise<AnchorConstructorInputPacket>;
@@ -104,7 +109,7 @@ export type GenerateAnchorsForReflectiveObjectResult =
 function defaultRepositories(): GenerateAnchorsForReflectiveObjectRepositories {
   return {
     reflectiveObjectRepository: createReflectiveObjectRepository(),
-    observationV2Repository: createObservationV2Repository(),
+    observationNativeReadRepository: createObservationNativeReadStore(),
     glossaryRepository: createGlossaryRepository(),
     latentOpportunityRepository: createLatentOpportunityRepository(),
     anchorRepository: createAnchorRepository(),
@@ -164,8 +169,9 @@ export async function generateAnchorsForReflectiveObject(
     packet = await composeInputPacket({
       userId: input.userId,
       priorityReflectiveObjectId: input.priorityReflectiveObjectId,
+      observationResolution: input.observationResolution,
       reflectiveObjectRepository: repositories.reflectiveObjectRepository,
-      observationV2Repository: repositories.observationV2Repository,
+      observationNativeReadRepository: repositories.observationNativeReadRepository,
       glossaryRepository: repositories.glossaryRepository,
       latentOpportunityRepository: repositories.latentOpportunityRepository,
     });

@@ -76,6 +76,26 @@ export function buildSupplementalRealizationPrompt(input: {
 }): string {
   const boundedGapText = input.sourceText.slice(input.target.sourceStart, input.target.sourceEnd);
   const boundedContextText = input.sourceText.slice(input.target.contextStart, input.target.contextEnd);
+  const terminalRecoveryInstructions = [
+    input.target.lateSectionStart !== null
+      ? `Late section anchor: ${input.target.lateSectionStart}.`
+      : null,
+    input.target.endingStart !== null
+      ? `Ending anchor: ${input.target.endingStart}.`
+      : null,
+    input.target.requireLateSectionCoverage
+      ? "You must recover at least one explicit observation from the late section when the source supports it."
+      : null,
+    input.target.requireEndingCoverage
+      ? "You must recover the terminal ending event, state, or wake-up when the source supports it."
+      : null,
+    input.target.includesEnding
+      ? "Do not stop before the ending-bearing material inside the authorized tail target."
+      : null,
+    input.target.requireLateSectionCoverage || input.target.requireEndingCoverage
+      ? "Do not compress the terminal section into one vague summary sentence if the source contains multiple concrete late events or an explicit ending."
+      : null,
+  ].filter((line): line is string => line !== null);
 
   return [
     "Perform bounded supplemental realization for dream observations.",
@@ -89,6 +109,7 @@ export function buildSupplementalRealizationPrompt(input: {
     `Context span: ${input.target.contextStart}-${input.target.contextEnd}.`,
     `Includes ending: ${input.target.includesEnding ? "yes" : "no"}.`,
     `Diagnostic gap reasons: ${input.target.reasons.join(", ") || "none"}.`,
+    ...(terminalRecoveryInstructions.length > 0 ? ["Terminal recovery requirements:", ...terminalRecoveryInstructions] : []),
     "Already represented neighboring material:",
     input.existingObservationText || "(none)",
     "Bounded gap text:",

@@ -1,12 +1,17 @@
 import type { OpeningActivationEventCursor } from "@/src/domain/responses/contracts";
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
-import type { ObservationRepository, ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type { ObservationRepository } from "@/src/domain/observation/contracts";
+import type {
+  ObservationNativeReadRepository,
+  ObservationNativeReadResolution,
+} from "@/src/domain/observation/native-read";
 import type { OpeningRepository } from "@/src/domain/openings/contracts";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 import type { ReflectiveResponseRepository } from "@/src/domain/responses/contracts";
 import type { ThreadRepository } from "@/src/domain/threads/contracts";
 import { composeOpeningDialogueWindow } from "@/src/reflective-space/composition/compose-opening-dialogue-window";
 import {
+  deriveGlossaryCuesFromObservationV3Authority,
   deriveGlossaryCuesFromObservationV2Bundle,
   deriveGlossaryCuesFromObservations,
 } from "@/src/reflective-space/composition/derive-glossary-cues";
@@ -29,13 +34,14 @@ const MAX_VIEWPORT_SERIALIZED_BYTES = 32_768;
 export interface ComposeReflectiveSpaceViewportInput {
   userId: UserId;
   centerObjectId?: string;
+  observationResolution?: ObservationNativeReadResolution;
   objectLimit?: number;
   dialogueLimit?: number;
   dialogueBeforeCreatedAt?: string;
   dialogueBeforeCursor?: OpeningActivationEventCursor;
   reflectiveObjectRepository: ReflectiveObjectRepository;
   observationRepository: ObservationRepository;
-  observationV2Repository: ObservationV2Repository;
+  observationNativeReadRepository: ObservationNativeReadRepository;
   glossaryRepository: GlossaryRepository;
   threadRepository: ThreadRepository;
   openingRepository: OpeningRepository;
@@ -189,7 +195,7 @@ export async function composeReflectiveSpaceViewport(
     ? input.centerObjectId
     : (reflectiveObjects[0]?.id ?? null);
 
-  const [threadRows, openingRows, observationBundle, observationRows, responseRows, dialogueWindow] = await Promise.all([
+  const [threadRows, openingRows, nativeObservation, observationRows, responseRows, dialogueWindow] = await Promise.all([
     centerObjectId && input.threadRepository.listThreadsByReflectiveObject
       ? input.threadRepository.listThreadsByReflectiveObject(input.userId, centerObjectId, THREAD_SURFACE_LIMIT + 1)
       : input.threadRepository.listThreadsByUser(input.userId, THREAD_SURFACE_LIMIT + 1),
@@ -197,7 +203,11 @@ export async function composeReflectiveSpaceViewport(
       ? input.openingRepository.listOpeningSurfacesByReflectiveObject(input.userId, centerObjectId, OPENING_SURFACE_LIMIT + 1)
       : input.openingRepository.listOpeningSurfacesByUser(input.userId, OPENING_SURFACE_LIMIT + 1),
     centerObjectId
-      ? input.observationV2Repository.getByReflectiveObjectId(centerObjectId, input.userId)
+      ? input.observationNativeReadRepository.getByReflectiveObjectId({
+          userId: input.userId,
+          reflectiveObjectId: centerObjectId,
+          resolution: input.observationResolution,
+        })
       : Promise.resolve(null),
     centerObjectId
       ? input.observationRepository.listByReflectiveObject({
@@ -234,8 +244,10 @@ export async function composeReflectiveSpaceViewport(
 
   const glossaryTerms = glossaryRows.slice(0, GLOSSARY_LIMIT);
   const hasMoreGlossaryTerms = glossaryRows.length > GLOSSARY_LIMIT;
-  const glossaryCuesAll = observationBundle
-    ? deriveGlossaryCuesFromObservationV2Bundle(observationBundle)
+  const glossaryCuesAll = nativeObservation
+    ? nativeObservation.family === "v2"
+      ? deriveGlossaryCuesFromObservationV2Bundle(nativeObservation.native)
+      : deriveGlossaryCuesFromObservationV3Authority(nativeObservation.native)
     : deriveGlossaryCuesFromObservations(observations);
   const hasMoreGlossaryCues = glossaryCuesAll.length > GLOSSARY_LIMIT;
   const glossaryCues = glossaryCuesAll.slice(0, GLOSSARY_LIMIT);

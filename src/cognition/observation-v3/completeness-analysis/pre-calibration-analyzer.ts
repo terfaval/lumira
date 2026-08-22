@@ -260,7 +260,15 @@ export function analyzeObservationCompletenessPreCalibration(input: {
   });
   const recoveryRecommendation = buildRecoveryRecommendation({
     adequacy,
-    gaps,
+    materialGapAssessment: {
+      gaps: gaps.gaps.map((gap) => ({
+        gapId: gap.id,
+        classification: "material_missing" as const,
+        admissionRelevant: true,
+        reasons: ["prefix_gap_presumed_material"],
+      })),
+      targetedGapIds: gaps.gaps.map((gap) => gap.id),
+    },
     lateRetentionStatus: lateRetention.status,
     endingRetentionStatus: endingRetention.status,
   });

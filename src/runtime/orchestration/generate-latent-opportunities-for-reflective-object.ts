@@ -15,6 +15,16 @@ import {
   type OpportunityRepositoryCreateMapping,
   type ValidatedOpportunityConstructorOutput,
 } from "@/src/cognition/latent-v2/opportunity-constructor";
+import {
+  generateOpportunityConstructorV3Output,
+  mapValidatedOpportunityConstructorV3OutputToRepositoryInputs,
+  parseOpportunityConstructorV3Output,
+  validateOpportunityConstructorV3Output,
+  type OpportunityConstructorV3InputPacket,
+  type OpportunityConstructorV3OutputPacket,
+  type OpportunityRepositoryCreateMappingV3,
+  type ValidatedOpportunityConstructorV3Output,
+} from "@/src/cognition/latent-v2/opportunity-constructor-v3";
 import type { GlossaryRepository } from "@/src/domain/glossary/contracts";
 import type { LatentOpportunityRepository } from "@/src/domain/latent-v2/contracts";
 import {
@@ -30,11 +40,14 @@ import type {
   LatentOpportunityIdentity,
   LatentOpportunityManifestation,
 } from "@/src/domain/latent-v2/types";
-import type { ObservationV2Repository } from "@/src/domain/observation/contracts";
+import type {
+  ObservationNativeReadRepository,
+  ObservationNativeReadResolution,
+} from "@/src/domain/observation/native-read";
 import type { ReflectiveObjectRepository } from "@/src/domain/reflective-objects/contracts";
 import { createGlossaryRepository } from "@/src/infrastructure/supabase/repositories/create-glossary-repository";
 import { createLatentOpportunityRepository } from "@/src/infrastructure/supabase/repositories/create-latent-opportunity-repository";
-import { createObservationV2Repository } from "@/src/infrastructure/supabase/repositories/create-observation-v2-repository";
+import { createObservationNativeStore } from "@/src/infrastructure/persistence/observation-store";
 import { createReflectiveObjectRepository } from "@/src/infrastructure/supabase/repositories/create-reflective-object-repository";
 import type { ReflectiveObjectId, UserId } from "@/src/shared/types";
 
@@ -58,11 +71,27 @@ type PlannedAtomicSuccessorCreate = {
   manifestationInput: CreateLatentOpportunityManifestationInput;
 };
 
-type OpportunityConstructorGenerator = typeof generateOpportunityConstructorOutput;
+type LatentInputPacket = OpportunityConstructorInputPacket | OpportunityConstructorV3InputPacket;
+type LatentParsedOutput = OpportunityConstructorOutputPacket | OpportunityConstructorV3OutputPacket;
+type LatentValidatedOutput = ValidatedOpportunityConstructorOutput | ValidatedOpportunityConstructorV3Output;
+type LatentMappedPayload = OpportunityRepositoryCreateMapping | OpportunityRepositoryCreateMappingV3;
+type OpportunityConstructorGenerator = (args: {
+  packet: LatentInputPacket;
+}) => Promise<
+  | {
+      mode: "generated";
+      rawOutput: string;
+    }
+  | {
+      mode: "failed";
+      reason: string;
+      details?: Record<string, unknown>;
+    }
+>;
 
 export interface GenerateLatentOpportunitiesForReflectiveObjectRepositories {
   reflectiveObjectRepository: ReflectiveObjectRepository;
-  observationV2Repository: ObservationV2Repository;
+  observationNativeReadRepository: ObservationNativeReadRepository;
   glossaryRepository: GlossaryRepository;
   latentOpportunityRepository: LatentOpportunityRepository;
 }
@@ -70,66 +99,86 @@ export interface GenerateLatentOpportunitiesForReflectiveObjectRepositories {
 export interface GenerateLatentOpportunitiesForReflectiveObjectInput {
   userId: UserId;
   priorityReflectiveObjectId: ReflectiveObjectId;
+  observationResolution?: ObservationNativeReadResolution;
   acceptedRunReuseGuard?: "evaluate" | "skip";
   repositories?: GenerateLatentOpportunitiesForReflectiveObjectRepositories;
   composeInputPacket?: (input: {
     userId: UserId;
     priorityReflectiveObjectId: ReflectiveObjectId;
+    observationResolution?: ObservationNativeReadResolution;
     reflectiveObjectRepository: ReflectiveObjectRepository;
-    observationV2Repository: ObservationV2Repository;
+    observationNativeReadRepository: ObservationNativeReadRepository;
     glossaryRepository: GlossaryRepository;
     latentOpportunityRepository: LatentOpportunityRepository;
-  }) => Promise<OpportunityConstructorInputPacket | ComposedOpportunityConstructorInput>;
+  }) => Promise<LatentInputPacket | ComposedOpportunityConstructorInput>;
   generateOutput?: OpportunityConstructorGenerator;
 }
 
 export type GenerateLatentOpportunitiesForReflectiveObjectResult =
   | {
       mode: "persisted";
-      packet: OpportunityConstructorInputPacket;
+      packet: LatentInputPacket;
       rawOutput: string;
-      parsedOutput: OpportunityConstructorOutputPacket;
-      validatedOutput: ValidatedOpportunityConstructorOutput;
-      mappedPayload: OpportunityRepositoryCreateMapping;
+      parsedOutput: LatentParsedOutput;
+      validatedOutput: LatentValidatedOutput;
+      mappedPayload: LatentMappedPayload;
       persistedIdentities: LatentOpportunityIdentity[];
       persistedManifestations: LatentOpportunityManifestation[];
     }
   | {
       mode: "empty";
-      packet: OpportunityConstructorInputPacket;
+      packet: LatentInputPacket;
       generationRunId: string;
       source: "new_assessment" | "existing_assessment";
       rawOutput?: string;
-      parsedOutput?: OpportunityConstructorOutputPacket;
-      validatedOutput?: ValidatedOpportunityConstructorOutput;
+      parsedOutput?: LatentParsedOutput;
+      validatedOutput?: LatentValidatedOutput;
     }
   | {
       mode: "failed";
       stage: GenerateStage;
       reason: string;
       details?: Record<string, unknown>;
-      packet?: OpportunityConstructorInputPacket;
+      packet?: LatentInputPacket;
       rawOutput?: string;
-      parsedOutput?: OpportunityConstructorOutputPacket;
-      validatedOutput?: ValidatedOpportunityConstructorOutput;
-      mappedPayload?: OpportunityRepositoryCreateMapping;
+      parsedOutput?: LatentParsedOutput;
+      validatedOutput?: LatentValidatedOutput;
+      mappedPayload?: LatentMappedPayload;
       cleanup?: CleanupSummary;
     };
 
 function defaultRepositories(): GenerateLatentOpportunitiesForReflectiveObjectRepositories {
   return {
     reflectiveObjectRepository: createReflectiveObjectRepository(),
-    observationV2Repository: createObservationV2Repository(),
+    observationNativeReadRepository: createObservationNativeStore(),
     glossaryRepository: createGlossaryRepository(),
     latentOpportunityRepository: createLatentOpportunityRepository(),
   };
+}
+
+function isV3Packet(packet: LatentInputPacket): packet is OpportunityConstructorV3InputPacket {
+  return "authority" in packet.generationContext;
 }
 
 function readErrorReason(error: unknown): string {
   return error instanceof Error && error.message.trim().length > 0 ? error.message : "unknown_error";
 }
 
-function buildInputFingerprint(packet: OpportunityConstructorInputPacket): string {
+function buildInputFingerprint(packet: LatentInputPacket): string {
+  if (isV3Packet(packet)) {
+    return JSON.stringify({
+      runtimeVersion: packet.generationContext.runtimeVersion,
+      priorityReflectiveObjectId: packet.generationContext.priorityReflectiveObjectId,
+      authority: packet.generationContext.authority,
+      objectLanguage: packet.generationContext.objectLanguage,
+      localityIds: packet.localities.map((locality) => locality.localityId),
+      unitIds: packet.units.map((unit) => unit.unitId),
+      confirmedGlossaryTermIds: packet.glossaryContext.confirmedTerms.map((term) => term.glossaryTermId),
+      reflectionIds: packet.reflectionContext?.reflections?.map((reflection) => reflection.reflectionId) ?? [],
+      existingOpportunityIdentityIds: packet.existingOpportunityContext.identities.map((identity) => identity.identityId),
+    });
+  }
+
   return JSON.stringify({
     runtimeVersion: packet.generationContext.runtimeVersion,
     priorityReflectiveObjectId: packet.generationContext.priorityReflectiveObjectId,
@@ -257,17 +306,23 @@ export async function generateLatentOpportunitiesForReflectiveObject(
     input.composeInputPacket ??
     ((args: Parameters<NonNullable<GenerateLatentOpportunitiesForReflectiveObjectInput["composeInputPacket"]>>[0]) =>
       composeOpportunityConstructorInputPacketWithProvenance(args));
-  const generateOutput = input.generateOutput ?? generateOpportunityConstructorOutput;
+  const generateOutput =
+    input.generateOutput ??
+    ((args: { packet: LatentInputPacket }) =>
+      isV3Packet(args.packet)
+        ? generateOpportunityConstructorV3Output({ packet: args.packet })
+        : generateOpportunityConstructorOutput({ packet: args.packet }));
 
-  let packet: OpportunityConstructorInputPacket;
+  let packet: LatentInputPacket;
   let authorityProvenance: LatentAuthorityProvenance | null = null;
   let contextProvenance: LatentContextProvenance | null = null;
   try {
     const composed = await composeInputPacket({
       userId: input.userId,
       priorityReflectiveObjectId: input.priorityReflectiveObjectId,
+      observationResolution: input.observationResolution,
       reflectiveObjectRepository: repositories.reflectiveObjectRepository,
-      observationV2Repository: repositories.observationV2Repository,
+      observationNativeReadRepository: repositories.observationNativeReadRepository,
       glossaryRepository: repositories.glossaryRepository,
       latentOpportunityRepository: repositories.latentOpportunityRepository,
     });
@@ -372,67 +427,140 @@ export async function generateLatentOpportunitiesForReflectiveObject(
     };
   }
 
-  const parsedOutput = parseOpportunityConstructorOutput(generation.rawOutput);
-  if (!parsedOutput) {
-    await repositories.latentOpportunityRepository
-      .markGenerationRunRejected(generationRun.id, input.userId)
-      .catch(() => undefined);
-    return {
-      mode: "failed",
-      stage: "parse",
-      reason: "invalid_output_packet",
-      packet,
-      rawOutput: generation.rawOutput,
-    };
-  }
+  let parsedOutput: LatentParsedOutput;
+  let validatedOutput: LatentValidatedOutput;
+  let mapping: LatentMappedPayload;
 
-  const validation = validateOpportunityConstructorOutput({
-    inputPacket: packet,
-    outputPacket: parsedOutput,
-  });
-  if (!validation.ok) {
-    await repositories.latentOpportunityRepository
-      .markGenerationRunRejected(generationRun.id, input.userId)
-      .catch(() => undefined);
-    return {
-      mode: "failed",
-      stage: "validation",
-      reason: validation.reason,
-      details: validation.details,
-      packet,
-      rawOutput: generation.rawOutput,
-      parsedOutput,
-    };
-  }
+  if (isV3Packet(packet)) {
+    const parsed = parseOpportunityConstructorV3Output(generation.rawOutput);
+    if (!parsed) {
+      await repositories.latentOpportunityRepository
+        .markGenerationRunRejected(generationRun.id, input.userId)
+        .catch(() => undefined);
+      return {
+        mode: "failed",
+        stage: "parse",
+        reason: "invalid_output_packet",
+        packet,
+        rawOutput: generation.rawOutput,
+      };
+    }
 
-  if (validation.value.decision.mode === "no_opportunity") {
-    await repositories.latentOpportunityRepository
-      .markGenerationRunEmpty(generationRun.id, input.userId)
-      .catch(() => undefined);
-    return {
-      mode: "empty",
-      packet,
-      generationRunId: generationRun.id,
-      source: "new_assessment",
-      rawOutput: generation.rawOutput,
-      parsedOutput,
-      validatedOutput: validation.value,
-    };
-  }
+    const validation = validateOpportunityConstructorV3Output({
+      inputPacket: packet,
+      outputPacket: parsed,
+    });
+    if (!validation.ok) {
+      await repositories.latentOpportunityRepository
+        .markGenerationRunRejected(generationRun.id, input.userId)
+        .catch(() => undefined);
+      return {
+        mode: "failed",
+        stage: "validation",
+        reason: validation.reason,
+        details: validation.details,
+        packet,
+        rawOutput: generation.rawOutput,
+        parsedOutput: parsed,
+      };
+    }
 
-  let mapping: OpportunityRepositoryCreateMapping;
-  try {
-    mapping = mapValidatedOpportunityConstructorOutputToRepositoryInputs(validation.value);
-  } catch (error) {
-    return {
-      mode: "failed",
-      stage: "mapping",
-      reason: readErrorReason(error),
-      packet,
-      rawOutput: generation.rawOutput,
-      parsedOutput,
-      validatedOutput: validation.value,
-    };
+    if (validation.value.decision.mode === "no_opportunity") {
+      await repositories.latentOpportunityRepository
+        .markGenerationRunEmpty(generationRun.id, input.userId)
+        .catch(() => undefined);
+      return {
+        mode: "empty",
+        packet,
+        generationRunId: generationRun.id,
+        source: "new_assessment",
+        rawOutput: generation.rawOutput,
+        parsedOutput: parsed,
+        validatedOutput: validation.value,
+      };
+    }
+
+    try {
+      mapping = mapValidatedOpportunityConstructorV3OutputToRepositoryInputs(validation.value);
+    } catch (error) {
+      return {
+        mode: "failed",
+        stage: "mapping",
+        reason: readErrorReason(error),
+        packet,
+        rawOutput: generation.rawOutput,
+        parsedOutput: parsed,
+        validatedOutput: validation.value,
+      };
+    }
+
+    parsedOutput = parsed;
+    validatedOutput = validation.value;
+  } else {
+    const parsed = parseOpportunityConstructorOutput(generation.rawOutput);
+    if (!parsed) {
+      await repositories.latentOpportunityRepository
+        .markGenerationRunRejected(generationRun.id, input.userId)
+        .catch(() => undefined);
+      return {
+        mode: "failed",
+        stage: "parse",
+        reason: "invalid_output_packet",
+        packet,
+        rawOutput: generation.rawOutput,
+      };
+    }
+
+    const validation = validateOpportunityConstructorOutput({
+      inputPacket: packet,
+      outputPacket: parsed,
+    });
+    if (!validation.ok) {
+      await repositories.latentOpportunityRepository
+        .markGenerationRunRejected(generationRun.id, input.userId)
+        .catch(() => undefined);
+      return {
+        mode: "failed",
+        stage: "validation",
+        reason: validation.reason,
+        details: validation.details,
+        packet,
+        rawOutput: generation.rawOutput,
+        parsedOutput: parsed,
+      };
+    }
+
+    if (validation.value.decision.mode === "no_opportunity") {
+      await repositories.latentOpportunityRepository
+        .markGenerationRunEmpty(generationRun.id, input.userId)
+        .catch(() => undefined);
+      return {
+        mode: "empty",
+        packet,
+        generationRunId: generationRun.id,
+        source: "new_assessment",
+        rawOutput: generation.rawOutput,
+        parsedOutput: parsed,
+        validatedOutput: validation.value,
+      };
+    }
+
+    try {
+      mapping = mapValidatedOpportunityConstructorOutputToRepositoryInputs(validation.value);
+    } catch (error) {
+      return {
+        mode: "failed",
+        stage: "mapping",
+        reason: readErrorReason(error),
+        packet,
+        rawOutput: generation.rawOutput,
+        parsedOutput: parsed,
+        validatedOutput: validation.value,
+      };
+    }
+
+    parsedOutput = parsed;
+    validatedOutput = validation.value;
   }
 
   const persistedIdentities: LatentOpportunityIdentity[] = [];
@@ -637,7 +765,7 @@ export async function generateLatentOpportunitiesForReflectiveObject(
       packet,
       rawOutput: generation.rawOutput,
       parsedOutput,
-      validatedOutput: validation.value,
+      validatedOutput,
       mappedPayload: mapping,
       cleanup: await cleanupCreatedResources({
         resources: createdResources,
@@ -652,7 +780,7 @@ export async function generateLatentOpportunitiesForReflectiveObject(
     packet,
     rawOutput: generation.rawOutput,
     parsedOutput,
-    validatedOutput: validation.value,
+    validatedOutput,
     mappedPayload: mapping,
     persistedIdentities,
     persistedManifestations,

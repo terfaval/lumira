@@ -4,6 +4,7 @@ export interface RuntimeEnvironment {
   supabaseAnonKey: string | null;
   supabaseServiceRoleKey: string | null;
   openAiApiKey: string | null;
+  observationCaptureAuthorityMode: string | null;
 }
 
 export function readRuntimeEnvironment(): RuntimeEnvironment {
@@ -21,6 +22,7 @@ export function readRuntimeEnvironment(): RuntimeEnvironment {
 
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? null;
   const openAiApiKey = process.env.OPENAI_API_KEY ?? null;
+  const observationCaptureAuthorityMode = process.env.OBSERVATION_CAPTURE_AUTHORITY_MODE ?? null;
 
   return {
     nodeEnv: process.env.NODE_ENV ?? "development",
@@ -28,5 +30,6 @@ export function readRuntimeEnvironment(): RuntimeEnvironment {
     supabaseAnonKey,
     supabaseServiceRoleKey,
     openAiApiKey,
+    observationCaptureAuthorityMode,
   };
 }

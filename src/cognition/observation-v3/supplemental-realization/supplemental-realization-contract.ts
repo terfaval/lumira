@@ -27,6 +27,10 @@ export interface PlannedSupplementalGap {
   contextStart: number;
   contextEnd: number;
   includesEnding: boolean;
+  lateSectionStart: number | null;
+  endingStart: number | null;
+  requireLateSectionCoverage: boolean;
+  requireEndingCoverage: boolean;
   neighboringEvidence: PhysicalGap["neighboringEvidence"];
   reasons: PhysicalGap["reasons"];
   confidence: PhysicalGap["confidence"];

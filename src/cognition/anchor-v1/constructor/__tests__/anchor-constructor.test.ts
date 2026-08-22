@@ -22,7 +22,8 @@ function createInputPacket(): AnchorConstructorInputPacket {
       content: "I searched through a house for a phone while my father guided me toward the stairwell.",
     },
     observationSet: {
-      observationBundleId: "bundle-1",
+      observationFamily: "v2",
+      observationAuthorityId: "bundle-1",
       runtimeVersion: "observation_v2",
       objectLanguage: "en",
       scenes: [
@@ -52,7 +53,7 @@ function createInputPacket(): AnchorConstructorInputPacket {
       ],
       observations: [
         {
-          observationV2SceneObservationId: "bundle-1:scene-a:obs-1",
+          observationReferenceId: "bundle-1:scene-a:obs-1",
           sceneRowId: "bundle-1:scene-a",
           sceneStableId: "scene-a",
           observationStableId: "obs-1",
@@ -68,7 +69,7 @@ function createInputPacket(): AnchorConstructorInputPacket {
           uncertaintyNote: null,
         },
         {
-          observationV2SceneObservationId: "bundle-1:scene-a:obs-2",
+          observationReferenceId: "bundle-1:scene-a:obs-2",
           sceneRowId: "bundle-1:scene-a",
           sceneStableId: "scene-a",
           observationStableId: "obs-2",
@@ -84,7 +85,7 @@ function createInputPacket(): AnchorConstructorInputPacket {
           uncertaintyNote: null,
         },
         {
-          observationV2SceneObservationId: "bundle-1:scene-a:obs-3",
+          observationReferenceId: "bundle-1:scene-a:obs-3",
           sceneRowId: "bundle-1:scene-a",
           sceneStableId: "scene-a",
           observationStableId: "obs-3",
@@ -166,7 +167,7 @@ function createInputPacket(): AnchorConstructorInputPacket {
           opportunityIdentityId: "opportunity-identity-1",
           evidenceBlockId: "evidence-block-1",
           evidenceBlockRole: "priority",
-          observationV2SceneObservationId: "bundle-1:scene-a:obs-1",
+          observationReferenceId: "bundle-1:scene-a:obs-1",
           sceneId: "scene-a",
           observationRole: "primary_support",
           supportsNodeKeys: ["A"],
@@ -177,7 +178,7 @@ function createInputPacket(): AnchorConstructorInputPacket {
           opportunityIdentityId: "opportunity-identity-1",
           evidenceBlockId: "evidence-block-1",
           evidenceBlockRole: "priority",
-          observationV2SceneObservationId: "bundle-1:scene-a:obs-2",
+          observationReferenceId: "bundle-1:scene-a:obs-2",
           sceneId: "scene-a",
           observationRole: "primary_support",
           supportsNodeKeys: ["B"],
@@ -188,7 +189,7 @@ function createInputPacket(): AnchorConstructorInputPacket {
           opportunityIdentityId: "opportunity-identity-2",
           evidenceBlockId: "evidence-block-2",
           evidenceBlockRole: "priority",
-          observationV2SceneObservationId: "bundle-1:scene-a:obs-3",
+          observationReferenceId: "bundle-1:scene-a:obs-3",
           sceneId: "scene-a",
           observationRole: "primary_support",
           supportsNodeKeys: ["unknown"],
@@ -398,7 +399,7 @@ function createValidAnchorOutput(overrides: Partial<AnchorConstructorOutput> = {
         evidence: {
           observationRefs: [
             {
-              observationV2SceneObservationId: "bundle-1:scene-a:obs-2",
+              observationReferenceId: "bundle-1:scene-a:obs-2",
               role: "primary_support",
             },
           ],
@@ -412,7 +413,7 @@ function createValidAnchorOutput(overrides: Partial<AnchorConstructorOutput> = {
             {
               opportunityManifestationId: "opportunity-manifestation-1",
               evidenceBlockId: "evidence-block-1",
-              observationV2SceneObservationId: "bundle-1:scene-a:obs-2",
+              observationReferenceId: "bundle-1:scene-a:obs-2",
               supportsNodeKeys: ["B"],
               supportsEdgeIndexes: [0],
             },
@@ -544,11 +545,11 @@ describe("anchor constructor validator and mapper", () => {
     output.anchors[0].anchorManifestation.manifestationLabel = "Searching for the phone opens into guided movement";
     output.anchors[0].evidence.observationRefs = [
       {
-        observationV2SceneObservationId: "bundle-1:scene-a:obs-1",
+        observationReferenceId: "bundle-1:scene-a:obs-1",
         role: "primary_support",
       },
       {
-        observationV2SceneObservationId: "bundle-1:scene-a:obs-3",
+        observationReferenceId: "bundle-1:scene-a:obs-3",
         role: "primary_support",
       },
     ];
@@ -599,11 +600,11 @@ describe("anchor constructor validator and mapper", () => {
       "Ash falls on Markus's trousers, apology and cleaning follow, Kata offers a solution";
     output.anchors[0].evidence.observationRefs = [
       {
-        observationV2SceneObservationId: "bundle-1:scene-a:obs-1",
+        observationReferenceId: "bundle-1:scene-a:obs-1",
         role: "primary_support",
       },
       {
-        observationV2SceneObservationId: "bundle-1:scene-a:obs-3",
+        observationReferenceId: "bundle-1:scene-a:obs-3",
         role: "primary_support",
       },
     ];
@@ -625,11 +626,11 @@ describe("anchor constructor validator and mapper", () => {
       "Ash falls on Markus's trousers, apology and cleaning follow, Kata offers a solution";
     output.anchors[0].evidence.observationRefs = [
       {
-        observationV2SceneObservationId: "bundle-1:scene-a:obs-1",
+        observationReferenceId: "bundle-1:scene-a:obs-1",
         role: "primary_support",
       },
       {
-        observationV2SceneObservationId: "bundle-1:scene-a:obs-3",
+        observationReferenceId: "bundle-1:scene-a:obs-3",
         role: "primary_support",
       },
     ];
@@ -683,11 +684,11 @@ describe("anchor constructor validator and mapper", () => {
           evidence: {
             observationRefs: [
               {
-                observationV2SceneObservationId: "bundle-1:scene-a:obs-1",
+                observationReferenceId: "bundle-1:scene-a:obs-1",
                 role: "primary_support",
               },
               {
-                observationV2SceneObservationId: "bundle-1:scene-a:obs-3",
+                observationReferenceId: "bundle-1:scene-a:obs-3",
                 role: "primary_support",
               },
             ],
@@ -760,7 +761,7 @@ describe("anchor constructor validator and mapper", () => {
       evidence: {
         observationRefs: [
           {
-            observationV2SceneObservationId: "bundle-1:scene-a:obs-2",
+            observationReferenceId: "bundle-1:scene-a:obs-2",
             role: "primary_support",
           },
         ],
@@ -909,7 +910,7 @@ describe("anchor constructor validator and mapper", () => {
 
   it("rejects invalid observation references", () => {
     const output = createValidAnchorOutput();
-    output.anchors[0].evidence.observationRefs[0].observationV2SceneObservationId = "bundle-1:scene-a:obs-x";
+    output.anchors[0].evidence.observationRefs[0].observationReferenceId = "bundle-1:scene-a:obs-x";
 
     expect(
       parseAndValidateAnchorConstructorOutput({
@@ -920,7 +921,7 @@ describe("anchor constructor validator and mapper", () => {
       ok: false,
       reason: "observation_ref_out_of_scope",
       details: expect.objectContaining({
-        observationV2SceneObservationId: "bundle-1:scene-a:obs-x",
+        observationReferenceId: "bundle-1:scene-a:obs-x",
       }),
     });
   });
@@ -1227,3 +1228,4 @@ describe("anchor constructor prompt and llm wrapper", () => {
     });
   });
 });
+

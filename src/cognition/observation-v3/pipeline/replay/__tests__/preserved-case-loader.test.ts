@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  isSupplementalReplayTargetCompatible,
   loadPreservedExtractionReplayEvidence,
   loadPreservedSupplementalReplayEvidence,
 } from "@/src/cognition/observation-v3/pipeline/replay/preserved-case-loader";
@@ -108,6 +109,21 @@ describe("preserved case loader", () => {
         evidenceArtifactRef: path.join("supplemental-provider-evidence", "target-gap-1-attempt-01.json"),
       },
     ]);
+    await writeJson(path.join(repeatDirectory, "stages", "02-recovery_selection.json"), {
+      artifact: {
+        canonicalRecoveryWindows: [
+          {
+            physicalGapId: "target-gap-1",
+            targetId: "target-gap-1",
+            kind: "tail",
+            sourceStart: 24,
+            sourceEnd: 80,
+            contextStart: 0,
+            contextEnd: 80,
+          },
+        ],
+      },
+    });
     await writeJson(
       path.join(repeatDirectory, "supplemental-provider-evidence", "target-gap-1-attempt-01.json"),
       {
@@ -136,6 +152,15 @@ describe("preserved case loader", () => {
     expect(loaded).toEqual([
       expect.objectContaining({
         physicalGapId: "target-gap-1",
+        targetContract: expect.objectContaining({
+          targetId: "target-gap-1",
+          physicalGapId: "target-gap-1",
+          kind: "tail",
+          sourceStart: 24,
+          sourceEnd: 80,
+          contextStart: 0,
+          contextEnd: 80,
+        }),
         providerResult: expect.objectContaining({
           outputText: expect.stringContaining("\"regions\":[]"),
         }),
@@ -161,6 +186,11 @@ describe("preserved case loader", () => {
           {
             physicalGapId: "gap-001",
             targetId: "target-1-gap-001",
+            kind: "tail",
+            sourceStart: 724,
+            sourceEnd: 1651,
+            contextStart: 464,
+            contextEnd: 1651,
           },
         ],
       },
@@ -196,7 +226,144 @@ describe("preserved case loader", () => {
     expect(loaded).toEqual([
       expect.objectContaining({
         physicalGapId: "gap-001",
+        targetContract: expect.objectContaining({
+          targetId: "target-1-gap-001",
+          physicalGapId: "gap-001",
+          kind: "tail",
+          sourceStart: 724,
+          sourceEnd: 1651,
+          contextStart: 464,
+          contextEnd: 1651,
+        }),
       }),
     ]);
+  });
+
+  it("treats equivalent effective target contracts as replay-compatible", () => {
+    expect(isSupplementalReplayTargetCompatible({
+      currentTarget: {
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        kind: "prefix",
+        sourceStart: 0,
+        sourceEnd: 152,
+        contextStart: 0,
+        contextEnd: 412,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: [],
+        reasons: ["coverage_prefix_loss_detected"],
+        confidence: "medium",
+        wholeSourceForbidden: true,
+      },
+      preservedTarget: {
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        kind: "prefix",
+        sourceStart: 0,
+        sourceEnd: 152,
+        contextStart: 0,
+        contextEnd: 412,
+      },
+    })).toBe(true);
+  });
+
+  it("rejects replay compatibility when the target kind changed for the same physical gap", () => {
+    expect(isSupplementalReplayTargetCompatible({
+      currentTarget: {
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        kind: "prefix",
+        sourceStart: 0,
+        sourceEnd: 152,
+        contextStart: 0,
+        contextEnd: 412,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: [],
+        reasons: ["coverage_prefix_loss_detected"],
+        confidence: "medium",
+        wholeSourceForbidden: true,
+      },
+      preservedTarget: {
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        kind: "tail",
+        sourceStart: 724,
+        sourceEnd: 1651,
+        contextStart: 464,
+        contextEnd: 1651,
+      },
+    })).toBe(false);
+  });
+
+  it("rejects replay compatibility when the source span changed materially for the same physical gap", () => {
+    expect(isSupplementalReplayTargetCompatible({
+      currentTarget: {
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        kind: "prefix",
+        sourceStart: 0,
+        sourceEnd: 152,
+        contextStart: 0,
+        contextEnd: 412,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: [],
+        reasons: ["coverage_prefix_loss_detected"],
+        confidence: "medium",
+        wholeSourceForbidden: true,
+      },
+      preservedTarget: {
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        kind: "prefix",
+        sourceStart: 0,
+        sourceEnd: 180,
+        contextStart: 0,
+        contextEnd: 412,
+      },
+    })).toBe(false);
+  });
+
+  it("rejects replay compatibility when the context span changed materially for the same physical gap", () => {
+    expect(isSupplementalReplayTargetCompatible({
+      currentTarget: {
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        kind: "prefix",
+        sourceStart: 0,
+        sourceEnd: 152,
+        contextStart: 0,
+        contextEnd: 412,
+        includesEnding: false,
+        lateSectionStart: null,
+        endingStart: null,
+        requireLateSectionCoverage: false,
+        requireEndingCoverage: false,
+        neighboringEvidence: [],
+        reasons: ["coverage_prefix_loss_detected"],
+        confidence: "medium",
+        wholeSourceForbidden: true,
+      },
+      preservedTarget: {
+        targetId: "target-1-gap-001",
+        physicalGapId: "gap-001",
+        kind: "prefix",
+        sourceStart: 0,
+        sourceEnd: 152,
+        contextStart: 0,
+        contextEnd: 640,
+      },
+    })).toBe(false);
   });
 });

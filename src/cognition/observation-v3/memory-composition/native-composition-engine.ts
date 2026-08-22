@@ -162,6 +162,243 @@ function computeSemanticNovelty(statement: string, supportingStatements: string[
   return novelTokens / supplementalTokens.size;
 }
 
+function evidenceCoverageLength(unit: { evidence: ExperimentalEvidenceSpan[] }): number {
+  const range = evidenceRange(unit);
+  if (range.start === null || range.end === null) {
+    return 0;
+  }
+  return Math.max(0, range.end - range.start);
+}
+
+function descriptiveSpecificityScore(unit: ExperimentalReconciledObservationUnit): number {
+  const tokenCount = tokenize(unit.statement).length;
+  const entityCount = (unit.recoveryProvenance?.entitySignature ?? buildEntitySignature(unit.statement)).length;
+  const evidenceCount = unit.evidence.length;
+  const coverageLength = evidenceCoverageLength(unit);
+  return (evidenceCount * 6) + Math.min(coverageLength / 32, 6) + (entityCount * 2) + Math.min(tokenCount / 4, 8);
+}
+
+function classifyStructuralRefinement(input: {
+  left: ExperimentalReconciledObservationUnit;
+  right: ExperimentalReconciledObservationUnit;
+  classification: ObservationOverlapClassification;
+  eventTypeCompatible: boolean;
+}): "left_refines_right" | "right_refines_left" | null {
+  const sameRecoveryChain = input.classification.recoveryWindowMatch || input.classification.physicalGapMatch;
+  const highSharedEvidence = input.classification.evidenceOverlapRatio >= 0.9;
+  if (!input.eventTypeCompatible || (!sameRecoveryChain && !highSharedEvidence)) {
+    return null;
+  }
+
+  if (input.classification.semanticSimilarity < 0.35 && input.classification.entityOverlapRatio < 0.5) {
+    return null;
+  }
+
+  const leftScore = descriptiveSpecificityScore(input.left);
+  const rightScore = descriptiveSpecificityScore(input.right);
+  const leftCoverage = evidenceCoverageLength(input.left);
+  const rightCoverage = evidenceCoverageLength(input.right);
+  const leftEvidenceEnrichment = input.left.evidence.length > input.right.evidence.length || leftCoverage >= rightCoverage + 32;
+  const rightEvidenceEnrichment = input.right.evidence.length > input.left.evidence.length || rightCoverage >= leftCoverage + 32;
+
+  if (leftEvidenceEnrichment && leftScore >= rightScore + 3 && leftCoverage >= rightCoverage) {
+    return "left_refines_right";
+  }
+  if (rightEvidenceEnrichment && rightScore >= leftScore + 3 && rightCoverage >= leftCoverage) {
+    return "right_refines_left";
+  }
+
+  return null;
+}
+
+function mergeEvidence(
+  retained: ExperimentalReconciledObservationUnit,
+  discarded: ExperimentalReconciledObservationUnit,
+): ExperimentalEvidenceSpan[] {
+  const seen = new Set<string>();
+  return [...retained.evidence, ...discarded.evidence]
+    .filter((entry) => {
+      const key = stableEvidenceKey(entry);
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    })
+    .sort((left, right) => {
+      const leftStart = left.spanStart ?? Number.MAX_SAFE_INTEGER;
+      const rightStart = right.spanStart ?? Number.MAX_SAFE_INTEGER;
+      if (leftStart !== rightStart) {
+        return leftStart - rightStart;
+      }
+      const leftEnd = left.spanEnd ?? Number.MAX_SAFE_INTEGER;
+      const rightEnd = right.spanEnd ?? Number.MAX_SAFE_INTEGER;
+      if (leftEnd !== rightEnd) {
+        return leftEnd - rightEnd;
+      }
+      return `${left.snippet ?? ""}:${left.contextLabel ?? ""}`.localeCompare(`${right.snippet ?? ""}:${right.contextLabel ?? ""}`);
+    });
+}
+
+function stableEvidenceKey(entry: ExperimentalEvidenceSpan): string {
+  return [
+    entry.spanStart ?? "null",
+    entry.spanEnd ?? "null",
+    entry.snippet ?? "",
+    entry.contextLabel ?? "",
+  ].join(":");
+}
+
+function mergeUncertainty(left: string | null | undefined, right: string | null | undefined): string | null {
+  const normalized = [left, right]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .map((value) => value.trim());
+  if (normalized.length === 0) {
+    return null;
+  }
+  if (normalized.length === 1 || normalized[0] === normalized[1]) {
+    return normalized[0] ?? null;
+  }
+
+  const [first, second] = normalized;
+  const firstStrength = uncertaintyStrength(first);
+  const secondStrength = uncertaintyStrength(second);
+  if (firstStrength !== secondStrength) {
+    return firstStrength > secondStrength ? first : second;
+  }
+
+  return [first, second].sort((a, b) => a.localeCompare(b)).join(" / ");
+}
+
+function buildSupplementalRelationSupport(
+  left: ExperimentalReconciledObservationUnit,
+  right: ExperimentalReconciledObservationUnit,
+  classification: ObservationOverlapClassification,
+): {
+  semanticEquivalent: boolean;
+  preferredBaselineRegionId: string | null;
+  preferredRetainedObservationId: string | null;
+} {
+  const leftRange = evidenceRange(left);
+  const rightRange = evidenceRange(right);
+  const leftNormalized = normalizeText(left.statement);
+  const rightNormalized = normalizeText(right.statement);
+  const containmentText = leftNormalized.includes(rightNormalized) || rightNormalized.includes(leftNormalized);
+  const sameRecoveryChain = classification.recoveryWindowMatch || classification.physicalGapMatch;
+  const leftEventStateType = left.recoveryProvenance?.eventStateType ?? "unknown";
+  const rightEventStateType = right.recoveryProvenance?.eventStateType ?? "unknown";
+  const eventTypeCompatible = leftEventStateType === "unknown"
+    || rightEventStateType === "unknown"
+    || leftEventStateType === rightEventStateType;
+  const chronologyCompatible = rangesAreNear(leftRange, rightRange, 96);
+  const structuralRefinement = classifyStructuralRefinement({
+    left,
+    right,
+    classification,
+    eventTypeCompatible,
+  });
+  const baselineUnit = left.origin === "baseline"
+    ? left
+    : right.origin === "baseline"
+      ? right
+      : null;
+  const recoveryUnit = left.origin === "recovery"
+    ? left
+    : right.origin === "recovery"
+      ? right
+      : null;
+  const baselineTokenCount = baselineUnit ? tokenize(baselineUnit.statement).length : 0;
+  const recoveryTokenCount = recoveryUnit ? tokenize(recoveryUnit.statement).length : 0;
+  const recoveryExpansionRisk = Boolean(
+    baselineUnit
+    && recoveryUnit
+    && recoveryTokenCount > baselineTokenCount * 1.25
+    && !containmentText
+    && structuralRefinement === null,
+  );
+  const semanticEquivalent = classification.classification !== "conflict"
+    && chronologyCompatible
+    && eventTypeCompatible
+    && !recoveryExpansionRisk
+    && (
+      structuralRefinement !== null
+      || 
+      (classification.evidenceOverlapRatio >= 0.75 && (classification.semanticSimilarity >= 0.45 || classification.entityOverlapRatio >= 0.75))
+      || (classification.evidenceOverlapRatio >= 0.9 && Math.abs(tokenize(left.statement).length - tokenize(right.statement).length) <= 4)
+      || (classification.evidenceOverlapRatio >= 0.9 && classification.entityOverlapRatio >= 0.6)
+      || (sameRecoveryChain && classification.evidenceOverlapRatio >= 0.5 && (classification.semanticSimilarity >= 0.55 || classification.entityOverlapRatio >= 0.75))
+      || (classification.evidenceOverlapRatio >= 0.5 && classification.semanticSimilarity >= 0.7)
+      || (classification.classification === "possible_duplicate" && classification.semanticSimilarity >= 0.62)
+      || (containmentText && classification.evidenceOverlapRatio >= 0.3)
+    );
+
+  const leftBaseline = left.origin === "baseline" ? left.regionId : null;
+  const rightBaseline = right.origin === "baseline" ? right.regionId : null;
+
+  return {
+    semanticEquivalent,
+    preferredBaselineRegionId: leftBaseline ?? rightBaseline ?? null,
+    preferredRetainedObservationId: structuralRefinement === "left_refines_right"
+      ? left.observationId
+      : structuralRefinement === "right_refines_left"
+        ? right.observationId
+        : null,
+  };
+}
+
+function reconcileEquivalentOverlap(input: {
+  left: ExperimentalReconciledObservationUnit;
+  right: ExperimentalReconciledObservationUnit;
+  classification: ObservationOverlapClassification;
+  duplicateResolution: DuplicateResolutionDecision[];
+  replacementDecisions: ReconciliationReplacementDecision[];
+  discardedObservationIds: Set<string>;
+}): boolean {
+  const relation = buildSupplementalRelationSupport(input.left, input.right, input.classification);
+  if (!relation.semanticEquivalent) {
+    return false;
+  }
+
+  const retained = relation.preferredRetainedObservationId === input.left.observationId
+    ? input.left
+    : relation.preferredRetainedObservationId === input.right.observationId
+      ? input.right
+      : chooseRetainedUnit(input.left, input.right);
+  const discarded = retained.observationId === input.left.observationId ? input.right : input.left;
+  retained.evidence = mergeEvidence(retained, discarded);
+  retained.uncertainty = mergeUncertainty(retained.uncertainty, discarded.uncertainty);
+  retained.supersedesObservationIds = uniqueSorted([
+    ...(retained.supersedesObservationIds ?? []),
+    discarded.observationId,
+    ...(discarded.supersedesObservationIds ?? []),
+  ]);
+  if (relation.preferredBaselineRegionId) {
+    retained.regionId = relation.preferredBaselineRegionId;
+  }
+  if (retained.origin === "recovery" && discarded.origin === "baseline") {
+    retained.origin = "merged";
+    discarded.reconciliationStatus = "replaced";
+    discarded.supersededByObservationId = retained.observationId;
+    input.replacementDecisions.push({
+      replacedObservationId: discarded.observationId,
+      replacementObservationId: retained.observationId,
+      evidenceOverlapRatio: input.classification.evidenceOverlapRatio,
+      rationale: "semantic_refinement_reconciled_before_canonicalization",
+    });
+  } else {
+    discarded.reconciliationStatus = "discarded";
+  }
+
+  input.discardedObservationIds.add(discarded.observationId);
+  input.duplicateResolution.push({
+    retainedObservationId: retained.observationId,
+    discardedObservationId: discarded.observationId,
+    classification: toResolutionClassification(input.classification.classification),
+    rationale: "semantic_equivalence_reconciled_before_canonicalization",
+  });
+  return true;
+}
+
 function toComparableUnit(
   unit: ExperimentalObservationUnit & Partial<Pick<
     ExperimentalReconciledObservationUnit,
@@ -241,6 +478,28 @@ function findInternalGaps(units: ExperimentalReconciledObservationUnit[]): Array
   return gaps;
 }
 
+function countOutOfOrderUnits<T extends { evidence: ExperimentalEvidenceSpan[] }>(units: T[]): number {
+  return units.reduce((count, current, index) => {
+    if (index === 0) {
+      return count;
+    }
+    const previous = units[index - 1]!;
+    return unitEarliestStart(current) < unitEarliestStart(previous) ? count + 1 : count;
+  }, 0);
+}
+
+function localityOrderIsValid(regions: SourceOrderAssemblyRecord["localityOrder"]): boolean {
+  return regions.every((current, index) => {
+    if (index === 0) {
+      return true;
+    }
+    const previous = regions[index - 1]!;
+    const previousStart = previous.earliestStart ?? Number.MIN_SAFE_INTEGER;
+    const currentStart = current.earliestStart ?? Number.MIN_SAFE_INTEGER;
+    return currentStart >= previousStart;
+  });
+}
+
 function classifyRegionBoundarySupport(region: ExperimentalRegion): ExperimentalRegionDecision["boundarySupport"] {
   if ((region.transitionCues ?? []).some((cue) => /dream|lucid|awareness/i.test(cue))) {
     return ["dream_awareness_change"];
@@ -249,6 +508,20 @@ function classifyRegionBoundarySupport(region: ExperimentalRegion): Experimental
     return ["activity_change"];
   }
   return ["uncertain_boundary"];
+}
+
+function groundedRegionEnd(region: ExperimentalRegionDecision): number | null {
+  const evidenceEnds = region.evidence
+    .map((entry) => entry.spanEnd)
+    .filter((value): value is number => typeof value === "number");
+  const evidenceEnd = evidenceEnds.length > 0 ? Math.max(...evidenceEnds) : null;
+  if (typeof region.spanEnd !== "number") {
+    return evidenceEnd;
+  }
+  if (evidenceEnd === null) {
+    return region.spanEnd;
+  }
+  return Math.max(region.spanEnd, evidenceEnd);
 }
 
 function regionEvidenceBounds(region: ExperimentalRegionDecision, units: ExperimentalReconciledObservationUnit[]): { start: number | null; end: number | null } {
@@ -266,7 +539,17 @@ function regionEvidenceBounds(region: ExperimentalRegionDecision, units: Experim
 
   return {
     start: starts.length > 0 ? Math.min(...starts) : region.spanStart,
-    end: ends.length > 0 ? Math.max(...ends) : region.spanEnd,
+    end: (() => {
+      const unitDerivedEnd = ends.length > 0 ? Math.max(...ends) : region.spanEnd;
+      const preservedGroundedEnd = groundedRegionEnd(region);
+      if (preservedGroundedEnd === null) {
+        return unitDerivedEnd;
+      }
+      if (unitDerivedEnd === null) {
+        return preservedGroundedEnd;
+      }
+      return preservedGroundedEnd > unitDerivedEnd ? preservedGroundedEnd : unitDerivedEnd;
+    })(),
   };
 }
 
@@ -326,7 +609,7 @@ export function classifyObservationOverlap(
   if (
     overlapRatio >= 0.5 &&
     entityOverlapRatio >= 0.5 &&
-    semanticSimilarity <= 0.34 &&
+    semanticSimilarity <= 0.2 &&
     !containmentText
   ) {
     classification = "conflict";
@@ -337,13 +620,13 @@ export function classifyObservationOverlap(
     (containmentText && overlapRatio >= 0.75)
   ) {
     classification = "confirmed_duplicate";
-  } else if (overlapRatio > 0) {
-    classification = "partial_overlap";
   } else if (
-    overlapRatio >= 0.05 &&
-    (semanticSimilarity >= 0.45 || entityOverlapRatio >= 0.6 || physicalGapMatch)
+    overlapRatio > 0 &&
+    (semanticSimilarity >= 0.6 || entityOverlapRatio >= 0.75 || physicalGapMatch || recoveryWindowMatch)
   ) {
     classification = "possible_duplicate";
+  } else if (overlapRatio > 0) {
+    classification = "partial_overlap";
   }
 
   return {
@@ -541,6 +824,25 @@ export function classifyCompositionOverlaps(allUnits: ExperimentalReconciledObse
     }
   }
 
+  for (const overlap of unresolvedOverlaps) {
+    const left = allUnits.find((unit) => unit.observationId === overlap.leftObservationId);
+    const right = allUnits.find((unit) => unit.observationId === overlap.rightObservationId);
+    if (!left || !right) {
+      continue;
+    }
+    if (discardedObservationIds.has(left.observationId) || discardedObservationIds.has(right.observationId)) {
+      continue;
+    }
+    reconcileEquivalentOverlap({
+      left,
+      right,
+      classification: overlap,
+      duplicateResolution,
+      replacementDecisions,
+      discardedObservationIds,
+    });
+  }
+
   const recoveryUnits = allUnits.filter((unit) => unit.origin === "recovery");
   for (const recoveryUnit of recoveryUnits) {
     if (discardedObservationIds.has(recoveryUnit.observationId)) {
@@ -648,8 +950,7 @@ export function classifyCompositionOverlaps(allUnits: ExperimentalReconciledObse
       && entry.rationale.startsWith("redundant_recovery_overlap_abstained"),
     );
     const duplicateResolutionEntry = duplicateResolution.find((entry) =>
-      entry.discardedObservationId === recoveryUnit.observationId
-      && entry.classification === "confirmed_duplicate",
+      entry.discardedObservationId === recoveryUnit.observationId,
     );
     const unresolvedAlternative = filteredUnresolvedOverlaps.some((entry) =>
       entry.leftObservationId === recoveryUnit.observationId || entry.rightObservationId === recoveryUnit.observationId,
@@ -852,7 +1153,12 @@ export function orderComposedRegions(
   return {
     regions: ordered,
     assembly: {
-      finalLocalityOrderValid: true,
+      finalLocalityOrderValid: localityOrderIsValid(ordered.map((region) => ({
+        regionId: region.regionId,
+        earliestStart: region.spanStart,
+        latestEnd: region.spanEnd,
+        assignedOrder: region.order,
+      }))),
       outOfOrderUnitCount: 0,
       outOfOrderLocalityCount: outOfOrderBefore,
       repeatedSourceSpanRealizationCount: repeatedSourceSpanRealizationCount(units),
@@ -869,6 +1175,8 @@ export function orderComposedRegions(
 export function composeNativeMemoryPackages(request: MemoryCompositionRequest): NativeCompositionLegacyResult {
   const normalized = normalizeCompositionRequest(request);
   const overlapStage = classifyCompositionOverlaps(normalized.allUnits);
+  const retainedObservationIds = new Set(overlapStage.retainedUnits.map((unit) => unit.observationId));
+  const preRepairUnitSequence = normalized.allUnits.filter((unit) => retainedObservationIds.has(unit.observationId));
   const localityStage = composeMemoryLocalities({
     baselineRegions: normalized.baselineRegions,
     supplementalRegions: normalized.supplementalRegions,
@@ -906,8 +1214,8 @@ export function composeNativeMemoryPackages(request: MemoryCompositionRequest): 
     localityMergeDecisions: localityStage.mergeDecisions,
     sourceOrderAssembly: {
       ...chronology.assembly,
-      outOfOrderUnitCount: 0,
-      finalLocalityOrderValid: true,
+      outOfOrderUnitCount: countOutOfOrderUnits(preRepairUnitSequence),
+      finalLocalityOrderValid: localityOrderIsValid(chronology.assembly.localityOrder),
       repeatedSourceSpanRealizationCount: repeatedSourceSpanRealizationCount(normalizedUnits),
     },
     earliestRepresentedPosition,

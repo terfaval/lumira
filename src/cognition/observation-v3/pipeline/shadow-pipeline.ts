@@ -37,6 +37,7 @@ import {
 import {
   fingerprintSupplementalRealization,
   fingerprintSupplementalRealizationPlan,
+  planSupplementalRealization,
   runShadowSupplementalRealization,
   type PlannedSupplementalGap,
   type SupplementalRealizationExecutionResponse,
@@ -47,6 +48,10 @@ import type {
   DescriptiveExtractionProviderEvidence,
   SupplementalRealizationProviderEvidence,
 } from "@/src/cognition/observation-v3/provider-evidence";
+import {
+  isSupplementalReplayTargetCompatible,
+  type LoadedSupplementalReplayTargetContract,
+} from "@/src/cognition/observation-v3/pipeline/replay/preserved-case-loader";
 import { runShadowSourceAnalysis } from "@/src/cognition/observation-v3/source-analysis";
 import { fingerprintObservationV3Pipeline } from "@/src/cognition/observation-v3/pipeline/pipeline-fingerprint";
 import {
@@ -96,6 +101,7 @@ export interface ObservationV3PreservedReplayAdapterInput {
   supplementalRealization?: {
     responses: Array<{
       physicalGapId: string;
+      targetContract?: LoadedSupplementalReplayTargetContract | null;
       sourceArtifactRef: string;
       providerResult: SupplementalRealizationExecutionResponse;
     }>;
@@ -214,6 +220,48 @@ function toCompositionRequest(
     supplemental: {
       regions: supplementalPackages.flatMap((pkg) => pkg.regions),
       units: supplementalPackages.flatMap((pkg) => pkg.observations),
+    },
+  };
+}
+
+function buildSupplementalIdentity(
+  supplementalPackages: SupplementalRealizationPackage[],
+): MemoryCompositionRequest["supplementalIdentity"] {
+  return supplementalPackages.length > 0
+    ? {
+        candidateId: `supplemental-${sha256Hex(stableJson(supplementalPackages.map((pkg) => pkg.packageId).sort())).slice(0, 16)}`,
+        candidateHash: sha256Hex(stableJson(
+          supplementalPackages
+            .map((pkg) => ({
+              packageId: pkg.packageId,
+              localityCount: pkg.regions.length,
+              unitCount: pkg.observations.length,
+            }))
+            .sort((left, right) => left.packageId.localeCompare(right.packageId)),
+        )),
+      }
+    : undefined;
+}
+
+function toIterativeCompositionRequest(input: {
+  dreamText: string;
+  sourceIdentity: MemoryRealizationSourceIdentity;
+  baselineIdentity: {
+    candidateId: string;
+    candidateHash: string;
+  };
+  baseline: MemoryCompositionRequest["baseline"];
+  supplementalPackages: SupplementalRealizationPackage[];
+}): MemoryCompositionRequest {
+  return {
+    dreamTextLength: input.dreamText.length,
+    sourceIdentity: input.sourceIdentity,
+    baselineIdentity: input.baselineIdentity,
+    supplementalIdentity: buildSupplementalIdentity(input.supplementalPackages),
+    baseline: input.baseline,
+    supplemental: {
+      regions: input.supplementalPackages.flatMap((pkg) => pkg.regions),
+      units: input.supplementalPackages.flatMap((pkg) => pkg.observations),
     },
   };
 }
@@ -404,9 +452,54 @@ export async function runObservationV3ShadowPipeline(
           };
         }
 
-        const replayResponses = new Map(
-          (input.replay?.supplementalRealization?.responses ?? []).map((entry) => [entry.physicalGapId, entry]),
-        );
+        const replayResponses = new Map<string, Array<{
+          physicalGapId: string;
+          targetContract?: LoadedSupplementalReplayTargetContract | null;
+          sourceArtifactRef: string;
+          providerResult: SupplementalRealizationExecutionResponse;
+        }>>();
+        for (const entry of input.replay?.supplementalRealization?.responses ?? []) {
+          const existing = replayResponses.get(entry.physicalGapId) ?? [];
+          existing.push(entry);
+          replayResponses.set(entry.physicalGapId, existing);
+        }
+        const currentPlan = planSupplementalRealization({
+          sourceText,
+          completeness,
+          baseline: {
+            candidateId: candidate.candidateId,
+            candidateHash: candidate.candidateHash,
+            regions: projectNativeC0CandidateToExperimentalRegions(candidate),
+            units: projectNativeC0CandidateToExperimentalUnits(candidate),
+          },
+          contextPadding: 260,
+          maximumWindowLength: 3200,
+        });
+        const incompatibleReplayTarget = input.replay
+          ? currentPlan.selectedGaps.find((target) => {
+            const candidates = replayResponses.get(target.physicalGapId) ?? [];
+            return candidates.length === 0 || !candidates.some((entry) =>
+              isSupplementalReplayTargetCompatible({
+                currentTarget: target,
+                preservedTarget: entry.targetContract ?? null,
+              }));
+          })
+          : null;
+        if (incompatibleReplayTarget) {
+          return {
+            status: "failed",
+            executionMode: supplementalExecutionMode,
+            sourceArtifactRef: null,
+            adapterFingerprint: input.replay?.adapterId ?? null,
+            subsystemFingerprint: sha256Hex(stableJson(subsystemFingerprints.supplemental_realization)),
+            inputHash: sha256Hex(stableJson(completeness)),
+            outputHash: null,
+            failure: {
+              code: "missing_preserved_replay",
+              message: `incompatible_preserved_replay:${incompatibleReplayTarget.targetId}`,
+            },
+          };
+        }
         supplementalRun = await runShadowSupplementalRealization({
           sourceText,
           sourceIdentity: sourceIdentity.sourceId,
@@ -423,7 +516,11 @@ export async function runObservationV3ShadowPipeline(
           executeStructuredRealization: liveProviderExecution?.supplementalRealization?.executeStructuredRealization
             ?? (input.replay
               ? async ({ target }) => {
-                  const replay = replayResponses.get(target.physicalGapId);
+                  const replay = (replayResponses.get(target.physicalGapId) ?? []).find((entry) =>
+                    isSupplementalReplayTargetCompatible({
+                      currentTarget: target,
+                      preservedTarget: entry.targetContract ?? null,
+                    }));
                   if (!replay) {
                     return {
                       outputText: null,
@@ -611,6 +708,7 @@ export async function runObservationV3ShadowPipeline(
       authorityAdmission: async ({ upstream }) => {
         const memoryRealization = upstream.memory_realization?.result as ReturnType<typeof realizeCanonicalMemoryCandidate> | undefined;
         const finalCompleteness = upstream.memory_composition?.finalCompleteness as CompletenessReport | undefined;
+        const compositionResult = upstream.memory_composition?.result as ReturnType<typeof runShadowMemoryComposition>["result"] | undefined;
         if (!memoryRealization || !finalCompleteness) {
           return {
             status: "failed",
@@ -669,23 +767,160 @@ export async function runObservationV3ShadowPipeline(
           };
         }
 
+        let effectiveRequest = request;
+        let effectiveDecision = decision.decision;
+        let effectiveFinalCompleteness = finalCompleteness;
+        let iterativeRecovery: Record<string, unknown> | null = null;
+
+        const shouldAttemptIterativeRecovery =
+          decision.decision.disposition === "deferred_for_supplemental_realization"
+          && compositionResult?.composedCandidateIdentity
+          && finalCompleteness.recoveryRecommendation.disposition === "required_before_admission"
+          && finalCompleteness.recoveryRecommendation.targetedPhysicalGapIds.length > 0
+          && Boolean(liveProviderExecution);
+
+        if (shouldAttemptIterativeRecovery && compositionResult) {
+          const liveExecution = liveProviderExecution;
+          if (!liveExecution) {
+            iterativeRecovery = {
+              attempted: false,
+              skippedReason: "live_execution_unavailable",
+            };
+          } else {
+            const supplementalExecution = liveExecution.supplementalRealization;
+            try {
+            const iterativeSupplementalRun = await runShadowSupplementalRealization({
+              sourceText: input.dreamText,
+              sourceIdentity: sourceIdentity.sourceId,
+              completeness: finalCompleteness,
+              baseline: {
+                candidateId: compositionResult.composedCandidateIdentity.composedCandidateId,
+                candidateHash: compositionResult.composedCandidateIdentity.composedCandidateHash,
+                regions: compositionResult.composedRegions,
+                units: compositionResult.composedUnits,
+              },
+              contextPadding: 260,
+              maximumWindowLength: 3200,
+              onProviderEvidence: supplementalExecution?.onProviderEvidence,
+              executeStructuredRealization: supplementalExecution?.executeStructuredRealization,
+            });
+
+            const iterativeCompositionRequest = toIterativeCompositionRequest({
+              dreamText: input.dreamText,
+              sourceIdentity,
+              baselineIdentity: {
+                candidateId: compositionResult.composedCandidateIdentity.composedCandidateId,
+                candidateHash: compositionResult.composedCandidateIdentity.composedCandidateHash,
+              },
+              baseline: {
+                regions: compositionResult.composedRegions,
+                units: compositionResult.composedUnits,
+              },
+              supplementalPackages: iterativeSupplementalRun.result.packages,
+            });
+            const iterativeCompositionRun = runShadowMemoryComposition(iterativeCompositionRequest);
+
+            const iterativeCompletenessStartedAtMs = Date.now();
+            const iterativeFinalCompleteness = analyzeComposedCandidateCompleteness({
+              dreamText: input.dreamText,
+              composedCandidate: iterativeCompositionRun.result.composedCandidate,
+              composedCandidateHash: iterativeCompositionRun.result.composedCandidateIdentity.composedCandidateHash,
+              sourceIdentity: {
+                sourceHash: sourceIdentity.sourceHash,
+                sourceLength: sourceIdentity.sourceLength,
+              },
+            });
+            const iterativeCompletenessCompletedAtMs = Date.now();
+            await liveExecution.onDeterministicSubstageTiming?.({
+              stage: "final_completeness",
+              startedAt: new Date(iterativeCompletenessStartedAtMs).toISOString(),
+              completedAt: new Date(iterativeCompletenessCompletedAtMs).toISOString(),
+              latencyMs: Math.max(0, iterativeCompletenessCompletedAtMs - iterativeCompletenessStartedAtMs),
+              status: "success",
+            });
+
+            const iterativeRealizationRequest: MemoryRealizationRequest = {
+              requestId: `memory-realization-${sha256Hex(iterativeCompositionRun.result.composedCandidateIdentity.composedCandidateId).slice(0, 12)}`,
+              sourceIdentity,
+              composedCandidateIdentity: iterativeCompositionRun.result.composedCandidateIdentity,
+              composedCandidate: iterativeCompositionRun.result.composedCandidate,
+              compositionResultRef: `composition:${iterativeCompositionRun.result.composedCandidate.provenance.provenanceId}`,
+              realizationPolicyVersion: "observation-v3-shadow-pipeline-v1",
+              realizationPolicyFingerprint: "observation-v3-shadow-pipeline-v1",
+            };
+            const iterativeRealizationRun = runShadowMemoryRealization({ request: iterativeRealizationRequest });
+
+            iterativeRecovery = {
+              attempted: true,
+              priorDisposition: decision.decision.disposition,
+              supplementalDisposition: iterativeSupplementalRun.result.disposition,
+              packageCount: iterativeSupplementalRun.result.packages.length,
+            };
+
+            if (iterativeRealizationRun.result.canonicalCandidate) {
+              const iterativeRequest = buildNativeAdmissionRequest({
+                nativeResult: iterativeRealizationRun.result,
+                completeness: {
+                  status: "available",
+                  reportId: `final-completeness:${sourceIdentity.sourceHash.slice(0, 12)}:iterative`,
+                  report: iterativeFinalCompleteness,
+                },
+              });
+
+              if (iterativeRequest) {
+                const iterativeDecision = runShadowAuthorityAdmission({
+                  request: iterativeRequest,
+                  policy: DEFAULT_AUTHORITY_ADMISSION_POLICY,
+                });
+
+                if (!iterativeDecision.failure) {
+                  effectiveRequest = iterativeRequest;
+                  effectiveDecision = iterativeDecision.decision;
+                  effectiveFinalCompleteness = iterativeFinalCompleteness;
+                  iterativeRecovery = {
+                    ...iterativeRecovery,
+                    finalDisposition: iterativeDecision.decision.disposition,
+                  };
+                } else {
+                  iterativeRecovery = {
+                    ...iterativeRecovery,
+                    failure: iterativeDecision.failure,
+                  };
+                }
+              }
+            }
+          } catch (error) {
+            iterativeRecovery = {
+              attempted: true,
+              priorDisposition: decision.decision.disposition,
+              failure: {
+                code: "iterative_supplemental_recovery_failed",
+                message: error instanceof Error ? error.message : "iterative_supplemental_recovery_failed",
+              },
+            };
+          }
+          }
+        }
+
         return {
           status: "success",
           executionMode: "native_deterministic",
           sourceArtifactRef: "native-admission-decision.json",
           adapterFingerprint: null,
           subsystemFingerprint: sha256Hex(stableJson(subsystemFingerprints.authority_admission)),
-          inputHash: sha256Hex(stableJson(request)),
-          outputHash: sha256Hex(stableJson(decision.decision)),
+          inputHash: sha256Hex(stableJson(effectiveRequest)),
+          outputHash: sha256Hex(stableJson(effectiveDecision)),
           payload: {
-            request,
+            request: effectiveRequest,
+            decision: effectiveDecision,
             artifacts: {
-              "admission-identity-input-comparison": request.admissionIdentityInputComparison,
-              "final-completeness-report": finalCompleteness,
+              "admission-identity-input-comparison": effectiveRequest.admissionIdentityInputComparison,
+              "final-completeness-report": effectiveFinalCompleteness,
             },
-            disposition: decision.decision.disposition,
-            authorityIdentity: decision.decision.authorityIdentity,
-            receivedCanonicalCandidateId: request.canonicalCandidate.canonicalCandidateId,
+            disposition: effectiveDecision.disposition,
+            authorityIdentity: effectiveDecision.authorityIdentity,
+            receivedCanonicalCandidateId: effectiveRequest.canonicalCandidate.canonicalCandidateId,
+            iterativeRecovery,
           },
         };
       },
