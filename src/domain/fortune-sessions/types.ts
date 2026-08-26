@@ -17,4 +17,10 @@ export interface FortuneSession extends VersionedTimestamps {
   state: FortuneSessionState;
   pausedAt: string | null;
   completedAt: string | null;
+  reflectionStartedAt?: string | null;
+}
+
+export interface FortuneJournalSessionRecord extends FortuneSession {
+  latestTurnAt: string | null;
+  latestUserReply: string | null;
 }

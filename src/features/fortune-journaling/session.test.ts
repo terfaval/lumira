@@ -168,6 +168,92 @@ describe("fortune journaling local session", () => {
     expect(session.latestAssistantTurn?.question).toContain("Mi az");
   });
 
+  it("keeps a focus-led pre-generated first facilitator turn on spread until reflection has actually started", () => {
+    const session = hydrateLocalFortuneSession({
+      persistedSession: {
+        id: "fortune-focus-1",
+        userId: "user-1",
+        modeId: "timeline",
+        focusText: "Munkahelyi atmenet",
+        cardSelections: [
+          { positionKey: "past_trace", cardId: "the_fool" },
+          { positionKey: "present_dynamic", cardId: "the_magician" },
+          { positionKey: "forming", cardId: "the_high_priestess" },
+        ],
+        firstInterpretation: null,
+        state: "active",
+        pausedAt: null,
+        completedAt: null,
+        reflectionStartedAt: null,
+        createdAt: "2026-08-19T12:00:00.000Z",
+        updatedAt: "2026-08-19T12:05:00.000Z",
+      },
+      persistedTurns: [
+        {
+          id: "turn-1",
+          sessionId: "fortune-focus-1",
+          userId: "user-1",
+          roundIndex: 0,
+          role: "assistant",
+          turnKind: "reflective_prompt",
+          content:
+            "{\"mode\":\"question\",\"reflection\":\"A fokusz es a lapok mintha ugyanazt a mozgast kerulnek.\",\"question\":\"Hol erzed most legerosebben ezt az alakulast a sajat helyzetedben?\"}",
+          createdAt: "2026-08-19T12:01:00.000Z",
+        },
+      ],
+      deck: getMajorArcanaDeck(),
+      mode: getTarotModeById("timeline"),
+    });
+
+    expect(session.stage).toBe("spread");
+    expect(session.focus).toBe("Munkahelyi atmenet");
+    expect(session.interpretation).toBeNull();
+    expect(session.latestAssistantTurn?.mode).toBe("question");
+  });
+
+  it("hydrates an awaiting reply step for a focus-led first facilitator turn after reflection has actually started", () => {
+    const session = hydrateLocalFortuneSession({
+      persistedSession: {
+        id: "fortune-focus-1",
+        userId: "user-1",
+        modeId: "timeline",
+        focusText: "Munkahelyi atmenet",
+        cardSelections: [
+          { positionKey: "past_trace", cardId: "the_fool" },
+          { positionKey: "present_dynamic", cardId: "the_magician" },
+          { positionKey: "forming", cardId: "the_high_priestess" },
+        ],
+        firstInterpretation: null,
+        state: "active",
+        pausedAt: null,
+        completedAt: null,
+        reflectionStartedAt: "2026-08-19T12:01:30.000Z",
+        createdAt: "2026-08-19T12:00:00.000Z",
+        updatedAt: "2026-08-19T12:05:00.000Z",
+      },
+      persistedTurns: [
+        {
+          id: "turn-1",
+          sessionId: "fortune-focus-1",
+          userId: "user-1",
+          roundIndex: 0,
+          role: "assistant",
+          turnKind: "reflective_prompt",
+          content:
+            "{\"mode\":\"question\",\"reflection\":\"A fokusz es a lapok mintha ugyanazt a mozgast kerulnek.\",\"question\":\"Hol erzed most legerosebben ezt az alakulast a sajat helyzetedben?\"}",
+          createdAt: "2026-08-19T12:01:00.000Z",
+        },
+      ],
+      deck: getMajorArcanaDeck(),
+      mode: getTarotModeById("timeline"),
+    });
+
+    expect(session.stage).toBe("awaiting-reply");
+    expect(session.focus).toBe("Munkahelyi atmenet");
+    expect(session.interpretation).toBeNull();
+    expect(session.latestAssistantTurn?.mode).toBe("question");
+  });
+
   it("hydrates awaiting-resting-choice when the latest assistant turn is a resting point with no reply", () => {
     const session = hydrateLocalFortuneSession({
       persistedSession: buildPersistedSession({ state: "active", pausedAt: null }),
@@ -270,6 +356,7 @@ function buildPersistedSession(input: {
     state: input.state,
     pausedAt: input.pausedAt,
     completedAt: null,
+    reflectionStartedAt: "2026-08-19T12:01:30.000Z",
     createdAt: "2026-08-19T12:00:00.000Z",
     updatedAt: "2026-08-19T12:05:00.000Z",
   };

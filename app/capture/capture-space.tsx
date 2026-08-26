@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 
 import { countCaptureTextMetrics } from "@/app/capture/capture-metrics";
 import styles from "@/app/capture/page.module.css";
@@ -9,18 +10,36 @@ interface CaptureSpaceProps {
   action: (formData: FormData) => Promise<void>;
 }
 
-export function CaptureSpace({ action }: CaptureSpaceProps) {
-  const [dreamText, setDreamText] = useState("");
-  const metrics = countCaptureTextMetrics(dreamText);
+function SubmitButton() {
+  const { pending } = useFormStatus();
 
   return (
-    <form action={action} className={styles.form}>
+    <button
+      type="submit"
+      className={styles.button}
+      disabled={pending}
+      aria-live="polite"
+    >
+      {pending ? <span className={styles.spinner} aria-hidden="true" /> : null}
+      <span>{pending ? "Feldolgozás..." : "Rögzítés"}</span>
+    </button>
+  );
+}
+
+function CaptureFields() {
+  const [dreamText, setDreamText] = useState("");
+  const metrics = countCaptureTextMetrics(dreamText);
+  const { pending } = useFormStatus();
+
+  return (
+    <>
       <textarea
         aria-label="Álomleírás"
         name="dreamText"
         className={styles.textarea}
         placeholder="Írd le az álmot úgy, ahogy és amennyire emlékszel rá."
         required
+        disabled={pending}
         value={dreamText}
         onChange={(event) => setDreamText(event.target.value)}
       />
@@ -30,10 +49,18 @@ export function CaptureSpace({ action }: CaptureSpaceProps) {
           {metrics.wordCount} szó · {metrics.characterCount} karakter
         </p>
 
-        <button type="submit" className={styles.button}>
-          Rögzítés
-        </button>
+        <SubmitButton />
       </div>
+    </>
+  );
+}
+
+export function CaptureSpace({ action }: CaptureSpaceProps) {
+  const { pending } = useFormStatus();
+
+  return (
+    <form action={action} className={styles.form} aria-busy={pending}>
+      <CaptureFields />
     </form>
   );
 }

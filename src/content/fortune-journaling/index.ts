@@ -1,5 +1,6 @@
 import majorArcanaSource from "@/src/content/fortune-journaling/major-arcana.json";
 import tarotModeLibrarySource from "@/src/content/fortune-journaling/tarot_mode_library.json";
+import tarotQuestionProfilesSource from "@/src/content/fortune-journaling/tarot_question_profiles.json";
 
 export interface FortuneCard {
   id: string;
@@ -40,6 +41,11 @@ export interface TarotModeDefinition {
   positions: TarotModePosition[];
   question_profile: string;
   phase: string;
+}
+
+export interface TarotQuestionProfileDefinition {
+  id: string;
+  focus: string[];
 }
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -86,6 +92,7 @@ function toTarotModeLibrary(): TarotModeDefinition[] {
 
 const majorArcanaDeck = toMajorArcanaDeck();
 const tarotModes = toTarotModeLibrary();
+const tarotQuestionProfiles = tarotQuestionProfilesSource as TarotQuestionProfileDefinition[];
 
 export function getMajorArcanaDeck(): FortuneCard[] {
   return [...majorArcanaDeck];
@@ -105,6 +112,12 @@ export function getTarotModeById(modeId: string): TarotModeDefinition {
   const mode = tarotModes.find((entry) => entry.id === modeId);
   assert(mode, `Tarot mode ${modeId} is not available.`);
   return mode;
+}
+
+export function getTarotQuestionProfileById(profileId: string): TarotQuestionProfileDefinition {
+  const profile = tarotQuestionProfiles.find((entry) => entry.id === profileId);
+  assert(profile, `Tarot question profile ${profileId} is not available.`);
+  return profile;
 }
 
 export function getSituationUnfoldingMode(): TarotModeDefinition {

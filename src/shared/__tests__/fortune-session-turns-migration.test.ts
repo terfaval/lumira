@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const V1_MIGRATION_PATH = "supabase/migrations/20260819_0002_fortune_session_turns.sql";
 const MULTI_TURN_MIGRATION_PATH = "supabase/migrations/20260819_0003_fortune_multi_turn_rounds.sql";
+const JOURNAL_START_MIGRATION_PATH = "supabase/migrations/20260826_0004_fortune_reflection_started_at.sql";
 const SESSION_MIGRATION_PATH = "supabase/migrations/20260819_0001_fortune_sessions.sql";
 
 function readWorkspaceFile(relativePath: string): string {
@@ -65,5 +66,15 @@ describe("fortune session turns migration", () => {
     expect(sessionsMigration).toContain("check (state in ('active', 'completed'))");
     expect(turnsMigration).toContain("fortune_session_turns_single_prompt_per_session_idx");
     expect(turnsMigration).toContain("fortune_session_turns_single_reply_per_session_idx");
+  });
+
+  it("adds a dedicated reflection-started marker for journal eligibility and backfills clearly started legacy sessions", () => {
+    const migration = readWorkspaceFile(JOURNAL_START_MIGRATION_PATH);
+
+    expect(migration).toContain("add column if not exists reflection_started_at timestamptz null");
+    expect(migration).toContain("first_interpretation is not null");
+    expect(migration).toContain("exists (");
+    expect(migration).toContain("from public.fortune_session_turns");
+    expect(migration).toContain("create index if not exists fortune_sessions_user_reflection_started_at_idx");
   });
 });

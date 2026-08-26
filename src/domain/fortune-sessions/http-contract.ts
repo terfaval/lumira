@@ -42,6 +42,7 @@ export function parseCreateFortuneSessionRequest(
 
 export type PatchFortuneSessionRequest =
   | { kind: "focus"; focusText: string | null }
+  | { kind: "reflection-started" }
   | { kind: "interpretation"; firstInterpretation: string };
 
 export interface CreateFortuneReflectiveReplyRequest {
@@ -76,10 +77,11 @@ export function parsePatchFortuneSessionRequest(
   }
 
   const hasFocusText = "focusText" in record;
+  const hasReflectionStarted = "reflectionStarted" in record;
   const hasInterpretation = "firstInterpretation" in record || "state" in record;
 
-  if (hasFocusText && hasInterpretation) {
-    return { ok: false, error: "PATCH accepts either focusText or completion payload, not both." };
+  if ([hasFocusText, hasReflectionStarted, hasInterpretation].filter(Boolean).length > 1) {
+    return { ok: false, error: "PATCH accepts exactly one supported Fortune session mutation." };
   }
 
   if (hasFocusText) {
@@ -88,6 +90,19 @@ export function parsePatchFortuneSessionRequest(
       value: {
         kind: "focus",
         focusText: normalizeOptionalText(record.focusText),
+      },
+    };
+  }
+
+  if (hasReflectionStarted) {
+    if (record.reflectionStarted !== true) {
+      return { ok: false, error: "reflectionStarted must be true when provided." };
+    }
+
+    return {
+      ok: true,
+      value: {
+        kind: "reflection-started",
       },
     };
   }

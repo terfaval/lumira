@@ -102,21 +102,19 @@ describe("HomepageOrientationHub capture surface", () => {
     expect(markup).not.toContain("Recall");
   });
 
-  it("renders a lighter meditation tile with panel and CTA links to /meditation", () => {
+  it("renders the final shared meditation and fortune carousel copy", () => {
     const markup = renderToStaticMarkup(<HomepageOrientationHub payload={payload} />);
 
+    expect(markup).toContain('data-homepage-feature-carousel="true"');
+    expect(markup).toContain('aria-label="Előző panel"');
+    expect(markup).toContain('aria-label="Következő panel"');
     expect(markup).toContain('href="/meditation"');
-    expect(markup).not.toContain("<h2>Meditáció</h2>");
-    expect(markup).toContain("Lépj be egy lassabb,");
-    expect(markup).toContain("csendesebb térbe.");
+    expect(markup).toContain('href="/fortune"');
+    expect(markup).toContain("<h2>Üveggyöngyök</h2>");
+    expect(markup).toContain("Lépj be egy lassabb, csendesebb térbe.");
     expect(markup).toContain(">Meditálj</a>");
-  });
-
-  it("renders Fortune Journaling as a top-level homepage destination", () => {
-    const markup = renderToStaticMarkup(<HomepageOrientationHub payload={payload} />);
-
     expect(markup).toContain("Fortune Journaling");
     expect(markup).toContain("Tarot-alapú önreflexió");
-    expect(markup).toContain('href="/fortune"');
+    expect(markup).toContain(">Próbáld ki</a>");
   });
 });

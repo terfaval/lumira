@@ -20,6 +20,7 @@ export interface LocalFortuneSessionBase {
   sessionId: string | null;
   mode: TarotModeDefinition;
   focus: string | null;
+  reflectionStartedAt: string | null;
   cards: LocalFortuneSessionCard[];
   interpretation: string | null;
   latestAssistantTurn: FortuneFacilitatorResponse | null;
@@ -36,7 +37,6 @@ export interface LocalFortuneSession extends LocalFortuneSessionBase {
 
 export interface LocalFortuneCompletedSession extends LocalFortuneSessionBase {
   stage: "complete";
-  interpretation: string;
   completedAt: string;
   pausedAt: null;
 }
@@ -141,27 +141,36 @@ function parseAssistantTurnContent(content: string): FortuneFacilitatorResponse 
 
 function deriveActiveStage(input: {
   cards: LocalFortuneSessionCard[];
+  focus: string | null;
   interpretation: string | null;
   latestAssistantTurn: FortuneFacilitatorResponse | null;
   reflectiveReply: string | null;
+  reflectionStartedAt: string | null;
 }): LocalFortuneActiveStage {
-  if (!input.interpretation && input.cards.length > 0 && !input.latestAssistantTurn) {
-    return "spread";
+  if (!input.interpretation && input.cards.length > 0) {
+    if (!input.latestAssistantTurn) {
+      return "spread";
+    }
+
+    // Round-zero prompts may be pre-generated before the user explicitly enters reflection.
+    if (input.focus && !input.reflectionStartedAt) {
+      return "spread";
+    }
+  }
+
+  if (input.latestAssistantTurn) {
+    if (input.reflectiveReply) {
+      return "ready-for-next-round";
+    }
+
+    return input.latestAssistantTurn.mode === "resting_point" ? "awaiting-resting-choice" : "awaiting-reply";
   }
 
   if (!input.interpretation) {
     return "interpretation";
   }
 
-  if (!input.latestAssistantTurn) {
-    return "ready-for-next-round";
-  }
-
-  if (input.reflectiveReply) {
-    return "ready-for-next-round";
-  }
-
-  return input.latestAssistantTurn.mode === "resting_point" ? "awaiting-resting-choice" : "awaiting-reply";
+  return "ready-for-next-round";
 }
 
 function findLatestAssistantTurn(turns: FortuneSessionTurn[]): FortuneSessionTurn | null {
@@ -222,6 +231,7 @@ export function startLocalFortuneSession(input: StartLocalFortuneSessionInput): 
     sessionId: null,
     mode: input.mode,
     focus: normalizeOptionalText(input.focus),
+    reflectionStartedAt: null,
     cards: input.mode.positions.map((position) => ({
       position,
       card: input.deck.find((entry) => entry.id === cardSelections.find((selection) => selection.positionKey === position.key)?.cardId)!,
@@ -290,6 +300,7 @@ export function hydrateLocalFortuneSession(input: {
     sessionId: input.persistedSession.id,
     mode: input.mode,
     focus: input.persistedSession.focusText,
+    reflectionStartedAt: input.persistedSession.reflectionStartedAt ?? null,
     cards,
     interpretation,
     latestAssistantTurn,
@@ -299,14 +310,9 @@ export function hydrateLocalFortuneSession(input: {
   } satisfies LocalFortuneSessionBase;
 
   if (input.persistedSession.state === "completed") {
-    if (!interpretation) {
-      throw new Error("Completed Fortune sessions must preserve the first interpretation.");
-    }
-
     return {
       ...base,
       stage: "complete",
-      interpretation,
       completedAt: input.persistedSession.completedAt ?? input.persistedSession.updatedAt,
       pausedAt: null,
     };
@@ -314,9 +320,11 @@ export function hydrateLocalFortuneSession(input: {
 
   const activeStage = deriveActiveStage({
     cards,
+    focus: input.persistedSession.focusText,
     interpretation,
     latestAssistantTurn,
     reflectiveReply,
+    reflectionStartedAt: input.persistedSession.reflectionStartedAt ?? null,
   });
 
   if (input.persistedSession.state === "paused") {
@@ -383,6 +391,7 @@ export function createPersistedFortuneSessionSnapshot(
     state,
     pausedAt: session.stage === "paused" ? session.pausedAt : null,
     completedAt: session.stage === "complete" ? session.completedAt : null,
+    reflectionStartedAt: session.reflectionStartedAt,
     createdAt: session.startedAt,
     updatedAt: new Date().toISOString(),
   };

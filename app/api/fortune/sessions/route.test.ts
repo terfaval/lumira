@@ -66,6 +66,52 @@ describe("/api/fortune/sessions route", () => {
     });
   });
 
+  it("normalizes and persists optional focus text at session creation", async () => {
+    resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
+    createSession.mockResolvedValue({
+      id: "fortune-2",
+      userId: "user-a",
+      modeId: "timeline",
+      focusText: "Munkahelyváltás körüli bizonytalanság",
+      cardSelections: [
+        { positionKey: "past_trace", cardId: "the_fool" },
+        { positionKey: "present_dynamic", cardId: "the_magician" },
+        { positionKey: "forming", cardId: "the_high_priestess" },
+      ],
+      firstInterpretation: null,
+      state: "active",
+      pausedAt: null,
+      completedAt: null,
+      createdAt: "2026-08-19T10:00:00.000Z",
+      updatedAt: "2026-08-19T10:00:00.000Z",
+    });
+
+    const { POST } = await import("@/app/api/fortune/sessions/route");
+    const response = await POST(
+      new Request("http://localhost/api/fortune/sessions", {
+        method: "POST",
+        body: JSON.stringify({
+          modeId: "timeline",
+          focusText: "  Munkahelyváltás körüli bizonytalanság  ",
+          selectedCardIds: ["the_fool", "the_magician", "the_high_priestess"],
+        }),
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(createSession).toHaveBeenCalledWith({
+      userId: "user-a",
+      modeId: "timeline",
+      focusText: "Munkahelyváltás körüli bizonytalanság",
+      cardSelections: [
+        { positionKey: "past_trace", cardId: "the_fool" },
+        { positionKey: "present_dynamic", cardId: "the_magician" },
+        { positionKey: "forming", cardId: "the_high_priestess" },
+      ],
+    });
+  });
+
   it("rejects unauthenticated Fortune session creation", async () => {
     resolveRequestUserContext.mockResolvedValue({ userId: null, source: "none" });
 

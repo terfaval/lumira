@@ -77,6 +77,19 @@ export async function PATCH(request: Request, context: RouteParams) {
     return NextResponse.json({ session });
   }
 
+  if (parsed.value.kind === "reflection-started") {
+    const session = await repository.markReflectionStarted({
+      sessionId: id,
+      userId: user.userId,
+    });
+
+    if (!session) {
+      return NextResponse.json({ error: "Fortune session not found." }, { status: 404 });
+    }
+
+    return NextResponse.json({ session });
+  }
+
   const session = await repository.storeFirstInterpretation({
     sessionId: id,
     userId: user.userId,

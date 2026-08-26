@@ -66,6 +66,10 @@ describe("fortune draw state helpers", () => {
       ariaLabel: "Vissza a kezdőlapra",
       target: "home",
     });
+    expect(getHeaderLeftControl("focus")).toEqual({
+      ariaLabel: "Vissza",
+      target: "library",
+    });
     expect(getHeaderLeftControl("draw")).toEqual({
       ariaLabel: "Vissza",
       target: "library",

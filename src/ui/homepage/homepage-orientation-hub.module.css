@@ -90,7 +90,6 @@
   justify-items: center;
   gap: 0.7rem;
   max-width: 20rem;
-  pointer-events: none;
 }
 
 .capture p {
@@ -122,6 +121,165 @@
     linear-gradient(90deg, rgba(28, 42, 35, 0.18), rgba(28, 42, 35, 0.06) 58%, rgba(28, 42, 35, 0.03)),
     radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.22), transparent 36%),
     url("/backgrounds/meditations_background.png") center / cover no-repeat;
+}
+
+.featureCarouselTile {
+  order: 6;
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  min-height: 7.4rem;
+}
+
+.featureCarousel {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+.featureCarouselViewport {
+  position: relative;
+  display: grid;
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+.featureCarouselSlide {
+  grid-area: 1 / 1;
+  display: grid;
+  place-items: stretch;
+  min-height: 100%;
+  padding: 0.82rem 2.75rem;
+  border-radius: 1.05rem;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+  transform: translateX(0.6rem);
+}
+
+.featureCarouselSlide[data-active="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.featureCarousel[data-active-feature="meditation"] .featureCarouselSlide[data-active="true"] {
+  border-color: rgba(229, 236, 231, 0.26);
+  background:
+    linear-gradient(180deg, rgba(22, 31, 28, 0.2), rgba(22, 31, 28, 0.44)),
+    linear-gradient(90deg, rgba(28, 42, 35, 0.08), rgba(28, 42, 35, 0.04) 58%, rgba(28, 42, 35, 0.08)),
+    url("/backgrounds/meditations_background.png") center / cover no-repeat;
+}
+
+.featureCarousel[data-active-feature="fortune"] .featureCarouselSlide[data-active="true"] {
+  background:
+    linear-gradient(180deg, rgba(23, 18, 16, 0.16), rgba(23, 18, 16, 0.5)),
+    linear-gradient(90deg, rgba(41, 27, 21, 0.12), rgba(41, 27, 21, 0.04) 58%, rgba(41, 27, 21, 0.14)),
+    url("/fortune-journaling/fortune-journaling.png") center 32% / cover no-repeat;
+}
+
+.featureCarouselContentGroup {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  grid-template-rows: auto auto auto;
+  gap: 0.72rem;
+  min-height: 100%;
+  width: 100%;
+  text-align: center;
+}
+
+.featureCarousel[data-active-feature="meditation"] .meditationContent h2,
+.featureCarousel[data-active-feature="meditation"] .meditationContent .panelLead {
+  color: #f6faf6;
+}
+
+.featureCarouselFortuneContent {
+  max-width: 17rem;
+}
+
+.featureCarouselFortuneContent h2,
+.featureCarouselFortuneContent .panelSublead {
+  color: #f6efe8;
+}
+
+.featureCarouselFortuneContent h2 {
+  font-size: clamp(1.18rem, 1.7vw, 1.42rem);
+  line-height: 1.08;
+}
+
+.featureCarouselFortuneContent .panelSublead {
+  color: rgba(246, 239, 232, 0.94);
+  font-size: 0.92rem;
+}
+
+.featureCarouselControls {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.45rem;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.featureCarouselArrow {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(248, 245, 239, 0.28);
+  border-radius: 999px;
+  background: rgba(250, 247, 241, 0.16);
+  box-shadow: 0 10px 22px rgba(20, 31, 26, 0.08);
+  color: #f8f5ef;
+  font-size: 1.15rem;
+  line-height: 1;
+  pointer-events: auto;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.featureCarouselArrow:hover,
+.featureCarouselArrow:focus-visible {
+  border-color: rgba(248, 245, 239, 0.42);
+  background: rgba(250, 247, 241, 0.24);
+}
+
+.fortuneCarouselCta {
+  display: inline-grid;
+  place-items: center;
+  min-height: 3rem;
+  min-width: 9.5rem;
+  padding: 0.45rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 236, 214, 0.34);
+  background: rgba(250, 238, 220, 0.14);
+  box-shadow: 0 10px 24px rgba(35, 24, 18, 0.12);
+  color: rgba(251, 243, 232, 0.98);
+  font-family: var(--font-reflective-serif), Georgia, serif;
+  font-size: clamp(1rem, 1.65vw, 1.18rem);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.fortuneCarouselCta:hover,
+.fortuneCarouselCta:focus-visible {
+  border-color: rgba(250, 236, 214, 0.5);
+  background: rgba(250, 238, 220, 0.2);
 }
 
 .meditation:hover,
@@ -374,7 +532,9 @@
 
 .captureContent,
 .meditationContent,
+.featureCarouselFortuneContent,
 .meditationCta,
+.fortuneCarouselCta,
 .captureCtaRow,
 .capturePlusBadge,
 .captureCtaLabel,
@@ -388,7 +548,8 @@
 .panelLead,
 .panelSublead,
 .quiet,
-.tile h2 {
+.tile h2,
+.featureCarouselArrow {
   position: relative;
   z-index: 2;
 }
@@ -421,20 +582,20 @@
   }
 
   .guide {
-    grid-column: 4 / 8;
+    grid-column: 1 / 5;
     grid-row: 2;
     min-height: 6.7rem;
   }
 
   .journal {
-    grid-column: 8 / 13;
+    grid-column: 5 / 10;
     grid-row: 2;
     min-height: 8rem;
   }
 
-  .meditation {
+  .featureCarouselTile {
     grid-column: 10 / 13;
-    grid-row: 3;
+    grid-row: 2;
     min-height: 6.7rem;
   }
 

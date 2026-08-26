@@ -1,6 +1,10 @@
 import type { FortuneSession } from "@/src/domain/fortune-sessions/types";
 import type { FortuneSessionTurn } from "@/src/domain/fortune-sessions/turn-types";
-import type { FortuneCard, TarotModeDefinition } from "@/src/content/fortune-journaling";
+import {
+  type FortuneCard,
+  getTarotQuestionProfileById,
+  type TarotModeDefinition,
+} from "@/src/content/fortune-journaling";
 import type { FortuneFacilitatorPacket } from "@/src/features/fortune-journaling/facilitator/facilitator-types";
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -15,13 +19,20 @@ export function buildFortuneFacilitatorPacket(input: {
   mode: TarotModeDefinition;
   deck: FortuneCard[];
 }): FortuneFacilitatorPacket {
-  assert(input.session.firstInterpretation, "Fortune facilitator requires a first interpretation.");
+  const questionProfile = getTarotQuestionProfileById(input.mode.question_profile);
 
   return {
     sessionId: input.session.id,
-    modeId: input.mode.id,
-    modeName: input.mode.name,
-    questionProfile: input.mode.question_profile,
+    mode: {
+      id: input.mode.id,
+      name: input.mode.name,
+      description: input.mode.library.description,
+      orientation: input.mode.library.orientation,
+      questionProfile: {
+        id: questionProfile.id,
+        focus: [...questionProfile.focus],
+      },
+    },
     focusText: input.session.focusText,
     firstInterpretation: input.session.firstInterpretation,
     cards: input.session.cardSelections.map((selection) => {
@@ -34,8 +45,13 @@ export function buildFortuneFacilitatorPacket(input: {
       return {
         id: card.id,
         name_hu: card.name_hu,
-        positionKey: position.key,
-        positionLabel: position.label,
+        position: {
+          key: position.key,
+          label: position.label,
+        },
+        archetype: card.archetype,
+        summary: card.summary,
+        interpretationAxes: [...card.interpretation_axes],
       };
     }),
     turns: input.turns.map((turn) => ({

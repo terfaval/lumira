@@ -1,0 +1,30 @@
+[
+  {
+    "id": "surface_vs_depth",
+    "focus": ["látható vs rejtett", "felszín mögötti réteg"]
+  },
+  {
+    "id": "temporal_flow",
+    "focus": ["múlt hatása", "jelen dinamika", "alakulás"]
+  },
+  {
+    "id": "inner_parts",
+    "focus": ["belső szerepek", "ellentétes részek"]
+  },
+  {
+    "id": "system_dynamics",
+    "focus": ["én vs környezet", "feszültség mező"]
+  },
+  {
+    "id": "perspective_reframe",
+    "focus": ["nézőpont váltás", "új értelmezés"]
+  },
+  {
+    "id": "boundaries",
+    "focus": ["határok", "beengedés / védelem"]
+  },
+  {
+    "id": "conflict_integration",
+    "focus": ["két erő", "integráció"]
+  }
+]

@@ -312,3 +312,16 @@ Append-only build run summary. Detailed logs are under `docs/build-logs/`.
 | 2026-08-20T09:10:55.546Z | success | 0 | `docs/build-logs/2026-08-20T09-10-55-546Z.log` |
 | 2026-08-20T09:25:05.742Z | success | 0 | `docs/build-logs/2026-08-20T09-25-05-742Z.log` |
 | 2026-08-20T13:45:56.037Z | success | 0 | `docs/build-logs/2026-08-20T13-45-56-037Z.log` |
+| 2026-08-25T14:21:16.330Z | failed | 1 | `docs/build-logs/2026-08-25T14-21-16-330Z.log` |
+| 2026-08-25T14:19:25.440Z | success | 0 | `docs/build-logs/2026-08-25T14-19-25-440Z.log` |
+| 2026-08-25T14:23:37.950Z | success | 0 | `docs/build-logs/2026-08-25T14-23-37-950Z.log` |
+| 2026-08-25T14:38:27.649Z | success | 0 | `docs/build-logs/2026-08-25T14-38-27-649Z.log` |
+| 2026-08-25T20:17:54.780Z | failed | 1 | `docs/build-logs/2026-08-25T20-17-54-780Z.log` |
+| 2026-08-25T20:15:41.779Z | success | 0 | `docs/build-logs/2026-08-25T20-15-41-779Z.log` |
+| 2026-08-25T20:22:41.578Z | success | 0 | `docs/build-logs/2026-08-25T20-22-41-578Z.log` |
+| 2026-08-26T17:24:21.909Z | failed | 1 | `docs/build-logs/2026-08-26T17-24-21-909Z.log` |
+| 2026-08-26T17:21:59.226Z | failed | 1 | `docs/build-logs/2026-08-26T17-21-59-226Z.log` |
+| 2026-08-26T17:30:31.780Z | failed | 1 | `docs/build-logs/2026-08-26T17-30-31-780Z.log` |
+| 2026-08-26T20:45:03.566Z | failed | 1 | `docs/build-logs/2026-08-26T20-45-03-566Z.log` |
+| 2026-08-26T20:46:51.587Z | failed | 1 | `docs/build-logs/2026-08-26T20-46-51-587Z.log` |
+| 2026-08-26T20:42:57.289Z | success | 0 | `docs/build-logs/2026-08-26T20-42-57-289Z.log` |

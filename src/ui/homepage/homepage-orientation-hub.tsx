@@ -6,6 +6,7 @@ import type {
 } from "@/src/reflective-space/composition/compose-homepage-orientation-payload";
 import type { HomepageNavigationTargetRef } from "@/src/reflective-space/composition/homepage-route-target-registry";
 import { buildGuideCardHref } from "@/src/ui/guide/guide-modal-state";
+import { HomepageFeatureCarouselTile } from "@/src/ui/homepage/homepage-feature-carousel-tile";
 import styles from "@/src/ui/homepage/homepage-orientation-hub.module.css";
 
 interface HomepageOrientationHubProps {
@@ -17,12 +18,6 @@ const FEATURED_GUIDE_ENTRIES = [
   { slug: "remalom", label: "Rémálmom volt" },
   { slug: "nem-emlekszem-az-almaimra", label: "Nem emlékszem az álmaimra" },
 ] as const;
-
-const MEDITATION_TARGET: HomepageNavigationTargetRef = {
-  targetKey: "homepage",
-  href: "/meditation",
-  routeStatus: "implemented",
-};
 
 function shortDate(iso: string): string {
   const parsed = new Date(iso);
@@ -97,26 +92,8 @@ export function HomepageOrientationHub({ payload }: HomepageOrientationHubProps)
           </ul>
         </article>
 
-        <article className={`${styles.tile} ${styles.fortune} ${styles.secondary} ${styles.interactive}`}>
-          <PanelEntryLink target={payload.navigation.fortune} label="Fortune Journaling megnyitása" />
-          <h2>Fortune Journaling</h2>
-          <p className={styles.panelSublead}>Tarot-alapú önreflexió</p>
-          <p className={styles.mobileHint}>Két lap, egy helyzet, saját jelentésalkotás.</p>
-          <p className={styles.quiet}>Külön nappali tér, a dream pipeline-tól függetlenül.</p>
-        </article>
-
-        <article className={`${styles.tile} ${styles.meditation} ${styles.secondary} ${styles.interactive}`}>
-          <PanelEntryLink target={MEDITATION_TARGET} label="Meditáció panel megnyitása" />
-          <div className={styles.meditationContent}>
-            <p className={`${styles.panelLead} ${styles.meditationLead}`}>
-              Lépj be egy lassabb,
-              <br />
-              csendesebb térbe.
-            </p>
-            <Link className={styles.meditationCta} href={MEDITATION_TARGET.href}>
-              Meditálj
-            </Link>
-          </div>
+        <article className={`${styles.tile} ${styles.featureCarouselTile} ${styles.secondary} ${styles.interactive}`}>
+          <HomepageFeatureCarouselTile />
         </article>
 
         <article className={`${styles.tile} ${styles.glossary} ${styles.secondary} ${styles.interactive}`}>

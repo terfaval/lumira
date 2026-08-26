@@ -18,6 +18,7 @@ describe("SupabaseFortuneSessionRepository", () => {
       state: "active",
       paused_at: null,
       completed_at: null,
+      reflection_started_at: null,
       created_at: "2026-08-19T10:00:00.000Z",
       updated_at: "2026-08-19T10:00:00.000Z",
       },
@@ -51,10 +52,21 @@ describe("SupabaseFortuneSessionRepository", () => {
       state: "active",
       paused_at: null,
       completed_at: null,
+      reflection_started_at: null,
     });
     const insertedRow = insert.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(Object.keys(insertedRow).sort()).toEqual(
-      ["card_selections", "completed_at", "first_interpretation", "focus_text", "mode_id", "paused_at", "state", "user_id"].sort(),
+      [
+        "card_selections",
+        "completed_at",
+        "first_interpretation",
+        "focus_text",
+        "mode_id",
+        "paused_at",
+        "reflection_started_at",
+        "state",
+        "user_id",
+      ].sort(),
     );
     expect(session.cardSelections).toEqual([
       { positionKey: "visible", cardId: "the_fool" },

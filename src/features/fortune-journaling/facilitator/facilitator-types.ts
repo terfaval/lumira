@@ -6,20 +6,34 @@ export interface FortuneFacilitatorPacketTurn {
   content: string;
 }
 
+export interface FortuneFacilitatorPacketMode {
+  id: string;
+  name: string;
+  description: string;
+  orientation: string;
+  questionProfile: {
+    id: string;
+    focus: string[];
+  };
+}
+
 export interface FortuneFacilitatorPacketCard {
   id: string;
   name_hu: string;
-  positionKey: string;
-  positionLabel: string;
+  position: {
+    key: string;
+    label: string;
+  };
+  archetype: string;
+  summary: string;
+  interpretationAxes: string[];
 }
 
 export interface FortuneFacilitatorPacket {
   sessionId: string;
-  modeId: string;
-  modeName: string;
-  questionProfile: string;
+  mode: FortuneFacilitatorPacketMode;
   focusText: string | null;
-  firstInterpretation: string;
+  firstInterpretation: string | null;
   cards: FortuneFacilitatorPacketCard[];
   turns: FortuneFacilitatorPacketTurn[];
 }

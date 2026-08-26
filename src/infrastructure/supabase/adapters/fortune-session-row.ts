@@ -11,6 +11,7 @@ export interface FortuneSessionRow {
   state: FortuneSessionState;
   paused_at: string | null;
   completed_at: string | null;
+  reflection_started_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -24,6 +25,7 @@ export interface FortuneSessionInsertRow {
   state: FortuneSessionState;
   paused_at: string | null;
   completed_at: string | null;
+  reflection_started_at: string | null;
 }
 
 export function toFortuneSessionInsertRow(input: CreateFortuneSessionInput): FortuneSessionInsertRow {
@@ -36,6 +38,7 @@ export function toFortuneSessionInsertRow(input: CreateFortuneSessionInput): For
     state: "active",
     paused_at: null,
     completed_at: null,
+    reflection_started_at: null,
   };
 }
 
@@ -50,6 +53,7 @@ export function fromFortuneSessionRow(row: FortuneSessionRow): FortuneSession {
     state: row.state,
     pausedAt: row.paused_at,
     completedAt: row.completed_at,
+    reflectionStartedAt: row.reflection_started_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

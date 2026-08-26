@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getMajorArcanaDeck, getSituationUnfoldingMode } from "@/src/content/fortune-journaling";
+import { getMajorArcanaDeck, getTarotModeById } from "@/src/content/fortune-journaling";
 import { buildFortuneFacilitatorPacket } from "@/src/features/fortune-journaling/facilitator/fortune-facilitator-packet";
 import { generateFortuneFacilitatorTurn } from "@/src/features/fortune-journaling/facilitator/fortune-facilitator-runtime";
 import { DEV_FALLBACK_HEADER, resolveRequestUserContext } from "@/src/infrastructure/supabase/auth/resolve-request-user-context";
@@ -36,7 +36,9 @@ export async function POST(request: Request, context: RouteParams) {
     return NextResponse.json({ error: "Fortune session not found." }, { status: 404 });
   }
 
-  if (!session.firstInterpretation) {
+  const hasFocus = typeof session.focusText === "string" && session.focusText.trim().length > 0;
+
+  if (!session.firstInterpretation && !hasFocus) {
     return NextResponse.json({ error: "First interpretation is required before the facilitator turn." }, { status: 409 });
   }
 
@@ -49,7 +51,13 @@ export async function POST(request: Request, context: RouteParams) {
     return NextResponse.json({ turn: existingTurn });
   }
 
-  const mode = getSituationUnfoldingMode();
+  let mode;
+  try {
+    mode = getTarotModeById(session.modeId);
+  } catch {
+    return NextResponse.json({ error: "The persisted Fortune mode is no longer available." }, { status: 409 });
+  }
+
   const turns = await turnRepository.listTurnsBySession(id, user.userId);
   const packet = buildFortuneFacilitatorPacket({
     session,

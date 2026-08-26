@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const resolveRequestUserContext = vi.fn();
 const getSessionById = vi.fn();
 const listTurnsBySession = vi.fn();
+const markReflectionStarted = vi.fn();
 const storeFirstInterpretation = vi.fn();
 const updateSessionFocus = vi.fn();
 
@@ -14,6 +15,7 @@ vi.mock("@/src/infrastructure/supabase/auth/resolve-request-user-context", () =>
 vi.mock("@/src/infrastructure/supabase/repositories/create-fortune-session-repository", () => ({
   createFortuneSessionRepository: () => ({
     getSessionById,
+    markReflectionStarted,
     storeFirstInterpretation,
     updateSessionFocus,
   }),
@@ -30,6 +32,7 @@ describe("/api/fortune/sessions/[id] route", () => {
     resolveRequestUserContext.mockReset();
     getSessionById.mockReset();
     listTurnsBySession.mockReset();
+    markReflectionStarted.mockReset();
     storeFirstInterpretation.mockReset();
     updateSessionFocus.mockReset();
   });
@@ -109,5 +112,34 @@ describe("/api/fortune/sessions/[id] route", () => {
       userId: "user-a",
       firstInterpretation: "Eloszor feszultseget es kivancsisagot erzek.",
     });
+  });
+
+  it("marks reflection as started idempotently through the existing PATCH surface", async () => {
+    resolveRequestUserContext.mockResolvedValue({ userId: "user-a", source: "supabase_auth" });
+    markReflectionStarted.mockResolvedValue({
+      id: "fortune-1",
+      reflectionStartedAt: "2026-09-01T08:10:00.000Z",
+      state: "active",
+    });
+
+    const { PATCH } = await import("@/app/api/fortune/sessions/[id]/route");
+    const response = await PATCH(
+      new Request("http://localhost/api/fortune/sessions/fortune-1", {
+        method: "PATCH",
+        body: JSON.stringify({
+          reflectionStarted: true,
+        }),
+        headers: { "Content-Type": "application/json" },
+      }),
+      { params: Promise.resolve({ id: "fortune-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(markReflectionStarted).toHaveBeenCalledWith({
+      sessionId: "fortune-1",
+      userId: "user-a",
+    });
+    expect(storeFirstInterpretation).not.toHaveBeenCalled();
+    expect(updateSessionFocus).not.toHaveBeenCalled();
   });
 });

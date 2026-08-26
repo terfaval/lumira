@@ -1,5 +1,6 @@
 export type FortuneHeaderLeftStage =
   | "library"
+  | "focus"
   | "draw"
   | "spread"
   | "interpretation"
@@ -70,7 +71,7 @@ export function getHeaderLeftControl(stage: FortuneHeaderLeftStage): {
     };
   }
 
-  if (stage === "draw") {
+  if (stage === "focus" || stage === "draw") {
     return {
       ariaLabel: "Vissza",
       target: "library",

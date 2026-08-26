@@ -1,6 +1,6 @@
 import type { FortuneSessionId, UserId } from "@/src/shared/types";
 
-import type { FortuneCardSelection, FortuneSession } from "@/src/domain/fortune-sessions/types";
+import type { FortuneCardSelection, FortuneJournalSessionRecord, FortuneSession } from "@/src/domain/fortune-sessions/types";
 import type {
   FortuneSessionTurn,
   FortuneSessionTurnKind,
@@ -41,14 +41,21 @@ export interface ResumeFortuneSessionInput {
   userId: UserId;
 }
 
+export interface MarkFortuneReflectionStartedInput {
+  sessionId: FortuneSessionId;
+  userId: UserId;
+}
+
 export interface FortuneSessionRepository {
   createSession(input: CreateFortuneSessionInput): Promise<FortuneSession>;
   getSessionById(sessionId: FortuneSessionId, userId: UserId): Promise<FortuneSession | null>;
   updateSessionFocus(input: UpdateFortuneSessionFocusInput): Promise<FortuneSession | null>;
   storeFirstInterpretation(input: StoreFirstFortuneInterpretationInput): Promise<FortuneSession | null>;
+  markReflectionStarted(input: MarkFortuneReflectionStartedInput): Promise<FortuneSession | null>;
   pauseSession(input: PauseFortuneSessionInput): Promise<FortuneSession | null>;
   resumeSession(input: ResumeFortuneSessionInput): Promise<FortuneSession | null>;
   markCompleted(input: CompleteFortuneSessionInput): Promise<FortuneSession | null>;
+  listStartedSessionsForJournal(userId: UserId): Promise<FortuneJournalSessionRecord[]>;
 }
 
 export interface CreateFortuneSessionTurnInput {

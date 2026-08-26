@@ -58,6 +58,43 @@ This ledger should not become:
 
 ## Entry Guidance
 
+## 2026-08-25 - Fortune Optional Focus Step V1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/api/fortune/sessions`
+  - `app/fortune`
+  - `src/features/fortune-journaling`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Added a new optional pre-session Focus step between Library and Draw, renumbered the shared step shell to `I / II / III / IV`, and kept Reflection Workspace outside the numbered sequence.
+  - Kept Focus client-local until the existing final-card session-create boundary, then persisted it through the already-supported `focusText` session field without introducing a parallel context field or new persistence abstraction.
+  - Surfaced persisted Focus in the Reflection Workspace session context and `Előzmények -> A vetés`, while preserving the existing facilitator/session lifecycle and reusing the established focus-aware facilitator packet path.
+- Verification:
+  - `npx.cmd vitest run src/features/fortune-journaling/pre-session-state.test.ts src/features/fortune-journaling/draw-state.test.ts src/features/fortune-journaling/session.test.ts app/api/fortune/sessions/route.test.ts app/fortune/page.test.tsx app/fortune/reflection-workspace-page.test.tsx src/features/fortune-journaling/reflection-workspace.test.ts src/features/fortune-journaling/card-info.test.ts` -> pass
+  - `npx.cmd tsc --noEmit --pretty false` -> fails on pre-existing unrelated type errors in `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts` and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+- `npm.cmd run build` -> no fresh clean verification obtained in this session: earlier 2026-08-25 build logs include one success (`docs/build-logs/2026-08-25T20-15-41-779Z.log`) and one concurrent-build lock failure (`docs/build-logs/2026-08-25T20-17-54-780Z.log`), while a fresh rerun timed out locally after 184.9s without producing a new logged result
+- Follow-up note:
+  - No schema or facilitator contract expansion was required for this ticket because `focusText` was already present in the Fortune session HTTP/domain/facilitator path.
+
+## 2026-08-25 - Fortune Reflection Workspace UX V1
+
+- Phase: BUILD
+- Touched boundaries:
+  - `app/fortune`
+  - `src/features/fortune-journaling`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Consolidated the persisted Fortune reflection phase into one shared workspace shell for `ready-for-next-round`, `awaiting-reply`, `awaiting-resting-choice`, and `paused`, while preserving `complete` as a distinct terminal presentation outside the active workspace.
+  - Added a persistent selected-card rail, compact session context strip, stage-specific center content, multiline composer only when a reply is actually expected, and a History drawer that occupies the desktop workspace zone without covering the card rail.
+  - Reused the existing Step III tarot metadata path for rail-card inspection, enforced local History/card-inspect mutual exclusivity without touching persistence semantics, and kept all session/facilitator lifecycle behavior on the existing hydrated session-turn model.
+- Verification:
+  - `npx.cmd vitest run app/fortune/page.test.tsx app/fortune/reflection-workspace-page.test.tsx src/features/fortune-journaling/session.test.ts src/features/fortune-journaling/reflection-workspace.test.ts src/features/fortune-journaling/draw-geometry.test.ts` -> pass
+  - `npx.cmd tsc --noEmit` -> fails on pre-existing unrelated type errors in `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts` and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`
+  - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-25T14-23-37-950Z.log`)
+- Follow-up note:
+  - One failed build log (`docs/build-logs/2026-08-25T14-21-16-330Z.log`) was produced only because a previous in-progress `next build` still held the build lock after a timeout; the subsequent full rerun completed successfully.
+
 ## 2026-08-20 - Fortune Library Proportion And Info Surface Polish
 
 - Phase: BUILD
@@ -6174,3 +6211,22 @@ Verification references:
   - `npm.cmd run build` -> pass (`docs/build-logs/2026-08-20T13-45-56-037Z.log`)
 - Follow-up note:
   - Step III -> Step II restoration was intentionally not implemented in this ticket; from persisted Spread onward the shared header-left control exits to the Fortune Library without mutating the persisted session.
+
+## 2026-08-26 - Homepage Meditation And Fortune Shared Carousel
+
+- Phase: BUILD
+- Touched boundaries:
+  - `src/ui/homepage`
+  - `docs/superpowers/specs`
+  - `docs/superpowers/plans`
+  - `docs/STABILIZATION_LEDGER.md`
+- Notes:
+  - Replaced the standalone homepage Fortune Journaling tile with a shared two-slide carousel in the meditation slot so Meditation and Fortune now live in one bounded secondary surface.
+  - Added arrow-based slide switching and hover-paused autoplay at `7500ms` while keeping the rest of the homepage orientation composition unchanged.
+  - Added a small pure helper module for carousel index wraparound and locked the homepage markup contract with targeted tests.
+- Verification:
+  - `npx.cmd vitest run src/ui/homepage/__tests__/homepage-feature-carousel.test.ts src/ui/homepage/__tests__/homepage-orientation-hub.test.tsx` -> pass (`2` files, `6` tests)
+  - `npm.cmd run typecheck` -> fails on pre-existing unrelated errors in `src/cognition/latent-v2/opportunity-constructor-v3/__tests__/opportunity-constructor-v3.test.ts` and `src/cognition/observation-v3/pipeline/replay/__tests__/preserved-case-loader.test.ts`, plus existing Fortune-branch type errors in `src/features/fortune-journaling/card-info.ts` and `src/features/fortune-journaling/FortuneJournalingPageClient.tsx`
+  - `npm.cmd run build` -> fails after successful compile during TypeScript validation on `src/features/fortune-journaling/card-info.ts` (`docs/build-logs/2026-08-26T17-30-31-780Z.log`)
+- Follow-up note:
+  - A previous timed-out build attempt also produced a transient lock-style failure log at `docs/build-logs/2026-08-26T17-24-21-909Z.log`; the later build log above is the authoritative ticket result.

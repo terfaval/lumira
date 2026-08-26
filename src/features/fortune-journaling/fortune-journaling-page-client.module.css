@@ -3,10 +3,9 @@
   min-height: 100svh;
   min-height: 100dvh;
   padding: 1rem 1rem 2rem;
+  box-sizing: border-box;
   overflow-x: clip;
-  background:
-    radial-gradient(circle at top left, rgba(248, 243, 229, 0.82), transparent 34%),
-    linear-gradient(180deg, #f4efe4 0%, #f7f4ed 44%, #f2efe7 100%);
+  background: transparent;
   color: #2f241a;
 }
 
@@ -32,6 +31,11 @@
   width: 100%;
 }
 
+.topControlsSpacer {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
 .stepHeader {
   display: grid;
   justify-items: center;
@@ -42,7 +46,7 @@
   display: grid;
   justify-items: center;
   gap: 0.28rem;
-  padding-block: 1.5rem 3rem;
+  padding-block: 0rem 1rem;
   text-align: center;
 }
 
@@ -96,6 +100,18 @@
 .pageInfoButton:focus-visible {
   background: rgba(255, 251, 245, 0.7);
   color: #4f3927;
+}
+
+.workspaceCloseButton {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(122, 95, 67, 0.16);
+  background: rgba(255, 251, 245, 0.88);
+  color: #4f3927;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .backIcon,
@@ -266,6 +282,194 @@
   justify-items: center;
 }
 
+.libraryFooter {
+  display: flex;
+  justify-content: center;
+  padding-top: 1.15rem;
+}
+
+.libraryJournalButton {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #7b6450;
+  font: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(123, 100, 80, 0.35);
+  text-underline-offset: 0.22rem;
+}
+
+.journalSurface {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  align-content: start;
+}
+
+.journalHeader {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.journalHeadingBlock {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.journalTitle {
+  margin: 0;
+  font-family: var(--font-reflective-serif), Georgia, serif;
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  color: #4a3727;
+}
+
+.journalLead {
+  margin: 0;
+  color: #6c5743;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.journalFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.journalFilter {
+  display: grid;
+  gap: 0.35rem;
+  color: #735c48;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.journalFilter select {
+  min-width: 10rem;
+  min-height: 2.4rem;
+  border: 1px solid rgba(122, 95, 67, 0.18);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  background: rgba(255, 251, 246, 0.9);
+  color: #4d3827;
+  font: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.journalList {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.journalRow {
+  text-decoration: none;
+  color: inherit;
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(122, 95, 67, 0.14);
+  border-radius: 1.2rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.76), transparent 38%),
+    rgba(255, 251, 246, 0.82);
+  box-shadow: 0 12px 30px rgba(82, 58, 33, 0.06);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+.journalRow:hover,
+.journalRow:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(122, 95, 67, 0.22);
+  box-shadow: 0 16px 34px rgba(82, 58, 33, 0.08);
+}
+
+.journalCardsColumn,
+.journalModeColumn,
+.journalContextColumn {
+  min-width: 0;
+}
+
+.journalCardStrip {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.journalCardThumb {
+  width: clamp(3.9rem, 6vw, 4.8rem);
+  aspect-ratio: 5 / 7;
+  border-radius: 0.7rem;
+  overflow: hidden;
+  border: 1px solid rgba(122, 95, 67, 0.14);
+  background:
+    linear-gradient(180deg, rgba(116, 84, 55, 0.08), rgba(116, 84, 55, 0.02)),
+    rgba(255, 251, 246, 0.92);
+  box-shadow: 0 8px 18px rgba(82, 58, 33, 0.08);
+  flex: 0 0 auto;
+}
+
+.journalCardThumbImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.journalModeName,
+.journalModeMeta,
+.journalPreview,
+.journalDate,
+.journalEmptyState p {
+  margin: 0;
+}
+
+.journalModeName {
+  font-family: var(--font-reflective-serif), Georgia, serif;
+  font-size: 1rem;
+  color: #422f20;
+}
+
+.journalModeMeta {
+  color: #7a624d;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.journalContextColumn {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.journalPreview {
+  color: #4e3928;
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.journalDate {
+  color: #816956;
+  font-size: 0.84rem;
+}
+
+.journalEmptyState {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.2rem 0 0.2rem;
+  color: #604a37;
+}
+
 .libraryGroups {
   --library-tile-size: clamp(11.9rem, 15.4vw, 13rem);
   --library-tile-height: clamp(8.8rem, 11.2vw, 9.7rem);
@@ -312,7 +516,13 @@
 }
 
 .libraryTileButton {
+  --library-watermark-opacity: 0.09;
+  --library-watermark-box-size: 120%;
+  --library-watermark-offset-inline: -32%;
+  --library-watermark-offset-block: -16%;
+  --library-watermark-rotation: -7deg;
   appearance: none;
+  position: relative;
   width: 100%;
   height: 100%;
   padding: 0.95rem;
@@ -326,6 +536,8 @@
   align-content: space-between;
   justify-items: start;
   gap: 0.85rem;
+  overflow: hidden;
+  isolation: isolate;
   text-align: left;
   cursor: pointer;
   transition:
@@ -335,9 +547,38 @@
     background-color 160ms ease;
 }
 
+.libraryTileButton::before {
+  content: "";
+  position: absolute;
+  right: var(--library-watermark-offset-inline);
+  bottom: var(--library-watermark-offset-block);
+  width: var(--library-watermark-box-size);
+  height: var(--library-watermark-box-size);
+  background-color: var(--library-watermark-color, transparent);
+  opacity: var(--library-watermark-opacity, 0);
+  transform: rotate(var(--library-watermark-rotation)) scale(var(--library-watermark-scale, 1));
+  transform-origin: 68% 68%;
+  pointer-events: none;
+  z-index: 0;
+  mask-image: var(--library-watermark-image);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-image: var(--library-watermark-image);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+}
+
 .libraryTileButton h3 {
   font-size: clamp(1.05rem, 1.08vw, 1.2rem);
   max-width: 11ch;
+}
+
+.libraryTileButton h3,
+.libraryCount {
+  position: relative;
+  z-index: 1;
 }
 
 .libraryTile:hover .libraryTileButton,
@@ -475,42 +716,52 @@
 }
 
 .drawSurface {
-  --draw-card-width: clamp(5.35rem, 7vw, 7.6rem);
-  --draw-overlap: clamp(3.15rem, 3.8vw, 4.5rem);
-  --draw-hover-lift: clamp(0.45rem, 1vh, 0.95rem);
-  --draw-selected-lift: clamp(0.9rem, 2vh, 1.6rem);
-  --draw-hover-scale: 1.045;
-  --draw-selected-scale: 1.095;
+  --draw-fan-width: clamp(51.5rem, 88vw, 70.5rem);
+  --draw-card-width: clamp(5.5rem, calc(var(--draw-fan-width) / 8.4), 7.1rem);
+  --draw-card-height: calc(var(--draw-card-width) * 1.4);
+  --draw-arc-depth: clamp(2rem, calc(var(--draw-fan-width) * 0.075), 4rem);
+  --draw-hover-lift: clamp(0.45rem, 0.95vh, 0.8rem);
+  --draw-selected-lift: clamp(0.95rem, 1.8vh, 1.45rem);
+  --draw-hover-scale: 1.04;
+  --draw-selected-scale: 1.09;
   --draw-border-radius: 1rem;
-  align-content: start;
+  --draw-fan-raise: clamp(5rem, calc(var(--draw-card-height) * 0.6), 7.5rem);
+  --draw-fan-baseline: clamp(1.2rem, 2.6vh, 2rem);
+  --draw-card-frame: clamp(0.2rem, 0.28vw, 0.28rem);
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+  justify-items: center;
+  height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
 .drawDeck {
   position: relative;
-  display: flex;
-  align-items: end;
-  justify-content: center;
-  width: 100%;
-  min-height: clamp(21rem, 42vh, 32rem);
-  padding: clamp(0.5rem, 1.4vh, 1rem) clamp(0.3rem, 1.5vw, 1.2rem) 0;
-  overflow: hidden;
+  width: min(100%, var(--draw-fan-width));
+  min-height: calc(var(--draw-card-height) + var(--draw-arc-depth) + 2rem);
+  height: min(100%, calc(var(--draw-card-height) + var(--draw-arc-depth) + 2rem));
+  align-self: center;
+  justify-self: center;
+  padding: 0 clamp(0.45rem, 1.2vw, 0.95rem) clamp(2.5rem, 5vh, 4rem);
+  transform: translateY(calc(var(--draw-fan-raise) * -1));
+  overflow: visible;
 }
 
 .drawCard {
   --fan-offset: 0rem;
   --fan-rotation: 0deg;
   --fan-lift: 0px;
-  position: relative;
-  flex: 0 0 auto;
+  position: absolute;
+  left: 50%;
+  bottom: var(--draw-fan-baseline);
   width: var(--draw-card-width);
   aspect-ratio: 5 / 7;
-  margin-left: calc(var(--draw-overlap) * -1);
   transform:
-    translateX(var(--fan-offset))
-    translateY(var(--fan-lift))
+    translateX(calc(-50% + (var(--fan-offset) * var(--draw-fan-width) * 0.53)))
+    translateY(calc(var(--fan-lift) * var(--draw-arc-depth)))
     rotate(var(--fan-rotation));
-  transform-origin: center 182%;
+  transform-origin: center 160%;
   border: 0;
   background: transparent;
   padding: 0;
@@ -522,15 +773,11 @@
     z-index 180ms ease;
 }
 
-.drawCard:first-child {
-  margin-left: 0;
-}
-
 .drawCard:hover:not(:disabled),
 .drawCard:focus-visible:not(:disabled) {
   transform:
-    translateX(var(--fan-offset))
-    translateY(calc(var(--fan-lift) - var(--draw-hover-lift)))
+    translateX(calc(-50% + (var(--fan-offset) * var(--draw-fan-width) * 0.53)))
+    translateY(calc((var(--fan-lift) * var(--draw-arc-depth)) - var(--draw-hover-lift)))
     rotate(var(--fan-rotation))
     scale(var(--draw-hover-scale));
   z-index: 30;
@@ -538,8 +785,8 @@
 
 .drawCard[data-selected="true"] {
   transform:
-    translateX(var(--fan-offset))
-    translateY(calc(var(--fan-lift) - var(--draw-selected-lift)))
+    translateX(calc(-50% + (var(--fan-offset) * var(--draw-fan-width) * 0.53)))
+    translateY(calc((var(--fan-lift) * var(--draw-arc-depth)) - var(--draw-selected-lift)))
     rotate(var(--fan-rotation))
     scale(var(--draw-selected-scale));
   z-index: 40;
@@ -548,8 +795,8 @@
 .drawCard[data-selected="true"]:hover:not(:disabled),
 .drawCard[data-selected="true"]:focus-visible:not(:disabled) {
   transform:
-    translateX(var(--fan-offset))
-    translateY(calc(var(--fan-lift) - var(--draw-selected-lift) - 0.18rem))
+    translateX(calc(-50% + (var(--fan-offset) * var(--draw-fan-width) * 0.53)))
+    translateY(calc((var(--fan-lift) * var(--draw-arc-depth)) - var(--draw-selected-lift) - 0.18rem))
     rotate(var(--fan-rotation))
     scale(calc(var(--draw-selected-scale) + 0.015));
   z-index: 42;
@@ -558,10 +805,14 @@
 .drawCardBack {
   width: 100%;
   height: 100%;
-  display: block;
+  display: grid;
+  padding: var(--draw-card-frame);
   border-radius: var(--draw-border-radius);
-  border: 1px solid rgba(122, 95, 67, 0.24);
-  box-shadow: 0 18px 40px rgba(69, 45, 24, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 238, 0.88), rgba(234, 215, 175, 0.98) 42%, rgba(216, 190, 137, 0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(109, 84, 55, 0.26),
+    0 18px 40px rgba(69, 45, 24, 0.18);
   overflow: hidden;
 }
 
@@ -570,11 +821,12 @@
   height: 100%;
   display: block;
   object-fit: cover;
+  border-radius: calc(var(--draw-border-radius) - var(--draw-card-frame));
 }
 
 .drawCard[data-selected="true"] .drawCardBack {
-  border-color: rgba(122, 95, 67, 0.4);
   box-shadow:
+    inset 0 0 0 1px rgba(109, 84, 55, 0.34),
     0 24px 44px rgba(69, 45, 24, 0.24),
     0 0 0 2px rgba(255, 248, 238, 0.58);
 }
@@ -582,6 +834,14 @@
 .spreadGrid {
   display: grid;
   gap: 1rem;
+}
+
+.spreadSurface {
+  position: relative;
+  align-content: start;
+  justify-items: center;
+  padding-top: clamp(0.35rem, 1.6vh, 1rem);
+  padding-bottom: clamp(0.35rem, 1.2vh, 0.9rem);
 }
 
 .spreadCard {
@@ -600,7 +860,8 @@
 }
 
 .spreadArtworkFrame {
-  width: min(100%, 12rem);
+  position: relative;
+  width: min(100%, 13.5rem);
   aspect-ratio: 5 / 7;
   border-radius: 1rem;
   overflow: hidden;
@@ -615,6 +876,195 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.spreadCardInfoButton {
+  appearance: none;
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 251, 245, 0.42);
+  background: rgba(44, 30, 20, 0.44);
+  color: #fff7ea;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  z-index: 2;
+  box-shadow: 0 10px 18px rgba(30, 20, 12, 0.16);
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.spreadCardInfoButton:hover,
+.spreadCardInfoButton:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(44, 30, 20, 0.58);
+  box-shadow: 0 12px 20px rgba(30, 20, 12, 0.22);
+}
+
+.cardInspectOverlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.cardInspectOverlay[data-open="true"] {
+  pointer-events: auto;
+}
+
+.cardInspectBackdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(13, 13, 13, 0.84);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 180ms ease;
+}
+
+.cardInspectOverlay[data-open="true"] .cardInspectBackdrop {
+  opacity: 1;
+}
+
+.cardInspectDialog {
+  --inspect-card-width: clamp(14.5rem, 20vw, 17rem);
+  --inspect-gap: clamp(0.9rem, 1.9vw, 1.4rem);
+  --inspect-panel-width: clamp(30rem, 43vw, 38rem);
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--inspect-card-width) var(--inspect-panel-width);
+  gap: var(--inspect-gap);
+  align-items: center;
+  justify-content: center;
+  width: min(
+    calc(var(--inspect-card-width) + var(--inspect-panel-width) + var(--inspect-gap)),
+    calc(100vw - 3rem)
+  );
+  max-height: calc(100dvh - 3rem);
+  opacity: 0;
+  transform: translateY(0.4rem) scale(0.985);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.cardInspectOverlay[data-open="true"] .cardInspectDialog {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.cardInspectCardColumn {
+  display: grid;
+  gap: 0.85rem;
+  justify-items: center;
+}
+
+.cardInspectArtworkFrame {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(122, 95, 67, 0.2);
+  background:
+    linear-gradient(180deg, rgba(116, 84, 55, 0.14), rgba(116, 84, 55, 0.04)),
+    linear-gradient(135deg, rgba(241, 228, 203, 0.95), rgba(255, 252, 246, 0.92));
+  box-shadow:
+    inset 0 0 0 0.18rem #ead7af,
+    0 22px 38px rgba(44, 29, 18, 0.2);
+}
+
+.cardInspectArtwork {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cardInspectName {
+  margin: 0;
+  font-family: var(--font-reflective-serif), Georgia, serif;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  color: #f8efe0;
+  text-align: center;
+}
+
+.cardInspectPanel {
+  min-width: 0;
+  max-height: calc(100dvh - 5rem);
+  position: relative;
+  padding: 0.35rem 0.2rem 0.35rem 0.25rem;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.cardInspectPanelHeader {
+  position: absolute;
+  top: 0.1rem;
+  right: 0;
+  z-index: 2;
+}
+
+.cardInspectPanelHeader .infoCloseButton {
+  color: #f6eee1;
+}
+
+.cardInspectPanelContent {
+  min-height: 100%;
+  overflow-y: auto;
+  display: grid;
+  align-content: center;
+}
+
+.cardInspectPanelGroup {
+  display: grid;
+  gap: 1rem;
+  align-content: center;
+  min-height: 100%;
+}
+
+.cardInspectPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.cardInspectPill {
+  --pill-rgb: 79, 82, 110;
+  padding: 0.38rem 0.72rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-pill-color, #4f526e) 82%, white 18%);
+  border: 1px solid color-mix(in srgb, var(--card-pill-color, #4f526e) 72%, white 28%);
+  color: #fff8ef;
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.cardInspectSummary {
+  margin: 0;
+  color: #f6eee1;
+  line-height: 1.62;
+  font-size: 1rem;
+}
+
+.cardInspectReadings {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.65rem;
+  color: #f6eee1;
+  line-height: 1.6;
 }
 
 .cardPlaceholder {
@@ -652,6 +1102,37 @@
 
 .transitionCta .primaryButton {
   min-width: min(100%, 18rem);
+}
+
+.transitionLoading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #6b5038;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.loadingDots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.loadingDots span {
+  width: 0.34rem;
+  height: 0.34rem;
+  border-radius: 999px;
+  background: rgba(107, 80, 56, 0.7);
+  animation: loading-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.loadingDots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loadingDots span:nth-child(3) {
+  animation-delay: 0.3s;
 }
 
 .ctaRow {
@@ -703,12 +1184,12 @@
 
 .interpretationForm {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.75rem;
 }
 
 .textarea {
   width: 100%;
-  min-height: 8.5rem;
+  min-height: 6.4rem;
   padding: 1rem;
   resize: vertical;
   border: 1px solid rgba(122, 95, 67, 0.22);
@@ -716,6 +1197,54 @@
   background: rgba(255, 255, 255, 0.82);
   color: #2f241a;
   font: inherit;
+}
+
+.inlineComposer {
+  position: relative;
+}
+
+.inlineComposerTextarea {
+  padding-right: 4.25rem;
+}
+
+.inlineComposerButton {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: #6f5c48;
+  color: #f7f1e8;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(73, 52, 33, 0.16);
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.inlineComposerButton:hover:not(:disabled),
+.inlineComposerButton:focus-visible:not(:disabled) {
+  background: #5f4d3c;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(73, 52, 33, 0.22);
+}
+
+.inlineComposerButton:disabled {
+  cursor: default;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+}
+
+.inlineComposerIcon {
+  width: 1rem;
+  height: 1rem;
 }
 
 .error {
@@ -729,6 +1258,456 @@
   font-size: 0.92rem;
 }
 
+.focusSurface {
+  width: min(100%, 42rem);
+  justify-self: center;
+  padding: 0 0 0.2rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.focusBody {
+  display: grid;
+  gap: 0.55rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.focusBody p {
+  margin: 0;
+  color: #5e4733;
+  line-height: 1.68;
+  max-width: 34rem;
+}
+
+.focusActions {
+  justify-content: flex-end;
+}
+
+.focusActions .secondaryButton {
+  order: 1;
+}
+
+.focusActions .primaryButton {
+  order: 2;
+}
+
+.reflectionWorkspace {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  overflow: visible;
+}
+
+.reflectionRail {
+  --rail-count: 3;
+  --rail-card-gap: 1rem;
+  --rail-badge-inline-reserve: 1.35rem;
+  --rail-badge-overhang: 0.72rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(var(--rail-count), minmax(0, 1fr));
+  gap: var(--rail-card-gap);
+  align-content: stretch;
+  position: relative;
+  z-index: 3;
+  overflow: hidden;
+  justify-items: stretch;
+  padding: 1rem 1rem 1rem calc(1rem + var(--rail-badge-inline-reserve));
+  border: 1px solid rgba(122, 95, 67, 0.14);
+  border-radius: 1.3rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.72), transparent 36%),
+    rgba(255, 251, 246, 0.68);
+}
+
+.reflectionRailCard {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  display: block;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  min-height: 0;
+  aspect-ratio: 5 / 7;
+  justify-self: center;
+  align-self: stretch;
+  isolation: isolate;
+  z-index: 1;
+}
+
+.reflectionRailArtworkFrame {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  width: 100%;
+  border-radius: 0.95rem;
+  overflow: hidden;
+  border: 1px solid rgba(122, 95, 67, 0.16);
+  background: transparent;
+  box-shadow: 0 10px 22px rgba(62, 42, 25, 0.08);
+}
+
+.reflectionRailArtwork {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  border-radius: inherit;
+}
+
+.reflectionRailMeta {
+  position: absolute;
+  top: 0.58rem;
+  left: calc(var(--rail-badge-overhang) * -1);
+  z-index: 6;
+  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.reflectionRailNumber {
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fffdf8;
+  background: var(--card-pill-color, #4f526e);
+  box-shadow: 0 10px 20px rgba(58, 38, 21, 0.18);
+  position: relative;
+  z-index: 2;
+}
+
+.reflectionRailName {
+  margin-left: -0.3rem;
+  padding: 0.55rem 0.95rem 0.55rem 0.92rem;
+  border-radius: 999px;
+  color: #fffdf8;
+  background: color-mix(in srgb, var(--card-pill-color, #4f526e) 92%, white 8%);
+  font-family: var(--font-body), "Alegreya Sans", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-0.35rem) scaleX(0.96);
+  transform-origin: left center;
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+  pointer-events: none;
+  box-shadow: 0 10px 20px rgba(58, 38, 21, 0.12);
+  position: relative;
+  z-index: 1;
+}
+
+.reflectionRail[data-card-count="2"] {
+  --rail-count: 2;
+  --rail-card-gap: 1rem;
+}
+
+.reflectionRail[data-card-count="3"] {
+  --rail-count: 3;
+  --rail-card-gap: 0.95rem;
+}
+
+.reflectionRail[data-card-count="4"] {
+  --rail-count: 4;
+  --rail-card-gap: 0.82rem;
+}
+
+.reflectionRailCard:hover .reflectionRailName,
+.reflectionRailCard:focus-visible .reflectionRailName,
+.reflectionRailCard[aria-pressed="true"] .reflectionRailName {
+  opacity: 1;
+  transform: translateX(0) scaleX(1);
+}
+
+.reflectionWorkspaceZone {
+  position: relative;
+  min-width: 0;
+  z-index: 1;
+}
+
+.reflectionWorkspaceSurface {
+  position: relative;
+  min-width: 0;
+  min-height: 100%;
+  padding: 1.05rem 1.15rem 1rem;
+  border: 1px solid rgba(122, 95, 67, 0.18);
+  border-radius: 1.3rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.84), transparent 34%),
+    rgba(255, 251, 246, 0.97);
+  box-shadow: 0 18px 40px rgba(82, 58, 33, 0.08);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  overflow: visible;
+}
+
+.reflectionContextStrip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.35rem 1rem;
+}
+
+.reflectionContextLabel,
+.historySectionLabel,
+.historyTurnRole {
+  margin: 0;
+  color: #7b6450;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.reflectionContextFocus,
+.historyFocus {
+  margin: 0;
+  color: #6b5038;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.reflectionContextFocus {
+  max-width: min(100%, 46rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(107, 80, 56, 0.84);
+}
+
+.historyToggle {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  justify-self: end;
+  appearance: none;
+  border: 1px solid rgba(122, 95, 67, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+  color: #6b5038;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.historyToggleIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.reflectionCenter {
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  min-height: 0;
+}
+
+.reflectionCenter[data-reflection-center="interpretation"],
+.reflectionCenter[data-reflection-center="awaiting-reply"] {
+  justify-items: center;
+  text-align: center;
+}
+
+.reflectionLead,
+.reflectionQuestion,
+.reflectionSupport,
+.historyInterpretation,
+.historyTurn p {
+  margin: 0;
+}
+
+.reflectionLead {
+  color: #5e4733;
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1.7;
+  max-width: 48rem;
+}
+
+.reflectionCenter[data-reflection-center="interpretation"] .reflectionLead {
+  max-width: 34rem;
+  color: #342519;
+  font-size: clamp(1.12rem, 1.75vw, 1.45rem);
+  line-height: 1.34;
+  letter-spacing: -0.025em;
+}
+
+.reflectionCenter[data-reflection-center="awaiting-reply"] .reflectionLead {
+  max-width: 48rem;
+}
+
+.reflectionQuestion {
+  font-family: var(--font-reflective-serif), Georgia, serif;
+  font-size: clamp(1.55rem, 2.15vw, 1.9rem);
+  font-weight: 400;
+  line-height: 1.2;
+  color: #342519;
+  letter-spacing: -0.025em;
+  max-width: 48rem;
+}
+
+.reflectionCenter[data-reflection-center="awaiting-reply"] .reflectionQuestion {
+  font-size: clamp(1.8rem, 2.55vw, 2rem);
+  line-height: 1.16;
+  max-width: 50rem;
+}
+
+.reflectionSupport {
+  color: #6f5846;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.reflectionCenter[data-reflection-center="interpretation"] .reflectionSupport,
+.reflectionCenter[data-reflection-center="awaiting-reply"] .reflectionSupport {
+  max-width: 46rem;
+  text-align: center;
+}
+
+.reflectionComposerRegion {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  padding-bottom: 0.2rem;
+  padding-top: 0.15rem;
+}
+
+.reflectionComposerRegion .interpretationForm {
+  width: min(100%, 50rem);
+}
+
+.composerActions {
+  justify-content: flex-end;
+}
+
+.historyDrawer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.historyDrawer[data-open="true"] {
+  pointer-events: auto;
+}
+
+.historyBackdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(241, 233, 219, 0.56);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.historyDrawer[data-open="true"] .historyBackdrop {
+  opacity: 1;
+}
+
+.historyPanel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(68%, 42rem);
+  padding: 1.15rem 1.15rem 1.15rem 1.2rem;
+  border-left: 1px solid rgba(122, 95, 67, 0.18);
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.86), transparent 34%),
+    rgba(255, 251, 246, 0.99);
+  box-shadow: -20px 0 40px rgba(73, 50, 30, 0.08);
+  transform: translateX(102%);
+  transition: transform 180ms ease;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.9rem;
+}
+
+.historyDrawer[data-open="true"] .historyPanel {
+  transform: translateX(0);
+}
+
+.historyPanelHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.historyPanelHeader h2 {
+  margin: 0;
+  font-family: var(--font-reflective-serif), Georgia, serif;
+  font-size: 1.08rem;
+  letter-spacing: -0.02em;
+}
+
+.historyPanelContent {
+  overflow-y: auto;
+  display: grid;
+  gap: 1.25rem;
+  padding-right: 0.2rem;
+}
+
+.historySection {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.historyCardList,
+.historyTranscript {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.historyCardList {
+  list-style: none;
+}
+
+.historyInterpretation {
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.95rem;
+  background: rgba(255, 250, 242, 0.84);
+  color: #5a4330;
+  line-height: 1.65;
+}
+
+.historyTurn {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.historyTurnQuestion {
+  font-family: var(--font-reflective-serif), Georgia, serif;
+  font-size: 1.03rem;
+  line-height: 1.45;
+  color: #332419;
+}
+
 @media (max-width: 959px) {
   .pageLibraryLocked {
     overflow-y: auto;
@@ -736,6 +1715,10 @@
 
   .stepInstruction {
     font-size: 1.14rem;
+  }
+
+  .stepHeaderCenter {
+    padding-block: 0.85rem 1.1rem;
   }
 
   .pageInfoPanel,
@@ -759,8 +1742,30 @@
     grid-auto-rows: auto;
   }
 
+  .journalFilters {
+    flex-direction: column;
+  }
+
+  .journalFilter select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .journalRow {
+    grid-template-columns: 1fr;
+  }
+
+  .journalCardStrip {
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+  }
+
   .libraryTileButton {
     min-height: 8rem;
+  }
+
+  .spreadSurface {
+    padding-top: 0;
   }
 
   .drawDeck {
@@ -774,8 +1779,10 @@
 
   .drawCard,
   .drawCard:first-child {
+    position: relative;
+    left: auto;
+    bottom: auto;
     width: 100%;
-    margin-left: 0;
     transform: none;
     transform-origin: center center;
   }
@@ -793,6 +1800,95 @@
   .drawCard[data-selected="true"]:focus-visible:not(:disabled) {
     transform: translateY(-0.45rem) scale(1.05);
   }
+
+  .cardInspectOverlay {
+    padding: 0.9rem;
+  }
+
+  .cardInspectDialog {
+    --inspect-card-width: min(100%, 16rem);
+    width: min(100%, 30rem);
+    max-height: calc(100dvh - 1.8rem);
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .cardInspectCardColumn {
+    width: min(100%, var(--inspect-card-width));
+  }
+
+  .cardInspectPanel {
+    width: 100%;
+    max-height: min(26rem, 46vh);
+    padding-inline: 0;
+  }
+
+  .reflectionWorkspace {
+    gap: 0.85rem;
+  }
+
+  .reflectionRail {
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    gap: 0.7rem;
+    overflow: visible;
+  }
+
+  .reflectionRailCard {
+    height: auto;
+    width: 100%;
+    max-width: none;
+  }
+
+  .reflectionRailMeta {
+    min-height: 0;
+  }
+
+  .reflectionRailName {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    font-size: 0.9rem;
+  }
+
+  .reflectionWorkspaceSurface {
+    padding: 1rem;
+    grid-template-rows: auto auto auto;
+    overflow: visible;
+  }
+
+  .reflectionCenter {
+    min-height: 0;
+  }
+
+  .reflectionLead {
+    font-size: 0.98rem;
+    line-height: 1.62;
+    max-width: 100%;
+  }
+
+  .reflectionCenter[data-reflection-center="awaiting-reply"] .reflectionQuestion {
+    font-size: clamp(1.45rem, 5.4vw, 1.78rem);
+    line-height: 1.2;
+    max-width: 100%;
+  }
+
+  .reflectionComposerRegion .interpretationForm {
+    width: 100%;
+  }
+
+  .historyDrawer {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+  }
+
+  .historyPanel {
+    width: min(100%, 100vw);
+    border-left: 0;
+    box-shadow: none;
+  }
 }
 
 @media (min-width: 960px) {
@@ -800,21 +1896,69 @@
     padding: 1rem 1.4rem 1.2rem;
   }
 
+  .page[data-layout-mode="spread"] {
+    overflow-y: hidden;
+    height: 100dvh;
+    box-sizing: border-box;
+  }
+
   .page[data-layout-mode="draw"] {
     overflow-y: hidden;
+    height: 100dvh;
+    box-sizing: border-box;
+  }
+
+  .page[data-layout-mode="focus"] .stepHeaderCenter,
+  .page[data-layout-mode="draw"] .stepHeaderCenter {
+    padding-block: 0.35rem 0.55rem;
   }
 
   .shell {
+    height: calc(100dvh - 2.2rem);
     min-height: calc(100dvh - 2.2rem);
+  }
+
+  .page[data-layout-mode="journal"] .shell {
+    height: auto;
+    min-height: 0;
+  }
+
+  .shell:has(.spreadSurface) {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .shell:has(.focusSurface) {
+    grid-template-rows: auto auto minmax(0, 1fr);
   }
 
   .shell:has(.drawSurface) {
     grid-template-rows: auto auto minmax(0, 1fr);
   }
 
+  .shell:has(.reflectionWorkspace) {
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .shell:has(.journalSurface) {
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: start;
+    overflow: visible;
+  }
+
   .librarySurface {
     min-height: calc(100dvh - 6.2rem);
     align-content: start;
+  }
+
+  .journalRow {
+    grid-template-columns: minmax(13rem, 18rem) minmax(9rem, 12rem) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .journalCardsColumn {
+    width: min(100%, 18rem);
   }
 
   .libraryViewport {
@@ -836,22 +1980,157 @@
 
   .spreadGrid[data-card-count="2"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-width: 34rem;
+    max-width: 38rem;
   }
 
   .spreadGrid[data-card-count="3"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    max-width: 52rem;
+    max-width: 58rem;
   }
 
   .spreadGrid[data-card-count="4"] {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    max-width: 64rem;
+    max-width: 72rem;
+  }
+
+  .spreadSurface {
+    min-height: calc(100dvh - 7.2rem);
+    max-height: calc(100dvh - 7.2rem);
+    padding-top: clamp(0.15rem, 0.9vh, 0.65rem);
+    padding-bottom: clamp(0.2rem, 1vh, 0.75rem);
+    overflow: hidden;
   }
 
   .spreadGrid {
     margin: 0 auto;
     width: 100%;
     justify-content: center;
+  }
+
+  .reflectionWorkspace {
+    grid-template-columns: clamp(12rem, 16vw, 13.5rem) minmax(0, 1fr);
+    align-items: stretch;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .reflectionRail {
+    --rail-card-gap: clamp(0.8rem, 1.1vh, 1rem);
+    --rail-badge-inline-reserve: clamp(1.35rem, 1.6vw, 1.6rem);
+    min-height: 0;
+    height: min(100%, clamp(32.5rem, 71vh, 40rem));
+    align-self: stretch;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(var(--rail-count), minmax(0, 1fr));
+    align-content: stretch;
+    justify-self: center;
+    width: 100%;
+    max-width: clamp(10.5rem, 13.4vw, 12.25rem);
+    padding: 1rem 1rem 1rem calc(1rem + var(--rail-badge-inline-reserve));
+  }
+
+  .reflectionWorkspaceZone,
+  .reflectionWorkspaceSurface {
+    min-height: 0;
+  }
+
+  .reflectionRail[data-card-count="4"] {
+    --rail-card-gap: clamp(0.68rem, 0.9vh, 0.82rem);
+  }
+
+  .reflectionWorkspaceZone {
+    display: grid;
+    align-items: start;
+  }
+
+  .reflectionWorkspaceSurface {
+    height: min(100%, clamp(32.5rem, 71vh, 40rem));
+    min-height: min(100%, clamp(32.5rem, 71vh, 40rem));
+    max-height: min(100%, clamp(32.5rem, 71vh, 40rem));
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-content: stretch;
+    gap: 1.1rem;
+    padding: 1.28rem 1.55rem 1.18rem;
+    overflow: hidden;
+  }
+
+  .reflectionContextStrip {
+    gap: 0.45rem 1rem;
+    padding-inline: 0.2rem;
+  }
+
+  .reflectionCenter {
+    justify-items: center;
+    align-content: start;
+    gap: 1.1rem;
+    padding: 0.55rem 0.9rem 0.45rem;
+    overflow-y: auto;
+  }
+
+  .reflectionLead {
+    font-size: clamp(1.08rem, 1.2vw, 1.18rem);
+    line-height: 1.68;
+    max-width: 47.5rem;
+  }
+
+  .reflectionCenter[data-reflection-center="awaiting-reply"] .reflectionLead {
+    max-width: 47.5rem;
+  }
+
+  .reflectionQuestion {
+    max-width: 47.5rem;
+  }
+
+  .reflectionCenter[data-reflection-center="awaiting-reply"] .reflectionQuestion {
+    font-size: clamp(1.78rem, 2.35vw, 2rem);
+    line-height: 1.14;
+    max-width: 48.5rem;
+  }
+
+  .reflectionSupport,
+  .reflectionCenter[data-reflection-center="awaiting-reply"] .reflectionSupport,
+  .reflectionCenter[data-reflection-center="interpretation"] .reflectionSupport {
+    max-width: 47rem;
+  }
+
+  .reflectionComposerRegion {
+    align-content: end;
+    padding-top: 0.4rem;
+    padding-bottom: 0.45rem;
+  }
+
+  .reflectionComposerRegion .interpretationForm {
+    width: min(100%, 52rem);
+    gap: 0.7rem;
+  }
+
+  .inlineComposerTextarea {
+    min-height: 5.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardInspectBackdrop,
+  .cardInspectDialog,
+  .historyBackdrop,
+  .historyPanel,
+  .reflectionRailName,
+  .loadingDots span {
+    transition: none;
+    animation: none;
+  }
+}
+
+@keyframes loading-dot-pulse {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.84);
+    opacity: 0.4;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
