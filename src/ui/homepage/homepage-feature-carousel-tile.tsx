@@ -32,7 +32,7 @@ const HOMEPAGE_FEATURE_SLIDES = [
     content: (
       <div className={`${styles.featureCarouselContentGroup} ${styles.featureCarouselFortuneContent}`}>
         <h2>Fortune Journaling</h2>
-        <p className={styles.panelSublead}>Tarot-alapú önreflexió</p>
+        <p className={styles.panelSublead}>Nézz rá más szemszögből</p>
         <Link className={styles.fortuneCarouselCta} href="/fortune">
           Próbáld ki
         </Link>
